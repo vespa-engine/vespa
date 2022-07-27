@@ -5,7 +5,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -13,8 +13,8 @@ import java.time.Duration;
 import java.util.List;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author mpolden
@@ -25,7 +25,7 @@ public class CertificatesTest {
     private final X509Certificate caCertificate = CertificateTester.createCertificate("CA", keyPair);
 
     @Test
-    public void expiry() {
+    void expiry() {
         var clock = new ManualClock();
         var certificates = new Certificates(clock);
         var csr = CertificateTester.createCsr();
@@ -37,7 +37,7 @@ public class CertificatesTest {
     }
 
     @Test
-    public void add_san_from_csr() throws Exception {
+    void add_san_from_csr() throws Exception {
         var certificates = new Certificates(new ManualClock());
         var dnsName = "host.example.com";
         var ip = "192.0.2.42";
@@ -49,13 +49,13 @@ public class CertificatesTest {
 
         var subjectAlternativeNames = List.copyOf(certificate.getSubjectAlternativeNames());
         assertEquals(List.of(SubjectAlternativeName.Type.DNS.getTag(), dnsName),
-                     subjectAlternativeNames.get(0));
+                subjectAlternativeNames.get(0));
         assertEquals(List.of(SubjectAlternativeName.Type.IP.getTag(), ip),
-                     subjectAlternativeNames.get(1));
+                subjectAlternativeNames.get(1));
     }
 
     @Test
-    public void parse_instance_id() {
+    void parse_instance_id() {
         var instanceId = "1.cluster1.default.app1.tenant1.us-north-1.prod.node";
         var instanceIdWithSuffix = instanceId + ".instanceid.athenz.dev-us-north-1.vespa.aws.oath.cloud";
         var csr = CertificateTester.createCsr(List.of("foo", "bar", instanceIdWithSuffix));

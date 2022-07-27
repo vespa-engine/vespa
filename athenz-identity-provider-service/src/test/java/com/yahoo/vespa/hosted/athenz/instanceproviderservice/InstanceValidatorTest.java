@@ -25,7 +25,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,8 +42,8 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_DOMAIN_KEY;
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_SERVICE_KEY;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,14 +62,14 @@ public class InstanceValidatorTest {
     private final AthenzService vespaTenantDomain = new AthenzService("vespa.vespa.tenant");
 
     @Test
-    public void application_does_not_exist() {
+    void application_does_not_exist() {
         SuperModelProvider superModelProvider = mockSuperModelProvider();
         InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, null, vespaTenantDomain);
         assertFalse(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
     }
 
     @Test
-    public void application_does_not_have_domain_set() {
+    void application_does_not_have_domain_set() {
         SuperModelProvider superModelProvider = mockSuperModelProvider(
                 mockApplicationInfo(applicationId, 5, Collections.emptyList()));
         InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, new IdentityDocumentSigner(), vespaTenantDomain);
@@ -78,9 +78,9 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void application_has_wrong_domain() {
+    void application_has_wrong_domain() {
         ServiceInfo serviceInfo = new ServiceInfo("serviceName", "type", Collections.emptyList(),
-                                                  Collections.singletonMap(SERVICE_PROPERTIES_DOMAIN_KEY, "not-domain"), "confId", "hostName");
+                Collections.singletonMap(SERVICE_PROPERTIES_DOMAIN_KEY, "not-domain"), "confId", "hostName");
 
         SuperModelProvider superModelProvider = mockSuperModelProvider(
                 mockApplicationInfo(applicationId, 5, Collections.singletonList(serviceInfo)));
@@ -90,13 +90,13 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void application_has_same_domain_and_service() {
+    void application_has_same_domain_and_service() {
         Map<String, String> properties = new HashMap<>();
         properties.put(SERVICE_PROPERTIES_DOMAIN_KEY, domain);
         properties.put(SERVICE_PROPERTIES_SERVICE_KEY, service);
 
         ServiceInfo serviceInfo = new ServiceInfo("serviceName", "type", Collections.emptyList(),
-                                                  properties, "confId", "hostName");
+                properties, "confId", "hostName");
 
         SuperModelProvider superModelProvider = mockSuperModelProvider(
                 mockApplicationInfo(applicationId, 5, Collections.singletonList(serviceInfo)));
@@ -108,7 +108,7 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void rejects_invalid_provider_unique_id_in_csr() {
+    void rejects_invalid_provider_unique_id_in_csr() {
         SuperModelProvider superModelProvider = mockSuperModelProvider();
         InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, null, vespaTenantDomain);
         InstanceConfirmation instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
@@ -118,7 +118,7 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void rejects_unknown_ips_in_csr() {
+    void rejects_unknown_ips_in_csr() {
         NodeRepository nodeRepository = mockNodeRepo();
         InstanceValidator instanceValidator = new InstanceValidator(null, mockSuperModelProvider(), nodeRepository, null, vespaTenantDomain);
         InstanceConfirmation instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
@@ -134,7 +134,7 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void accepts_valid_refresh_requests() {
+    void accepts_valid_refresh_requests() {
         NodeRepository nodeRepository = mock(NodeRepository.class);
         Nodes nodes = mock(Nodes.class);
         when(nodeRepository.nodes()).thenReturn(nodes);
@@ -151,7 +151,7 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void rejects_refresh_on_ip_mismatch() {
+    void rejects_refresh_on_ip_mismatch() {
         NodeRepository nodeRepository = mockNodeRepo();
         InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
 
@@ -169,7 +169,7 @@ public class InstanceValidatorTest {
     }
 
     @Test
-    public void rejects_refresh_when_node_is_not_allocated() {
+    void rejects_refresh_when_node_is_not_allocated() {
         NodeRepository nodeRepository = mock(NodeRepository.class);
         Nodes nodes = mock(Nodes.class);
         when(nodeRepository.nodes()).thenReturn(nodes);

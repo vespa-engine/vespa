@@ -25,14 +25,14 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.TestUtils.getAthenzProviderConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,27 +45,27 @@ public class IdentityDocumentGeneratorTest {
     private static final Zone ZONE = new Zone(SystemName.cd, Environment.dev, RegionName.from("us-north-1"));
 
     @Test
-    public void generates_valid_identity_document()  {
+    void generates_valid_identity_document()  {
         String parentHostname = "docker-host";
         String containerHostname = "docker-container";
 
         ApplicationId appid = ApplicationId.from(
                 TenantName.from("tenant"), ApplicationName.from("application"), InstanceName.from("default"));
         Allocation allocation = new Allocation(appid,
-                                               ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3"), Optional.empty()),
-                                               new NodeResources(1, 1, 1, 1),
-                                               Generation.initial(),
-                                               false);
+                ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3"), Optional.empty()),
+                new NodeResources(1, 1, 1, 1),
+                Generation.initial(),
+                false);
         Node parentNode = Node.create("ostkid",
-                                      IP.Config.ofEmptyPool(Set.of("127.0.0.1")),
-                                      parentHostname,
-                                      new MockNodeFlavors().getFlavorOrThrow("default"),
-                                      NodeType.host).build();
+                IP.Config.ofEmptyPool(Set.of("127.0.0.1")),
+                parentHostname,
+                new MockNodeFlavors().getFlavorOrThrow("default"),
+                NodeType.host).build();
         Node containerNode = Node.reserve(Set.of("::1"),
-                                          containerHostname,
-                                          parentHostname,
-                                          new MockNodeFlavors().getFlavorOrThrow("default").resources(),
-                                          NodeType.tenant)
+                containerHostname,
+                parentHostname,
+                new MockNodeFlavors().getFlavorOrThrow("default").resources(),
+                NodeType.tenant)
                 .allocation(allocation).build();
         NodeRepository nodeRepository = mock(NodeRepository.class);
         Nodes nodes = mock(Nodes.class);

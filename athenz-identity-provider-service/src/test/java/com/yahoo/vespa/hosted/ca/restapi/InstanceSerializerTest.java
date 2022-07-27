@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.ca.CertificateTester;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRegistration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -25,7 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 public class InstanceSerializerTest {
 
     @Test
-    public void deserialize_instance_registration() {
+    void deserialize_instance_registration() {
         var csr = CertificateTester.createCsr();
         var csrPem = Pkcs10CsrUtils.toPem(csr);
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
@@ -49,36 +49,36 @@ public class InstanceSerializerTest {
                 IdentityType.NODE);
 
         var json = String.format("{\n" +
-                   "  \"provider\": \"provider_prod_us-north-1\",\n" +
-                   "  \"domain\": \"vespa.external\",\n" +
-                   "  \"service\": \"tenant\",\n" +
-                   "  \"attestationData\":\"%s\",\n" +
-                   "  \"csr\": \"" + csrPem + "\"\n" +
-                   "}", StringUtilities.escape(EntityBindingsMapper.toAttestationData(signedIdentityDocument)));
+                "  \"provider\": \"provider_prod_us-north-1\",\n" +
+                "  \"domain\": \"vespa.external\",\n" +
+                "  \"service\": \"tenant\",\n" +
+                "  \"attestationData\":\"%s\",\n" +
+                "  \"csr\": \"" + csrPem + "\"\n" +
+                "}", StringUtilities.escape(EntityBindingsMapper.toAttestationData(signedIdentityDocument)));
         var instanceRegistration = new InstanceRegistration("provider_prod_us-north-1", "vespa.external",
-                                                            "tenant", signedIdentityDocument,
-                                                            csr);
+                "tenant", signedIdentityDocument,
+                csr);
         var deserialized = InstanceSerializer.registrationFromSlime(SlimeUtils.jsonToSlime(json));
         assertEquals(instanceRegistration, deserialized);
     }
 
     @Test
-    public void serialize_instance_identity() {
+    void serialize_instance_identity() {
         var certificate = CertificateTester.createCertificate();
         var pem = X509CertificateUtils.toPem(certificate);
         var identity = new InstanceIdentity("provider_prod_us-north-1", "tenant", "node1.example.com",
-                                            Optional.of(certificate));
+                Optional.of(certificate));
         var json = "{" +
-                   "\"provider\":\"provider_prod_us-north-1\"," +
-                   "\"service\":\"tenant\"," +
-                   "\"instanceId\":\"node1.example.com\"," +
-                   "\"x509Certificate\":\"" + pem.replace("\n", "\\n") + "\"" +
-                   "}";
+                "\"provider\":\"provider_prod_us-north-1\"," +
+                "\"service\":\"tenant\"," +
+                "\"instanceId\":\"node1.example.com\"," +
+                "\"x509Certificate\":\"" + pem.replace("\n", "\\n") + "\"" +
+                "}";
         assertEquals(json, asJsonString(InstanceSerializer.identityToSlime(identity)));
     }
 
     @Test
-    public void serialize_instance_refresh() {
+    void serialize_instance_refresh() {
         var csr = CertificateTester.createCsr();
         var csrPem = Pkcs10CsrUtils.toPem(csr);
         var json = "{\"csr\": \"" + csrPem + "\"}";
