@@ -25,10 +25,16 @@ install:
 
 clean:
 	rm -f $(BIN)/vespa-logfmt
-	rmdir $(BIN)
+	-rmdir $(BIN)
 
 checkfmt:
-	@bash -c "diff --line-format='%L' <(echo -n) <(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
+	@badlist=`gofmt -l .`; \
+	if [ "$$badlist" != "" ]; then \
+		echo "file(s) need to be formatted:"; \
+		echo "   " $$badlist; \
+		echo "(try make fmt to fix this automatically)"; \
+		exit 1; \
+	fi
 
 fmt:
 	gofmt -w .
