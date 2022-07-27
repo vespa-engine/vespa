@@ -3,29 +3,29 @@ package com.yahoo.vespa.athenz.utils;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class SiaUtilsTest {
 
-    @Rule
-    public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     @Test
-    public void it_finds_all_identity_names_from_files_in_sia_keys_directory() throws IOException {
-        Path siaRoot = tempDirectory.getRoot().toPath();
+    void it_finds_all_identity_names_from_files_in_sia_keys_directory() throws IOException {
+        Path siaRoot = tempDirectory.toPath();
         assertTrue(SiaUtils.findSiaServices(siaRoot).isEmpty());
         Files.createDirectory(siaRoot.resolve("keys"));
         AthenzService fooService = new AthenzService("my.domain.foo");

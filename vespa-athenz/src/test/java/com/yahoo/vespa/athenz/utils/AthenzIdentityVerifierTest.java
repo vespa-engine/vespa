@@ -7,7 +7,7 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -21,8 +21,8 @@ import java.time.Instant;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class AthenzIdentityVerifierTest {
 
     @Test
-    public void verifies_certificate_with_athenz_service_as_common_name() throws Exception {
+    void verifies_certificate_with_athenz_service_as_common_name() throws Exception {
         AthenzIdentity trustedIdentity = new AthenzService("mydomain", "alice");
         AthenzIdentity unknownIdentity = new AthenzService("mydomain", "mallory");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);

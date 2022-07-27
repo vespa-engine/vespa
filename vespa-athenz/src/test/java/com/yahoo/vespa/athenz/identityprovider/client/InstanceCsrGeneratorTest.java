@@ -6,13 +6,13 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.security.Pkcs10Csr;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mortent
@@ -24,7 +24,7 @@ public class InstanceCsrGeneratorTest {
     private static final String ATHENZ_SERVICE = "foo.bar";
 
     @Test
-    public void it_generates_csr_with_correct_subject() {
+    void it_generates_csr_with_correct_subject() {
         CsrGenerator csrGenerator = new CsrGenerator(DNS_SUFFIX, PROVIDER_SERVICE);
 
         AthenzService service = new AthenzService(ATHENZ_SERVICE);

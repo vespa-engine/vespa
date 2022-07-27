@@ -14,12 +14,13 @@ import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.security.auth.x500.X500Principal;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -44,8 +46,8 @@ import static org.mockito.Mockito.when;
  */
 public class AthenzIdentityProviderImplTest {
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public File tempDir;
 
     public static final Duration certificateValidity = Duration.ofDays(30);
 
@@ -63,7 +65,7 @@ public class AthenzIdentityProviderImplTest {
     private Path trustStoreFile;
     private X509Certificate caCertificate;
 
-    @Before
+    @BeforeEach
     public void createTrustStoreFile() throws IOException {
         caCertificate = X509CertificateBuilder
                 .fromKeypair(
@@ -74,7 +76,7 @@ public class AthenzIdentityProviderImplTest {
                         SignatureAlgorithm.SHA256_WITH_ECDSA,
                         BigInteger.ONE)
                 .build();
-        trustStoreFile = tempDir.newFile().toPath();
+        trustStoreFile = File.createTempFile("junit", null, tempDir).toPath();
         KeyStoreUtils.writeKeyStoreToFile(
                 KeyStoreBuilder.withType(KeyStoreType.JKS)
                         .withKeyEntry("default", caKeypair.getPrivate(), caCertificate)
@@ -82,17 +84,19 @@ public class AthenzIdentityProviderImplTest {
                 trustStoreFile);
     }
 
-    @Test(expected = AthenzIdentityProviderException.class)
-    public void component_creation_fails_when_credentials_not_found() {
-        AthenzCredentialsService credentialService = mock(AthenzCredentialsService.class);
-        when(credentialService.registerInstance())
-                .thenThrow(new RuntimeException("athenz unavailable"));
+    @Test
+    void component_creation_fails_when_credentials_not_found() {
+        assertThrows(AthenzIdentityProviderException.class, () -> {
+            AthenzCredentialsService credentialService = mock(AthenzCredentialsService.class);
+            when(credentialService.registerInstance())
+                    .thenThrow(new RuntimeException("athenz unavailable"));
 
-        new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), trustStoreFile ,credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
+            new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), trustStoreFile, credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
+        });
     }
 
     @Test
-    public void metrics_updated_on_refresh() {
+    void metrics_updated_on_refresh() {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         Metric metric = mock(Metric.class);
 

@@ -3,13 +3,13 @@ package com.yahoo.vespa.athenz.api;
 
 import com.yahoo.athenz.auth.util.CryptoException;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.security.PrivateKey;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -19,14 +19,14 @@ public class NTokenGeneratorTest {
     private final PrivateKey key = mock(PrivateKey.class);
 
     @Test
-    public void ntoken() {
+    void ntoken() {
         var signer = new Signer("signature");
         NTokenGenerator generator = new NTokenGenerator(signer, new ManualClock(Instant.ofEpochSecond(12L)), () -> 3L);
         AthenzIdentity identity = new AthenzService("domain", "service");
 
         NToken token = generator.setIdentity(identity)
-                                .setKeyVersion("0")
-                                .sign(key);
+                .setKeyVersion("0")
+                .sign(key);
 
         assertEquals("v=S1;d=domain;n=service;k=0;a=3;t=12;e=612", signer.message);
         assertSame(key, signer.key);

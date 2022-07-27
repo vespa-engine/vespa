@@ -7,7 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
 import java.time.Instant;
@@ -16,7 +16,7 @@ import java.util.HashSet;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -25,7 +25,7 @@ public class IdentityDocumentSignerTest {
     public static final int KEY_VERSION = 0;
 
     @Test
-    public void generates_and_validates_signature() {
+    void generates_and_validates_signature() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityType identityType = TENANT;
         VespaUniqueInstanceId id =
