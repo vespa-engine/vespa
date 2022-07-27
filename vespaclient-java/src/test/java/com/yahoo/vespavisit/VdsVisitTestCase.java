@@ -3,22 +3,31 @@ package com.yahoo.vespavisit;
 
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AckToken;
+import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorResponse;
+import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import org.apache.commons.cli.Options;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class VdsVisitTestCase {
 
@@ -28,9 +37,9 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testCommandLineShortOptions() throws Exception {
+    void testCommandLineShortOptions() throws Exception {
         // short options testing (for options that do not collide with each other)
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-d", "foo.remote",
                 "-s", "'id.user=1234'",
                 "-f", "5678",
@@ -70,9 +79,9 @@ public class VdsVisitTestCase {
      * @throws Exception
      */
     @Test
-    public void testCommandLineShortOptions2() throws Exception {
+    void testCommandLineShortOptions2() throws Exception {
         // Short options testing (for options that do not collide with each other)
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-o", "654321",
                 "-i"
         };
@@ -88,9 +97,9 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testCommandLineShortOptionsPrintIdsOnly() throws Exception {
+    void testCommandLineShortOptionsPrintIdsOnly() throws Exception {
         // Short options testing (for options that do not collide with each other)
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-i"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
@@ -104,9 +113,9 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testCommandLineLongOptions() throws Exception {
+    void testCommandLineLongOptions() throws Exception {
         // short options testing (for options that do not collide with each other)
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "--datahandler", "foo.remote",
                 "--selection", "'id.user=1234'",
                 "--from", "5678",
@@ -151,12 +160,12 @@ public class VdsVisitTestCase {
         assertEquals("kittens", allParams.getCluster());
 
         assertTrue(params.getThrottlePolicy() instanceof StaticThrottlePolicy);
-        assertEquals(3, ((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount());
+        assertEquals(3, ((StaticThrottlePolicy) params.getThrottlePolicy()).getMaxPendingCount());
 
         assertTrue(params.visitInconsistentBuckets());
         assertEquals("fnord", params.getVisitorLibrary());
         // TODO: FIXME? multiple library params doesn't work
-        assertTrue(Arrays.equals("rargh".getBytes(), params.getLibraryParameters().get("asdf")));
+        assertArrayEquals("rargh".getBytes(), params.getLibraryParameters().get("asdf"));
         //assertTrue(Arrays.equals("pie".getBytes(), params.getLibraryParameters().get("pinkie")));
         assertEquals(555, allParams.getProcessTime());
         assertEquals(2002, params.getMaxTotalHits());
@@ -171,7 +180,7 @@ public class VdsVisitTestCase {
         printStream.flush();
         String nl = System.getProperty("line.separator"); // the joys of running tests on windows
         assertEquals(
-                        "Time out visitor after 123456789 ms." + nl +
+                "Time out visitor after 123456789 ms." + nl +
                         "Visiting documents matching: 'id.user=1234'" + nl +
                         "Visiting bucket space: outerspace" + nl +
                         "Visiting in the inclusive timestamp range 5678 - 9012." + nl +
@@ -193,7 +202,7 @@ public class VdsVisitTestCase {
     private static String[] emptyArgList() { return new String[]{}; }
 
     @Test
-    public void visitor_priority_is_low1_by_default() throws Exception {
+    void visitor_priority_is_low1_by_default() throws Exception {
         VdsVisit.VdsVisitParameters allParams = createMockArgumentParser().parse(emptyArgList());
 
         VisitorParameters params = allParams.getVisitorParameters();
@@ -201,8 +210,8 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testBadPriorityValue() throws Exception {
-        String[] args = new String[] {
+    void testBadPriorityValue() throws Exception {
+        String[] args = new String[]{
                 "--priority", "super_hyper_important"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
@@ -215,9 +224,9 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testCommandLineShortOptionsInvokeHelp() throws Exception {
+    void testCommandLineShortOptionsInvokeHelp() throws Exception {
         // Short options testing (for options that do not collide with each other)
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-h"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
@@ -226,7 +235,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testAutoSelectClusterRoute() throws Exception {
+    void testAutoSelectClusterRoute() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
@@ -236,7 +245,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testBadClusterName() throws Exception {
+    void testBadClusterName() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
@@ -244,13 +253,13 @@ public class VdsVisitTestCase {
             VdsVisit.resolveClusterRoute(clusterList, "borkbork");
         } catch (IllegalArgumentException e) {
             assertEquals("Your vespa cluster contains the content clusters 'storage', not 'borkbork'. " +
-                         "Please select a valid vespa cluster.",
-                         e.getMessage());
+                    "Please select a valid vespa cluster.",
+                    e.getMessage());
         }
     }
 
     @Test
-    public void testRequireClusterOptionIfMultipleClusters() {
+    void testRequireClusterOptionIfMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         clusterDefs.add(new ClusterDef("storage"));
         clusterDefs.add(new ClusterDef("storage2"));
@@ -263,7 +272,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testExplicitClusterOptionWithMultipleClusters() {
+    void testExplicitClusterOptionWithMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         clusterDefs.add(new ClusterDef("storage"));
         clusterDefs.add(new ClusterDef("storage2"));
@@ -274,7 +283,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testFailIfNoContentClustersAvailable() {
+    void testFailIfNoContentClustersAvailable() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         ClusterList clusterList = new ClusterList(clusterDefs);
         try {
@@ -285,8 +294,8 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testStatistics() throws Exception {
-        String[] args = new String[] {
+    void testStatistics() throws Exception {
+        String[] args = new String[]{
                 "--statistics", "foo"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
@@ -400,7 +409,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testVdsVisitRunLogic() {
+    void testVdsVisitRunLogic() {
         MockVisitorSessionAccessorFactory accessorFactory = new MockVisitorSessionAccessorFactory();
         MockShutdownHookRegistrar shutdownHookRegistrar = new MockShutdownHookRegistrar();
         VdsVisit vdsVisit = new VdsVisit(accessorFactory, shutdownHookRegistrar);
@@ -429,7 +438,7 @@ public class VdsVisitTestCase {
     }
 
     @Test
-    public void testVdsVisitRunLogicProgressFileNotYetCreated() {
+    void testVdsVisitRunLogicProgressFileNotYetCreated() {
         MockVisitorSessionAccessorFactory accessorFactory = new MockVisitorSessionAccessorFactory();
         MockShutdownHookRegistrar shutdownHookRegistrar = new MockShutdownHookRegistrar();
         VdsVisit vdsVisit = new VdsVisit(accessorFactory, shutdownHookRegistrar);

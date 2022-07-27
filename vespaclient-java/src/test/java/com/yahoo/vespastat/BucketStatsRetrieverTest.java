@@ -9,12 +9,13 @@ import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketReply;
 import com.yahoo.messagebus.Error;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,7 +32,7 @@ public class BucketStatsRetrieverTest {
     private final String bucketSpace = "default";
 
 
-    @Before
+    @BeforeEach
     public void prepareMessageBusMocks() {
         this.mockedFactory = mock(DocumentAccessFactory.class);
         this.mockedDocumentAccess = mock(MessageBusDocumentAccess.class);
@@ -41,7 +42,7 @@ public class BucketStatsRetrieverTest {
     }
 
     @Test
-    public void testGetBucketId() throws BucketStatsException {
+    void testGetBucketId() throws BucketStatsException {
         BucketStatsRetriever retriever = createRetriever();
 
         assertEquals("BucketId(0x80000000000004d2)",
@@ -57,7 +58,7 @@ public class BucketStatsRetrieverTest {
     }
 
     @Test
-    public void testRetrieveBucketList() throws BucketStatsException {
+    void testRetrieveBucketList() throws BucketStatsException {
         String bucketInfo = "I like turtles!";
         BucketId bucketId = bucketIdFactory.getBucketId(new DocumentId("id:ns:type::another"));
 
@@ -73,7 +74,7 @@ public class BucketStatsRetrieverTest {
     }
 
     @Test
-    public void testRetrieveBucketStats() throws BucketStatsException {
+    void testRetrieveBucketStats() throws BucketStatsException {
         String docId = "id:ns:type::another";
         String bucketInfo = "I like turtles!";
         BucketId bucketId = bucketIdFactory.getBucketId(new DocumentId(docId));
@@ -88,9 +89,10 @@ public class BucketStatsRetrieverTest {
     }
 
     @Test
-    public void testShutdownHook() {
+    void testShutdownHook() {
         class MockShutdownRegistrar implements BucketStatsRetriever.ShutdownHookRegistrar {
             public Runnable shutdownRunnable;
+
             @Override
             public void registerShutdownHook(Runnable runnable) {
                 shutdownRunnable = runnable;
@@ -104,24 +106,27 @@ public class BucketStatsRetrieverTest {
         verify(mockedDocumentAccess, times(1)).shutdown();
     }
 
-    @Test(expected = BucketStatsException.class)
-    public void testShouldFailOnReplyError() throws BucketStatsException {
-        GetBucketListReply reply = new GetBucketListReply();
-        reply.addError(new Error(0, "errormsg"));
-        when(mockedSession.syncSend(any())).thenReturn(reply);
+    @Test
+    void testShouldFailOnReplyError() throws BucketStatsException {
+        assertThrows(BucketStatsException.class, () -> {
+            GetBucketListReply reply = new GetBucketListReply();
+            reply.addError(new Error(0, "errormsg"));
+            when(mockedSession.syncSend(any())).thenReturn(reply);
 
-        createRetriever().retrieveBucketList(new BucketId(1), bucketSpace);
+            createRetriever().retrieveBucketList(new BucketId(1), bucketSpace);
+        });
     }
 
     @Test
-    public void testRoute() throws BucketStatsException {
+    void testRoute() throws BucketStatsException {
         String route = "default";
         BucketId bucketId = bucketIdFactory.getBucketId(new DocumentId("id:ns:type::another"));
         GetBucketListReply reply = new GetBucketListReply();
         reply.getBuckets().add(new GetBucketListReply.BucketInfo(bucketId, "I like turtles!"));
         when(mockedSession.syncSend(any())).thenReturn(reply);
 
-        BucketStatsRetriever retriever = new BucketStatsRetriever(mockedFactory, route, t -> {});
+        BucketStatsRetriever retriever = new BucketStatsRetriever(mockedFactory, route, t -> {
+        });
         retriever.retrieveBucketList(new BucketId(0), bucketSpace);
 
         // Route is set at session-level, not per message sent.
