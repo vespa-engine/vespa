@@ -185,26 +185,16 @@
             <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
-                <!-- Vespa bundles -->
+                <!-- BEGIN Bundles needed to retrieve config, or used by container-disc -->
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 hosted-zone-api-jar-with-dependencies.jar,
-                jdisc-security-filters-jar-with-dependencies.jar,
-                vespa-athenz-jar-with-dependencies.jar,
-
-                <!-- Apache http client repackaged as bundle -->
                 container-apache-http-client-bundle-jar-with-dependencies.jar,
-
-                <!-- Vespa security utils with necessary 3rd party bundles -->
                 security-utils.jar,
-                bcpkix-jdk15on-${bouncycastle.version}.jar,
-                bcprov-jdk15on-${bouncycastle.version}.jar,
+                bcprov-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                <!-- END Bundles needed to retrieve config, or used by container-disc -->
 
-                <!-- TODO Vespa 9 Stop providing servlet-api 3.x -->
-                javax.servlet-api-3.1.0.jar,
-
-                <!-- Aries SPIFly repackaged -->
-                container-spifly.jar,
+                bcpkix-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
 
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,

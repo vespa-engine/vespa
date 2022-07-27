@@ -1,7 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-# TODO: remove this def when oldest hosted model no longer uses it.
-
-namespace=jdisc.http.filter.security.rule
+package=com.yahoo.vespa.config.jdisc.http.filter
 
 dryrun bool default=false
 defaultRule.action enum { ALLOW, BLOCK }

@@ -194,6 +194,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.jdisc.http.server.jetty.Janitor.class);
     }
 
+    protected abstract boolean messageBusEnabled();
+
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
 
     public void setZone(Zone zone) {
@@ -455,18 +457,20 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     /**
-     * Adds the Vespa bundles that are necessary for all container types.
+     * Adds the Vespa bundles that are necessary for most container types.
+     * Note that some of these can be removed later by the individual cluster types.
      */
     public void addCommonVespaBundles() {
-        PlatformBundles.commonVespaBundles.forEach(this::addPlatformBundle);
+        PlatformBundles.COMMON_VESPA_BUNDLES.forEach(this::addPlatformBundle);
+        PlatformBundles.VESPA_SECURITY_BUNDLES.forEach(this::addPlatformBundle);
     }
 
-    /*
-    Add all search/docproc/feed related platform bundles.
-    This is only required for application configured containers as the platform bundle set is not allowed to change
-    between config generations. For standalone container platform bundles can be added on features enabled as an
-    update of application package requires restart.
-    */
+    /**
+     * Add all search/docproc/feed related platform bundles.
+     * These are only required for application configured containers as the platform bundle set is not allowed to change
+     * between config generations. For standalone container platform bundles can be added on features enabled as an
+     * update of application package requires restart.
+     */
     public void addAllPlatformBundles() {
         ContainerDocumentApi.addVespaClientContainerBundle(this);
         addSearchAndDocprocBundles();
@@ -481,8 +485,18 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * @param bundlePath usually an absolute path, e.g. '$VESPA_HOME/lib/jars/foo.jar'
      */
     public final void addPlatformBundle(Path bundlePath) {
-        platformBundles.add(bundlePath);
+        if (! unnecessaryPlatformBundles().contains(bundlePath)) {
+            platformBundles.add(bundlePath);
+        } else {
+            log.fine(() -> "Not installing bundle " + bundlePath + " for cluster " + getName());
+        }
     }
+
+    /**
+     * Implement in subclasses to avoid installing unnecessary bundles, see {@link PlatformBundles}
+     * Should only return constant values, as there is no guarantee for when this is called.
+     */
+    protected Set<Path> unnecessaryPlatformBundles() { return Set.of(); }
 
     @Override
     public void getConfig(PlatformBundlesConfig.Builder builder) {
@@ -644,8 +658,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public String toString() {
         return "container cluster '" + getName() + "'";
     }
-
-    protected abstract boolean messageBusEnabled();
 
     /**
      * Mark whether the config emitted by this cluster currently should be applied by clients already running with

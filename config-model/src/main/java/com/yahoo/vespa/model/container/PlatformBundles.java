@@ -33,17 +33,32 @@ public class PlatformBundles {
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
     // Bundles that must be loaded for all container types.
-    public static final Set<Path> commonVespaBundles = Stream.of(
+    public static final Set<Path> COMMON_VESPA_BUNDLES = toBundlePaths(
+            "container-spifly.jar",  // Aries SPIFly repackaged
             "zkfacade",
-            "zookeeper-server"  // TODO: not necessary in metrics-proxy.
-    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
+            "zookeeper-server",  // TODO: not necessary in metrics-proxy.
+            // Used by vespa-athenz, zkfacade, other vespa bundles and nearly all hosted apps.
+            // TODO Vespa 9: stop installing and providing servlet-api. Seems difficult, though.
+            "javax.servlet-api-3.1.0.jar"
+    );
 
-    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = Stream.of(
-            PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE,
+    public static final Set<Path> VESPA_SECURITY_BUNDLES = toBundlePaths(
+            "jdisc-security-filters",
+            "vespa-athenz"
+    );
+
+    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
+            SEARCH_AND_DOCPROC_BUNDLE,
             "container-search-gui",
             "docprocs",
             "linguistics-components"
-    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
+    );
+
+    private static Set<Path> toBundlePaths(String... bundleNames) {
+        return Stream.of(bundleNames)
+                .map(PlatformBundles::absoluteBundlePath)
+                .collect(Collectors.toSet());
+    }
 
     public static Path absoluteBundlePath(String fileName) {
         return absoluteBundlePath(fileName, JarSuffix.JAR_WITH_DEPS);
@@ -51,7 +66,8 @@ public class PlatformBundles {
 
     public static Path absoluteBundlePath(String fileName, JarSuffix jarSuffix) {
         if (fileName == null) return null;
-        return LIBRARY_PATH.resolve(Paths.get(fileName + jarSuffix.suffix));
+        String fullFilename = fileName.endsWith(".jar") ? fileName : fileName + jarSuffix.suffix;
+        return LIBRARY_PATH.resolve(Paths.get(fullFilename));
     }
 
     public static boolean isSearchAndDocprocClass(String className) {

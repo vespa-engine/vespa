@@ -7,8 +7,12 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Container cluster for cluster-controller containers.
@@ -17,6 +21,8 @@ import java.util.Optional;
  * @author bjorncs
  */
 public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer> {
+
+    private static final Set<Path> UNNECESSARY_BUNDLES = Collections.unmodifiableSet(PlatformBundles.VESPA_SECURITY_BUNDLES);
 
     private final ReindexingContext reindexingContext;
 
@@ -27,6 +33,9 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
+
+    @Override
+    protected Set<Path> unnecessaryPlatformBundles() { return UNNECESSARY_BUNDLES; }
 
     @Override
     protected void doPrepare(DeployState deployState) { }

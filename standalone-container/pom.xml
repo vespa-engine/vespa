@@ -99,7 +99,14 @@
             config-bundle-jar-with-dependencies.jar,
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
+
             container-disc-jar-with-dependencies.jar,
+
+            <!-- START bundles that can be moved to config-model when all standalone containers are set up via the model -->
+            container-spifly.jar,  <!-- Aries SPIFly repackaged -->
+            javax.servlet-api-3.1.0.jar,  <!-- Needed by vespa-athenz. TODO Vespa 9: remove the need for servlet-api -->
+            <!-- END bundles that can be moved to config-model -->
+
             <!-- START config-model dependencies -->
             container-search-and-docproc-jar-with-dependencies.jar,
             linguistics-components-jar-with-dependencies.jar,

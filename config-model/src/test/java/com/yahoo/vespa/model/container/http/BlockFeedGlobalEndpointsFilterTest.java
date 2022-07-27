@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
+import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class BlockFeedGlobalEndpointsFilterTest {

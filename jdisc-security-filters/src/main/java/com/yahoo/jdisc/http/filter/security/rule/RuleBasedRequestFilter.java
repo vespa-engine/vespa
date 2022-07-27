@@ -6,7 +6,8 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Action;
+import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
+import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Action;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
