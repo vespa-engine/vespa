@@ -57,6 +57,7 @@
       "public static com.yahoo.application.Application fromApplicationPackage(java.nio.file.Path, com.yahoo.application.Networking)",
       "public static com.yahoo.application.Application fromApplicationPackage(java.io.File, com.yahoo.application.Networking)",
       "public com.yahoo.application.container.JDisc getJDisc(java.lang.String)",
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry getCompiledQueryProfileRegistry()",
       "public void close()"
     ],
     "fields": [

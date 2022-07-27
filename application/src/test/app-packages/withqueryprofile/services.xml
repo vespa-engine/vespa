@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+    <container version="1.0">
+        <!-- Avoid using DefaultLinguisticsProvider -->
+        <component id="com.yahoo.language.simple.SimpleLinguistics" />
+
+        <search>
+            <chain id="default" inherits="vespa"/>
+            <provider id="bar" type="local" cluster="foo">
+                <searcher id="MockResultSearcher" class="com.yahoo.application.MockResultSearcher"/>
+            </provider>
+        </search>
+
+        <accesslog type="disabled" />
+    </container>
+
+    <content version="1.0" id="foo">
+        <redundancy>2</redundancy>
+        <documents>
+            <document type="mydoc" mode="index"/>
+        </documents>
+        <nodes>
+            <node hostalias="node1" distribution-key="1"/>
+        </nodes>
+    </content>
+
+</services>
