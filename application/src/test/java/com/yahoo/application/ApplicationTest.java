@@ -63,9 +63,8 @@ public class ApplicationTest {
         }
     }
 
-    /** Tests that an application with query profile sets up the QueryProfileRegistry */
     @Test
-    public void container_and_query_profile() {
+    public void application_with_query_profile_sets_up_query_profile_registry() {
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/withqueryprofile"), Networking.disable)) {
             Query query = new Query(HttpRequest.createTestRequest("?query=substring:foobar&timeout=20000", com.yahoo.jdisc.http.HttpRequest.Method.GET), application.getCompiledQueryProfileRegistry().findQueryProfile("default"));
