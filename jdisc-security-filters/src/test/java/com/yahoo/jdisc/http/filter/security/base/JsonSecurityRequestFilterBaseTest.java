@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -23,7 +23,7 @@ public class JsonSecurityRequestFilterBaseTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void filter_renders_errors_as_json() throws IOException {
+    void filter_renders_errors_as_json() throws IOException {
         int statusCode = 403;
         String message = "Forbidden";
         DiscFilterRequest request = mock(DiscFilterRequest.class);

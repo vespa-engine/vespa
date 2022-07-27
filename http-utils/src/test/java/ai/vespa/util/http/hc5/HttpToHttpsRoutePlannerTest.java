@@ -6,9 +6,9 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpHost;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
@@ -18,7 +18,7 @@ public class HttpToHttpsRoutePlannerTest {
     final HttpToHttpsRoutePlanner planner = new HttpToHttpsRoutePlanner();
 
     @Test
-    public void verifySchemeMustBeHttp() throws HttpException {
+    void verifySchemeMustBeHttp() throws HttpException {
         try {
             planner.determineRoute(new HttpHost("https", "host", 1), new HttpClientContext());
         }
@@ -28,7 +28,7 @@ public class HttpToHttpsRoutePlannerTest {
     }
 
     @Test
-    public void verifyPortMustBeSet() throws HttpException {
+    void verifyPortMustBeSet() throws HttpException {
         try {
             planner.determineRoute(new HttpHost("http", "host", -1), new HttpClientContext());
         }
@@ -39,7 +39,7 @@ public class HttpToHttpsRoutePlannerTest {
 
 
     @Test
-    public void verifyProxyIsDisallowed() throws HttpException {
+    void verifyProxyIsDisallowed() throws HttpException {
         HttpClientContext context = new HttpClientContext();
         context.setRequestConfig(RequestConfig.custom().setProxy(new HttpHost("proxy")).build());
         try {
@@ -51,9 +51,9 @@ public class HttpToHttpsRoutePlannerTest {
     }
 
     @Test
-    public void verifySchemeIsRewritten() throws HttpException {
+    void verifySchemeIsRewritten() throws HttpException {
         assertEquals(new HttpRoute(new HttpHost("https", "host", 1)),
-                     planner.determineRoute(new HttpHost("http", "host", 1), new HttpClientContext()));
+                planner.determineRoute(new HttpHost("http", "host", 1), new HttpClientContext()));
     }
 
 }

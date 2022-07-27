@@ -2,7 +2,7 @@
 package ai.vespa.util.http.hc4.retry;
 
 import org.apache.http.client.protocol.HttpClientContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
@@ -10,8 +10,8 @@ import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,7 +23,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void retry_consumers_are_invoked() {
+    void retry_consumers_are_invoked() {
         RetryConsumer<IOException> retryConsumer = (RetryConsumer<IOException>) mock(RetryConsumer.class);
         RetryFailedConsumer<IOException> retryFailedConsumer = (RetryFailedConsumer<IOException>) mock(RetryFailedConsumer.class);
 
@@ -51,7 +51,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     }
 
     @Test
-    public void retry_with_fixed_delay_sleeps_for_expected_duration() {
+    void retry_with_fixed_delay_sleeps_for_expected_duration() {
         Sleeper sleeper = mock(Sleeper.class);
 
         Duration delay = Duration.ofSeconds(2);
@@ -73,7 +73,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     }
 
     @Test
-    public void retry_with_fixed_backoff_sleeps_for_expected_durations() {
+    void retry_with_fixed_backoff_sleeps_for_expected_durations() {
         Sleeper sleeper = mock(Sleeper.class);
 
         Duration startDelay = Duration.ofMillis(500);
@@ -100,7 +100,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     }
 
     @Test
-    public void retries_for_listed_exceptions_until_max_retries_exceeded() {
+    void retries_for_listed_exceptions_until_max_retries_exceeded() {
         int maxRetries = 2;
 
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
@@ -119,7 +119,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     }
 
     @Test
-    public void does_not_retry_for_non_listed_exception() {
+    void does_not_retry_for_non_listed_exception() {
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), 2)
                 .retryForExceptions(Arrays.asList(SSLException.class, ConnectException.class))

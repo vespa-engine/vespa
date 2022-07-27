@@ -12,7 +12,7 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.BufferedReader;
@@ -31,10 +31,10 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +48,7 @@ public class AthenzPrincipalFilterTest {
     private static final X509Certificate CERTIFICATE = createSelfSignedCertificate(IDENTITY);
 
     @Test
-    public void missing_certificate_is_unauthorized() {
+    void missing_certificate_is_unauthorized() {
         DiscFilterRequest request = createRequestMock();
         when(request.getClientCertificateChain()).thenReturn(emptyList());
 
@@ -61,7 +61,7 @@ public class AthenzPrincipalFilterTest {
     }
 
     @Test
-    public void certificate_is_accepted() {
+    void certificate_is_accepted() {
         DiscFilterRequest request = createRequestMock();
         when(request.getClientCertificateChain()).thenReturn(singletonList(CERTIFICATE));
 
@@ -81,7 +81,7 @@ public class AthenzPrincipalFilterTest {
 
 
     @Test
-    public void no_response_produced_when_passthrough_mode_is_enabled() {
+    void no_response_produced_when_passthrough_mode_is_enabled() {
         DiscFilterRequest request = createRequestMock();
         when(request.getClientCertificateChain()).thenReturn(emptyList());
 

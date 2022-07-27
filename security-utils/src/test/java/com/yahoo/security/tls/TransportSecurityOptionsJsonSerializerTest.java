@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,20 +22,21 @@ import java.util.Optional;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
-import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
  */
 public class TransportSecurityOptionsJsonSerializerTest {
 
-    @Rule public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     private static final Path TEST_CONFIG_FILE = Paths.get("src/test/resources/transport-security-options.json");
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void can_serialize_and_deserialize_transport_security_options() throws IOException {
+    void can_serialize_and_deserialize_transport_security_options() throws IOException {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCaCertificates(Paths.get("/path/to/ca-certs.pem"))
                 .withCertificates(Paths.get("/path/to/cert.pem"), Paths.get("/path/to/key.pem"))
@@ -61,15 +63,15 @@ public class TransportSecurityOptionsJsonSerializerTest {
     }
 
     @Test
-    public void can_serialize_options_without_authorized_peers() throws IOException {
+    void can_serialize_options_without_authorized_peers() throws IOException {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
-                .withAcceptedCiphers(Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" , "TLS_AES_256_GCM_SHA384"))
+                .withAcceptedCiphers(Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
                 .withAcceptedProtocols(Collections.singletonList("TLSv1.2"))
                 .withHostnameValidationDisabled(true)
                 .build();
-        File outputFile = tempDirectory.newFile();
+        File outputFile = File.createTempFile("junit", null, tempDirectory);
         try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
             new TransportSecurityOptionsJsonSerializer().serialize(out, options);
         }
@@ -79,13 +81,13 @@ public class TransportSecurityOptionsJsonSerializerTest {
     }
 
     @Test
-    public void disable_hostname_validation_is_not_serialized_if_false() throws IOException {
+    void disable_hostname_validation_is_not_serialized_if_false() throws IOException {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
                 .withHostnameValidationDisabled(false)
                 .build();
-        File outputFile = tempDirectory.newFile();
+        File outputFile = File.createTempFile("junit", null, tempDirectory);
         try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
             new TransportSecurityOptionsJsonSerializer().serialize(out, options);
         }
@@ -94,6 +96,10 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 Paths.get("src/test/resources/transport-security-options-with-disable-hostname-validation-set-to-false.json")));
         String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
         assertJsonEquals(expectedOutput, actualOutput);
+    }
+
+    private static void assertJsonEquals(String inputJson, String expectedJson) throws JsonProcessingException {
+        assertEquals(mapper.readTree(expectedJson), mapper.readTree(inputJson));
     }
 
 }

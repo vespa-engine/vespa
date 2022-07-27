@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -20,11 +20,11 @@ public class KeyStoreBuilderTest {
 
     private static final char[] PASSWORD = new char[0];
 
-    @Rule
-    public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     @Test
-    public void can_create_jks_keystore_from_privatekey_and_certificate() throws Exception {
+    void can_create_jks_keystore_from_privatekey_and_certificate() throws Exception {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X509Certificate certificate = createCertificate(keyPair);
         KeyStoreBuilder.withType(KeyStoreType.JKS)
@@ -33,8 +33,8 @@ public class KeyStoreBuilderTest {
     }
 
     @Test
-    public void can_build_jks_keystore_from_file() throws Exception {
-        Path keystoreFile = tempDirectory.newFile().toPath();
+    void can_build_jks_keystore_from_file() throws Exception {
+        Path keystoreFile = File.createTempFile("junit", null, tempDirectory).toPath();
         createKeystoreFile(keystoreFile, KeyStoreType.JKS, PASSWORD);
 
         KeyStoreBuilder.withType(KeyStoreType.JKS)
@@ -43,8 +43,8 @@ public class KeyStoreBuilderTest {
     }
 
     @Test
-    public void can_build_pcks12_keystore_from_file() throws Exception {
-        Path keystoreFile = tempDirectory.newFile().toPath();
+    void can_build_pcks12_keystore_from_file() throws Exception {
+        Path keystoreFile = File.createTempFile("junit", null, tempDirectory).toPath();
         createKeystoreFile(keystoreFile, KeyStoreType.PKCS12, PASSWORD);
 
         KeyStoreBuilder.withType(KeyStoreType.PKCS12)

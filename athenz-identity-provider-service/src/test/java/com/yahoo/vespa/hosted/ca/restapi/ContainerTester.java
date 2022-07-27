@@ -5,14 +5,14 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.hosted.ca.restapi.mock.SecretStoreMock;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The superclass of REST API tests which require a functional container instance.
@@ -23,12 +23,12 @@ public class ContainerTester {
 
     private JDisc container;
 
-    @Before
+    @BeforeEach
     public void startContainer() {
         container = JDisc.fromServicesXml(servicesXml(), Networking.enable);
     }
 
-    @After
+    @AfterEach
     public void stopContainer() {
         container.close();
     }

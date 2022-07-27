@@ -7,9 +7,8 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
@@ -22,27 +21,27 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author bjorncs
  */
 public class SiaIdentityProviderTest {
 
-    @Rule
-    public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     @Test
-    public void constructs_ssl_context_from_file() throws IOException {
-        File keyFile = tempDirectory.newFile();
+    void constructs_ssl_context_from_file() throws IOException {
+        File keyFile = File.createTempFile("junit", null, tempDirectory);
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         createPrivateKeyFile(keyFile, keypair);
 
         X509Certificate certificate = createCertificate(keypair);
-        File certificateFile = tempDirectory.newFile();
+        File certificateFile = File.createTempFile("junit", null, tempDirectory);
         createCertificateFile(certificate, certificateFile);
 
-        File trustStoreFile = tempDirectory.newFile();
+        File trustStoreFile = File.createTempFile("junit", null, tempDirectory);
         createTrustStoreFile(certificate, trustStoreFile);
 
         SiaIdentityProvider provider =
@@ -56,16 +55,16 @@ public class SiaIdentityProviderTest {
     }
 
     @Test
-    public void constructs_ssl_context_with_pem_trust_store() throws IOException {
-        File keyFile = tempDirectory.newFile();
+    void constructs_ssl_context_with_pem_trust_store() throws IOException {
+        File keyFile = File.createTempFile("junit", null, tempDirectory);
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         createPrivateKeyFile(keyFile, keypair);
 
         X509Certificate certificate = createCertificate(keypair);
-        File certificateFile = tempDirectory.newFile();
+        File certificateFile = File.createTempFile("junit", null, tempDirectory);
         createCertificateFile(certificate, certificateFile);
 
-        File trustStoreFile = tempDirectory.newFile();
+        File trustStoreFile = File.createTempFile("junit", null, tempDirectory);
         createPemTrustStoreFile(certificate, trustStoreFile);
 
         SiaIdentityProvider provider =

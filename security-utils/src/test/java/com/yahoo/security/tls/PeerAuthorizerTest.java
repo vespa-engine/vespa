@@ -6,7 +6,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName.Type;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.RequiredPeerCredential.Field;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -28,8 +28,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -40,7 +40,7 @@ public class PeerAuthorizerTest {
     private static final String POLICY_1 = "policy-1", POLICY_2 = "policy-2";
 
     @Test
-    public void certificate_must_match_both_san_and_cn_pattern() {
+    void certificate_must_match_both_san_and_cn_pattern() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanRequirement));
@@ -50,12 +50,12 @@ public class PeerAuthorizerTest {
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
         assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", singletonList("foo.matching.san"), emptyList())));
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", asList("foo.matching.san", "foo.invalid.san"),emptyList())));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", asList("foo.matching.san", "foo.invalid.san"), emptyList())));
         assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.invalid.san"), emptyList())));
     }
 
     @Test
-    public void can_match_multiple_policies() {
+    void can_match_multiple_policies() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
 
@@ -70,7 +70,7 @@ public class PeerAuthorizerTest {
     }
 
     @Test
-    public void can_match_subset_of_policies() {
+    void can_match_subset_of_policies() {
         PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
                 createPolicy(POLICY_1, createRequiredCredential(CN, "*.matching.cn")),
                 createPolicy(POLICY_2, createRequiredCredential(SAN_DNS, "*.matching.san")));
@@ -81,7 +81,7 @@ public class PeerAuthorizerTest {
     }
 
     @Test
-    public void must_match_all_cn_and_san_patterns() {
+    void must_match_all_cn_and_san_patterns() {
         RequiredPeerCredential cnSuffixRequirement = createRequiredCredential(CN, "*.*.matching.suffix.cn");
         RequiredPeerCredential cnPrefixRequirement = createRequiredCredential(CN, "matching.prefix.*.*.*");
         RequiredPeerCredential sanPrefixRequirement = createRequiredCredential(SAN_DNS, "*.*.matching.suffix.san");
@@ -95,7 +95,7 @@ public class PeerAuthorizerTest {
     }
 
     @Test
-    public void can_match_policy_with_san_uri_pattern() {
+    void can_match_policy_with_san_uri_pattern() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanUriRequirement = createRequiredCredential(SAN_URI, "myscheme://my/*/uri");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanUriRequirement));
@@ -108,7 +108,7 @@ public class PeerAuthorizerTest {
     }
 
     @Test
-    public void auth_context_contains_union_of_granted_capabilities_from_policies() {
+    void auth_context_contains_union_of_granted_capabilities_from_policies() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
 

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -14,16 +14,16 @@ import java.util.List;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class X509CertificateUtilsTest {
     @Test
-    public void can_deserialize_serialized_pem_certificate() {
+    void can_deserialize_serialized_pem_certificate() {
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject = new X500Principal("CN=myservice");
         X509Certificate cert = TestUtils.createCertificate(keypair, subject);
@@ -36,7 +36,7 @@ public class X509CertificateUtilsTest {
     }
 
     @Test
-    public void can_deserialize_serialized_pem_certificate_list() {
+    void can_deserialize_serialized_pem_certificate_list() {
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject1 = new X500Principal("CN=myservice1");
         X509Certificate cert1 = TestUtils.createCertificate(keypair, subject1);
@@ -51,7 +51,7 @@ public class X509CertificateUtilsTest {
     }
 
     @Test
-    public void can_list_subject_alternative_names() {
+    void can_list_subject_alternative_names() {
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject = new X500Principal("CN=myservice");
         SubjectAlternativeName san = new SubjectAlternativeName(DNS, "dns-san");
@@ -72,7 +72,7 @@ public class X509CertificateUtilsTest {
     }
 
     @Test
-    public void verifies_matching_cert_and_key() {
+    void verifies_matching_cert_and_key() {
         KeyPair ecKeypairA = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         KeyPair ecKeypairB = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         KeyPair rsaKeypairA = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 1024);

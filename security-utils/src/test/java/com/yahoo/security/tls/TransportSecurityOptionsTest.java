@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -28,13 +28,13 @@ public class TransportSecurityOptionsTest {
             .build();
 
     @Test
-    public void can_read_options_from_json_file() {
+    void can_read_options_from_json_file() {
         TransportSecurityOptions actualOptions =  TransportSecurityOptions.fromJsonFile(TEST_CONFIG_FILE);
         assertEquals(OPTIONS, actualOptions);
     }
 
     @Test
-    public void can_read_options_from_json() throws IOException {
+    void can_read_options_from_json() throws IOException {
         String tlsJson = new String(Files.readAllBytes(TEST_CONFIG_FILE), StandardCharsets.UTF_8);
         TransportSecurityOptions actualOptions = TransportSecurityOptions.fromJson(tlsJson);
         assertEquals(OPTIONS, actualOptions);

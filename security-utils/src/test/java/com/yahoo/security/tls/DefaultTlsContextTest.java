@@ -3,7 +3,7 @@ package com.yahoo.security.tls;
 
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLEngine;
 import javax.security.auth.x500.X500Principal;
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultTlsContextTest {
 
     @Test
-    public void can_create_sslcontext_from_credentials() {
+    void can_create_sslcontext_from_credentials() {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
 
         X509Certificate certificate = X509CertificateBuilder

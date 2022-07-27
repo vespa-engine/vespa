@@ -8,16 +8,16 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,28 +29,28 @@ import static org.mockito.Mockito.when;
 public class CorsPreflightRequestFilterTest {
 
     @Test
-    public void any_options_request_yields_access_control_headers_in_response() {
+    void any_options_request_yields_access_control_headers_in_response() {
         HeaderFields headers = doFilterRequest(newRequestFilter(), "http://any.origin");
         ACCESS_CONTROL_HEADERS.keySet().forEach(
-                header -> assertFalse("Empty header: " + header, headers.getFirst(header).isEmpty()));
+                header -> assertFalse(headers.getFirst(header).isEmpty(), "Empty header: " + header));
     }
 
     @Test
-    public void allowed_request_origin_yields_allow_origin_header_in_response() {
+    void allowed_request_origin_yields_allow_origin_header_in_response() {
         final String ALLOWED_ORIGIN = "http://allowed.origin";
         HeaderFields headers = doFilterRequest(newRequestFilter(ALLOWED_ORIGIN), ALLOWED_ORIGIN);
         assertEquals(ALLOWED_ORIGIN, headers.getFirst(ALLOW_ORIGIN_HEADER));
     }
 
     @Test
-    public void allowed_wildcard_origin_yields_origin_header_in_response() {
+    void allowed_wildcard_origin_yields_origin_header_in_response() {
         final String ALLOWED_ORIGIN = "http://allowed.origin";
         HeaderFields headers = doFilterRequest(newRequestFilter("*"), ALLOWED_ORIGIN);
         assertEquals(ALLOWED_ORIGIN, headers.getFirst(ALLOW_ORIGIN_HEADER));
     }
 
     @Test
-    public void disallowed_request_origin_does_not_yield_allow_origin_header_in_response() {
+    void disallowed_request_origin_does_not_yield_allow_origin_header_in_response() {
         HeaderFields headers = doFilterRequest(newRequestFilter("http://allowed.origin"), "http://disallowed.origin");
         assertNull(headers.getFirst(ALLOW_ORIGIN_HEADER));
     }

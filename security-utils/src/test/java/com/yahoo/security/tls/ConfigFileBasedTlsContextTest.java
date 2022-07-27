@@ -4,12 +4,13 @@ package com.yahoo.security.tls;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.net.ssl.SSLEngine;
 import javax.security.auth.x500.X500Principal;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -28,23 +29,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ConfigFileBasedTlsContextTest {
 
-    @Rule
-    public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     @Test
-    public void can_create_sslcontext_from_credentials() throws IOException, InterruptedException {
+    void can_create_sslcontext_from_credentials() throws IOException, InterruptedException {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
-        Path privateKeyFile = tempDirectory.newFile().toPath();
+        Path privateKeyFile = File.createTempFile("junit", null, tempDirectory).toPath();
         Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes());
 
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
-        Path certificateChainFile = tempDirectory.newFile().toPath();
+        Path certificateChainFile = File.createTempFile("junit", null, tempDirectory).toPath();
         String certificatePem = X509CertificateUtils.toPem(certificate);
         Files.write(certificateChainFile, certificatePem.getBytes());
 
-        Path caCertificatesFile = tempDirectory.newFile().toPath();
+        Path caCertificatesFile = File.createTempFile("junit", null, tempDirectory).toPath();
         Files.write(caCertificatesFile, certificatePem.getBytes());
 
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
@@ -52,7 +53,7 @@ public class ConfigFileBasedTlsContextTest {
                 .withCaCertificates(caCertificatesFile)
                 .build();
 
-        Path optionsFile = tempDirectory.newFile().toPath();
+        Path optionsFile = File.createTempFile("junit", null, tempDirectory).toPath();
         options.toJsonFile(optionsFile);
 
         try (TlsContext tlsContext = new ConfigFileBasedTlsContext(optionsFile, AuthorizationMode.ENFORCE)) {

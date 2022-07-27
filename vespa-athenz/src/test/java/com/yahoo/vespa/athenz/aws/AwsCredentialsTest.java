@@ -2,14 +2,14 @@
 package com.yahoo.vespa.athenz.aws;
 
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author tokle
@@ -17,19 +17,19 @@ import static org.junit.Assert.assertFalse;
 public class AwsCredentialsTest {
 
     @Test
-    public void refreshes_correctly() {
+    void refreshes_correctly() {
         Clock clock = Clock.systemUTC();
         // Does not require refresh when expires in 10 minutes
         assertFalse(AwsCredentials.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(10)))));
 
         // Requires refresh when expires in 3 minutes
-        Assert.assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(3)))));
+        assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(3)))));
 
         // Requires refresh when expired
-        Assert.assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().minus(Duration.ofMinutes(1)))));
+        assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().minus(Duration.ofMinutes(1)))));
 
         // Refreshes when no credentials provided
-        Assert.assertTrue(AwsCredentials.shouldRefresh(null));
+        assertTrue(AwsCredentials.shouldRefresh(null));
     }
 
     private AwsTemporaryCredentials getCredentials(Instant expiration) {

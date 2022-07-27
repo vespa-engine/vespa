@@ -8,7 +8,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -29,7 +29,7 @@ public class MutableX509KeyManagerTest {
     private static final X500Principal SUBJECT = new X500Principal("CN=dummy");
 
     @Test
-    public void key_manager_can_be_updated_with_new_certificate() {
+    void key_manager_can_be_updated_with_new_certificate() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
 
         BigInteger serialNumberInitialCertificate = BigInteger.ONE;
