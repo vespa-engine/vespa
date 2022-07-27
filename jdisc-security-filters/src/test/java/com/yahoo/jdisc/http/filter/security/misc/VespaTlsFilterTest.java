@@ -9,7 +9,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.security.auth.x500.X500Principal;
@@ -21,14 +21,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 public class VespaTlsFilterTest {
 
     @Test
-    public void testFilter() {
+    void testFilter() {
         assertSuccess(createRequest(List.of(createCertificate())));
         assertForbidden(createRequest(Collections.emptyList()));
     }

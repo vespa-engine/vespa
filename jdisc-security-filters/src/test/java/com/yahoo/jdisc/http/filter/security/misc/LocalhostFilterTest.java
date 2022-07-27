@@ -4,13 +4,13 @@ package com.yahoo.jdisc.http.filter.security.misc;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 public class LocalhostFilterTest {
 
     @Test
-    public void filter() {
+    void filter() {
         // Reject from non-loopback
         assertUnauthorized(createRequest("1.2.3.4", null));
 

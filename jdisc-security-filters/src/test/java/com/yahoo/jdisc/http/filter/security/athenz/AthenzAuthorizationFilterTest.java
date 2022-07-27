@@ -21,7 +21,7 @@ import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.athenz.zpe.AuthorizationResult;
 import com.yahoo.vespa.athenz.zpe.Zpe;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -39,10 +39,10 @@ import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFil
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.EMAIL;
 import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -72,7 +72,7 @@ public class AthenzAuthorizationFilterTest {
     private static final String REJECTED_METRIC_NAME = "jdisc.http.filter.athenz.rejected_requests";
 
     @Test
-    public void accepts_request_with_access_token() {
+    void accepts_request_with_access_token() {
         AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
 
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -86,7 +86,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void accepts_request_with_role_certificate() {
+    void accepts_request_with_role_certificate() {
         AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
 
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -100,7 +100,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void accepts_request_with_role_token() {
+    void accepts_request_with_role_token() {
         AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
 
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -114,7 +114,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void accepts_request_with_proxied_access_token() {
+    void accepts_request_with_proxied_access_token() {
         Zpe zpe = mock(Zpe.class);
         when(zpe.checkAccessAllowed(any(), any(), any(), any())).thenReturn(new AuthorizationResult(Type.ALLOW, ROLE));
         when(zpe.checkAccessAllowed((AthenzAccessToken) any(), any(), any())).thenReturn(new AuthorizationResult(Type.ALLOW, ROLE));
@@ -135,7 +135,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void accepts_request_with_access_token_and_matching_identity_certificate_with_proxy_support_enabled() {
+    void accepts_request_with_access_token_and_matching_identity_certificate_with_proxy_support_enabled() {
         Zpe zpe = mock(Zpe.class);
         when(zpe.checkAccessAllowed(any(), any(), any(), any())).thenReturn(new AuthorizationResult(Type.ALLOW, ROLE));
         when(zpe.checkAccessAllowed((AthenzAccessToken) any(), any(), any())).thenReturn(new AuthorizationResult(Type.ALLOW, ROLE));
@@ -156,7 +156,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void returns_forbidden_when_identity_certificate_has_unknown_proxy_identity() {
+    void returns_forbidden_when_identity_certificate_has_unknown_proxy_identity() {
         Zpe zpe = mock(Zpe.class);
         when(zpe.checkAccessAllowed(any(), any(), any(), any())).thenReturn(new AuthorizationResult(Type.DENY, ROLE));
         when(zpe.checkAccessAllowed((AthenzAccessToken) any(), any(), any())).thenReturn(new AuthorizationResult(Type.DENY, ROLE));
@@ -174,7 +174,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void returns_unauthorized_for_request_with_disabled_credential_type() {
+    void returns_unauthorized_for_request_with_disabled_credential_type() {
         AthenzAuthorizationFilter filter =
                 createFilter(new AllowingZpe(), List.of(EnabledCredentials.ROLE_CERTIFICATE, EnabledCredentials.ACCESS_TOKEN));
 
@@ -188,7 +188,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void returns_forbidden_for_credentials_rejected_by_zpe() {
+    void returns_forbidden_for_credentials_rejected_by_zpe() {
         AthenzAuthorizationFilter filter = createFilter(new DenyingZpe(), List.of());
 
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -200,7 +200,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void reports_metrics_for_rejected_requests() {
+    void reports_metrics_for_rejected_requests() {
         MetricMock metric = new MetricMock();
         AthenzAuthorizationFilter filter = createFilter(new DenyingZpe(), List.of(), metric, null);
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -211,7 +211,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void reports_metrics_for_accepted_requests() {
+    void reports_metrics_for_accepted_requests() {
         MetricMock metric = new MetricMock();
         AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of(EnabledCredentials.ACCESS_TOKEN), metric, null);
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -222,7 +222,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     @Test
-    public void ignores_access_token_if_client_has_role_certificate() {
+    void ignores_access_token_if_client_has_role_certificate() {
         AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
 
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -238,7 +238,7 @@ public class AthenzAuthorizationFilterTest {
     private void assertMetrics(MetricMock metric, String metricName, Map<String, String> dimensions) {
         assertTrue(metric.addInvocations.keySet().contains(metricName));
         SimpleMetricContext metricContext = metric.addInvocations.get(metricName);
-        assertNotNull("Metric not found " + metricName, metricName);
+        assertNotNull(metricName, "Metric not found " + metricName);
         for (Map.Entry<String, String> entry : dimensions.entrySet()) {
             String dimensionName = entry.getKey();
             String expected = entry.getValue();
