@@ -5,23 +5,12 @@
 package logfmt
 
 import (
-	"fmt"
 	"strings"
 )
 
 type flagValueForShow struct {
 	shown   map[string]bool
 	changed bool
-}
-
-func trimPrefix(value, prefix string) (newValue string, hadPrefix bool) {
-	hadPrefix = strings.HasPrefix(value, prefix)
-	if hadPrefix {
-		newValue = strings.TrimPrefix(value, prefix)
-	} else {
-		newValue = value
-	}
-	return
 }
 
 func defaultShowFlags() map[string]bool {
@@ -44,10 +33,21 @@ func (v *flagValueForShow) Type() string {
 }
 
 func (v *flagValueForShow) String() string {
-	mv := v.shown
 	var buf strings.Builder
-	for flag, active := range mv {
-		if active {
+	flagNames := []string{
+		"time",
+		"fmttime",
+		"msecs",
+		"usecs",
+		"host",
+		"level",
+		"pid",
+		"service",
+		"component",
+		"message",
+	}
+	for _, flag := range flagNames {
+		if v.shown[flag] {
 			buf.WriteString(" +")
 		} else {
 			buf.WriteString(" -")
@@ -57,40 +57,18 @@ func (v *flagValueForShow) String() string {
 	return buf.String()
 }
 
+func (v *flagValueForShow) flags() map[string]bool {
+	return v.shown
+}
+
+func (v *flagValueForShow) name() string {
+	return "show"
+}
+
+func (v *flagValueForShow) unchanged() bool {
+	return !v.changed
+}
+
 func (v *flagValueForShow) Set(val string) error {
-	minus := strings.HasPrefix(val, "-")
-	plus := strings.HasPrefix(val, "+")
-	val = strings.ReplaceAll(val, "-", ",-")
-	val = strings.ReplaceAll(val, "+", ",+")
-	if !v.changed {
-		if minus == false && plus == false {
-			for k, _ := range v.shown {
-				v.shown[k] = false
-			}
-		}
-	}
-	toShow := !minus
-	for _, k := range strings.Split(val, ",") {
-		if suppress, minus := trimPrefix(k, "-"); minus {
-			k = suppress
-			toShow = false
-		}
-		if surface, plus := trimPrefix(k, "+"); plus {
-			k = surface
-			toShow = true
-		}
-		if k == "" {
-			continue
-		}
-		if k == "all" {
-			for k, _ := range v.shown {
-				v.shown[k] = toShow
-			}
-		} else if _, ok := v.shown[k]; !ok {
-			return fmt.Errorf("not a valid show flag: '%s'", k)
-		} else {
-			v.shown[k] = toShow
-		}
-	}
-	return nil
+	return applyPlusMinus(val, v)
 }
