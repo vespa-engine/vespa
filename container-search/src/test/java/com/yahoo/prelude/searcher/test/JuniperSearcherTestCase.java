@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
@@ -22,7 +20,7 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -113,19 +111,19 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testFieldRewriting() {
+    void testFieldRewriting() {
         Result check = createResult("\u001FXYZ\u001F\u001EQWE\u001FJKL\u001FASD&");
         assertEquals(1, check.getHitCount());
         assertEquals("<hi>XYZ</hi><sep />QWE<hi>JKL</hi>ASD&",
-                     check.hits().get(0).getField("dynteaser").toString());
+                check.hits().get(0).getField("dynteaser").toString());
         check = createResult("a&b&c");
         assertEquals(1, check.getHitCount());
         assertEquals("a&b&c",
-                     check.hits().get(0).getField("dynteaser").toString());
+                check.hits().get(0).getField("dynteaser").toString());
     }
 
     @Test
-    public void testNoRewritingDueToSearchDefinition() {
+    void testNoRewritingDueToSearchDefinition() {
         Result check = createResult("two", "\u001FXYZ\u001F\u001EQWE\u001FJKL\u001FASD&");
         assertEquals(1, check.getHitCount());
         assertEquals("\u001FXYZ\u001F\u001EQWE\u001FJKL\u001FASD&",
@@ -137,20 +135,20 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testBoldingEquals() {
+    void testBoldingEquals() {
         assertNotEquals(new Query("?query=12"), new Query("?query=12&bolding=false"));
     }
 
     @Test
-    public void testUnboldedRewriting() {
+    void testUnboldedRewriting() {
         Result check = createResult("one", "\u001FXYZ\u001F\u001EQWE\u001FJKL\u001FASD&", false);
         assertEquals(1, check.getHitCount());
         assertEquals("XYZ...QWEJKLASD&",
-                     check.hits().get(0).getField("dynteaser").toString());
+                check.hits().get(0).getField("dynteaser").toString());
     }
 
     @Test
-    public void testAnnotatedSummaryFields() {
+    void testAnnotatedSummaryFields() {
         Result check = createResult("\uFFF9Feeding\uFFFAfeed\uFFFB \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F into Vespa \uFFF9is\uFFFAbe\u001Eincrement of a set of \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F fed into Vespa \uFFF9is\u001Efloat in XML when \u001Fdocument\u001F attribute \uFFF9is\uFFFAbe\uFFFB int\u001E");
         assertEquals(1, check.getHitCount());
         assertEquals("Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />", check.hits().get(0).getField("dynteaser").toString());
@@ -185,7 +183,7 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testThatIncompleteAnnotationWithHighlightIsIgnored() {
+    void testThatIncompleteAnnotationWithHighlightIsIgnored() {
         // Look at bug 5707026 for details.
         {
             Result check = createResult("of\u001e\u001fyahoo\u001f\uFFFB! \uFFF9Angels\uFFFAangels\uFFFB \uFFF9\u001fYahoo\u001f\uFFFA\u001fyahoo\u001f\uFFFB! \uFFF9Angles\uFFFAangels\uFFFB \uFFF9is\uFFFAbe\u001e");
@@ -202,7 +200,7 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testThatIncompleteAnnotationWithHighlightAtTheBeginningIsIgnored() {
+    void testThatIncompleteAnnotationWithHighlightAtTheBeginningIsIgnored() {
         {
             Result check = createResult("\u001e\u001fIncomplete\uFFFAincomplete\uFFFB\u001f \uFFF9Original\uFFFAstemmed\uFFFB\u001e");
             assertEquals(1, check.getHitCount());
@@ -221,7 +219,7 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testThatIncompleteAnnotationWithHighlightAtTheEndIsIgnored() {
+    void testThatIncompleteAnnotationWithHighlightAtTheEndIsIgnored() {
         {
             Result check = createResult("\u001e\uFFF9Original\uFFFAstemmed\uFFFB \u001f\uFFF9Incomplete\uFFFAincomplete\u001f\u001e");
             assertEquals(1, check.getHitCount());
@@ -240,7 +238,7 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testExplicitTwoPhase() {
+    void testExplicitTwoPhase() {
         Chain<Searcher> searchChain = createSearchChain("one", "\u001e\uFFFAbe\uFFFB within the set of \u001f\uFFF9documents\uFFFAdocument\uFFFB\u001f. \uFFF9phrases\uFFFA\u001E\uFFFA\uFFFB to as a remedy). Each of the \u001fdocument\u001f \uFFF9fields\uFFFAfield\uFFFB in a catalog can be \uFFF9\u001e");
         Query q = new Query("?query=12");
         Result check = createExecution(searchChain).search(q);
@@ -252,7 +250,7 @@ public class JuniperSearcherTestCase {
     }
 
     @Test
-    public void testCompoundWordsBolding() {
+    void testCompoundWordsBolding() {
         Result check = createResult("\u001eTest \u001fkommunikations\u001f\u001ffehler\u001f");
         assertEquals(1, check.getHitCount());
         assertEquals("<sep />Test <hi>kommunikationsfehler</hi>",  check.hits().get(0).getField("dynteaser").toString());

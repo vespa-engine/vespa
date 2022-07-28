@@ -13,11 +13,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -25,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class QueryRewriteTestCase {
 
     @Test
-    public void testOptimizeByRestrict() {
+    void testOptimizeByRestrict() {
         Query query = new Query("?query=sddocname:music");
         query.getModel().setRestrict("music");
         QueryRewrite.optimizeByRestrict(query);
@@ -33,7 +31,7 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecallAndDontImpactRank() {
+    void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecallAndDontImpactRank() {
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "foo", "sddocname:foo");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "bar", "sddocname:bar");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "baz", "sddocname:baz");
@@ -48,16 +46,16 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void testRestrictRewriteDoesNotRemoveRankContributingTerms() {
+    void testRestrictRewriteDoesNotRemoveRankContributingTerms() {
         Query query = query("sddocname:per OR foo OR bar", "per");
         assertRewritten(query, "OR sddocname:per foo bar");
-        ((OrItem)query.getModel().getQueryTree().getRoot()).getItem(2).setRanked(false); // set 'bar' unranked
+        ((OrItem) query.getModel().getQueryTree().getRoot()).getItem(2).setRanked(false); // set 'bar' unranked
         assertRewritten(query, "OR sddocname:per foo");
         assertRewritten("sddocname:per OR foo OR (bar AND fuz)", "per", "OR sddocname:per foo (AND bar fuz)");
     }
 
     @Test
-    public void testRankContributingTermsAreNotRemovedOnFullRecall() {
+    void testRankContributingTermsAreNotRemovedOnFullRecall() {
         Query query = new Query(QueryTestCase.httpEncode("?query=default:term1 OR default:term2 OR default:term3 OR sddocname:per&type=adv&recall=+id:1&restrict=per"));
         RecallSearcher searcher = new RecallSearcher();
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
@@ -67,7 +65,7 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void requireThatOptimizeByRestrictSimplifiesANDItemsThatHaveZeroRecall() {
+    void requireThatOptimizeByRestrictSimplifiesANDItemsThatHaveZeroRecall() {
         assertRewritten("sddocname:foo AND bar AND baz", "cox", "NULL");
         assertRewritten("foo AND sddocname:bar AND baz", "cox", "NULL");
         assertRewritten("foo AND bar AND sddocname:baz", "cox", "NULL");
@@ -82,7 +80,7 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void testRestrictRewrite() {
+    void testRestrictRewrite() {
         assertRewritten("a AND b", "per", "AND a b");
         assertRewritten("a OR b", "per", "OR a b");
         assertRewritten("sddocname:per", "per", "sddocname:per");
@@ -94,9 +92,9 @@ public class QueryRewriteTestCase {
         assertRewritten("sddocname:perder ANDNOT b", "per", "NULL");
         assertRewritten("a ANDNOT sddocname:per a b", "per", "NULL");
     }
-    
+
     @Test
-    public void testRestrictRank() {
+    void testRestrictRank() {
         assertRewritten("sddocname:per&filter=abc", "espen", "NULL");
         assertRewritten("sddocname:per&filter=abc", "per", "RANK sddocname:per |abc");
         assertRewritten("sddocname:per RANK bar", "per", "RANK sddocname:per bar");
@@ -119,7 +117,7 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void assertAndNotMovedUp() {
+    void assertAndNotMovedUp() {
         Query query = new Query();
         NotItem not = new NotItem();
         not.addPositiveItem(new WordItem("a"));
@@ -139,7 +137,7 @@ public class QueryRewriteTestCase {
     }
 
     @Test
-    public void assertMultipleAndNotIsCollapsed() {
+    void assertMultipleAndNotIsCollapsed() {
         Query query = new Query();
         NotItem not1 = new NotItem();
         not1.addPositiveItem(new WordItem("a"));
@@ -165,7 +163,7 @@ public class QueryRewriteTestCase {
         AndItem a = (AndItem) n.getPositiveItem();
         assertEquals(5, a.getItemCount());
         assertEquals("na1", n.getItem(1).toString());
-        assertEquals("na2",n.getItem(2).toString());
+        assertEquals("na2", n.getItem(2).toString());
         assertEquals("nb", n.getItem(3).toString());
         assertEquals("1", a.getItem(0).toString());
         assertEquals("a", a.getItem(1).toString());

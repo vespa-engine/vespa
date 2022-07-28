@@ -24,13 +24,13 @@ import com.yahoo.search.statistics.ElapsedTimeTestCase;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.CreativeTimeSource;
 import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test the XML renderer
@@ -41,21 +41,21 @@ import static org.junit.Assert.assertTrue;
 public class XMLRendererTestCase {
 
     @Test
-    public void testGetEncoding() {
+    void testGetEncoding() {
         XmlRenderer renderer = new XmlRenderer();
         renderer.init();
         assertEquals("utf-8", renderer.getEncoding());
     }
 
     @Test
-    public void testGetMimeType() {
+    void testGetMimeType() {
         XmlRenderer renderer = new XmlRenderer();
         renderer.init();
         assertEquals("text/xml", renderer.getMimeType());
     }
 
     @Test
-    public void testXmlRendering() throws Exception {
+    void testXmlRendering() throws Exception {
         Query q = new Query("/?query=a");
 
         Result result = new Result(q);
@@ -82,31 +82,31 @@ public class XMLRendererTestCase {
 
         String expected =
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<result total-hit-count=\"0\" coverage-docs=\"500\" coverage-nodes=\"1\" coverage-full=\"false\" coverage=\"0\" results-full=\"0\" results=\"1\">\n" +
-                "  <error code=\"18\">Internal server error.</error>\n" +
-                "  <errordetails>\n" +
-                "    <error error=\"Internal server error.\" code=\"18\">message</error>\n" +
-                "  </errordetails>\n" +
-                "  <group relevancy=\"1.0\">\n" +
-                "    <hit type=\"summary\" relevancy=\"0.9\">\n" +
-                "      <field name=\"relevancy\">0.9</field>\n" +
-                "      <field name=\"c\">d</field>\n" +
-                "    </hit>\n" +
-                "  </group>\n" +
-                "  <hit type=\"grouphit\" relevancy=\"1.0\">\n" +
-                "    <id>type grouphit</id>\n" +
-                "  </hit>\n" +
-                "  <hit type=\"summary\" relevancy=\"0.95\">\n" +
-                "    <field name=\"relevancy\">0.95</field>\n" +
-                "    <field name=\"b\">foo</field>\n" +
-                "  </hit>\n" +
-                "</result>\n";
+                        "<result total-hit-count=\"0\" coverage-docs=\"500\" coverage-nodes=\"1\" coverage-full=\"false\" coverage=\"0\" results-full=\"0\" results=\"1\">\n" +
+                        "  <error code=\"18\">Internal server error.</error>\n" +
+                        "  <errordetails>\n" +
+                        "    <error error=\"Internal server error.\" code=\"18\">message</error>\n" +
+                        "  </errordetails>\n" +
+                        "  <group relevancy=\"1.0\">\n" +
+                        "    <hit type=\"summary\" relevancy=\"0.9\">\n" +
+                        "      <field name=\"relevancy\">0.9</field>\n" +
+                        "      <field name=\"c\">d</field>\n" +
+                        "    </hit>\n" +
+                        "  </group>\n" +
+                        "  <hit type=\"grouphit\" relevancy=\"1.0\">\n" +
+                        "    <id>type grouphit</id>\n" +
+                        "  </hit>\n" +
+                        "  <hit type=\"summary\" relevancy=\"0.95\">\n" +
+                        "    <field name=\"relevancy\">0.95</field>\n" +
+                        "    <field name=\"b\">foo</field>\n" +
+                        "  </hit>\n" +
+                        "</result>\n";
 
         assertEquals(expected, summary);
     }
 
     @Test
-    public void testXmlRenderingOfDynamicSummary() throws Exception {
+    void testXmlRenderingOfDynamicSummary() throws Exception {
         String content = "\uFFF9Feeding\uFFFAfeed\uFFFB \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F into Vespa \uFFF9is\uFFFAbe\u001Eincrement of a set of \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F fed into Vespa \uFFF9is\u001Efloat in XML when \u001Fdocument\u001F attribute \uFFF9is\uFFFAbe\uFFFB int\u001E";
         Result result = createResult("one", content, true);
 
@@ -114,18 +114,18 @@ public class XMLRendererTestCase {
 
         String expected =
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<result total-hit-count=\"0\">\n" +
-                "  <hit relevancy=\"1.0\">\n" +
-                "    <field name=\"relevancy\">1.0</field>\n" +
-                "    <field name=\"sddocname\">one</field>\n" +
-                "    <field name=\"dynteaser\">Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep /></field>\n" +
-                "  </hit>\n" +
-                "</result>\n";
+                        "<result total-hit-count=\"0\">\n" +
+                        "  <hit relevancy=\"1.0\">\n" +
+                        "    <field name=\"relevancy\">1.0</field>\n" +
+                        "    <field name=\"sddocname\">one</field>\n" +
+                        "    <field name=\"dynteaser\">Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep /></field>\n" +
+                        "  </hit>\n" +
+                        "</result>\n";
         assertEquals(expected, summary);
     }
 
     @Test
-    public void testXmlRenderingWithTimeTracking() throws Exception {
+    void testXmlRenderingWithTimeTracking() throws Exception {
         Query q = new Query("/?query=a&tracelevel=5");
         q.getPresentation().setTiming(true);
 
@@ -133,9 +133,9 @@ public class XMLRendererTestCase {
         result.setCoverage(new Coverage(500, 1));
 
         TimeTracker t = new TimeTracker(new Chain<Searcher>(new NoopSearcher("first"),
-                                                            new NoopSearcher("second"),
-                                                            new NoopSearcher("third")));
-        ElapsedTimeTestCase.doInjectTimeSource(t, new CreativeTimeSource(new long[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L }));
+                new NoopSearcher("second"),
+                new NoopSearcher("third")));
+        ElapsedTimeTestCase.doInjectTimeSource(t, new CreativeTimeSource(new long[]{1L, 2L, 3L, 4L, 5L, 6L, 7L}));
         t.sampleSearch(0, true);
         t.sampleSearch(1, true);
         t.sampleSearch(2, true);
@@ -148,7 +148,7 @@ public class XMLRendererTestCase {
         String summary = render(result);
 
         assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<result total-hit-count=\"0\"",
-                     summary.substring(0, 67));
+                summary.substring(0, 67));
         assertTrue(summary.contains("querytime="));
         assertTrue(summary.contains("summaryfetchtime="));
         assertTrue(summary.contains("searchtime="));

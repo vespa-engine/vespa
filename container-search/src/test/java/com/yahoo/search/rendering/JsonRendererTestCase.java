@@ -56,13 +56,12 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -78,9 +77,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Functional testing of {@link JsonRenderer}.
@@ -92,14 +91,11 @@ public class JsonRendererTestCase {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    @Rule
-    public Timeout globalTimeout = Timeout.seconds(300);
-
     private static ThreadPoolExecutor executor;
     private static JsonRenderer blueprint;
     private JsonRenderer renderer;
 
-    @BeforeClass
+    @BeforeAll
     public static void createExecutorAndBlueprint() {
         ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("test-rendering");
         executor = new ThreadPoolExecutor(4, 4, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), threadFactory);
@@ -107,14 +103,14 @@ public class JsonRendererTestCase {
         blueprint = new JsonRenderer(executor);
     }
 
-    @Before
+    @BeforeEach
     public void createClone() {
         // Use the shared renderer as a prototype object, as specified in the API contract
         renderer = (JsonRenderer) blueprint.clone();
         renderer.init();
     }
 
-    @After
+    @AfterEach
     public void deconstructClone() {
         if (renderer != null) {
             renderer.deconstruct();
@@ -122,7 +118,7 @@ public class JsonRendererTestCase {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void deconstructBlueprintAndExecutor() throws InterruptedException {
         blueprint.deconstruct();
         blueprint = null;
@@ -134,7 +130,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDocumentId() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testDocumentId() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -163,30 +160,31 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTensorShortForm() throws ExecutionException, InterruptedException, IOException {
+    @Timeout(300)
+    void testTensorShortForm() throws ExecutionException, InterruptedException, IOException {
         String expected = "{" +
                 "\"root\":{" +
-                    "\"id\":\"toplevel\"," +
-                    "\"relevance\":1.0," +
-                    "\"fields\":{" +
-                        "\"totalCount\":1" +
-                    "}," +
-                    "\"children\":[{" +
-                        "\"id\":\"tensors\"," +
-                        "\"relevance\":1.0," +
-                        "\"fields\":{" +
-                            "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
-                            "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
-                            "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
-                            "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}," +
-                            "\"summaryfeatures\":{" +
-                                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
-                                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
-                                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
-                                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}" +
-                            "}" +
-                        "}" +
-                    "}]" +
+                "\"id\":\"toplevel\"," +
+                "\"relevance\":1.0," +
+                "\"fields\":{" +
+                "\"totalCount\":1" +
+                "}," +
+                "\"children\":[{" +
+                "\"id\":\"tensors\"," +
+                "\"relevance\":1.0," +
+                "\"fields\":{" +
+                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}," +
+                "\"summaryfeatures\":{" +
+                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}" +
+                "}" +
+                "}" +
+                "}]" +
                 "}}\n";
 
         Slime slime = new Slime();
@@ -222,12 +220,13 @@ public class JsonRendererTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long' or 'short', not 'unknown'",
-                         Exceptions.toMessageString(e));
+                    Exceptions.toMessageString(e));
         }
     }
 
     @Test
-    public void testDataTypes() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testDataTypes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -298,7 +297,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTracing() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracing() throws IOException, InterruptedException, ExecutionException {
         // which clearly shows a trace child is created once too often...
         String expected = "{"
                 + "    \"root\": {"
@@ -353,7 +353,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTracingOfSlime() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracingOfSlime() throws IOException, InterruptedException, ExecutionException {
         // which clearly shows a trace child is created once too often...
         String expected = "{"
                 + "    \"root\": {"
@@ -406,10 +407,10 @@ public class JsonRendererTestCase {
         e2.search(subQuery);
         Value.ArrayValue access = new Value.ArrayValue();
         Slime slime = new Slime();
-        slime.setObject().setString("colour","yellow");
+        slime.setObject().setString("colour", "yellow");
         access.add(new SlimeAdapter(slime.get()));
         slime = new Slime();
-        slime.setObject().setString("colour","green");
+        slime.setObject().setString("colour", "green");
         access.add(new SlimeAdapter(slime.get()));
         subQuery.trace(access, 1);
         q.trace("marker", 1);
@@ -418,7 +419,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -444,7 +446,8 @@ public class JsonRendererTestCase {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -495,17 +498,18 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void trace_is_not_included_if_tracelevel_0() throws IOException, ExecutionException, InterruptedException {
+    @Timeout(300)
+    void trace_is_not_included_if_tracelevel_0() throws IOException, ExecutionException, InterruptedException {
         String expected =
                 "{" +
-                "  \"root\": {" +
-                "    \"id\": \"toplevel\"," +
-                "    \"relevance\": 1.0," +
-                "    \"fields\": {" +
-                "      \"totalCount\": 0" +
-                "    }" +
-                "  }" +
-                "}";
+                        "  \"root\": {" +
+                        "    \"id\": \"toplevel\"," +
+                        "    \"relevance\": 1.0," +
+                        "    \"fields\": {" +
+                        "      \"totalCount\": 0" +
+                        "    }" +
+                        "  }" +
+                        "}";
         Query q = new Query("/?query=a&tracelevel=0");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
@@ -516,7 +520,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -561,7 +566,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -602,7 +608,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -650,7 +657,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void test() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void test() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -716,7 +724,7 @@ public class JsonRendererTestCase {
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 500,1,1));
+        r.setCoverage(new Coverage(500, 500, 1, 1));
 
         FastHit h = new FastHit("http://localhost/", .95);
         h.setField("$a", "Hello, world.");
@@ -737,7 +745,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testCoverage() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testCoverage() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"coverage\": {"
@@ -771,7 +780,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testMoreTypes() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testMoreTypes() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -795,8 +805,8 @@ public class JsonRendererTestCase {
                 + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("moredatatypestuff");
-        h.setField("byte", (byte)8);
-        h.setField("short", (short)16);
+        h.setField("byte", (byte) 8);
+        h.setField("short", (short) 16);
         h.setField("bigInteger", new BigInteger("340282366920938463463374607431768211455"));
         h.setField("bigDecimal", new BigDecimal("340282366920938463463374607431768211456.5"));
         h.setField("nanNumber", NanNumber.NaN);
@@ -807,7 +817,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testNullField() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testNullField() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -836,7 +847,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testHitWithSource() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testHitWithSource() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -863,7 +875,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testErrorWithStackTrace() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testErrorWithStackTrace() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"errors\": ["
@@ -896,13 +909,15 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testContentHeader() {
+    @Timeout(300)
+    void testContentHeader() {
         assertEquals("utf-8", renderer.getEncoding());
         assertEquals("application/json", renderer.getMimeType());
     }
 
     @Test
-    public void testGrouping() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testGrouping() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -988,7 +1003,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testGroupingWithBucket() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testGroupingWithBucket() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1051,7 +1067,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testJsonObjects() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testJsonObjects() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1097,7 +1114,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testFieldValueInHit() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testFieldValueInHit() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1132,7 +1150,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testHiddenFields() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testHiddenFields() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1157,7 +1176,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDebugRendering() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testDebugRendering() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1188,7 +1208,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testTimingRendering() throws InterruptedException, ExecutionException, IOException {
+    @Timeout(300)
+    void testTimingRendering() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -1208,7 +1229,7 @@ public class JsonRendererTestCase {
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));
         ElapsedTimeTestCase.doInjectTimeSource(t, new CreativeTimeSource(
-                new long[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L }));
+                new long[]{1L, 2L, 3L, 4L, 5L, 6L, 7L}));
         t.sampleSearch(0, true);
         t.sampleSearch(1, true);
         t.sampleSearch(2, true);
@@ -1223,7 +1244,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testJsonCallback() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testJsonCallback() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1244,7 +1266,7 @@ public class JsonRendererTestCase {
                 + "}";
 
         String jsonCallback = "some_function_name";
-        Result r = newEmptyResult(new String[] {"query=a", "jsoncallback="+jsonCallback} );
+        Result r = newEmptyResult(new String[]{"query=a", "jsoncallback=" + jsonCallback});
         Hit h = new Hit("jsonCallbackTest");
         h.setField("documentid", new DocumentId("id:unittest:smoke::whee"));
         r.hits().add(h);
@@ -1261,7 +1283,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testMapInField() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testMapInField() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -1288,18 +1311,18 @@ public class JsonRendererTestCase {
         Hit h = new Hit("MapInField");
         Value.ArrayValue atop = new Value.ArrayValue();
         atop.add(new Value.ObjectValue()
-                 .put("key", new Value.StringValue("foo"))
-                 .put("value", new Value.StringValue("string foo")))
-            .add(new Value.ObjectValue()
-                 .put("key", new Value.StringValue("bar"))
-                 .put("value", new Value.ArrayValue()
-                      .add(new Value.StringValue("array bar elem 1"))
-                      .add(new Value.StringValue("array bar elem 2"))))
-            .add(new Value.ObjectValue()
-                 .put("key", new Value.StringValue("baz"))
-                 .put("value", new Value.ObjectValue()
-                      .put("f1", new Value.StringValue("object baz field 1"))
-                      .put("f2", new Value.StringValue("object baz field 2"))));
+                .put("key", new Value.StringValue("foo"))
+                .put("value", new Value.StringValue("string foo")))
+                .add(new Value.ObjectValue()
+                        .put("key", new Value.StringValue("bar"))
+                        .put("value", new Value.ArrayValue()
+                                .add(new Value.StringValue("array bar elem 1"))
+                                .add(new Value.StringValue("array bar elem 2"))))
+                .add(new Value.ObjectValue()
+                        .put("key", new Value.StringValue("baz"))
+                        .put("value", new Value.ObjectValue()
+                                .put("f1", new Value.StringValue("object baz field 1"))
+                                .put("f2", new Value.StringValue("object baz field 2"))));
         h.setField("structured", atop);
         r.hits().add(h);
         r.setTotalHitCount(1L);
@@ -1314,21 +1337,22 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testMapDeepInFields() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testMapDeepInFields() throws IOException, InterruptedException, ExecutionException {
         Result r = new Result(new Query("/?renderer.json.jsonMaps=true"));
         var expected = dataFromSimplified(
                 "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
-                "  children: [ { id: 'myHitName', relevance: 1.0," +
-                "    fields: { " +
-                "      f1: [ 'v1', { mykey1: 'myvalue1', mykey2: 'myvalue2' } ]," +
-                "      f2: { i1: 'v2', i2: { mykey3: 'myvalue3' }, i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
-                "      f5: { '10001': 'myvalue6', '10002': 'myvalue7' }," +
-                "      f6: { i4: 'v6', i5: { '-17': 'myvalue8', '-42': 'myvalue9' } }" +
-                "    }" +
-                "  } ]" +
-                "}}");
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ 'v1', { mykey1: 'myvalue1', mykey2: 'myvalue2' } ]," +
+                        "      f2: { i1: 'v2', i2: { mykey3: 'myvalue3' }, i3: 'v3' }," +
+                        "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                        "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
+                        "      f5: { '10001': 'myvalue6', '10002': 'myvalue7' }," +
+                        "      f6: { i4: 'v6', i5: { '-17': 'myvalue8', '-42': 'myvalue9' } }" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
         Hit h = new Hit("myHitName");
         h.setField("f1", dataFromSimplified("[ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]"));
         h.setField("f2", dataFromSimplified("{ i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }"));
@@ -1349,17 +1373,17 @@ public class JsonRendererTestCase {
         r = new Result(new Query("/?renderer.json.jsonMaps=false"));
         expected = dataFromSimplified(
                 "{root:{id:'toplevel',relevance:1.0,fields:{totalCount:1}," +
-                "  children: [ { id: 'myHitName', relevance: 1.0," +
-                "    fields: { " +
-                "      f1: [ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]," +
-                "      f2: { i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
-                "      f5: [ { key: 10001, value: 'myvalue6' }, { key: 10002, value: 'myvalue7' } ]," +
-                "      f6: { i4: 'v6', i5: [ { key: -17, value: 'myvalue8' }, { key: -42, value: 'myvalue9' } ] }" +
-                "    }" +
-                "  } ]" +
-                "}}");
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]," +
+                        "      f2: { i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }," +
+                        "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                        "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
+                        "      f5: [ { key: 10001, value: 'myvalue6' }, { key: 10002, value: 'myvalue7' } ]," +
+                        "      f6: { i4: 'v6', i5: [ { key: -17, value: 'myvalue8' }, { key: -42, value: 'myvalue9' } ] }" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
         r.hits().add(h);
         r.setTotalHitCount(1L);
         summary = render(r);
@@ -1367,19 +1391,20 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testWsetInFields() throws IOException, InterruptedException, ExecutionException {
+    @Timeout(300)
+    void testWsetInFields() throws IOException, InterruptedException, ExecutionException {
         Result r = new Result(new Query("/?renderer.json.jsonWsets=true"));
         var expected = dataFromSimplified(
                 "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
-                "  children: [ { id: 'myHitName', relevance: 1.0," +
-                "    fields: { " +
-                "      f1: [ 'v1', { mykey1: 10, mykey2: 20 } ]," +
-                "      f2: { i1: 'v2', i2: { mykey3: 30 }, i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: { mykey4: 40, mykey5: 50 }" +
-                "    }" +
-                "  } ]" +
-                "}}");
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ 'v1', { mykey1: 10, mykey2: 20 } ]," +
+                        "      f2: { i1: 'v2', i2: { mykey3: 30 }, i3: 'v3' }," +
+                        "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                        "      f4: { mykey4: 40, mykey5: 50 }" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
         Hit h = new Hit("myHitName");
         h.setField("f1", dataFromSimplified("[ 'v1', [ { item: 'mykey1', weight: 10 }, { item: 'mykey2', weight: 20 } ] ]"));
         h.setField("f2", dataFromSimplified("{ i1: 'v2', i2: [ { item: 'mykey3', weight: 30 } ], i3: 'v3' }"));
@@ -1393,15 +1418,15 @@ public class JsonRendererTestCase {
         r = new Result(new Query("/?renderer.json.jsonWsets=false"));
         expected = dataFromSimplified(
                 "{root:{id:'toplevel',relevance:1.0,fields:{totalCount:1}," +
-                "  children: [ { id: 'myHitName', relevance: 1.0," +
-                "    fields: { " +
-                "      f1: [ 'v1', [ { item: 'mykey1', weight: 10 }, { item: 'mykey2', weight: 20 } ] ]," +
-                "      f2: { i1: 'v2', i2: [ { item: 'mykey3', weight: 30 } ], i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: [ { item: 'mykey4', weight: 40 }, { item: 'mykey5', weight: 50 } ]" +
-                "    }" +
-                "  } ]" +
-                "}}");
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ 'v1', [ { item: 'mykey1', weight: 10 }, { item: 'mykey2', weight: 20 } ] ]," +
+                        "      f2: { i1: 'v2', i2: [ { item: 'mykey3', weight: 30 } ], i3: 'v3' }," +
+                        "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                        "      f4: [ { item: 'mykey4', weight: 40 }, { item: 'mykey5', weight: 50 } ]" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
         r.hits().add(h);
         r.setTotalHitCount(1L);
         summary = render(r);
@@ -1409,7 +1434,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testThatTheJsonValidatorCanCatchErrors() {
+    @Timeout(300)
+    void testThatTheJsonValidatorCanCatchErrors() {
         String json = "{"
                 + "    \"root\": {"
                 + "        \"invalidvalue\": 1adsf,"
@@ -1422,7 +1448,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDynamicSummary() throws Exception {
+    @Timeout(300)
+    void testDynamicSummary() throws Exception {
         String content = "\uFFF9Feeding\uFFFAfeed\uFFFB \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F into Vespa \uFFF9is\uFFFAbe\u001Eincrement of a set of \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F fed into Vespa \uFFF9is\u001Efloat in XML when \u001Fdocument\u001F attribute \uFFF9is\uFFFAbe\uFFFB int\u001E";
         Result result = createResult("one", content, true);
 
@@ -1430,24 +1457,24 @@ public class JsonRendererTestCase {
 
         String expected =
                 "{  " +
-                "   \"root\":{  " +
-                "      \"id\":\"toplevel\"," +
-                "      \"relevance\":1.0," +
-                "      \"fields\":{  " +
-                "         \"totalCount\":0" +
-                "      }," +
-                "      \"children\":[  " +
-                "         {  " +
-                "            \"id\":\"http://abc.html/\"," +
-                "            \"relevance\":1.0," +
-                "            \"fields\":{  " +
-                "               \"sddocname\":\"one\"," +
-                "               \"dynteaser\":\"Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />\"" +
-                "            }" +
-                "         }" +
-                "      ]" +
-                "   }" +
-                "}";
+                        "   \"root\":{  " +
+                        "      \"id\":\"toplevel\"," +
+                        "      \"relevance\":1.0," +
+                        "      \"fields\":{  " +
+                        "         \"totalCount\":0" +
+                        "      }," +
+                        "      \"children\":[  " +
+                        "         {  " +
+                        "            \"id\":\"http://abc.html/\"," +
+                        "            \"relevance\":1.0," +
+                        "            \"fields\":{  " +
+                        "               \"sddocname\":\"one\"," +
+                        "               \"dynteaser\":\"Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />\"" +
+                        "            }" +
+                        "         }" +
+                        "      ]" +
+                        "   }" +
+                        "}";
         assertEqualJson(expected, summary);
     }
 

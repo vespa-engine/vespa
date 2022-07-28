@@ -17,12 +17,11 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.json.JsonTestHelper;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,12 +31,12 @@ import java.util.Map;
 import java.util.Random;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests submitting the query as JSON.
@@ -56,16 +55,16 @@ public class JSONSearchHandlerTestCase {
     private static final String uri = "http://localhost?";
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    @Rule
-    public TemporaryFolder tempfolder = new TemporaryFolder();
+    @TempDir
+    public File tempfolder;
 
     private RequestHandlerTestDriver driver = null;
     private HandlersConfigurerTestWrapper configurer = null;
     private SearchHandler searchHandler;
 
-    @Before
+    @BeforeEach
     public void startUp() throws IOException {
-        File cfgDir = tempfolder.newFolder("SearchHandlerTestCase");
+        File cfgDir = newFolder(tempfolder, "SearchHandlerTestCase");
         tempDir = cfgDir.getAbsolutePath();
         String configId = "dir:" + tempDir;
 
@@ -77,7 +76,7 @@ public class JSONSearchHandlerTestCase {
         driver = new RequestHandlerTestDriver(searchHandler);
     }
 
-    @After
+    @AfterEach
     public void shutDown() {
         if (configurer != null) configurer.shutdown();
         if (driver != null) driver.close();
@@ -96,7 +95,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testBadJSON() {
+    void testBadJSON() {
         String json = "Not a valid JSON-string";
         RequestHandlerTestDriver.MockResponseHandler responseHandler = driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json, JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
@@ -106,7 +105,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testFailing() {
+    void testFailing() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "test");
         json.put("searchChain", "classLoadingError");
@@ -115,7 +114,7 @@ public class JSONSearchHandlerTestCase {
 
 
     @Test
-    public synchronized void testPluginError() {
+    synchronized void testPluginError() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "test");
         json.put("searchChain", "exceptionInPlugin");
@@ -123,7 +122,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public synchronized void testWorkingReconfiguration() throws IOException {
+    synchronized void testWorkingReconfiguration() throws IOException {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         assertJsonResult(json, driver);
@@ -135,22 +134,22 @@ public class JSONSearchHandlerTestCase {
 
         // ...and check the resulting config
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
-        assertNotNull("Have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"));
-        assertNull("Don't have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"));
+        assertNotSame(searchHandler, newSearchHandler, "Have a new instance of the search handler");
+        assertNotNull(fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"), "Have the new search chain");
+        assertNull(fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"), "Don't have the new search chain");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             assertJsonResult(json, newDriver);
         }
     }
 
     @Test
-    public void testInvalidYqlQuery() throws IOException {
+    void testInvalidYqlQuery() throws IOException {
         IOUtils.copyDirectory(new File(testDir, "config_yql"), new File(tempDir), 1);
         generateComponentsConfigForActive();
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue("Do I have a new instance of the search handler?", searchHandler != newSearchHandler);
+        assertTrue(searchHandler != newSearchHandler, "Do I have a new instance of the search handler?");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             ObjectNode json = jsonMapper.createObjectNode();
             json.put("yql", "selectz * from foo where bar > 1453501295");
@@ -162,7 +161,7 @@ public class JSONSearchHandlerTestCase {
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test
-    public void testInvalidQueryParamWithQueryProfile() throws IOException {
+    void testInvalidQueryParamWithQueryProfile() throws IOException {
         try (RequestHandlerTestDriver newDriver = driverWithConfig("config_invalid_param")) {
             testInvalidQueryParam(newDriver);
         }
@@ -182,7 +181,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultJsonAliasRendering() {
+    void testNormalResultJsonAliasRendering() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("format", "json");
         json.put("query", "abc");
@@ -190,7 +189,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNullQuery() {
+    void testNullQuery() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("format", "xml");
 
@@ -204,7 +203,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testWebServiceStatus() {
+    void testWebServiceStatus() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "web_service_status_code");
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
@@ -215,14 +214,14 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultImplicitDefaultRendering() {
+    void testNormalResultImplicitDefaultRendering() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         assertJsonResult(json, driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRendering() {
+    void testNormalResultExplicitDefaultRendering() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         json.put("format", "default");
@@ -230,7 +229,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultXmlAliasRendering() {
+    void testNormalResultXmlAliasRendering() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         json.put("format", "xml");
@@ -238,7 +237,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName1() {
+    void testNormalResultExplicitDefaultRenderingFullRendererName1() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         json.put("format", "XmlRenderer");
@@ -246,7 +245,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName2() {
+    void testNormalResultExplicitDefaultRenderingFullRendererName2() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         json.put("format", "JsonRenderer");
@@ -303,12 +302,12 @@ public class JSONSearchHandlerTestCase {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue("Do I have a new instance of the search handler?", searchHandler != newSearchHandler);
+        assertTrue(searchHandler != newSearchHandler, "Do I have a new instance of the search handler?");
         return new RequestHandlerTestDriver(newSearchHandler);
     }
 
     @Test
-    public void testSelectParameters() throws IOException {
+    void testSelectParameters() throws IOException {
         ObjectNode json = jsonMapper.createObjectNode();
 
         ObjectNode select = jsonMapper.createObjectNode();
@@ -335,7 +334,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testJsonQueryWithSelectWhere() {
+    void testJsonQueryWithSelectWhere() {
         ObjectNode root = jsonMapper.createObjectNode();
         ObjectNode select = jsonMapper.createObjectNode();
         ObjectNode where = jsonMapper.createObjectNode();
@@ -349,28 +348,28 @@ public class JSONSearchHandlerTestCase {
         // Run query
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
         assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\"\"}}]}}",
-                     result);
+                result);
     }
 
     @Test
-    public void testJsonWithWhereAndGroupingUnderSelect() {
+    void testJsonWithWhereAndGroupingUnderSelect() {
         String query = "{\n" +
-                       "  \"select\": {\n" +
-                       "    \"where\": {\n" +
-                       "      \"contains\": [\n" +
-                       "        \"field\",\n" +
-                       "        \"term\"\n" +
-                       "      ]\n" +
-                       "    },\n" +
-                       "    \"grouping\":[\n" +
-                       "      {\n" +
-                       "        \"all\": {\n" +
-                       "          \"output\": \"count()\"\n" +
-                       "        }\n" +
-                       "      }\n" +
-                       "    ]\n" +
-                       "  }\n" +
-                       "}\n";
+                "  \"select\": {\n" +
+                "    \"where\": {\n" +
+                "      \"contains\": [\n" +
+                "        \"field\",\n" +
+                "        \"term\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"grouping\":[\n" +
+                "      {\n" +
+                "        \"all\": {\n" +
+                "          \"output\": \"count()\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}\n";
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
         String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
@@ -378,22 +377,22 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testJsonWithWhereAndGroupingSeparate() {
+    void testJsonWithWhereAndGroupingSeparate() {
         String query = "{\n" +
-                       "  \"select.where\": {\n" +
-                       "    \"contains\": [\n" +
-                       "      \"field\",\n" +
-                       "      \"term\"\n" +
-                       "    ]\n" +
-                       "  },\n" +
-                       "  \"select.grouping\":[\n" +
-                       "    {\n" +
-                       "      \"all\": {\n" +
-                       "        \"output\": \"count()\"\n" +
-                       "      }\n" +
-                       "    }\n" +
-                       "  ]\n" +
-                       "}\n";
+                "  \"select.where\": {\n" +
+                "    \"contains\": [\n" +
+                "      \"field\",\n" +
+                "      \"term\"\n" +
+                "    ]\n" +
+                "  },\n" +
+                "  \"select.grouping\":[\n" +
+                "    {\n" +
+                "      \"all\": {\n" +
+                "        \"output\": \"count()\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n";
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
         String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
@@ -401,18 +400,18 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testJsonQueryWithYQL() {
+    void testJsonQueryWithYQL() {
         ObjectNode root = jsonMapper.createObjectNode();
         root.put("yql", "select * from sources * where default contains 'bad';");
 
         // Run query
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
         assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\"\"}}]}}",
-                     result);
+                result);
     }
 
     @Test
-    public void testRequestMapping() {
+    void testRequestMapping() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("yql", "select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())))");
         json.put("hits", 10);
@@ -529,7 +528,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testContentTypeParsing() {
+    void testContentTypeParsing() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), "Application/JSON; charset=utf-8"), jsonResult);
@@ -546,7 +545,7 @@ public class JSONSearchHandlerTestCase {
         sb.append("]}");
         return sb.toString();
     }
-    @Ignore
+    @Disabled
     public void benchmarkJsonParsing() {
         String request = createBenchmarkRequest(768);
         for (int i=0; i < 10000; i++) {
@@ -556,6 +555,15 @@ public class JSONSearchHandlerTestCase {
             assertEquals(200, responseHandler.getStatus());
             assertFalse(response.isEmpty());
         }
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }

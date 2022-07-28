@@ -8,11 +8,9 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests parsing of semantic rules bases
@@ -24,33 +22,33 @@ public class SemanticsParserTestCase {
     private final static String ROOT = "src/test/java/com/yahoo/prelude/semantics/parser/test/";
 
     @Test
-    public void testRuleReading() throws java.io.IOException, ParseException {
+    void testRuleReading() throws java.io.IOException, ParseException {
         RuleBase rules = new RuleImporter(new SimpleLinguistics()).importFile(ROOT + "rules.sr");
         Iterator<?> i = rules.ruleIterator();
         assertEquals("[listing] [preposition] [place] -> listing:[listing] place:[place]!150",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[listing] [place] +> place:[place]",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[brand] -> brand:[brand]",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[category] -> category:[category]",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("digital camera -> digicamera",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("(parameter.ranking='cat'), (parameter.ranking='cat0') -> one", i.next().toString());
         assertFalse(i.hasNext());
 
         i = rules.conditionIterator();
         assertEquals("[listing] :- restaurant, shop, cafe, hotel",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[preposition] :- in, at, near",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[place] :- geary",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[brand] :- sony, dell",
-                     i.next().toString());
+                i.next().toString());
         assertEquals("[category] :- digital camera, camera, phone",
-                     i.next().toString());
+                i.next().toString());
         assertFalse(i.hasNext());
 
         assertTrue(rules.isDefault());

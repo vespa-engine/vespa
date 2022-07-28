@@ -10,11 +10,9 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.statistics.TimeTracker.Activity;
 import com.yahoo.search.statistics.TimeTracker.SearcherTimer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Check sanity of TimeTracker and ElapsedTime.
@@ -145,9 +143,9 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasic() {
+    void testBasic() {
         TimeTracker t = new TimeTracker(null);
-        t.injectTimeSource(new CreativeTimeSource(new long[] {1L, 2L, 3L, 4L}));
+        t.injectTimeSource(new CreativeTimeSource(new long[]{1L, 2L, 3L, 4L}));
         Query q = new Query();
         Result r = new Result(q);
         t.sampleSearch(0, false);
@@ -164,9 +162,9 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testMultiSearchAndPing() {
+    void testMultiSearchAndPing() {
         TimeTracker t = new TimeTracker(null);
-        t.injectTimeSource(new CreativeTimeSource(new long[] {1L, 4L, 16L, 32L, 64L, 128L, 256L}));
+        t.injectTimeSource(new CreativeTimeSource(new long[]{1L, 4L, 16L, 32L, 64L, 128L, 256L}));
         Query q = new Query();
         Result r = new Result(q);
         t.sampleSearch(0, false);
@@ -189,7 +187,7 @@ public class ElapsedTimeTestCase {
         // multiple adds is supposed to be safe
         assertEquals(255L, t.totalTime());
         TimeTracker tx = new TimeTracker(null);
-        tx.injectTimeSource(new CreativeTimeSource(new long[] {1L, 2L, 3L, 4L}));
+        tx.injectTimeSource(new CreativeTimeSource(new long[]{1L, 2L, 3L, 4L}));
         Query qx = new Query();
         Result rx = new Result(qx);
         tx.sampleSearch(0, false);
@@ -203,12 +201,12 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasicBreakdown() {
+    void testBasicBreakdown() {
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));
-        t.injectTimeSource(new CreativeTimeSource(new long[] { 1L, 2L, 3L,
-                4L, 5L, 6L, 7L }));
+        t.injectTimeSource(new CreativeTimeSource(new long[]{1L, 2L, 3L,
+                4L, 5L, 6L, 7L}));
         t.sampleSearch(0, true);
         t.sampleSearch(1, true);
         t.sampleSearch(2, true);
@@ -223,7 +221,7 @@ public class ElapsedTimeTestCase {
     // This test is to make sure the other tests correctly simulate the call
     // order into the TimeTracker
     @Test
-    public void testBasicBreakdownFullyWiredIn() {
+    void testBasicBreakdownFullyWiredIn() {
         Chain<? extends Searcher> chain = new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third"));
@@ -250,7 +248,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasicBreakdownWithFillFullyWiredIn() {
+    void testBasicBreakdownWithFillFullyWiredIn() {
         Chain<? extends Searcher> chain = new Chain<>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new AlmostUselessSearcher("third"));
@@ -279,7 +277,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasicBreakdownFullyWiredInFirstSearcherNotFirstInChain() {
+    void testBasicBreakdownFullyWiredInFirstSearcherNotFirstInChain() {
         Chain<? extends Searcher> chain = new Chain<>(
                 new TestingSearcher(),
                 new UselessSearcher("first"), new UselessSearcher("second"),
@@ -289,7 +287,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasicBreakdownWithFillFullyWiredInFirstSearcherNotFirstInChain() {
+    void testBasicBreakdownWithFillFullyWiredInFirstSearcherNotFirstInChain() {
         Chain<? extends Searcher> chain = new Chain<>(
                 new SecondTestingSearcher(),
                 new UselessSearcher("first"), new UselessSearcher("second"),
@@ -299,7 +297,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testTimingWithShortChain() {
+    void testTimingWithShortChain() {
         Chain<? extends Searcher> chain = new Chain<>(
                 new ShortChainTestingSearcher(),
                 new NoForwardSearcher());
@@ -308,12 +306,12 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testBasicBreakdownReturnInsideSearchChain() {
+    void testBasicBreakdownReturnInsideSearchChain() {
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));
-        t.injectTimeSource(new CreativeTimeSource(new long[] { 1L, 2L, 3L,
-                4L, 5L, 6L }));
+        t.injectTimeSource(new CreativeTimeSource(new long[]{1L, 2L, 3L,
+                4L, 5L, 6L}));
         t.sampleSearch(0, true);
         t.sampleSearch(1, true);
         t.sampleSearch(2, true);
@@ -325,16 +323,16 @@ public class ElapsedTimeTestCase {
         assertEquals(Long.valueOf(1L), searchers[1].getInvoking(Activity.SEARCH));
         assertEquals(Long.valueOf(1L), searchers[2].getInvoking(Activity.SEARCH));
         assertNull(searchers[2].getReturning(Activity.SEARCH));
-        assertEquals(Long.valueOf(1L) ,searchers[1].getReturning(Activity.SEARCH));
-        assertEquals(Long.valueOf(1L) ,searchers[0].getReturning(Activity.SEARCH));
+        assertEquals(Long.valueOf(1L), searchers[1].getReturning(Activity.SEARCH));
+        assertEquals(Long.valueOf(1L), searchers[0].getReturning(Activity.SEARCH));
     }
 
     @Test
-    public void testBasicBreakdownWithFill() {
+    void testBasicBreakdownWithFill() {
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));
-        t.injectTimeSource(new CreativeTimeSource(new long[] { 1L, 2L, 3L,
+        t.injectTimeSource(new CreativeTimeSource(new long[]{1L, 2L, 3L,
                 4L, 5L, 6L, 7L, 7L, 8L, 9L, 10L}));
         t.sampleSearch(0, true);
         t.sampleSearch(1, true);
@@ -400,7 +398,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testMixedActivity() {
+    void testMixedActivity() {
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));
@@ -424,7 +422,7 @@ public class ElapsedTimeTestCase {
     }
 
     @Test
-    public void testReportGeneration() {
+    void testReportGeneration() {
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
                 new UselessSearcher("third")));

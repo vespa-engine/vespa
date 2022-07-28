@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -12,7 +11,7 @@ import static org.junit.Assert.fail;
 public class IntegerDecoderTestCase {
 
     @Test
-    public void requireThatIntDecoderWorksAsExpected() {
+    void requireThatIntDecoderWorksAsExpected() {
         assertDecode("A", 0);
         assertDecode("BC", 1);
         assertDecode("CBI", 12);
@@ -29,7 +28,7 @@ public class IntegerDecoderTestCase {
     }
 
     @Test
-    public void requireThatDecoderThrowsExceptionOnBadInput() {
+    void requireThatDecoderThrowsExceptionOnBadInput() {
         try {
             new IntegerDecoder("B").next();
             fail();

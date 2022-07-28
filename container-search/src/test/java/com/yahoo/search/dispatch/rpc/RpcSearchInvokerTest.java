@@ -11,17 +11,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author ollivir
@@ -29,7 +26,7 @@ import static org.junit.Assert.fail;
 public class RpcSearchInvokerTest {
 
     @Test
-    public void testProtobufSerialization() throws IOException {
+    void testProtobufSerialization() throws IOException {
         var compressionTypeHolder = new AtomicReference<CompressionType>();
         var payloadHolder = new AtomicReference<byte[]>();
         var lengthHolder = new AtomicInteger();
@@ -50,14 +47,14 @@ public class RpcSearchInvokerTest {
         assertTrue(request.getQueryTreeBlob().size() > 0);
 
         var invoker2 = new RpcSearchInvoker(mockSearcher(), new Node(8, "eight", 1), mockPool, 1000);
-        RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext)invoker2.sendSearchRequest(q, context);
+        RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext) invoker2.sendSearchRequest(q, context);
         assertSame(context, context2);
         assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
         assertSame(context.compressedPayload.data(), payloadHolder.get());
     }
 
     @Test
-    public void testProtobufSerializationWithMaxHitsSet() throws IOException {
+    void testProtobufSerializationWithMaxHitsSet() throws IOException {
         int maxHits = 5;
         var compressionTypeHolder = new AtomicReference<CompressionType>();
         var payloadHolder = new AtomicReference<byte[]>();

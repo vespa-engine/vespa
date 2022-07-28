@@ -7,17 +7,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for aynchrounous execution
@@ -56,10 +53,10 @@ public class AsyncExecutionTestCase {
 
     // This should take ~50+ ms
     @Test
-    public void testAsync() {
+    void testAsync() {
         List<Searcher> searchList = new ArrayList<>();
-        searchList.add(new WaitingSearcher("one",60000));
-        searchList.add(new WaitingSearcher("two",0));
+        searchList.add(new WaitingSearcher("one", 60000));
+        searchList.add(new WaitingSearcher("two", 0));
         Chain<Searcher> searchChain = new Chain<>(new ComponentId("chain"), searchList);
 
         AsyncExecution asyncExecution = new AsyncExecution(searchChain, Execution.Context.createContextStub());
@@ -70,23 +67,23 @@ public class AsyncExecutionTestCase {
     }
 
     @Test
-    public void testWaitForAll() {
+    void testWaitForAll() {
         Chain<Searcher> slowChain = new Chain<>(
                 new ComponentId("slow"),
-                Arrays.asList(new Searcher[]{new WaitingSearcher("slow",30000)}
+                Arrays.asList(new Searcher[]{new WaitingSearcher("slow", 30000)}
                 )
         );
 
         Chain<Searcher> fastChain = new Chain<>(
                 new ComponentId("fast"),
                 Arrays.asList(new Searcher[]{new SimpleSearcher()})
-                );
+        );
 
         FutureResult slowFuture = new AsyncExecution(slowChain, Execution.Context.createContextStub()).search(new Query("?hits=0"));
         FutureResult fastFuture = new AsyncExecution(fastChain, Execution.Context.createContextStub()).search(new Query("?hits=0"));
         fastFuture.get();
-        FutureResult [] reslist = new FutureResult[]{slowFuture,fastFuture};
-        List<Result> results = AsyncExecution.waitForAll(Arrays.asList(reslist),0);
+        FutureResult [] reslist = new FutureResult[]{slowFuture, fastFuture};
+        List<Result> results = AsyncExecution.waitForAll(Arrays.asList(reslist), 0);
 
         //assertTrue(slowFuture.isCancelled());
         assertTrue(fastFuture.isDone() && !fastFuture.isCancelled());
@@ -96,27 +93,27 @@ public class AsyncExecutionTestCase {
     }
 
     @Test
-    public void testSync() {
-        Query query=new Query("?query=test");
-        Searcher searcher=new ResultProducingSearcher();
-        Result result=new Execution(searcher, Execution.Context.createContextStub()).search(query);
+    void testSync() {
+        Query query = new Query("?query=test");
+        Searcher searcher = new ResultProducingSearcher();
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
 
-        assertEquals(1,result.hits().size());
-        assertEquals("hello",result.hits().get(0).getField("test"));
+        assertEquals(1, result.hits().size());
+        assertEquals("hello", result.hits().get(0).getField("test"));
     }
 
     @Test
-    public void testSyncThroughSync() {
-        Query query=new Query("?query=test");
-        Searcher searcher=new ResultProducingSearcher();
-        Result result=new Execution(new Execution(searcher, Execution.Context.createContextStub())).search(query);
+    void testSyncThroughSync() {
+        Query query = new Query("?query=test");
+        Searcher searcher = new ResultProducingSearcher();
+        Result result = new Execution(new Execution(searcher, Execution.Context.createContextStub())).search(query);
 
-        assertEquals(1,result.hits().size());
-        assertEquals("hello",result.hits().get(0).getField("test"));
+        assertEquals(1, result.hits().size());
+        assertEquals("hello", result.hits().get(0).getField("test"));
     }
 
     @Test
-    public void testAsyncThroughSync() {
+    void testAsyncThroughSync() {
         Query query = new Query("?query=test");
         Searcher searcher = new ResultProducingSearcher();
         FutureResult futureResult = new AsyncExecution(new Execution(searcher, Execution.Context.createContextStub())).search(query);
@@ -144,7 +141,7 @@ public class AsyncExecutionTestCase {
     }
 
     @Test
-    public void testAsyncExecutionTimeout() {
+    void testAsyncExecutionTimeout() {
         Chain<Searcher> chain = new Chain<>(new Searcher() {
             @Override
             public Result search(Query query, Execution execution) {

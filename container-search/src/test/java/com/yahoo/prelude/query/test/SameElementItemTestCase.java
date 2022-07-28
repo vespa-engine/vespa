@@ -9,20 +9,18 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SameElementItemTestCase {
 
     @Test
-    public void testAddItem() {
+    void testAddItem() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "f2"));
@@ -31,18 +29,18 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void testClone() {
+    void testClone() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "f2"));
         s.addItem(new WordItem("d", "f3"));
         assertEquals("structa:{f1:b f2:c f3:d}", s.toString());
-        SameElementItem c = (SameElementItem)s.clone();
+        SameElementItem c = (SameElementItem) s.clone();
         assertEquals("structa:{f1:b f2:c f3:d}", c.toString());
     }
 
     @Test
-    public void requireAllChildrenHaveStructMemberNameSet() {
+    void requireAllChildrenHaveStructMemberNameSet() {
         try {
             SameElementItem s = new SameElementItem("structa");
             s.addItem(new WordItem("b", "f1"));
@@ -55,7 +53,7 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireAllowCommonPrefix() {
+    void requireAllowCommonPrefix() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "structaf2"));
@@ -63,7 +61,7 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireChildrenCanHavePrefixCommonWithParent() {
+    void requireChildrenCanHavePrefixCommonWithParent() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "structa.f2"));
@@ -71,7 +69,7 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireAllChildrenHaveNonEmptyTerm() {
+    void requireAllChildrenHaveNonEmptyTerm() {
         try {
             SameElementItem s = new SameElementItem("structa");
             s.addItem(new WordItem("", "f2"));
@@ -83,7 +81,7 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireNoChildrenAreWordAlternatives() {
+    void requireNoChildrenAreWordAlternatives() {
         try {
             SameElementItem s = new SameElementItem("structa");
             s.addItem(new AndItem());
@@ -91,12 +89,12 @@ public class SameElementItemTestCase {
         }
         catch (IllegalArgumentException e) { // Success
             assertEquals("Child item (AND ) should be an instance of class com.yahoo.prelude.query.TermItem but is class com.yahoo.prelude.query.AndItem",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireAllChildrenAreTermItems() {
+    void requireAllChildrenAreTermItems() {
         try {
             SameElementItem s = new SameElementItem("structa");
             s.addItem(new WordAlternativesItem("test", true, new Substring("origin"), List.of(new WordAlternativesItem.Alternative("a", 0.3))));
@@ -118,13 +116,13 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireExtractSingleItemToExtractSingles() {
+    void requireExtractSingleItemToExtractSingles() {
         verifyExtractSingle(new WordItem("b", "f1"));
         verifyExtractSingle(new IntItem("7", "f1"));
     }
 
     @Test
-    public void requireExtractSingleItemToExtractSinglesOnly() {
+    void requireExtractSingleItemToExtractSinglesOnly() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "f2"));

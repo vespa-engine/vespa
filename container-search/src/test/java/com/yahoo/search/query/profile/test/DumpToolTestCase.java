@@ -2,9 +2,9 @@
 package com.yahoo.search.query.profile.test;
 
 import com.yahoo.search.query.profile.DumpTool;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -14,28 +14,28 @@ public class DumpToolTestCase {
     private final String profileDir = "src/test/java/com/yahoo/search/query/profile/config/test/multiprofile";
 
     @Test
-    public void testNoParameters() {
+    void testNoParameters() {
         assertTrue(new DumpTool().resolveAndDump().startsWith("Dumps all resolved"));
     }
 
     @Test
-    public void testHelpParameter() {
+    void testHelpParameter() {
         assertTrue(new DumpTool().resolveAndDump("-help").startsWith("Dumps all resolved"));
     }
 
     @Test
-    public void testNoDimensionValues() {
+    void testNoDimensionValues() {
         System.out.println(new DumpTool().resolveAndDump("multiprofile1", profileDir));
         assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir).contains("a=general-a\n"));
     }
 
     @Test
-    public void testAllParametersSet() {
+    void testAllParametersSet() {
         assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir, "").contains("a=general-a\n"));
     }
 
     @Test
-    public void testVariant() {
+    void testVariant() {
         String result = new DumpTool().resolveAndDump("multiprofile1", profileDir, "region=us");
         assertTrue(result.contains("a=us-a"));
         assertTrue(result.contains("b=us-b"));

@@ -11,16 +11,14 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -34,7 +32,7 @@ public class FederationResultTest {
     private final ManualClock clock = new ManualClock();
 
     @Test
-    public void testFederationResult() {
+    void testFederationResult() {
         assertTimeout(ImmutableSet.of(),               100, 200, 180);
         assertTimeout(ImmutableSet.of(),               480, 400, 400);
         assertTimeout(ImmutableSet.of("dsp1"),         260, 280, 220);
@@ -56,9 +54,9 @@ public class FederationResultTest {
         for (FederationResult.TargetResult targetResult : federationResult.all()) {
             Result result = targetResult.getOrTimeoutError();
             if (expectedTimeoutNames.contains(targetResult.target.getId().toString()))
-                assertTrue(targetResult.target.getId() + " timed out", timedOut(result));
+                assertTrue(timedOut(result), targetResult.target.getId() + " timed out");
             else
-                assertFalse(targetResult.target.getId() + " did not time out", timedOut(result));
+                assertFalse(timedOut(result), targetResult.target.getId() + " did not time out");
         }
     }
     

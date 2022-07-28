@@ -8,15 +8,12 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.CacheControlSearcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.search.searchers.CacheControlSearcher.CACHE_CONTROL_HEADER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test cases for CacheControlSearcher.
@@ -54,17 +51,17 @@ public class CacheControlSearcherTestCase {
      * @param cacheheaders - The "Cache-Control" headers from the response ListMap
      */
     private void assertCacheHeaders(String[] values, List<String> cacheheaders) {
-        assertNotNull("No headers to test for (was null)", values);
-        assertTrue("No headers to test for (no elements in array)", values.length > 0);
-        assertNotNull("No cache headers set in response", cacheheaders);
+        assertNotNull(values, "No headers to test for (was null)");
+        assertTrue(values.length > 0, "No headers to test for (no elements in array)");
+        assertNotNull(cacheheaders, "No cache headers set in response");
         assertEquals(values.length, cacheheaders.size());
         for (String header : values) {
-            assertTrue("Cache header does not contain header '" + header + "'", cacheheaders.contains(header));
+            assertTrue(cacheheaders.contains(header), "Cache header does not contain header '" + header + "'");
         }
     }
 
     @Test
-    public void testNoHeader() {
+    void testNoHeader() {
         Chain<Searcher> chain = getSearchChain();
         Query query = new Query("?query=foo&custid=foo");
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
@@ -72,7 +69,7 @@ public class CacheControlSearcherTestCase {
     }
 
     @Test
-    public void testInvalidAgeParams() {
+    void testInvalidAgeParams() {
         Chain<Searcher> chain = getSearchChain();
 
         try {
@@ -97,7 +94,7 @@ public class CacheControlSearcherTestCase {
     }
 
     @Test
-    public void testMaxAge() {
+    void testMaxAge() {
         Chain<Searcher> chain = getSearchChain();
 
         Query query = new Query("?query=foo&custid=foo&cachecontrol.maxage=120");
@@ -106,7 +103,7 @@ public class CacheControlSearcherTestCase {
     }
 
     @Test
-    public void testNoCache() {
+    void testNoCache() {
         Chain<Searcher> chain = getSearchChain();
 
         Query query = new Query("?query=foo&custid=foo&cachecontrol.maxage=120&noCache");
@@ -119,7 +116,7 @@ public class CacheControlSearcherTestCase {
     }
 
     @Test
-    public void testStateWhileRevalidate() {
+    void testStateWhileRevalidate() {
         Chain<Searcher> chain = getSearchChain();
 
         Query query = new Query("?query=foo&custid=foo&cachecontrol.staleage=3600");
@@ -128,7 +125,7 @@ public class CacheControlSearcherTestCase {
     }
 
     @Test
-    public void testStaleAndMaxAge() {
+    void testStaleAndMaxAge() {
         Chain<Searcher> chain = getSearchChain();
 
         Query query = new Query("?query=foo&custid=foo&cachecontrol.maxage=60&cachecontrol.staleage=3600");

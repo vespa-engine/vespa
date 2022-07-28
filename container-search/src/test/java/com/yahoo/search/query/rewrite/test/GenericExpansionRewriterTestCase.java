@@ -8,8 +8,8 @@ import com.yahoo.search.searchchain.*;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Cases for GenericExpansionRewriter
@@ -29,7 +29,7 @@ public class GenericExpansionRewriterTestCase {
      * Load the GenericExpansionRewriterSearcher and prepare the
      * execution object
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
@@ -44,149 +44,149 @@ public class GenericExpansionRewriterTestCase {
      * MaxRewrites=3, PartialPhraseMatch is on, type=adv case
      */
     @Test
-    public void testPartialPhraseMaxRewriteAdvType() {
+    void testPartialPhraseMaxRewriteAdvType() {
         utils.assertRewrittenQuery("?query=(modern new york city travel phone number) OR (travel agency) OR travel&type=adv&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
-                                   REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=3",
-                                   "query 'OR (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
-                                   "(AND new york city travel)) (OR pn (AND phone number))) ta (AND travel agency) " +
-                                   "tr travel'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
+                REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=3",
+                "query 'OR (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
+                        "(AND new york city travel)) (OR pn (AND phone number))) ta (AND travel agency) " +
+                        "tr travel'");
     }
 
     /**
      * PartialPhraseMatch is off, type=adv case
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteAdvType() {
+    void testPartialPhraseNoMaxRewriteAdvType() {
         utils.assertRewrittenQuery("?query=(modern new york city travel phone number) OR (travel agency) OR travel&type=adv&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'OR (AND modern new york city travel phone number) " +
-                                   "ta (AND travel agency) tr travel'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'OR (AND modern new york city travel phone number) " +
+                        "ta (AND travel agency) tr travel'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, type=adv, added filter case
      */
     @Test
-    public void testFullPhraseNoMaxRewriteAdvTypeFilter() {
+    void testFullPhraseNoMaxRewriteAdvTypeFilter() {
         utils.assertRewrittenQuery("?query=ca OR (modern new york city travel phone number) OR (travel agency) OR travel&" +
-                                   "type=adv&filter=citystate:santa clara ca&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'RANK (OR california ca (AND modern new york city travel phone number) " +
-                                   "ta (AND travel agency) tr travel) |citystate:santa |clara |ca'");
+                "type=adv&filter=citystate:santa clara ca&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'RANK (OR california ca (AND modern new york city travel phone number) " +
+                        "ta (AND travel agency) tr travel) |citystate:santa |clara |ca'");
     }
 
     /**
      * MaxRewrites=0 (i.e No MaxRewrites), PartialPhraseMatch is on, type=adv, added filter case
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteAdvTypeFilter() {
+    void testPartialPhraseNoMaxRewriteAdvTypeFilter() {
         utils.assertRewrittenQuery("?query=ca OR (modern new york city travel phone number) OR (travel agency) OR travel&" +
-                                   "type=adv&filter=citystate:santa clara ca&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
-                                   REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true&" +
-                                   REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=0",
-                                   "query 'RANK (OR california ca (AND modern (OR \"rewrite11 rewrite12\" " +
-                                   "rewrite2 rewrite3 rewrite4 rewrite5 (AND new york city travel)) " +
-                                   "(OR pn (AND phone number))) ta (AND travel agency) tr travel) " +
-                                   "|citystate:santa |clara |ca'");
+                "type=adv&filter=citystate:santa clara ca&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
+                REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true&" +
+                REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=0",
+                "query 'RANK (OR california ca (AND modern (OR \"rewrite11 rewrite12\" " +
+                        "rewrite2 rewrite3 rewrite4 rewrite5 (AND new york city travel)) " +
+                        "(OR pn (AND phone number))) ta (AND travel agency) tr travel) " +
+                        "|citystate:santa |clara |ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, single word, added filter case
      */
     @Test
-    public void testFullPhraseNoMaxRewriteSingleWordFilter() {
+    void testFullPhraseNoMaxRewriteSingleWordFilter() {
         utils.assertRewrittenQuery("?query=ca&type=all&" +
-                                   "filter=citystate:santa clara ca&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
+                "filter=citystate:santa clara ca&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is on, single word, added filter case
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteSingleWordFilter() {
+    void testPartialPhraseNoMaxRewriteSingleWordFilter() {
         utils.assertRewrittenQuery("?query=ca&type=all&" +
-                                   "filter=citystate:santa clara ca&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
+                "filter=citystate:santa clara ca&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word, added filter case
      */
     @Test
-    public void testFullPhraseNoMaxRewriteMultiWordFilter() {
+    void testFullPhraseNoMaxRewriteMultiWordFilter() {
         utils.assertRewrittenQuery("?query=travel agency&type=all&" +
-                                   "filter=citystate:santa clara ca&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'RANK (OR ta (AND travel agency)) |citystate:santa |clara |ca'");
+                "filter=citystate:santa clara ca&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'RANK (OR ta (AND travel agency)) |citystate:santa |clara |ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is on, multi word, added filter case
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteMultiWordFilter() {
+    void testPartialPhraseNoMaxRewriteMultiWordFilter() {
         utils.assertRewrittenQuery("?query=modern new york city travel phone number&" +
-                                   "filter=citystate:santa clara ca&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'RANK (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
-                                   "rewrite4 rewrite5 (AND new york city travel)) (OR pn (AND phone number))) " +
-                                   "|citystate:santa |clara |ca'");
+                "filter=citystate:santa clara ca&type=all&" +
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'RANK (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
+                        "rewrite4 rewrite5 (AND new york city travel)) (OR pn (AND phone number))) " +
+                        "|citystate:santa |clara |ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, single word
      */
     @Test
-    public void testFullPhraseNoMaxRewriteSingleWord() {
+    void testFullPhraseNoMaxRewriteSingleWord() {
         utils.assertRewrittenQuery("?query=ca&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'OR california ca'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'OR california ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is on, single word
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteSingleWord() {
+    void testPartialPhraseNoMaxRewriteSingleWord() {
         utils.assertRewrittenQuery("?query=ca&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'OR california ca'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'OR california ca'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word
      */
     @Test
-    public void testFullPhraseNoMaxRewriteMultiWord() {
+    void testFullPhraseNoMaxRewriteMultiWord() {
         utils.assertRewrittenQuery("?query=travel agency&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'OR ta (AND travel agency)'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'OR ta (AND travel agency)'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word, no full match
      */
     @Test
-    public void testFullPhraseNoMaxRewriteMultiWordNoMatch() {
+    void testFullPhraseNoMaxRewriteMultiWordNoMatch() {
         utils.assertRewrittenQuery("?query=nyc travel agency&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'AND nyc travel agency'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
+                "query 'AND nyc travel agency'");
     }
 
     /**
      * No MaxRewrites, PartialPhraseMatch is on, multi word
      */
     @Test
-    public void testPartialPhraseNoMaxRewriteMultiWord() {
+    void testPartialPhraseNoMaxRewriteMultiWord() {
         utils.assertRewrittenQuery("?query=modern new york city travel phone number&type=all&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 rewrite4 rewrite5 "+
-                                   "(AND new york city travel)) (OR pn (AND phone number))'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 rewrite4 rewrite5 " +
+                        "(AND new york city travel)) (OR pn (AND phone number))'");
     }
 
     /**
@@ -195,10 +195,10 @@ public class GenericExpansionRewriterTestCase {
      * Should rewrite travel but not travel agency in this case
      */
     @Test
-    public void testPartialPhraseMultiWordRankTree() {
+    void testPartialPhraseMultiWordRankTree() {
         utils.assertRewrittenQuery("?query=travel RANK agency&type=adv&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'RANK (OR tr travel) agency'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'RANK (OR tr travel) agency'");
     }
 
     /**
@@ -207,10 +207,10 @@ public class GenericExpansionRewriterTestCase {
      * Should rewrite travel but not travel agency in this case
      */
     @Test
-    public void testFullPhraseMultiWordRankTree() {
+    void testFullPhraseMultiWordRankTree() {
         utils.assertRewrittenQuery("?query=travel RANK agency&type=adv&" +
-                                   REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
-                                   "query 'RANK (OR tr travel) agency'");
+                REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
+                "query 'RANK (OR tr travel) agency'");
     }
 
 }

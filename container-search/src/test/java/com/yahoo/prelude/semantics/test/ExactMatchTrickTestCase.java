@@ -3,7 +3,7 @@ package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author bratseth
@@ -15,20 +15,20 @@ public class ExactMatchTrickTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testCompleteMatch() {
+    void testCompleteMatch() {
         assertSemantics("AND default:primetime default:in default:no default:time", "primetime notime");
     }
 
     @Test
-    public void testCompleteMatchWithNegative() { // Notice ordering bug
+    void testCompleteMatchWithNegative() { // Notice ordering bug
         assertSemantics("+(AND default:primetime default:in default:time default:no TRUE) -regionexcl:us",
-                        new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv")));
+                new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv")));
     }
 
     @Test
-    public void testCompleteMatchWithFilterAndNegative() {
+    void testCompleteMatchWithFilterAndNegative() {
         assertSemantics("AND (+(AND default:primetime default:in default:time default:no TRUE) -regionexcl:us) |lang:en",
-                        new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv&filter=+lang:en")));
+                new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv&filter=+lang:en")));
     }
 
 }

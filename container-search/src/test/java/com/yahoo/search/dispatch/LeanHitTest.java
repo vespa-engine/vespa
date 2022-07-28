@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LeanHitTest {
     private static final byte [] gidA = {'a'};
@@ -20,34 +18,39 @@ public class LeanHitTest {
         assertTrue(c.compareTo(b) > 0);
         assertTrue(c.compareTo(a) > 0);
     }
+
     @Test
-    public void testOrderingByRelevance() {
+    void testOrderingByRelevance() {
         assertEquals(0, new LeanHit(gidA, 0, 0, 1).compareTo(new LeanHit(gidA, 0, 0, 1)));
         verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, 1),
                 new LeanHit(gidA, 0, 0, 0),
                 new LeanHit(gidA, 0, 0, -1));
     }
+
     @Test
-    public void testOrderingByGid() {
+    void testOrderingByGid() {
         assertEquals(0, new LeanHit(gidA, 0, 0, 1).compareTo(new LeanHit(gidA, 0, 0, 1)));
 
         verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, 1),
                 new LeanHit(gidB, 0, 0, 1),
                 new LeanHit(gidC, 0, 0, 1));
     }
+
     @Test
-    public void testOrderingBySortData() {
+    void testOrderingBySortData() {
         assertEquals(0, new LeanHit(gidA, 0, 0, 0.0, gidA).compareTo(new LeanHit(gidA, 0, 0, 0.0, gidA)));
         verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, 0.0, gidA),
                 new LeanHit(gidA, 0, 0, 0.0, gidB),
                 new LeanHit(gidA, 0, 0, 0.0, gidC));
     }
+
     @Test
-    public void testRelevanceIsKeptEvenWithBySortData() {
+    void testRelevanceIsKeptEvenWithBySortData() {
         assertEquals(1.3, new LeanHit(gidA, 0, 0, 1.3, gidA).getRelevance(), 0.0);
     }
+
     @Test
-    public void testNaN2negativeInfinity() {
+    void testNaN2negativeInfinity() {
         LeanHit nan = new LeanHit(gidA, 0, 0, Double.NaN);
         assertFalse(Double.isNaN(nan.getRelevance()));
         assertTrue(Double.isInfinite(nan.getRelevance()));

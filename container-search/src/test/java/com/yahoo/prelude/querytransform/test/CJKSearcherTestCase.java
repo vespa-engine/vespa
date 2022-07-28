@@ -18,10 +18,10 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.searchchain.Execution;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author Steinar Knutsen
@@ -32,9 +32,9 @@ public class CJKSearcherTestCase {
                                                                         "querytransform/test/cjk-index-info.cfg", null);
 
     @Test
-    public void testTermWeight() {
+    void testTermWeight() {
         assertTransformed("efg!10", "SAND e!10 fg!10",
-                          Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL, TestLinguistics.INSTANCE);
+                Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL, TestLinguistics.INSTANCE);
     }
 
     /**
@@ -43,14 +43,14 @@ public class CJKSearcherTestCase {
      * must combine overlapping tokens as PHRASE, not AND to avoid a too high recall because of the token overlap.
      */
     @Test
-    public void testCjkQueryWithOverlappingTokens() {
+    void testCjkQueryWithOverlappingTokens() {
         // The test language segmenter will segment "bcd" into the overlapping tokens "bc" "cd"
         assertTransformed("bcd", "SAND bc cd", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL,
-                          TestLinguistics.INSTANCE);
+                TestLinguistics.INSTANCE);
 
         // While "efg" will be segmented into one of the standard options, "e" "fg"
         assertTransformed("efg", "SAND e fg", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL,
-                          TestLinguistics.INSTANCE);
+                TestLinguistics.INSTANCE);
     }
 
     private void assertTransformed(String queryString, String expected, Query.Type mode, Language actualLanguage,

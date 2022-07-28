@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
@@ -31,7 +29,7 @@ public class FieldFilterTestCase {
     private Execution.Context context;
     private Execution execution;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Query query = new Query("?query=test");
 
@@ -58,7 +56,7 @@ public class FieldFilterTestCase {
         return h;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         searchChain = null;
         context = null;
@@ -66,7 +64,7 @@ public class FieldFilterTestCase {
     }
 
     @Test
-    public final void testBasic() {
+    final void testBasic() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD_B);
         Result result = execution.search(query);
         execution.fill(result);
@@ -77,7 +75,7 @@ public class FieldFilterTestCase {
     }
 
     @Test
-    public final void testNoFiltering() {
+    final void testNoFiltering() {
         final Query query = new Query("?query=test");
         Result result = execution.search(query);
         execution.fill(result);

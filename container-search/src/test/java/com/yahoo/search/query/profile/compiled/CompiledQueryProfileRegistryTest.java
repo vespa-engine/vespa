@@ -2,12 +2,12 @@
 package com.yahoo.search.query.profile.compiled;
 
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -15,13 +15,13 @@ import static org.junit.Assert.assertTrue;
 public class CompiledQueryProfileRegistryTest {
 
     @Test
-    public void registry_can_be_created_from_config() {
+    void registry_can_be_created_from_config() {
         var config = new QueryProfilesConfig.Builder()
                 .queryprofile(new QueryProfilesConfig.Queryprofile.Builder()
-                                      .id("profile1")
-                                      .property(new QueryProfilesConfig.Queryprofile.Property.Builder()
-                                                        .name("hits")
-                                                        .value("5")))
+                        .id("profile1")
+                        .property(new QueryProfilesConfig.Queryprofile.Property.Builder()
+                                .name("hits")
+                                .value("5")))
                 .build();
 
         var executor = Executors.newCachedThreadPool();

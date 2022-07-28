@@ -8,9 +8,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test using the profile to set the query to execute
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryFromProfileTestCase {
 
     @Test
-    public void testQueryFromProfile1() {
+    void testQueryFromProfile1() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile topLevel = new QueryProfile("topLevel");
         topLevel.setType(registry.getTypeRegistry().getComponent("native"));
@@ -39,7 +39,7 @@ public class QueryFromProfileTestCase {
     }
 
     @Test
-    public void testQueryFromProfile2() {
+    void testQueryFromProfile2() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileType rootType = new QueryProfileType("root");
         rootType.inherited().add(registry.getTypeRegistry().getComponent("native"));
@@ -49,7 +49,7 @@ public class QueryFromProfileTestCase {
         root.setType(rootType);
         registry.register(root);
 
-        QueryProfile queryBest=new QueryProfile("querybest");
+        QueryProfile queryBest = new QueryProfile("querybest");
         queryBest.setType(registry.getTypeRegistry().getComponent("model"));
         queryBest.set("queryString", "best", registry);
         registry.register(queryBest);
@@ -62,7 +62,7 @@ public class QueryFromProfileTestCase {
     }
 
     @Test
-    public void testQueryFromProfile3() {
+    void testQueryFromProfile3() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileType rootType = new QueryProfileType("root");
         rootType.inherited().add(registry.getTypeRegistry().getComponent("native"));
@@ -72,7 +72,7 @@ public class QueryFromProfileTestCase {
         root.setType(rootType);
         registry.register(root);
 
-        QueryProfile queryBest=new QueryProfile("querybest");
+        QueryProfile queryBest = new QueryProfile("querybest");
         queryBest.setType(registry.getTypeRegistry().getComponent("model"));
         queryBest.set("queryString", "best", registry);
         registry.register(queryBest);

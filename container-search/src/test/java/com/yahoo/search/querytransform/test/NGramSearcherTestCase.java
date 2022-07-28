@@ -33,12 +33,10 @@ import com.yahoo.search.querytransform.NGramSearcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.search.searchchain.Execution.Context.createContextStub;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -103,7 +101,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testMixedDocTypes() {
+    void testMixedDocTypes() {
         {
             Query q = new Query("?query=abc&restrict=song");
             createMixedSetupExecution().search(q);
@@ -127,7 +125,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testMixedClusters() {
+    void testMixedClusters() {
         {
             Query q = new Query("?query=abc&search=songOnly");
             createMixedSetupExecution().search(q);
@@ -151,42 +149,42 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testNGramRewritingMixedQuery() {
+    void testNGramRewritingMixedQuery() {
         Query q = new Query("?query=foo+gram3:engul+test:bar");
         createExecution().search(q);
         assertEquals("WEAKAND(100) foo (AND gram3:eng gram3:ngu gram3:gul) test:bar", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingNGramOnly() {
+    void testNGramRewritingNGramOnly() {
         Query q = new Query("?query=gram3:engul");
         createExecution().search(q);
         assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewriting2NGramsOnly() {
+    void testNGramRewriting2NGramsOnly() {
         Query q = new Query("?query=gram3:engul+gram2:123");
         createExecution().search(q);
         assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul) (AND gram2:12 gram2:23)", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingShortOnly() {
+    void testNGramRewritingShortOnly() {
         Query q = new Query("?query=gram3:en");
         createExecution().search(q);
         assertEquals("WEAKAND(100) gram3:en", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingShortInMixes() {
+    void testNGramRewritingShortInMixes() {
         Query q = new Query("?query=test:a+gram3:en");
         createExecution().search(q);
         assertEquals("WEAKAND(100) test:a gram3:en", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingPhrase() {
+    void testNGramRewritingPhrase() {
         Query q = new Query("?query=gram3:%22engul+a+holi%22");
         createExecution().search(q);
         assertEquals("WEAKAND(100) gram3:\"eng ngu gul a hol oli\"", q.getModel().getQueryTree().toString());
@@ -197,19 +195,19 @@ public class NGramSearcherTestCase {
      * so the ngram rewriter cannot know to keep the grams as a phrase in this case.
      */
     @Test
-    public void testNGramRewritingPhraseSingleTerm() {
+    void testNGramRewritingPhraseSingleTerm() {
         Query q = new Query("?query=gram3:%22engul%22");
         createExecution().search(q);
         assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingAdditionalTermInfo() {
+    void testNGramRewritingAdditionalTermInfo() {
         Query q = new Query("?query=gram3:engul!50+foo+gram2:123!150");
         createExecution().search(q);
-        WeakAndItem root = (WeakAndItem)q.getModel().getQueryTree().getRoot();
-        AndItem gram3And = (AndItem)root.getItem(0);
-        AndItem gram2And = (AndItem)root.getItem(2);
+        WeakAndItem root = (WeakAndItem) q.getModel().getQueryTree().getRoot();
+        AndItem gram3And = (AndItem) root.getItem(0);
+        AndItem gram2And = (AndItem) root.getItem(2);
 
         assertExtraTermInfo(50, "engul", gram3And.getItem(0));
         assertExtraTermInfo(50, "engul", gram3And.getItem(1));
@@ -227,21 +225,21 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testNGramRewritingExplicitDefault() {
+    void testNGramRewritingExplicitDefault() {
         Query q = new Query("?query=default:engul");
         createExecution().search(q);
-        assertEquals("WEAKAND(100) (AND default:eng default:ngu default:gul)" ,q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND default:eng default:ngu default:gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testNGramRewritingImplicitDefault() {
+    void testNGramRewritingImplicitDefault() {
         Query q = new Query("?query=engul");
         createExecution().search(q);
         assertEquals("WEAKAND(100) (AND eng ngu gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
-    public void testGramsWithSegmentation() {
+    void testGramsWithSegmentation() {
         Searcher searcher = createSearcher();
         assertGramsWithSegmentation(new Chain<>(searcher));
         assertGramsWithSegmentation(new Chain<>(new CJKSearcher(), searcher));
@@ -259,7 +257,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testGramsWithSegmentationSingleSegment() {
+    void testGramsWithSegmentationSingleSegment() {
         Searcher searcher = createSearcher();
         assertGramsWithSegmentationSingleSegment(new Chain<>(searcher));
         assertGramsWithSegmentationSingleSegment(new Chain<>(new CJKSearcher(), searcher));
@@ -277,7 +275,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testGramsWithSegmentationSubstringSegmented() {
+    void testGramsWithSegmentationSubstringSegmented() {
         Searcher searcher = createSearcher();
         assertGramsWithSegmentationSubstringSegmented(new Chain<>(searcher));
         assertGramsWithSegmentationSubstringSegmented(new Chain<>(new CJKSearcher(), searcher));
@@ -296,7 +294,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testGramsWithSegmentationMixed() {
+    void testGramsWithSegmentationMixed() {
         Searcher searcher = createSearcher();
         assertGramsWithSegmentationMixed(new Chain<>(searcher));
         assertGramsWithSegmentationMixed(new Chain<>(new CJKSearcher(), searcher));
@@ -315,7 +313,7 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testGramsWithSegmentationMixedAndPhrases() {
+    void testGramsWithSegmentationMixedAndPhrases() {
         Searcher searcher = createSearcher();
         assertGramsWithSegmentationMixedAndPhrases(new Chain<>(searcher));
         assertGramsWithSegmentationMixedAndPhrases(new Chain<>(new CJKSearcher(), searcher));
@@ -334,19 +332,20 @@ public class NGramSearcherTestCase {
     }
 
     @Test
-    public void testNGramRecombining() {
+    void testNGramRecombining() {
         Query q = new Query("?query=ignored");
         Result r = new Execution(new Chain<>(createSearcher(), new MockBackend1()), createContextStub(createIndexFacts())).search(q);
         Hit h1 = r.hits().get("hit1");
         assertEquals("Should be untouched,\u001feven if containing \u001f",
-                     h1.getField("test").toString());
+                h1.getField("test").toString());
         assertTrue(h1.getField("test") instanceof String);
 
-        assertEquals("Blue red Ed A",h1.getField("gram2").toString());
+        assertEquals("Blue red Ed A", h1.getField("gram2").toString());
         assertTrue(h1.getField("gram2") instanceof XMLString);
 
-        assertEquals("Separators on borders work","Blue red ed a\u001f",
-                     h1.getField("gram3").toString());
+        assertEquals("Blue red ed a\u001f",
+                h1.getField("gram3").toString(),
+                "Separators on borders work");
         assertTrue(h1.getField("gram3") instanceof String);
 
         Hit h2 = r.hits().get("hit2");
@@ -356,7 +355,7 @@ public class NGramSearcherTestCase {
         Hit h3 = r.hits().get("hit3");
         assertEquals("\u001ffin\u001f \u001fen\u001f \u001fa\u001f", h3.getField("gram2").toString());
         assertEquals("#Logging in #Java is like that \"Judean P\u001fopul\u001far Front\" scene from \"Life of Brian\".",
-                     h3.getField("gram3").toString());
+                h3.getField("gram3").toString());
     }
 
     private Item parseQuery(String query, Query.Type type) {

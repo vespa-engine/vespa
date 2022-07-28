@@ -19,13 +19,13 @@ import com.yahoo.text.Utf8String;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vespa.objects.BufferSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
@@ -280,13 +280,13 @@ public class VdsVisitorTestCase {
     }
 
     @Test
-    public void testGetQueryFlags() {
+    void testGetQueryFlags() {
         assertEquals(0x00028000, VdsVisitor.getQueryFlags(new Query("/?query=test")));
         assertEquals(0x00028080, VdsVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true")));
         assertEquals(0x00068000, VdsVisitor.getQueryFlags(new Query("/?query=test&rankfeatures=true")));
         assertEquals(0x00068080, VdsVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true&rankfeatures=true")));
 
-        Query query= new Query("/?query=test");
+        Query query = new Query("/?query=test");
         assertEquals(0x00028000, VdsVisitor.getQueryFlags(query));
         query.setNoCache(true);
         assertEquals(0x00038000, VdsVisitor.getQueryFlags(query));
@@ -295,7 +295,7 @@ public class VdsVisitorTestCase {
     }
 
     @Test
-    public void testBasics() throws Exception {
+    void testBasics() throws Exception {
         Route route = Route.parse("storageClusterRouteSpec");
         String searchCluster = "searchClusterConfigId";
         MockVisitorSessionFactory factory = new MockVisitorSessionFactory();
@@ -318,7 +318,7 @@ public class VdsVisitorTestCase {
     }
 
     @Test
-    public void testFailures() throws Exception {
+    void testFailures() throws Exception {
         Route route = Route.parse("storageClusterRouteSpec");
         String searchCluster = "searchClusterConfigId";
         MockVisitorSessionFactory factory = new MockVisitorSessionFactory();
@@ -346,11 +346,11 @@ public class VdsVisitorTestCase {
         VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
         try {
             visitor.doSearch();
-            assertTrue("Visitor did not fail", false);
+            assertTrue(false, "Visitor did not fail");
         } catch (TimeoutException te) {
-            assertTrue("Got TimeoutException unexpectedly", factory.timeoutQuery);
+            assertTrue(factory.timeoutQuery, "Got TimeoutException unexpectedly");
         } catch (IllegalArgumentException iae) {
-            assertTrue("Got IllegalArgumentException unexpectedly", factory.failQuery);
+            assertTrue(factory.failQuery, "Got IllegalArgumentException unexpectedly");
         }
     }
 
@@ -363,7 +363,7 @@ public class VdsVisitorTestCase {
         visitor.onMessage(createDSM("id:ns:type::2"), ackToken);
         try {
             visitor.onMessage(createM(), ackToken);
-            assertTrue("Unsupported message did not cause exception", false);
+            assertTrue(false, "Unsupported message did not cause exception");
         } catch (UnsupportedOperationException uoe) {
             assertTrue(uoe.getMessage().contains("VdsVisitor can only accept query result, search result, and documentsummary messages"));
         }
@@ -389,10 +389,10 @@ public class VdsVisitorTestCase {
                 assertEquals("id:ns:type::0", hit.getDocId());
                 assertEquals(0.3, hit.getRank(), 0.01);
             } else {
-                assertTrue("Got too many hits", false);
+                assertTrue(false, "Got too many hits");
             }
             DocumentSummary.Summary summary = visitor.getSummaryMap().get(hit.getDocId());
-            assertNotNull("Did not find summary for " + hit.getDocId(), summary);
+            assertNotNull(summary, "Did not find summary for " + hit.getDocId());
         }
     }
 

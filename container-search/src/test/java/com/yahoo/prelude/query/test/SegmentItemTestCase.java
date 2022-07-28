@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.prelude.query.PhraseSegmentItem;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.query.WordItem;
 
 /**
@@ -16,7 +15,7 @@ import com.yahoo.prelude.query.WordItem;
 public class SegmentItemTestCase {
 
     @Test
-    public final void test() {
+    final void test() {
         PhraseSegmentItem item = new PhraseSegmentItem("a b c", false, true);
         item.addItem(new WordItem("a"));
         item.addItem(new WordItem("b"));

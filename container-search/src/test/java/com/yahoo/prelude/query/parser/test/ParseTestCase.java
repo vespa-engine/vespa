@@ -24,14 +24,11 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests query parsing.
@@ -41,562 +38,562 @@ import static org.junit.Assert.assertTrue;
 public class ParseTestCase {
 
     private final ParsingTester tester = new ParsingTester();
-    
+
     @Test
-    public void testSimpleTermQuery() {
+    void testSimpleTermQuery() {
         tester.assertParsed("foobar", "foobar", Query.Type.ANY);
     }
 
     @Test
-    public void testTermWithIndexPrefix() {
+    void testTermWithIndexPrefix() {
         tester.assertParsed("url:foobar",
-                            "url:foobar",
-                            Query.Type.ANY);
+                "url:foobar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testTermWithCatalogAndIndexPrefix() {
+    void testTermWithCatalogAndIndexPrefix() {
         tester.assertParsed("normal.title:foobar", "normal.title:foobar", Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleTermsWithUTF8EncodingOred() {
+    void testMultipleTermsWithUTF8EncodingOred() {
         tester.assertParsed("OR l\u00e5gen delta M\u00dcNICH M\u00fcnchen",
-                            "l\u00e5gen delta M\u00dcNICH M\u00fcnchen",
-                            Query.Type.ANY);
+                "l\u00e5gen delta M\u00dcNICH M\u00fcnchen",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleTermsWithMultiplePrefixes() {
+    void testMultipleTermsWithMultiplePrefixes() {
         tester.assertParsed("RANK (+bar -normal.title:foo -baz) url:foobar",
-                            "url:foobar +bar -normal.title:foo -baz", Query.Type.ANY);
+                "url:foobar +bar -normal.title:foo -baz", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleQueryDefaultOr() {
+    void testSimpleQueryDefaultOr() {
         tester.assertParsed("OR foobar foo bar baz", "foobar foo bar baz", Query.Type.ANY);
     }
 
     @Test
-    public void testOrAndNot() {
+    void testOrAndNot() {
         tester.assertParsed("RANK (+(AND baz bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy -foobaz +bar", Query.Type.ANY);
+                "foobar +baz foo -xyzzy -foobaz +bar", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleOrNestedAnd() {
+    void testSimpleOrNestedAnd() {
         tester.assertParsed("RANK (OR foo bar baz) foobar xyzzy",
-                            "foobar +(foo bar baz) xyzzy", Query.Type.ANY);
+                "foobar +(foo bar baz) xyzzy", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleOrNestedNot() {
+    void testSimpleOrNestedNot() {
         tester.assertParsed("+(OR foobar xyzzy) -(AND foo bar baz)",
-                            "foobar -(foo bar baz) xyzzy", Query.Type.ANY);
+                "foobar -(foo bar baz) xyzzy", Query.Type.ANY);
     }
 
     @Test
-    public void testOrNotNestedAnd() {
+    void testOrNotNestedAnd() {
         tester.assertParsed("RANK (+(AND baz (OR foo bar baz) bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +bar",
-                            Query.Type.ANY);
+                "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +bar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrAndNotNestedNot() {
+    void testOrAndNotNestedNot() {
         tester.assertParsed("RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy -(foo bar baz) -foobaz +bar",
-                            Query.Type.ANY);
+                "foobar +baz foo -xyzzy -(foo bar baz) -foobaz +bar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrMultipleNestedAnd() {
+    void testOrMultipleNestedAnd() {
         tester.assertParsed("RANK (AND (OR fo ba foba) (OR foz baraz)) foobar foo bar baz",
-                            "foobar +(fo ba foba) foo bar +(foz baraz) baz",
-                            Query.Type.ANY);
+                "foobar +(fo ba foba) foo bar +(foz baraz) baz",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrMultipleNestedNot() {
+    void testOrMultipleNestedNot() {
         tester.assertParsed("+(OR foobar foo bar baz) -(AND fo ba foba) -(AND foz baraz)",
-                            "foobar -(fo ba foba) foo bar -(foz baraz) baz",
-                            Query.Type.ANY);
+                "foobar -(fo ba foba) foo bar -(foz baraz) baz",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrAndNotMultipleNestedAnd() {
+    void testOrAndNotMultipleNestedAnd() {
         tester.assertParsed("RANK (+(AND baz (OR foo bar baz) (OR foz bazaz) bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +(foz bazaz) +bar",
-                            Query.Type.ANY);
+                "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +(foz bazaz) +bar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrAndNotMultipleNestedNot() {
+    void testOrAndNotMultipleNestedNot() {
         tester.assertParsed("RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz -(AND foz bazaz)) foobar foo",
-                            "foobar +baz foo -xyzzy -(foo bar baz) -foobaz -(foz bazaz) +bar",
-                            Query.Type.ANY);
+                "foobar +baz foo -xyzzy -(foo bar baz) -foobaz -(foz bazaz) +bar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrMultipleNestedAndNot() {
+    void testOrMultipleNestedAndNot() {
         tester.assertParsed("RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof)) -(AND fo ba foba) -(AND foz baraz)) foobar foo bar baz",
-                            "foobar -(fo ba foba) foo +(ffoooo bbaarr) bar +(oof rab raboof) -(foz baraz) baz",
-                            Query.Type.ANY);
+                "foobar -(fo ba foba) foo +(ffoooo bbaarr) bar +(oof rab raboof) -(foz baraz) baz",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testOrAndNotMultipleNestedAndNot() {
+    void testOrAndNotMultipleNestedAndNot() {
         tester.assertParsed("RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof) baz xyxyzzy) -(AND fo ba foba) -foo -bar -(AND foz baraz)) foobar",
-                            "foobar -(fo ba foba) -foo +(ffoooo bbaarr) -bar +(oof rab raboof) -(foz baraz) +baz +xyxyzzy",
-                            Query.Type.ANY);
+                "foobar -(fo ba foba) -foo +(ffoooo bbaarr) -bar +(oof rab raboof) -(foz baraz) +baz +xyxyzzy",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitPhrase() {
+    void testExplicitPhrase() {
         Item root = tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"", Query.Type.ANY);
         assertTrue(root instanceof PhraseItem);
-        assertTrue(((PhraseItem)root).isExplicit());
+        assertTrue(((PhraseItem) root).isExplicit());
     }
 
     @Test
-    public void testPhraseWithIndex() {
+    void testPhraseWithIndex() {
         tester.assertParsed("normal.title:\"foo bar foobar\"",
-                            "normal.title:\"foo bar foobar\"", Query.Type.ANY);
+                "normal.title:\"foo bar foobar\"", Query.Type.ANY);
     }
 
     @Test
-    public void testPhrasesAndTerms() {
+    void testPhrasesAndTerms() {
         tester.assertParsed("OR \"foo bar foobar\" xyzzy \"baz gaz faz\"",
-                            "\"foo bar foobar\" xyzzy \"baz gaz faz\"", Query.Type.ANY);
+                "\"foo bar foobar\" xyzzy \"baz gaz faz\"", Query.Type.ANY);
     }
 
     @Test
-    public void testPhrasesAndTermsWithOperators() {
+    void testPhrasesAndTermsWithOperators() {
         tester.assertParsed("RANK (+(AND \"baz gaz faz\" bazar) -\"foo bar foobar\") foofoo xyzzy",
-                            "foofoo -\"foo bar foobar\" xyzzy +\"baz gaz faz\" +bazar",
-                            Query.Type.ANY);
+                "foofoo -\"foo bar foobar\" xyzzy +\"baz gaz faz\" +bazar",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleTermQueryDefaultAnd() {
+    void testSimpleTermQueryDefaultAnd() {
         tester.assertParsed("foobar", "foobar", Query.Type.ALL);
     }
 
     @Test
-    public void testTermWithCatalogAndIndexPrefixDefaultAnd() {
+    void testTermWithCatalogAndIndexPrefixDefaultAnd() {
         tester.assertParsed("normal.title:foobar", "normal.title:foobar", Query.Type.ALL);
     }
 
     @Test
-    public void testMultipleTermsWithMultiplePrefixesDefaultAnd() {
+    void testMultipleTermsWithMultiplePrefixesDefaultAnd() {
         tester.assertParsed("+(AND url:foobar bar) -normal.title:foo -baz",
-                            "url:foobar +bar -normal.title:foo -baz",
-                            Query.Type.ALL);
+                "url:foobar +bar -normal.title:foo -baz",
+                Query.Type.ALL);
     }
 
     @Test
-    public void testSimpleQueryDefaultAnd() {
+    void testSimpleQueryDefaultAnd() {
         tester.assertParsed("AND foobar foo bar baz", "foobar foo bar baz", Query.Type.ALL);
     }
 
     @Test
-    public void testNotDefaultAnd() {
+    void testNotDefaultAnd() {
         tester.assertParsed("+(AND foobar (OR foo bar baz) xyzzy) -(AND foz baraz bazar)",
-                            "foobar +(foo bar baz) xyzzy -(foz baraz bazar)",
-                            Query.Type.ALL);
+                "foobar +(foo bar baz) xyzzy -(foz baraz bazar)",
+                Query.Type.ALL);
     }
 
     @Test
-    public void testSimpleTermQueryDefaultPhrase() {
+    void testSimpleTermQueryDefaultPhrase() {
         tester.assertParsed("foobar",
-                            "foobar",
-                            Query.Type.PHRASE);
+                "foobar",
+                Query.Type.PHRASE);
     }
 
     @Test
-    public void testSimpleQueryDefaultPhrase() {
+    void testSimpleQueryDefaultPhrase() {
         Item root = tester.assertParsed("\"foobar foo bar baz\"",
-                                        "foobar foo bar baz",
-                                        Query.Type.PHRASE);
+                "foobar foo bar baz",
+                Query.Type.PHRASE);
         assertTrue(root instanceof PhraseItem);
-        assertFalse(((PhraseItem)root).isExplicit());
+        assertFalse(((PhraseItem) root).isExplicit());
     }
 
     @Test
-    public void testMultipleTermsWithMultiplePrefixesDefaultPhrase() {
+    void testMultipleTermsWithMultiplePrefixesDefaultPhrase() {
         tester.assertParsed("\"url foobar bar normal title foo baz\"",
-                            "url:foobar +bar -normal.title:foo -baz",
-                            Query.Type.PHRASE);
+                "url:foobar +bar -normal.title:foo -baz",
+                Query.Type.PHRASE);
     }
 
     @Test
-    public void testOdd1() {
+    void testOdd1() {
         tester.assertParsed("AND window print error", "+window.print() +error",
-                            Query.Type.ALL);
+                Query.Type.ALL);
     }
 
     @Test
-    public void testOdd2() {
+    void testOdd2() {
         tester.assertParsed("normal.title:kaboom", "normal.title:\"kaboom\"",
-                            Query.Type.ALL);
+                Query.Type.ALL);
     }
 
     @Test
-    public void testOdd2Uppercase() {
+    void testOdd2Uppercase() {
         tester.assertParsed("normal.title:KABOOM", "NORMAL.TITLE:\"KABOOM\"", Query.Type.ALL);
     }
 
     @Test
-    public void testOdd3() {
+    void testOdd3() {
         tester.assertParsed("AND foo (OR size.all:[200;300] date.all:512)",
                 "foo +(size.all:[200;300] date.all:512)", Query.Type.ALL);
     }
 
     @Test
-    public void testNullQuery() {
+    void testNullQuery() {
         tester.assertParsed(null, null, Query.Type.ALL);
     }
 
     @Test
-    public void testEmptyQuery() {
+    void testEmptyQuery() {
         tester.assertParsed(null, "", Query.Type.ALL);
     }
 
     @Test
-    public void testNotOnly() {
+    void testNotOnly() {
         tester.assertParsed(null, "-foobar", Query.Type.ALL);
     }
 
     @Test
-    public void testMultipleNotsOnlt() {
+    void testMultipleNotsOnlt() {
         tester.assertParsed(null, "-foo -bar -foobar", Query.Type.ALL);
     }
 
     @Test
-    public void testOnlyNotComposite() {
+    void testOnlyNotComposite() {
         tester.assertParsed(null, "-(foo bar baz)", Query.Type.ALL);
     }
 
     @Test
-    public void testNestedCompositesDefaultOr() {
+    void testNestedCompositesDefaultOr() {
         tester.assertParsed("RANK (OR foobar bar baz) foo xyzzy",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.ANY);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.ANY);
     }
 
     @Test
-    public void testNestedCompositesDefaultAnd() {
+    void testNestedCompositesDefaultAnd() {
         tester.assertParsed("AND foo (OR foobar bar baz) xyzzy",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.ALL);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.ALL);
     }
 
     @Test
-    public void testNestedCompositesPhraseDefault() {
+    void testNestedCompositesPhraseDefault() {
         tester.assertParsed("\"foo foobar bar baz xyzzy\"",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.PHRASE);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.PHRASE);
     }
 
     @Test
-    public void testNumeric() {
+    void testNumeric() {
         tester.assertParsed("34", "34", Query.Type.ANY);
     }
 
     @Test
-    public void testGreaterNumeric() {
+    void testGreaterNumeric() {
         tester.assertParsed("<454", "<454", Query.Type.ANY);
     }
 
     @Test
-    public void testGreaterNumericWithIndex() {
-        IntItem item = (IntItem)tester.assertParsed("score:<454", "score:<454", Query.Type.ANY);
+    void testGreaterNumericWithIndex() {
+        IntItem item = (IntItem) tester.assertParsed("score:<454", "score:<454", Query.Type.ANY);
         assertEquals("score", item.getIndexName());
         assertEquals(454L, item.getToLimit().number());
         assertFalse(item.getToLimit().isInclusive());
     }
 
     @Test
-    public void testSmallerNumeric() {
+    void testSmallerNumeric() {
         tester.assertParsed(">454", ">454", Query.Type.ANY);
     }
 
     @Test
-    public void testSmallerNumericWithIndex() {
-        IntItem item = (IntItem)tester.assertParsed("score:>454", "score:>454", Query.Type.ANY);
+    void testSmallerNumericWithIndex() {
+        IntItem item = (IntItem) tester.assertParsed("score:>454", "score:>454", Query.Type.ANY);
         assertEquals("score", item.getIndexName());
         assertEquals(454L, item.getFromLimit().number());
         assertFalse(item.getFromLimit().isInclusive());
     }
 
     @Test
-    public void testFullRange() {
+    void testFullRange() {
         tester.assertParsed("[34;454]", "[34;454]", Query.Type.ANY);
     }
 
     @Test
-    public void testFullRangeLimit() {
+    void testFullRangeLimit() {
         tester.assertParsed("[34;454;7]", "[34;454;7]", Query.Type.ANY);
         tester.assertParsed("[34;454;-7]", "[34;454;-7]", Query.Type.ANY);
     }
 
     @Test
-    public void testLowOpenRange() {
+    void testLowOpenRange() {
         tester.assertParsed("[;454]", "[;454]", Query.Type.ANY);
     }
 
     @Test
-    public void testHiOpenRange() {
+    void testHiOpenRange() {
         tester.assertParsed("[34;]", "[34;]", Query.Type.ANY);
     }
 
     @Test
-    public void testNumericWithIndex() {
+    void testNumericWithIndex() {
         tester.assertParsed("document.size:[34;454]", "document.size:[34;454]", Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleNumeric() {
+    void testMultipleNumeric() {
         tester.assertParsed("OR [34;454] <34", "[34;454] <34", Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleIntegerWithIndex() {
+    void testMultipleIntegerWithIndex() {
         tester.assertParsed("OR document.size:[34;454] date:>1234567890",
-                            "document.size:[34;454] date:>1234567890", Query.Type.ANY);
+                "document.size:[34;454] date:>1234567890", Query.Type.ANY);
     }
 
     @Test
-    public void testMixedNumericAndOtherTerms() {
+    void testMixedNumericAndOtherTerms() {
         tester.assertParsed("RANK (AND document.size:<1024 xyzzy) foo date:>123456890",
-                            "foo +document.size:<1024 +xyzzy date:>123456890",
-                            Query.Type.ANY);
+                "foo +document.size:<1024 +xyzzy date:>123456890",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testEmptyPhrase() {
+    void testEmptyPhrase() {
         tester.assertParsed("\"to be or not\"", "\"\"to be or not", Query.Type.ANY);
     }
 
     @Test
-    public void testItemPhraseEmptyPhrase() {
+    void testItemPhraseEmptyPhrase() {
         tester.assertParsed("RANK to \"or not to be\"", "+to\"or not to be\"\"\"", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleQuery() {
+    void testSimpleQuery() {
         tester.assertParsed("OR if am \"f g 4 2\" maybe", "if am \"  f g 4 2\"\" maybe", Query.Type.ANY);
     }
 
     @Test
-    public void testExcessivePluses() {
+    void testExcessivePluses() {
         tester.assertParsed("+(AND other is nothing) -test",
-                            "++other +++++is ++++++nothing -test", Query.Type.ANY);
+                "++other +++++is ++++++nothing -test", Query.Type.ANY);
     }
 
     @Test
-    public void testMinusAndPluses() {
+    void testMinusAndPluses() {
         tester.assertParsed(null, "--test+-if", Query.Type.ANY);
     }
 
     @Test
-    public void testPlusesAndMinuses() {
+    void testPlusesAndMinuses() {
         tester.assertParsed("AND a b c d d", "a+b+c+d--d", Query.Type.ANY);
     }
 
     @Test
-    public void testNumbers() {
+    void testNumbers() {
         tester.assertParsed("AND 123 2132odfd 934032 32423", "123+2132odfd.934032,,32423", Query.Type.ANY);
     }
 
     @Test
-    public void testOtherSignsInQuote() {
+    void testOtherSignsInQuote() {
         tester.assertParsed("AND 0032 4 320 24329043", "0032+4\\320.24329043", Query.Type.ANY);
     }
 
     @Test
-    public void testGribberish() {
+    void testGribberish() {
         tester.assertParsed("1349832840234l3040roer\u00e6lf12",
-                            ",1349832840234l3040roer\u00e6lf12",
-                            Query.Type.ANY);
+                ",1349832840234l3040roer\u00e6lf12",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testUrl() {
+    void testUrl() {
         tester.assertParsed("AND www:www www:hotelaiguablava www:com",
-                            "+www:www.hotelaiguablava:com",
-                            Query.Type.ANY);
+                "+www:www.hotelaiguablava:com",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testUrlGribberish() {
+    void testUrlGribberish() {
         tester.assertParsed("OR (AND 3 16) fast.type:lycosoffensive",
-                            "[ 3:16 fast.type:lycosoffensive",
-                            Query.Type.ANY);
+                "[ 3:16 fast.type:lycosoffensive",
+                Query.Type.ANY);
     }
 
     @Test
-    public void testBracedWordAny() {
+    void testBracedWordAny() {
         tester.assertParsed("foo", "(foo)", Query.Type.ANY);
     }
 
     @Test
-    public void testBracedWordAll() {
+    void testBracedWordAll() {
         tester.assertParsed("foo", "(foo)", Query.Type.ALL);
 
     }
 
     @Test
-    public void testBracedWords() {
+    void testBracedWords() {
         tester.assertParsed("OR (OR foo bar) (OR xyzzy foobar)",
                 "(foo bar) (xyzzy foobar)", Query.Type.ANY);
     }
 
     @Test
-    public void testNullAdvanced() {
+    void testNullAdvanced() {
         tester.assertParsed(null, null, Query.Type.ADVANCED);
     }
 
     @Test
-    public void testEmptyAdvanced() {
+    void testEmptyAdvanced() {
         tester.assertParsed(null, "", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleAdvanced() {
+    void testSimpleAdvanced() {
         tester.assertParsed("foobar", "foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testPrefixAdvanced() {
+    void testPrefixAdvanced() {
         tester.assertParsed("url:foobar", "url:foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testPrefixWithDotAdvanced() {
+    void testPrefixWithDotAdvanced() {
         tester.assertParsed("normal.title:foobar", "normal.title:foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testUTF8Advanced() {
+    void testUTF8Advanced() {
         tester.assertParsed("m\u00fcnchen", "m\u00fcnchen", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimplePhraseAdvanced() {
+    void testSimplePhraseAdvanced() {
         tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimplePhraseWithIndexAdvanced() {
+    void testSimplePhraseWithIndexAdvanced() {
         tester.assertParsed("normal.title:\"foo bar foobar\"",
-                            "normal.title:\"foo bar foobar\"",
-                            Query.Type.ADVANCED);
+                "normal.title:\"foo bar foobar\"",
+                Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultiplePhrasesAdvanced() {
+    void testMultiplePhrasesAdvanced() {
         tester.assertParsed("AND \"foo bar foobar\" \"baz gaz faz\"",
-                            "\"foo bar foobar\" and \"baz gaz faz\"",
-                            Query.Type.ADVANCED);
+                "\"foo bar foobar\" and \"baz gaz faz\"",
+                Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNumberAdvanced() {
+    void testNumberAdvanced() {
         tester.assertParsed("34", "34", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testLargerNumberAdvanced() {
+    void testLargerNumberAdvanced() {
         tester.assertParsed("<454", "<454", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testLesserNumberAdvanced() {
+    void testLesserNumberAdvanced() {
         tester.assertParsed(">454", ">454", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testRangeAdvanced() {
+    void testRangeAdvanced() {
         tester.assertParsed("[34;454]", "[34;454]", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testLowOpenRangeAdvanced() {
+    void testLowOpenRangeAdvanced() {
         tester.assertParsed("[;454]", "[;454]", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testHighOpenRangeAdvanced() {
+    void testHighOpenRangeAdvanced() {
         tester.assertParsed("[34;]", "[34;]", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIdexedRangeAdvanced() {
+    void testIdexedRangeAdvanced() {
         tester.assertParsed("document.size:[34;454]", "document.size:[34;454]", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleAndAdvanced() {
+    void testSimpleAndAdvanced() {
         tester.assertParsed("AND foo bar", "foo and bar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleOrAdvanced() {
+    void testSimpleOrAdvanced() {
         tester.assertParsed("OR foo bar", "foo or bar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleAndNotAdvanced() {
+    void testSimpleAndNotAdvanced() {
         tester.assertParsed("+foo -bar", "foo andnot bar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleRankAdvanced() {
+    void testSimpleRankAdvanced() {
         tester.assertParsed("RANK foo bar", "foo rank bar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultipleAndAdvanced() {
+    void testMultipleAndAdvanced() {
         tester.assertParsed("AND foo bar foobar", "foo and bar and foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultipleOrAdvanced() {
+    void testMultipleOrAdvanced() {
         tester.assertParsed("OR foo bar foobar", "foo or bar or foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultipleAndnotAdvanced() {
+    void testMultipleAndnotAdvanced() {
         tester.assertParsed("+foo -bar -foobar", "foo andnot bar andnot foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultipleRankAdvanced() {
+    void testMultipleRankAdvanced() {
         tester.assertParsed("RANK foo bar foobar", "foo rank bar rank foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMixedAdvanced() {
+    void testMixedAdvanced() {
         tester.assertParsed("OR (AND foo bar) foobar", "foo and bar or foobar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedAdvanced() {
+    void testNestedAdvanced() {
         tester.assertParsed("AND foo (OR bar foobar)", "foo and (bar or foobar)", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testMultipleNestedAdvanced() {
+    void testMultipleNestedAdvanced() {
         tester.assertParsed("+(AND foo xyzzy) -(OR bar foobar)",
-                     "(foo and xyzzy) andnot (bar or foobar)", Query.Type.ADVANCED);
+                "(foo and xyzzy) andnot (bar or foobar)", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testDoubleNestedAdvanced() {
+    void testDoubleNestedAdvanced() {
         tester.assertParsed("AND foo (OR bar (OR xyzzy foobar))",
-                     "foo and (bar or (xyzzy or foobar))", Query.Type.ADVANCED);
+                "foo and (bar or (xyzzy or foobar))", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testDeeplyAdvanced() {
+    void testDeeplyAdvanced() {
         tester.assertParsed(
                 "AND foo (OR bar (OR (AND (AND baz (+(OR bazar zyxxy) -fozbaz)) (OR boz bozor) xyzzy) foobar))",
                 "foo and (bar or ((baz and ((bazar or zyxxy) andnot fozbaz)) and (boz or bozor) and xyzzy or foobar))",
@@ -604,7 +601,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testDeeplyAdvancedUppercase() {
+    void testDeeplyAdvancedUppercase() {
         tester.assertParsed(
                 "AND FOO (OR BAR (OR (AND (AND BAZ (+(OR BAZAR ZYXXY) -FOZBAZ)) (OR BOZ BOZOR) XYZZY) FOOBAR))",
                 "FOO AND (BAR OR ((BAZ AND ((BAZAR OR ZYXXY) ANDNOT FOZBAZ)) AND (BOZ OR BOZOR) AND XYZZY OR FOOBAR))",
@@ -612,230 +609,230 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testAbortedIntegerRange() {
+    void testAbortedIntegerRange() {
         tester.assertParsed("AND audio.audall:744 audio.audall:ph",
                 "+audio.audall:[744 +audio.audall:ph", Query.Type.ANY);
     }
 
     @Test
-    public void testJunk() {
+    void testJunk() {
         tester.assertParsed("+l -fast.type:offensive",
                 ",;'/.<l:>? -fast.type:offensive", Query.Type.ALL);
     }
 
     @Test
-    public void testOneTermPhraseWithIndex() {
+    void testOneTermPhraseWithIndex() {
         tester.assertParsed("normal.title:foo", "normal.title:\"foo\"", Query.Type.ANY);
     }
 
     @Test
-    public void testOneTermPhraseWithIndexAdvanced() {
+    void testOneTermPhraseWithIndexAdvanced() {
         tester.assertParsed("normal.title:foo", "normal.title:\"foo\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIncorrect1Advanced() {
+    void testIncorrect1Advanced() {
         tester.assertParsed("\"to be or not\"", "\"\"to be or not", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIncorrect2Advanced() {
+    void testIncorrect2Advanced() {
         tester.assertParsed("AND to \"or not to be\"", "+to\"or not to be\"\"\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIncorrect3Advanced() {
+    void testIncorrect3Advanced() {
         tester.assertParsed("AND if am \"f g 4 2\" maybe",
                 "if am \"  f g 4 2\"\" maybe", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIncorrect4Advanced() {
+    void testIncorrect4Advanced() {
         tester.assertParsed("AND other is nothing test",
                 "++other +++++is ++++++nothing -test", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testImplicitPhrase1Advanced() {
+    void testImplicitPhrase1Advanced() {
         tester.assertParsed("AND test if", "--test+-if", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testImplicitPhrase2Advanced() {
+    void testImplicitPhrase2Advanced() {
         tester.assertParsed("AND a b c d d", "a+b+c+d--d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testImplicitPhrase3Advanced() {
+    void testImplicitPhrase3Advanced() {
         tester.assertParsed("AND 123 2132odfd 934032 32423",
                 "123+2132odfd.934032,,32423", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testImplicitPhrase4Advanced() {
+    void testImplicitPhrase4Advanced() {
         tester.assertParsed("AND 0032 4 320 24329043", "0032+4\\320.24329043", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testUtf8Advanced() {
+    void testUtf8Advanced() {
         tester.assertParsed("1349832840234l3040roer\u00e6lf12",
                 ",1349832840234l3040roer\u00e6lf12", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testOperatorSearchAdvanced() {
+    void testOperatorSearchAdvanced() {
         tester.assertParsed("RANK (OR (AND and and) or andnot) rank",
                 "and and and or or or andnot rank rank", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testIncorrectParenthesisAdvanced() {
+    void testIncorrectParenthesisAdvanced() {
         tester.assertParsed("AND foo bar", "foo and bar )", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testOpeningParenthesisOnlyAdvanced() {
+    void testOpeningParenthesisOnlyAdvanced() {
         tester.assertParsed("AND foo (OR bar (AND foobar xyzzy))",
                 "(foo and (bar or (foobar and xyzzy", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleWeight() {
+    void testSimpleWeight() {
         tester.assertParsed("foo!150", "foo!", Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleWeight() {
+    void testMultipleWeight() {
         tester.assertParsed("foo!250", "foo!!!", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitWeight() {
+    void testExplicitWeight() {
         tester.assertParsed("foo!200", "foo!200", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitZeroWeight() {
+    void testExplicitZeroWeight() {
         tester.assertParsed("foo!0", "foo!0", Query.Type.ANY);
     }
 
     @Test
-    public void testSimplePhraseWeight() {
+    void testSimplePhraseWeight() {
         tester.assertParsed("\"foo bar\"!150", "\"foo bar\"!", Query.Type.ANY);
     }
 
     @Test
-    public void testSingleHyphen() {
+    void testSingleHyphen() {
         tester.assertParsed("AND a b", "a-b", Query.Type.ALL);
     }
 
     @Test
-    public void testUserCase() {
+    void testUserCase() {
         tester.assertParsed("\"a a\"", "\"a- a-*\"", Query.Type.ALL);
     }
 
     @Test
-    public void testMultiplePhraseWeight() {
+    void testMultiplePhraseWeight() {
         tester.assertParsed("\"foo bar\"!250", "\"foo bar\"!!!", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitPhraseWeight() {
+    void testExplicitPhraseWeight() {
         tester.assertParsed("\"foo bar\"!200", "\"foo bar\"!200", Query.Type.ANY);
     }
 
     @Test
-    public void testUrlSubmodeHyphen() {
+    void testUrlSubmodeHyphen() {
         assertTrue(ParsingTester.createIndexFacts().newSession(new Query()).getIndex("url.all").isUriIndex());
         tester.assertParsed("url.all:\"www-microsoft com\"", "url.all:www-microsoft.com", Query.Type.ANY);
     }
 
     @Test
-    public void testUrlSubmodeUnderscore() {
+    void testUrlSubmodeUnderscore() {
         tester.assertParsed("url.all:\"www_microsoft com\"", "url.all:www_microsoft.com", Query.Type.ANY);
     }
 
     @Test
-    public void testUrlSubmode() {
+    void testUrlSubmode() {
         tester.assertParsed("host.all:\"www-microsoft com $\"", "host.all:www-microsoft.com", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitHostNameAnchoringHost() {
+    void testExplicitHostNameAnchoringHost() {
         tester.assertParsed("host.all:\"^ www-microsoft com $\"", "host.all:^www-microsoft.com$", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitHostNameAnchoringSite() {
+    void testExplicitHostNameAnchoringSite() {
         tester.assertParsed("site:\"^ www-microsoft com $\"", "site:^www-microsoft.com$", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitHostNameAnchoring() {
+    void testExplicitHostNameAnchoring() {
         tester.assertParsed("host.all:\"^ http www krangaz-central com index html $\"",
                 "host.all:^http://www.krangaz-central.com/index.html$",
                 Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitHostAnchoringRemoval() {
+    void testExplicitHostAnchoringRemoval() {
         tester.assertParsed("host.all:\"www-microsoft com\"",
                 "host.all:www-microsoft.com*", Query.Type.ANY);
 
     }
 
     @Test
-    public void testQuery1Any() {
+    void testQuery1Any() {
         tester.assertParsed("RANK (AND fast \"search engine\") kernel",
                 "+fast +\"search engine\" kernel", Query.Type.ANY);
 
     }
 
     @Test
-    public void testQuery1Advanced() {
+    void testQuery1Advanced() {
         tester.assertParsed("RANK (AND fast \"search engine\") kernel",
                 "+fast and \"search engine\" rank kernel", Query.Type.ADVANCED);
 
     }
 
     @Test
-    public void testQuery2Any() {
+    void testQuery2Any() {
         tester.assertParsed("+(OR title:car bmw) -z3", "title:car bmw -z3",
                 Query.Type.ANY);
 
     }
 
     @Test
-    public void testQuery2Advanced() {
+    void testQuery2Advanced() {
         tester.assertParsed("+(OR title:car bmw) -z3", "title:car or bmw andnot z3", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testQuery3All() {
+    void testQuery3All() {
         tester.assertParsed("+(AND FAST search domain:no pagedepth:0) -title:phrase",
-                     "FAST search -title:phrase domain:no Pagedepth:0",
-                     Query.Type.ALL);
+                "FAST search -title:phrase domain:no Pagedepth:0",
+                Query.Type.ALL);
     }
 
     @Test
-    public void testQuery4Advanced() {
+    void testQuery4Advanced() {
         tester.assertParsed("AND (+(AND FAST search) -title:phrase) domain:no pagedepth:0",
-                     "FAST and search andnot title:phrase and domain:no and Pagedepth:0",
-                     Query.Type.ADVANCED);
+                "FAST and search andnot title:phrase and domain:no and Pagedepth:0",
+                Query.Type.ADVANCED);
     }
 
     @Test
-    public void testQuery5Any() {
+    void testQuery5Any() {
         tester.assertParsed("AND alltheweb fast search", "+alltheweb +fast +search", Query.Type.ANY);
     }
 
     @Test
-    public void testQuery6Any() {
+    void testQuery6Any() {
         tester.assertParsed("RANK (+(AND query language) -sql) search", "+query +language -sql search", Query.Type.ANY);
     }
 
     @Test
-    public void testQuery7Any() {
+    void testQuery7Any() {
         tester.assertParsed(
                 "+(AND alltheweb (OR search engine)) -(OR excite altavista)",
                 "(alltheweb and (search or engine)) andnot (excite or altavista)",
@@ -843,7 +840,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testQuery8Advanced() {
+    void testQuery8Advanced() {
         tester.assertParsed(
                 "RANK (AND \"search engines\" \"query processing\") \"fast search\"",
                 "(\"search engines\" and \"query processing\") rank \"fast search\"",
@@ -851,132 +848,132 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testPStrangeAdvanced() {
+    void testPStrangeAdvanced() {
         tester.assertParsed("AND AND r.s:jnl", "( AND +r.s:jnl) ", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testEmptyNestAdvanced() {
+    void testEmptyNestAdvanced() {
         tester.assertParsed(null, "() ", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedBeginningAdvanced() {
+    void testNestedBeginningAdvanced() {
         tester.assertParsed("AND (OR a b) c", "(a or b) and c", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedPositiveAny() {
+    void testNestedPositiveAny() {
         tester.assertParsed("AND (OR a b) c", "+(a b) +c", Query.Type.ANY);
     }
 
     @Test
-    public void testParseAdvancedQuery() {
+    void testParseAdvancedQuery() {
         tester.assertParsed("AND joplin remediation r.s:jnl",
                 "(joplin and + and remediation and +r.s:jnl)",
                 Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleDotPhraseAny() {
+    void testSimpleDotPhraseAny() {
         tester.assertParsed("OR a (AND b c) d", "a b.c d", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleHyphenPhraseAny() {
+    void testSimpleHyphenPhraseAny() {
         tester.assertParsed("OR a (AND b c) d", "a b-c d", Query.Type.ANY);
     }
 
     @Test
-    public void testAnotherSimpleDotPhraseAny() {
+    void testAnotherSimpleDotPhraseAny() {
         tester.assertParsed("OR (AND a b) c d", "a.b c d", Query.Type.ANY);
     }
 
     @Test
-    public void testYetAnotherSimpleDotPhraseAny() {
+    void testYetAnotherSimpleDotPhraseAny() {
         tester.assertParsed("OR a b (AND c d)", "a b c.d", Query.Type.ANY);
     }
 
     @Test
-    public void testVariousSeparatorsPhraseAny() {
+    void testVariousSeparatorsPhraseAny() {
         tester.assertParsed("AND a b c d", "a-b.c%d", Query.Type.ANY);
     }
 
     @Test
-    public void testDoublyMarkedPhraseAny() {
+    void testDoublyMarkedPhraseAny() {
         tester.assertParsed("OR a \"b c\" d", "a \"b.c\" d", Query.Type.ANY);
     }
 
     @Test
-    public void testPartlyDoublyMarkedPhraseAny() {
+    void testPartlyDoublyMarkedPhraseAny() {
         tester.assertParsed("OR a \"b c d\"", "a \"b.c d\"", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexedDottedPhraseAny() {
+    void testIndexedDottedPhraseAny() {
         tester.assertParsed("OR a (AND url:b url:c) d", "a url:b.c d", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexedPlusedPhraseAny() {
+    void testIndexedPlusedPhraseAny() {
         tester.assertParsed("OR a (AND normal.title:b normal.title:c) d", "a normal.title:b+c d", Query.Type.ANY);
     }
 
     @Test
-    public void testNestedNotAny() {
+    void testNestedNotAny() {
         tester.assertParsed(
                 "RANK (+(OR normal.title:foobar (AND url:www url:pvv url:org)) -foo) a",
                 "a +(normal.title:foobar url:www.pvv.org) -foo", Query.Type.ANY);
     }
 
     @Test
-    public void testDottedPhraseAdvanced() {
+    void testDottedPhraseAdvanced() {
         tester.assertParsed("OR a (AND b c)", "a or b.c", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testHyphenPhraseAdvanced() {
+    void testHyphenPhraseAdvanced() {
         tester.assertParsed("OR (AND a (AND b c)) d", "a and b-c or d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testAnotherDottedPhraseAdvanced() {
+    void testAnotherDottedPhraseAdvanced() {
         tester.assertParsed("OR (AND a b) c", "a.b or c", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNottedDottedPhraseAdvanced() {
+    void testNottedDottedPhraseAdvanced() {
         tester.assertParsed("+a -(AND c d)", "a andnot c.d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testVariousSeparatorsPhraseAdvanced() {
+    void testVariousSeparatorsPhraseAdvanced() {
         tester.assertParsed("AND a b c d", "a-b.c%d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testDoublyPhrasedAdvanced() {
+    void testDoublyPhrasedAdvanced() {
         tester.assertParsed("OR (AND a \"b c\") d", "a and \"b.c\" or d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testPartlyDoublyPhrasedAdvanced() {
+    void testPartlyDoublyPhrasedAdvanced() {
         tester.assertParsed("OR a \"b c d\"", "a or \"b.c d\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedDottedPhraseAdvanced() {
+    void testNestedDottedPhraseAdvanced() {
         tester.assertParsed("AND a (OR url:\"b c\" d)", "a and(url:\"b.c\" or d)", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedPlussedPhraseAdvanced() {
+    void testNestedPlussedPhraseAdvanced() {
         tester.assertParsed("AND (OR a (AND normal.title:b normal.title:c)) d",
                 "a or normal.title:b+c and d", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNottedNestedDottedPhraseAdvanced() {
+    void testNottedNestedDottedPhraseAdvanced() {
         tester.assertParsed(
                 "+(AND a (OR normal.title:foobar (AND url:www url:pvv url:org))) -foo",
                 "a and (normal.title:foobar or url:www.pvv.org) andnot foo",
@@ -984,570 +981,570 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testPlusedThenQuotedPhraseAny() {
+    void testPlusedThenQuotedPhraseAny() {
         tester.assertParsed("\"a b c\"", "a+\"b c\"", Query.Type.ANY);
     }
 
     @Test
-    public void testPlusedTwiceThenQuotedPhraseAny() {
+    void testPlusedTwiceThenQuotedPhraseAny() {
         tester.assertParsed("AND a b c d", "a+b+\"c d\"", Query.Type.ANY);
     }
 
     @Test
-    public void testPlusedThenQuotedPhraseAdvanced() {
+    void testPlusedThenQuotedPhraseAdvanced() {
         tester.assertParsed("\"a b c\"", "a+\"b c\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testPhrasesInBraces() {
+    void testPhrasesInBraces() {
         tester.assertParsed("AND url.domain:microsoft url.domain:com",
                 "+(url.domain:microsoft.com)", Query.Type.ALL);
     }
 
     @Test
-    public void testDoublyPhrasedPhrasesInBraces() {
+    void testDoublyPhrasedPhrasesInBraces() {
         tester.assertParsed("url.domain:\"microsoft com\"",
                 "+(url.domain:\"microsoft.com\")", Query.Type.ALL);
     }
 
     @Test
-    public void testSinglePrefixTerm() {
+    void testSinglePrefixTerm() {
         Item root = tester.assertParsed("prefix*", "prefix*", Query.Type.ANY);
         assertTrue(root instanceof PrefixItem);
     }
 
     @Test
-    public void testSingleSubstringTerm() {
+    void testSingleSubstringTerm() {
         Item root = tester.assertParsed("*substring*", "*substring*", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testSingleSuffixTerm() {
+    void testSingleSuffixTerm() {
         Item root = tester.assertParsed("*suffix", "*suffix", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     @Test
-    public void testPrefixAndWordTerms() {
+    void testPrefixAndWordTerms() {
         Item root = tester.assertParsed("OR foo prefix* bar", "foo prefix* bar", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(1) instanceof PrefixItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof PrefixItem);
     }
 
     @Test
-    public void testSubstringAndWordTerms() {
+    void testSubstringAndWordTerms() {
         Item root = tester.assertParsed("OR foo *substring* bar", "foo *substring* bar", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(1) instanceof SubstringItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof SubstringItem);
     }
 
     @Test
-    public void testSuffixAndWordTerms() {
+    void testSuffixAndWordTerms() {
         Item root = tester.assertParsed("OR foo *suffix bar", "foo *suffix bar", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(1) instanceof SuffixItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof SuffixItem);
     }
 
     @Test
-    public void testPhraseNotPrefix() {
+    void testPhraseNotPrefix() {
         tester.assertParsed("OR foo (AND prefix bar)", "foo prefix*bar", Query.Type.ANY);
     }
 
     @Test
-    public void testPhraseNotSubstring() {
+    void testPhraseNotSubstring() {
         tester.assertParsed("OR foo (AND substring bar)", "foo *substring*bar", Query.Type.ANY);
     }
 
     @Test
-    public void testPhraseNotSuffix() {
+    void testPhraseNotSuffix() {
         tester.assertParsed("OR (AND foo suffix) bar", "foo*suffix bar", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexedPrefix() {
+    void testIndexedPrefix() {
         Item root = tester.assertParsed("foo.bar:prefix*", "foo.bar:prefix*", Query.Type.ANY);
         assertTrue(root instanceof PrefixItem);
     }
 
     @Test
-    public void testIndexedSubstring() {
+    void testIndexedSubstring() {
         Item root = tester.assertParsed("foo.bar:*substring*", "foo.bar:*substring*", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testIndexedSuffix() {
+    void testIndexedSuffix() {
         Item root = tester.assertParsed("foo.bar:*suffix", "foo.bar:*suffix", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     @Test
-    public void testIndexedPhraseNotPrefix() {
+    void testIndexedPhraseNotPrefix() {
         tester.assertParsed("AND foo.bar:prefix foo.bar:xyzzy", "foo.bar:prefix*xyzzy", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexedPhraseNotSubstring() {
+    void testIndexedPhraseNotSubstring() {
         tester.assertParsed("AND foo.bar:substring foo.bar:xyzzy", "foo.bar:*substring*xyzzy", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexedPhraseNotSuffix() {
+    void testIndexedPhraseNotSuffix() {
         tester.assertParsed("AND foo.bar:xyzzy foo.bar:suffix", "foo.bar:xyzzy*suffix", Query.Type.ANY);
     }
 
     @Test
-    public void testPrefixWithWeight() {
+    void testPrefixWithWeight() {
         Item root = tester.assertParsed("prefix*!200", "prefix*!200", Query.Type.ANY);
         assertTrue(root instanceof PrefixItem);
     }
 
     @Test
-    public void testSubstringWithWeight() {
+    void testSubstringWithWeight() {
         Item root = tester.assertParsed("*substring*!200", "*substring*!200", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testSuffixWithWeight() {
+    void testSuffixWithWeight() {
         Item root = tester.assertParsed("*suffix!200", "*suffix!200", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     /** Non existing index → and **/
     @Test
-    public void testNonIndexPhraseNotPrefix() {
+    void testNonIndexPhraseNotPrefix() {
         tester.assertParsed("AND void prefix", "void:prefix*", Query.Type.ANY);
     }
 
     @Test
-    public void testNonIndexPhraseNotSubstring() {
+    void testNonIndexPhraseNotSubstring() {
         tester.assertParsed("AND void substring", "void:*substring*", Query.Type.ANY);
     }
 
     @Test
-    public void testNonIndexPhraseNotSuffix() {
+    void testNonIndexPhraseNotSuffix() {
         tester.assertParsed("AND void suffix", "void:*suffix", Query.Type.ANY);
     }
 
     /** Explicit phrase → remove '*' **/
     @Test
-    public void testExplicitPhraseNotPrefix() {
+    void testExplicitPhraseNotPrefix() {
         tester.assertParsed("\"prefix bar\"", "\"prefix* bar\"", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitPhraseNotSubstring() {
+    void testExplicitPhraseNotSubstring() {
         tester.assertParsed("\"substring bar\"", "\"*substring* bar\"", Query.Type.ANY);
     }
 
     @Test
-    public void testExplicitPhraseNotSuffix() {
+    void testExplicitPhraseNotSuffix() {
         tester.assertParsed("\"suffix bar\"", "\"*suffix bar\"", Query.Type.ANY);
     }
 
     /** Extra star is ignored */
     @Test
-    public void testPrefixExtraStar() {
+    void testPrefixExtraStar() {
         Item root = tester.assertParsed("prefix*", "prefix**", Query.Type.ANY);
         assertTrue(root instanceof PrefixItem);
     }
 
     @Test
-    public void testSubstringExtraStar() {
+    void testSubstringExtraStar() {
         Item root = tester.assertParsed("*substring*", "**substring**", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testSuffixExtraStar() {
+    void testSuffixExtraStar() {
         Item root = tester.assertParsed("*suffix", "**suffix", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     @Test
-    public void testPrefixExtraSpace() {
+    void testPrefixExtraSpace() {
         Item root = tester.assertParsed("prefix", "prefix *", Query.Type.ANY);
         assertTrue(root instanceof WordItem);
     }
 
     @Test
-    public void testSubstringExtraSpace() {
+    void testSubstringExtraSpace() {
         Item root = tester.assertParsed("*substring*", "* substring*", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testSubstringExtraSpace2() {
+    void testSubstringExtraSpace2() {
         Item root = tester.assertParsed("*substring", "* substring *", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     @Test
-    public void testSuffixExtraSpace() {
+    void testSuffixExtraSpace() {
         Item root = tester.assertParsed("*suffix", "* suffix", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     /** Extra spaces with index **/
     @Test
-    public void testIndexPrefixExtraSpace() {
+    void testIndexPrefixExtraSpace() {
         tester.assertParsed("AND foo prefix", "foo:prefix *", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexSubstringExtraSpace() {
+    void testIndexSubstringExtraSpace() {
         Item root = tester.assertParsed("OR foo substring*", "foo:* substring*", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(0) instanceof WordItem);
-        assertTrue(((OrItem)root).getItem(1) instanceof PrefixItem);
+        assertTrue(((OrItem) root).getItem(0) instanceof WordItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof PrefixItem);
     }
 
     @Test
-    public void testIndexSubstringExtraSpace2() {
+    void testIndexSubstringExtraSpace2() {
         Item root = tester.assertParsed("OR foo substring", "foo:* substring *", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(0) instanceof WordItem);
-        assertTrue(((OrItem)root).getItem(1) instanceof WordItem);
+        assertTrue(((OrItem) root).getItem(0) instanceof WordItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof WordItem);
     }
 
     @Test
-    public void testIndexSuffixExtraSpace() {
+    void testIndexSuffixExtraSpace() {
         Item root = tester.assertParsed("OR foo suffix", "foo:* suffix", Query.Type.ANY);
-        assertTrue(((OrItem)root).getItem(0) instanceof WordItem);
-        assertTrue(((OrItem)root).getItem(1) instanceof WordItem);
+        assertTrue(((OrItem) root).getItem(0) instanceof WordItem);
+        assertTrue(((OrItem) root).getItem(1) instanceof WordItem);
     }
 
     /** Various tests for prefix, substring, and suffix terms **/
     @Test
-    public void testTermsWithStarsAndSpaces() {
+    void testTermsWithStarsAndSpaces() {
         tester.assertParsed("OR foo *bar", "foo * bar", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndSpaces2() {
+    void testTermsWithStarsAndSpaces2() {
         tester.assertParsed("OR foo *bar *baz", "foo * * bar * * baz", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndPlussAndMinus() {
+    void testTermsWithStarsAndPlussAndMinus() {
         tester.assertParsed("+(AND *bar baz*) -*foo*", "+*bar -*foo* +baz*", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndPlussAndMinus2() {
+    void testTermsWithStarsAndPlussAndMinus2() {
         tester.assertParsed("OR *bar *foo baz", "+ * bar - * foo * + baz *", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndExclamation() {
+    void testTermsWithStarsAndExclamation() {
         tester.assertParsed("OR foo* 200 *bar* 200 *baz 200", "foo* !200 *bar* !200 *baz !200", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndExclamation2() {
+    void testTermsWithStarsAndExclamation2() {
         tester.assertParsed("OR foo 200 *bar 200", "foo *!200 *bar *!200", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndParenthesis() {
+    void testTermsWithStarsAndParenthesis() {
         tester.assertParsed("RANK *baz *bar* foo*", "(foo*) (*bar*) (*baz)", Query.Type.ANY);
     }
 
     @Test
-    public void testTermsWithStarsAndParenthesis2() {
+    void testTermsWithStarsAndParenthesis2() {
         tester.assertParsed("RANK baz bar foo", "(foo)* *(bar)* *(baz)", Query.Type.ANY);
     }
 
 
     @Test
-    public void testSimpleAndFilter() {
+    void testSimpleAndFilter() {
         tester.assertParsed("AND bar |foo", "bar", "+foo", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleRankFilter() {
+    void testSimpleRankFilter() {
         tester.assertParsed("RANK bar |foo", "bar", "foo", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleNotFilter() {
+    void testSimpleNotFilter() {
         tester.assertParsed("+bar -|foo", "bar", "-foo", Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleCompoundFilter1() {
+    void testSimpleCompoundFilter1() {
         tester.assertParsed("RANK (AND bar |foo1) |foo2", "bar", "+foo1 foo2",
                 Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleCompoundFilter2() {
+    void testSimpleCompoundFilter2() {
         tester.assertParsed("+(AND bar |foo1) -|foo3", "bar", "+foo1 -foo3",
                 Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleCompoundFilter3() {
+    void testSimpleCompoundFilter3() {
         tester.assertParsed("RANK (+bar -|foo3) |foo2", "bar", "foo2 -foo3",
                 Query.Type.ANY);
     }
 
     @Test
-    public void testSimpleCompoundFilter4() {
+    void testSimpleCompoundFilter4() {
         tester.assertParsed("RANK (+(AND bar |foo1) -|foo3) |foo2", "bar",
                 "+foo1 foo2 -foo3", Query.Type.ANY);
     }
 
     @Test
-    public void testAndFilterEmptyQuery() {
+    void testAndFilterEmptyQuery() {
         tester.assertParsed("|foo", "", "+foo", Query.Type.ANY);
     }
 
     @Test
-    public void testRankFilterEmptyQuery() {
+    void testRankFilterEmptyQuery() {
         tester.assertParsed("|foo", "", "foo", Query.Type.ANY);
     }
 
     @Test
-    public void testNotFilterEmptyQuery() {
+    void testNotFilterEmptyQuery() {
         tester.assertParsed(null, "", "-foo", Query.Type.ANY);
     }
 
     @Test
-    public void testCompoundFilter1EmptyQuery() {
+    void testCompoundFilter1EmptyQuery() {
         tester.assertParsed("RANK |foo1 |foo2", "", "+foo1 foo2", Query.Type.ANY);
     }
 
     @Test
-    public void testCompoundFilter2EmptyQuery() {
+    void testCompoundFilter2EmptyQuery() {
         tester.assertParsed("+|foo1 -|foo3", "", "+foo1 -foo3", Query.Type.ANY);
     }
 
     @Test
-    public void testCompoundFilter3EmptyQuery() {
+    void testCompoundFilter3EmptyQuery() {
         tester.assertParsed("+|foo2 -|foo3", "", "foo2 -foo3", Query.Type.ANY);
     }
 
     @Test
-    public void testCompoundFilter4EmptyQuery() {
+    void testCompoundFilter4EmptyQuery() {
         tester.assertParsed("RANK (+|foo1 -|foo3) |foo2", "", "+foo1 foo2 -foo3",
                 Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermAndFilter() {
+    void testMultitermAndFilter() {
         tester.assertParsed("AND bar |foo |foz", "bar", "+foo +foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermRankFilter() {
+    void testMultitermRankFilter() {
         tester.assertParsed("RANK bar |foo |foz", "bar", "foo foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermNotFilter() {
+    void testMultitermNotFilter() {
         tester.assertParsed("+bar -|foo -|foz", "bar", "-foo -foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter1() {
+    void testMultitermCompoundFilter1() {
         tester.assertParsed("RANK (AND bar |foo1 |foz1) |foo2 |foz2", "bar",
                 "+foo1 +foz1 foo2 foz2", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter2() {
+    void testMultitermCompoundFilter2() {
         tester.assertParsed("+(AND bar |foo1 |foz1) -|foo3 -|foz3", "bar",
                 "+foo1 +foz1 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter3() {
+    void testMultitermCompoundFilter3() {
         tester.assertParsed("RANK (+bar -|foo3 -|foz3) |foo2 |foz2", "bar",
                 "foo2 foz2 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter4() {
+    void testMultitermCompoundFilter4() {
         tester.assertParsed("RANK (+(AND bar |foo1 |foz1) -|foo3 -|foz3) |foo2 |foz2",
                 "bar", "+foo1 +foz1 foo2 foz2 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermAndFilterEmptyQuery() {
+    void testMultitermAndFilterEmptyQuery() {
         tester.assertParsed("AND |foo |foz", "", "+foo +foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermRankFilterEmptyQuery() {
+    void testMultitermRankFilterEmptyQuery() {
         tester.assertParsed("OR |foo |foz", "", "foo foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermNotFilterEmptyQuery() {
+    void testMultitermNotFilterEmptyQuery() {
         tester.assertParsed(null, "", "-foo -foz", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter1EmptyQuery() {
+    void testMultitermCompoundFilter1EmptyQuery() {
         tester.assertParsed("RANK (AND |foo1 |foz1) |foo2 |foz2", "",
                 "+foo1 +foz1 foo2 foz2", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter2EmptyQuery() {
+    void testMultitermCompoundFilter2EmptyQuery() {
         tester.assertParsed("+(AND |foo1 |foz1) -|foo3 -|foz3", "",
                 "+foo1 +foz1 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter3EmptyQuery() {
+    void testMultitermCompoundFilter3EmptyQuery() {
         tester.assertParsed("+(OR |foo2 |foz2) -|foo3 -|foz3", "",
                 "foo2 foz2 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultitermCompoundFilter4EmptyQuery() {
+    void testMultitermCompoundFilter4EmptyQuery() {
         tester.assertParsed("RANK (+(AND |foo1 |foz1) -|foo3 -|foz3) |foo2 |foz2", "",
                 "+foo1 +foz1 foo2 foz2 -foo3 -foz3", Query.Type.ANY);
     }
 
     @Test
-    public void testMultipleDifferentPhraseSeparators() {
+    void testMultipleDifferentPhraseSeparators() {
         tester.assertParsed("AND foo bar", "foo.-.bar", Query.Type.ANY);
     }
 
     @Test
-    public void testNoisyFilter() {
+    void testNoisyFilter() {
         tester.assertParsed("RANK (+(AND foobar kanoo) -|foo) |bar", "foobar and kanoo",
                 "-foo ;+;bar", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testReallyNoisyQuery1() {
+    void testReallyNoisyQuery1() {
         tester.assertParsed("AND word another", "&word\"()/&#)(/&another!\"", Query.Type.ALL);
     }
 
     @Test
-    public void testReallyNoisyQuery2() {
+    void testReallyNoisyQuery2() {
         tester.assertParsed("AND \u03bc\u03bc hei", "&&&`\u00b5\u00b5=@hei", Query.Type.ALL);
     }
 
     @Test
-    public void testReallyNoisyQuery3() {
+    void testReallyNoisyQuery3() {
         tester.assertParsed("AND hei hallo du der", "hei-hallo;du;der", Query.Type.ALL);
     }
 
     @Test
-    public void testNumberParsing() {
+    void testNumberParsing() {
         Item root = tester.parseQuery("normal:400", null, Language.UNKNOWN, Query.Type.ANY, TestLinguistics.INSTANCE);
         assertEquals(root.getCode(), 5);
     }
 
     @Test
-    public void testRangeParsing() {
+    void testRangeParsing() {
         Item root = tester.parseQuery("normal:[5;400]", null, Language.UNKNOWN, Query.Type.ANY, TestLinguistics.INSTANCE);
         assertEquals(root.toString(), "normal:[5;400]");
         assertEquals(root.getCode(), 5);
     }
 
     @Test
-    public void testNumberAsPrefix() {
+    void testNumberAsPrefix() {
         Item root = tester.assertParsed("89*", "89*", Query.Type.ANY);
         assertTrue(root instanceof PrefixItem);
     }
 
     @Test
-    public void testNumberAsSubstring() {
+    void testNumberAsSubstring() {
         Item root = tester.assertParsed("*89*", "*89*", Query.Type.ANY);
         assertTrue(root instanceof SubstringItem);
     }
 
     @Test
-    public void testNumberAsSuffix() {
+    void testNumberAsSuffix() {
         Item root = tester.assertParsed("*89", "*89", Query.Type.ANY);
         assertTrue(root instanceof SuffixItem);
     }
 
     @Test
-    public void testTheStupidSymbolsWhichAreNowWordCharactersInUnicode() {
+    void testTheStupidSymbolsWhichAreNowWordCharactersInUnicode() {
         tester.assertParsed("AND yz a", "yz\u00A8\u00AA\u00AF", Query.Type.ANY);
     }
 
     @Test
-    public void testTWoWords() {
+    void testTWoWords() {
         tester.assertParsed("\"hei h\u00e5\"", "\"hei h\u00e5\"", Query.Type.ANY);
     }
 
     @Test
-    public void testLoneStar() {
+    void testLoneStar() {
         assertNull(tester.parseQuery("*", null, Language.UNKNOWN, Query.Type.ANY, TestLinguistics.INSTANCE));
     }
 
     @Test
-    public void testLoneStarWithFilter() {
+    void testLoneStarWithFilter() {
         tester.assertParsed("|a", "*", "+a", Query.Type.ANY);
     }
 
     @Test
-    public void testImplicitPhrasingWithIndex() {
+    void testImplicitPhrasingWithIndex() {
         tester.assertParsed("AND a:b a:c", "a:/b/c", Query.Type.ANY);
     }
 
     @Test
-    public void testSingleNoisyTermWithIndex() {
+    void testSingleNoisyTermWithIndex() {
         tester.assertParsed("a:b", "a:/b", Query.Type.ANY);
     }
 
     @Test
-    public void testSingleNoisyPhraseWithIndex() {
+    void testSingleNoisyPhraseWithIndex() {
         tester.assertParsed("AND mail:yahoo mail:com", "mail:@yahoo.com", Query.Type.ANY);
     }
 
     @Test
-    public void testPhraseWithWeightAndIndex() {
+    void testPhraseWithWeightAndIndex() {
         tester.assertParsed("to:\"a b\"!150", "to:\"a b\"!150", Query.Type.ANY);
     }
 
     @Test
-    public void testTermWithWeightAndIndex() {
+    void testTermWithWeightAndIndex() {
         tester.assertParsed("to:a!150", "to:a!150", Query.Type.ANY);
     }
 
     @Test
-    public void testPhrasingWithIndexAndQuerySyntax() {
+    void testPhrasingWithIndexAndQuerySyntax() {
         tester.assertParsed("to:\"a b c\"", "to:\"a (b c)\"", Query.Type.ANY);
     }
 
     @Test
-    public void testPhrasingWithIndexAndHalfBrokenQuerySyntax() {
+    void testPhrasingWithIndexAndHalfBrokenQuerySyntax() {
         tester.assertParsed("to:\"a b c\"", "to:\"a +b c)\"", Query.Type.ANY);
     }
 
     @Test
-    public void testURLHostQueryOneTerm1() {
+    void testURLHostQueryOneTerm1() {
         tester.assertParsed("site:\"com $\"", "site:com", Query.Type.ANY);
     }
 
     @Test
-    public void testURLHostQueryOneTerm2() {
+    void testURLHostQueryOneTerm2() {
         tester.assertParsed("site:com", "site:com*", Query.Type.ANY);
     }
 
     @Test
-    public void testURLHostQueryOneTerm3() {
+    void testURLHostQueryOneTerm3() {
         tester.assertParsed("site:\"com $\"", "site:.com", Query.Type.ANY);
     }
 
     @Test
-    public void testURLHostQueryOneTerm4() {
+    void testURLHostQueryOneTerm4() {
         tester.assertParsed("site:\"^ com $\"", "site:^com", Query.Type.ANY);
     }
 
     @Test
-    public void testURLHostQueryOneTerm5() {
+    void testURLHostQueryOneTerm5() {
         tester.assertParsed("site:\"^ com\"", "site:^com*", Query.Type.ANY);
     }
 
     @Test
-    public void testFullURLQuery() {
+    void testFullURLQuery() {
         tester.assertParsed(
                 "url.all:\"http shopping yahoo-inc com 1080 this is a path shop d hab id 1804905709 frag1\"",
                 "url.all:http://shopping.yahoo-inc.com:1080/this/is/a/path/shop?d=hab&id=1804905709#frag1",
@@ -1555,7 +1552,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testURLQueryHyphen() {
+    void testURLQueryHyphen() {
         tester.assertParsed(
                 "url.all:\"http news bbc co uk go rss test - sport1 hi tennis 4112866 stm\"",
                 "url.all:http://news.bbc.co.uk/go/rss/test/-/sport1/hi/tennis/4112866.stm",
@@ -1563,7 +1560,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testURLQueryUnderScoreNumber() {
+    void testURLQueryUnderScoreNumber() {
         tester.assertParsed(
                 "url.all:\"ap 20050621 45_ap_on_re_la_am_ca aruba_missing_teen_5\"",
                 "url.all:/ap/20050621/45_ap_on_re_la_am_ca/aruba_missing_teen_5",
@@ -1571,7 +1568,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testOtherComplexUrls() {
+    void testOtherComplexUrls() {
         tester.assertParsed(
                 "url.all:\"http redir folha com br redir online dinheiro rss091 http www1 folha uol com br folha dinheiro ult91u96593 shtml\"",
                 "url.all:http://redir.folha.com.br/redir/online/dinheiro/rss091/*http://www1.folha.uol.com.br/folha/dinheiro/ult91u96593.shtml",
@@ -1595,33 +1592,33 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testTooGreedyUrlParsing() {
+    void testTooGreedyUrlParsing() {
         tester.assertParsed("AND site:\"nypost com $\" about", "site:nypost.com about",
                 Query.Type.ALL);
     }
 
     @Test
-    public void testTooGreedyUrlParsing2() {
+    void testTooGreedyUrlParsing2() {
         tester.assertParsed("AND site:\"nypost com $\" about foo",
                 "site:nypost.com about foo", Query.Type.ALL);
     }
 
     @Test
-    public void testSimplerDurbin() {
+    void testSimplerDurbin() {
         tester.assertParsed("+(OR language:en \"Durbin said\" a) -newstype:rssexclude",
                 "( a (\"Durbin said\" ) -newstype:rssexclude (language:en )",
                 Query.Type.ALL);
     }
 
     @Test
-    public void testSimplerDurbin2() {
+    void testSimplerDurbin2() {
         tester.assertParsed("+(AND \"Durbin said\" language:en) -newstype:rssexclude",
                 "( , (\"Durbin said\" ) -newstype:rssexclude (language:en )",
                 Query.Type.ALL);
     }
 
     @Test
-    public void testDurbin() {
+    void testDurbin() {
         tester.assertParsed(
                 "AND \"Richard Durbin\" Welfare (+(OR language:en \"Durbin said\" \"Durbin says\" \"Durbin added\" \"Durbin agreed\" \"Durbin questioned\" date:>1109664000) -newstype:rssexclude)",
                 "(\"Richard Durbin\" ) \"Welfare\" ((\"Durbin said\" \"Durbin says\" \"Durbin added\" \"Durbin agreed\" \"Durbin questioned\" )  -newstype:rssexclude date:>1109664000 (language:en )",
@@ -1629,35 +1626,35 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testTooLongQueryTerms() {
+    void testTooLongQueryTerms() {
         tester.assertParsed("AND 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof filter ew 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof 2b 2f 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof",
                 "+/545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof&filter=ew:545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof!1000 =.2b..2f.545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof",
                 Query.Type.ALL);
     }
 
     @Test
-    public void testNonSpecialTokenParsing() {
+    void testNonSpecialTokenParsing() {
         ParsingTester customTester = new ParsingTester(SpecialTokens.empty());
         customTester.assertParsed("OR c or c with (AND tcp ip)", "c# or c++ with tcp/ip", Query.Type.ANY);
     }
 
     @Test
-    public void testNonIndexWithColons1() {
+    void testNonIndexWithColons1() {
         tester.assertParsed("OR this is (AND notan iindex)", "this is notan:iindex", Query.Type.ANY);
     }
 
     @Test
-    public void testNonIndexWithColons2() {
+    void testNonIndexWithColons2() {
         tester.assertParsed("OR this is (AND notan iindex either)", "this is notan:iindex:either", Query.Type.ANY);
     }
 
     @Test
-    public void testIndexThenUnderscoreTermBecomesIndex() {
+    void testIndexThenUnderscoreTermBecomesIndex() {
         tester.assertParsed("AND name:batch name:article", "name:batch_article", Query.Type.ANY);
     }
 
     @Test
-    public void testFakeCJKSegmenting() {
+    void testFakeCJKSegmenting() {
         // "first" "second" and "third" are segments in the test language
         Item item = tester.parseQuery("name:firstsecondthird", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
 
@@ -1675,7 +1672,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testFakeCJKSegmentingOfPhrase() {
+    void testFakeCJKSegmentingOfPhrase() {
         // "first" "second" and "third" are segments in the test language
         Item item = tester.parseQuery("name:\"firstsecondthird\"", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
 
@@ -1689,23 +1686,23 @@ public class ParseTestCase {
 
         assertEquals("name", ((WordItem) segment.getItem(0)).getIndexName());
         assertEquals("name", ((WordItem) segment.getItem(1)).getIndexName());
-        assertEquals("name", ((WordItem)segment.getItem(2)).getIndexName());
+        assertEquals("name", ((WordItem) segment.getItem(2)).getIndexName());
     }
 
     @Test
-    public void testAndItemAndImplicitPhrase() {
+    void testAndItemAndImplicitPhrase() {
         tester.assertParsed("AND \u00d8 \u00d8 \u00d8 \u00d9",
-                            "\u00d8\u00b9\u00d8\u00b1\u00d8\u00a8\u00d9", "",
-                            Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
+                "\u00d8\u00b9\u00d8\u00b1\u00d8\u00a8\u00d9", "",
+                Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
     }
 
     @Test
-    public void testAvoidMultiLevelAndForLongCJKQueries() {
+    void testAvoidMultiLevelAndForLongCJKQueries() {
         Item root = tester.parseQuery(
                 "\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74\u30d7\u30ed\u91ce\u7403\u962a\u795e\u306e\u672c\u62e0\u5730\u3001\u7532\u5b50\u5712\u7403\u5834\uff08\u5175\u5eab\u770c\u897f\u5bae\u5e02\uff09\u306f\uff11\u65e5\u3001\uff11\uff19\uff12\uff14\u5e74",
                 "", Language.UNKNOWN, Query.Type.ALL, TestLinguistics.INSTANCE);
 
-        assertTrue("Query tree too deep when parsing CJK queries.", 4 > stackDepth(0, root));
+        assertTrue(4 > stackDepth(0, root), "Query tree too deep when parsing CJK queries.");
     }
 
     private int stackDepth(int i, Item root) {
@@ -1724,151 +1721,151 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testFakeCJKSegmentingOfMultiplePhrases() {
+    void testFakeCJKSegmentingOfMultiplePhrases() {
         Item item = tester.parseQuery("name:firstsecond.s", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
         assertEquals("AND (SAND name:first name:second) name:s", item.toString());
     }
 
     @Test
-    public void testOrFilter() {
+    void testOrFilter() {
         tester.assertParsed("AND d (OR |a |b)", "d", "+(a b)", Query.Type.ALL);
     }
 
     @Test
-    public void testOrFilterWithTypeAdv() {
+    void testOrFilterWithTypeAdv() {
         tester.assertParsed("AND d (OR |a |b)", "d", "+(a b)", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testPhraseFilter() {
+    void testPhraseFilter() {
         tester.assertParsed("AND d |\"a b\"", "d", "+\"a b\"", Query.Type.ALL);
     }
 
     @Test
-    public void testMinusAndFilter() {
+    void testMinusAndFilter() {
         tester.assertParsed("+d -(AND |a |b)", "d", "-(a b)", Query.Type.ALL);
     }
 
     @Test
-    public void testOrAndSomeTermsFilter() {
+    void testOrAndSomeTermsFilter() {
         tester.assertParsed("RANK d |c |a |b |e", "d", "c (a b) e", Query.Type.ALL);
     }
 
     // This is an ugly parse tree, but it's at least reasonable
     @Test
-    public void testOrAndSomeTermsFilterAndAnAnd() {
-        AndItem root=(AndItem)tester.assertParsed("AND (RANK d |c |a |b |e) (OR |e |f)", "d", "c (a b) e +(e f)", Query.Type.ALL);
+    void testOrAndSomeTermsFilterAndAnAnd() {
+        AndItem root = (AndItem) tester.assertParsed("AND (RANK d |c |a |b |e) (OR |e |f)", "d", "c (a b) e +(e f)", Query.Type.ALL);
         assertFalse(root.isFilter()); // AND
         assertFalse(root.getItem(0).isFilter()); // RANK
-        assertFalse(((RankItem)root.getItem(0)).getItem(0).isFilter()); // d
-        assertTrue(((RankItem)root.getItem(0)).getItem(1).isFilter()); // c
-        assertTrue(((RankItem)root.getItem(0)).getItem(2).isFilter()); // a
-        assertTrue(((RankItem)root.getItem(0)).getItem(3).isFilter()); // b
-        assertTrue(((RankItem)root.getItem(0)).getItem(4).isFilter()); // e
+        assertFalse(((RankItem) root.getItem(0)).getItem(0).isFilter()); // d
+        assertTrue(((RankItem) root.getItem(0)).getItem(1).isFilter()); // c
+        assertTrue(((RankItem) root.getItem(0)).getItem(2).isFilter()); // a
+        assertTrue(((RankItem) root.getItem(0)).getItem(3).isFilter()); // b
+        assertTrue(((RankItem) root.getItem(0)).getItem(4).isFilter()); // e
         assertFalse(root.getItem(1).isFilter()); // OR
-        assertTrue(((OrItem)root.getItem(1)).getItem(0).isFilter()); // e
-        assertTrue(((OrItem)root.getItem(1)).getItem(1).isFilter()); // f
+        assertTrue(((OrItem) root.getItem(1)).getItem(0).isFilter()); // e
+        assertTrue(((OrItem) root.getItem(1)).getItem(1).isFilter()); // f
     }
 
     @Test
-    public void testUrlNotConsumingBrace() {
+    void testUrlNotConsumingBrace() {
         tester.assertParsed("AND A (OR url.all:B url.all:C) D E", "A (url.all:B url.all:C) D E", Query.Type.ALL);
     }
 
     // Really a syntax error on part of the user, but it's part of
     // the logic where balanced braces are allowed in URLs
     @Test
-    public void testUrlNotConsumingBrace2() {
+    void testUrlNotConsumingBrace2() {
         tester.assertParsed("AND A (OR url.all:B url.all:C) D E",
                 "A (url.all:B url.all:C)D E", Query.Type.ALL);
     }
 
     @Test
-    public void testSiteNotConsumingBrace() {
+    void testSiteNotConsumingBrace() {
         tester.assertParsed("AND A (OR site:\"B $\" site:\"C $\") D E",
                 "A (site:B site:C) D E", Query.Type.ALL);
     }
 
     @Test
-    public void testCommaOnlyLeadsToImplicitPhrasing() {
+    void testCommaOnlyLeadsToImplicitPhrasing() {
         tester.assertParsed("AND A B C", "A,B,C", Query.Type.ALL);
     }
 
     @Test
-    public void testBangDoesNotBindAcrossSpace() {
+    void testBangDoesNotBindAcrossSpace() {
         tester.assertParsed("word", "word !", Query.Type.ALL);
     }
 
     @Test
-    public void testLotsOfPlusMinus() {
+    void testLotsOfPlusMinus() {
         tester.assertParsed("OR word term", "word - + - + - term", Query.Type.ANY);
     }
 
     @Test
-    public void testLotsOfMinusPlus() {
+    void testLotsOfMinusPlus() {
         tester.assertParsed("OR word term", "word - + - + term", Query.Type.ANY);
     }
 
     @Test
-    public void testMinusDoesNotBindAcrossSpace() {
+    void testMinusDoesNotBindAcrossSpace() {
         tester.assertParsed("OR word term", "word - term", Query.Type.ANY);
     }
 
     @Test
-    public void testPlusDoesNotBindAcrossSpace() {
+    void testPlusDoesNotBindAcrossSpace() {
         tester.assertParsed("OR word term", "word + term", Query.Type.ANY);
     }
 
     @Test
-    public void testMinusDoesNotBindAcrossSpaceAllQuery() {
+    void testMinusDoesNotBindAcrossSpaceAllQuery() {
         tester.assertParsed("AND word term", "word - term", Query.Type.ALL);
     }
 
     @Test
-    public void testPlusDoesNotBindAcrossSpaceAllQuery() {
+    void testPlusDoesNotBindAcrossSpaceAllQuery() {
         tester.assertParsed("AND word term", "word + term", Query.Type.ALL);
     }
 
     @Test
-    public void testNoSpaceInIndexPrefix() {
+    void testNoSpaceInIndexPrefix() {
         tester.assertParsed("AND url domain:s url.domain:b",
                 "url. domain:s url.domain:b", Query.Type.ALL);
     }
 
     @Test
-    public void testNestedParensAndLittleElse() {
+    void testNestedParensAndLittleElse() {
         tester.assertParsed("OR a b c d", "((a b) (c d))", Query.Type.ALL);
     }
 
     // This is simply to control it doesn't crash
     @Test
-    public void testNestedParensAndLittleElseMoreBroken() {
+    void testNestedParensAndLittleElseMoreBroken() {
         tester.assertParsed("AND (OR a b) (OR c d)", "(a b) +(c d))", Query.Type.ALL);
     }
 
     @Test
-    public void testNestedUnbalancedParensAndLittleElseMoreBroken() {
+    void testNestedUnbalancedParensAndLittleElseMoreBroken() {
         tester.assertParsed("OR a b c d", "((a b) +(c d)", Query.Type.ALL);
     }
 
     @Test
-    public void testUnbalancedParens() {
+    void testUnbalancedParens() {
         tester.assertParsed("AND a b (OR c d)", "a b) +(c d))", Query.Type.ALL);
     }
 
     @Test
-    public void testUnbalancedStartingParens() {
+    void testUnbalancedStartingParens() {
         tester.assertParsed("OR a b c d", "((a b) +(c d", Query.Type.ALL);
     }
 
     @Test
-    public void testJPMobileExceptionQuery() {
+    void testJPMobileExceptionQuery() {
         tester.assertParsed("OR concat and (AND make string) 1 47 or",
-                            "(concat \"and\" (make-string 1 47) \"or\")", Query.Type.ALL);
+                "(concat \"and\" (make-string 1 47) \"or\")", Query.Type.ALL);
     }
 
     @Test
-    public void testColonDoesNotBindAcrossSpace() {
+    void testColonDoesNotBindAcrossSpace() {
         tester.assertParsed("b", "a: b", Query.Type.ALL);
         tester.assertParsed("AND a b", "a : b", Query.Type.ALL);
         tester.assertParsed("AND a b", "a :b", Query.Type.ALL);
@@ -1877,14 +1874,14 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testGermanUriDecompounding() {
+    void testGermanUriDecompounding() {
         tester.assertParsed("url.all:\"kommunikationsfehler de\"",
-                     "url.all:kommunikationsfehler.de", "", Query.Type.ALL, Language.GERMAN);
+                "url.all:kommunikationsfehler.de", "", Query.Type.ALL, Language.GERMAN);
     }
 
     // Check the parser doesn't fail on these horrible query strings
     @Test
-    public void testTicket443882() {
+    void testTicket443882() {
         tester.assertParsed(
                 "AND australian LOTTERY (+(OR language:en IN AFFILIATION WITH THE UK NATIONAL LOTTERY date:>1125475200) -newstype:rssexclude)",
                 "australian LOTTERY (IN AFFILIATION WITH THE UK NATIONAL LOTTERY -newstype:rssexclude date:>1125475200 (language:en )",
@@ -1900,7 +1897,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testParensInQuotes() {
+    void testParensInQuotes() {
         tester.assertParsed("AND ringtone (OR a:\"Delivery SMAF large max 150kB 063\" a:\"RealMusic Delivery\")",
                 "ringtone AND (a:\"Delivery SMAF large max.150kB (063)\" OR a:\"RealMusic Delivery\" )",
                 Query.Type.ADVANCED);
@@ -1914,7 +1911,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testMixedCaseIndexNames() {
+    void testMixedCaseIndexNames() {
         tester.assertParsed("AND mixedCase:a mixedCase:b notAnIndex c mixedCase:d",
                 "mixedcase:a MIXEDCASE:b notAnIndex:c mixedCase:d",
                 Query.Type.ALL);
@@ -1922,9 +1919,9 @@ public class ParseTestCase {
 
     /** CJK special tokens should be recognized also on non-boundaries */
     @Test
-    public void testChineseSpecialTokens() {
+    void testChineseSpecialTokens() {
         tester.assertParsed("AND cat tcp/ip zu foo dotnet bar dotnet dotnet c# c++ bar dotnet dotnet wiz",
-                     "cattcp/ipzu foo.netbar.net.netC#c++bar.net.netwiz","", Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
+                "cattcp/ipzu foo.netbar.net.netC#c++bar.net.netwiz", "", Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
     }
 
     /**
@@ -1932,69 +1929,69 @@ public class ParseTestCase {
      * but right now it is not
      */
     @Test
-    public void testChineseSpecialTokensWithMultiSegmentReplace() {
+    void testChineseSpecialTokensWithMultiSegmentReplace() {
         // special-token-fs is a special token, to be replaced by firstsecond, first and second are segments in test
-        tester.assertParsed("AND tcp/ip firstsecond dotnet firstsecond (SAND first second)","tcp/ipspecial-token-fs.net special-token-fs firstsecond",
-                            "", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, TestLinguistics.INSTANCE);
+        tester.assertParsed("AND tcp/ip firstsecond dotnet firstsecond (SAND first second)", "tcp/ipspecial-token-fs.net special-token-fs firstsecond",
+                "", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, TestLinguistics.INSTANCE);
     }
 
     @Test
-    public void testSpaceAndTermWeights() {
+    void testSpaceAndTermWeights() {
         tester.assertParsed("AND yahoo!360 yahoo 360 yahoo!150 360 yahoo 360 yahoo yahoo!150 yahoo!200",
-                            "yahoo!360 yahoo !360 yahoo! 360 yahoo ! 360 yahoo !!! yahoo! ! yahoo!!", Query.Type.ALL);
+                "yahoo!360 yahoo !360 yahoo! 360 yahoo ! 360 yahoo !!! yahoo! ! yahoo!!", Query.Type.ALL);
     }
 
     @Test
-    public void testNumbersAndNot() {
+    void testNumbersAndNot() {
         tester.assertParsed("AND a -12", "a -12", Query.Type.ALL);
     }
 
     @Test
-    public void testNumbersAndDoubleNot() {
+    void testNumbersAndDoubleNot() {
         tester.assertParsed("+a --12", "a --12", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeNumberWithIndex() {
+    void testNegativeNumberWithIndex() {
         tester.assertParsed("normal:-12", "normal:-12", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeTermPositiveNumberWithIndex() {
+    void testNegativeTermPositiveNumberWithIndex() {
         tester.assertParsed("+a -normal:12", "a -normal:12", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeTermNegativeNumberWithIndex() {
+    void testNegativeTermNegativeNumberWithIndex() {
         tester.assertParsed("+a -normal:-12", "a -normal:-12", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeTermPositiveNumberInParentheses() {
+    void testNegativeTermPositiveNumberInParentheses() {
         tester.assertParsed("+a -12", "a -(12)", Query.Type.ALL);
         tester.assertParsed("+a -(AND 12 15)", "a -(12 15)", Query.Type.ALL);
         tester.assertParsed("+a -12 -15", "a -(12) -(15)", Query.Type.ALL);
     }
 
     @Test
-    public void testSingleNegativeNumberLikeTerm() {
+    void testSingleNegativeNumberLikeTerm() {
         tester.assertParsed("-12", "-12", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeLessThan() {
+    void testNegativeLessThan() {
         tester.assertParsed("normal:<-3", "normal:<-3", Query.Type.ALL);
         tester.assertParsed("<-3", "<-3", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeBiggerThan() {
+    void testNegativeBiggerThan() {
         tester.assertParsed("normal:>-3", "normal:>-3", Query.Type.ALL);
         tester.assertParsed(">-3", ">-3", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativesInRanges() {
+    void testNegativesInRanges() {
         tester.assertParsed("normal:[-4;9]", "normal:[-4;9]", Query.Type.ALL);
         tester.assertParsed("[-4;9]", "[-4;9]", Query.Type.ALL);
         tester.assertParsed("normal:[-4;-9]", "normal:[-4;-9]", Query.Type.ALL);
@@ -2002,51 +1999,51 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testDecimal() {
-        Item root=tester.assertParsed("2.2", "2.2", Query.Type.ALL);
+    void testDecimal() {
+        Item root = tester.assertParsed("2.2", "2.2", Query.Type.ALL);
         assertTrue(root instanceof IntItem);
         tester.assertParsed("normal:2.2", "normal:2.2", Query.Type.ALL);
     }
 
     @Test
-    public void testVersionNumbers() {
+    void testVersionNumbers() {
         tester.assertParsed("AND 1 0 9", "1.0.9", Query.Type.ALL);
     }
 
     @Test
-    public void testDecimalNumbersAndNot() {
+    void testDecimalNumbersAndNot() {
         tester.assertParsed("AND a -12.2", "a -12.2", Query.Type.ALL);
     }
 
     @Test
-    public void testDecimalNumbersAndDoubleNot() {
+    void testDecimalNumbersAndDoubleNot() {
         tester.assertParsed("+a --12.2", "a --12.2", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeDecimalNumberWithIndex() {
+    void testNegativeDecimalNumberWithIndex() {
         tester.assertParsed("normal:-12.2", "normal:-12.2", Query.Type.ALL);
     }
 
     @Test
-    public void testSingleNegativeDecimalNumberLikeTerm() {
+    void testSingleNegativeDecimalNumberLikeTerm() {
         tester.assertParsed("-12.2", "-12.2", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeDecimalLessThan() {
+    void testNegativeDecimalLessThan() {
         tester.assertParsed("normal:<-3.14", "normal:<-3.14", Query.Type.ALL);
         tester.assertParsed("<-3.14", "<-3.14", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativeDecimalBiggerThan() {
+    void testNegativeDecimalBiggerThan() {
         tester.assertParsed("normal:>-3.14", "normal:>-3.14", Query.Type.ALL);
         tester.assertParsed(">-3.14", ">-3.14", Query.Type.ALL);
     }
 
     @Test
-    public void testNegativesDecimalInRanges() {
+    void testNegativesDecimalInRanges() {
         tester.assertParsed("normal:[-4.16;9.2]", "normal:[-4.16;9.2]", Query.Type.ALL);
         tester.assertParsed("[-4.16;9.2]", "[-4.16;9.2]", Query.Type.ALL);
         tester.assertParsed("normal:[-4.16;-9.2]", "normal:[-4.16;-9.2]", Query.Type.ALL);
@@ -2054,12 +2051,12 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testRangesAndNoise() {
+    void testRangesAndNoise() {
         tester.assertParsed("[2;3]", "[2;3]]", Query.Type.ALL);
     }
 
     @Test
-    public void testIndexNoise() {
+    void testIndexNoise() {
         tester.assertParsed("AND normal:a notanindex", "normal:a normal: notanindex:", Query.Type.ALL);
         tester.assertParsed(null, "normal:", Query.Type.ALL);
         tester.assertParsed(null, "normal:!", Query.Type.ALL);
@@ -2070,13 +2067,13 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testIndexNoiseAndExplicitPhrases() {
+    void testIndexNoiseAndExplicitPhrases() {
         tester.assertParsed("normal:\"a b\"", "normal:\" a b\"", Query.Type.ALL);
         tester.assertParsed("normal:\"a b\"", "normal:\"a b\"", Query.Type.ALL);
     }
 
     @Test
-    public void testExactMatchParsing1() {
+    void testExactMatchParsing1() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -2092,13 +2089,13 @@ public class ParseTestCase {
 
         customTester.assertParsed("testexact1:/,%&#", "testexact1:/,%&#", Query.Type.ALL);
         customTester.assertParsed("testexact2:/,%&#!!", "testexact2:/,%&#!!()/aa*::*&", Query.Type.ALL);
-        customTester.assertParsed("AND word1 (OR testexact1:word2 testexact1:word3)","word1 AND (testexact1:word2 OR testexact1:word3 )",Query.Type.ADVANCED);
-        customTester.assertParsed("AND word (OR testexact1:AND testexact1:OR)","word AND (testexact1: AND OR testexact1: OR )",Query.Type.ADVANCED);
+        customTester.assertParsed("AND word1 (OR testexact1:word2 testexact1:word3)", "word1 AND (testexact1:word2 OR testexact1:word3 )", Query.Type.ADVANCED);
+        customTester.assertParsed("AND word (OR testexact1:AND testexact1:OR)", "word AND (testexact1: AND OR testexact1: OR )", Query.Type.ADVANCED);
     }
 
     /** Testing terminators containing control characters in conjunction with those control characters */
     @Test
-    public void testExactMatchParsing2() {
+    void testExactMatchParsing2() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -2108,12 +2105,12 @@ public class ParseTestCase {
         IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
-        customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_*!**!!",Query.Type.ALL);
+        customTester.assertParsed("testexact1:_-_*!200", "testexact1:_-_*!**!!", Query.Type.ALL);
     }
 
     /** Testing terminators containing control characters in conjunction with those control characters */
     @Test
-    public void testExactMatchParsing3() {
+    void testExactMatchParsing3() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -2123,48 +2120,48 @@ public class ParseTestCase {
         IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
-        customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_**!!",Query.Type.ALL);
+        customTester.assertParsed("testexact1:_-_*!200", "testexact1:_-_**!!", Query.Type.ALL);
     }
 
     // bug 1393139
     @Test
-    public void testMinimalBritneyFilter() {
+    void testMinimalBritneyFilter() {
         tester.assertParsed("RANK (+a -|c) b", "a RANK b", "-c", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testBritneyFilter() {
+    void testBritneyFilter() {
         tester.assertParsed("RANK (+(AND performernameall:britney performernameall:spears songnameall:toxic |SongConsumable:1 |country:us |collapsedrecord:1 |doctype:song) -|collapsecount:0) (AND metadata:britney metadata:spears metadata:toxic)",
-            "((performernameall:britney AND performernameall:spears AND songnameall:toxic) RANK (metadata:britney AND metadata:spears AND metadata:toxic))",
-            "+SongConsumable:1 +country:us +collapsedrecord:1  -collapsecount:0  +doctype:song",
-            Query.Type.ADVANCED);
+                "((performernameall:britney AND performernameall:spears AND songnameall:toxic) RANK (metadata:britney AND metadata:spears AND metadata:toxic))",
+                "+SongConsumable:1 +country:us +collapsedrecord:1  -collapsecount:0  +doctype:song",
+                Query.Type.ADVANCED);
 
         tester.assertParsed("AND (+(AND (RANK (OR (AND performernameall:britney performernameall:spears songnameall:toxic) (AND performernameall:britney performernameall:spears songnameall:toxic)) (AND metadata:britney metadata:spears metadata:toxic)) |SongConsumable:1 |country:us |collapsedrecord:1) -|collapsecount:0) |doctype:song",
-            "(((performernameall:britney AND performernameall:spears AND songnameall:toxic) OR (performernameall:britney AND performernameall:spears AND songnameall:toxic)) RANK (metadata:britney AND metadata:spears AND metadata:toxic)))",
-            "+SongConsumable:1 +country:us +collapsedrecord:1  -collapsecount:0  +doctype:song",
-            Query.Type.ADVANCED);
+                "(((performernameall:britney AND performernameall:spears AND songnameall:toxic) OR (performernameall:britney AND performernameall:spears AND songnameall:toxic)) RANK (metadata:britney AND metadata:spears AND metadata:toxic)))",
+                "+SongConsumable:1 +country:us +collapsedrecord:1  -collapsecount:0  +doctype:song",
+                Query.Type.ADVANCED);
     }
 
     // bug 1412840
     @Test
-    public void testGreedyPhrases() {
+    void testGreedyPhrases() {
         tester.assertParsed("AND title:why title:\"1 2\"", "title:\"why\" title:\"&\" title:\"1/2\"", Query.Type.ALL);
     }
 
     // bug 1509347
     @Test
-    public void testUnderscoreInFieldNames() {
+    void testUnderscoreInFieldNames() {
         tester.assertParsed("AND title:why score_under:what score_under:>5000",
-             "title:why score_under:what score_under:>5000",
-             Query.Type.ALL);
+                "title:why score_under:what score_under:>5000",
+                Query.Type.ALL);
     }
 
     // bug 1509347
     @Test
-    public void testLeadingUnderscoreInFieldNames() {
+    void testLeadingUnderscoreInFieldNames() {
         tester.assertParsed("AND title:why _under_score_:what _under_score_:>5000",
-             "title:why _under_score_:what _under_score_:>5000",
-             Query.Type.ALL);
+                "title:why _under_score_:what _under_score_:>5000",
+                Query.Type.ALL);
     }
 
     // Re-add if underscore should be a word character
@@ -2185,7 +2182,7 @@ public class ParseTestCase {
 
     // bug 524918
     @Test
-    public void testAdvancedSyntaxParensAndQuotes() {
+    void testAdvancedSyntaxParensAndQuotes() {
         tester.assertParsed("OR a (AND \"b c d\" e)",
                 "a OR (\"b (c) d\" AND e)",
                 Query.Type.ADVANCED);
@@ -2195,7 +2192,7 @@ public class ParseTestCase {
     // this needs to become series of tests where the tokenizer
     // and parser will step on each other's toes.
     @Test
-    public void testStarFirstInAttributes() {
+    void testStarFirstInAttributes() {
         tester.assertParsed("exactindex:*test",
                 "exactindex:*test",
                 Query.Type.ALL);
@@ -2203,162 +2200,162 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testOneWordWebParsing() {
-        tester.assertParsed("a","a",Query.Type.WEB);
+    void testOneWordWebParsing() {
+        tester.assertParsed("a", "a", Query.Type.WEB);
     }
 
     @Test
-    public void testTwoWordWebParsing() {
-        tester.assertParsed("AND a b","a b",Query.Type.WEB);
+    void testTwoWordWebParsing() {
+        tester.assertParsed("AND a b", "a b", Query.Type.WEB);
     }
 
     @Test
-    public void testPlusWordWebParsing1() {
-        Item root=tester.assertParsed("AND a b","+a b",Query.Type.WEB);
-        assertTrue(((AndItem)root).getItem(0).isProtected());
-        assertFalse(((AndItem)root).getItem(1).isProtected());
+    void testPlusWordWebParsing1() {
+        Item root = tester.assertParsed("AND a b", "+a b", Query.Type.WEB);
+        assertTrue(((AndItem) root).getItem(0).isProtected());
+        assertFalse(((AndItem) root).getItem(1).isProtected());
     }
 
     @Test
-    public void testPlusWordWebParsing2() {
-        Item root=tester.assertParsed("AND a b","+a +b",Query.Type.WEB);
-        assertTrue(((AndItem)root).getItem(0).isProtected());
-        assertTrue(((AndItem)root).getItem(1).isProtected());
+    void testPlusWordWebParsing2() {
+        Item root = tester.assertParsed("AND a b", "+a +b", Query.Type.WEB);
+        assertTrue(((AndItem) root).getItem(0).isProtected());
+        assertTrue(((AndItem) root).getItem(1).isProtected());
     }
 
     @Test
-    public void testNegativeWordsParsing1() {
-        Item root=tester.assertParsed("+a -b","a -b",Query.Type.WEB);
-        assertFalse(((NotItem)root).getItem(0).isProtected());
-        assertTrue(((NotItem)root).getItem(1).isProtected());
+    void testNegativeWordsParsing1() {
+        Item root = tester.assertParsed("+a -b", "a -b", Query.Type.WEB);
+        assertFalse(((NotItem) root).getItem(0).isProtected());
+        assertTrue(((NotItem) root).getItem(1).isProtected());
     }
 
     @Test
-    public void testNegativeWordsParsing2() {
-        Item root=tester.assertParsed("+a -b","+a -b",Query.Type.WEB);
-        assertTrue(((NotItem)root).getItem(0).isProtected());
-        assertTrue(((NotItem)root).getItem(1).isProtected());
+    void testNegativeWordsParsing2() {
+        Item root = tester.assertParsed("+a -b", "+a -b", Query.Type.WEB);
+        assertTrue(((NotItem) root).getItem(0).isProtected());
+        assertTrue(((NotItem) root).getItem(1).isProtected());
     }
 
     @Test
-    public void testNegativeWordsParsing3() {
-        tester.assertParsed("+a -b","-b a",Query.Type.WEB);
+    void testNegativeWordsParsing3() {
+        tester.assertParsed("+a -b", "-b a", Query.Type.WEB);
     }
 
     @Test
-    public void testNegativeWordsParsing4() {
-        tester.assertParsed("+(AND a b) -c -d","a b -c -d",Query.Type.WEB);
+    void testNegativeWordsParsing4() {
+        tester.assertParsed("+(AND a b) -c -d", "a b -c -d", Query.Type.WEB);
     }
 
     @Test
-    public void testNegativeWordsParsing5() {
-        tester.assertParsed("+(AND a \"b c\" d) -e -f","a -e \"b c\" d -f",Query.Type.WEB);
+    void testNegativeWordsParsing5() {
+        tester.assertParsed("+(AND a \"b c\" d) -e -f", "a -e \"b c\" d -f", Query.Type.WEB);
     }
 
     @Test
-    public void testPhraseWebParsing() {
-        tester.assertParsed("\"a b\"","\"a b\"",Query.Type.WEB);
+    void testPhraseWebParsing() {
+        tester.assertParsed("\"a b\"", "\"a b\"", Query.Type.WEB);
     }
 
     @Test
-    public void testPhraseAndExtraTermWebParsing() {
-        tester.assertParsed("AND \"a b\" c","\"a b\" c",Query.Type.WEB);
+    void testPhraseAndExtraTermWebParsing() {
+        tester.assertParsed("AND \"a b\" c", "\"a b\" c", Query.Type.WEB);
     }
 
     @Test
-    public void testNotOrWebParsing() {
-        tester.assertParsed("AND a or b","a or b",Query.Type.WEB);
+    void testNotOrWebParsing() {
+        tester.assertParsed("AND a or b", "a or b", Query.Type.WEB);
     }
 
     @Test
-    public void testNotOrALLParsing() {
-        tester.assertParsed("AND a OR b","a OR b",Query.Type.ALL);
+    void testNotOrALLParsing() {
+        tester.assertParsed("AND a OR b", "a OR b", Query.Type.ALL);
     }
 
     @Test
-    public void testOrParsing1() {
-        tester.assertParsed("OR a b","a OR b",Query.Type.WEB);
+    void testOrParsing1() {
+        tester.assertParsed("OR a b", "a OR b", Query.Type.WEB);
     }
 
     @Test
-    public void testOrParsing2() {
-        tester.assertParsed("OR a b c","a OR b OR c",Query.Type.WEB);
+    void testOrParsing2() {
+        tester.assertParsed("OR a b c", "a OR b OR c", Query.Type.WEB);
     }
 
     @Test
-    public void testOrParsing3() {
-        tester.assertParsed("OR a (AND b c) \"d e\"","a OR b c OR \"d e\"",Query.Type.WEB);
+    void testOrParsing3() {
+        tester.assertParsed("OR a (AND b c) \"d e\"", "a OR b c OR \"d e\"", Query.Type.WEB);
     }
 
     @Test
-    public void testOrParsing4() {
-        tester.assertParsed("OR (AND or1 a) or2","or1 a OR or2",Query.Type.WEB);
+    void testOrParsing4() {
+        tester.assertParsed("OR (AND or1 a) or2", "or1 a OR or2", Query.Type.WEB);
     }
 
     @Test
-    public void testOrCornerCase1() {
-        tester.assertParsed("AND OR a","OR a",Query.Type.WEB);
+    void testOrCornerCase1() {
+        tester.assertParsed("AND OR a", "OR a", Query.Type.WEB);
     }
 
     @Test
-    public void testOrCornerCase2() {
-        tester.assertParsed("AND OR a","OR a OR",Query.Type.WEB); // Don't care
+    void testOrCornerCase2() {
+        tester.assertParsed("AND OR a", "OR a OR", Query.Type.WEB); // Don't care
     }
 
     @Test
-    public void testOrCornerCase3() {
-        tester.assertParsed("AND OR a","OR a OR OR",Query.Type.WEB); // Don't care
+    void testOrCornerCase3() {
+        tester.assertParsed("AND OR a", "OR a OR OR", Query.Type.WEB); // Don't care
     }
 
     @Test
-    public void testOrCornerCase4() {
-        tester.assertParsed("+(OR (AND a b) (AND d c) (AND g h)) -e -f","a b OR d c -e -f OR g h",Query.Type.WEB);
+    void testOrCornerCase4() {
+        tester.assertParsed("+(OR (AND a b) (AND d c) (AND g h)) -e -f", "a b OR d c -e -f OR g h", Query.Type.WEB);
     }
 
     @Test
-    public void testOdd1Web() {
-        tester.assertParsed("AND window print error", "+window.print() +error",Query.Type.WEB);
+    void testOdd1Web() {
+        tester.assertParsed("AND window print error", "+window.print() +error", Query.Type.WEB);
     }
 
     @Test
-    public void testNotOnlyWeb() {
+    void testNotOnlyWeb() {
         tester.assertParsed(null, "-foobar", Query.Type.WEB);
     }
 
     @Test
-    public void testMultipleNotsOnltWeb() {
+    void testMultipleNotsOnltWeb() {
         tester.assertParsed(null, "-foo -bar -foobar", Query.Type.WEB);
     }
 
     @Test
-    public void testOnlyNotCompositeWeb() {
+    void testOnlyNotCompositeWeb() {
         tester.assertParsed(null, "-(foo bar baz)", Query.Type.WEB);
     }
 
     @Test
-    public void testSingleNegativeNumberLikeTermWeb() {
+    void testSingleNegativeNumberLikeTermWeb() {
         tester.assertParsed("-12", "-12", Query.Type.WEB);
     }
 
     @Test
-    public void testSingleNegativeDecimalNumberLikeTermWeb() {
+    void testSingleNegativeDecimalNumberLikeTermWeb() {
         tester.assertParsed("-12.2", "-12.2", Query.Type.WEB);
     }
 
     @Test
-    public void testDefaultWebIndices() {
-        tester.assertParsed("AND notanindex b","notanindex:b", Query.Type.WEB);
-        tester.assertParsed("site:\"b $\"","site:b", Query.Type.WEB);
-        tester.assertParsed("hostname:b","hostname:b", Query.Type.WEB);
-        tester.assertParsed("link:b","link:b", Query.Type.WEB);
-        tester.assertParsed("url:b","url:b", Query.Type.WEB);
-        tester.assertParsed("inurl:b","inurl:b", Query.Type.WEB);
-        tester.assertParsed("intitle:b","intitle:b", Query.Type.WEB);
+    void testDefaultWebIndices() {
+        tester.assertParsed("AND notanindex b", "notanindex:b", Query.Type.WEB);
+        tester.assertParsed("site:\"b $\"", "site:b", Query.Type.WEB);
+        tester.assertParsed("hostname:b", "hostname:b", Query.Type.WEB);
+        tester.assertParsed("link:b", "link:b", Query.Type.WEB);
+        tester.assertParsed("url:b", "url:b", Query.Type.WEB);
+        tester.assertParsed("inurl:b", "inurl:b", Query.Type.WEB);
+        tester.assertParsed("intitle:b", "intitle:b", Query.Type.WEB);
     }
 
     @Test
-    public void testHTMLWeb() {
-        tester.assertParsed("AND h2 Title h2","<h2>Title</h2>",Query.Type.WEB);
+    void testHTMLWeb() {
+        tester.assertParsed("AND h2 Title h2", "<h2>Title</h2>", Query.Type.WEB);
     }
 
     /**
@@ -2366,82 +2363,82 @@ public class ParseTestCase {
      * The information about added bangs is available from the origin as shown (do not use the weight to find this)
      */
     @Test
-    public void testShortcutsWeb() {
-        tester.assertParsed("AND map new york","map new york",Query.Type.WEB);
+    void testShortcutsWeb() {
+        tester.assertParsed("AND map new york", "map new york", Query.Type.WEB);
 
-        AndItem root=(AndItem)tester.assertParsed("AND map!150 new york","map! new york",Query.Type.WEB);
-        assertEquals('!',((WordItem)root.getItem(0)).getOrigin().charAfter(0));
+        AndItem root = (AndItem) tester.assertParsed("AND map!150 new york", "map! new york", Query.Type.WEB);
+        assertEquals('!', ((WordItem) root.getItem(0)).getOrigin().charAfter(0));
 
-        root=(AndItem)tester.assertParsed("AND barack obama news!150","barack obama news!",Query.Type.WEB);
-        assertEquals('!',((WordItem)root.getItem(2)).getOrigin().charAfter(0));
+        root = (AndItem) tester.assertParsed("AND barack obama news!150", "barack obama news!", Query.Type.WEB);
+        assertEquals('!', ((WordItem) root.getItem(2)).getOrigin().charAfter(0));
     }
 
     @Test
-    public void testZipCodeShortcutWeb() {
-        tester.assertParsed("12345","12345",Query.Type.WEB);
-        IntItem root=(IntItem)tester.assertParsed("00012!150","00012!",Query.Type.WEB);
-        assertEquals('!',root.getOrigin().charAfter(0));
+    void testZipCodeShortcutWeb() {
+        tester.assertParsed("12345", "12345", Query.Type.WEB);
+        IntItem root = (IntItem) tester.assertParsed("00012!150", "00012!", Query.Type.WEB);
+        assertEquals('!', root.getOrigin().charAfter(0));
     }
 
     @Test
-    public void testDouble() {
-        Item number=tester.assertParsed("123456789.987654321","123456789.987654321",Query.Type.ALL);
+    void testDouble() {
+        Item number = tester.assertParsed("123456789.987654321", "123456789.987654321", Query.Type.ALL);
         assertTrue(number instanceof IntItem);
     }
 
     @Test
-    public void testLong() {
-        Item number=tester.assertParsed("3000000000000","3000000000000",Query.Type.ALL);
+    void testLong() {
+        Item number = tester.assertParsed("3000000000000", "3000000000000", Query.Type.ALL);
         assertTrue(number instanceof IntItem);
     }
 
     @Test
-    public void testNear1() {
-        tester.assertParsed("NEAR(2) new york","new NEAR york",Query.Type.ADVANCED);
+    void testNear1() {
+        tester.assertParsed("NEAR(2) new york", "new NEAR york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear2() {
-        tester.assertParsed("ONEAR(2) new york","new ONEAR york",Query.Type.ADVANCED);
+    void testNear2() {
+        tester.assertParsed("ONEAR(2) new york", "new ONEAR york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear3() {
-        tester.assertParsed("NEAR(3) new york","new NEAR(3) york",Query.Type.ADVANCED);
+    void testNear3() {
+        tester.assertParsed("NEAR(3) new york", "new NEAR(3) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear4() {
-        tester.assertParsed("ONEAR(3) new york","new ONEAR(3) york",Query.Type.ADVANCED);
+    void testNear4() {
+        tester.assertParsed("ONEAR(3) new york", "new ONEAR(3) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear5() {
-        tester.assertParsed("NEAR(3) map new york","map NEAR(3) new NEAR(3) york",Query.Type.ADVANCED);
+    void testNear5() {
+        tester.assertParsed("NEAR(3) map new york", "map NEAR(3) new NEAR(3) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear6() {
-        tester.assertParsed("ONEAR(3) map new york","map ONEAR(3) new ONEAR(3) york",Query.Type.ADVANCED);
+    void testNear6() {
+        tester.assertParsed("ONEAR(3) map new york", "map ONEAR(3) new ONEAR(3) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear7() {
-        tester.assertParsed("NEAR(4) (NEAR(3) map new) york","map NEAR(3) new NEAR(4) york",Query.Type.ADVANCED);
+    void testNear7() {
+        tester.assertParsed("NEAR(4) (NEAR(3) map new) york", "map NEAR(3) new NEAR(4) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNear8() {
-        tester.assertParsed("ONEAR(4) (ONEAR(3) map new) york","map ONEAR(3) new ONEAR(4) york",Query.Type.ADVANCED);
+    void testNear8() {
+        tester.assertParsed("ONEAR(4) (ONEAR(3) map new) york", "map ONEAR(3) new ONEAR(4) york", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNearPrefix() {
-        tester.assertParsed("NEAR(2) a b*","a NEAR b*",Query.Type.ADVANCED);
+    void testNearPrefix() {
+        tester.assertParsed("NEAR(2) a b*", "a NEAR b*", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testNestedBracesAndPhrases() {
+    void testNestedBracesAndPhrases() {
         String userQuery = "(\"Secondary Curriculum\" (\"Key Stage 3\" OR KS3) (\"Key Stage 4\" OR KS4)) ";
         tester.assertParsed(
                 "OR \"Secondary Curriculum\" \"Key Stage 3\" OR KS3 \"Key Stage 4\" OR KS4",
@@ -2458,53 +2455,53 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testYetAnotherCycleQuery() {
+    void testYetAnotherCycleQuery() {
         tester.assertParsed("+(OR (+d -f) b) -c",
                 "( b -c  ( d -f )",
                 Query.Type.ALL);
     }
 
     @Test
-    public void testSimpleEquivAdvanced() {
+    void testSimpleEquivAdvanced() {
         tester.assertParsed("EQUIV foo bar baz", "foo equiv bar equiv baz", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testEquivWordIntPhraseAdvanced() {
+    void testEquivWordIntPhraseAdvanced() {
         tester.assertParsed("EQUIV foo 5 \"a b\"", "foo equiv 5 equiv \"a b\"", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testEquivRejectCompositeAdvanced() {
+    void testEquivRejectCompositeAdvanced() {
         try {
             tester.assertParsed("this should not parse", "foo equiv (a or b)", Query.Type.ADVANCED);
-        } catch(Exception e) {
+        } catch (Exception e) {
             // Success
         }
     }
 
     @Test
-    public void testSimpleWandAdvanced() {
+    void testSimpleWandAdvanced() {
         tester.assertParsed("WEAKAND(100) foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleWandAdvancedWithNonDefaultN() {
+    void testSimpleWandAdvancedWithNonDefaultN() {
         tester.assertParsed("WEAKAND(32) foo bar baz", "foo weakand(32) bar weakand(32) baz", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testSimpleWandAdvancedWithNonDefaultNAndWeights() {
+    void testSimpleWandAdvancedWithNonDefaultNAndWeights() {
         tester.assertParsed("WEAKAND(32) foo!32 bar!64 baz", "foo!32 weakand(32) bar!64 weakand(32) baz", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testTwoRanges() {
-        tester.assertParsed("AND score:[1.25;2.18] age:[25;30]","score:[1.25;2.18] AND age:[25;30]", Query.Type.ADVANCED);
+    void testTwoRanges() {
+        tester.assertParsed("AND score:[1.25;2.18] age:[25;30]", "score:[1.25;2.18] AND age:[25;30]", Query.Type.ADVANCED);
     }
 
     @Test
-    public void testTooLargeTermWeights() {
+    void testTooLargeTermWeights() {
         // This behavior is a bit silly:
         tester.assertParsed("AND a 12345678901234567890", "a!12345678901234567890", Query.Type.ALL);
         // but in light of
@@ -2515,7 +2512,7 @@ public class ParseTestCase {
     }
 
     @Test
-    public void testAndSegmenting() {
+    void testAndSegmenting() {
         Item root = tester.parseQuery("a'b&c'd", Language.ENGLISH, Query.Type.ALL);
         assertTrue(root instanceof AndItem);
         AndItem top = (AndItem) root;
@@ -2527,59 +2524,59 @@ public class ParseTestCase {
         Item t2 = seg1.getItem(1);
         Item t3 = seg2.getItem(0);
         Item t4 = seg2.getItem(1);
-        assertTrue(((TaggableItem)t2).hasUniqueID());
-        assertTrue(((TaggableItem)t3).hasUniqueID());
-        assertTrue(((TaggableItem)t1).getConnectedItem() == t2);
-        assertTrue(((TaggableItem)t2).getConnectedItem() == t3);
-        assertTrue(((TaggableItem)t3).getConnectedItem() == t4);
+        assertTrue(((TaggableItem) t2).hasUniqueID());
+        assertTrue(((TaggableItem) t3).hasUniqueID());
+        assertEquals(((TaggableItem) t1).getConnectedItem(), t2);
+        assertEquals(((TaggableItem) t2).getConnectedItem(), t3);
+        assertEquals(((TaggableItem) t3).getConnectedItem(), t4);
     }
 
     @Test
-    public void testSiteAndSegmentPhrases() {
+    void testSiteAndSegmentPhrases() {
         tester.assertParsed("host.all:\"www abc com x y-z $\"",
-                           "host.all:www.abc.com/x'y-z", "",
-                           Query.Type.ALL, Language.ENGLISH);
+                "host.all:www.abc.com/x'y-z", "",
+                Query.Type.ALL, Language.ENGLISH);
     }
 
     @Test
-    public void testSiteAndSegmentPhrasesFollowedByText() {
+    void testSiteAndSegmentPhrasesFollowedByText() {
         tester.assertParsed("AND host.all:\"www abc com x y-z $\" (SAND a b)",
-                           "host.all:www.abc.com/x'y-z a'b", "",
-                           Query.Type.ALL, Language.ENGLISH);
+                "host.all:www.abc.com/x'y-z a'b", "",
+                Query.Type.ALL, Language.ENGLISH);
     }
 
     @Test
-    public void testIntItemFollowedByDot() {
-        tester.assertParsed("AND Campion Ste 3 When To Her Lute Corinna Sings","Campion Ste: 3. When To Her Lute Corinna Sings", Query.Type.ALL);
+    void testIntItemFollowedByDot() {
+        tester.assertParsed("AND Campion Ste 3 When To Her Lute Corinna Sings", "Campion Ste: 3. When To Her Lute Corinna Sings", Query.Type.ALL);
     }
 
     @Test
-    public void testNotIntItemIfPrecededByHyphen() {
-        tester.assertParsed("AND Horny Horny '98 Radio Edit","Horny [Horny '98 Radio Edit]]", Query.Type.ALL);
+    void testNotIntItemIfPrecededByHyphen() {
+        tester.assertParsed("AND Horny Horny '98 Radio Edit", "Horny [Horny '98 Radio Edit]]", Query.Type.ALL);
     }
 
     @Test
-    public void testNonAsciiNumber() {
+    void testNonAsciiNumber() {
         tester.assertParsed("AND title:199 title:119 title:201 title:149", "title:１９９．１１９．２０１．１４９", Query.Type.ALL);
     }
 
     @Test
-    public void testNoGrammar1() {
+    void testNoGrammar1() {
         tester.assertParsed("WEAKAND(100) foobar", "foobar", Query.Type.TOKENIZE);
     }
 
     @Test
-    public void testNoGrammar2() {
+    void testNoGrammar2() {
         tester.assertParsed("WEAKAND(100) foobar", "-foobar", Query.Type.TOKENIZE);
     }
 
     @Test
-    public void testNoGrammar3() {
+    void testNoGrammar3() {
         tester.assertParsed("WEAKAND(100) foo bar", "foo -bar", Query.Type.TOKENIZE);
     }
 
     @Test
-    public void testNoGrammar4() {
+    void testNoGrammar4() {
         tester.assertParsed("WEAKAND(100) foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
     }
 }

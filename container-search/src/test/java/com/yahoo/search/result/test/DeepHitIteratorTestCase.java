@@ -7,12 +7,9 @@ import java.util.NoSuchElementException;
 import com.yahoo.search.result.DeepHitIterator;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Ensure that the {@link DeepHitIterator} works as intended.
@@ -22,7 +19,7 @@ import static org.junit.Assert.fail;
 public class DeepHitIteratorTestCase {
 
     @Test
-    public void testEmpty() {
+    void testEmpty() {
         HitGroup hits = new HitGroup();
         Iterator<Hit> it = hits.deepIterator();
         assertFalse(it.hasNext());
@@ -35,7 +32,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testRemove() {
+    void testRemove() {
         HitGroup hits = new HitGroup();
         hits.add(new Hit("foo"));
         hits.add(new Hit("bar"));
@@ -62,7 +59,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testShallow() {
+    void testShallow() {
         HitGroup hits = new HitGroup();
         hits.add(new Hit("foo"));
         hits.add(new Hit("bar"));
@@ -79,7 +76,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testDeep() {
+    void testDeep() {
         HitGroup grandParent = new HitGroup();
         grandParent.add(new Hit("a"));
         HitGroup parent = new HitGroup();
@@ -114,7 +111,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testFirstHitIsGroup() {
+    void testFirstHitIsGroup() {
         HitGroup root = new HitGroup();
         HitGroup group = new HitGroup();
         group.add(new Hit("foo"));
@@ -130,7 +127,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testSecondHitIsGroup() {
+    void testSecondHitIsGroup() {
         HitGroup root = new HitGroup();
         root.add(new Hit("foo"));
         HitGroup group = new HitGroup();
@@ -146,7 +143,7 @@ public class DeepHitIteratorTestCase {
     }
 
     @Test
-    public void testOrder() {
+    void testOrder() {
         HitGroup root = new HitGroup();
         MyHitGroup group = new MyHitGroup();
         group.add(new Hit("foo"));

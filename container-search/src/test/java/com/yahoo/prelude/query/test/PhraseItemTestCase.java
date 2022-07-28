@@ -4,9 +4,9 @@ package com.yahoo.prelude.query.test;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.WordItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test methods changing phrase items.
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class PhraseItemTestCase {
 
     @Test
-    public void testAddItem() {
+    void testAddItem() {
         PhraseItem p = new PhraseItem();
         PhraseSegmentItem pp = new PhraseSegmentItem("", false, false);
         PhraseItem ppp = new PhraseItem();
@@ -32,7 +32,7 @@ public class PhraseItemTestCase {
     }
 
     @Test
-    public void testAddItemWithIndex() {
+    void testAddItemWithIndex() {
         PhraseItem p = new PhraseItem();
         PhraseSegmentItem pp = new PhraseSegmentItem("", false, false);
         PhraseItem ppp = new PhraseItem();
@@ -48,7 +48,7 @@ public class PhraseItemTestCase {
     }
 
     @Test
-    public void testSetItem() {
+    void testSetItem() {
         PhraseItem backup = new PhraseItem();
         PhraseSegmentItem segment = new PhraseSegmentItem("", false, false);
         PhraseItem innerPhrase = new PhraseItem();

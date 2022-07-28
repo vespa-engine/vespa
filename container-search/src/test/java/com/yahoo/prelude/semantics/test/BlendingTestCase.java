@@ -2,9 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests blending rules
@@ -19,9 +19,9 @@ public class BlendingTestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter literal matching */
     @Test
-    public void testLiteralEquals() {
-        assertParameterSemantics("AND a sun came cd","a sun came cd","search","[music]");
-        assertParameterSemantics("AND driving audi","driving audi","search","[cars]");
+    void testLiteralEquals() {
+        assertParameterSemantics("AND a sun came cd", "a sun came cd", "search", "[music]");
+        assertParameterSemantics("AND driving audi", "driving audi", "search", "[cars]");
         //assertParameterSemantics("AND audi music quality","audi music quality","search","carstereos",1);
     }
 

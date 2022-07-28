@@ -5,16 +5,16 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests async execution of search chains.
@@ -26,12 +26,12 @@ public class VespaAsyncSearcherTest {
 
     private ExecutorService executor;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = Executors.newFixedThreadPool(16);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         assertEquals(0, executor.shutdownNow().size());
     }
@@ -69,7 +69,7 @@ public class VespaAsyncSearcherTest {
     }
 
     @Test
-    public void testAsyncExecution() {
+    void testAsyncExecution() {
         Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
         Execution execution = new Execution(chain, Execution.Context.createContextStub());
         Query query = new Query();

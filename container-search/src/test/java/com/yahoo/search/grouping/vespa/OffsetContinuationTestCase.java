@@ -2,9 +2,9 @@
 package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 public class OffsetContinuationTestCase {
 
     @Test
-    public void requireThatNullResultIdThrowsException() {
+    void requireThatNullResultIdThrowsException() {
         try {
             new OffsetContinuation(null, 0, 0, 0);
             fail();
@@ -22,7 +22,7 @@ public class OffsetContinuationTestCase {
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         OffsetContinuation cnt = new OffsetContinuation(ResultId.valueOf(1), 2, 3, 4);
         assertEquals(ResultId.valueOf(1), cnt.getResultId());
         assertEquals(2, cnt.getTag());
@@ -44,7 +44,7 @@ public class OffsetContinuationTestCase {
     }
 
     @Test
-    public void requireThatOffsetContinuationsCanBeEncoded() {
+    void requireThatOffsetContinuationsCanBeEncoded() {
         assertEncode("BCBCBCBEBG", newOffset(1, 1, 2, 3));
         assertEncode("BCBKCBACBKCCK", newOffset(5, 8, 13, 21));
         assertEncode("BCBBBBBDBF", newOffset(-1, -1, -2, -3));
@@ -52,7 +52,7 @@ public class OffsetContinuationTestCase {
     }
 
     @Test
-    public void requireThatOffsetContinuationsCanBeDecoded() {
+    void requireThatOffsetContinuationsCanBeDecoded() {
         assertDecode("BCBCBCBEBG", newOffset(1, 1, 2, 3));
         assertDecode("BCBKCBACBKCCK", newOffset(5, 8, 13, 21));
         assertDecode("BCBBBBBDBF", newOffset(-1, -1, -2, -3));
@@ -60,18 +60,18 @@ public class OffsetContinuationTestCase {
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(newOffset(1, 1, 2, 3).hashCode(), newOffset(1, 1, 2, 3).hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         Continuation cnt = newOffset(1, 1, 2, 3);
-        assertFalse(cnt.equals(new Object()));
-        assertFalse(cnt.equals(newOffset(0, 1, 2, 3)));
-        assertFalse(cnt.equals(newOffset(1, 0, 2, 3)));
-        assertFalse(cnt.equals(newOffset(1, 1, 0, 3)));
-        assertFalse(cnt.equals(newOffset(1, 1, 2, 0)));
+        assertNotEquals(cnt, new Object());
+        assertNotEquals(cnt, newOffset(0, 1, 2, 3));
+        assertNotEquals(cnt, newOffset(1, 0, 2, 3));
+        assertNotEquals(cnt, newOffset(1, 1, 0, 3));
+        assertNotEquals(cnt, newOffset(1, 1, 2, 0));
         assertEquals(cnt, newOffset(1, 1, 2, 3));
     }
 

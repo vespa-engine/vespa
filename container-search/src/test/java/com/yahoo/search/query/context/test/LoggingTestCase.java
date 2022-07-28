@@ -8,10 +8,10 @@ import java.util.Set;
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -19,34 +19,34 @@ import static org.junit.Assert.assertTrue;
 public class LoggingTestCase {
 
     @Test
-    public void testLogging() {
-        Query query=new Query();
+    void testLogging() {
+        Query query = new Query();
         QueryContext queryContext = query.getContext(true);
-        queryContext.logValue("a","a1");
+        queryContext.logValue("a", "a1");
         queryContext.trace("first message", 2);
-        queryContext.logValue("a","a2");
-        queryContext.logValue("b","b1");
+        queryContext.logValue("a", "a2");
+        queryContext.logValue("b", "b1");
         QueryContext h2 = query.clone().getContext(true);
-        h2.logValue("b","b2");
+        h2.logValue("b", "b2");
         h2.trace("second message", 2);
-        h2.logValue("b","b3");
-        queryContext.logValue("b","b4");
+        h2.logValue("b", "b3");
+        queryContext.logValue("b", "b4");
         QueryContext h3 = query.clone().getContext(true);
-        h3.logValue("b","b5");
-        h3.logValue("c","c1");
+        h3.logValue("b", "b5");
+        h3.logValue("c", "c1");
         h3.trace("third message", 2);
-        h2.logValue("c","c2");
+        h2.logValue("c", "c2");
         queryContext.trace("fourth message", 2);
-        queryContext.logValue("d","d1");
+        queryContext.logValue("d", "d1");
         h2.trace("fifth message", 2);
-        h2.logValue("c","c3");
-        queryContext.logValue("c","c4");
+        h2.logValue("c", "c3");
+        queryContext.logValue("c", "c4");
 
         // Assert that all of the above is in the log, in some undefined order
-        Set<String> logValues=new HashSet<>();
-        for (Iterator<Execution.Trace.LogValue> logValueIterator=queryContext.logValueIterator(); logValueIterator.hasNext(); )
+        Set<String> logValues = new HashSet<>();
+        for (Iterator<Execution.Trace.LogValue> logValueIterator = queryContext.logValueIterator(); logValueIterator.hasNext(); )
             logValues.add(logValueIterator.next().toString());
-        assertEquals(12,logValues.size());
+        assertEquals(12, logValues.size());
         assertTrue(logValues.contains("a=a1"));
         assertTrue(logValues.contains("a=a2"));
         assertTrue(logValues.contains("b=b1"));

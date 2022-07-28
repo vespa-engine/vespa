@@ -17,11 +17,11 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -33,7 +33,7 @@ public class HitConverterTestCase {
     }
 
     @Test
-    public void requireThatHitsAreConverted() {
+    void requireThatHitsAreConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
         assertNotNull(hit);
@@ -45,7 +45,7 @@ public class HitConverterTestCase {
     }
 
     @Test
-    public void requireThatContextDataIsCopied() {
+    void requireThatContextDataIsCopied() {
         Hit ctxHit = context();
         ctxHit.setSource("69");
         Query ctxQuery = new Query();
@@ -55,14 +55,14 @@ public class HitConverterTestCase {
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(ctxHit));
         assertNotNull(hit);
         assertTrue(hit instanceof FastHit);
-        assertEquals(1, ((FastHit)hit).getPartId());
-        assertEquals(createGlobalId(2), ((FastHit)hit).getGlobalId());
+        assertEquals(1, ((FastHit) hit).getPartId());
+        assertEquals(createGlobalId(2), ((FastHit) hit).getGlobalId());
         assertSame(ctxQuery, hit.getQuery());
         assertEquals(ctxHit.getSource(), hit.getSource());
     }
 
     @Test
-    public void requireThatSummaryClassIsSet() {
+    void requireThatSummaryClassIsSet() {
         Searcher searcher = new MySearcher();
         HitConverter converter = new HitConverter(searcher, new Query());
         Hit hit = converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
@@ -72,7 +72,7 @@ public class HitConverterTestCase {
     }
 
     @Test
-    public void requireThatHitHasContext() {
+    void requireThatHitHasContext() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         try {
             converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3));
@@ -83,7 +83,7 @@ public class HitConverterTestCase {
     }
 
     @Test
-    public void requireThatUnsupportedHitClassThrows() {
+    void requireThatUnsupportedHitClassThrows() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         try {
             converter.toSearchHit("69", new com.yahoo.searchlib.aggregation.Hit() {
@@ -107,10 +107,10 @@ public class HitConverterTestCase {
     }
 
     @Test
-    public void requireThatVdsHitCanBeConverted() {
+    void requireThatVdsHitCanBeConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         GroupingListHit context = new GroupingListHit(null, sixtynine());
-        VdsHit lowHit = new VdsHit("id:ns:type::", new byte[] { 0x55, 0x55, 0x55, 0x55 }, 1);
+        VdsHit lowHit = new VdsHit("id:ns:type::", new byte[]{0x55, 0x55, 0x55, 0x55}, 1);
         lowHit.setContext(context);
         Hit hit = converter.toSearchHit("69", lowHit);
         assertNotNull(hit);

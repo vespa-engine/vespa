@@ -20,17 +20,14 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.Execution.Context;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -40,19 +37,19 @@ public class FederationSearcherTest {
     private static final String hasBeenFilled = "hasBeenFilled";
 
     @Test
-    public void require_that_hits_are_not_automatically_filled() {
+    void require_that_hits_are_not_automatically_filled() {
         Result result = federationToSingleAddHitSearcher().search();
         assertNotFilled(firstHitInFirstGroup(result));
     }
 
     @Test
-    public void require_that_hits_can_be_filled() {
+    void require_that_hits_can_be_filled() {
         Result result = federationToSingleAddHitSearcher().searchAndFill();
         assertFilled(firstHitInFirstGroup(result));
     }
 
     @Test
-    public void require_that_hits_can_be_filled_when_moved() {
+    void require_that_hits_can_be_filled_when_moved() {
         FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new AddHitSearcher());
@@ -80,7 +77,7 @@ public class FederationSearcherTest {
     }
 
     @Test
-    public void require_that_hits_can_be_filled_for_multiple_chains_and_queries() {
+    void require_that_hits_can_be_filled_for_multiple_chains_and_queries() {
         FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new ModifyQueryAndAddHitSearcher("modified1"));
@@ -89,12 +86,12 @@ public class FederationSearcherTest {
         Result result = tester.search();
         tester.fill(result);
         assertEquals(3, result.hits().getConcreteSize());
-        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();)
+        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext(); )
             assertFilled(i.next());
     }
 
     @Test
-    public void require_that_hits_that_time_out_in_fill_are_removed() {
+    void require_that_hits_that_time_out_in_fill_are_removed() {
         FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
@@ -104,13 +101,13 @@ public class FederationSearcherTest {
         Result result = tester.search(query);
         tester.fill(result);
         assertEquals(1, result.hits().getConcreteSize());
-        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();)
+        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext(); )
             assertFilled(i.next());
         assertEquals("Timed out", result.hits().getError().getMessage());
     }
 
     @Test
-    public void require_that_optional_search_chains_does_not_delay_federation() {
+    void require_that_optional_search_chains_does_not_delay_federation() {
         BlockingSearcher blockingSearcher = new BlockingSearcher();
 
         FederationTester tester = new FederationTester();
@@ -121,8 +118,8 @@ public class FederationSearcherTest {
         assertEquals(2, result.getHitCount());
         assertTrue(result.hits().get(0) instanceof HitGroup);
         assertTrue(result.hits().get(1) instanceof HitGroup);
-        HitGroup chain1Result = (HitGroup)result.hits().get(0);
-        HitGroup chain2Result = (HitGroup)result.hits().get(1);
+        HitGroup chain1Result = (HitGroup) result.hits().get(0);
+        HitGroup chain2Result = (HitGroup) result.hits().get(1);
 
         // Verify chain1 result: One filled hit
         assertEquals(1, chain1Result.size());
@@ -141,21 +138,21 @@ public class FederationSearcherTest {
     }
 
     @Test
-    public void require_that_calling_a_single_slow_source_with_long_timeout_does_not_delay_federation() {
+    void require_that_calling_a_single_slow_source_with_long_timeout_does_not_delay_federation() {
         FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1",
-                              new FederationOptions().setUseByDefault(true).setRequestTimeoutInMilliseconds(3600 * 1000),
-                              new BlockingSearcher() );
+                new FederationOptions().setUseByDefault(true).setRequestTimeoutInMilliseconds(3600 * 1000),
+                new BlockingSearcher());
 
         Query query = new Query();
         query.setTimeout(50); // make the test run faster
         Result result = tester.search(query);
         assertEquals(1, result.hits().size());
         assertTrue(result.hits().get(0) instanceof HitGroup);
-        HitGroup chain1Result = (HitGroup)result.hits().get(0);
+        HitGroup chain1Result = (HitGroup) result.hits().get(0);
         assertEquals(1, chain1Result.size());
         assertTrue(chain1Result.asList().get(0) instanceof ErrorHit);
-        ErrorHit errorHit = (ErrorHit)chain1Result.get(0);
+        ErrorHit errorHit = (ErrorHit) chain1Result.get(0);
         assertEquals(1, errorHit.errors().size());
         ErrorMessage error = errorHit.errors().iterator().next();
         assertEquals("chain1", error.getSource());
@@ -164,7 +161,7 @@ public class FederationSearcherTest {
     }
 
     @Test
-    public void custom_federation_target() {
+    void custom_federation_target() {
         ComponentId targetSelectorId = ComponentId.fromString("TargetSelector");
         ComponentRegistry<TargetSelector> targetSelectors = new ComponentRegistry<>();
         targetSelectors.register(targetSelectorId, new TestTargetSelector());
@@ -182,7 +179,7 @@ public class FederationSearcherTest {
     }
 
     @Test
-    public void target_selectors_can_have_multiple_targets() {
+    void target_selectors_can_have_multiple_targets() {
         ComponentId targetSelectorId = ComponentId.fromString("TestMultipleTargetSelector");
         ComponentRegistry<TargetSelector> targetSelectors = new ComponentRegistry<>();
         targetSelectors.register(targetSelectorId, new TestMultipleTargetSelector());

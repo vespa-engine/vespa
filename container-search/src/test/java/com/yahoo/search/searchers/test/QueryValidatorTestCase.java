@@ -7,10 +7,10 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.QueryValidator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 public class QueryValidatorTestCase {
 
     @Test
-    public void testValidation() {
+    void testValidation() {
         SearchDefinition sd = new SearchDefinition("test");
         sd.addCommand("mytensor1", "type tensor(x[100]");
         sd.addCommand("mytensor2", "type tensor<float>(x[100]");

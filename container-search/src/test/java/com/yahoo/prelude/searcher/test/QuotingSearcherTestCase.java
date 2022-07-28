@@ -15,14 +15,15 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests hit property quoting.
@@ -38,10 +39,10 @@ public class QuotingSearcherTestCase {
     }
 
     @Test
-    public void testBasicQuoting() {
+    void testBasicQuoting() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
-                                                + "searcher/test/testquoting.cfg");
+                + "searcher/test/testquoting.cfg");
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(s, docsource);
         Query q = new Query("?query=a");
@@ -58,10 +59,10 @@ public class QuotingSearcherTestCase {
     }
 
     @Test
-    public void testBasicQuotingWithNoisyStrings() {
+    void testBasicQuotingWithNoisyStrings() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
-                                                + "searcher/test/testquoting.cfg");
+                + "searcher/test/testquoting.cfg");
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(s, docsource);
         Query q = new Query("?query=a");
@@ -78,10 +79,10 @@ public class QuotingSearcherTestCase {
     }
 
     @Test
-    public void testFieldQuotingWithNoisyStrings() {
+    void testFieldQuotingWithNoisyStrings() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
-                                                + "searcher/test/testquoting.cfg");
+                + "searcher/test/testquoting.cfg");
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(s, docsource);
         Query q = new Query("?query=a");
@@ -99,10 +100,10 @@ public class QuotingSearcherTestCase {
 
 
     @Test
-    public void testNoQuotingWithOtherTypes() {
+    void testNoQuotingWithOtherTypes() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
-                                                + "searcher/test/testquoting.cfg");
+                + "searcher/test/testquoting.cfg");
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(s, docsource);
         Query q = new Query("?query=a");

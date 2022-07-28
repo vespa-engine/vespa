@@ -6,12 +6,12 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author bratseth
@@ -21,7 +21,7 @@ public class FeatureDataTestCase {
     private static final double delta = 0.00000001;
 
     @Test
-    public void testFeatureData() {
+    void testFeatureData() {
         Cursor features = new Slime().setObject();
         features.setDouble("scalar1", 1.5);
         features.setDouble("scalar2", 2.5);
@@ -32,11 +32,11 @@ public class FeatureDataTestCase {
 
         FeatureData featureData = new FeatureData(new SlimeAdapter(features));
         assertEquals("scalar1,scalar2,tensor1,tensor2",
-                     featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
+                featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
         assertNull(featureData.getDouble("nosuch1"));
         assertEquals(1.5, featureData.getDouble("scalar1"), delta);
         assertEquals(2.5, featureData.getDouble("scalar2"), delta);
-        assertEquals("Cached lookup", 2.5, featureData.getDouble("scalar2"), delta);
+        assertEquals(2.5, featureData.getDouble("scalar2"), delta, "Cached lookup");
         assertNull(featureData.getDouble("nosuch2"));
         assertNull(featureData.getDouble("nosuch2"));
 
@@ -45,17 +45,17 @@ public class FeatureDataTestCase {
         assertEquals(Tensor.from(2.5), featureData.getTensor("scalar2"));
         assertEquals(tensor1, featureData.getTensor("tensor1"));
         assertEquals(tensor2, featureData.getTensor("tensor2"));
-        assertEquals("Cached lookup", tensor2, featureData.getTensor("tensor2"));
+        assertEquals(tensor2, featureData.getTensor("tensor2"), "Cached lookup");
         assertNull(featureData.getTensor("nosuch2"));
         assertNull(featureData.getTensor("nosuch2"));
 
         String expectedJson =
                 "{" +
-                "\"scalar1\":1.5," +
-                "\"scalar2\":2.5," +
-                "\"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]}," +
-                "\"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}" +
-                "}";
+                        "\"scalar1\":1.5," +
+                        "\"scalar2\":2.5," +
+                        "\"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]}," +
+                        "\"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}" +
+                        "}";
         assertEquals(expectedJson, featureData.toJson());
     }
 

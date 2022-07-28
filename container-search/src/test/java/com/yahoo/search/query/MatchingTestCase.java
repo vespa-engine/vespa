@@ -2,10 +2,9 @@
 package com.yahoo.search.query;
 
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -13,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class MatchingTestCase {
 
     @Test
-    public void testDefaultsInQuery() {
+    void testDefaultsInQuery() {
         Query query = new Query("?query=test");
         assertNull(query.getRanking().getMatching().getTermwiseLimit());
         assertNull(query.getRanking().getMatching().getNumThreadsPerSearch());
@@ -24,7 +23,7 @@ public class MatchingTestCase {
     }
 
     @Test
-    public void testQueryOverrides() {
+    void testQueryOverrides() {
         Query query = new Query("?query=test" +
                 "&ranking.matching.termwiseLimit=0.7" +
                 "&ranking.matching.numThreadsPerSearch=17" +
@@ -49,7 +48,7 @@ public class MatchingTestCase {
     }
 
     @Test
-    public void testBackwardsCompatibleQueryOverrides() {
+    void testBackwardsCompatibleQueryOverrides() {
         // The lowercase aliases are supported to provide backwards compatibility of the properties that was wrongly named in the first place.
         Query query = new Query("?query=test" +
                 "&ranking.matching.termwiselimit=0.7" +
@@ -73,7 +72,7 @@ public class MatchingTestCase {
     }
 
     @Test
-    public void testLimits() {
+    void testLimits() {
         verifyException("termwiselimit", "-0.1");
         verifyException("termwiselimit", "1.1");
     }

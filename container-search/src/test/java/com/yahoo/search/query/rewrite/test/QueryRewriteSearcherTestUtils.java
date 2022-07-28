@@ -13,9 +13,10 @@ import com.yahoo.text.interpretation.Interpretation;
 import com.yahoo.text.interpretation.Annotations;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.component.chain.Chain;
-import org.junit.Assert;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test utilities for QueryRewriteSearcher
@@ -73,7 +74,7 @@ public class QueryRewriteSearcherTestUtils {
     public void assertRewrittenQuery(String origQuery, String finalQuery) {
         Query query = new Query(QueryTestCase.httpEncode(origQuery));
         Result result = execution.search(query);
-        Assert.assertEquals(finalQuery, result.getQuery().toString());
+        assertEquals(finalQuery, result.getQuery().toString());
     }
 
     /**
@@ -89,7 +90,7 @@ public class QueryRewriteSearcherTestUtils {
         Query query = new Query(origQuery);
         intentModel.setTo(query);
         Result result = execution.search(query);
-        Assert.assertEquals(finalQuery, result.getQuery().toString());
+        assertEquals(finalQuery, result.getQuery().toString());
     }
 
     /**

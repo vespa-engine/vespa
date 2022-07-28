@@ -7,13 +7,13 @@ import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.searchchain.Execution;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,17 +21,17 @@ import static org.junit.Assert.*;
 public class GroupingQueryParserTestCase {
 
     @Test
-    public void requireThatNoRequestIsSkipped() {
+    void requireThatNoRequestIsSkipped() {
         assertEquals(Collections.emptyList(), executeQuery(null, null, null));
     }
 
     @Test
-    public void requireThatEmptyRequestIsSkipped() {
+    void requireThatEmptyRequestIsSkipped() {
         assertEquals(Collections.emptyList(), executeQuery("", null, null));
     }
 
     @Test
-    public void requireThatRequestIsParsed() {
+    void requireThatRequestIsParsed() {
         List<GroupingRequest> lst = executeQuery("all(group(foo) each(output(max(bar))))", null, null);
         assertNotNull(lst);
         assertEquals(1, lst.size());
@@ -41,7 +41,7 @@ public class GroupingQueryParserTestCase {
     }
 
     @Test
-    public void requireThatRequestListIsParsed() {
+    void requireThatRequestListIsParsed() {
         List<GroupingRequest> lst = executeQuery("all();each()", null, null);
         assertNotNull(lst);
         assertEquals(2, lst.size());
@@ -50,7 +50,7 @@ public class GroupingQueryParserTestCase {
     }
 
     @Test
-    public void requireThatEachRightBelowAllParses() {
+    void requireThatEachRightBelowAllParses() {
         List<GroupingRequest> lst = executeQuery("all(each(output(summary(bar))))",
                 null, null);
         assertNotNull(lst);
@@ -64,9 +64,9 @@ public class GroupingQueryParserTestCase {
     }
 
     @Test
-    public void requireThatContinuationListIsParsed() {
+    void requireThatContinuationListIsParsed() {
         List<GroupingRequest> lst = executeQuery("all(group(foo) each(output(max(bar))))",
-                                                 "BCBCBCBEBGBCBKCBACBKCCK BCBBBBBDBF", null);
+                "BCBCBCBEBGBCBKCBACBKCCK BCBBBBBDBF", null);
         assertNotNull(lst);
         assertEquals(1, lst.size());
         GroupingRequest req = lst.get(0);
@@ -76,7 +76,7 @@ public class GroupingQueryParserTestCase {
     }
 
     @Test
-    public void requireThatTimeZoneIsParsed() {
+    void requireThatTimeZoneIsParsed() {
         List<GroupingRequest> lst = executeQuery("all(group(foo) each(output(max(bar))))", null, "cet");
         assertNotNull(lst);
         assertEquals(1, lst.size());
@@ -88,7 +88,7 @@ public class GroupingQueryParserTestCase {
     }
 
     @Test
-    public void requireThatTimeZoneHasUtcDefault() {
+    void requireThatTimeZoneHasUtcDefault() {
         List<GroupingRequest> lst = executeQuery("all(group(foo) each(output(max(bar))))", null, null);
         assertNotNull(lst);
         assertEquals(1, lst.size());

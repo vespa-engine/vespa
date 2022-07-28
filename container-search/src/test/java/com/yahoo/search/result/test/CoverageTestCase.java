@@ -4,10 +4,10 @@ package com.yahoo.search.result.test;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Steinar Knutsen
@@ -15,14 +15,14 @@ import static org.junit.Assert.assertNull;
 public class CoverageTestCase {
 
     @Test
-    public void testZeroCoverage() {
+    void testZeroCoverage() {
         Coverage c = new Coverage(0L, 0, 0, 0);
         assertEquals(0, c.getResultPercentage());
         assertEquals(0, c.getResultSets());
     }
 
     @Test
-    public void testActiveCoverage() {
+    void testActiveCoverage() {
         Coverage c = new Coverage(6, 5);
         assertEquals(5, c.getActive());
         assertEquals(6, c.getDocs());
@@ -34,7 +34,7 @@ public class CoverageTestCase {
     }
 
     @Test
-    public void testDefaultCoverage() {
+    void testDefaultCoverage() {
         boolean create = true;
 
         Result r1 = new Result(new Query());
@@ -46,18 +46,18 @@ public class CoverageTestCase {
     }
 
     @Test
-    public void testDefaultSearchScenario() {
+    void testDefaultSearchScenario() {
         boolean create = true;
 
         Result federationSearcherResult = new Result(new Query());
         Result singleSourceResult = new Result(new Query());
         federationSearcherResult.mergeWith(singleSourceResult);
-        assertNull(federationSearcherResult.getCoverage( !create));
+        assertNull(federationSearcherResult.getCoverage(!create));
         assertEquals(0, federationSearcherResult.getCoverage(create).getResultSets());
     }
 
     @Test
-    public void testRequestingCoverageSearchScenario() {
+    void testRequestingCoverageSearchScenario() {
         boolean create = true;
 
         Result federationSearcherResult = new Result(new Query());
@@ -68,7 +68,7 @@ public class CoverageTestCase {
     }
 
     @Test
-    public void testCoverageConversion() {
+    void testCoverageConversion() {
         Coverage c = new Coverage(6, 10);
         c.setDegradedReason(7);
         com.yahoo.container.logging.Coverage lc = c.toLoggingCoverage();

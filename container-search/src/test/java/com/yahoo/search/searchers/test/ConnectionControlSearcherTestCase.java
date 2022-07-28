@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,8 +12,7 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Container;
@@ -35,7 +34,7 @@ import com.yahoo.search.searchers.ConnectionControlSearcher;
 public class ConnectionControlSearcherTestCase {
 
     @Test
-    public final void test() throws URISyntaxException {
+    final void test() throws URISyntaxException {
         URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=1");
         long connectedAtMillis = 0L;
         long nowMillis = 2L * 1000L;
@@ -44,7 +43,7 @@ public class ConnectionControlSearcherTestCase {
     }
 
     @Test
-    public final void testForcedClose() throws URISyntaxException {
+    final void testForcedClose() throws URISyntaxException {
         URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=0");
         long connectedAtMillis = 0L;
         long nowMillis = 0L;
@@ -53,7 +52,7 @@ public class ConnectionControlSearcherTestCase {
     }
 
     @Test
-    public final void testNormalCloseWithoutJdisc() {
+    final void testNormalCloseWithoutJdisc() {
         long nowMillis = 2L;
         Query query = new Query("/?connectioncontrol.maxlifetime=1");
         Execution e = new Execution(new Chain<Searcher>(ConnectionControlSearcher.createTestInstance(() -> nowMillis)),
@@ -63,7 +62,7 @@ public class ConnectionControlSearcherTestCase {
     }
 
     @Test
-    public final void testNoMaxLifetime() throws URISyntaxException {
+    final void testNoMaxLifetime() throws URISyntaxException {
         URI uri = new URI("http://finance.yahoo.com/");
         long connectedAtMillis = 0L;
         long nowMillis = 0L;
@@ -72,7 +71,7 @@ public class ConnectionControlSearcherTestCase {
     }
 
     @Test
-    public final void testYoungEnoughConnection() throws URISyntaxException {
+    final void testYoungEnoughConnection() throws URISyntaxException {
         URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=1");
         long connectedAtMillis = 0L;
         long nowMillis = 500L;

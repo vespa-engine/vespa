@@ -2,13 +2,13 @@
 package com.yahoo.search.querytransform;
 
 import com.yahoo.prelude.query.PredicateQueryItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author magnarn
@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 public class BooleanAttributeParserTest {
 
     @Test
-    public void requireThatParseHandlesAllFormats() {
+    void requireThatParseHandlesAllFormats() {
         assertParse(null, 0);
         assertParse("{}", 0);
         assertParse("{foo:bar}", 1);
@@ -37,7 +37,7 @@ public class BooleanAttributeParserTest {
     }
 
     @Test
-    public void requireThatIllegalStringsFail() {
+    void requireThatIllegalStringsFail() {
         assertException("{foo:[bar:[baz]}");
         assertException("{foo:[bar:baz}");
         assertException("{foo:bar:[0,1,2}");
@@ -60,7 +60,7 @@ public class BooleanAttributeParserTest {
     }
 
     @Test
-    public void requireThatTermsCanHaveBitmaps() {
+    void requireThatTermsCanHaveBitmaps() {
         PredicateQueryItem q = assertParse("{foo:bar:0x1}", 1);
         PredicateQueryItem.Entry[] features = new PredicateQueryItem.Entry[q.getFeatures().size()];
         q.getFeatures().toArray(features);

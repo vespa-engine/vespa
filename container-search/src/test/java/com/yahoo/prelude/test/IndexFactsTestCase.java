@@ -11,7 +11,8 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,10 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
@@ -58,7 +56,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testBasicCases() {
+    void testBasicCases() {
         // First check default behavior
         IndexFacts indexFacts = createIndexFacts();
         Query q = newQuery("?query=a:b", indexFacts);
@@ -68,7 +66,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testDefaultPosition() {
+    void testDefaultPosition() {
         Index a = new Index("a");
         assertFalse(a.isDefaultPosition());
         a.addCommand("any");
@@ -80,21 +78,21 @@ public class IndexFactsTestCase {
         sd.addCommand("b", "any");
         assertNull(sd.getDefaultPosition());
         sd.addCommand("c", "default-position");
-        assertTrue(sd.getDefaultPosition().equals("c"));
+        assertEquals(sd.getDefaultPosition(), "c");
 
         SearchDefinition sd2 = new SearchDefinition("sd2");
         sd2.addIndex(new Index("b").addCommand("any"));
         assertNull(sd2.getDefaultPosition());
         sd2.addIndex(a);
-        assertTrue(sd2.getDefaultPosition().equals("a"));
+        assertEquals(sd2.getDefaultPosition(), "a");
 
         IndexFacts indexFacts = createIndexFacts(ImmutableList.of(sd, sd2));
-        assertTrue(indexFacts.getDefaultPosition(null).equals("a"));
-        assertTrue(indexFacts.getDefaultPosition("sd").equals("c"));
+        assertEquals(indexFacts.getDefaultPosition(null), "a");
+        assertEquals(indexFacts.getDefaultPosition("sd"), "c");
     }
 
     @Test
-    public void testIndicesInAnyConfigurationAreIndicesInDefault() {
+    void testIndicesInAnyConfigurationAreIndicesInDefault() {
         IndexFacts.Session indexFacts = createIndexFacts().newSession(new Query());
         assertTrue(indexFacts.isIndex("a"));
         assertTrue(indexFacts.isIndex("b"));
@@ -104,21 +102,21 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testDefaultIsUnionHostIndex() {
+    void testDefaultIsUnionHostIndex() {
         IndexFacts.Session session = createIndexFacts().newSession(new Query());
         assertTrue(session.getIndex("c").isHostIndex());
         assertFalse(session.getIndex("a").isHostIndex());
     }
 
     @Test
-    public void testDefaultIsUnionUriIndex() {
+    void testDefaultIsUnionUriIndex() {
         IndexFacts indexFacts = createIndexFacts();
         assertTrue(indexFacts.newSession(new Query()).getIndex("d").isUriIndex());
         assertFalse(indexFacts.newSession(new Query()).getIndex("a").isUriIndex());
     }
 
     @Test
-    public void testDefaultIsUnionStemMode() {
+    void testDefaultIsUnionStemMode() {
         IndexFacts.Session session = createIndexFacts().newSession(new Query());
         assertEquals(StemMode.NONE, session.getIndex("a").getStemMode());
         assertEquals(StemMode.NONE, session.getIndex("b").getStemMode());
@@ -140,7 +138,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testExactMatching() {
+    void testExactMatching() {
         assertExactIsWorking("test");
         assertExactIsWorking("artist_name_ft_norm1");
 
@@ -157,7 +155,7 @@ public class IndexFactsTestCase {
 
         Index e = nullSession.getIndex("e");
         assertTrue(e.isExact());
-        assertEquals("kj(/&",e.getExactTerminator());
+        assertEquals("kj(/&", e.getExactTerminator());
 
         Index a = nullSession.getIndex("a");
         assertFalse(a.isExact());
@@ -169,7 +167,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testComplexExactMatching() {
+    void testComplexExactMatching() {
         SearchDefinition sd = new SearchDefinition("foobar");
         String u_name = "foo_bar";
         Index u_index = new Index(u_name);
@@ -190,7 +188,7 @@ public class IndexFactsTestCase {
 
     // This is also backed by a system test on cause of complex config
     @Test
-    public void testRestrictLists1() {
+    void testRestrictLists1() {
         Query query = new Query();
         query.getModel().getSources().add("nalle");
         query.getModel().getSources().add("one");
@@ -203,7 +201,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testRestrictLists2() {
+    void testRestrictLists2() {
         Query query = new Query();
         query.getModel().getSources().add("clusterTwo");
         query.getModel().getRestrict().add("three");
@@ -223,7 +221,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testRestrictLists3() {
+    void testRestrictLists3() {
         Query query = new Query();
         query.getModel().getSources().add("clusterOne");
         query.getModel().getRestrict().add("two");
@@ -242,7 +240,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testPredicateBounds() {
+    void testPredicateBounds() {
         Index index = new Index("a");
         assertEquals(Long.MIN_VALUE, index.getPredicateLowerBound());
         assertEquals(Long.MAX_VALUE, index.getPredicateUpperBound());
@@ -264,7 +262,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testUriIndexAndRestrict() {
+    void testUriIndexAndRestrict() {
         IndexInfoConfig.Builder b = new IndexInfoConfig.Builder();
 
         IndexInfoConfig.Indexinfo.Builder b1 = new IndexInfoConfig.Indexinfo.Builder();
@@ -298,7 +296,7 @@ public class IndexFactsTestCase {
     }
 
     @Test
-    public void testConflictingAliases() {
+    void testConflictingAliases() {
         SearchDefinition first = new SearchDefinition("first");
         Index field1 = new Index("field1");
         first.addIndex(field1);

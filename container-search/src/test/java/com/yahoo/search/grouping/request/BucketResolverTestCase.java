@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ChoiceFormat;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,7 +22,7 @@ public class BucketResolverTestCase {
     // --------------------------------------------------------------------------------
 
     @Test
-    public void testResolve() {
+    void testResolve() {
         BucketResolver resolver = new BucketResolver();
         resolver.push(new StringValue("a"), true);
         try {
@@ -71,32 +71,32 @@ public class BucketResolverTestCase {
     }
 
     @Test
-    public void testBucketType() {
-        checkPushFail(Arrays.asList((ConstantValue)new StringValue("a"), new LongValue(1L)),
-                      "Bucket type mismatch, expected 'StringValue' got 'LongValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new StringValue("a"), new DoubleValue(1.0)),
-                      "Bucket type mismatch, expected 'StringValue' got 'DoubleValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new LongValue(1L), new StringValue("a")),
-                      "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new LongValue(1L), new DoubleValue(1.0)),
-                      "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new DoubleValue(1.0), new StringValue("a")),
-                      "Bucket type mismatch, expected 'DoubleValue' got 'StringValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new DoubleValue(1.0), new LongValue(1L)),
-                      "Bucket type mismatch, expected 'DoubleValue' got 'LongValue'.");
-        checkPushFail(Arrays.asList((ConstantValue)new InfiniteValue(new Infinite(true)), new InfiniteValue(new Infinite(false))),
-                      "Bucket type mismatch, cannot both be infinity.");
+    void testBucketType() {
+        checkPushFail(Arrays.asList((ConstantValue) new StringValue("a"), new LongValue(1L)),
+                "Bucket type mismatch, expected 'StringValue' got 'LongValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new StringValue("a"), new DoubleValue(1.0)),
+                "Bucket type mismatch, expected 'StringValue' got 'DoubleValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new LongValue(1L), new StringValue("a")),
+                "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new LongValue(1L), new DoubleValue(1.0)),
+                "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(1.0), new StringValue("a")),
+                "Bucket type mismatch, expected 'DoubleValue' got 'StringValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(1.0), new LongValue(1L)),
+                "Bucket type mismatch, expected 'DoubleValue' got 'LongValue'.");
+        checkPushFail(Arrays.asList((ConstantValue) new InfiniteValue(new Infinite(true)), new InfiniteValue(new Infinite(false))),
+                "Bucket type mismatch, cannot both be infinity.");
 
     }
 
     @Test
-    public void testBucketOrder() {
-        checkPushFail(Arrays.asList((ConstantValue)new LongValue(2L), new LongValue(1L)),
-                      "Bucket to-value can not be less than from-value.");
-        checkPushFail(Arrays.asList((ConstantValue)new DoubleValue(2.0), new DoubleValue(1.0)),
-                      "Bucket to-value can not be less than from-value.");
-        checkPushFail(Arrays.asList((ConstantValue)new StringValue("b"), new StringValue("a")),
-                      "Bucket to-value can not be less than from-value.");
+    void testBucketOrder() {
+        checkPushFail(Arrays.asList((ConstantValue) new LongValue(2L), new LongValue(1L)),
+                "Bucket to-value can not be less than from-value.");
+        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(2.0), new DoubleValue(1.0)),
+                "Bucket to-value can not be less than from-value.");
+        checkPushFail(Arrays.asList((ConstantValue) new StringValue("b"), new StringValue("a")),
+                "Bucket to-value can not be less than from-value.");
     }
 
     public void assertBucketRange(BucketValue expected, ConstantValue from, boolean inclusiveFrom, ConstantValue to, boolean inclusiveTo) {
@@ -123,7 +123,7 @@ public class BucketResolverTestCase {
     }
 
     @Test
-    public void requireThatBucketRangesWork() {
+    void requireThatBucketRangesWork() {
         BucketValue expected = new LongBucket(2, 5);
         assertBucketRange(expected, new LongValue(1), false, new LongValue(4), true);
         assertBucketRange(expected, new LongValue(1), false, new LongValue(5), false);

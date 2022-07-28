@@ -26,7 +26,7 @@ import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.searchlib.expression.TimeStampFunctionNode;
 import com.yahoo.searchlib.expression.ToStringFunctionNode;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,9 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -44,19 +42,19 @@ import static org.junit.Assert.fail;
 public class RequestBuilderTestCase {
 
     @Test
-    public void requireThatAllAggregationResulsAreSupported() {
-       assertLayout("all(group(a) each(output(avg(b))))", "[[{ Attribute, result = [Average] }]]");
-       assertLayout("all(group(a) each(output(count())))", "[[{ Attribute, result = [Count] }]]");
-       assertLayout("all(group(a) each(output(max(b))))", "[[{ Attribute, result = [Max] }]]");
-       assertLayout("all(group(a) each(output(min(b))))", "[[{ Attribute, result = [Min] }]]");
-       assertLayout("all(group(a) each(output(sum(b))))", "[[{ Attribute, result = [Sum] }]]");
-       assertLayout("all(group(a) each(each(output(summary()))))", "[[{ Attribute, result = [Hits] }]]");
-       assertLayout("all(group(a) each(output(xor(b))))", "[[{ Attribute, result = [Xor] }]]");
-       assertLayout("all(group(a) each(output(stddev(b))))", "[[{ Attribute, result = [StandardDeviation] }]]");
+    void requireThatAllAggregationResulsAreSupported() {
+        assertLayout("all(group(a) each(output(avg(b))))", "[[{ Attribute, result = [Average] }]]");
+        assertLayout("all(group(a) each(output(count())))", "[[{ Attribute, result = [Count] }]]");
+        assertLayout("all(group(a) each(output(max(b))))", "[[{ Attribute, result = [Max] }]]");
+        assertLayout("all(group(a) each(output(min(b))))", "[[{ Attribute, result = [Min] }]]");
+        assertLayout("all(group(a) each(output(sum(b))))", "[[{ Attribute, result = [Sum] }]]");
+        assertLayout("all(group(a) each(each(output(summary()))))", "[[{ Attribute, result = [Hits] }]]");
+        assertLayout("all(group(a) each(output(xor(b))))", "[[{ Attribute, result = [Xor] }]]");
+        assertLayout("all(group(a) each(output(stddev(b))))", "[[{ Attribute, result = [StandardDeviation] }]]");
     }
 
     @Test
-    public void requireThatExpressionCountAggregationResultIsSupported() {
+    void requireThatExpressionCountAggregationResultIsSupported() {
         RequestBuilder builder = new RequestBuilder(0);
         builder.setRootOperation(GroupingOperation.fromString("all(group(foo) output(count()))"));
         builder.build();
@@ -73,28 +71,28 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatTopNIsHonoured() {
+    void requireThatTopNIsHonoured() {
         List<Grouping> gl = getRequestList("all(max(3) all(group(product_id) max(5) each(output(sum(price)))))");
         assertEquals(1, gl.size());
         assertEquals(3, gl.get(0).getTopN());
     }
 
     @Test
-    public void requireThatTopNIsHonouredWhenNested() {
+    void requireThatTopNIsHonouredWhenNested() {
         List<Grouping> gl = getRequestList("all( all(max(3) all(group(product_id) max(5) each(output(sum(price))))))");
         assertEquals(1, gl.size());
         assertEquals(3, gl.get(0).getTopN());
     }
 
     @Test
-    public void requireThatTopNIsInherited() {
+    void requireThatTopNIsInherited() {
         List<Grouping> gl = getRequestList("all(max(7) all( all(group(product_id) max(5) each(output(sum(price))))))");
         assertEquals(1, gl.size());
         assertEquals(7, gl.get(0).getTopN());
     }
 
     @Test
-    public void requireThatTopNIsMinimum() {
+    void requireThatTopNIsMinimum() {
         List<Grouping> gl = getRequestList("all(max(7) all(max(3) all(group(product_id) max(5) each(output(sum(price))))))");
         assertEquals(1, gl.size());
         assertEquals(3, gl.get(0).getTopN());
@@ -104,7 +102,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatTopNIsIndividual() {
+    void requireThatTopNIsIndividual() {
         List<Grouping> gl = getRequestList("all( all(max(3) all(group(product_id) max(5) each(output(sum(price))))) all(group(filter_cluster3) order(count()) each(output(count()))))");
         assertEquals(2, gl.size());
         assertEquals(3, gl.get(0).getTopN());
@@ -117,7 +115,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatAllExpressionNodesAreSupported() {
+    void requireThatAllExpressionNodesAreSupported() {
         assertLayout("all(group(add(a,b)) each(output(count())))", "[[{ Add, result = [Count] }]]");
         assertLayout("all(group(and(a,b)) each(output(count())))", "[[{ And, result = [Count] }]]");
         assertLayout("all(group(a) each(output(count())))", "[[{ Attribute, result = [Count] }]]");
@@ -188,22 +186,22 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatForceSinglePassIsSupported() {
+    void requireThatForceSinglePassIsSupported() {
         assertForceSinglePass("all(group(foo) each(output(count())))", "[false]");
         assertForceSinglePass("all(group(foo) hint(singlepass) each(output(count())))", "[true]");
         assertForceSinglePass("all(hint(singlepass) " +
-                              "    all(group(foo) each(output(count())))" +
-                              "    all(group(bar) each(output(count()))))",
-                              "[true, true]");
+                "    all(group(foo) each(output(count())))" +
+                "    all(group(bar) each(output(count()))))",
+                "[true, true]");
 
         // it would be really nice if this test returned [true, true], but that is not how the AST is built
         assertForceSinglePass("all(all(group(foo) hint(singlepass) each(output(count())))" +
-                              "    all(group(bar) hint(singlepass) each(output(count()))))",
-                              "[false, false]");
+                "    all(group(bar) hint(singlepass) each(output(count()))))",
+                "[false, false]");
     }
 
     @Test
-    public void requireThatThereCanBeOnlyOneBuildCall() {
+    void requireThatThereCanBeOnlyOneBuildCall() {
         RequestBuilder builder = new RequestBuilder(0);
         builder.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(count())))"));
         builder.build();
@@ -216,148 +214,148 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatNullSummaryClassProvidesDefault() {
+    void requireThatNullSummaryClassProvidesDefault() {
         RequestBuilder reqBuilder = new RequestBuilder(0);
         reqBuilder.setRootOperation(new AllOperation()
-                                            .setGroupBy(new AttributeValue("foo"))
-                                            .addChild(new EachOperation()
-                                                    .addChild(new EachOperation()
-                                                            .addOutput(new SummaryValue()))));
+                .setGroupBy(new AttributeValue("foo"))
+                .addChild(new EachOperation()
+                        .addChild(new EachOperation()
+                                .addOutput(new SummaryValue()))));
         reqBuilder.setDefaultSummaryName(null);
         reqBuilder.build();
 
-        HitsAggregationResult hits = (HitsAggregationResult)reqBuilder.getRequestList().get(0)
-                                                                      .getLevels().get(0)
-                                                                      .getGroupPrototype()
-                                                                      .getAggregationResults().get(0);
+        HitsAggregationResult hits = (HitsAggregationResult) reqBuilder.getRequestList().get(0)
+                .getLevels().get(0)
+                .getGroupPrototype()
+                .getAggregationResults().get(0);
         assertEquals(ExpressionConverter.DEFAULT_SUMMARY_NAME, hits.getSummaryClass());
     }
 
     @Test
-    public void requireThatGroupOfGroupsAreNotSupported() {
+    void requireThatGroupOfGroupsAreNotSupported() {
         // "Can not group list of groups."
         assertBuildFail("all(group(a) all(group(avg(b)) each(each(each(output(summary()))))))",
                 "Can not operate on list of list of groups.");
     }
 
     @Test
-    public void requireThatAnonymousListsAreNotSupported() {
+    void requireThatAnonymousListsAreNotSupported() {
         assertBuildFail("all(group(a) all(each(each(output(summary())))))",
-                        "Can not create anonymous list of groups.");
+                "Can not create anonymous list of groups.");
     }
 
     @Test
-    public void requireThatOffsetContinuationCanModifyGroupingLevel() {
+    void requireThatOffsetContinuationCanModifyGroupingLevel() {
         assertOffset("all(group(a) max(5) each(output(count())))",
-                     newOffset(2, 5),
-                     "[[{ tag = 2, max = [5, 11], hits = [] }]]");
+                newOffset(2, 5),
+                "[[{ tag = 2, max = [5, 11], hits = [] }]]");
         assertOffset("all(group(a) max(5) each(output(count())) as(foo)" +
-                     "                    each(output(count())) as(bar))",
-                     newOffset(2, 5),
-                     "[[{ tag = 2, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 4, max = [5, 6], hits = [] }]]");
+                "                    each(output(count())) as(bar))",
+                newOffset(2, 5),
+                "[[{ tag = 2, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 4, max = [5, 6], hits = [] }]]");
         assertOffset("all(group(a) max(5) each(output(count())) as(foo)" +
-                        "                    each(output(count())) as(bar))",
+                "                    each(output(count())) as(bar))",
                 newComposite(newOffset(2, 5), newOffset(4, 10)),
                 "[[{ tag = 2, max = [5, 11], hits = [] }]," +
                         " [{ tag = 4, max = [5, 16], hits = [] }]]");
     }
 
     @Test
-    public void requireThatOffsetContinuationCanModifyHitAggregator() {
+    void requireThatOffsetContinuationCanModifyHitAggregator() {
         assertOffset("all(group(a) each(max(5) each(output(summary()))))",
-                     newOffset(3, 5),
-                     "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]]");
+                newOffset(3, 5),
+                "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]]");
         assertOffset("all(group(a) each(max(5) each(output(summary()))) as(foo)" +
-                     "             each(max(5) each(output(summary()))) as(bar))",
-                     newOffset(3, 5),
-                     "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 4, max = [0, -1], hits = [{ tag = 5, max = [5, 6] }] }]]");
+                "             each(max(5) each(output(summary()))) as(bar))",
+                newOffset(3, 5),
+                "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 4, max = [0, -1], hits = [{ tag = 5, max = [5, 6] }] }]]");
         assertOffset("all(group(a) each(max(5) each(output(summary()))) as(foo)" +
-                     "             each(max(5) each(output(summary()))) as(bar))",
-                     newComposite(newOffset(3, 5), newOffset(5, 10)),
-                     "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 4, max = [0, -1], hits = [{ tag = 5, max = [5, 16] }] }]]");
+                "             each(max(5) each(output(summary()))) as(bar))",
+                newComposite(newOffset(3, 5), newOffset(5, 10)),
+                "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 4, max = [0, -1], hits = [{ tag = 5, max = [5, 16] }] }]]");
     }
 
     @Test
-    public void requireThatOffsetContinuationIsNotAppliedToGroupingLevelWithoutMax() {
+    void requireThatOffsetContinuationIsNotAppliedToGroupingLevelWithoutMax() {
         assertOffset("all(group(a) each(output(count())))",
-                     newOffset(2, 5),
-                     "[[{ tag = 2, max = [0, -1], hits = [] }]]");
+                newOffset(2, 5),
+                "[[{ tag = 2, max = [0, -1], hits = [] }]]");
     }
 
     @Test
-    public void requireThatOffsetContinuationIsNotAppliedToHitAggregatorWithoutMax() {
+    void requireThatOffsetContinuationIsNotAppliedToHitAggregatorWithoutMax() {
         assertOffset("all(group(a) each(each(output(summary()))))",
-                     newOffset(3, 5),
-                     "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [0, -1] }] }]]");
+                newOffset(3, 5),
+                "[[{ tag = 2, max = [0, -1], hits = [{ tag = 3, max = [0, -1] }] }]]");
     }
 
     @Test
-    public void requireThatUnstableContinuationsDoNotAffectRequestedGroupLists() {
+    void requireThatUnstableContinuationsDoNotAffectRequestedGroupLists() {
         String request = "all(group(a) max(5) each(group(b) max(5) each(output(count())) as(a1_b1)" +
-                         "                                         each(output(count())) as(a1_b2)) as(a1)" +
-                         "                    each(group(b) max(5) each(output(count())) as(a2_b1)" +
-                         "                                         each(output(count())) as(a2_b2)) as(a2))";
+                "                                         each(output(count())) as(a1_b2)) as(a1)" +
+                "                    each(group(b) max(5) each(output(count())) as(a2_b1)" +
+                "                                         each(output(count())) as(a2_b2)) as(a2))";
         CompositeContinuation session = newComposite(newOffset(2, 5), newOffset(3, 5), newOffset(5, 5),
-                                                     newOffset(7, 5), newOffset(8, 5), newOffset(10, 5));
+                newOffset(7, 5), newOffset(8, 5), newOffset(10, 5));
         assertOffset(request, newComposite(session),
-                     "[[{ tag = 2, max = [5, 11], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 2, max = [5, 11], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
+                "[[{ tag = 2, max = [5, 11], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 2, max = [5, 11], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(2, 10)),
-                     "[[{ tag = 2, max = [5, 16], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 2, max = [5, 16], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
+                "[[{ tag = 2, max = [5, 16], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 2, max = [5, 16], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 11], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(7, 10)),
-                     "[[{ tag = 2, max = [5, 11], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 2, max = [5, 11], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
+                "[[{ tag = 2, max = [5, 11], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 2, max = [5, 11], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(2, 10), newUnstableOffset(7, 10)),
-                     "[[{ tag = 2, max = [5, 16], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 2, max = [5, 16], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
-                     " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
+                "[[{ tag = 2, max = [5, 16], hits = [] }, { tag = 3, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 2, max = [5, 16], hits = [] }, { tag = 5, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 10, max = [5, 11], hits = [] }]," +
+                        " [{ tag = 7, max = [5, 16], hits = [] }, { tag = 8, max = [5, 11], hits = [] }]]");
     }
 
     @Test
-    public void requireThatUnstableContinuationsDoNotAffectRequestedHitLists() {
+    void requireThatUnstableContinuationsDoNotAffectRequestedHitLists() {
         String request = "all(group(a) max(5) each(max(5) each(output(summary())) as(a1_h1)" +
-                         "                                each(output(summary())) as(a1_h2)) as(a1)" +
-                         "                    each(max(5) each(output(summary())) as(a2_h1)" +
-                         "                                each(output(summary())) as(a2_h2)) as(a2))";
+                "                                each(output(summary())) as(a1_h2)) as(a1)" +
+                "                    each(max(5) each(output(summary())) as(a2_h1)" +
+                "                                each(output(summary())) as(a2_h2)) as(a2))";
         CompositeContinuation session = newComposite(newOffset(2, 5), newOffset(3, 5), newOffset(4, 5),
-                                                     newOffset(5, 5), newOffset(6, 5), newOffset(7, 5));
+                newOffset(5, 5), newOffset(6, 5), newOffset(7, 5));
         assertOffset(request, newComposite(session),
-                     "[[{ tag = 2, max = [5, 11], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 2, max = [5, 11], hits = [{ tag = 4, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 11], hits = [{ tag = 6, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 11], hits = [{ tag = 7, max = [5, 11] }] }]]");
+                "[[{ tag = 2, max = [5, 11], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 2, max = [5, 11], hits = [{ tag = 4, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 11], hits = [{ tag = 6, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 11], hits = [{ tag = 7, max = [5, 11] }] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(2, 10)),
-                     "[[{ tag = 2, max = [5, 16], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 2, max = [5, 16], hits = [{ tag = 4, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 11], hits = [{ tag = 6, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 11], hits = [{ tag = 7, max = [5, 11] }] }]]");
+                "[[{ tag = 2, max = [5, 16], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 2, max = [5, 16], hits = [{ tag = 4, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 11], hits = [{ tag = 6, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 11], hits = [{ tag = 7, max = [5, 11] }] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(5, 10)),
-                     "[[{ tag = 2, max = [5, 11], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 2, max = [5, 11], hits = [{ tag = 4, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 16], hits = [{ tag = 6, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 16], hits = [{ tag = 7, max = [5, 11] }] }]]");
+                "[[{ tag = 2, max = [5, 11], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 2, max = [5, 11], hits = [{ tag = 4, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 16], hits = [{ tag = 6, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 16], hits = [{ tag = 7, max = [5, 11] }] }]]");
         assertOffset(request, newComposite(session, newUnstableOffset(2, 10), newUnstableOffset(5, 10)),
-                     "[[{ tag = 2, max = [5, 16], hits = [{ tag = 3, max = [5, 11] }] }]," +
-                     " [{ tag = 2, max = [5, 16], hits = [{ tag = 4, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 16], hits = [{ tag = 6, max = [5, 11] }] }]," +
-                     " [{ tag = 5, max = [5, 16], hits = [{ tag = 7, max = [5, 11] }] }]]");
+                "[[{ tag = 2, max = [5, 16], hits = [{ tag = 3, max = [5, 11] }] }]," +
+                        " [{ tag = 2, max = [5, 16], hits = [{ tag = 4, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 16], hits = [{ tag = 6, max = [5, 11] }] }]," +
+                        " [{ tag = 5, max = [5, 16], hits = [{ tag = 7, max = [5, 11] }] }]]");
     }
 
     @Test
-    public void requireThatExpressionsCanBeAliased() {
+    void requireThatExpressionsCanBeAliased() {
         OutputWriter writer = (groupingList, transform) -> groupingList.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0)
-                           .toString();
+                .toString();
 
         RequestTest test = new RequestTest();
         test.expectedOutput = new SumAggregationResult().setTag(3).setExpression(new AttributeNode("price")).toString();
@@ -373,89 +371,89 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatGroupingLayoutIsCorrect() {
+    void requireThatGroupingLayoutIsCorrect() {
         assertLayout("all(group(artist) each(max(69) output(count()) each(output(summary()))))",
-                     "[[{ Attribute, result = [Count, Hits] }]]");
+                "[[{ Attribute, result = [Count, Hits] }]]");
         assertLayout("all(group(artist) each(output(count()) all(group(album) each(output(count()) all(group(song) each(max(69) output(count()) each(output(summary()))))))))",
-                     "[[{ Attribute, result = [Count] }, { Attribute, result = [Count] }, { Attribute, result = [Count, Hits] }]]");
+                "[[{ Attribute, result = [Count] }, { Attribute, result = [Count] }, { Attribute, result = [Count, Hits] }]]");
         assertLayout("all(group(artist) each(output(count())))",
-                     "[[{ Attribute, result = [Count] }]]");
+                "[[{ Attribute, result = [Count] }]]");
         assertLayout("all(group(artist) order(sum(price)) each(output(count())))",
-                     "[[{ Attribute, result = [Count, Sum], order = [[1], [AggregationRef]] }]]");
+                "[[{ Attribute, result = [Count, Sum], order = [[1], [AggregationRef]] }]]");
         assertLayout("all(group(artist) each(max(69) output(count()) each(output(summary(foo)))))",
-                     "[[{ Attribute, result = [Count, Hits] }]]");
+                "[[{ Attribute, result = [Count, Hits] }]]");
         assertLayout("all(group(artist) each(output(count()) all(group(album) each(output(count())))))",
-                     "[[{ Attribute, result = [Count] }, { Attribute, result = [Count] }]]");
+                "[[{ Attribute, result = [Count] }, { Attribute, result = [Count] }]]");
         assertLayout("all(group(artist) max(5) each(output(count()) all(group(album) max(3) each(output(count())))))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [4, 4], result = [Count] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [4, 4], result = [Count] }]]");
         assertLayout("all(group(artist) max(5) each(output(count()) all(group(album) max(3) each(output(count())))))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [4, 4], result = [Count] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [4, 4], result = [Count] }]]");
         assertLayout("all(group(foo) max(10) each(output(count()) all(group(bar) max(10) each(output(count())))))",
-                     "[[{ Attribute, max = [11, 11], result = [Count] }, { Attribute, max = [11, 11], result = [Count] }]]");
+                "[[{ Attribute, max = [11, 11], result = [Count] }, { Attribute, max = [11, 11], result = [Count] }]]");
         assertLayout("all(group(a) max(5) each(max(69) output(count()) each(output(summary()))))",
-                     "[[{ Attribute, max = [6, 6], result = [Count, Hits] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count, Hits] }]]");
         assertLayout("all(group(a) max(5) each(output(count()) all(group(b) max(5) each(max(69) output(count()) each(output(summary()))))))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count, Hits] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count, Hits] }]]");
         assertLayout("all(group(a) max(5) each(output(count()) all(group(b) max(5) each(output(count()) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))))))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count, Hits] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count] }, { Attribute, max = [6, 6], result = [Count, Hits] }]]");
         assertLayout("all(group(fixedwidth(n,3)) max(5) each(output(count()) all(group(a) max(2) each(output(count())))))",
-                     "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count] }]]");
+                "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count] }]]");
         assertLayout("all(group(fixedwidth(n,3)) max(5) each(output(count()) all(group(a) max(2) each(output(count())))))",
-                     "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count] }]]");
+                "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count] }]]");
         assertLayout("all(group(fixedwidth(n,3)) max(5) each(output(count()) all(group(a) max(2) each(max(1) output(count()) each(output(summary()))))))",
-                     "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count, Hits] }]]");
+                "[[{ FixedWidthBucket, max = [6, 6], result = [Count] }, { Attribute, max = [3, 3], result = [Count, Hits] }]]");
         assertLayout("all(group(predefined(n,bucket(1,3),bucket(6,9))) each(output(count())))",
-                     "[[{ RangeBucketPreDef, result = [Count] }]]");
+                "[[{ RangeBucketPreDef, result = [Count] }]]");
         assertLayout("all(group(predefined(f,bucket(1.0,3.0),bucket(6.0,9.0))) each(output(count())))",
-                     "[[{ RangeBucketPreDef, result = [Count] }]]");
+                "[[{ RangeBucketPreDef, result = [Count] }]]");
         assertLayout("all(group(predefined(s,bucket(\"ab\",\"cd\"),bucket(\"ef\",\"gh\"))) each(output(count())))",
-                     "[[{ RangeBucketPreDef, result = [Count] }]]");
+                "[[{ RangeBucketPreDef, result = [Count] }]]");
         assertLayout("all(group(a) max(5) each(output(count())))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }]]");
         assertLayout("all(group(a) max(5) each(output(count())))",
-                     "[[{ Attribute, max = [6, 6], result = [Count] }]]");
+                "[[{ Attribute, max = [6, 6], result = [Count] }]]");
         assertLayout("all(max(9) all(group(a) each(output(count()))))",
-                     "[[{ Attribute, result = [Count] }]]");
+                "[[{ Attribute, result = [Count] }]]");
         assertLayout("all(where(true) all(group(a) each(output(count()))))",
-                     "[[{ Attribute, result = [Count] }]]");
+                "[[{ Attribute, result = [Count] }]]");
         assertLayout("all(group(a) order(sum(n)) each(output(count())))",
-                     "[[{ Attribute, result = [Count, Sum], order = [[1], [AggregationRef]] }]]");
+                "[[{ Attribute, result = [Count, Sum], order = [[1], [AggregationRef]] }]]");
         assertLayout("all(group(a) max(2) each(output(count())))",
-                     "[[{ Attribute, max = [3, 3], result = [Count] }]]");
+                "[[{ Attribute, max = [3, 3], result = [Count] }]]");
         assertLayout("all(group(a) max(2) precision(10) each(output(count())))",
-                     "[[{ Attribute, max = [3, 10], result = [Count] }]]");
+                "[[{ Attribute, max = [3, 10], result = [Count] }]]");
         assertLayout("all(group(fixedwidth(a,1)) each(output(count())))",
-                     "[[{ FixedWidthBucket, result = [Count] }]]");
+                "[[{ FixedWidthBucket, result = [Count] }]]");
     }
 
     @Test
-    public void requireThatAggregatorCanBeUsedAsArgumentToOrderByFunction() {
+    void requireThatAggregatorCanBeUsedAsArgumentToOrderByFunction() {
         assertLayout("all(group(a) order(sum(price) * count()) each(output(count())))",
-                     "[[{ Attribute, result = [Count, Sum], order = [[1], [Multiply]] }]]");
+                "[[{ Attribute, result = [Count, Sum], order = [[1], [Multiply]] }]]");
         assertLayout("all(group(a) order(sum(price) + 4) each(output(sum(price))))",
-                     "[[{ Attribute, result = [Sum], order = [[1], [Add]] }]]");
+                "[[{ Attribute, result = [Sum], order = [[1], [Add]] }]]");
         assertLayout("all(group(a) order(sum(price) + 4, count()) each(output(sum(price))))",
-                     "[[{ Attribute, result = [Sum, Count], order = [[1, 2], [Add, AggregationRef]] }]]");
+                "[[{ Attribute, result = [Sum, Count], order = [[1, 2], [Add, AggregationRef]] }]]");
         assertLayout("all(group(a) order(sum(price) + 4, -count()) each(output(sum(price))))",
-                     "[[{ Attribute, result = [Sum, Count], order = [[1, -2], [Add, AggregationRef]] }]]");
+                "[[{ Attribute, result = [Sum, Count], order = [[1, -2], [Add, AggregationRef]] }]]");
     }
 
     @Test
-    public void requireThatSameAggregatorCanBeUsedMultipleTimes() {
+    void requireThatSameAggregatorCanBeUsedMultipleTimes() {
         assertLayout("all(group(a) each(output(count() as(b),count() as(c))))",
-                     "[[{ Attribute, result = [Count, Count] }]]");
+                "[[{ Attribute, result = [Count, Count] }]]");
     }
 
     @Test
-    public void requireThatSiblingAggregatorsCanNotShareSameLabel() {
+    void requireThatSiblingAggregatorsCanNotShareSameLabel() {
         assertBuildFail("all(group(a) each(output(count(),count())))",
-                        "Can not use output label 'count()' for multiple siblings.");
+                "Can not use output label 'count()' for multiple siblings.");
         assertBuildFail("all(group(a) each(output(count() as(b),count() as(b))))",
                 "Can not use output label 'b' for multiple siblings.");
     }
 
     @Test
-    public void requireThatOrderByReusesOutputResults() {
+    void requireThatOrderByReusesOutputResults() {
         assertLayout("all(group(a) order(count()) each(output(count())))",
                 "[[{ Attribute, result = [Count], order = [[1], [AggregationRef]] }]]");
         assertLayout("all(group(a) order(count()) each(output(count() as(b))))",
@@ -463,40 +461,40 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatNoopBranchesArePruned() {
+    void requireThatNoopBranchesArePruned() {
         assertLayout("all()", "[]");
         assertLayout("all(group(a))", "[]");
         assertLayout("all(group(a) each())", "[]");
 
         String expectedA = "[{ Attribute, result = [Count] }]";
         assertLayout("all(group(a) each(output(count())))",
-                     Arrays.asList(expectedA).toString());
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all()))",
-                     Arrays.asList(expectedA).toString());
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b))))",
-                     Arrays.asList(expectedA).toString());
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())))",
-                     Arrays.asList(expectedA).toString());
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())))",
-                     Arrays.asList(expectedA).toString());
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
-                     "             each())",
-                     Arrays.asList(expectedA).toString());
+                "             each())",
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
-                     "             each(group(b)))",
-                     Arrays.asList(expectedA).toString());
+                "             each(group(b)))",
+                Arrays.asList(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
-                     "             each(group(b) each()))",
-                     Arrays.asList(expectedA).toString());
+                "             each(group(b) each()))",
+                Arrays.asList(expectedA).toString());
 
         String expectedB = "[{ Attribute }, { Attribute, result = [Count] }]";
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
-                     "             each(group(b) each(output(count()))))",
-                     Arrays.asList(expectedB, expectedA).toString());
+                "             each(group(b) each(output(count()))))",
+                Arrays.asList(expectedB, expectedA).toString());
     }
 
     @Test
-    public void requireThatAggregationLevelIsValidatedFails() {
+    void requireThatAggregationLevelIsValidatedFails() {
         assertBuildFail("all(group(artist) output(sum(length)))",
                 "Expression 'length' not applicable for single group.");
         assertBuild("all(group(artist) each(output(count())))");
@@ -506,46 +504,46 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatCountOnListOfGroupsIsValidated() {
+    void requireThatCountOnListOfGroupsIsValidated() {
         assertBuild("all(group(artist) output(count()))");
         assertBuild("all(group(artist) each(group(album) output(count())))");
     }
 
     @Test
-    public void requireThatGroupByIsValidated() {
+    void requireThatGroupByIsValidated() {
         assertBuild("all(group(artist) each(output(count())))");
         assertBuildFail("all(group(sum(artist)) each(output(count())))",
-                        "Expression 'sum(artist)' not applicable for single hit.");
+                "Expression 'sum(artist)' not applicable for single hit.");
         assertBuild("all(group(artist) each(group(album) each(output(count()))))");
         assertBuildFail("all(group(artist) each(group(sum(album)) each(output(count()))))",
-                        "Expression 'sum(album)' not applicable for single hit.");
+                "Expression 'sum(album)' not applicable for single hit.");
     }
 
     @Test
-    public void requireThatGroupingLevelIsValidated() {
+    void requireThatGroupingLevelIsValidated() {
         assertBuild("all(group(artist))");
         assertBuild("all(group(artist) each(group(album)))");
         assertBuildFail("all(group(artist) all(group(sum(price))))",
-                        "Can not operate on list of list of groups.");
+                "Can not operate on list of list of groups.");
         assertBuild("all(group(artist) each(group(album) each(group(song))))");
         assertBuildFail("all(group(artist) each(group(album) all(group(sum(price)))))",
-                        "Can not operate on list of list of groups.");
+                "Can not operate on list of list of groups.");
     }
 
     @Test
-    public void requireThatOrderByIsValidated() {
+    void requireThatOrderByIsValidated() {
         assertBuildFail("all(order(length))",
-                        "Can not order single group content.");
+                "Can not order single group content.");
         assertBuild("all(group(artist) order(sum(length)))");
         assertBuildFail("all(group(artist) each(order(length)))",
-                        "Can not order single group content.");
+                "Can not order single group content.");
         assertBuild("all(group(artist) each(group(album) order(sum(length))))");
         assertBuildFail("all(group(artist) each(group(album) each(order(length))))",
-                        "Can not order single group content.");
+                "Can not order single group content.");
     }
 
     @Test
-    public void requireThatOrderByHasCorrectReference() {
+    void requireThatOrderByHasCorrectReference() {
         assertOrderBy("all(group(a) order(count()) each(output(count())))", "[[[1]]]");
         assertOrderBy("all(group(a) order(-count()) each(output(count())))", "[[[-1]]]");
         assertOrderBy("all(group(a) order(count()) each(output(count(),sum(b))))", "[[[1]]]");
@@ -565,23 +563,23 @@ public class RequestBuilderTestCase {
         assertOrderBy("all(group(a) order(-count(),-sum(b)) each(output(sum(b), count())))", "[[[-1, -2]]]");
 
         assertOrderBy("all(group(a) order(count()) each(output(count())) as(foo)" +
-                      "                            each(output(sum(b))) as(bar))",
-                      "[[[1]], [[1]]]");
+                "                            each(output(sum(b))) as(bar))",
+                "[[[1]], [[1]]]");
     }
 
 
     @Test
-    public void requireThatWhereIsValidated() {
+    void requireThatWhereIsValidated() {
         assertBuild("all(where(true))");
         assertBuild("all(where($query))");
         assertBuildFail("all(where(foo))",
-                        "Operation 'where' does not support 'foo'.");
+                "Operation 'where' does not support 'foo'.");
         assertBuildFail("all(group(artist) where(true))",
-                        "Can not apply 'where' to non-root group.");
+                "Can not apply 'where' to non-root group.");
     }
 
     @Test
-    public void requireThatRootAggregationCanBeTransformed() {
+    void requireThatRootAggregationCanBeTransformed() {
         RequestTest test = new RequestTest();
         test.expectedOutput = CountAggregationResult.class.getName();
         test.request = "all(output(count()))";
@@ -590,68 +588,68 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatExpressionsCanBeLabeled() {
+    void requireThatExpressionsCanBeLabeled() {
         assertLabel("all(group(a) each(output(count())))",
-                    "[[{ label = 'a', results = [count()] }]]");
+                "[[{ label = 'a', results = [count()] }]]");
         assertLabel("all(group(a) each(output(count())) as(b))",
-                    "[[{ label = 'b', results = [count()] }]]");
+                "[[{ label = 'b', results = [count()] }]]");
         assertLabel("all(group(a) each(group(b) each(output(count()))))",
-                    "[[{ label = 'a', results = [] }, { label = 'b', results = [count()] }]]");
+                "[[{ label = 'a', results = [] }, { label = 'b', results = [count()] }]]");
         assertLabel("all(group(a) each(group(b) each(group(c) each(output(count())))))",
-                    "[[{ label = 'a', results = [] }, { label = 'b', results = [] }, { label = 'c', results = [count()] }]]");
+                "[[{ label = 'a', results = [] }, { label = 'b', results = [] }, { label = 'c', results = [count()] }]]");
         assertBuildFail("all(group(a) each(output(count())) each(output(count())))",
-                        "Can not use group list label 'a' for multiple siblings.");
+                "Can not use group list label 'a' for multiple siblings.");
         assertBuildFail("all(all(group(a) each(output(count())))" +
-                        "    all(group(a) each(output(count()))))",
-                        "Can not use group list label 'a' for multiple siblings.");
+                "    all(group(a) each(output(count()))))",
+                "Can not use group list label 'a' for multiple siblings.");
         assertLabel("all(group(a) each(output(count())) as(a1)" +
-                    "             each(output(count())) as(a2))",
-                    "[[{ label = 'a1', results = [count()] }], [{ label = 'a2', results = [count()] }]]");
+                "             each(output(count())) as(a2))",
+                "[[{ label = 'a1', results = [count()] }], [{ label = 'a2', results = [count()] }]]");
         assertLabel("all(group(a) each(all(group(b) each(output(count())))" +
-                    "                  all(group(c) each(output(count())))))",
-                    "[[{ label = 'a', results = [] }, { label = 'b', results = [count()] }], [{ label = 'a', results = [] }, { label = 'c', results = [count()] }]]");
+                "                  all(group(c) each(output(count())))))",
+                "[[{ label = 'a', results = [] }, { label = 'b', results = [count()] }], [{ label = 'a', results = [] }, { label = 'c', results = [count()] }]]");
         assertLabel("all(group(a) each(group(b) each(output(count()))) as(a1)" +
-                    "             each(group(b) each(output(count()))) as(a2))",
-                    "[[{ label = 'a1', results = [] }, { label = 'b', results = [count()] }], [{ label = 'a2', results = [] }, { label = 'b', results = [count()] }]]");
+                "             each(group(b) each(output(count()))) as(a2))",
+                "[[{ label = 'a1', results = [] }, { label = 'b', results = [count()] }], [{ label = 'a2', results = [] }, { label = 'b', results = [count()] }]]");
         assertLabel("all(group(a) each(group(b) each(group(c) each(output(count())))) as(a1)" +
-                    "             each(group(b) each(group(e) each(output(count())))) as(a2))",
-                    "[[{ label = 'a1', results = [] }, { label = 'b', results = [] }, { label = 'c', results = [count()] }]," +
-                    " [{ label = 'a2', results = [] }, { label = 'b', results = [] }, { label = 'e', results = [count()] }]]");
+                "             each(group(b) each(group(e) each(output(count())))) as(a2))",
+                "[[{ label = 'a1', results = [] }, { label = 'b', results = [] }, { label = 'c', results = [count()] }]," +
+                        " [{ label = 'a2', results = [] }, { label = 'b', results = [] }, { label = 'e', results = [count()] }]]");
         assertLabel("all(group(a) each(group(b) each(output(count())) as(b1)" +
-                    "                           each(output(count())) as(b2)))",
-                    "[[{ label = 'a', results = [] }, { label = 'b1', results = [count()] }]," +
-                    " [{ label = 'a', results = [] }, { label = 'b2', results = [count()] }]]");
+                "                           each(output(count())) as(b2)))",
+                "[[{ label = 'a', results = [] }, { label = 'b1', results = [count()] }]," +
+                        " [{ label = 'a', results = [] }, { label = 'b2', results = [count()] }]]");
 
         assertBuildFail("all(group(a) each(each(output(summary() as(foo)))))",
-                        "Can not label expression 'summary()'.");
+                "Can not label expression 'summary()'.");
         assertLabel("all(group(foo) each(each(output(summary()))))",
-                    "[[{ label = 'foo', results = [hits] }]]");
+                "[[{ label = 'foo', results = [hits] }]]");
         assertLabel("all(group(foo) each(each(output(summary())) as(bar)))",
-                    "[[{ label = 'foo', results = [bar] }]]");
+                "[[{ label = 'foo', results = [bar] }]]");
         assertLabel("all(group(foo) each(each(output(summary())) as(bar)) as(baz))",
-                    "[[{ label = 'baz', results = [bar] }]]");
+                "[[{ label = 'baz', results = [bar] }]]");
         assertLabel("all(group(foo) each(each(output(summary())) as(bar)" +
-                    "                    each(output(summary())) as(baz)))",
-                    "[[{ label = 'foo', results = [bar] }]," +
-                    " [{ label = 'foo', results = [baz] }]]");
+                "                    each(output(summary())) as(baz)))",
+                "[[{ label = 'foo', results = [bar] }]," +
+                        " [{ label = 'foo', results = [baz] }]]");
         assertLabel("all(group(foo) each(each(output(summary())))" +
-                    "               each(each(output(summary()))) as(bar))",
-                    "[[{ label = 'bar', results = [hits] }]," +
-                    " [{ label = 'foo', results = [hits] }]]");
+                "               each(each(output(summary()))) as(bar))",
+                "[[{ label = 'bar', results = [hits] }]," +
+                        " [{ label = 'foo', results = [hits] }]]");
     }
 
     @Test
-    public void requireThatOrderByResultsAreNotLabeled() {
+    void requireThatOrderByResultsAreNotLabeled() {
         assertLabel("all(group(a) each(output(min(b), max(b), avg(b))))",
-                    "[[{ label = 'a', results = [min(b), max(b), avg(b)] }]]");
+                "[[{ label = 'a', results = [min(b), max(b), avg(b)] }]]");
         assertLabel("all(group(a) order(min(b)) each(output(max(b), avg(b))))",
-                    "[[{ label = 'a', results = [max(b), avg(b), null] }]]");
+                "[[{ label = 'a', results = [max(b), avg(b), null] }]]");
         assertLabel("all(group(a) order(min(b), max(b)) each(output(avg(b))))",
-                    "[[{ label = 'a', results = [avg(b), null, null] }]]");
+                "[[{ label = 'a', results = [avg(b), null, null] }]]");
     }
 
     @Test
-    public void requireThatTimeZoneIsAppliedToTimeFunctions() {
+    void requireThatTimeZoneIsAppliedToTimeFunctions() {
         for (String timePart : Arrays.asList("dayofmonth", "dayofweek", "dayofyear", "hourofday",
                                              "minuteofhour", "monthofyear", "secondofminute", "year"))
         {
@@ -665,17 +663,17 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatTimeDateIsExpanded() {
+    void requireThatTimeDateIsExpanded() {
         RequestTest test = new RequestTest();
         test.expectedOutput = new StrCatFunctionNode()
                 .addArg(new ToStringFunctionNode(new TimeStampFunctionNode(new AttributeNode("foo"),
-                                                                         TimeStampFunctionNode.TimePart.Year, true)))
+                        TimeStampFunctionNode.TimePart.Year, true)))
                 .addArg(new ConstantNode(new StringResultNode("-")))
                 .addArg(new ToStringFunctionNode(new TimeStampFunctionNode(new AttributeNode("foo"),
-                                                                         TimeStampFunctionNode.TimePart.Month, true)))
+                        TimeStampFunctionNode.TimePart.Month, true)))
                 .addArg(new ConstantNode(new StringResultNode("-")))
                 .addArg(new ToStringFunctionNode(new TimeStampFunctionNode(new AttributeNode("foo"),
-                                                                         TimeStampFunctionNode.TimePart.MonthDay, true)))
+                        TimeStampFunctionNode.TimePart.MonthDay, true)))
                 .toString();
         test.request = "all(output(avg(time.date(foo))))";
         test.outputWriter = (groupingList, transform) -> groupingList.get(0).getRoot().getAggregationResults().get(0).getExpression().toString();
@@ -683,7 +681,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatNowIsResolvedToCurrentTime() {
+    void requireThatNowIsResolvedToCurrentTime() {
         RequestTest test = new RequestTest();
         test.expectedOutput = Boolean.toString(true);
         test.request = "all(output(avg(now() - foo)))";
@@ -693,8 +691,8 @@ public class RequestBuilderTestCase {
             @Override
             public String write(List<Grouping> groupingList, GroupingTransform transform) {
                 AddFunctionNode add =
-                        (AddFunctionNode)groupingList.get(0).getRoot().getAggregationResults().get(0).getExpression();
-                long nowValue = ((ConstantNode)add.getArg(0)).getValue().getInteger();
+                        (AddFunctionNode) groupingList.get(0).getRoot().getAggregationResults().get(0).getExpression();
+                long nowValue = ((ConstantNode) add.getArg(0)).getValue().getInteger();
                 boolean preCond = nowValue >= (before / 1000);
                 long after = System.currentTimeMillis();
                 boolean postCond = nowValue <= (after / 1000);
@@ -706,7 +704,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatAttributeMapLookupNodeIsCreatedFromKey() {
+    void requireThatAttributeMapLookupNodeIsCreatedFromKey() {
         RequestTest test = new RequestTest();
         test.expectedOutput = AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key").toString();
         test.request = "all(group(map{\"my_key\"}) each(output(count())))";
@@ -715,7 +713,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void requireThatAttributeMapLookupNodeIsCreatedFromKeySourceAttribute() {
+    void requireThatAttributeMapLookupNodeIsCreatedFromKeySourceAttribute() {
         RequestTest test = new RequestTest();
         test.expectedOutput = AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source").toString();
         test.request = "all(group(map{attribute(key_source)}) each(output(count())))";
@@ -724,7 +722,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void require_that_default_max_values_from_request_builder_restricts_max_groups_and_hits() {
+    void require_that_default_max_values_from_request_builder_restricts_max_groups_and_hits() {
         int defaultMaxHits = 19;
         int defaultMaxGroups = 7;
         RequestBuilder builder = new RequestBuilder(0)
@@ -735,12 +733,12 @@ public class RequestBuilderTestCase {
         List<Grouping> requests = builder.getRequestList();
         assertEquals(defaultMaxGroups + 1, requests.get(0).getLevels().get(0).getMaxGroups());
         HitsAggregationResult hitsAggregation =
-                (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
+                (HitsAggregationResult) requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
         assertEquals(defaultMaxHits + 1, hitsAggregation.getMaxHits());
     }
 
     @Test
-    public void require_that_default_max_values_from_request_builder_respects_explicit_max() {
+    void require_that_default_max_values_from_request_builder_respects_explicit_max() {
         {
             RequestBuilder builder = new RequestBuilder(0)
                     .setDefaultMaxGroups(7)
@@ -750,7 +748,7 @@ public class RequestBuilderTestCase {
             List<Grouping> requests = builder.getRequestList();
             assertEquals(12, requests.get(0).getLevels().get(0).getMaxGroups());
             HitsAggregationResult hitsAggregation =
-                    (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
+                    (HitsAggregationResult) requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
             assertEquals(22, hitsAggregation.getMaxHits());
         }
         {
@@ -762,21 +760,21 @@ public class RequestBuilderTestCase {
             List<Grouping> requests = builder.getRequestList();
             assertEquals(-1, requests.get(0).getLevels().get(0).getMaxGroups());
             HitsAggregationResult hitsAggregation =
-                    (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
+                    (HitsAggregationResult) requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
             assertEquals(-1, hitsAggregation.getMaxHits());
         }
     }
 
     @Test
-    public void require_that_total_groups_and_summaries_calculation_is_correct() {
+    void require_that_total_groups_and_summaries_calculation_is_correct() {
         assertTotalGroupsAndSummaries(5, "all(group(a) max(5) each(output(count())))");
-        assertTotalGroupsAndSummaries(5+5*7, "all(group(a) max(5) each(max(7) each(output(summary()))))");
-        assertTotalGroupsAndSummaries(3+3*5+3*5*7+3*5*7*11,
+        assertTotalGroupsAndSummaries(5 + 5 * 7, "all(group(a) max(5) each(max(7) each(output(summary()))))");
+        assertTotalGroupsAndSummaries(3 + 3 * 5 + 3 * 5 * 7 + 3 * 5 * 7 * 11,
                 "all( group(a) max(3) each(output(count())" +
-                "     all(group(b) max(5) each(output(count())" +
-                "         all(group(c) max(7) each(max(11) output(count())" +
-                "             each(output(summary()))))))))");
-        assertTotalGroupsAndSummaries(2*(3+3*5),
+                        "     all(group(b) max(5) each(output(count())" +
+                        "         all(group(c) max(7) each(max(11) output(count())" +
+                        "             each(output(summary()))))))))");
+        assertTotalGroupsAndSummaries(2 * (3 + 3 * 5),
                 "all(" +
                         "   all(group(a) max(3) each(output(count()) max(5) each(output(summary())))) " +
                         "   all(group(b) max(3) each(output(count()) max(5) each(output(summary())))))");
@@ -784,24 +782,24 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void require_that_total_groups_restriction_can_be_disabled() {
-        assertTotalGroupsAndSummaries(3+3*5+3*5*7+3*5*7*100,
-                                      -1, // disable
-                                      "all( group(a) max(3) each(output(count())" +
-                                      "     all(group(b) max(5) each(output(count())" +
-                                      "         all(group(c) max(7) each(max(100) output(count())" +
-                                      "             each(output(summary()))))))))");
+    void require_that_total_groups_restriction_can_be_disabled() {
+        assertTotalGroupsAndSummaries(3 + 3 * 5 + 3 * 5 * 7 + 3 * 5 * 7 * 100,
+                -1, // disable
+                "all( group(a) max(3) each(output(count())" +
+                        "     all(group(b) max(5) each(output(count())" +
+                        "         all(group(c) max(7) each(max(100) output(count())" +
+                        "             each(output(summary()))))))))");
     }
 
     @Test
-    public void require_that_unbounded_queries_fails_when_global_max_is_enabled() {
+    void require_that_unbounded_queries_fails_when_global_max_is_enabled() {
         assertQueryFailsOnGlobalMax(4, "all(group(a) max(5) each(output(count())))", "5 > 4");
         assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) each(output(count())))", "unbounded number of groups");
         assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) max(5) each(each(output(summary()))))", "unbounded number of summaries");
     }
 
     @Test
-    public void require_that_default_precision_factor_overrides_implicit_precision() {
+    void require_that_default_precision_factor_overrides_implicit_precision() {
         int factor = 3;
         RequestBuilder builder = new RequestBuilder(0)
                 .setDefaultPrecisionFactor(factor)
@@ -811,7 +809,7 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    public void require_that_explicit_precision_has_precedence() {
+    void require_that_explicit_precision_has_precedence() {
         RequestBuilder builder = new RequestBuilder(0)
                 .setDefaultPrecisionFactor(3)
                 .setRootOperation(GroupingOperation.fromString("all(group(foo)max(5)precision(10)each(output(count())))"));

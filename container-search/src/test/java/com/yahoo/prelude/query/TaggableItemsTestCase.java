@@ -1,18 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Keep CompositeTaggableItem, SimpleTaggableItem and TaggableSegmentItem in
@@ -22,11 +19,11 @@ import org.junit.Test;
  */
 public class TaggableItemsTestCase {
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
     }
 
@@ -97,7 +94,7 @@ public class TaggableItemsTestCase {
     }
 
     @Test
-    public void requireSimilarAPIs() {
+    void requireSimilarAPIs() {
         final Method[] composite = CompositeTaggableItem.class
                 .getDeclaredMethods();
         final Method[] simple = SimpleTaggableItem.class.getDeclaredMethods();
@@ -123,7 +120,7 @@ public class TaggableItemsTestCase {
     }
 
     @Test
-    public final void testSetUniqueID() {
+    final void testSetUniqueID() {
         final PhraseSegmentItem p = new PhraseSegmentItem("farmyards", false,
                 false);
         assertFalse(p.hasUniqueID());
@@ -133,7 +130,7 @@ public class TaggableItemsTestCase {
     }
 
     @Test
-    public final void testSetConnectivity() {
+    final void testSetConnectivity() {
         final PhraseSegmentItem p = new PhraseSegmentItem("farmyards", false,
                 false);
         assertEquals(0.0d, p.getConnectivity(), 1e-9);
@@ -145,7 +142,7 @@ public class TaggableItemsTestCase {
     }
 
     @Test
-    public final void testSetSignificance() {
+    final void testSetSignificance() {
         final PhraseSegmentItem p = new PhraseSegmentItem("farmyards", false,
                 false);
         // unset

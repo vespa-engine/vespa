@@ -4,9 +4,9 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -14,14 +14,14 @@ import static org.junit.Assert.assertEquals;
 public class FieldTypeTestCase {
 
     @Test
-    public void testConvertToFromString() {
-        QueryProfileTypeRegistry registry=new QueryProfileTypeRegistry();
+    void testConvertToFromString() {
+        QueryProfileTypeRegistry registry = new QueryProfileTypeRegistry();
         registry.register(new QueryProfileType("foo"));
 
-        assertEquals("string", FieldType.fromString("string",registry).stringValue());
-        assertEquals("boolean", FieldType.fromString("boolean",registry).stringValue());
-        assertEquals("query-profile", FieldType.fromString("query-profile",registry).stringValue());
-        assertEquals("query-profile:foo", FieldType.fromString("query-profile:foo",registry).stringValue());
+        assertEquals("string", FieldType.fromString("string", registry).stringValue());
+        assertEquals("boolean", FieldType.fromString("boolean", registry).stringValue());
+        assertEquals("query-profile", FieldType.fromString("query-profile", registry).stringValue());
+        assertEquals("query-profile:foo", FieldType.fromString("query-profile:foo", registry).stringValue());
     }
 
 }

@@ -15,10 +15,10 @@ import com.yahoo.prelude.semantics.rule.ReferenceTermProduction;
 import com.yahoo.prelude.semantics.rule.ReplacingProductionRule;
 import com.yahoo.prelude.semantics.rule.TermCondition;
 import com.yahoo.prelude.semantics.rule.TermProduction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class ProductionRuleTestCase {
 
     @Test
-    public void testProductionRule() {
+    void testProductionRule() {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term = new TermCondition("sony", linguistics);
         NamedCondition named = new NamedCondition("brand", term);
@@ -46,7 +46,7 @@ public class ProductionRuleTestCase {
         ruleBase.addRule(rule);
         ruleBase.initialize();
 
-        assertTrue("Brand is referenced", rule.matchReferences().contains("brand"));
+        assertTrue(rule.matchReferences().contains("brand"), "Brand is referenced");
 
         Query query = new Query("?query=sony");
         RuleEvaluation e = new Evaluation(query, null).freshRuleEvaluation();

@@ -8,7 +8,7 @@ import com.yahoo.search.pagetemplates.engine.Resolution;
 import com.yahoo.search.pagetemplates.engine.Resolver;
 import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
 import com.yahoo.search.pagetemplates.model.Choice;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests an expanded example.
@@ -18,7 +18,7 @@ import org.junit.Test;
 public class PageWithBlendingTestCase extends ExecutionAbstractTestCase {
 
     @Test
-    public void testExecution() {
+    void testExecution() {
         // Create the page template
         Choice page = Choice.createSingleton(importPage("PageWithBlending.xml"));
 
