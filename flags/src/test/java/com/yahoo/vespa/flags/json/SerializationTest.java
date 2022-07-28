@@ -5,23 +5,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
  */
 public class SerializationTest {
     @Test
-    public void emptyJson() throws IOException {
+    void emptyJson() throws IOException {
         String json = "{\"id\":\"id1\"}";
         WireFlagData wireData = WireFlagData.deserialize(json);
         assertThat(wireData.id, equalTo("id1"));
@@ -33,7 +33,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void deserialization() throws IOException {
+    void deserialization() throws IOException {
         String json = "{\n" +
                 "    \"id\": \"id2\",\n" +
                 "    \"rules\": [\n" +
@@ -107,7 +107,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void jsonWithStrayFields() {
+    void jsonWithStrayFields() {
         String json = "{\n" +
                 "    \"id\": \"id3\",\n" +
                 "    \"foo\": true,\n" +
@@ -136,7 +136,7 @@ public class SerializationTest {
         assertThat(whitelistCondition.dimension, equalTo("zone"));
         assertThat(whitelistCondition.values, nullValue());
         assertThat(wireData.rules.get(0).value, nullValue());
-        assertThat(wireData.defaultFetchVector, anEmptyMap());
+        assertTrue(wireData.defaultFetchVector.isEmpty());
 
         assertThat(wireData.serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
 

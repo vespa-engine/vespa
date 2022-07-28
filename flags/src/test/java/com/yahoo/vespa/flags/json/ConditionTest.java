@@ -2,18 +2,18 @@
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.vespa.flags.FetchVector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
  */
 public class ConditionTest {
     @Test
-    public void testWhitelist() {
+    void testWhitelist() {
         String hostname1 = "host1";
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = WhitelistCondition.create(params);
@@ -24,7 +24,7 @@ public class ConditionTest {
     }
 
     @Test
-    public void testBlacklist() {
+    void testBlacklist() {
         String hostname1 = "host1";
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = BlacklistCondition.create(params);
@@ -35,7 +35,7 @@ public class ConditionTest {
     }
 
     @Test
-    public void testRelational() {
+    void testRelational() {
         verifyVespaVersionFor("<", true, false, false);
         verifyVespaVersionFor("<=", true, true, false);
         verifyVespaVersionFor(">", false, false, true);
