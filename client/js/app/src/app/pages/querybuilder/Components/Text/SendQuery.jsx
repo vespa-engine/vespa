@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import SimpleDropDownForm from './SimpleDropDownForm';
 import SimpleButton from '../Buttons/SimpleButton';
-import SimpleForm from './SimpleForm';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import { ResponseContext } from '../Contexts/ResponseContext';
 import { QueryContext } from '../Contexts/QueryContext';
+import SimpleForm from './SimpleForm';
+import SimpleDropDownForm from './SimpleDropDownForm';
 
 export default function SendQuery() {
   const { inputs } = useContext(QueryInputContext);
@@ -65,15 +65,12 @@ export default function SendQuery() {
       case 'Integer':
       case 'Long':
         return parseInt(input);
-        break;
 
       case 'Float':
         return parseFloat(input);
-        break;
 
       case 'Boolean':
         return input.toLowerCase() === 'true' ? true : false;
-        break;
 
       default:
         return input;
