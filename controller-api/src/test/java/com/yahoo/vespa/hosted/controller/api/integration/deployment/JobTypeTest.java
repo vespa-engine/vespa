@@ -2,11 +2,11 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.zone.ZoneId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class JobTypeTest {
 
     @Test
-    public void test() {
+    void test() {
         assertEquals(JobType.test("us-east-3"), JobType.ofSerialized("prod.us-east-3.test"));
         assertEquals(JobType.dev("aws-us-east-1c"), JobType.ofSerialized("dev.aws-us-east-1c"));
 

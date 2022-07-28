@@ -2,14 +2,14 @@
 package com.yahoo.vespa.hosted.controller.api.integration.maven;
 
 import com.yahoo.component.Version;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MetadataTest {
 
     @Test
-    public void testParsing() {
+    void testParsing() {
         Metadata metadata = Metadata.fromXml(metadataXml);
         assertEquals("com.yahoo.vespa", metadata.id().groupId());
         assertEquals("tenant-base", metadata.id().artifactId());

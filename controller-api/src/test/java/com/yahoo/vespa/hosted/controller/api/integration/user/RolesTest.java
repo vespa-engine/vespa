@@ -6,9 +6,10 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author jonmv
@@ -16,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class RolesTest {
 
     @Test
-    public void testSerialization() {
+    void testSerialization() {
         TenantName tenant = TenantName.from("my-tenant");
         for (TenantRole role : Roles.tenantRoles(tenant))
             assertEquals(role, Roles.toRole(Roles.valueOf(role)));
@@ -26,38 +27,48 @@ public class RolesTest {
             assertEquals(role, Roles.toRole(Roles.valueOf(role)));
 
         assertEquals(Role.hostedOperator(),
-                     Roles.toRole("hostedOperator"));
+                Roles.toRole("hostedOperator"));
         assertEquals(Role.hostedSupporter(),
-                     Roles.toRole("hostedSupporter"));
+                Roles.toRole("hostedSupporter"));
         assertEquals(Role.administrator(tenant), Roles.toRole("my-tenant.administrator"));
         assertEquals(Role.developer(tenant), Roles.toRole("my-tenant.developer"));
         assertEquals(Role.reader(tenant), Roles.toRole("my-tenant.reader"));
         assertEquals(Role.headless(tenant, application), Roles.toRole("my-tenant.my-application.headless"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalTenantName() {
-        Roles.valueOf(Role.developer(TenantName.from("my.tenant")));
+    @Test
+    void illegalTenantName() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Roles.valueOf(Role.developer(TenantName.from("my.tenant")));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalApplicationName() {
-        Roles.valueOf(Role.headless(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+    @Test
+    void illegalApplicationName() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Roles.valueOf(Role.headless(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalRoleValue() {
-        Roles.toRole("my-tenant.awesomePerson");
+    @Test
+    void illegalRoleValue() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Roles.toRole("my-tenant.awesomePerson");
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalCombination() {
-        Roles.toRole("my-tenant.my-application.tenantOwner");
+    @Test
+    void illegalCombination() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Roles.toRole("my-tenant.my-application.tenantOwner");
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalValue() {
-        Roles.toRole("everyone");
+    @Test
+    void illegalValue() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Roles.toRole("everyone");
+        });
     }
 
 }

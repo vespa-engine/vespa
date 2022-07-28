@@ -16,10 +16,8 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -37,9 +35,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -53,12 +52,8 @@ public class SystemFlagsDataArchiveTest {
     private static final FlagId MY_TEST_FLAG = new FlagId("my-test-flag");
     private static final FlagId FLAG_WITH_EMPTY_DATA = new FlagId("flag-with-empty-data");
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException expectedException = ExpectedException.none();
+    @TempDir
+    public File temporaryFolder;
 
     private static final FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
     private static final FlagsTarget cdControllerTarget = FlagsTarget.forController(SystemName.cd);
@@ -75,8 +70,8 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void can_serialize_and_deserialize_archive() throws IOException {
-        File tempFile = temporaryFolder.newFile("serialized-flags-archive");
+    void can_serialize_and_deserialize_archive() throws IOException {
+        File tempFile = File.createTempFile("serialized-flags-archive", null, temporaryFolder);
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
             var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
             archive.toZip(out);
@@ -88,26 +83,27 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void retrieves_correct_flag_data_for_target() {
+    void retrieves_correct_flag_data_for_target() {
         var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
         assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
     }
 
     @Test
-    public void supports_multi_level_flags_directory() {
+    void supports_multi_level_flags_directory() {
         var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level/"));
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "default");
     }
 
     @Test
-    public void duplicated_flagdata_is_detected() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("contains redundant flag data for id 'my-test-flag' already set in another directory!");
-        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/"));
+    void duplicated_flagdata_is_detected() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/"));
+        });
+        assertTrue(exception.getMessage().contains("contains redundant flag data for id 'my-test-flag' already set in another directory!"));
     }
 
     @Test
-    public void empty_files_are_handled_as_no_flag_data_for_target() {
+    void empty_files_are_handled_as_no_flag_data_for_target() {
         var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, mainControllerTarget);
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
@@ -116,43 +112,45 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void throws_exception_on_non_json_file() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
-        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+    void throws_exception_on_non_json_file() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+        });
+        assertTrue(exception.getMessage().contains("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')"));
     }
 
     @Test
-    public void throws_exception_on_unknown_file() {
-        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json");
-        archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
+    void throws_exception_on_unknown_file() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
+            archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
+        });
+        assertTrue(exception.getMessage().contains("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json"));
     }
 
     @Test
-    public void throws_exception_on_unknown_region() {
-        Path directory = Paths.get("src/test/resources/system-flags-with-unknown-file-name/");
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(
-                "Environment or zone in filename 'main.prod.unknown-region.json' does not exist");
-        SystemFlagsDataArchive.fromDirectoryAndSystem(directory, createZoneRegistryMock());
+    void throws_exception_on_unknown_region() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            Path directory = Paths.get("src/test/resources/system-flags-with-unknown-file-name/");
+            SystemFlagsDataArchive.fromDirectoryAndSystem(directory, createZoneRegistryMock());
+        });
+        assertTrue(exception.getMessage().contains("Environment or zone in filename 'main.prod.unknown-region.json' does not exist"));
     }
 
     @Test
-    public void throws_on_unknown_field() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(
-                "flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
+    void throws_on_unknown_field() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+        });
+        assertTrue(exception.getMessage().contains("flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
                 "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
                 "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
                 "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
-                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
-        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax"));
     }
 
     @Test
-    public void remove_comments() {
+    void remove_comments() {
         assertTrue(JSON.equals("{\n" +
                 "    \"a\": {\n" +
                 "        \"b\": 1\n" +
@@ -184,7 +182,7 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void normalize_json_fail_on_invalid_application() {
+    void normalize_json_fail_on_invalid_application() {
         try {
             SystemFlagsDataArchive.normalizeJson("{\n" +
                     "    \"id\": \"foo\",\n" +
@@ -208,7 +206,7 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void normalize_json_fail_on_invalid_node_type() {
+    void normalize_json_fail_on_invalid_node_type() {
         try {
             SystemFlagsDataArchive.normalizeJson("{\n" +
                     "    \"id\": \"foo\",\n" +
@@ -232,7 +230,7 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void normalize_json_fail_on_invalid_email() {
+    void normalize_json_fail_on_invalid_email() {
         try {
             SystemFlagsDataArchive.normalizeJson("{\n" +
                     "    \"id\": \"foo\",\n" +
@@ -256,7 +254,7 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void normalize_json_fail_on_invalid_tenant_id() {
+    void normalize_json_fail_on_invalid_tenant_id() {
         try {
             SystemFlagsDataArchive.normalizeJson("{\n" +
                     "    \"id\": \"foo\",\n" +
@@ -280,7 +278,7 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    public void ignores_files_not_related_to_specified_system_definition() {
+    void ignores_files_not_related_to_specified_system_definition() {
         ZoneRegistry registry = createZoneRegistryMock();
         Path testDirectory = Paths.get("src/test/resources/system-flags-for-multiple-systems/");
         var archive = SystemFlagsDataArchive.fromDirectoryAndSystem(testDirectory, registry);
