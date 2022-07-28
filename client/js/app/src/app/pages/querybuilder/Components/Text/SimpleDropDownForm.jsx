@@ -11,7 +11,7 @@ export default function SimpleDropDownForm({
 }) {
   const { selectedItems } = useContext(QueryInputContext);
 
-  //FIXME: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
+  //TODO: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
   let filtered = Object.keys(choices).filter(
     (choice) => !selectedItems.includes(choice)
   );

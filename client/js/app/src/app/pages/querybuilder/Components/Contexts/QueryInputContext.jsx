@@ -20,6 +20,7 @@ export const QueryInputProvider = (prop) => {
     },
     searchChain: { name: 'searchChain', type: 'String', hasChildren: false },
     timeout: { name: 'timeout', type: 'Float', hasChildren: false },
+    trace: { name: 'trace', type: 'Parent', hasChildren: true },
     tracelevel: { name: 'tracelevel', type: 'Parent', hasChildren: true },
     traceLevel: { name: 'traceLevel', type: 'Integer', hasChildren: false },
     explainLevel: { name: 'explainLevel', type: 'Integer', hasChildren: false },
@@ -40,7 +41,6 @@ export const QueryInputProvider = (prop) => {
     recall: { name: 'recall', type: 'List', hasChildren: false },
     user: { name: 'user', type: 'String', hasChildren: false },
     metrics: { name: 'metrics', type: 'Parent', hasChildren: true },
-    trace: { name: 'trace', type: 'Parent', hasChildren: true },
   };
 
   // Children of the levelZeroParameters that have child attributes

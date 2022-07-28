@@ -1,5 +1,5 @@
+import React, { useContext, useState } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import React, { useCallback, useContext, useState } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 
 export default function QueryDropdownForm({
