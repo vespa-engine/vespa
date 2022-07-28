@@ -28,8 +28,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Provides testing of JSON container responses
@@ -123,7 +123,7 @@ public class ContainerTester {
         catch (IOException e) {
             fail("failed writing JSON: " + e);
         }
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
+        assertEquals(expectedStatusCode, response.getStatus(), "Status code");
     }
 
     public void assertResponse(Supplier<Request> request, String expectedResponse) {
@@ -154,7 +154,7 @@ public class ContainerTester {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
+        assertEquals(expectedStatusCode, response.getStatus(), "Status code");
     }
 
     // Hack to run request filters as part of the request processing chain.

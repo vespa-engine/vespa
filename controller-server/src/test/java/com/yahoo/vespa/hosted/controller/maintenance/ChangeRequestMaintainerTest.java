@@ -8,13 +8,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSourc
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author olaa
@@ -26,7 +26,7 @@ public class ChangeRequestMaintainerTest {
     private final ChangeRequestMaintainer changeRequestMaintainer = new ChangeRequestMaintainer(tester.controller(), Duration.ofMinutes(1));
 
     @Test
-    public void updates_status_time_and_approval() {
+    void updates_status_time_and_approval() {
         var time = ZonedDateTime.now();
         var persistedChangeRequest = persistedChangeRequest("some-id", time.minusDays(5), Status.WAITING_FOR_APPROVAL);
         tester.curator().writeChangeRequest(persistedChangeRequest);
@@ -43,7 +43,7 @@ public class ChangeRequestMaintainerTest {
     }
 
     @Test
-    public void deletes_old_change_requests() {
+    void deletes_old_change_requests() {
         var now = ZonedDateTime.now();
         var before = now.minus(Duration.ofDays(8));
         var newChangeRequest = persistedChangeRequest("new", now, Status.CLOSED);
@@ -60,7 +60,7 @@ public class ChangeRequestMaintainerTest {
     }
 
     @Test
-    public void approves_change_request_if_non_prod() {
+    void approves_change_request_if_non_prod() {
         var time = ZonedDateTime.now();
         var prodChangeRequest = newChangeRequest("id1", ChangeRequest.Approval.REQUESTED, time, Status.WAITING_FOR_APPROVAL);
         var nonProdApprovalRequested = newChangeRequest("id2", "unknown-node", ChangeRequest.Approval.REQUESTED, time, Status.WAITING_FOR_APPROVAL);

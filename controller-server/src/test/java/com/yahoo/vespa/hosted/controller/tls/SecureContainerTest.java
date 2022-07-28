@@ -9,19 +9,19 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyStoreUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author mpolden
@@ -30,28 +30,28 @@ public class SecureContainerTest {
 
     private JDisc container;
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    public File folder;
 
-    @Before
+    @BeforeEach
     public void startContainer() {
         container = JDisc.fromServicesXml(servicesXml(writeKeyStore()), Networking.enable);
     }
 
-    @After
+    @AfterEach
     public void stopContainer() {
         container.close();
     }
 
     @Test
-    public void test_https_request() {
-        assertNotNull("SslContextFactoryProvider is created", sslContextFactoryProvider());
+    void test_https_request() {
+        assertNotNull(sslContextFactoryProvider(), "SslContextFactoryProvider is created");
         assertResponse(Request.Method.GET, "/", 200);
     }
 
     private void assertResponse(Request.Method method, String path, int expectedStatusCode) {
         Response response = container.handleRequest(new Request("https://localhost:9999" + path, new byte[0], method));
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
+        assertEquals(expectedStatusCode, response.getStatus(), "Status code");
     }
 
     private ControllerSslContextFactoryProvider sslContextFactoryProvider() {
@@ -83,7 +83,7 @@ public class SecureContainerTest {
                                                          Keys.keyPair.getPrivate(), new char[0], Keys.certificate)
                                            .build();
         try {
-            Path path = folder.newFile().toPath();
+            Path path = File.createTempFile("junit", null, folder).toPath();
             KeyStoreUtils.writeKeyStoreToFile(keyStore, path);
             return path;
         } catch (IOException e) {

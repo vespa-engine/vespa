@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author olaa
@@ -19,7 +19,7 @@ public class UserManagementMaintainerTest {
     private final String APP_NAME = "some-app";
 
     @Test
-    public void deletes_tenant_when_not_public() {
+    void deletes_tenant_when_not_public() {
         var tester = createTester(SystemName.main);
         var maintainer = new UserManagementMaintainer(tester.controller(), Duration.ofMinutes(5), tester.serviceRegistry().roleMaintainer());
         maintainer.maintain();
@@ -32,7 +32,7 @@ public class UserManagementMaintainerTest {
     }
 
     @Test
-    public void no_tenant_deletion_in_public() {
+    void no_tenant_deletion_in_public() {
         var tester = createTester(SystemName.Public);
         var maintainer = new UserManagementMaintainer(tester.controller(), Duration.ofMinutes(5), tester.serviceRegistry().roleMaintainer());
         maintainer.maintain();

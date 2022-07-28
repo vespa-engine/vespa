@@ -14,7 +14,7 @@ import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.json.Condition;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +36,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 public class UserFlagsSerializerTest {
 
     @Test
-    public void user_flag_test() throws IOException {
+    void user_flag_test() throws IOException {
         String email1 = "alice@domain.tld";
         String email2 = "bob@domain.tld";
 
@@ -56,33 +56,33 @@ public class UserFlagsSerializerTest {
                             rule("[\"value2\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email2)),
                             rule("[\"value1\",\"value3\"]", condition(APPLICATION_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default"))),
                     flagData("jackson-id", rule("{\"integer\":456,\"string\":\"xyz\"}", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(TENANT_ID, Condition.Type.WHITELIST, "tenant1", "tenant3")))
-                    ).collect(Collectors.toMap(FlagData::id, fd -> fd));
+            ).collect(Collectors.toMap(FlagData::id, fd -> fd));
 
             // double-id is not here as it does not have CONSOLE_USER_EMAIL dimension
             assertUserFlags("{\"flags\":[" +
-                            "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
-                            "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\"}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
-                            // Resolved for email, but conditions are empty since this user is not authorized for any tenants
-                            "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
-                            "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
+                    "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
+                    "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\"}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
+                    // Resolved for email, but conditions are empty since this user is not authorized for any tenants
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
                     flagData, Set.of(), false, email1);
 
             // Same as the first one, but user is authorized for tenant1
             assertUserFlags("{\"flags\":[" +
-                            "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
-                            "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\",\"values\":[\"tenant1\"]}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
-                            // Resolved for email, but conditions have filtered out tenant2
-                            "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
-                            "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
+                    "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
+                    "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\",\"values\":[\"tenant1\"]}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
+                    // Resolved for email, but conditions have filtered out tenant2
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
                     flagData, Set.of("tenant1"), false, email1);
 
             // As operator no conditions are filtered, but the email precondition is applied
             assertUserFlags("{\"flags\":[" +
-                            "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
-                            "{\"id\":\"jackson-id\",\"rules\":[{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Default from code, no DB values match
-                            // Includes last value from DB which is not conditioned on email and the default from code
-                            "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\",\"tenant2:music:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
-                            "{\"id\":\"string-id\",\"rules\":[{\"value\":\"default value\"}]}]}", // Default from code
+                    "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
+                    "{\"id\":\"jackson-id\",\"rules\":[{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Default from code, no DB values match
+                    // Includes last value from DB which is not conditioned on email and the default from code
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\",\"tenant2:music:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"string-id\",\"rules\":[{\"value\":\"default value\"}]}]}", // Default from code
                     flagData, Set.of(), true, "operator@domain.tld");
         }
     }

@@ -7,10 +7,10 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -22,24 +22,24 @@ public class AuditedFlagsApiTest extends ControllerContainerTest {
 
     private ContainerTester tester;
 
-    @Before
+    @BeforeEach
     public void before() {
         addUserToHostedOperatorRole(operator);
         tester = new ContainerTester(container, responses);
     }
 
     @Test
-    public void test_audit_logging() {
+    void test_audit_logging() {
         var body = "{\n" +
-                   "  \"id\": \"id1\",\n" +
-                   "  \"rules\": [\n" +
-                   "    {\n" +
-                   "      \"value\": true\n" +
-                   "    }\n" +
-                   "  ]\n" +
-                   "}";
+                "  \"id\": \"id1\",\n" +
+                "  \"rules\": [\n" +
+                "    {\n" +
+                "      \"value\": true\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
         assertResponse(new Request("http://localhost:8080/flags/v1/data/id1?force=true", body, Request.Method.PUT),
-                       "", 200);
+                "", 200);
         var log = tester.controller().auditLogger().readLog();
         assertEquals(1, log.entries().size());
         var entry = log.entries().get(0);

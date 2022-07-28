@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
@@ -28,7 +28,7 @@ public class LogSerializerTest {
     private static final Path logsFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/logs.json");
 
     @Test
-    public void testSerialization() throws IOException {
+    void testSerialization() throws IOException {
         for (LogEntry.Type type : LogEntry.Type.values())
             assertEquals(type, LogSerializer.typeOf(LogSerializer.valueOf(type)));
 

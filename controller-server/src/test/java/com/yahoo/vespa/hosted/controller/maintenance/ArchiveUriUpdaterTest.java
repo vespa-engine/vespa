@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
@@ -21,7 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -31,7 +31,7 @@ public class ArchiveUriUpdaterTest {
     private final DeploymentTester tester = new DeploymentTester(new ControllerTester(SystemName.Public));
 
     @Test
-    public void archive_uri_test() {
+    void archive_uri_test() {
         var updater = new ArchiveUriUpdater(tester.controller(), Duration.ofDays(1));
 
         var tenant1 = TenantName.from("tenant1");

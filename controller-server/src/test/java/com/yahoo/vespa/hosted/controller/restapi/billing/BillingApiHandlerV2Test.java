@@ -10,8 +10,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Set;
@@ -37,7 +37,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     private MockBillingController billingController;
     private ContainerTester tester;
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         tester.controller().tenants().create(new CloudTenantSpec(tenant, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
@@ -68,13 +68,13 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_tenant_info() {
+    void require_tenant_info() {
         var request = request("/billing/v2/tenant/" + tenant.value()).roles(tenantReader);
         tester.assertResponse(request, "{\"tenant\":\"tenant1\",\"plan\":{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},\"collection\":\"AUTO\"}");
     }
 
     @Test
-    public void require_admin_for_update_plan() {
+    void require_admin_for_update_plan() {
         var request = request("/billing/v2/tenant/" + tenant.value(), Request.Method.PATCH)
                 .data("{\"plan\": \"paid\"}");
 
@@ -86,7 +86,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_accountant_for_update_collection() {
+    void require_accountant_for_update_collection() {
         var request = request("/billing/v2/tenant/" + tenant.value(), Request.Method.PATCH)
                 .data("{\"collection\": \"INVOICE\"}");
 
@@ -99,13 +99,13 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_tenant_usage() {
+    void require_tenant_usage() {
         var request = request("/billing/v2/tenant/" + tenant + "/usage").roles(tenantReader);
         tester.assertResponse(request, "{\"from\":\"2021-04-13\",\"to\":\"2021-04-13\",\"total\":\"0.00\",\"items\":[]}");
     }
 
     @Test
-    public void require_tenant_invoice() {
+    void require_tenant_invoice() {
         var listRequest = request("/billing/v2/tenant/" + tenant + "/bill").roles(tenantReader);
         tester.assertResponse(listRequest, "{\"invoices\":[{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-28\",\"total\":\"123.00\",\"status\":\"OPEN\"}]}");
 
@@ -115,7 +115,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_accountant_summary() {
+    void require_accountant_summary() {
         var tenantRequest = request("/billing/v2/accountant").roles(tenantReader);
         tester.assertResponse(tenantRequest, "{\n" +
                 "  \"code\" : 403,\n" +
@@ -128,13 +128,13 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_accountant_tenant_preview() {
+    void require_accountant_tenant_preview() {
         var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1").roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"id\":\"empty\",\"from\":\"2021-04-13\",\"to\":\"2021-04-12\",\"total\":\"0.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2021-04-13T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[]}");
     }
 
     @Test
-    public void require_accountant_tenant_bill() {
+    void require_accountant_tenant_bill() {
         var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1", Request.Method.POST)
                 .roles(Role.hostedAccountant())
                 .data("{\"from\": \"2020-05-01\",\"to\": \"2020-06-01\"}");
@@ -142,7 +142,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void require_list_of_all_plans() {
+    void require_list_of_all_plans() {
         var accountantRequest = request("/billing/v2/accountant/plans")
                 .roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");

@@ -8,8 +8,8 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
@@ -31,7 +31,7 @@ public class ZoneApiTest extends ControllerContainerCloudTest {
 
     private ContainerTester tester;
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         tester.serviceRegistry().zoneRegistry()
@@ -40,30 +40,30 @@ public class ZoneApiTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void test_requests() {
+    void test_requests() {
         // GET /zone/v1
         tester.assertResponse(request("/zone/v1")
-                                                        .roles(everyone),
-                                                new File("root.json"));
+                        .roles(everyone),
+                new File("root.json"));
 
         // GET /zone/v1/environment/prod
         tester.assertResponse(request("/zone/v1/environment/prod")
-                                                        .roles(everyone),
-                                                new File("prod.json"));
+                        .roles(everyone),
+                new File("prod.json"));
 
         // GET /zone/v1/environment/dev/default
         tester.assertResponse(request("/zone/v1/environment/dev/default")
-                                                        .roles(everyone),
-                                                new File("default-for-region.json"));
+                        .roles(everyone),
+                new File("default-for-region.json"));
     }
 
     @Test
-    public void test_invalid_requests() {
+    void test_invalid_requests() {
         // GET /zone/v1/environment/prod/default: No default region
         tester.assertResponse(request("/zone/v1/environment/prod/default")
-                                                        .roles(everyone),
-                                                new File("no-default-region.json"),
-                                                400);
+                        .roles(everyone),
+                new File("no-default-region.json"),
+                400);
     }
 
 }

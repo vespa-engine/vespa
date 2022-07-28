@@ -13,12 +13,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author enygaard
@@ -35,7 +35,7 @@ public class NotificationFormatterTest {
     private final NotificationFormatter formatter = new NotificationFormatter(zoneRegistry);
 
     @Test
-    public void applicationPackage() {
+    void applicationPackage() {
         var notification = new Notification(Instant.now(), Notification.Type.applicationPackage, Notification.Level.warning, NotificationSource.from(applicationId), List.of("1", "2"));
         var content = formatter.format(notification);
         assertEquals("Application package", content.prettyType());
@@ -44,7 +44,7 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    public void deployment() {
+    void deployment() {
         var runId = new RunId(applicationId, JobType.prod(RegionName.defaultName()), 1001);
         var notification = new Notification(Instant.now(), Notification.Type.deployment, Notification.Level.warning, NotificationSource.from(runId), List.of("1"));
         var content = formatter.format(notification);
@@ -54,7 +54,7 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    public void deploymentError() {
+    void deploymentError() {
         var runId = new RunId(applicationId, JobType.prod(RegionName.defaultName()), 1001);
         var notification = new Notification(Instant.now(), Notification.Type.deployment, Notification.Level.error, NotificationSource.from(runId), List.of("1"));
         var content = formatter.format(notification);
@@ -64,7 +64,7 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    public void testPackage() {
+    void testPackage() {
         var notification = new Notification(Instant.now(), Notification.Type.testPackage, Notification.Level.warning, NotificationSource.from(TenantAndApplicationId.from(applicationId)), List.of("1"));
         var content = formatter.format(notification);
         assertEquals("Test package", content.prettyType());
@@ -73,7 +73,7 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    public void reindex() {
+    void reindex() {
         var notification = new Notification(Instant.now(), Notification.Type.reindex, Notification.Level.info, NotificationSource.from(deploymentId, cluster), List.of("1"));
         var content = formatter.format(notification);
         assertEquals("Reindex", content.prettyType());
@@ -82,7 +82,7 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    public void feedBlock() {
+    void feedBlock() {
         var notification = new Notification(Instant.now(), Notification.Type.feedBlock, Notification.Level.warning, NotificationSource.from(deploymentId, cluster), List.of("1"));
         var content = formatter.format(notification);
         assertEquals("Nearly feed blocked", content.prettyType());

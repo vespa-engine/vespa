@@ -16,17 +16,15 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NotifierTest {
     private static final TenantName tenant = TenantName.from("tenant1");
@@ -48,13 +46,13 @@ public class NotifierTest {
 
     MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
 
-    @Before
+    @BeforeEach
     public void init() {
         curatorDb.writeTenant(cloudTenant);
     }
 
     @Test
-    public void dispatch() {
+    void dispatch() {
         var mailer = new MockMailer();
         var flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.NOTIFICATION_DISPATCH_FLAG.id(), true);
         var notifier = new Notifier(curatorDb, new ZoneRegistryMock(SystemName.cd), mailer, flagSource);
@@ -86,7 +84,7 @@ public class NotifierTest {
     }
 
     @Test
-    public void linkify() {
+    void linkify() {
         var data = Map.of(
                 "Hello. https://example.com/foo/bar.html is a nice place.", "Hello. <a href=\"https://example.com/foo/bar.html\">https://example.com/foo/bar.html</a> is a nice place.",
                 "No url.", "No url.");

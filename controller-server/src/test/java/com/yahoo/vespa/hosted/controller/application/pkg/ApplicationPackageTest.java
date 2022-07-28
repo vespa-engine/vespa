@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author valerijf
@@ -55,7 +55,7 @@ public class ApplicationPackageTest {
                                            "</nodes>";
 
     @Test
-    public void test_createEmptyForDeploymentRemoval() {
+    void test_createEmptyForDeploymentRemoval() {
         ApplicationPackage app = ApplicationPackage.deploymentRemoval();
         assertEquals(DeploymentSpec.empty, app.deploymentSpec());
         assertEquals(List.of(), app.trustedCertificates());
@@ -66,22 +66,22 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    public void testMetaData() {
+    void testMetaData() {
         byte[] zip = ApplicationPackage.filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8),
-                                                        "jdisc.xml", jdiscXml.getBytes(UTF_8),
-                                                        "content/content.xml", contentXml.getBytes(UTF_8),
-                                                        "content/nodes.xml", nodesXml.getBytes(UTF_8),
-                                                        "gurba", "gurba".getBytes(UTF_8)));
+                "jdisc.xml", jdiscXml.getBytes(UTF_8),
+                "content/content.xml", contentXml.getBytes(UTF_8),
+                "content/nodes.xml", nodesXml.getBytes(UTF_8),
+                "gurba", "gurba".getBytes(UTF_8)));
 
         assertEquals(Map.of("services.xml", servicesXml,
-                            "jdisc.xml", jdiscXml,
-                            "content/content.xml", contentXml,
-                            "content/nodes.xml", nodesXml),
-                     unzip(new ApplicationPackage(zip, false).metaDataZip()));
+                        "jdisc.xml", jdiscXml,
+                        "content/content.xml", contentXml,
+                        "content/nodes.xml", nodesXml),
+                unzip(new ApplicationPackage(zip, false).metaDataZip()));
     }
 
     @Test
-    public void testMetaDataWithMissingFiles() {
+    void testMetaDataWithMissingFiles() {
         byte[] zip = ApplicationPackage.filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8)));
 
         try {
@@ -94,7 +94,7 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    public void testAbsoluteInclude() throws Exception {
+    void testAbsoluteInclude() throws Exception {
         try {
             getApplicationZip("include-absolute.zip");
             fail("Should fail on include file outside zip");
@@ -105,7 +105,7 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    public void testParentInclude() throws Exception {
+    void testParentInclude() throws Exception {
         try {
             getApplicationZip("include-parent.zip");
             fail("Should fail on include file outside zip");
@@ -116,7 +116,7 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    public void testBundleHashesAreSameWithDifferentDeploymentXml() throws Exception {
+    void testBundleHashesAreSameWithDifferentDeploymentXml() throws Exception {
         var originalPackage = getApplicationZip("original.zip");
         var changedServices = getApplicationZip("changed-services-xml.zip");
         var changedDeploymentXml = getApplicationZip("changed-deployment-xml.zip");

@@ -11,7 +11,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import org.intellij.lang.annotations.Language;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SupportAccessSerializerTest {
 
@@ -78,70 +78,70 @@ public class SupportAccessSerializerTest {
     }
 
     @Test
-    public void serialize_default() {
+    void serialize_default() {
         var slime = SupportAccessSerializer.serializeCurrentState(SupportAccess.DISALLOWED_NO_HISTORY, Instant.EPOCH);
         assertSerialized(slime, "{\n" +
-                                "  \"state\": {\n" +
-                                "    \"supportAccess\": \"NOT_ALLOWED\"\n" +
-                                "  },\n" +
-                                "  \"history\": [ ],\n" +
-                                "  \"grants\": [ ]\n" +
-                                "}\n");
+                "  \"state\": {\n" +
+                "    \"supportAccess\": \"NOT_ALLOWED\"\n" +
+                "  },\n" +
+                "  \"history\": [ ],\n" +
+                "  \"grants\": [ ]\n" +
+                "}\n");
     }
 
     @Test
-    public void serialize_with_certificates() {
+    void serialize_with_certificates() {
         var slime = SupportAccessSerializer.toSlime(supportAccessExample);
         assertSerialized(slime, expectedWithCertificates);
     }
 
     @Test
-    public void serialize_with_status() {
+    void serialize_with_status() {
         var slime = SupportAccessSerializer.serializeCurrentState(supportAccessExample, hour(12));
         assertSerialized(slime,
-                         "{\n"
-                         + "  \"state\": {\n"
-                         + "    \"supportAccess\": \"ALLOWED\",\n"
-                         + "    \"until\": \"1970-01-02T12:00:00Z\",\n"
-                         + "    \"by\": \"andreer\"\n"
-                         + "  },\n"
-                         + "  \"history\": [\n"
-                         + "    {\n"
-                         + "      \"state\": \"allowed\",\n"
-                         + "      \"at\": \"1970-01-02T06:00:00Z\",\n"
-                         + "      \"until\": \"1970-01-02T12:00:00Z\",\n"
-                         + "      \"by\": \"andreer\"\n"
-                         + "    },\n"
-                         + "    {\n"
-                         + "      \"state\": \"disallowed\",\n"
-                         + "      \"at\": \"1970-01-01T22:00:00Z\",\n"
-                         + "      \"by\": \"andreer\"\n"
-                         + "    },\n"
-                         + "    {\n"
-                         + "      \"state\": \"allowed\",\n"
-                         + "      \"at\": \"1970-01-01T02:00:00Z\",\n"
-                         + "      \"until\": \"1970-01-02T00:00:00Z\",\n"
-                         + "      \"by\": \"andreer\"\n"
-                         + "    },\n"
-                         + "    {\n"
-                         + "      \"state\": \"grant\",\n"
-                         + "      \"at\": \"1970-01-01T03:00:00Z\",\n"
-                         + "      \"until\": \"1970-01-01T04:00:00Z\",\n"
-                         + "      \"by\": \"mortent\"\n"
-                         + "    }\n"
-                         + "  ],\n"
-                         + "  \"grants\": [\n"
-                         + "    {\n"
-                         + "      \"requestor\": \"mortent\",\n"
-                         + "      \"notBefore\": \"1970-01-01T07:00:00Z\",\n"
-                         + "      \"notAfter\": \"1970-01-01T19:00:00Z\"\n"
-                         + "    }\n"
-                         + "  ]\n"
-                         + "}\n");
+                "{\n"
+                        + "  \"state\": {\n"
+                        + "    \"supportAccess\": \"ALLOWED\",\n"
+                        + "    \"until\": \"1970-01-02T12:00:00Z\",\n"
+                        + "    \"by\": \"andreer\"\n"
+                        + "  },\n"
+                        + "  \"history\": [\n"
+                        + "    {\n"
+                        + "      \"state\": \"allowed\",\n"
+                        + "      \"at\": \"1970-01-02T06:00:00Z\",\n"
+                        + "      \"until\": \"1970-01-02T12:00:00Z\",\n"
+                        + "      \"by\": \"andreer\"\n"
+                        + "    },\n"
+                        + "    {\n"
+                        + "      \"state\": \"disallowed\",\n"
+                        + "      \"at\": \"1970-01-01T22:00:00Z\",\n"
+                        + "      \"by\": \"andreer\"\n"
+                        + "    },\n"
+                        + "    {\n"
+                        + "      \"state\": \"allowed\",\n"
+                        + "      \"at\": \"1970-01-01T02:00:00Z\",\n"
+                        + "      \"until\": \"1970-01-02T00:00:00Z\",\n"
+                        + "      \"by\": \"andreer\"\n"
+                        + "    },\n"
+                        + "    {\n"
+                        + "      \"state\": \"grant\",\n"
+                        + "      \"at\": \"1970-01-01T03:00:00Z\",\n"
+                        + "      \"until\": \"1970-01-01T04:00:00Z\",\n"
+                        + "      \"by\": \"mortent\"\n"
+                        + "    }\n"
+                        + "  ],\n"
+                        + "  \"grants\": [\n"
+                        + "    {\n"
+                        + "      \"requestor\": \"mortent\",\n"
+                        + "      \"notBefore\": \"1970-01-01T07:00:00Z\",\n"
+                        + "      \"notAfter\": \"1970-01-01T19:00:00Z\"\n"
+                        + "    }\n"
+                        + "  ]\n"
+                        + "}\n");
     }
 
     @Test
-    public void deserialize() {
+    void deserialize() {
         var slime = SupportAccessSerializer.toSlime(supportAccessExample);
         assertSerialized(slime, expectedWithCertificates);
 

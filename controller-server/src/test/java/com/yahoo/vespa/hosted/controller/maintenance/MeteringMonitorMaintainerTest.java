@@ -8,15 +8,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMoc
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author olaa
@@ -31,7 +31,7 @@ public class MeteringMonitorMaintainerTest {
     private final ApplicationId applicationId = ApplicationId.from("foo", "bar", "default");
     private final ZoneId zone = ZoneId.from("prod.aws-us-east-1c");
 
-    @Before
+    @BeforeEach
     public void setup() {
         tester = new ControllerTester(SystemName.Public);
         deploymentTester = new DeploymentTester(tester);
@@ -39,8 +39,9 @@ public class MeteringMonitorMaintainerTest {
         database = new ResourceDatabaseClientMock(new PlanRegistryMock());
         maintainer = new MeteringMonitorMaintainer(tester.controller(), Duration.ofMinutes(5), database, metrics);
     }
+
     @Test
-    public void finds_stale_data() {
+    void finds_stale_data() {
         deploymentTester.newDeploymentContext(applicationId).submit().deploy();
         maintainer.maintain();
         var now = tester.clock().instant().getEpochSecond();
