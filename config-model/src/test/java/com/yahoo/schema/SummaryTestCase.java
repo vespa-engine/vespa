@@ -5,7 +5,8 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.objects.FieldBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.util.Collection;
@@ -14,9 +15,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests summary validation
@@ -26,7 +25,7 @@ import static org.junit.Assert.fail;
 public class SummaryTestCase {
 
     @Test
-    public void testMemorySummary() throws ParseException {
+    void testMemorySummary() throws ParseException {
         String sd = joinLines(
                 "schema memorysummary {",
                 "  document memorysummary {",
@@ -44,7 +43,7 @@ public class SummaryTestCase {
     }
 
     @Test
-    public void testDiskSummary() throws ParseException {
+    void testDiskSummary() throws ParseException {
         String sd = joinLines(
                 "schema disksummary {",
                 "  document-summary foobar {",
@@ -65,13 +64,13 @@ public class SummaryTestCase {
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
         assertEquals("summary field 'foo2' in document summary 'foobar' references source field 'ondisk', " +
-                     "which is not an attribute: Using this summary will cause disk accesses. " +
-                     "Set 'from-disk' on this summary class to silence this warning.",
-                     logger.entries.get(0).message);
+                "which is not an attribute: Using this summary will cause disk accesses. " +
+                "Set 'from-disk' on this summary class to silence this warning.",
+                logger.entries.get(0).message);
     }
 
     @Test
-    public void testDiskSummaryExplicit() throws ParseException {
+    void testDiskSummaryExplicit() throws ParseException {
         String sd = joinLines(
                 "schema disksummary {",
                 "  document disksummary {",
@@ -94,7 +93,7 @@ public class SummaryTestCase {
     }
 
     @Test
-    public void testStructMemorySummary() throws ParseException {
+    void testStructMemorySummary() throws ParseException {
         String sd = joinLines(
                 "schema structmemorysummary {",
                 "  document structmemorysummary {",
@@ -125,7 +124,7 @@ public class SummaryTestCase {
     }
 
     @Test
-    public void testInheritance() throws Exception {
+    void testInheritance() throws Exception {
         String sd = joinLines(
                 "schema music {",
                 "  document music {",
@@ -174,17 +173,17 @@ public class SummaryTestCase {
         );
         tests.forEach(testValue -> {
             var actualFields = testValue.summary.getSummaryFields().values().stream()
-                                                .map(FieldBase::getName)
-                                                .collect(Collectors.toList());
-            assertEquals(testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()),
-                         Optional.ofNullable(testValue.parent),
-                         testValue.summary.inherited());
-            assertEquals("Summary " + testValue.summary.getName() + " has expected fields", testValue.fields, actualFields);
+                    .map(FieldBase::getName)
+                    .collect(Collectors.toList());
+            assertEquals(Optional.ofNullable(testValue.parent),
+                    testValue.summary.inherited(),
+                    testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()));
+            assertEquals(testValue.fields, actualFields, "Summary " + testValue.summary.getName() + " has expected fields");
         });
     }
 
     @Test
-    public void testRedeclaringInheritedFieldFails() throws Exception {
+    void testRedeclaringInheritedFieldFails() throws Exception {
         String sd = joinLines(
                 "schema music {",
                 "  document music {",
@@ -212,25 +211,25 @@ public class SummaryTestCase {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
-                         "source 'title_short' for this summary field, an equally named field in summary class 'title' " +
-                         "uses a different source: 'title'.", e.getMessage());
+                    "source 'title_short' for this summary field, an equally named field in summary class 'title' " +
+                    "uses a different source: 'title'.", e.getMessage());
         }
     }
 
     @Test
-    public void testValidationOfInheritedSummary() throws ParseException {
+    void testValidationOfInheritedSummary() throws ParseException {
         try {
             String schema = joinLines(
                     "schema test {" +
-                    "  document test {" +
-                    "  }" +
-                    "  document-summary test_summary inherits nonesuch {" +
-                    "  }" +
-                    "}");
+                            "  document test {" +
+                            "  }" +
+                            "  document-summary test_summary inherits nonesuch {" +
+                            "  }" +
+                            "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
-                         logger.entries.get(0).message);
+                    logger.entries.get(0).message);
             // fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
@@ -240,29 +239,29 @@ public class SummaryTestCase {
     }
 
     @Test
-    public void testInheritingParentSummary() throws ParseException {
+    void testInheritingParentSummary() throws ParseException {
         String parent = joinLines(
                 "schema parent {" +
-                "  document parent {" +
-                "    field pf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  document-summary parent_summary {" +
-                "    summary pf1 type string {}" +
-                "  }" +
-                "}");
+                        "  document parent {" +
+                        "    field pf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  document-summary parent_summary {" +
+                        "    summary pf1 type string {}" +
+                        "  }" +
+                        "}");
         String child = joinLines(
                 "schema child inherits parent {" +
-                "  document child inherits parent {" +
-                "    field cf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  document-summary child_summary inherits parent_summary {" +
-                "    summary cf1 type string {}" +
-                "  }" +
-                "}");
+                        "  document child inherits parent {" +
+                        "    field cf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  document-summary child_summary inherits parent_summary {" +
+                        "    summary cf1 type string {}" +
+                        "  }" +
+                        "}");
         DeployLoggerStub logger = new DeployLoggerStub();
         ApplicationBuilder.createFromStrings(logger, parent, child);
         logger.entries.forEach(e -> System.out.println(e));

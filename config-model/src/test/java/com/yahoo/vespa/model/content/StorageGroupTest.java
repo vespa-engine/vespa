@@ -6,10 +6,10 @@ import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for storage groups.
@@ -21,7 +21,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testSingleGroup() throws Exception {
+    void testSingleGroup() throws Exception {
         ContentCluster cluster = parse(
                 "<content id=\"storage\">\n" +
                         "  <documents/>" +
@@ -65,7 +65,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testNestedGroupsNoDistribution() {
+    void testNestedGroupsNoDistribution() {
         try {
             parse(
                     "<content version=\"1.0\" id=\"storage\">\n" +
@@ -87,7 +87,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testNestedGroups() throws Exception {
+    void testNestedGroups() throws Exception {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
                         "  <redundancy>4</redundancy>" +
@@ -171,7 +171,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testGroupCapacity() throws Exception {
+    void testGroupCapacity() throws Exception {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
                         "  <redundancy>2</redundancy>" +

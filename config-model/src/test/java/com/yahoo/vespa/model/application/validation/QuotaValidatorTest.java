@@ -7,12 +7,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author ogronnesby
@@ -24,13 +24,13 @@ public class QuotaValidatorTest {
     private final Quota quota = Quota.unlimited().withClusterSize(10).withBudget(BigDecimal.valueOf(1.25));
 
     @Test
-    public void test_deploy_under_quota() {
+    void test_deploy_under_quota() {
         var tester = new ValidationTester(8, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         tester.deploy(null, getServices("testCluster", 4), Environment.prod, null);
     }
 
     @Test
-    public void test_deploy_above_quota_clustersize() {
+    void test_deploy_above_quota_clustersize() {
         var tester = new ValidationTester(14, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 11), Environment.prod, null);
@@ -41,7 +41,7 @@ public class QuotaValidatorTest {
     }
 
     @Test
-    public void test_deploy_above_quota_budget() {
+    void test_deploy_above_quota_budget() {
         var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
@@ -52,7 +52,7 @@ public class QuotaValidatorTest {
     }
 
     @Test
-    public void test_deploy_above_quota_budget_in_publiccd() {
+    void test_deploy_above_quota_budget_in_publiccd() {
         var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota.withBudget(BigDecimal.ONE)).setZone(publicCdZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
@@ -63,7 +63,7 @@ public class QuotaValidatorTest {
     }
 
     @Test
-    public void test_deploy_max_resources_above_quota() {
+    void test_deploy_max_resources_above_quota() {
         var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
@@ -75,7 +75,7 @@ public class QuotaValidatorTest {
     }
 
     @Test
-    public void test_deploy_with_negative_budget() {
+    void test_deploy_with_negative_budget() {
         var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(-1));
         var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {

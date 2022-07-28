@@ -10,7 +10,7 @@ import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporarySDField;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -102,45 +102,45 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
 
 
     @Test
-    public void testPerfectOrderingIsKept() {
+    void testPerfectOrderingIsKept() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("grandParent", "mother", "father", "daughter", "son", "product", "pc", "alone"));
+                Arrays.asList("grandParent", "mother", "father", "daughter", "son", "product", "pc", "alone"));
     }
 
     @Test
-    public void testOneLevelReordering() {
+    void testOneLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("grandParent", "daughter", "son", "mother", "father", "pc", "product", "alone"));
+                Arrays.asList("grandParent", "daughter", "son", "mother", "father", "pc", "product", "alone"));
     }
 
     @Test
-    public void testMultiLevelReordering() {
+    void testMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("daughter", "son", "mother", "father", "grandParent", "pc", "product", "alone"));
+                Arrays.asList("daughter", "son", "mother", "father", "grandParent", "pc", "product", "alone"));
     }
 
     @Test
-    public void testAloneIsKeptInPlaceWithMultiLevelReordering() {
+    void testAloneIsKeptInPlaceWithMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("alone", "daughter", "son", "mother", "father", "grandParent", "pc", "product"));
+                Arrays.asList("alone", "daughter", "son", "mother", "father", "grandParent", "pc", "product"));
     }
 
     @Test
-    public void testPartialMultiLevelReordering() {
+    void testPartialMultiLevelReordering() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("daughter", "grandParent", "mother", "son", "father", "product", "pc", "alone"));
+                Arrays.asList("daughter", "grandParent", "mother", "son", "father", "product", "pc", "alone"));
     }
 
     @Test
-    public void testMultilevelReorderingAccrossHierarchies() {
+    void testMultilevelReorderingAccrossHierarchies() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                    Arrays.asList("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
+                Arrays.asList("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
 
     @Test
-    public void referees_are_ordered_before_referrer() {
+    void referees_are_ordered_before_referrer() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "accessory-pc", "son"),
-                    Arrays.asList("accessory-pc", "daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
+                Arrays.asList("accessory-pc", "daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
 
 

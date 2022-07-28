@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author geirst
@@ -35,31 +35,31 @@ public class DocumentDatabaseTestCase {
     private static final double SMALL = 0.00000000000001;
 
     @Test
-    public void requireThatWeCanHaveOneSDForIndexedMode() {
+    void requireThatWeCanHaveOneSDForIndexedMode() {
         new SchemaTester().assertSingleSD("index");
     }
 
     @Test
-    public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
+    void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency("index", "", 0.50);
         verifyConcurrency("streaming", "", 1.0);
         verifyConcurrency("store-only", "", 1.0);
     }
 
     @Test
-    public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
+    void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency("index", "", 0.30, 0.3);
         verifyConcurrency("streaming", "", 0.6, 0.3);
         verifyConcurrency("store-only", "", 0.8, 0.4);
     }
 
     @Test
-    public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
+    void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0);
     }
 
     @Test
-    public void requireThatMixedModeConcurrencyIsReflected() {
+    void requireThatMixedModeConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
@@ -67,10 +67,10 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatConcurrencyIsReflected() {
+    void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
-                            "  <concurrency>0.7</concurrency>" +
-                            "</feeding>\n";
+                "  <concurrency>0.7</concurrency>" +
+                "</feeding>\n";
         verifyConcurrency("index", feedTuning, 0.7);
         verifyConcurrency("streaming", feedTuning, 0.7);
         verifyConcurrency("store-only", feedTuning, 0.7);
@@ -113,17 +113,17 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireFeedNicenessIsReflected() {
+    void requireFeedNicenessIsReflected() {
         verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.0, null);
         verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.32, 0.32);
     }
 
     @Test
-    public void requireThatModeIsSet() {
+    void requireThatModeIsSet() {
         var tester = new SchemaTester();
         VespaModel model = tester.createModel(Arrays.asList(DocType.create("a", "index"),
-                                                        DocType.create("b", "streaming"),
-                                                       DocType.create("c", "store-only")), "");
+                DocType.create("b", "streaming"),
+                DocType.create("c", "store-only")), "");
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
         assertEquals(3, proton.documentdb().size());
@@ -148,13 +148,14 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
+    void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
         final long DEFAULT = 1024L;
         verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
                 "", Arrays.asList(DEFAULT, DEFAULT));
     }
+
     @Test
-    public void requireThatMixedModeInitialDocumentCountIsReflected() {
+    void requireThatMixedModeInitialDocumentCountIsReflected() {
         final long INITIAL = 1000000000L;
         String feedTuning = "<resizing>" +
                 "  <initialdocumentcount>1000000000</initialdocumentcount>" +
@@ -176,11 +177,11 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void testMultipleSchemas() {
+    void testMultipleSchemas() {
         List<String> sds = List.of("type1", "type2", "type3");
         var tester = new SchemaTester();
         var model = tester.createModel(sds);
-        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
+        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster) model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
         String type2Id = "test/search/cluster.test/type2";
@@ -226,26 +227,26 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void testRankingConstants() {
+    void testRankingConstants() {
         List<String> schemas = List.of("type1");
         var tester = new SchemaTester();
 
         // Use lz4 endings to avoid having to provide file content to be validated
         String schemaConstants =
                 "  constant constant_1 {" +
-                "    file: constants/my_constant_1.json.lz4" +
-                "    type: tensor<float>(x{},y{})" +
-                "  }" +
-                "  constant constant_2 {" +
-                "    file: constants/my_constant_2.json.lz4" +
-                "    type: tensor(x[1000])" +
-                "  }";
+                        "    file: constants/my_constant_1.json.lz4" +
+                        "    type: tensor<float>(x{},y{})" +
+                        "  }" +
+                        "  constant constant_2 {" +
+                        "    file: constants/my_constant_2.json.lz4" +
+                        "    type: tensor(x[1000])" +
+                        "  }";
 
         Map<Path, String> constants = new HashMap<>();
         constants.put(Path.fromString("constants/my_constant_1.json.lz4"), "");
         constants.put(Path.fromString("constants/my_constant_2.json.lz4"), "");
         var model = tester.createModel(schemaConstants, "", schemas, constants);
-        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
+        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster) model.getSearchClusters().get(0);
         RankingConstantsConfig.Builder b = new RankingConstantsConfig.Builder();
         indexedSearchCluster.getDocumentDbs().get(0).getConfig(b);
         RankingConstantsConfig config = b.build();
@@ -263,14 +264,14 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
+    void requireThatRelevantConfigIsAvailableForClusterSearcher() {
         String inputsProfile =
                 "  rank-profile inputs {" +
-                "    inputs {" +
-                "      query(foo) tensor<float>(x[10])" +
-                "      query(bar) tensor(key{},x[1000])" +
-                "    }" +
-                "  }";
+                        "    inputs {" +
+                        "      query(foo) tensor<float>(x[10])" +
+                        "      query(bar) tensor(key{},x[1000])" +
+                        "    }" +
+                        "  }";
         List<String> schemas = List.of("type1", "type2");
         var tester = new SchemaTester();
         VespaModel model = tester.createModelWithRankProfile(inputsProfile, schemas);
@@ -305,7 +306,7 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatDocumentDBConfigIsAvailableForStreaming() {
+    void requireThatDocumentDBConfigIsAvailableForStreaming() {
         assertDocumentDBConfigAvailableForStreaming("streaming");
     }
 
@@ -343,7 +344,7 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void testThatAttributesMaxUnCommittedMemoryIsControlledByFeatureFlag() {
+    void testThatAttributesMaxUnCommittedMemoryIsControlledByFeatureFlag() {
         assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
                 Arrays.asList("test/search/cluster.test/type1"),
                 ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")),
@@ -351,20 +352,21 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void testThatAttributesConfigIsProducedForIndexed() {
+    void testThatAttributesConfigIsProducedForIndexed() {
         assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
                 Arrays.asList("test/search/cluster.test/type1"),
                 ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")));
     }
 
     @Test
-    public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
+    void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),
                 Arrays.asList("test/search/type1"),
                 ImmutableMap.of("type1", Arrays.asList("f2")));
     }
+
     @Test
-    public void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
+    void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"),
                 Arrays.asList("test/search"), Collections.emptyMap());
     }

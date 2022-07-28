@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author arnej
@@ -10,10 +10,10 @@ import org.junit.Test;
 public class DuplicateStructTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void exact_duplicate_struct_works() throws Exception {
+    void exact_duplicate_struct_works() throws Exception {
         assertCorrectDeriving("duplicate_struct", "foobar",
-                              new TestProperties(),
-                              new TestableDeployLogger());
+                new TestProperties(),
+                new TestableDeployLogger());
     }
 
 }

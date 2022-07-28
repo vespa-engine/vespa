@@ -11,12 +11,12 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author gjoranv
@@ -39,7 +39,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     }
 
     @Test
-    public void request_chain_binding_is_added_to_http() throws Exception {
+    void request_chain_binding_is_added_to_http() throws Exception {
         Element xml = parse(
                 "<http>",
                 "  <filtering>",
@@ -55,11 +55,11 @@ public class FilterBindingsTest extends DomBuilderTest {
         assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-request-chain");
-        assertNotNull("Missing chain", myChain);
+        assertNotNull(myChain, "Missing chain");
     }
 
     @Test
-    public void response_chain_binding_is_added_to_http() throws Exception {
+    void response_chain_binding_is_added_to_http() throws Exception {
         Element xml = parse(
                 "<http>",
                 "  <filtering>",
@@ -75,11 +75,11 @@ public class FilterBindingsTest extends DomBuilderTest {
         assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-response-chain");
-        assertNotNull("Missing chain", myChain);
+        assertNotNull(myChain, "Missing chain");
     }
 
     @Test
-    public void bindings_are_added_to_config_for_all_http_servers_with_jetty() {
+    void bindings_are_added_to_config_for_all_http_servers_with_jetty() {
         final Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",

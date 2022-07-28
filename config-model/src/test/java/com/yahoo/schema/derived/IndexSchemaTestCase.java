@@ -4,15 +4,15 @@ package com.yahoo.schema.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 public class IndexSchemaTestCase {
 
     @Test
-    public void requireThatPrimitiveIsNotFlattened() {
+    void requireThatPrimitiveIsNotFlattened() {
         assertFlat(new Field("foo", DataType.BYTE), new Field("foo", DataType.BYTE));
         assertFlat(new Field("foo", DataType.DOUBLE), new Field("foo", DataType.DOUBLE));
         assertFlat(new Field("foo", DataType.FLOAT), new Field("foo", DataType.FLOAT));
@@ -33,29 +33,29 @@ public class IndexSchemaTestCase {
     }
 
     @Test
-    public void requireThatArrayOfPrimitiveIsNotFlattened() {
+    void requireThatArrayOfPrimitiveIsNotFlattened() {
         assertFlat(new Field("foo", DataType.getArray(DataType.BYTE)),
-                   new Field("foo", DataType.getArray(DataType.BYTE)));
+                new Field("foo", DataType.getArray(DataType.BYTE)));
         assertFlat(new Field("foo", DataType.getArray(DataType.DOUBLE)),
-                   new Field("foo", DataType.getArray(DataType.DOUBLE)));
+                new Field("foo", DataType.getArray(DataType.DOUBLE)));
         assertFlat(new Field("foo", DataType.getArray(DataType.FLOAT)),
-                   new Field("foo", DataType.getArray(DataType.FLOAT)));
+                new Field("foo", DataType.getArray(DataType.FLOAT)));
         assertFlat(new Field("foo", DataType.getArray(DataType.INT)),
-                   new Field("foo", DataType.getArray(DataType.INT)));
+                new Field("foo", DataType.getArray(DataType.INT)));
         assertFlat(new Field("foo", DataType.getArray(DataType.LONG)),
-                   new Field("foo", DataType.getArray(DataType.LONG)));
+                new Field("foo", DataType.getArray(DataType.LONG)));
         assertFlat(new Field("foo", DataType.getArray(DataType.RAW)),
-                   new Field("foo", DataType.getArray(DataType.RAW)));
+                new Field("foo", DataType.getArray(DataType.RAW)));
         assertFlat(new Field("foo", DataType.getArray(DataType.STRING)),
-                   new Field("foo", DataType.getArray(DataType.STRING)));
+                new Field("foo", DataType.getArray(DataType.STRING)));
         assertFlat(new Field("foo", DataType.getArray(DataType.URI)),
-                   new Field("foo", DataType.getArray(DataType.URI)));
+                new Field("foo", DataType.getArray(DataType.URI)));
         assertFlat(new Field("foo", DataType.getArray(DataType.PREDICATE)),
-                   new Field("foo", DataType.getArray(DataType.PREDICATE)));
+                new Field("foo", DataType.getArray(DataType.PREDICATE)));
     }
 
     @Test
-    public void requireThatStructIsFlattened() {
+    void requireThatStructIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.BYTE));
         type.addField(new Field("my_double", DataType.DOUBLE));
@@ -67,18 +67,18 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.URI));
 
         assertFlat(new Field("foo", type),
-                   new Field("foo.my_byte", DataType.BYTE),
-                   new Field("foo.my_double", DataType.DOUBLE),
-                   new Field("foo.my_float", DataType.FLOAT),
-                   new Field("foo.my_int", DataType.INT),
-                   new Field("foo.my_long", DataType.LONG),
-                   new Field("foo.my_raw", DataType.RAW),
-                   new Field("foo.my_string", DataType.STRING),
-                   new Field("foo.my_uri", DataType.URI));
+                new Field("foo.my_byte", DataType.BYTE),
+                new Field("foo.my_double", DataType.DOUBLE),
+                new Field("foo.my_float", DataType.FLOAT),
+                new Field("foo.my_int", DataType.INT),
+                new Field("foo.my_long", DataType.LONG),
+                new Field("foo.my_raw", DataType.RAW),
+                new Field("foo.my_string", DataType.STRING),
+                new Field("foo.my_uri", DataType.URI));
     }
 
     @Test
-    public void requireThatArrayOfStructIsFlattened() {
+    void requireThatArrayOfStructIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.BYTE));
         type.addField(new Field("my_double", DataType.DOUBLE));
@@ -90,18 +90,18 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.URI));
 
         assertFlat(new Field("foo", DataType.getArray(type)),
-                   new Field("foo.my_byte", DataType.getArray(DataType.BYTE)),
-                   new Field("foo.my_double", DataType.getArray(DataType.DOUBLE)),
-                   new Field("foo.my_float", DataType.getArray(DataType.FLOAT)),
-                   new Field("foo.my_int", DataType.getArray(DataType.INT)),
-                   new Field("foo.my_long", DataType.getArray(DataType.LONG)),
-                   new Field("foo.my_raw", DataType.getArray(DataType.RAW)),
-                   new Field("foo.my_string", DataType.getArray(DataType.STRING)),
-                   new Field("foo.my_uri", DataType.getArray(DataType.URI)));
+                new Field("foo.my_byte", DataType.getArray(DataType.BYTE)),
+                new Field("foo.my_double", DataType.getArray(DataType.DOUBLE)),
+                new Field("foo.my_float", DataType.getArray(DataType.FLOAT)),
+                new Field("foo.my_int", DataType.getArray(DataType.INT)),
+                new Field("foo.my_long", DataType.getArray(DataType.LONG)),
+                new Field("foo.my_raw", DataType.getArray(DataType.RAW)),
+                new Field("foo.my_string", DataType.getArray(DataType.STRING)),
+                new Field("foo.my_uri", DataType.getArray(DataType.URI)));
     }
 
     @Test
-    public void requireThatArrayOfArrayOfStructIsFlattened() {
+    void requireThatArrayOfArrayOfStructIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.BYTE));
         type.addField(new Field("my_double", DataType.DOUBLE));
@@ -113,18 +113,18 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.URI));
 
         assertFlat(new Field("foo", DataType.getArray(DataType.getArray(type))),
-                   new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
-                   new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
-                   new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
-                   new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
-                   new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
-                   new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
-                   new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
-                   new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
+                new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
+                new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
+                new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
+                new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
+                new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
+                new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
+                new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
+                new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
     }
 
     @Test
-    public void requireThatStructWithArrayFieldIsFlattened() {
+    void requireThatStructWithArrayFieldIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.getArray(DataType.BYTE)));
         type.addField(new Field("my_double", DataType.getArray(DataType.DOUBLE)));
@@ -136,18 +136,18 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.getArray(DataType.URI)));
 
         assertFlat(new Field("foo", type),
-                   new Field("foo.my_byte", DataType.getArray(DataType.BYTE)),
-                   new Field("foo.my_double", DataType.getArray(DataType.DOUBLE)),
-                   new Field("foo.my_float", DataType.getArray(DataType.FLOAT)),
-                   new Field("foo.my_int", DataType.getArray(DataType.INT)),
-                   new Field("foo.my_long", DataType.getArray(DataType.LONG)),
-                   new Field("foo.my_raw", DataType.getArray(DataType.RAW)),
-                   new Field("foo.my_string", DataType.getArray(DataType.STRING)),
-                   new Field("foo.my_uri", DataType.getArray(DataType.URI)));
+                new Field("foo.my_byte", DataType.getArray(DataType.BYTE)),
+                new Field("foo.my_double", DataType.getArray(DataType.DOUBLE)),
+                new Field("foo.my_float", DataType.getArray(DataType.FLOAT)),
+                new Field("foo.my_int", DataType.getArray(DataType.INT)),
+                new Field("foo.my_long", DataType.getArray(DataType.LONG)),
+                new Field("foo.my_raw", DataType.getArray(DataType.RAW)),
+                new Field("foo.my_string", DataType.getArray(DataType.STRING)),
+                new Field("foo.my_uri", DataType.getArray(DataType.URI)));
     }
 
     @Test
-    public void requireThatStructWithArrayOfArrayFieldIsFlattened() {
+    void requireThatStructWithArrayOfArrayFieldIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))));
         type.addField(new Field("my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))));
@@ -159,18 +159,18 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
 
         assertFlat(new Field("foo", type),
-                   new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
-                   new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
-                   new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
-                   new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
-                   new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
-                   new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
-                   new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
-                   new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
+                new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
+                new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
+                new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
+                new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
+                new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
+                new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
+                new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
+                new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
     }
 
     @Test
-    public void requireThatArrayOfStructWithArrayFieldIsFlattened() {
+    void requireThatArrayOfStructWithArrayFieldIsFlattened() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("my_byte", DataType.getArray(DataType.BYTE)));
         type.addField(new Field("my_double", DataType.getArray(DataType.DOUBLE)));
@@ -182,14 +182,14 @@ public class IndexSchemaTestCase {
         type.addField(new Field("my_uri", DataType.getArray(DataType.URI)));
 
         assertFlat(new Field("foo", DataType.getArray(type)),
-                   new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
-                   new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
-                   new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
-                   new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
-                   new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
-                   new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
-                   new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
-                   new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
+                new Field("foo.my_byte", DataType.getArray(DataType.getArray(DataType.BYTE))),
+                new Field("foo.my_double", DataType.getArray(DataType.getArray(DataType.DOUBLE))),
+                new Field("foo.my_float", DataType.getArray(DataType.getArray(DataType.FLOAT))),
+                new Field("foo.my_int", DataType.getArray(DataType.getArray(DataType.INT))),
+                new Field("foo.my_long", DataType.getArray(DataType.getArray(DataType.LONG))),
+                new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
+                new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
+                new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
     }
 
     private static void assertFlat(Field fieldToFlatten, Field... expectedFields) {
@@ -202,7 +202,7 @@ public class IndexSchemaTestCase {
                 fail("Unexpected field: " + field);
             }
         }
-        assertTrue("Missing fields: " + expected, expected.isEmpty());
+        assertTrue(expected.isEmpty(), "Missing fields: " + expected);
     }
 
 }

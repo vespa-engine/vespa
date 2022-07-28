@@ -10,7 +10,7 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests deriving rank for files from search definitions
@@ -20,7 +20,7 @@ import org.junit.Test;
 public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testDeriving() {
+    void testDeriving() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType doc = new SDDocumentType("test");

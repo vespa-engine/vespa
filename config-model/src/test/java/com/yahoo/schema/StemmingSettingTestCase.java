@@ -4,12 +4,12 @@ package com.yahoo.schema;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Stemming settings test
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNull;
 public class StemmingSettingTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testStemmingSettings() throws IOException, ParseException {
+    void testStemmingSettings() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
 
         SDField artist = (SDField) schema.getDocument().getField("artist");
@@ -42,7 +42,7 @@ public class StemmingSettingTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatStemmingIsDefaultBest() throws IOException, ParseException {
+    void requireThatStemmingIsDefaultBest() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
         assertNull(schema.getConcreteField("my_str").getStemming());
         assertEquals(Stemming.BEST, schema.getConcreteField("my_str").getStemming(schema));

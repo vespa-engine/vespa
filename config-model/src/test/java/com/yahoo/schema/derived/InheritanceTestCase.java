@@ -12,19 +12,15 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.rules.TemporaryFolder;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests inheritance
@@ -33,11 +29,11 @@ import static org.junit.Assert.assertNull;
  */
 public class InheritanceTestCase extends AbstractExportingTestCase {
 
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
+    @TempDir
+    public File tmpDir;
 
     @Test
-    public void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
+    void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
         String dir = "src/test/derived/inheritstruct/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
@@ -48,7 +44,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void requireThatInheritFromNullIsCaught() throws IOException, ParseException {
+    void requireThatInheritFromNullIsCaught() throws IOException, ParseException {
         try {
             assertCorrectDeriving("inheritfromnull");
         } catch (IllegalArgumentException e) {
@@ -57,7 +53,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void requireThatStructTypesAreInheritedThroughDiamond() throws IOException, ParseException {
+    void requireThatStructTypesAreInheritedThroughDiamond() throws IOException, ParseException {
         String dir = "src/test/derived/inheritdiamond/";
         {
             ApplicationBuilder builder = new ApplicationBuilder();
@@ -70,7 +66,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             assertCorrectConfigFiles("inheritdiamond");
         }
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
-        File outDir = tmpDir.newFolder("out");
+        File outDir = newFolder(tmpDir, "out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
             var builder = new ApplicationBuilder(new TestProperties());
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
@@ -80,7 +76,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             builder.build(true);
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
             DerivedConfiguration.exportDocuments(new DocumentManager().
-                                                 produce(builder.getModel(), b), outDir.getPath());
+                    produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
             assertEquals(5, dc.doctype().size());
 
@@ -120,9 +116,9 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         }
         return null;
     }
-    
+
     @Test
-    public void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
+    void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromparent/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
@@ -133,7 +129,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
+    void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromgrandparent/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "grandparent.sd");
@@ -145,7 +141,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testInheritance() throws IOException, ParseException {
+    void testInheritance() throws IOException, ParseException {
         String dir = "src/test/derived/inheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "grandparent.sd");
@@ -158,7 +154,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testIndexSettingInheritance() {
+    void testIndexSettingInheritance() {
         SDDocumentType parent = new SDDocumentType("parent");
         Schema parentSchema = new Schema("parent", MockApplicationPackage.createEmpty());
         parentSchema.addDocument(parent);
@@ -171,13 +167,13 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         Schema childSchema = new Schema("child", MockApplicationPackage.createEmpty());
         childSchema.addDocument(child);
 
-        prefixed = (SDField)child.getField("prefixed");
+        prefixed = (SDField) child.getField("prefixed");
         assertNotNull(prefixed);
         assertEquals(new Index("prefixed", true), childSchema.getIndex("prefixed"));
     }
 
     @Test
-    public void testInheritStructDiamondNew() throws IOException, ParseException {
+    void testInheritStructDiamondNew() throws IOException, ParseException {
         String dir = "src/test/derived/declstruct/";
         List<String> files = Arrays.asList("common.sd", "foo.sd", "bar.sd", "foobar.sd");
         var builder = new ApplicationBuilder(new TestProperties());
@@ -187,6 +183,15 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.build(true);
         derive("declstruct", builder, builder.getSchema("foobar"));
         assertCorrectConfigFiles("declstruct");
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }

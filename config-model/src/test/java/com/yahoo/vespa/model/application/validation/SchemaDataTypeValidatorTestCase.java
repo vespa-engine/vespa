@@ -2,10 +2,10 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,22 +13,22 @@ import static org.junit.Assert.fail;
 public class SchemaDataTypeValidatorTestCase {
 
     @Test
-    public void requireThatSupportedTypesAreValidated() {
+    void requireThatSupportedTypesAreValidated() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/search_alltypes/").create();
     }
 
     @Test
-    public void requireThatStructsAreLegalInSearchClusters() {
+    void requireThatStructsAreLegalInSearchClusters() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/search_struct/").create();
     }
 
     @Test
-    public void requireThatEmptyContentFieldIsLegalInSearchClusters() {
+    void requireThatEmptyContentFieldIsLegalInSearchClusters() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/search_empty_content/").create();
     }
 
     @Test
-    public void requireThatIndexingMapsInNonStreamingClusterIsIllegal() {
+    void requireThatIndexingMapsInNonStreamingClusterIsIllegal() {
         try {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/index_struct/").create();
             fail();

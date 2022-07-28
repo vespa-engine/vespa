@@ -3,27 +3,24 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
 import static com.yahoo.schema.ApplicationBuilder.createFromStrings;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PagedAttributeValidatorTestCase {
 
     @Test
-    public void dense_tensor_attribute_supports_paged_setting() throws ParseException {
+    void dense_tensor_attribute_supports_paged_setting() throws ParseException {
         assertPagedSupported("tensor(x[2],y[2])");
     }
 
     @Test
-    public void primitive_attribute_types_support_paged_setting() throws ParseException {
+    void primitive_attribute_types_support_paged_setting() throws ParseException {
         assertPagedSupported("int");
         assertPagedSupported("array<int>");
         assertPagedSupported("weightedset<int>");
@@ -34,7 +31,7 @@ public class PagedAttributeValidatorTestCase {
     }
 
     @Test
-    public void struct_field_attributes_support_paged_setting() throws ParseException {
+    void struct_field_attributes_support_paged_setting() throws ParseException {
         var sd = joinLines("schema test {",
                 "  document test {",
                 "    struct elem {",
@@ -68,17 +65,17 @@ public class PagedAttributeValidatorTestCase {
     }
 
     @Test
-    public void non_dense_tensor_attribute_does_not_support_paged_setting() throws ParseException {
+    void non_dense_tensor_attribute_does_not_support_paged_setting() throws ParseException {
         assertPagedSettingNotSupported("tensor(x{},y[2])");
     }
 
     @Test
-    public void predicate_attribute_does_not_support_paged_setting() throws ParseException {
+    void predicate_attribute_does_not_support_paged_setting() throws ParseException {
         assertPagedSettingNotSupported("predicate");
     }
 
     @Test
-    public void reference_attribute_does_not_support_paged_setting() throws ParseException {
+    void reference_attribute_does_not_support_paged_setting() throws ParseException {
         assertPagedSettingNotSupported("reference<parent>", Optional.of(getSd("parent", "int")));
     }
 

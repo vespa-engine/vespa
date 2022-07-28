@@ -3,14 +3,14 @@ package com.yahoo.vespa.model.storage;
 
 import com.yahoo.vespa.model.content.DistributionBitCalculator;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DistributionBitCalculatorTest {
 
     @Test
-    public void testBitCalculator() {
+    void testBitCalculator() {
         ContentCluster.DistributionMode mode = ContentCluster.DistributionMode.STRICT;
         assertEquals(8, DistributionBitCalculator.getDistributionBits(1, mode));
         assertEquals(16, DistributionBitCalculator.getDistributionBits(10, mode));
@@ -19,15 +19,15 @@ public class DistributionBitCalculatorTest {
         assertEquals(28, DistributionBitCalculator.getDistributionBits(1000, mode));
 
         mode = ContentCluster.DistributionMode.LOOSE;
-        assertEquals( 8, DistributionBitCalculator.getDistributionBits(1, mode));
-        assertEquals( 8, DistributionBitCalculator.getDistributionBits(4, mode));
+        assertEquals(8, DistributionBitCalculator.getDistributionBits(1, mode));
+        assertEquals(8, DistributionBitCalculator.getDistributionBits(4, mode));
         assertEquals(16, DistributionBitCalculator.getDistributionBits(5, mode));
         assertEquals(16, DistributionBitCalculator.getDistributionBits(199, mode));
         assertEquals(24, DistributionBitCalculator.getDistributionBits(200, mode));
         assertEquals(24, DistributionBitCalculator.getDistributionBits(2500, mode));
 
         mode = ContentCluster.DistributionMode.LEGACY;
-        assertEquals( 8, DistributionBitCalculator.getDistributionBits(1, mode));
+        assertEquals(8, DistributionBitCalculator.getDistributionBits(1, mode));
         assertEquals(14, DistributionBitCalculator.getDistributionBits(4, mode));
         assertEquals(19, DistributionBitCalculator.getDistributionBits(16, mode));
         assertEquals(23, DistributionBitCalculator.getDistributionBits(200, mode));

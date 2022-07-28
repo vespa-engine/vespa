@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -14,7 +14,7 @@ import java.io.IOException;
 public class PrefixExactAttributeTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testTypes() throws IOException, ParseException {
+    void testTypes() throws IOException, ParseException {
         assertCorrectDeriving("prefixexactattribute");
     }
 

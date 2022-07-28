@@ -3,15 +3,12 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author geirst
@@ -19,32 +16,32 @@ import static org.junit.Assert.fail;
 public class TensorFieldTestCase {
 
     @Test
-    public void requireThatTensorFieldCannotBeOfCollectionType() throws ParseException {
+    void requireThatTensorFieldCannotBeOfCollectionType() throws ParseException {
         try {
             createFromString(getSd("field f1 type array<tensor(x{})> {}"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'f1': A field with collection type of tensor is not supported. Use simple type 'tensor' instead.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatTensorFieldCannotBeIndexField() throws ParseException {
+    void requireThatTensorFieldCannotBeIndexField() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(x{}) { indexing: index }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'f1': A tensor of type 'tensor(x{})' does not support having an 'index'. " +
-                            "Currently, only tensors with 1 indexed dimension supports that.",
-                         e.getMessage());
+                    "Currently, only tensors with 1 indexed dimension supports that.",
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatIndexedTensorAttributeCannotBeFastSearch() throws ParseException {
+    void requireThatIndexedTensorAttributeCannotBeFastSearch() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: fast-search }"));
             fail("Expected exception");
@@ -55,7 +52,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void requireThatIndexedTensorAttributeCannotBeFastRank() throws ParseException {
+    void requireThatIndexedTensorAttributeCannotBeFastRank() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: fast-rank }"));
             fail("Expected exception");
@@ -66,7 +63,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
+    void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(invalid) { indexing: attribute }"));
             fail("Expected exception");
@@ -77,19 +74,19 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void hnsw_index_is_default_turned_off() throws ParseException {
+    void hnsw_index_is_default_turned_off() throws ParseException {
         var attr = getAttributeFromSd("field t1 type tensor(x[64]) { indexing: attribute }", "t1");
         assertFalse(attr.hnswIndexParams().isPresent());
     }
 
     @Test
-    public void hnsw_index_gets_default_parameters_if_not_specified() throws ParseException {
+    void hnsw_index_gets_default_parameters_if_not_specified() throws ParseException {
         assertHnswIndexParams("", 16, 200);
         assertHnswIndexParams("index: hnsw", 16, 200);
     }
 
     @Test
-    public void hnsw_index_parameters_can_be_specified() throws ParseException {
+    void hnsw_index_parameters_can_be_specified() throws ParseException {
         assertHnswIndexParams("index { hnsw { max-links-per-node: 32 } }", 32, 200);
         assertHnswIndexParams("index { hnsw { neighbors-to-explore-at-insert: 300 } }", 16, 300);
         assertHnswIndexParams(joinLines("index {",
@@ -102,7 +99,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void tensor_with_hnsw_index_must_be_an_attribute() throws ParseException {
+    void tensor_with_hnsw_index_must_be_an_attribute() throws ParseException {
         try {
             createFromString(getSd("field t1 type tensor(x[64]) { indexing: index }"));
             fail("Expected exception");
@@ -113,7 +110,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void tensor_with_hnsw_index_parameters_must_be_an_index() throws ParseException {
+    void tensor_with_hnsw_index_parameters_must_be_an_index() throws ParseException {
         try {
             createFromString(getSd(joinLines(
                     "field t1 type tensor(x[64]) {",
@@ -132,7 +129,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void tensors_with_at_least_one_mapped_dimension_can_be_direct() throws ParseException {
+    void tensors_with_at_least_one_mapped_dimension_can_be_direct() throws ParseException {
         assertTrue(getAttributeFromSd(
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }", "t1").isFastSearch());
         assertTrue(getAttributeFromSd(
@@ -140,7 +137,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void tensors_with_at_least_one_mapped_dimension_can_be_fast_rank() throws ParseException {
+    void tensors_with_at_least_one_mapped_dimension_can_be_fast_rank() throws ParseException {
         assertTrue(getAttributeFromSd(
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }", "t1").isFastRank());
         assertTrue(getAttributeFromSd(

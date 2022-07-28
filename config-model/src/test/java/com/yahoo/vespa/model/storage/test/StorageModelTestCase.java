@@ -6,10 +6,9 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests storage model
@@ -19,9 +18,11 @@ import static org.junit.Assert.assertNotNull;
  */
 public class StorageModelTestCase {
 
-    @Test(expected=RuntimeException.class)
-    public void testTwoClustersSameName() {
-        createModel("src/test/cfg/storage/twoclusterssamename");
+    @Test
+    void testTwoClustersSameName() {
+        assertThrows(RuntimeException.class, () -> {
+            createModel("src/test/cfg/storage/twoclusterssamename");
+        });
     }
 
     private VespaModel createModel(String filename) {
@@ -29,7 +30,7 @@ public class StorageModelTestCase {
     }
 
     @Test
-    public void testIndexGreaterThanNumNodes() {
+    void testIndexGreaterThanNumNodes() {
         VespaModel vespaModel = createModel("src/test/cfg/storage/app_index_higher_than_num_nodes");
 
         // Test fleet controller config
@@ -41,7 +42,7 @@ public class StorageModelTestCase {
     }
 
     @Test
-    public void testMetricsSnapshotIntervalYAMAS() {
+    void testMetricsSnapshotIntervalYAMAS() {
         VespaModel vespaModel = createModel("src/test/cfg/storage/clustercontroller_advanced");
         ContentCluster contentCluster = vespaModel.getContentClusters().values().iterator().next();
         assertNotNull(contentCluster);

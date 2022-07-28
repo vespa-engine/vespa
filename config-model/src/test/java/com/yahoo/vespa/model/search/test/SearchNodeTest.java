@@ -13,13 +13,11 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.TransactionLogServer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for search node.
@@ -59,14 +57,14 @@ public class SearchNodeTest {
     }
 
     @Test
-    public void requireThatSyncIsHonoured() {
+    void requireThatSyncIsHonoured() {
         assertTrue(getTlsConfig(new TestProperties(), null).usefsync());
         assertTrue(getTlsConfig(new TestProperties(), true).usefsync());
         assertFalse(getTlsConfig(new TestProperties(), false).usefsync());
     }
 
     @Test
-    public void requireThatBasedirIsCorrectForElasticMode() {
+    void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
         prepare(root, node, true);
@@ -74,7 +72,7 @@ public class SearchNodeTest {
     }
 
     @Test
-    public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
+    void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
@@ -83,7 +81,7 @@ public class SearchNodeTest {
     }
 
     @Test
-    public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
+    void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), new TestProperties());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
@@ -101,7 +99,7 @@ public class SearchNodeTest {
     }
 
     @Test
-    public void requireThatCodePageTypeCanBeControlled() {
+    void requireThatCodePageTypeCanBeControlled() {
         verifyCodePlacement(true);
         verifyCodePlacement(false);
     }
@@ -115,7 +113,7 @@ public class SearchNodeTest {
     }
 
     @Test
-    public void requireThatSharedRepoReclaimCanBeControlled() {
+    void requireThatSharedRepoReclaimCanBeControlled() {
         verifySharedStringRepoReclaim(true);
         verifySharedStringRepoReclaim(false);
     }

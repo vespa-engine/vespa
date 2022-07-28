@@ -5,12 +5,12 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.logging.Level;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author lesters
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class ReservedRankingExpressionFunctionNamesTestCase {
 
     @Test
-    public void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
+    void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(deployLogger, rankProfileRegistry);

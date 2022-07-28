@@ -15,17 +15,15 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Einar M R Rosenvinge
@@ -40,7 +38,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     private SchemamappingConfig schemamappingConfig;
     private QrStartConfig qrStartConfig;
 
-    @Before
+    @BeforeEach
     public void setupCluster() {
         ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(DeployState.createTestState(), null, null, root, servicesXml());
         cluster = (ApplicationContainerCluster) model.getCluster();
@@ -72,7 +70,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testDocprocCluster() {
+    void testDocprocCluster() {
         assertEquals("banan", cluster.getName());
         List<ApplicationContainer> services = cluster.getContainers();
         assertEquals(1, services.size());
@@ -93,13 +91,13 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testContainerMbusConfig() {
+    void testContainerMbusConfig() {
         assertTrue(containerMbusConfig.port() >= HostPorts.BASE_PORT);
         assertEquals(300, containerMbusConfig.maxpendingcount());
     }
 
     @Test
-    public void testComponentsConfig() {
+    void testComponentsConfig() {
         Map<String, ComponentsConfig.Components> components = new HashMap<>();
         for (ComponentsConfig.Components component : componentsConfig.components()) {
             System.err.println(component.id());
@@ -123,12 +121,12 @@ public class DocprocBuilderTest extends DomBuilderTest {
         assertEquals("banan/docprocchains/chain/chein/component/docproc2", docproc2.configId());
         assertEquals("docproc2", docproc2.classId());
         assertEquals("docproc2", docproc2.bundle());
-/*
-        ComponentsConfig.Components health = components.get("com.yahoo.container.jdisc.state.StateHandler");
-        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.id()));
-        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.classId());
-        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.bundle()));
-*/
+        /*
+                ComponentsConfig.Components health = components.get("com.yahoo.container.jdisc.state.StateHandler");
+                assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.id()));
+                assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.classId());
+                assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.bundle()));
+        */
         ComponentsConfig.Components sourceClient = components.get("source@MbusClient");
         assertNotNull(sourceClient);
         assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", sourceClient.classId());
@@ -141,7 +139,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testChainsConfig() {
+    void testChainsConfig() {
         Map<String, ChainsConfig.Components> components = new HashMap<>();
         for (ChainsConfig.Components component : chainsConfig.components()) {
             components.put(component.id(), component);
@@ -176,12 +174,12 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testSchemaMappingConfig() {
+    void testSchemaMappingConfig() {
         assertTrue(schemamappingConfig.fieldmapping().isEmpty());
     }
 
     @Test
-    public void testQrStartConfig() {
+    void testQrStartConfig() {
         QrStartConfig.Jvm jvm = qrStartConfig.jvm();
         assertTrue(jvm.server());
         assertTrue(jvm.verbosegc());

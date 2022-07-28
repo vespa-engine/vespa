@@ -4,10 +4,10 @@ package com.yahoo.schema.parser;
 import com.yahoo.document.DocumentTypeManager;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author arnej
@@ -15,12 +15,12 @@ import static org.junit.Assert.assertThrows;
 public class ConvertIntermediateTestCase {
 
     @Test
-    public void can_convert_minimal_schema() throws Exception {
+    void can_convert_minimal_schema() throws Exception {
         String input = joinLines
-            ("schema foo {",
-             "  document foo {",
-             "  }",
-             "}");
+                ("schema foo {",
+                        "  document foo {",
+                        "  }",
+                        "}");
         var collection = new IntermediateCollection();
         ParsedSchema schema = collection.addSchemaFromString(input);
         assertEquals("foo", schema.getDocument().name());
@@ -32,7 +32,7 @@ public class ConvertIntermediateTestCase {
     }
 
     @Test
-    public void can_convert_schema_files() throws Exception {
+    void can_convert_schema_files() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/deriver/child.sd");
         collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
@@ -50,7 +50,7 @@ public class ConvertIntermediateTestCase {
     }
 
     @Test
-    public void can_convert_structs_and_annotations() throws Exception {
+    void can_convert_structs_and_annotations() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/converter/child.sd");
         collection.addSchemaFromFile("src/test/converter/other.sd");
@@ -62,34 +62,34 @@ public class ConvertIntermediateTestCase {
         var dt = docMan.getDocumentType("child");
         assertTrue(dt != null);
         for (var parent : dt.getInheritedTypes()) {
-            System.err.println("dt "+dt.getName()+" inherits from "+parent.getName());
+            System.err.println("dt " + dt.getName() + " inherits from " + parent.getName());
         }
         for (var field : dt.fieldSetAll()) {
-            System.err.println("dt "+dt.getName()+" contains field "+field.getName()+" of type "+field.getDataType());
+            System.err.println("dt " + dt.getName() + " contains field " + field.getName() + " of type " + field.getDataType());
         }
         dt = docMan.getDocumentType("parent");
         assertTrue(dt != null);
         for (var parent : dt.getInheritedTypes()) {
-            System.err.println("dt "+dt.getName()+" inherits from "+parent.getName());
+            System.err.println("dt " + dt.getName() + " inherits from " + parent.getName());
         }
         for (var field : dt.fieldSetAll()) {
-            System.err.println("dt "+dt.getName()+" contains field "+field.getName()+" of type "+field.getDataType());
+            System.err.println("dt " + dt.getName() + " contains field " + field.getName() + " of type " + field.getDataType());
         }
         dt = docMan.getDocumentType("grandparent");
         assertTrue(dt != null);
         for (var parent : dt.getInheritedTypes()) {
-            System.err.println("dt "+dt.getName()+" inherits from "+parent.getName());
+            System.err.println("dt " + dt.getName() + " inherits from " + parent.getName());
         }
         for (var field : dt.fieldSetAll()) {
-            System.err.println("dt "+dt.getName()+" contains field "+field.getName()+" of type "+field.getDataType());
+            System.err.println("dt " + dt.getName() + " contains field " + field.getName() + " of type " + field.getDataType());
         }
         dt = docMan.getDocumentType("other");
         assertTrue(dt != null);
         for (var parent : dt.getInheritedTypes()) {
-            System.err.println("dt "+dt.getName()+" inherits from "+parent.getName());
+            System.err.println("dt " + dt.getName() + " inherits from " + parent.getName());
         }
         for (var field : dt.fieldSetAll()) {
-            System.err.println("dt "+dt.getName()+" contains field "+field.getName()+" of type "+field.getDataType());
+            System.err.println("dt " + dt.getName() + " contains field " + field.getName() + " of type " + field.getDataType());
         }
     }
 }

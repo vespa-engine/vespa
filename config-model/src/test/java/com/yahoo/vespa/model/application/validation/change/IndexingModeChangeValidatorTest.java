@@ -7,15 +7,13 @@ import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -24,7 +22,7 @@ import static org.junit.Assert.fail;
 public class IndexingModeChangeValidatorTest {
 
     @Test
-    public void testChangingIndexModeFromIndexedToStreamingWhenDisallowed() {
+    void testChangingIndexModeFromIndexedToStreamingWhenDisallowed() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
@@ -36,14 +34,14 @@ public class IndexingModeChangeValidatorTest {
         }
         catch (ValidationException e) {
             assertEquals("indexing-mode-change:\n" +
-                         "\tDocument type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'\n" +
-                         "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
-                         e.getMessage());
+                    "\tDocument type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'\n" +
+                    "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
+                    e.getMessage());
         }
     }
 
     @Test
-    public void testChangingIndexModeFromIndexedToStreaming() {
+    void testChangingIndexModeFromIndexedToStreaming() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
@@ -52,12 +50,12 @@ public class IndexingModeChangeValidatorTest {
                 tester.deploy(oldModel, getServices("streaming"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
-                                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
-                                changeActions);
+                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
+                changeActions);
     }
 
     @Test
-    public void testChangingIndexModeFromStoreOnlyToIndexed() {
+    void testChangingIndexModeFromStoreOnlyToIndexed() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
@@ -66,8 +64,8 @@ public class IndexingModeChangeValidatorTest {
                 tester.deploy(oldModel, getServices("store-only"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
-                                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'store-only'",
-                                changeActions);
+                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'store-only'",
+                changeActions);
     }
 
     private void assertReindexingChange(String message, List<ConfigChangeAction> changeActions) {

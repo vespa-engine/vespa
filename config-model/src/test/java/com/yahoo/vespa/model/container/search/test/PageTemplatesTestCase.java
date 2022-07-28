@@ -6,14 +6,14 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.model.container.search.PageTemplates;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -23,8 +23,8 @@ public class PageTemplatesTestCase {
     private final static String root="src/test/java/com/yahoo/vespa/model/container/search/test/pages";
 
     @Test
-    public void testExport() throws IOException {
-        List<NamedReader> pageFiles=new ArrayList<>(2);
+    void testExport() throws IOException {
+        List<NamedReader> pageFiles = new ArrayList<>(2);
         pageFiles.add(new NamedReader(root + "/slottingSerp.xml", IOUtils.createReader(root + "/slottingSerp.xml")));
         pageFiles.add(new NamedReader(root + "/richSerp.xml", IOUtils.createReader(root + "/richSerp.xml")));
         pageFiles.add(new NamedReader(root + "/footer.xml", IOUtils.createReader(root + "/footer.xml")));

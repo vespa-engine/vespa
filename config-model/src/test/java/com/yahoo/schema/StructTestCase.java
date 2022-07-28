@@ -6,10 +6,12 @@ import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.schema.derived.Deriver;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
-import static org.junit.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests importing of document containing array type fields
@@ -19,25 +21,25 @@ import static org.junit.Assert.fail;
 public class StructTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testStruct() throws IOException {
+    void testStruct() throws IOException {
         assertConfigFile("src/test/examples/structresult.cfg",
-                         new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")) + "\n");
+                new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")) + "\n");
     }
 
     @Test
-    public void testBadStruct() throws IOException {
+    void testBadStruct() throws IOException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/badstruct.sd");
             fail("Should throw exception.");
-        } catch (IllegalArgumentException|ParseException expected) {
-            System.err.println("As expected, with message: "+expected.getMessage());
+        } catch (IllegalArgumentException | ParseException expected) {
+            System.err.println("As expected, with message: " + expected.getMessage());
             // success
         }
     }
 
     @Test
-    @Ignore
-    public void testStructAndDocumentWithSameNames() {
+    @Disabled
+    void testStructAndDocumentWithSameNames() {
         try {
             DocumenttypesConfig.Builder dt = Deriver.getDocumentTypesConfig("src/test/examples/structanddocumentwithsamenames.sd");
             // while the above line may work, the config generated will fail.
@@ -51,7 +53,7 @@ public class StructTestCase extends AbstractSchemaTestCase {
      * Declaring a struct before a document should work
      */
     @Test
-    public void testStructOutsideDocumentLegal() throws IOException, ParseException {
+    void testStructOutsideDocumentLegal() throws IOException, ParseException {
         new ApplicationBuilder().addSchemaFile("src/test/examples/structoutsideofdocument.sd");
     }
 

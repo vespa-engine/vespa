@@ -6,12 +6,13 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 /**
  * Attributes should be implicitly exact-match in some cases
  * @author vegardh
@@ -19,7 +20,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class AttributesExactMatchTestCase extends AbstractSchemaTestCase {
     @Test
-    public void testAttributesExactMatch() throws IOException, ParseException {
+    void testAttributesExactMatch() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");
         assertEquals(schema.getConcreteField("color").getMatching().getType(), MatchType.EXACT);
         assertEquals(schema.getConcreteField("artist").getMatching().getType(), MatchType.WORD);
@@ -28,12 +29,12 @@ public class AttributesExactMatchTestCase extends AbstractSchemaTestCase {
         assertEquals(schema.getConcreteField("saxophonist_arr").getMatching().getType(), MatchType.WORD);
         assertEquals(schema.getConcreteField("flutist").getMatching().getType(), MatchType.TEXT);
 
-        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(MatchType.EXACT));
-        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(MatchType.EXACT));
-        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(MatchType.EXACT));
-        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(MatchType.WORD));
-        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(MatchType.WORD));
-        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(MatchType.WORD));
+        assertNotEquals(schema.getConcreteField("genre").getMatching().getType(), MatchType.EXACT);
+        assertNotEquals(schema.getConcreteField("title").getMatching().getType(), MatchType.EXACT);
+        assertNotEquals(schema.getConcreteField("trumpetist").getMatching().getType(), MatchType.EXACT);
+        assertNotEquals(schema.getConcreteField("genre").getMatching().getType(), MatchType.WORD);
+        assertNotEquals(schema.getConcreteField("title").getMatching().getType(), MatchType.WORD);
+        assertNotEquals(schema.getConcreteField("trumpetist").getMatching().getType(), MatchType.WORD);
 
     }
 

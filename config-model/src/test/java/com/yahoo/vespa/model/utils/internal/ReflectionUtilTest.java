@@ -7,14 +7,12 @@ import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
 import static com.yahoo.vespa.model.utils.internal.ReflectionUtil.getAllConfigsProduced;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -67,14 +65,14 @@ public class ReflectionUtilTest {
     private static class NonRestartConfig extends ConfigInstance {}
 
     @Test
-    public void getAllConfigsProduced_includes_configs_produced_by_super_class() {
+    void getAllConfigsProduced_includes_configs_produced_by_super_class() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(ConcreteProducer.class, "foo");
         assertEquals(1, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
     }
 
     @Test
-    public void getAllConfigsProduced_includes_configs_produced_by_implemented_interface() {
+    void getAllConfigsProduced_includes_configs_produced_by_implemented_interface() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(InterfaceImplementingProducer.class, "foo");
         assertEquals(2, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
@@ -82,27 +80,29 @@ public class ReflectionUtilTest {
     }
 
     @Test
-    public void getAllConfigsProduced_includes_configs_directly_implemented_by_producer() {
+    void getAllConfigsProduced_includes_configs_directly_implemented_by_producer() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(SimpleProducer.class, "foo");
         assertEquals(1, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
     }
 
     @Test
-    public void requireThatRestartMethodsAreDetectedProperly() {
+    void requireThatRestartMethodsAreDetectedProperly() {
         assertFalse(ReflectionUtil.hasRestartMethods(NonRestartConfig.class));
         assertTrue(ReflectionUtil.hasRestartMethods(RestartConfig.class));
     }
 
     @Test
-    public void requireThatRestartMethodsAreProperlyInvoked() {
+    void requireThatRestartMethodsAreProperlyInvoked() {
         assertTrue(ReflectionUtil.containsFieldsFlaggedWithRestart(RestartConfig.class));
         assertEquals("testing", ReflectionUtil.getChangesRequiringRestart(new RestartConfig(), new RestartConfig()).getName());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void requireThatGetChangesRequiringRestartValidatesParameterTypes() {
-        ReflectionUtil.getChangesRequiringRestart(new RestartConfig(), new NonRestartConfig());
+    @Test
+    void requireThatGetChangesRequiringRestartValidatesParameterTypes() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            ReflectionUtil.getChangesRequiringRestart(new RestartConfig(), new NonRestartConfig());
+        });
     }
 
 

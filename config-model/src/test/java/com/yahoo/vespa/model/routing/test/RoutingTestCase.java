@@ -8,7 +8,7 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -35,13 +33,13 @@ public class RoutingTestCase {
     private static final boolean WRITE_FILES = false;
 
     @Test
-    public void testRoutingContent() throws IOException {
+    void testRoutingContent() throws IOException {
         assertApplication(new File("src/test/cfg/routing/contentsimpleconfig"));
         assertApplication(new File("src/test/cfg/routing/content_two_clusters"));
     }
 
     @Test
-    public void testRouting() throws IOException {
+    void testRouting() throws IOException {
         assertApplication(new File("src/test/cfg/routing/unexpectedrecipient"));
         assertApplication(new File("src/test/cfg/routing/servicenotfound"));
         assertApplication(new File("src/test/cfg/routing/routenotfoundinroute"));

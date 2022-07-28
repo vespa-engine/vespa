@@ -16,7 +16,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.OptionalDouble;
@@ -25,7 +25,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 
 import static com.yahoo.schema.processing.AssertIndexingScript.assertIndexing;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -33,108 +33,108 @@ import static org.junit.Assert.assertEquals;
 public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testSetLanguageRewriting() {
+    void testSetLanguageRewriting() {
         assertIndexingScript("{ input test | set_language; }",
-                             createField("test", DataType.STRING, "{ set_language }"));
+                createField("test", DataType.STRING, "{ set_language }"));
     }
 
     @Test
-    public void testSummaryRewriting() {
+    void testSummaryRewriting() {
         assertIndexingScript("{ input test | summary test; }",
-                             createField("test", DataType.STRING, "{ summary }"));
+                createField("test", DataType.STRING, "{ summary }"));
     }
 
     @Test
-    public void testDynamicSummaryRewriting() {
+    void testDynamicSummaryRewriting() {
         SDField field = createField("test", DataType.STRING, "{ summary }");
         field.addSummaryField(createDynamicSummaryField(field, "dyn"));
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary dyn; }", field);
     }
 
     @Test
-    public void testSummaryRewritingWithIndexing() {
+    void testSummaryRewritingWithIndexing() {
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary test | index test; }",
-                             createField("test", DataType.STRING, "{ summary | index }"));
+                createField("test", DataType.STRING, "{ summary | index }"));
     }
 
     @Test
-    public void testDynamicAndStaticSummariesRewritingWithIndexing() {
+    void testDynamicAndStaticSummariesRewritingWithIndexing() {
         SDField field = createField("test", DataType.STRING, "{ summary | index }");
         field.addSummaryField(createDynamicSummaryField(field, "dyn"));
         field.addSummaryField(createStaticSummaryField(field, "test"));
         field.addSummaryField(createStaticSummaryField(field, "other"));
         field.addSummaryField(createDynamicSummaryField(field, "dyn2"));
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary dyn | summary dyn2 | summary other | " +
-                             "summary test | index test; }", field);
+                "summary test | index test; }", field);
     }
 
     @Test
-    public void testIntSummaryRewriting() {
+    void testIntSummaryRewriting() {
         assertIndexingScript("{ input test | summary test | attribute test; }",
-                             createField("test", DataType.INT, "{ summary | index }"));
+                createField("test", DataType.INT, "{ summary | index }"));
     }
 
     @Test
-    public void testStringAttributeSummaryRewriting() {
+    void testStringAttributeSummaryRewriting() {
         assertIndexingScript("{ input test | summary test | attribute test; }",
-                             createField("test", DataType.STRING, "{ summary | attribute }"));
+                createField("test", DataType.STRING, "{ summary | attribute }"));
     }
 
     @Test
-    public void testMultiblockTokenize() {
+    void testMultiblockTokenize() {
         SDField field = createField("test", DataType.STRING,
-                                    "{ input test | tokenize | { summary test; }; }");
+                "{ input test | tokenize | { summary test; }; }");
         assertIndexingScript("{ input test | tokenize | { summary test; }; }", field);
     }
 
     @Test
-    public void requireThatOutputDefaultsToCurrentField() {
+    void requireThatOutputDefaultsToCurrentField() {
         assertIndexingScript("{ input test | attribute test; }",
-                             createField("test", DataType.STRING, "{ attribute; }"));
+                createField("test", DataType.STRING, "{ attribute; }"));
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | index test; }",
-                             createField("test", DataType.STRING, "{ index; }"));
+                createField("test", DataType.STRING, "{ index; }"));
         assertIndexingScript("{ input test | summary test; }",
-                             createField("test", DataType.STRING, "{ summary; }"));
+                createField("test", DataType.STRING, "{ summary; }"));
     }
 
     @Test
-    public void testTokenizeComparisonDisregardsConfig() {
+    void testTokenizeComparisonDisregardsConfig() {
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary test | index test; }",
-                             createField("test", DataType.STRING, "{ summary | tokenize | index; }"));
+                createField("test", DataType.STRING, "{ summary | tokenize | index; }"));
     }
 
     @Test
-    public void testDerivingFromSimple() throws Exception {
+    void testDerivingFromSimple() throws Exception {
         assertIndexing(Arrays.asList("clear_state | guard { input access | attribute access; }",
-                "clear_state | guard { input category | split \";\" | attribute category_arr; }",
-                "clear_state | guard { input category | tokenize | index category; }",
-                "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
-                "clear_state | guard { input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
-                "clear_state | guard { input chatter | tokenize normalize stem:\"BEST\" | index chatter; }",
-                "clear_state | guard { input description | tokenize normalize stem:\"BEST\" | summary description | summary dyndesc | index description; }",
-                "clear_state | guard { input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
-                "clear_state | guard { input longdesc | tokenize normalize stem:\"BEST\" | summary dyndesc2 | summary dynlong | summary longdesc | summary longstat; }",
-                "clear_state | guard { input measurement | attribute measurement | summary measurement; }",
-                "clear_state | guard { input measurement | to_array | attribute measurement_arr; }",
-                "clear_state | guard { input popularity | attribute popularity; }",
-                "clear_state | guard { input popularity * input measurement | attribute popsiness; }",
-                "clear_state | guard { input smallattribute | attribute smallattribute; }",
-                "clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
-                "clear_state | guard { input title . \" \" . input category | tokenize | summary exact | index exact; }"),
-                       ApplicationBuilder.buildFromFile("src/test/examples/simple.sd"));
+                        "clear_state | guard { input category | split \";\" | attribute category_arr; }",
+                        "clear_state | guard { input category | tokenize | index category; }",
+                        "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
+                        "clear_state | guard { input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
+                        "clear_state | guard { input chatter | tokenize normalize stem:\"BEST\" | index chatter; }",
+                        "clear_state | guard { input description | tokenize normalize stem:\"BEST\" | summary description | summary dyndesc | index description; }",
+                        "clear_state | guard { input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
+                        "clear_state | guard { input longdesc | tokenize normalize stem:\"BEST\" | summary dyndesc2 | summary dynlong | summary longdesc | summary longstat; }",
+                        "clear_state | guard { input measurement | attribute measurement | summary measurement; }",
+                        "clear_state | guard { input measurement | to_array | attribute measurement_arr; }",
+                        "clear_state | guard { input popularity | attribute popularity; }",
+                        "clear_state | guard { input popularity * input measurement | attribute popsiness; }",
+                        "clear_state | guard { input smallattribute | attribute smallattribute; }",
+                        "clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
+                        "clear_state | guard { input title . \" \" . input category | tokenize | summary exact | index exact; }"),
+                ApplicationBuilder.buildFromFile("src/test/examples/simple.sd"));
     }
 
     @Test
-    public void testIndexRewrite() throws Exception {
+    void testIndexRewrite() throws Exception {
         assertIndexing(
                 Arrays.asList("clear_state | guard { input title_src | lowercase | normalize | " +
-                              "                      tokenize | index title; }",
-                              "clear_state | guard { input title_src | summary title_s; }"),
+                        "                      tokenize | index title; }",
+                        "clear_state | guard { input title_src | summary title_s; }"),
                 ApplicationBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
     }
 
     @Test
-    public void requireThatPredicateFieldsGetOptimization() {
+    void requireThatPredicateFieldsGetOptimization() {
         assertIndexingScript("{ 10 | set_var arity | { input test | optimize_predicate | attribute test; }; }",
                 createPredicateField(
                         "test", DataType.PREDICATE, "{ attribute; }", 10, OptionalLong.empty(), OptionalLong.empty()));
@@ -143,7 +143,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                         "test", DataType.PREDICATE, "{ summary | attribute ; }", 10, OptionalLong.empty(), OptionalLong.empty()));
         assertIndexingScript(
                 "{ 2 | set_var arity | 0L | set_var lower_bound | 1023L | set_var upper_bound | " +
-                "{ input test | optimize_predicate | attribute test; }; }",
+                        "{ input test | optimize_predicate | attribute test; }; }",
                 createPredicateField("test", DataType.PREDICATE, "{ attribute; }", 2, OptionalLong.of(0L), OptionalLong.of(1023L)));
     }
 

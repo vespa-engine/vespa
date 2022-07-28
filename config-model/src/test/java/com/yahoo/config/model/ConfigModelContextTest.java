@@ -7,10 +7,10 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertNotEquals;
 public class ConfigModelContextTest {
 
     @Test
-    public void testConfigModelContext() {
+    void testConfigModelContext() {
         MockRoot root = new MockRoot();
         String id = "foobar";
         ApplicationPackage pkg = new MockApplicationPackage.Builder()

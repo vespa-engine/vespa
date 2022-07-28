@@ -13,16 +13,14 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hmusum
@@ -31,7 +29,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
 
     private static MockRoot root;
 
-    @Before
+    @BeforeEach
     public void prepareTest() {
         root = new MockRoot("root");
     }
@@ -104,7 +102,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void multitenant() {
+    void multitenant() {
         List<ConfigServerSpec> configServerSpecs = Arrays.asList(
                 new TestProperties.Spec("test1", 19070, 2181),
                 new TestProperties.Spec("test2", 19070, 2181),
@@ -124,13 +122,13 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
      * Tests that configservers/configserver works
      */
     @Test
-    public void adminWithConfigserversElement() {
+    void adminWithConfigserversElement() {
         Admin admin = buildAdmin(servicesConfigservers());
         assertEquals(1, admin.getConfigservers().size());
     }
 
     @Test
-    public void basicYamasNoXml() {
+    void basicYamasNoXml() {
         Admin admin = buildAdmin(servicesNoYamas());
         Monitoring y = admin.getMonitoring();
         assertEquals("vespa", y.getClustername());
@@ -138,13 +136,13 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testAdminServerOnly() {
+    void testAdminServerOnly() {
         Admin admin = buildAdmin(servicesAdminServerOnly());
         assertEquals(1, admin.getSlobroks().size());
     }
 
     @Test
-    public void basicYamasXml() {
+    void basicYamasXml() {
         Admin admin = buildAdmin(servicesYamas());
         Monitoring y = admin.getMonitoring();
         assertEquals("foo", y.getClustername());
@@ -152,7 +150,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void yamasWithIntervalOverride() {
+    void yamasWithIntervalOverride() {
         Admin admin = buildAdmin(servicesYamasIntervalOverride());
         Monitoring y = admin.getMonitoring();
         assertEquals("foo", y.getClustername());
@@ -162,18 +160,20 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     /**
      * Test that illegal yamas interval throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void yamasElementInvalid() {
-        Element servicesYamasIllegalInterval = XML.getDocument(
-                        "<admin version=\"2.0\">" +
-                        "  <adminserver hostalias=\"mockhost\"/>" +
-                        "  <monitoring interval=\"5\"/>" +
-                        "</admin>").getDocumentElement();
-        Admin admin = buildAdmin(servicesYamasIllegalInterval);
+    @Test
+    void yamasElementInvalid() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Element servicesYamasIllegalInterval = XML.getDocument(
+                    "<admin version=\"2.0\">" +
+                            "  <adminserver hostalias=\"mockhost\"/>" +
+                            "  <monitoring interval=\"5\"/>" +
+                            "</admin>").getDocumentElement();
+            Admin admin = buildAdmin(servicesYamasIllegalInterval);
+        });
     }
 
     @Test
-    public void configOverridesCanBeUsedInAdmin() {
+    void configOverridesCanBeUsedInAdmin() {
         Admin admin = buildAdmin(servicesOverride());
         assertEquals(1, admin.getUserConfigs().size());
         LogdConfig.Builder logdBuilder = new LogdConfig.Builder();

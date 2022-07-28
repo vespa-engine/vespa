@@ -3,10 +3,10 @@ package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -14,20 +14,20 @@ import static org.junit.Assert.fail;
 public class UrlFieldValidationTestCase {
 
     @Test
-    public void requireThatInheritedRiseFieldsStillCanBeInConflictButDontThrowException() throws ParseException {
+    void requireThatInheritedRiseFieldsStillCanBeInConflictButDontThrowException() throws ParseException {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema("search test {" +
-                          "    document test { " +
-                          "        field a type uri { indexing: attribute | summary }" +
-                          "    }" +
-                          "}");
+                "    document test { " +
+                "        field a type uri { indexing: attribute | summary }" +
+                "    }" +
+                "}");
         try {
             builder.build(true);
             fail("Should have caused an exception");
             // success
         } catch (IllegalArgumentException e) {
             assertEquals("Error in field 'a' in schema 'test': uri type fields cannot be attributes",
-                         Exceptions.toMessageString(e));
+                    Exceptions.toMessageString(e));
         }
     }
 

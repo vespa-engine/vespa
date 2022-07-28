@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.messagebus.routing.RouteSpec;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ContentBaseTest {
     public static String getHosts() {

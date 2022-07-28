@@ -9,22 +9,22 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RankPropertyVariablesTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testRankPropVariables() throws IOException, ParseException {
+    void testRankPropVariables() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
-                                                          new BaseDeployLogger(),
-                                                          rankProfileRegistry,
-                                                          new QueryProfileRegistry());
+                new BaseDeployLogger(),
+                rankProfileRegistry,
+                new QueryProfileRegistry());
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar1", "foo");
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar_2", "bar");
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvarOne23", "baz");

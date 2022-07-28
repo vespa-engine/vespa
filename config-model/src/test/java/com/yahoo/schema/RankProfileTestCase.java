@@ -24,17 +24,13 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests rank profiles
@@ -44,7 +40,7 @@ import static org.junit.Assert.fail;
 public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testRankProfileInheritance() {
+    void testRankProfileInheritance() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
@@ -68,7 +64,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatIllegalInheritanceIsChecked() throws ParseException {
+    void requireThatIllegalInheritanceIsChecked() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
@@ -85,7 +81,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatSelfInheritanceIsIllegal() throws ParseException {
+    void requireThatSelfInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
@@ -102,7 +98,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatSelfInheritanceIsLegalWhenOverloading() throws ParseException {
+    void requireThatSelfInheritanceIsLegalWhenOverloading() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
@@ -119,7 +115,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
+    void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
@@ -172,7 +168,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatDefaultInheritingDefaultIsIgnored() throws ParseException {
+    void requireThatDefaultInheritingDefaultIsIgnored() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
@@ -184,7 +180,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
+    void requireThatCyclicInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
@@ -203,7 +199,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
+    void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
     {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
@@ -214,9 +210,9 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "  rank-profile not_yet_defined {}",
                 "}"));
         builder.build(true);
-        assertNotNull(registry.get("test","p1"));
-        assertTrue(registry.get("test","p1").inherits("not_yet_defined"));
-        assertNotNull(registry.get("test","not_yet_defined"));
+        assertNotNull(registry.get("test", "p1"));
+        assertTrue(registry.get("test", "p1").inherits("not_yet_defined"));
+        assertNotNull(registry.get("test", "not_yet_defined"));
     }
 
     private String createSD(Double termwiseLimit) {
@@ -239,7 +235,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testTermwiseLimitWithDeployOverride() throws ParseException {
+    void testTermwiseLimitWithDeployOverride() throws ParseException {
         verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties(), createSD(null), null);
         verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties(), createSD(0.78), 0.78);
         verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties().setDefaultTermwiseLimit(0.09), createSD(null), 0.09);
@@ -279,7 +275,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatConfigIsDerivedForAttributeTypeSettings() throws ParseException {
+    void requireThatConfigIsDerivedForAttributeTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry);
         builder.addSchema(joinLines(
@@ -303,7 +299,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatDenseDimensionsMustBeBound() throws ParseException {
+    void requireThatDenseDimensionsMustBeBound() throws ParseException {
         try {
             ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
             builder.addSchema(joinLines(
@@ -316,7 +312,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Illegal type in field a type tensor(x[]): Dense tensor dimensions must have a size",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
@@ -332,7 +328,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
+    void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
@@ -386,7 +382,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void approximate_nearest_neighbor_threshold_settings_are_configurable() throws ParseException {
+    void approximate_nearest_neighbor_threshold_settings_are_configurable() throws ParseException {
         verifyApproximateNearestNeighborThresholdSettings(0.7, null);
         verifyApproximateNearestNeighborThresholdSettings(null, 0.3);
         verifyApproximateNearestNeighborThresholdSettings(0.7, 0.3);

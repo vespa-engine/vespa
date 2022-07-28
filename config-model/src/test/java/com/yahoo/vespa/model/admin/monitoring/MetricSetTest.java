@@ -4,13 +4,13 @@ package com.yahoo.vespa.model.admin.monitoring;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author gjoranv
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertNotNull;
 public class MetricSetTest {
 
     @Test
-    public void metrics_from_children_are_added() {
+    void metrics_from_children_are_added() {
         MetricSet child1 = new MetricSet("child1", ImmutableList.of(new Metric("child1_metric")));
         MetricSet child2 = new MetricSet("child2", ImmutableList.of(new Metric("child2_metric")));
         MetricSet parent = new MetricSet("parent", emptyList(), ImmutableList.of(child1, child2));
@@ -30,7 +30,7 @@ public class MetricSetTest {
     }
 
     @Test
-    public void adding_the_same_child_set_twice_has_no_effect() {
+    void adding_the_same_child_set_twice_has_no_effect() {
         MetricSet child = new MetricSet("child", ImmutableList.of(new Metric("child_metric")));
         MetricSet parent = new MetricSet("parent", emptyList(), ImmutableList.of(child, child));
 
@@ -40,7 +40,7 @@ public class MetricSetTest {
     }
 
     @Test
-    public void internal_metrics_take_precedence_over_metrics_from_children() {
+    void internal_metrics_take_precedence_over_metrics_from_children() {
         String METRIC_NAME = "metric1";
         String COMMON_DIMENSION_KEY = "commonKey";
 

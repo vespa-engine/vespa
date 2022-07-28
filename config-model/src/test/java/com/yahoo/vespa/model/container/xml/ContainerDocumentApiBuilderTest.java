@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
@@ -19,10 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Einar M R Rosenvinge
@@ -42,7 +39,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void custom_bindings_are_allowed() {
+    void custom_bindings_are_allowed() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api>",
@@ -65,7 +62,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void test_handler_setup() {
+    void test_handler_setup() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api />",
@@ -88,14 +85,14 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void nonexisting_fields_can_be_ignored() {
+    void nonexisting_fields_can_be_ignored() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api>" +
-                "    <ignore-undefined-fields>true</ignore-undefined-fields>" +
-                nodesXml,
+                        "    <ignore-undefined-fields>true</ignore-undefined-fields>" +
+                        nodesXml,
                 "  </document-api>" +
-                "</container>");
+                        "</container>");
         ContainerModel model = createModel(root, elem).get(0);
 
         var documentManager = new DocumentmanagerConfig.Builder();
@@ -104,7 +101,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void feeding_api_have_separate_threadpools() {
+    void feeding_api_have_separate_threadpools() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api />",
@@ -124,7 +121,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void threadpools_configuration_can_be_overridden() {
+    void threadpools_configuration_can_be_overridden() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api>",

@@ -7,19 +7,14 @@ import com.yahoo.schema.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AdjustPositionSummaryFieldsTestCase {
 
     @Test
-    public void test_pos_summary() {
+    void test_pos_summary() {
         SearchModel model = new SearchModel(false);
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -29,7 +24,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
-    public void test_imported_pos_summary() {
+    void test_imported_pos_summary() {
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
         model.resolve();
@@ -39,7 +34,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
-    public void test_imported_pos_summary_bad_source() {
+    void test_imported_pos_summary_bad_source() {
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -50,7 +45,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
-    public void test_imported_pos_summary_bad_datatype() {
+    void test_imported_pos_summary_bad_datatype() {
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", DataType.getArray(PositionDataType.INSTANCE), null, "pos");
         model.resolve();
@@ -60,7 +55,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
-    public void test_pos_summary_no_attr_no_rename() {
+    void test_pos_summary_no_attr_no_rename() {
         SearchModel model = new SearchModel(false, false, false);
         model.addSummaryField("pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -70,14 +65,14 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
-    public void test_pos_default_summary_no_attr_no_rename() {
+    void test_pos_default_summary_no_attr_no_rename() {
         SearchModel model = new SearchModel(false, false, false);
         model.resolve();
         assertNull(model.childSchema.getSummary("default")); // ImplicitSummaries processing not run in this test
     }
 
     @Test
-    public void test_pos_summary_no_rename() {
+    void test_pos_summary_no_rename() {
         SearchModel model = new SearchModel(false, true, false);
         model.addSummaryField("pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -86,79 +81,82 @@ public class AdjustPositionSummaryFieldsTestCase {
         model.assertSummaryField("pos.distance", DataType.INT, SummaryTransform.DISTANCE, "pos_zcurve");
     }
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void test_pos_summary_no_attr() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'");
-        SearchModel model = new SearchModel(false, false, false);
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
-        model.resolve();
+    void test_pos_summary_no_attr() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel(false, false, false);
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'"));
     }
 
     @Test
-    public void test_pos_summary_bad_attr() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'");
-        SearchModel model = new SearchModel(false, false, true);
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
-        model.resolve();
+    void test_pos_summary_bad_attr() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel(false, false, true);
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'"));
     }
 
     @Test
-    public void test_imported_pos_summary_no_attr() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', import field 'my_pos_zcurve': "
-                + "Field 'pos_zcurve' via reference field 'ref': Not found");
-        SearchModel model = new SearchModel(true, false, false);
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-        model.resolve();
+    void test_imported_pos_summary_no_attr() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel(true, false, false);
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_pos_zcurve': "
+                + "Field 'pos_zcurve' via reference field 'ref': Not found"));
     }
 
     @Test
-    public void test_imported_pos_summary_bad_attr() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos': "
-                + "No position attribute 'my_pos_zcurve'");
-        SearchModel model = new SearchModel(true, false, true);
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-        model.resolve();
+    void test_imported_pos_summary_bad_attr() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel(true, false, true);
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos': "
+                + "No position attribute 'my_pos_zcurve'"));
     }
 
     @Test
-    public void test_my_pos_position_summary_bad_datatype() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
-                + "exists with type 'datatype string (code: 2)', should be of type 'datatype Array<string> (code: -1486737430)");
-        SearchModel model = new SearchModel();
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-        model.addSummaryField("my_pos.position", DataType.STRING, null, "pos");
-        model.resolve();
+    void test_my_pos_position_summary_bad_datatype() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel();
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
+            model.addSummaryField("my_pos.position", DataType.STRING, null, "pos");
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
+                + "exists with type 'datatype string (code: 2)', should be of type 'datatype Array<string> (code: -1486737430)"));
     }
 
     @Test
-    public void test_my_pos_position_summary_bad_transform() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
-                + "has summary transform 'none', should have transform 'positions'");
-        SearchModel model = new SearchModel();
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-        model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), null, "pos");
-        model.resolve();
+    void test_my_pos_position_summary_bad_transform() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel();
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
+            model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), null, "pos");
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
+                + "has summary transform 'none', should have transform 'positions'"));
     }
 
     @Test
-    public void test_my_pos_position_summary_bad_source() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
-                + "has source '[source field 'pos']', should have source 'source field 'my_pos_zcurve''");
-        SearchModel model = new SearchModel();
-        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-        model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), SummaryTransform.POSITIONS, "pos");
-        model.resolve();
+    void test_my_pos_position_summary_bad_source() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SearchModel model = new SearchModel();
+            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
+            model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), SummaryTransform.POSITIONS, "pos");
+            model.resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
+                + "has source '[source field 'pos']', should have source 'source field 'my_pos_zcurve''"));
     }
 
     static class SearchModel extends ParentChildSearchModel {

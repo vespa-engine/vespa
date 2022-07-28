@@ -21,13 +21,10 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StorageClusterTest {
 
@@ -83,8 +80,9 @@ public class StorageClusterTest {
                 group(),
                 "</content>");
     }
+
     @Test
-    public void testBasics() {
+    void testBasics() {
         StorageCluster storage = parse(cluster("foofighters", ""));
 
         assertEquals(1, storage.getChildren().size());
@@ -95,8 +93,9 @@ public class StorageClusterTest {
         assertEquals("foofighters", config.cluster_name());
         assertEquals(4, config.content_node_bucket_db_stripe_bits());
     }
+
     @Test
-    public void testCommunicationManagerDefaults() {
+    void testCommunicationManagerDefaults() {
         StorageCluster storage = parse(cluster("foofighters", ""));
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         storage.getChildren().get("0").getConfig(builder);
@@ -105,7 +104,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMergeDefaults() {
+    void testMergeDefaults() {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse(cluster("foofighters", "")).getConfig(builder);
 
@@ -116,7 +115,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMerges() {
+    void testMerges() {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse(cluster("foofighters", joinLines(
                 "<tuning>",
@@ -127,7 +126,7 @@ public class StorageClusterTest {
 
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(1024, config.max_merges_per_node());
-        assertEquals(1024*10, config.max_merge_queue_size());
+        assertEquals(1024 * 10, config.max_merge_queue_size());
     }
 
     private StorServerConfig configFromProperties(TestProperties properties) {
@@ -149,7 +148,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void verifyDefaultMbusConfig() {
+    void verifyDefaultMbusConfig() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties());
         assertEquals(1, confg.mbus().num_network_threads());
         assertEquals(1, confg.mbus().num_rpc_targets());
@@ -159,7 +158,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void verifyDefaultMbusConfigControl() {
+    void verifyDefaultMbusConfigControl() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties()
                 .setMbusNetworkThreads(7)
                 .setRpcNumTargets(11)
@@ -174,20 +173,20 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMergeFeatureFlags() {
+    void testMergeFeatureFlags() {
         var config = configFromProperties(new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37));
         assertEquals(37, config.max_merges_per_node());
         assertEquals(1919, config.max_merge_queue_size());
     }
 
     @Test
-    public void merge_throttling_policy_config_defaults_to_static() {
+    void merge_throttling_policy_config_defaults_to_static() {
         var config = configFromProperties(new TestProperties());
         assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
     }
 
     @Test
-    public void merge_throttling_policy_config_is_derived_from_flag() {
+    void merge_throttling_policy_config_is_derived_from_flag() {
         var config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("STATIC"));
         assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
 
@@ -200,15 +199,15 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testVisitors() {
+    void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(cluster("bees",
                 joinLines(
-                "<tuning>",
-                "  <visitors thread-count=\"7\" max-queue-size=\"1000\">",
-                "    <max-concurrent fixed=\"42\" variable=\"100\"/>",
-                "  </visitors>",
-                "</tuning>"))
+                        "<tuning>",
+                        "  <visitors thread-count=\"7\" max-queue-size=\"1000\">",
+                        "    <max-concurrent fixed=\"42\" variable=\"100\"/>",
+                        "  </visitors>",
+                        "</tuning>"))
         ).getConfig(builder);
 
         StorVisitorConfig config = new StorVisitorConfig(builder);
@@ -219,9 +218,9 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreads() {
+    void testPersistenceThreads() {
 
-        StorageCluster stc = parse(cluster("bees",joinLines(
+        StorageCluster stc = parse(cluster("bees", joinLines(
                 "<tuning>",
                 "  <persistence-threads count=\"7\"/>",
                 "</tuning>")),
@@ -244,9 +243,9 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testResponseThreads() {
+    void testResponseThreads() {
 
-        StorageCluster stc = parse(cluster("bees",joinLines(
+        StorageCluster stc = parse(cluster("bees", joinLines(
                 "<tuning>",
                 "  <persistence-threads count=\"7\"/>",
                 "</tuning>")),
@@ -259,7 +258,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreadsOld() {
+    void testPersistenceThreadsOld() {
 
         StorageCluster stc = parse(cluster("bees", joinLines(
                 "<tuning>",
@@ -287,7 +286,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testNoPersistenceThreads() {
+    void testNoPersistenceThreads() {
         StorageCluster stc = parse(cluster("bees", ""),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
@@ -311,7 +310,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testFeatureFlagControlOfResponseSequencer() {
+    void testFeatureFlagControlOfResponseSequencer() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setResponseNumThreads(13).setResponseSequencerType("THROUGHPUT")));
         assertEquals(13, config.num_response_threads());
         assertEquals(StorFilestorConfig.Response_sequencer_type.THROUGHPUT, config.response_sequencer_type());
@@ -321,14 +320,15 @@ public class StorageClusterTest {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setAsyncMessageHandlingOnSchedule(value)));
         assertEquals(expected, config.use_async_message_handling_on_schedule());
     }
+
     @Test
-    public void testFeatureFlagControlOfAsyncMessageHandlingOnSchedule() {
+    void testFeatureFlagControlOfAsyncMessageHandlingOnSchedule() {
         verifyAsyncMessageHandlingOnSchedule(false, false);
         verifyAsyncMessageHandlingOnSchedule(true, true);
     }
 
     @Test
-    public void persistence_dynamic_throttling_parameters_have_sane_defaults() {
+    void persistence_dynamic_throttling_parameters_have_sane_defaults() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
         assertEquals(StorFilestorConfig.Async_operation_throttler.Type.DYNAMIC, config.async_operation_throttler().type());
         assertEquals(1.2, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
@@ -340,7 +340,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
+    void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties()
                 .setPersistenceThrottlingWsDecrementFactor(1.5)
                 .setPersistenceThrottlingWsBackoff(0.8)
@@ -357,7 +357,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
+    void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(cluster("bees", "")).getConfig(builder);
         StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
@@ -366,7 +366,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testCapacity() {
+    void testCapacity() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <documents/>",
@@ -385,12 +385,12 @@ public class StorageClusterTest {
             cluster.getStorageCluster().getConfig(builder);
             node.getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(1.0 + (double)i * 0.5, config.node_capacity(), 0.001);
+            assertEquals(1.0 + (double) i * 0.5, config.node_capacity(), 0.001);
         }
     }
 
     @Test
-    public void testRootFolder() {
+    void testRootFolder() {
         ContentCluster cluster = ContentClusterUtils.createCluster(cluster("storage", ""), new MockRoot());
 
         StorageNode node = cluster.getStorageCluster().getChildren().get("0");
@@ -413,7 +413,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testGenericPersistenceTuning() {
+    void testGenericPersistenceTuning() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <documents/>",
@@ -439,7 +439,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
+    void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <documents/>",
@@ -465,12 +465,12 @@ public class StorageClusterTest {
             fail("Did not fail when having both group and nodes");
         } catch (RuntimeException e) {
             assertEquals("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
+    void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <redundancy>2</redundancy>",
@@ -491,12 +491,12 @@ public class StorageClusterTest {
             fail("Did not get exception with duplicate group names");
         } catch (RuntimeException e) {
             assertEquals("Cluster 'storage' has multiple groups with name 'bar' in the same subgroup. " +
-                         "Group sibling names must be unique.", e.getMessage());
+                    "Group sibling names must be unique.", e.getMessage());
         }
     }
 
     @Test
-    public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
+    void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <redundancy>2</redundancy>",
@@ -521,7 +521,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatNestedGroupsRequireDistribution() {
+    void requireThatNestedGroupsRequireDistribution() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
                 "  <documents/>",

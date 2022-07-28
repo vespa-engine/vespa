@@ -3,7 +3,8 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 
 /**
@@ -14,7 +15,7 @@ import java.io.IOException;
 public class MailTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testMail() throws IOException, ParseException {
+    void testMail() throws IOException, ParseException {
         String dir = "src/test/derived/mail/";
         ApplicationBuilder sb = new ApplicationBuilder();
         sb.addSchemaFile(dir + "mail.sd");

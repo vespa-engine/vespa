@@ -10,9 +10,9 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Tony Vaagenes
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 public class ImplicitIndexingClusterTest {
 
     @Test
-    public void existing_jdisc_is_used_as_indexing_cluster_when_multitenant() {
+    void existing_jdisc_is_used_as_indexing_cluster_when_multitenant() {
         final String servicesXml = "<services version=\"1.0\">\n" + //
                 "  <container version=\"1.0\" id=\"jdisc\">\n" + //
                 "    <search />\n" + //
@@ -42,8 +42,8 @@ public class ImplicitIndexingClusterTest {
 
         VespaModel vespaModel = buildMultiTenantVespaModel(servicesXml);
         ContainerCluster jdisc = vespaModel.getContainerClusters().get("jdisc");
-        assertNotNull("Docproc not added to jdisc", jdisc.getDocproc());
-        assertNotNull("Indexing chain not added to jdisc", jdisc.getDocprocChains().allChains().getComponent("indexing"));
+        assertNotNull(jdisc.getDocproc(), "Docproc not added to jdisc");
+        assertNotNull(jdisc.getDocprocChains().allChains().getComponent("indexing"), "Indexing chain not added to jdisc");
     }
 
     private static VespaModel buildMultiTenantVespaModel(String servicesXml) {

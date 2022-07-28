@@ -3,14 +3,14 @@ package com.yahoo.config.model;
 
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 public class MapConfigModelRegistryTest {
 
     @Test
-    public void require_that_registry_finds_components() {
+    void require_that_registry_finds_components() {
         ModelABuilder ba = new ModelABuilder();
         ModelBBuilder bb = new ModelBBuilder();
         ConfigModelRegistry registry = MapConfigModelRegistry.createFromList(ba, bb);
@@ -31,7 +31,7 @@ public class MapConfigModelRegistryTest {
     }
 
     @Test
-    public void require_all_builders_for_a_tag() {
+    void require_all_builders_for_a_tag() {
         ModelBBuilder b1 = new ModelBBuilder();
         ModelB2Builder b2 = new ModelB2Builder();
         ConfigModelRegistry registry = MapConfigModelRegistry.createFromList(b1, b2);

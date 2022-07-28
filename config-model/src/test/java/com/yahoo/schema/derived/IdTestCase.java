@@ -10,12 +10,12 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests that documents ids are treated as they should
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNull;
 public class IdTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testExplicitUpperCaseIdField() {
+    void testExplicitUpperCaseIdField() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);
@@ -34,7 +34,7 @@ public class IdTestCase extends AbstractExportingTestCase {
         document.addField(uri);
 
         new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
-                                 true, false, Set.of());
+                true, false, Set.of());
 
         assertNull(document.getField("uri"));
         assertNull(document.getField("Uri"));
@@ -42,7 +42,7 @@ public class IdTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testCompleteDeriving() throws Exception {
+    void testCompleteDeriving() throws Exception {
         assertCorrectDeriving("id");
     }
 

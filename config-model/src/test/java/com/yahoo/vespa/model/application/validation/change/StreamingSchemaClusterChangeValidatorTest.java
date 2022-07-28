@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -19,7 +19,7 @@ import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.normalizeServicesInActions;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StreamingSchemaClusterChangeValidatorTest {
 
@@ -98,13 +98,13 @@ public class StreamingSchemaClusterChangeValidatorTest {
             new ServiceInfo("searchnode2", "null", null, null, "bar/search/0", "null"));
 
     @Test
-    public void changing_field_type_requires_refeed() {
+    void changing_field_type_requires_refeed() {
         Fixture.withOneDocType(STRING_FIELD, INT_FIELD)
                 .assertValidation(createFieldTypeChangeRefeedAction("d1", FOO_SERVICE));
     }
 
     @Test
-    public void changes_in_multiple_streaming_clusters_are_discovered() {
+    void changes_in_multiple_streaming_clusters_are_discovered() {
         Fixture.withTwoClusters(STRING_FIELD, INT_FIELD)
                 .assertValidation(Arrays.asList(
                         createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
@@ -112,7 +112,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
     }
 
     @Test
-    public void changes_in_multiple_document_types_are_discovered() {
+    void changes_in_multiple_document_types_are_discovered() {
         Fixture.withTwoDocTypes(STRING_FIELD, INT_FIELD)
                 .assertValidation(Arrays.asList(
                         createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
@@ -120,7 +120,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
     }
 
     @Test
-    public void adding_fast_access_to_an_attribute_requires_restart() {
+    void adding_fast_access_to_an_attribute_requires_restart() {
         Fixture.withOneDocType(INT_FIELD, ATTRIBUTE_FAST_ACCESS_INT_FIELD)
                 .assertValidation(createAddFastAccessRestartAction());
 
@@ -129,7 +129,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
     }
 
     @Test
-    public void removing_fast_access_from_an_attribute_requires_restart() {
+    void removing_fast_access_from_an_attribute_requires_restart() {
         Fixture.withOneDocType(ATTRIBUTE_FAST_ACCESS_INT_FIELD, INT_FIELD)
                 .assertValidation(createRemoveFastAccessRestartAction());
 
@@ -138,27 +138,27 @@ public class StreamingSchemaClusterChangeValidatorTest {
     }
 
     @Test
-    public void adding_attribute_field_is_ok() {
+    void adding_attribute_field_is_ok() {
         Fixture.withOneDocType(INT_FIELD, ATTRIBUTE_INT_FIELD).assertValidation();
     }
 
     @Test
-    public void removing_attribute_field_is_ok() {
+    void removing_attribute_field_is_ok() {
         Fixture.withOneDocType(ATTRIBUTE_INT_FIELD, INT_FIELD).assertValidation();
     }
 
     @Test
-    public void unchanged_fast_access_attribute_field_is_ok() {
+    void unchanged_fast_access_attribute_field_is_ok() {
         Fixture.withOneDocType(ATTRIBUTE_FAST_ACCESS_INT_FIELD, ATTRIBUTE_FAST_ACCESS_INT_FIELD).assertValidation();
     }
 
     @Test
-    public void adding_streaming_cluster_is_ok() {
+    void adding_streaming_cluster_is_ok() {
         new Fixture(Fixture.createOneDocModel(STRING_FIELD), Fixture.createTwoClusterModel(STRING_FIELD, STRING_FIELD)).assertValidation();
     }
 
     @Test
-    public void removing_streaming_cluster_is_ok() {
+    void removing_streaming_cluster_is_ok() {
         new Fixture(Fixture.createTwoClusterModel(STRING_FIELD, STRING_FIELD), Fixture.createOneDocModel(STRING_FIELD)).assertValidation();
     }
 

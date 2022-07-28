@@ -34,8 +34,8 @@ import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -48,10 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for creating cluster controllers under the admin tag.
@@ -60,13 +57,13 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
     private List<String> sds;
 
-    @Before
+    @BeforeEach
     public void setup() {
         sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
     }
 
     @Test
-    public void testSingleCluster() throws Exception {
+    void testSingleCluster() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -90,7 +87,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                 "    <tuning>" +
                 "      <cluster-controller>\n" +
                 "        <init-progress-time>34567s</init-progress-time>" +
-                "        <transition-time>4000ms</transition-time>" + 
+                "        <transition-time>4000ms</transition-time>" +
                 "        <stable-state-period>1h</stable-state-period>" +
                 "      </cluster-controller>" +
                 "    </tuning>" +
@@ -126,63 +123,67 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                            .noneMatch(unnecessaryBundles::contains));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSeparateHostsRequired() {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<services>\n" +
-                "\n" +
-                "  <admin version=\"2.0\">\n" +
-                "    <adminserver hostalias=\"mockhost\" />\n" +
-                "    <cluster-controllers standalone-zookeeper=\"true\">\n" +
-                "      <cluster-controller hostalias=\"mockhost\"/>" +
-                "      <cluster-controller hostalias=\"mockhost\"/>" +
-                "      <cluster-controller hostalias=\"mockhost\"/>" +
-                "    </cluster-controllers>\n" +
-                "  </admin>\n" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>1</redundancy>\n" +
-                "     <documents>" +
-                "     </documents>\n" +
-                "     <group>" +
-                "       <node hostalias='mockhost' distribution-key='0' />" +
-                "     </group>" +
-                "   </content>" +
-                "\n" +
-                "</services>";
-        TestDriver driver = new TestDriver();
-        driver.buildModel(xml);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSeparateHostsFromConfigServerRequired() {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<services>\n" +
-                "\n" +
-                "  <admin version=\"2.0\">\n" +
-                "    <adminserver hostalias=\"mockhost\" />\n" +
-                "    <configservers>\n" +
-                "      <configserver hostalias=\"mockhost\" />" +
-                "    </configservers>" +
-                "    <cluster-controllers standalone-zookeeper=\"true\">\n" +
-                "      <cluster-controller hostalias=\"mockhost\"/>" +
-                "    </cluster-controllers>\n" +
-                "  </admin>\n" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>1</redundancy>\n" +
-                "     <documents>" +
-                "     </documents>\n" +
-                "     <group>" +
-                "       <node hostalias='mockhost' distribution-key='0' />" +
-                "     </group>" +
-                "   </content>" +
-                "\n" +
-                "</services>";
-        TestDriver driver = new TestDriver();
-        driver.buildModel(xml);
+    @Test
+    void testSeparateHostsRequired() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                    "<services>\n" +
+                    "\n" +
+                    "  <admin version=\"2.0\">\n" +
+                    "    <adminserver hostalias=\"mockhost\" />\n" +
+                    "    <cluster-controllers standalone-zookeeper=\"true\">\n" +
+                    "      <cluster-controller hostalias=\"mockhost\"/>" +
+                    "      <cluster-controller hostalias=\"mockhost\"/>" +
+                    "      <cluster-controller hostalias=\"mockhost\"/>" +
+                    "    </cluster-controllers>\n" +
+                    "  </admin>\n" +
+                    "  <content version='1.0' id='bar'>" +
+                    "     <redundancy>1</redundancy>\n" +
+                    "     <documents>" +
+                    "     </documents>\n" +
+                    "     <group>" +
+                    "       <node hostalias='mockhost' distribution-key='0' />" +
+                    "     </group>" +
+                    "   </content>" +
+                    "\n" +
+                    "</services>";
+            TestDriver driver = new TestDriver();
+            driver.buildModel(xml);
+        });
     }
 
     @Test
-    public void testStandaloneZooKeeper() {
+    void testSeparateHostsFromConfigServerRequired() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                    "<services>\n" +
+                    "\n" +
+                    "  <admin version=\"2.0\">\n" +
+                    "    <adminserver hostalias=\"mockhost\" />\n" +
+                    "    <configservers>\n" +
+                    "      <configserver hostalias=\"mockhost\" />" +
+                    "    </configservers>" +
+                    "    <cluster-controllers standalone-zookeeper=\"true\">\n" +
+                    "      <cluster-controller hostalias=\"mockhost\"/>" +
+                    "    </cluster-controllers>\n" +
+                    "  </admin>\n" +
+                    "  <content version='1.0' id='bar'>" +
+                    "     <redundancy>1</redundancy>\n" +
+                    "     <documents>" +
+                    "     </documents>\n" +
+                    "     <group>" +
+                    "       <node hostalias='mockhost' distribution-key='0' />" +
+                    "     </group>" +
+                    "   </content>" +
+                    "\n" +
+                    "</services>";
+            TestDriver driver = new TestDriver();
+            driver.buildModel(xml);
+        });
+    }
+
+    @Test
+    void testStandaloneZooKeeper() {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -258,7 +259,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testUnconfigured() throws Exception {
+    void testUnconfigured() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -320,7 +321,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testUnconfiguredMultiple() throws Exception {
+    void testUnconfiguredMultiple() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -362,7 +363,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testUnconfiguredNoTuning() throws Exception {
+    void testUnconfiguredNoTuning() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -417,7 +418,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testUnconfiguredNoContent() throws Exception {
+    void testUnconfiguredNoContent() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "  <admin version=\"2.0\">\n" +
@@ -438,7 +439,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testUsingOldStyle() throws Exception {
+    void testUsingOldStyle() throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +

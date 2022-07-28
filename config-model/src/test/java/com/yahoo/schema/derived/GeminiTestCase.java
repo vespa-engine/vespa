@@ -3,13 +3,14 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -17,7 +18,7 @@ import java.util.Map;
 public class GeminiTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testRanking2() throws IOException, ParseException {
+    void testRanking2() throws IOException, ParseException {
         DerivedConfiguration c = assertCorrectDeriving("gemini2");
         RawRankProfile p = c.getRankProfileList().getRankProfiles().get("test");
         Map<String, String> ranking = removePartKeySuffixes(asMap(p.configProperties()));

@@ -3,10 +3,10 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,15 +17,15 @@ import java.util.jar.JarOutputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BundleValidatorTest {
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public File tempDir;
 
     @Test
-    public void basicBundleValidation() throws Exception {
+    void basicBundleValidation() throws Exception {
         // Valid jar file
         JarFile ok = createTemporaryJarFile("ok");
         BundleValidator bundleValidator = new BundleValidator();
@@ -42,12 +42,12 @@ public class BundleValidatorTest {
             bundleValidator.validateJarFile(DeployState.createTestState(), jarFile);
             assert (false);
         } catch (IllegalArgumentException e) {
-            assertEquals(e.getMessage(), exceptionMessage);
+            assertEquals(exceptionMessage, e.getMessage());
         }
     }
 
     @Test
-    public void require_that_deploying_snapshot_bundle_gives_warning() throws IOException {
+    void require_that_deploying_snapshot_bundle_gives_warning() throws IOException {
         final StringBuffer buffer = new StringBuffer();
 
         DeployState state = createDeployState(buffer);
@@ -57,7 +57,7 @@ public class BundleValidatorTest {
     }
 
     @Test
-    public void outputs_deploy_warning_on_import_of_packages_from_deprecated_artifact() throws IOException {
+    void outputs_deploy_warning_on_import_of_packages_from_deprecated_artifact() throws IOException {
         final StringBuffer buffer = new StringBuffer();
         DeployState state = createDeployState(buffer);
         BundleValidator validator = new BundleValidator();
@@ -78,7 +78,7 @@ public class BundleValidatorTest {
     }
 
     private JarFile createTemporaryJarFile(String testArtifact) throws IOException {
-        Path jarFile = tempDir.newFile(testArtifact + ".jar").toPath();
+        Path jarFile = Paths.get(tempDir.toString(), testArtifact + ".jar");
         Path artifactDirectory = Paths.get("src/test/cfg/application/validation/testjars/" + testArtifact);
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jarFile))) {
             Files.walk(artifactDirectory).forEach(path -> {

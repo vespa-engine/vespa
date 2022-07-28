@@ -13,13 +13,13 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Set;
 
 import static com.yahoo.schema.processing.AssertIndexingScript.assertIndexing;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -30,7 +30,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      * Tests adding of literal boost constructs
      */
     @Test
-    public void testLiteralBoost() {
+    void testLiteralBoost() {
         Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
@@ -43,7 +43,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                                 true, false, Set.of());
+                true, false, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check attribute fields
@@ -51,8 +51,8 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
 
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
-                                     "clear_state | guard { input a | tokenize | index a_literal; }"),
-                       schema);
+                        "clear_state | guard { input a | tokenize | index a_literal; }"),
+                schema);
 
         // Check index info addition
         IndexInfo indexInfo = derived.getIndexInfo();
@@ -63,7 +63,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      * Tests adding a literal boost in a non-default rank profile only
      */
     @Test
-    public void testNonDefaultRankLiteralBoost() {
+    void testNonDefaultRankLiteralBoost() {
         Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
@@ -79,17 +79,17 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
 
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
-                                     "clear_state | guard { input a | tokenize | index a_literal; }"),
-                       schema);
+                        "clear_state | guard { input a | tokenize | index a_literal; }"),
+                schema);
 
         // Check index info addition
         IndexInfo indexInfo = derived.getIndexInfo();
-        assertTrue(indexInfo.hasCommand("a","literal-boost"));
+        assertTrue(indexInfo.hasCommand("a", "literal-boost"));
     }
 
     /** Tests literal boosts in two fields going to the same index */
     @Test
-    public void testTwoLiteralBoostFields() {
+    void testTwoLiteralBoostFields() {
         Schema schema = new Schema("msb", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("msb");
@@ -104,10 +104,10 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
-                                     "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
-                                     "clear_state | guard { input title | tokenize | index title_literal; }",
-                                     "clear_state | guard { input body | tokenize | index body_literal; }"),
-                       schema);
+                        "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
+                        "clear_state | guard { input title | tokenize | index title_literal; }",
+                        "clear_state | guard { input body | tokenize | index body_literal; }"),
+                schema);
     }
 
 }

@@ -5,14 +5,14 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.SearchNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for the naming of search nodes base dir and config ids in an indexed content cluster.
@@ -69,14 +69,14 @@ public class IndexedSchemaNodeNamingTest {
     }
 
     @Test
-    public void requireThatSingleNodeIsNamedAfterDistributionKey() throws Exception {
+    void requireThatSingleNodeIsNamedAfterDistributionKey() throws Exception {
         ContentCluster cluster = getSingleNodeCluster();
         List<SearchNode> nodes = cluster.getSearch().getSearchNodes();
         assertSearchNode("n3", "3", nodes.get(0));
     }
 
     @Test
-    public void requireThatMultipleNodesAreNamedAfterDistributionKey() throws Exception {
+    void requireThatMultipleNodesAreNamedAfterDistributionKey() throws Exception {
         ContentCluster cluster = getMultiNodeCluster();
         List<SearchNode> nodes = cluster.getSearch().getSearchNodes();
         assertEquals(3, nodes.size());
@@ -86,7 +86,7 @@ public class IndexedSchemaNodeNamingTest {
     }
 
     @Test
-    public void requireThatNodesInHierarchicGroupsAreNamedAfterDistributionKey() throws Exception {
+    void requireThatNodesInHierarchicGroupsAreNamedAfterDistributionKey() throws Exception {
         ContentCluster cluster = getMultiGroupCluster();
         List<SearchNode> nodes = cluster.getSearch().getSearchNodes();
         assertEquals(4, nodes.size());

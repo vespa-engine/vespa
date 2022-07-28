@@ -2,20 +2,20 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConstantValidatorTest {
 
     @Test
-    public void ensure_that_valid_ranking_constants_do_not_fail() {
+    void ensure_that_valid_ranking_constants_do_not_fail() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/ranking_constants_ok/").create();
     }
 
     @Test
-    public void ensure_that_failing_ranking_constants_fails() {
+    void ensure_that_failing_ranking_constants_fails() {
         try {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/ranking_constants_fail/").create();
             fail();

@@ -5,11 +5,11 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests that qrserver is assigned port Defaults.getDefaults().vespaWebServicePort() even if there is a HTTP gateway configured earlier in
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class QrserverAndGatewayPortAllocationTest {
 
     @Test
-    public void testPorts() {
+    void testPorts() {
         String appDir = "src/test/cfg/application/app_qrserverandgw/";
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg(appDir);
         VespaModel vespaModel = creator.create();

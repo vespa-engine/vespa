@@ -10,9 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -21,56 +19,56 @@ import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author geirst
  */
 public class ComplexFieldsValidatorTestCase {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(getExpectedMessage("struct_array (struct_array.f1), struct_map (struct_map.value.f1)"));
-        createModelAndValidate(joinLines("search test {",
-                "  document test {",
-                "    struct s { field f1 type array<int> {} }",
-                "    field struct_array type array<s> {",
-                "      struct-field f1 { indexing: attribute }",
-                "    }",
-                "    field struct_map type map<string,s> {",
-                "      struct-field key { indexing: attribute }",
-                "      struct-field value.f1 { indexing: attribute }",
-                "    }",
-                "  }",
-                "}"));
+    void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines("search test {",
+                    "  document test {",
+                    "    struct s { field f1 type array<int> {} }",
+                    "    field struct_array type array<s> {",
+                    "      struct-field f1 { indexing: attribute }",
+                    "    }",
+                    "    field struct_map type map<string,s> {",
+                    "      struct-field key { indexing: attribute }",
+                    "      struct-field value.f1 { indexing: attribute }",
+                    "    }",
+                    "  }",
+                    "}"));
+        });
+        assertTrue(exception.getMessage().contains(getExpectedMessage("struct_array (struct_array.f1), struct_map (struct_map.value.f1)")));
     }
 
     @Test
-    public void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(getExpectedMessage("docTopics (docTopics.topics)"));
-        createModelAndValidate(joinLines(
-                "schema test {",
-                "document test {",
-                "struct topic {",
-                "  field id type string {}",
-                "  field label type string {}",
-                "}",
-                "struct docTopic {",
-                "  field id type string {}",
-                "  field topics type array<topic> {}",
-                "}",
-                "field docTopics type array<docTopic> {",
-                "  indexing: summary",
-                "  struct-field id { indexing: attribute }",
-                "  struct-field topics { indexing: attribute }",
-                "}",
-                "}",
-                "}"));
+    void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines(
+                    "schema test {",
+                    "document test {",
+                    "struct topic {",
+                    "  field id type string {}",
+                    "  field label type string {}",
+                    "}",
+                    "struct docTopic {",
+                    "  field id type string {}",
+                    "  field topics type array<topic> {}",
+                    "}",
+                    "field docTopics type array<docTopic> {",
+                    "  indexing: summary",
+                    "  struct-field id { indexing: attribute }",
+                    "  struct-field topics { indexing: attribute }",
+                    "}",
+                    "}",
+                    "}"));
+        });
+        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics)")));
     }
 
     private String getExpectedMessage(String unsupportedFields) {
@@ -89,7 +87,7 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    public void logs_warning_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
+    void logs_warning_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
         var logger = new MyLogger();
         createModelAndValidate(joinLines(
                 "schema test {",
@@ -109,13 +107,13 @@ public class ComplexFieldsValidatorTestCase {
                 "}"), logger);
         assertThat(logger.message.toString().contains(
                 "For cluster 'mycluster', schema 'test': " +
-                      "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
-                      "topics (topics.id, topics.label). " +
-                      "Remove setting or change to 'indexing: attribute' if needed for matching."));
+                        "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
+                        "topics (topics.id, topics.label). " +
+                        "Remove setting or change to 'indexing: attribute' if needed for matching."));
     }
 
     @Test
-    public void validation_passes_when_only_supported_struct_field_attributes_are_used() throws IOException, SAXException {
+    void validation_passes_when_only_supported_struct_field_attributes_are_used() throws IOException, SAXException {
         createModelAndValidate(joinLines("search test {",
                 "  document test {",
                 "    struct s1 {",

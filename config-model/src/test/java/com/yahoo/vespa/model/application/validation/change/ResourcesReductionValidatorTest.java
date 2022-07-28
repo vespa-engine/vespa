@@ -9,10 +9,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author freva
@@ -23,54 +23,54 @@ public class ResourcesReductionValidatorTest {
     private final ValidationTester tester = new ValidationTester(provisioner);
 
     @Test
-    public void fail_when_reduction_by_over_50_percent() {
+    void fail_when_reduction_by_over_50_percent() {
         VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices(new NodeResources(8, 16, 800, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
             assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                            "Current memory GB: 64.00, new: 16.00. New min resources must be at least 50% of the current min resources. " +
-                            ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
+                    "Current memory GB: 64.00, new: 16.00. New min resources must be at least 50% of the current min resources. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void fail_when_reducing_multiple_resources_by_over_50_percent() {
+    void fail_when_reducing_multiple_resources_by_over_50_percent() {
         VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices(new NodeResources(3, 16, 200, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
             assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                            "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
-                            "New min resources must be at least 50% of the current min resources. " +
-                            ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
+                    "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
+                    "New min resources must be at least 50% of the current min resources. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void small_resource_decrease_is_allowed() {
+    void small_resource_decrease_is_allowed() {
         VespaModel previous = tester.deploy(null, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(new NodeResources(.5, 48, 600, 1)), Environment.prod, null);
     }
 
     @Test
-    public void overriding_resource_decrease() {
+    void overriding_resource_decrease() {
         VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(new NodeResources(8, 16, 800, 1)), Environment.prod, resourcesReductionOverride); // Allowed due to override
     }
 
     @Test
-    public void allowed_to_go_to_not_specifying_resources() {
+    void allowed_to_go_to_not_specifying_resources() {
         VespaModel previous = tester.deploy(null, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(null), Environment.prod, null);
     }
 
     @Test
-    public void allowed_to_go_from_not_specifying_resources() {
+    void allowed_to_go_from_not_specifying_resources() {
         VespaModel previous = tester.deploy(null, getServices(null), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null);
     }

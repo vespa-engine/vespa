@@ -7,13 +7,13 @@ import com.yahoo.path.Path;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.ml.ImportedModelTester;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests adding Vespa ranking expression based models in the models/ dir
@@ -37,13 +37,13 @@ public class VespaMlModelTestCase {
     /** The model name */
     private final String name = "example";
 
-    @After
+    @AfterEach
     public void removeGeneratedModelFiles() {
         IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
     }
 
     @Test
-    public void testGlobalVespaModel() throws IOException {
+    void testGlobalVespaModel() throws IOException {
         ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
         VespaModel model = tester.createVespaModel();
         tester.assertLargeConstant("constant1asLarge", model, Optional.of(3L));
@@ -55,7 +55,7 @@ public class VespaMlModelTestCase {
             storedAppDir.toFile().mkdirs();
             IOUtils.copy(applicationDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+                    storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester(name, storedAppDir);
             VespaModel storedModel = storedTester.createVespaModel();
             storedTester.assertLargeConstant("constant1asLarge", model, Optional.of(3L));

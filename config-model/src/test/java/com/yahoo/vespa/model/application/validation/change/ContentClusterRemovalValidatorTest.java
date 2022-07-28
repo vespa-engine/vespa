@@ -7,10 +7,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -20,7 +20,7 @@ public class ContentClusterRemovalValidatorTest {
     private final ValidationTester tester = new ValidationTester(5);
 
     @Test
-    public void testContentRemovalValidation() {
+    void testContentRemovalValidation() {
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null);
@@ -28,13 +28,13 @@ public class ContentClusterRemovalValidatorTest {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("content-cluster-removal: Content cluster 'contentClusterId' is removed. This will cause loss of all data in this cluster. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.contentClusterRemoval),
-                         Exceptions.toMessageString(expected));
+                    ValidationOverrides.toAllowMessage(ValidationId.contentClusterRemoval),
+                    Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testOverridingContentRemovalValidation() {
+    void testOverridingContentRemovalValidation() {
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
     }

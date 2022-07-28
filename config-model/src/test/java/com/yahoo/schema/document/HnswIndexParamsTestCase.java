@@ -3,7 +3,7 @@
 package com.yahoo.schema.document;
 
 import java.util.Optional;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -11,7 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HnswIndexParamsTestCase {
 
     @Test
-    public void override_from() throws Exception {
+    void override_from() throws Exception {
         var empty = new HnswIndexParams();
         var builder = new HnswIndexParams.Builder();
         builder.setMaxLinksPerNode(7);

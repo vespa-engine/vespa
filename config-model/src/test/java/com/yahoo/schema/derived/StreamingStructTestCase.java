@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -14,12 +14,12 @@ import java.io.IOException;
 public class StreamingStructTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testStreamingStruct() throws IOException, ParseException {
+    void testStreamingStruct() throws IOException, ParseException {
         assertCorrectDeriving("streamingstruct");
     }
 
     @Test
-    public void testStreamingStructExplicitDefaultSummaryClass() throws IOException, ParseException {
+    void testStreamingStructExplicitDefaultSummaryClass() throws IOException, ParseException {
         assertCorrectDeriving("streamingstructdefault");
     }
 

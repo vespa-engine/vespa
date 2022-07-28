@@ -8,13 +8,11 @@ import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -24,7 +22,7 @@ public class RankProfileRegistryTest {
     private static final String TESTDIR = "src/test/cfg/search/data/v2/inherited_rankprofiles";
 
     @Test
-    public void testRankProfileInheritance() {
+    void testRankProfileInheritance() {
         TestRoot root = new TestDriver().buildModel(FilesApplicationPackage.fromFile(new File(TESTDIR)));
         RankProfilesConfig left = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/left");
         RankProfilesConfig right = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/right");
@@ -32,17 +30,19 @@ public class RankProfileRegistryTest {
         assertEquals(2, right.rankprofile().size());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testRankProfileDuplicateNameIsIllegal() {
-        Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
-        RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry);
-        rankProfileRegistry.add(barRankProfile);
-        rankProfileRegistry.add(barRankProfile);
+    @Test
+    void testRankProfileDuplicateNameIsIllegal() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
+            RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
+            RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry);
+            rankProfileRegistry.add(barRankProfile);
+            rankProfileRegistry.add(barRankProfile);
+        });
     }
 
     @Test
-    public void testRankProfileDuplicateNameLegalForOverridableRankProfiles() {
+    void testRankProfileDuplicateNameLegalForOverridableRankProfiles() {
         Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
 

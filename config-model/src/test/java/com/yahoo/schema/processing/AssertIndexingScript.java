@@ -9,8 +9,8 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -36,8 +36,8 @@ public abstract class AssertIndexingScript {
         }
         for (Expression actualExp : actual) {
             String str = actualExp.toString();
-            assertTrue("Unexpected: " + str, parsedExpected.remove(str));
+            assertTrue(parsedExpected.remove(str), "Unexpected: " + str);
         }
-        assertTrue("Missing: " + parsedExpected.toString(), parsedExpected.isEmpty());
+        assertTrue(parsedExpected.isEmpty(), "Missing: " + parsedExpected.toString());
     }
 }

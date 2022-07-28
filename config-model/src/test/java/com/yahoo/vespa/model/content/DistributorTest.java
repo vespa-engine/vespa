@@ -9,13 +9,11 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for content DistributorCluster.
@@ -37,14 +35,14 @@ public class DistributorTest {
     }
 
     @Test
-    public void testBasics() {
+    void testBasics() {
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
-              "  <group>" +
-              "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-              "  </group>" +
-              "</content>\n").
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</content>\n").
                 getConfig(builder);
 
         StorServerConfig config = new StorServerConfig(builder);
@@ -53,7 +51,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testRevertDefaultOffForSearch() {
+    void testRevertDefaultOffForSearch() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
@@ -66,7 +64,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testSplitAndJoin() {
+    void testSplitAndJoin() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
@@ -89,7 +87,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testThatGroupsAreCountedInWhenComputingSplitBits() {
+    void testThatGroupsAreCountedInWhenComputingSplitBits() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         ContentCluster cluster = parseCluster("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
@@ -145,7 +143,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testMaxMergesPerNode() {
+    void testMaxMergesPerNode() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         DistributorCluster dcluster = parse("<content id=\"storage\">\n" +
                 "  <documents/>" +
@@ -159,30 +157,30 @@ public class DistributorTest {
 
         builder = new StorDistributormanagerConfig.Builder();
         dcluster = parse("<content id=\"storage\">\n" +
-              "  <documents/>" +
-              "  <tuning>\n" +
-              "    <merges max-nodes-per-merge=\"4\"/>\n" +
-              "  </tuning>\n" +
-              "  <group>" +
-              "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-              "  </group>" +
-              "</content>");
+                "  <documents/>" +
+                "  <tuning>\n" +
+                "    <merges max-nodes-per-merge=\"4\"/>\n" +
+                "  </tuning>\n" +
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</content>");
         ((ContentCluster) dcluster.getParent()).getConfig(builder);
         conf = new StorDistributormanagerConfig(builder);
         assertEquals(4, conf.maximum_nodes_per_merge());
     }
 
     @Test
-    public void testGarbageCollectionSetExplicitly() {
+    void testGarbageCollectionSetExplicitly() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
-              "  <documents garbage-collection=\"true\">\n" +
-              "    <document type=\"music\"/>\n" +
-              "  </documents>\n" +
+                "  <documents garbage-collection=\"true\">\n" +
+                "    <document type=\"music\"/>\n" +
+                "  </documents>\n" +
                 "  <group>" +
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
-              "</cluster>").getConfig(builder);
+                "</cluster>").getConfig(builder);
 
         StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
         assertEquals(3600, conf.garbagecollection().interval());
@@ -190,7 +188,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testGarbageCollectionInterval() {
+    void testGarbageCollectionInterval() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents garbage-collection=\"true\" garbage-collection-interval=\"30\">\n" +
@@ -206,7 +204,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testGarbageCollectionOffByDefault() {
+    void testGarbageCollectionOffByDefault() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents>\n" +
@@ -223,7 +221,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testComplexGarbageCollectionSelectionForIndexedSearch() {
+    void testComplexGarbageCollectionSelectionForIndexedSearch() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"foo\">\n" +
                 "  <documents garbage-collection=\"true\" selection=\"true\">" +
@@ -243,7 +241,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testGarbageCollectionDisabledIfForced() {
+    void testGarbageCollectionDisabledIfForced() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"foo\">\n" +
                 "  <documents selection=\"true\" garbage-collection=\"false\" garbage-collection-interval=\"30\">\n" +
@@ -261,7 +259,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testPortOverride() {
+    void testPortOverride() {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         DistributorCluster cluster =
                 parse("<cluster id=\"storage\" distributor-base-port=\"14065\">" +
@@ -277,7 +275,7 @@ public class DistributorTest {
     }
 
     @Test
-    public void testCommunicationManagerDefaults() {
+    void testCommunicationManagerDefaults() {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         DistributorCluster cluster =
                 parse("<cluster id=\"storage\">" +
@@ -305,38 +303,38 @@ public class DistributorTest {
     }
 
     @Test
-    public void bucket_activation_disabled_if_no_documents_in_indexed_mode() {
+    void bucket_activation_disabled_if_no_documents_in_indexed_mode() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.storeOnly("music")));
         assertTrue(config.disable_bucket_activation());
     }
 
     @Test
-    public void bucket_activation_enabled_with_single_indexed_document() {
+    void bucket_activation_enabled_with_single_indexed_document() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.index("music")));
         assertFalse(config.disable_bucket_activation());
     }
 
     @Test
-    public void bucket_activation_enabled_with_multiple_indexed_documents() {
+    void bucket_activation_enabled_with_multiple_indexed_documents() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.index("music"),
-                                       DocType.index("movies")));
+                        DocType.index("movies")));
         assertFalse(config.disable_bucket_activation());
     }
 
     @Test
-    public void bucket_activation_enabled_if_at_least_one_document_indexed() {
+    void bucket_activation_enabled_if_at_least_one_document_indexed() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.storeOnly("music"),
-                                       DocType.streaming("bunnies"),
-                                       DocType.index("movies")));
+                        DocType.streaming("bunnies"),
+                        DocType.index("movies")));
         assertFalse(config.disable_bucket_activation());
     }
 
     @Test
-    public void bucket_activation_disabled_for_single_streaming_type() {
+    void bucket_activation_disabled_for_single_streaming_type() {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.streaming("music")));
         assertTrue(config.disable_bucket_activation());

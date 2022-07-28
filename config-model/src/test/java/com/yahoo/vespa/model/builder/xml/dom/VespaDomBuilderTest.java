@@ -10,13 +10,13 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author gjoranv
@@ -68,21 +68,21 @@ public class VespaDomBuilderTest {
 
 
     @Test
-    public void testUserConfigsWithNamespace() {
+    void testUserConfigsWithNamespace() {
         VespaModel model = createModel(hosts, servicesWithNamespace);
 
-        GenericConfig.GenericConfigBuilder builder = 
+        GenericConfig.GenericConfigBuilder builder =
                 new GenericConfig.GenericConfigBuilder(new ConfigDefinitionKey("testnamespace", "foo"), new ConfigPayloadBuilder());
         model.getConfig(builder, "admin");
         assertEquals("{\n" +
-                     "  \"basicStruct\": {\n" +
-                     "    \"stringVal\": \"default\"\n" +
-                     "  }\n" +
-                     "}\n", builder.getPayload().toString());
+                "  \"basicStruct\": {\n" +
+                "    \"stringVal\": \"default\"\n" +
+                "  }\n" +
+                "}\n", builder.getPayload().toString());
     }
 
     @Test
-    public void testGetElement() {
+    void testGetElement() {
         Element e = Xml.getElement(new StringReader("<chain><foo>sdf</foo></chain>"));
         assertEquals(e.getTagName(), "chain");
         assertEquals(XML.getChild(e, "foo").getTagName(), "foo");
@@ -90,7 +90,7 @@ public class VespaDomBuilderTest {
     }
 
     @Test
-    public void testHostSystem() {
+    void testHostSystem() {
         VespaModel model = createModel(hosts, services);
         HostSystem hostSystem = model.hostSystem();
         assertEquals(1, hostSystem.getHosts().size());

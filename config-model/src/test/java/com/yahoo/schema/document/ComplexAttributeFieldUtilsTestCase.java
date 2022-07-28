@@ -4,11 +4,11 @@ package com.yahoo.schema.document;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ComplexAttributeFieldUtilsTestCase {
 
@@ -77,7 +77,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void array_of_struct_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void array_of_struct_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
         Fixture f = new Fixture("elem_array",
                 joinLines("field elem_array type array<elem> {",
                         "  indexing: summary",
@@ -90,7 +90,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void array_of_struct_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void array_of_struct_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
         Fixture f = new Fixture("elem_array",
                 joinLines("field elem_array type array<elem> {",
                         "  indexing: summary",
@@ -102,7 +102,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void map_of_struct_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void map_of_struct_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
         Fixture f = new Fixture("elem_map",
                 joinLines("field elem_map type map<string, elem> {",
                         "  indexing: summary",
@@ -117,7 +117,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void map_of_struct_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void map_of_struct_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
         {
             Fixture f = new Fixture("elem_map",
                     joinLines("field elem_map type map<int, elem> {",
@@ -145,7 +145,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void map_of_primitive_type_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void map_of_primitive_type_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
         Fixture f = new Fixture("str_map",
                 joinLines("field str_map type map<string, string> {",
                         "  indexing: summary",
@@ -159,7 +159,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void map_of_primitive_type_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
+    void map_of_primitive_type_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
         {
             Fixture f = new Fixture("int_map",
                     joinLines("field int_map type map<int, int> {",
@@ -185,7 +185,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void unsupported_complex_field_is_tagged_as_such() throws ParseException {
+    void unsupported_complex_field_is_tagged_as_such() throws ParseException {
         {
             ComplexFixture f = new ComplexFixture("elem_array",
                     joinLines("field elem_array type array<elem> {",
@@ -214,7 +214,7 @@ public class ComplexAttributeFieldUtilsTestCase {
     }
 
     @Test
-    public void only_struct_field_attributes_are_considered_when_tagging_a_complex_field() throws ParseException {
+    void only_struct_field_attributes_are_considered_when_tagging_a_complex_field() throws ParseException {
         {
             ComplexFixture f = new ComplexFixture("elem_array",
                     joinLines("field elem_array type array<elem> {",

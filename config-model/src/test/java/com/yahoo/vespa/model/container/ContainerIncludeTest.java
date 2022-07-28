@@ -6,15 +6,12 @@ import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.processing.ProcessingChain;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Einar M R Rosenvinge
@@ -23,7 +20,7 @@ import static org.junit.Assert.fail;
 public class ContainerIncludeTest {
 
     @Test
-    public void include() {
+    void include() {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude/");
         VespaModel model = creator.create();
 
@@ -85,43 +82,51 @@ public class ContainerIncludeTest {
         assertEquals("com.yahoo.Processor2", processingChainMap.get("processingchain2").getInnerComponents().iterator().next().getComponentId().stringValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void includeNonExistent() {
-        VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude2/");
-        creator.create();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void includeAbsolutePath() {
-        VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude3/");
-        creator.create();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void includeNonDirectory() {
-        VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude4/");
-        creator.create();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void include_file_with_wrong_root_element_name() {
-        VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude5/");
-        creator.create();
+    @Test
+    void includeNonExistent() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude2/");
+            creator.create();
+        });
     }
 
     @Test
-    public void include_empty_directory() {
+    void includeAbsolutePath() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude3/");
+            creator.create();
+        });
+    }
+
+    @Test
+    void includeNonDirectory() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude4/");
+            creator.create();
+        });
+    }
+
+    @Test
+    void include_file_with_wrong_root_element_name() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude5/");
+            creator.create();
+        });
+    }
+
+    @Test
+    void include_empty_directory() {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/containerinclude6/");
         creator.create();
     }
 
     @Test
-    public void included_file_with_xml_schema_violation() {
+    void included_file_with_xml_schema_violation() {
         try {
             VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/include_xml_error/");
             creator.create(true);
             fail("Expected exception due to xml schema violation ('zearcer')");
-         } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Invalid XML according to XML schema"));
             assertTrue(e.getMessage().contains("zearcer"));
         }

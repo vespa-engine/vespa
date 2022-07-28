@@ -4,9 +4,9 @@ package com.yahoo.document.test;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.SDDocumentType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Thomas Gundersen
@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 public class SDFieldTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testIdSettingConflict() {
+    void testIdSettingConflict() {
         SDDocumentType doc = new SDDocumentType("testdoc");
         doc.addField("one", DataType.STRING, 60);
 
@@ -30,7 +30,7 @@ public class SDFieldTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testSettingReservedId() {
+    void testSettingReservedId() {
         SDDocumentType doc = new SDDocumentType("testdoc");
         try {
             doc.addField("one", DataType.STRING, 127);

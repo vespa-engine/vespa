@@ -12,7 +12,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,10 +21,7 @@ import java.util.List;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.SchemaBuilder.createSchemas;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for content search cluster.
@@ -99,51 +96,51 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void requireThatProtonInitializeThreadsIsSet() throws Exception {
+    void requireThatProtonInitializeThreadsIsSet() throws Exception {
         assertEquals(2, getProtonConfig(createClusterWithOneDocumentType()).initialize().threads());
         assertEquals(3, getProtonConfig(createClusterWithTwoDocumentType()).initialize().threads());
     }
 
     @Test
-    public void requireThatProtonResourceLimitsCanBeSet() throws Exception {
+    void requireThatProtonResourceLimitsCanBeSet() throws Exception {
         assertProtonResourceLimits(0.88, 0.77,
                 new ContentClusterBuilder().protonDiskLimit(0.88).protonMemoryLimit(0.77).getXml());
     }
 
     @Test
-    public void requireThatOnlyDiskLimitCanBeSet() throws Exception {
+    void requireThatOnlyDiskLimitCanBeSet() throws Exception {
         assertProtonResourceLimits(0.88, 0.9,
                 new ContentClusterBuilder().protonDiskLimit(0.88).getXml());
     }
 
     @Test
-    public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
+    void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
         assertProtonResourceLimits(0.9, 0.77,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
     }
 
     @Test
-    public void cluster_controller_resource_limits_can_be_set() throws Exception {
+    void cluster_controller_resource_limits_can_be_set() throws Exception {
         assertClusterControllerResourceLimits(0.92, 0.93,
                 new ContentClusterBuilder().clusterControllerDiskLimit(0.92).clusterControllerMemoryLimit(0.93).getXml());
     }
 
     @Test
-    public void resource_limits_are_derived_from_the_other_if_not_specified() throws Exception {
+    void resource_limits_are_derived_from_the_other_if_not_specified() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().clusterControllerDiskLimit(0.5).protonMemoryLimit(0.95).getXml());
         assertProtonResourceLimits(0.8, 0.95, cluster);
         assertClusterControllerResourceLimits(0.5, 0.94, cluster);
     }
 
     @Test
-    public void default_resource_limits_with_feed_block_in_distributor() throws Exception {
+    void default_resource_limits_with_feed_block_in_distributor() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().getXml());
         assertProtonResourceLimits(0.9, 0.9, cluster);
         assertClusterControllerResourceLimits(0.75, 0.8, cluster);
     }
 
     @Test
-    public void requireThatGloballyDistributedDocumentTypeIsTaggedAsSuch() throws Exception {
+    void requireThatGloballyDistributedDocumentTypeIsTaggedAsSuch() throws Exception {
         ProtonConfig cfg = getProtonConfig(createClusterWithGlobalType());
         assertEquals(2, cfg.documentdb().size());
         assertDocumentDb("global", true, cfg.documentdb(0));
@@ -156,7 +153,7 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void require_that_document_types_with_references_are_topologically_sorted() throws Exception {
+    void require_that_document_types_with_references_are_topologically_sorted() throws Exception {
         ProtonConfig cfg = getProtonConfig(createClusterWithThreeDocumentTypes());
         assertEquals(3, cfg.documentdb().size());
         assertDocumentDb("c", true, cfg.documentdb(0));
@@ -202,7 +199,7 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void require_that_document_types_belong_to_correct_bucket_spaces() throws Exception {
+    void require_that_document_types_belong_to_correct_bucket_spaces() throws Exception {
         BucketspacesConfig config = getBucketspacesConfig(createClusterWithGlobalType());
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
@@ -210,7 +207,7 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void bucket_space_config_builder_returns_correct_mappings() throws Exception {
+    void bucket_space_config_builder_returns_correct_mappings() throws Exception {
         ContentCluster cluster = createClusterWithGlobalType();
         BucketspacesConfig expected = getBucketspacesConfig(cluster);
         AllClustersBucketSpacesConfig.Cluster actual = cluster.clusterBucketSpaceConfigBuilder().build();
@@ -223,13 +220,13 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void cluster_with_global_document_types_sets_cluster_controller_global_docs_config_option() throws Exception {
+    void cluster_with_global_document_types_sets_cluster_controller_global_docs_config_option() throws Exception {
         ContentCluster cluster = createClusterWithGlobalType();
         assertTrue(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
     @Test
-    public void cluster_without_global_document_types_unsets_cluster_controller_global_docs_config_option() throws Exception {
+    void cluster_without_global_document_types_unsets_cluster_controller_global_docs_config_option() throws Exception {
         ContentCluster cluster = createClusterWithoutGlobalType();
         assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
@@ -241,21 +238,21 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void fsync_is_controllable() throws Exception {
+    void fsync_is_controllable() throws Exception {
         assertTrue(getTlsConfig(createCluster(new ContentClusterBuilder().getXml())).usefsync());
         assertTrue(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(true).getXml())).usefsync());
         assertFalse(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(false).getXml())).usefsync());
     }
 
     @Test
-    public void verifyDefaultDocStoreCompression() throws Exception {
+    void verifyDefaultDocStoreCompression() throws Exception {
         ProtonConfig cfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
         assertEquals(3, cfg.summary().log().chunk().compression().level());
         assertEquals(3, cfg.summary().log().compact().compression().level());
     }
 
     @Test
-    public void verifyDefaultDiskBloatFactor() throws Exception {
+    void verifyDefaultDiskBloatFactor() throws Exception {
         var defaultCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
         assertEquals(0.25, defaultCfg.flush().memory().diskbloatfactor(), EPSILON);
         assertEquals(0.25, defaultCfg.flush().memory().each().diskbloatfactor(), EPSILON);

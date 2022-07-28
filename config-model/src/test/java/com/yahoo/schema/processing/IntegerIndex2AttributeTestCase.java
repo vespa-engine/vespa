@@ -9,13 +9,11 @@ import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -23,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class IntegerIndex2AttributeTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testIntegerIndex2Attribute() throws IOException, ParseException {
+    void testIntegerIndex2Attribute() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
         new IntegerIndex2Attribute(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
 

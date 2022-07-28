@@ -3,12 +3,12 @@ package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Basic tests of DependencyBuilder
@@ -24,7 +24,7 @@ public class DependenciesBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testBuildDependencies() {
+    void testBuildDependencies() {
         DependenciesBuilder dependenciesBuilder = new DependenciesBuilder(parse(
                 "<searcher provides='symbol1  symbol2 ' before='p1' after=' s1' >",
                 "  <provides> symbol3 </provides>",

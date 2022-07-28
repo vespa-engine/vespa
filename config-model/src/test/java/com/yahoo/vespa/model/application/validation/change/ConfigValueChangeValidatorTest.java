@@ -18,8 +18,8 @@ import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testing the validator on both a stub model and a real-life Vespa model.
@@ -39,7 +38,7 @@ public class ConfigValueChangeValidatorTest {
 
     private DeployLoggerStub logger;
 
-    @Before
+    @BeforeEach
     public void resetLogger() {
         logger = new DeployLoggerStub();
     }
@@ -54,7 +53,7 @@ public class ConfigValueChangeValidatorTest {
      *    This test will to a certain degree ensure that the annotations in the VespaModel is correctly applied.
      */
     @Test
-    public void requireThatValidatorHandlesVespaModel() {
+    void requireThatValidatorHandlesVespaModel() {
         List<ConfigChangeAction> changes = getConfigChanges(
                 createVespaModel(createQrStartConfigSegment(true, 2096)),
                 createVespaModel(createQrStartConfigSegment(false, 2096))
@@ -66,7 +65,7 @@ public class ConfigValueChangeValidatorTest {
     }
 
     @Test
-    public void requireThatDocumentTypesCanBeAddedWithoutNeedForRestart() {
+    void requireThatDocumentTypesCanBeAddedWithoutNeedForRestart() {
         List<ConfigChangeAction> changes = getConfigChanges(
                 createVespaModel("", Arrays.asList("foo")),
                 createVespaModel("", Arrays.asList("foo", "bar")));
@@ -74,7 +73,7 @@ public class ConfigValueChangeValidatorTest {
     }
 
     @Test
-    public void requireThatValidatorDetectsConfigChangeFromService() {
+    void requireThatValidatorDetectsConfigChangeFromService() {
         MockRoot oldRoot = createRootWithChildren(new SimpleConfigProducer("p", 0)
                 .withChildren(new ServiceWithAnnotation("s1", 1), new ServiceWithAnnotation("s2", 2)));
         MockRoot newRoot = createRootWithChildren(new SimpleConfigProducer("p", 0)
@@ -89,7 +88,7 @@ public class ConfigValueChangeValidatorTest {
     }
 
     @Test
-    public void requireThatValidatorDetectsConfigChangeFromParentProducer() {
+    void requireThatValidatorDetectsConfigChangeFromParentProducer() {
         MockRoot oldRoot = createRootWithChildren(new SimpleConfigProducer("p", 1)
                 .withChildren(new ServiceWithAnnotation("s1", 0), new ServiceWithAnnotation("s2", 0)));
         MockRoot newRoot = createRootWithChildren(new SimpleConfigProducer("p", 2)
@@ -102,7 +101,7 @@ public class ConfigValueChangeValidatorTest {
     }
 
     @Test
-    public void requireThatValidatorHandlesModelsWithDifferentTopology() {
+    void requireThatValidatorHandlesModelsWithDifferentTopology() {
         MockRoot oldRoot = createRootWithChildren(
                 new SimpleConfigProducer("p1", 0).withChildren(new ServiceWithAnnotation("s1", 1)),
                 new SimpleConfigProducer("p2", 0).withChildren(new ServiceWithAnnotation("s2", 1)));
@@ -117,27 +116,31 @@ public class ConfigValueChangeValidatorTest {
         assertEmptyLog();
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void requireThatAnnotationDoesNotHaveEmtpyConfigList() {
-        MockRoot root = createRootWithChildren(new EmptyConfigListAnnotationService(""));
-        getConfigChanges(root, root);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void requireThatConfigHasRestartMethods() {
-        MockRoot root = createRootWithChildren(new ConfigWithMissingMethodsAnnotatedService(""));
-        getConfigChanges(root, root);
+    @Test
+    void requireThatAnnotationDoesNotHaveEmtpyConfigList() {
+        assertThrows(IllegalStateException.class, () -> {
+            MockRoot root = createRootWithChildren(new EmptyConfigListAnnotationService(""));
+            getConfigChanges(root, root);
+        });
     }
 
     @Test
-    public void requireThatServicesAnnotatedWithNonRestartConfigProduceWarningInLog() {
+    void requireThatConfigHasRestartMethods() {
+        assertThrows(IllegalStateException.class, () -> {
+            MockRoot root = createRootWithChildren(new ConfigWithMissingMethodsAnnotatedService(""));
+            getConfigChanges(root, root);
+        });
+    }
+
+    @Test
+    void requireThatServicesAnnotatedWithNonRestartConfigProduceWarningInLog() {
         MockRoot root = createRootWithChildren(new NonRestartConfigAnnotatedService(""));
         getConfigChanges(root, root);
         assertEquals(1, logger.entries.size());
     }
 
     @Test
-    public void requireThatConfigsFromAnnotatedSuperClassesAreDetected() {
+    void requireThatConfigsFromAnnotatedSuperClassesAreDetected() {
         MockRoot oldRoot = createRootWithChildren(new SimpleConfigProducer("p", 1).withChildren(
                 new ChildServiceWithAnnotation("child1", 0),
                 new ChildServiceWithoutAnnotation("child2", 0)));

@@ -18,15 +18,14 @@ import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
 
@@ -35,7 +34,7 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testFunctions() throws IOException, ParseException {
+    void testFunctions() throws IOException, ParseException {
         ModelContext.Properties deployProperties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Schema schema = createSearch("src/test/examples/rankingexpressionfunction", deployProperties, rankProfileRegistry);
@@ -46,13 +45,13 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
         assertEquals("var2", functions.get("titlematch").function().arguments().get(1));
         assertEquals("var1 * var2 + 890", functions.get("titlematch").function().getBody().getRoot().toString());
         assertEquals("0.8 + 0.2 * titlematch(4,5) + 0.8 * titlematch(7,8) * closeness(distance)",
-                     functionsRankProfile.getFirstPhaseRanking().getRoot().toString());
+                functionsRankProfile.getFirstPhaseRanking().getRoot().toString());
         assertEquals("78 + closeness(distance)",
-                     functions.get("artistmatch").function().getBody().getRoot().toString());
+                functions.get("artistmatch").function().getBody().getRoot().toString());
         assertEquals(0, functions.get("artistmatch").function().arguments().size());
 
         RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
-                                                           new ImportedMlModels(), new AttributeFields(schema), deployProperties);
+                new ImportedMlModels(), new AttributeFields(schema), deployProperties);
         List<Pair<String, String>> rankProperties = rawRankProfile.configProperties();
         assertEquals(6, rankProperties.size());
 
@@ -72,11 +71,13 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
         assertEquals("4 * 5 + 890", rankProperties.get(0).getSecond());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
-        RankProfileRegistry registry = new RankProfileRegistry();
-        Schema schema = createSearch("src/test/examples/rankingexpressioninfile", new TestProperties(), registry);
-        new DerivedConfiguration(schema, registry); // rank profile parsing happens during deriving
+    @Test
+    void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
+        assertThrows(IllegalArgumentException.class, () -> {
+            RankProfileRegistry registry = new RankProfileRegistry();
+            Schema schema = createSearch("src/test/examples/rankingexpressioninfile", new TestProperties(), registry);
+            new DerivedConfiguration(schema, registry); // rank profile parsing happens during deriving
+        }); // rank profile parsing happens during deriving
     }
 
     private void verifyProfile(RankProfile profile, List<String> expectedFunctions, List<Pair<String, String>> rankProperties,
@@ -114,7 +115,7 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testLargeInheritedFunctions() throws IOException, ParseException {
+    void testLargeInheritedFunctions() throws IOException, ParseException {
         ModelContext.Properties properties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry(), 50);

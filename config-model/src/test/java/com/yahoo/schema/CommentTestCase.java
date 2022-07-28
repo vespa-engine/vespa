@@ -3,11 +3,11 @@ package com.yahoo.schema;
 
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests comment handling
@@ -17,11 +17,11 @@ import static org.junit.Assert.assertEquals;
 public class CommentTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testComments() throws IOException, ParseException {
+    void testComments() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/comment.sd");
         SDField field = schema.getConcreteField("a");
         assertEquals("{ input a | tokenize normalize stem:\"BEST\" | summary a | index a; }",
-                     field.getIndexingScript().toString());
+                field.getIndexingScript().toString());
     }
 
 }

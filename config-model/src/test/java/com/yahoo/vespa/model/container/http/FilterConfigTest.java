@@ -4,15 +4,13 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.http.HttpFilterConfig;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.collections.CollectionUtil.first;
 import static com.yahoo.vespa.model.container.http.FilterConfigProvider.configProviderId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -22,7 +20,7 @@ public class FilterConfigTest extends DomBuilderTest {
 
     private Http http;
 
-    @Before
+    @BeforeEach
     public void setupFilterChains() {
         http = new HttpBuilder().build(root.getDeployState(), root, servicesXml());
         root.freezeModelTopology();
@@ -54,14 +52,14 @@ public class FilterConfigTest extends DomBuilderTest {
     }
 
     @Test
-    public void filter_without_config_does_not_have_FilterConfigProvider() {
+    void filter_without_config_does_not_have_FilterConfigProvider() {
         Filter noConfigFilter = getOuterFilter("no-config");
 
         assertNull(getProvider(noConfigFilter));
     }
 
     @Test
-    public void filterName_is_id_from_component_spec() {
+    void filterName_is_id_from_component_spec() {
         Filter emptyConfigFilter = getOuterFilter("empty-config");
         HttpFilterConfig config = getHttpFilterConfig(emptyConfigFilter);
 
@@ -69,7 +67,7 @@ public class FilterConfigTest extends DomBuilderTest {
     }
 
     @Test
-    public void filterClass_is_class_from_component_spec() {
+    void filterClass_is_class_from_component_spec() {
         Filter emptyConfigFilter = getOuterFilter("empty-config");
         HttpFilterConfig config = getHttpFilterConfig(emptyConfigFilter);
 
@@ -77,7 +75,7 @@ public class FilterConfigTest extends DomBuilderTest {
     }
 
     @Test
-    public void filter_with_empty_config_has_FilterConfigProvider_with_empty_map() {
+    void filter_with_empty_config_has_FilterConfigProvider_with_empty_map() {
         Filter emptyConfigFilter = getOuterFilter("empty-config");
         HttpFilterConfig config = getHttpFilterConfig(emptyConfigFilter);
 
@@ -85,7 +83,7 @@ public class FilterConfigTest extends DomBuilderTest {
     }
 
     @Test
-    public void config_params_are_set_correctly_in_FilterConfigProvider() {
+    void config_params_are_set_correctly_in_FilterConfigProvider() {
         Filter configWithParamsFilter = getOuterFilter("config-with-params");
         HttpFilterConfig config = getHttpFilterConfig(configWithParamsFilter);
 
@@ -95,7 +93,7 @@ public class FilterConfigTest extends DomBuilderTest {
     }
 
     @Test
-    public void inner_filter_can_have_filter_config() {
+    void inner_filter_can_have_filter_config() {
         Filter innerFilter =
                 first(http.getFilterChains().allChains().getComponent("myChain").getInnerComponents());
 

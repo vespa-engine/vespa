@@ -2,8 +2,8 @@
 package com.yahoo.config.model.builder.xml.test;
 
 import com.yahoo.config.model.test.TestUtil;
+import org.junit.jupiter.api.BeforeEach;
 import com.yahoo.config.model.test.MockRoot;
-import org.junit.Before;
 import org.w3c.dom.Element;
 
 /**
@@ -22,7 +22,7 @@ abstract public class DomBuilderTest {
 
     protected MockRoot root;
 
-    @Before
+    @BeforeEach
     public void setup() {
         root = new MockRoot();
     }

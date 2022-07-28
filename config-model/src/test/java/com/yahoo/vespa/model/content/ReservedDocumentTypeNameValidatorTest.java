@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,9 +12,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReservedDocumentTypeNameValidatorTest {
 
@@ -23,7 +21,7 @@ public class ReservedDocumentTypeNameValidatorTest {
     }
 
     @Test
-    public void exception_thrown_on_reserved_names() {
+    void exception_thrown_on_reserved_names() {
         // Ensure ordering is consistent for testing
         Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(ReservedDocumentTypeNameValidator.ORDERED_RESERVED_NAMES));
 
@@ -40,13 +38,13 @@ public class ReservedDocumentTypeNameValidatorTest {
     }
 
     @Test
-    public void exception_is_not_thrown_on_unreserved_name() {
+    void exception_is_not_thrown_on_unreserved_name() {
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
         validator.validate(asDocTypeMapping(Collections.singletonList("foo")));
     }
 
     @Test
-    public void validation_is_case_insensitive() {
+    void validation_is_case_insensitive() {
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
         Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(Arrays.asList("NULL", "True", "anD")));
         try {
@@ -54,7 +52,7 @@ public class ReservedDocumentTypeNameValidatorTest {
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith("The following document types conflict with reserved keyword names: " +
-                            "'NULL', 'True', 'anD'."));
+                    "'NULL', 'True', 'anD'."));
         }
     }
 

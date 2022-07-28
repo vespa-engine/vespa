@@ -6,7 +6,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.io.IOUtils;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +17,12 @@ import java.io.IOException;
 public class SchemaInheritanceTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testIt() throws IOException, ParseException {
+    void testIt() throws IOException, ParseException {
         try {
             ApplicationBuilder builder = ApplicationBuilder.createFromDirectory("src/test/derived/schemainheritance/",
-                                                                                  new MockFileRegistry(),
-                                                                                  new TestableDeployLogger(),
-                                                                                  new TestProperties());
+                    new MockFileRegistry(),
+                    new TestableDeployLogger(),
+                    new TestProperties());
             derive("schemainheritance", builder, builder.getSchema("child"));
             assertCorrectConfigFiles("schemainheritance");
         }

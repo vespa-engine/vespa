@@ -46,7 +46,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -66,12 +66,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for "core functionality" of the container model, e.g. ports, or the 'components' and 'bundles' configs.
@@ -84,7 +79,7 @@ import static org.junit.Assert.fail;
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void model_evaluation_bundles_are_deployed() {
+    void model_evaluation_bundles_are_deployed() {
         createBasicContainerModel();
         PlatformBundlesConfig config = root.getConfig(PlatformBundlesConfig.class, "default");
         assertTrue(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
@@ -92,79 +87,79 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void default_port_is_4080() {
+    void default_port_is_4080() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
-                  nodesXml,
-                "</container>" );
+                nodesXml,
+                "</container>");
         createModel(root, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("container/container.0");
+        AbstractService container = (AbstractService) root.getProducer("container/container.0");
         assertEquals(getDefaults().vespaWebServicePort(), container.getRelativePort(0));
     }
 
     @Test
-    public void http_server_port_is_configurable_and_does_not_affect_other_ports() {
+    void http_server_port_is_configurable_and_does_not_affect_other_ports() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
-                  nodesXml,
-                "</container>" );
+                nodesXml,
+                "</container>");
         createModel(root, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("container/container.0");
+        AbstractService container = (AbstractService) root.getProducer("container/container.0");
         assertEquals(9000, container.getRelativePort(0));
         assertNotEquals(9001, container.getRelativePort(1));
     }
 
     @Test
-    public void omitting_http_server_port_gives_default() {
+    void omitting_http_server_port_gives_default() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <http>",
                 "    <server id='foo'/>",
                 "  </http>",
                 nodesXml,
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("container/container.0");
+        AbstractService container = (AbstractService) root.getProducer("container/container.0");
         assertEquals(Defaults.getDefaults().vespaWebServicePort(), container.getRelativePort(0));
     }
 
     @Test
-    public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
+    void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =
                     "<services>" +
-                    "<admin version='3.0'>" +
-                    "    <nodes count='1'/>" +
-                    "</admin>" +
-                    "<container version='1.0'>" +
-                    "  <http>" +
-                    "    <server port='9000' id='foo' />" +
-                    "  </http>" +
-                    nodesXml +
-                    "</container>" +
-                    "</services>";
+                            "<admin version='3.0'>" +
+                            "    <nodes count='1'/>" +
+                            "</admin>" +
+                            "<container version='1.0'>" +
+                            "  <http>" +
+                            "    <server port='9000' id='foo' />" +
+                            "  </http>" +
+                            nodesXml +
+                            "</container>" +
+                            "</services>";
             ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
             // Need to create VespaModel to make deploy properties have effect
             TestLogger logger = new TestLogger();
             new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                                                                  .applicationPackage(applicationPackage)
-                                                                  .deployLogger(logger)
-                                                                  .properties(new TestProperties().setHostedVespa(true))
-                                                                  .build());
+                    .applicationPackage(applicationPackage)
+                    .deployLogger(logger)
+                    .properties(new TestProperties().setHostedVespa(true))
+                    .build());
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             // Success
             assertEquals("Illegal port 9000 in http server 'foo': Port must be set to " + Defaults.getDefaults().vespaWebServicePort(),
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void one_cluster_with_explicit_port_and_one_without_is_ok() {
+    void one_cluster_with_explicit_port_and_one_without_is_ok() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0' />");
         Element cluster2Elem = DomBuilderTest.parse(
@@ -177,15 +172,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void two_clusters_without_explicit_port_throws_exception() {
+    void two_clusters_without_explicit_port_throws_exception() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
-                  nodesXml,
-                "</container>" );
+                nodesXml,
+                "</container>");
         Element cluster2Elem = DomBuilderTest.parse(
                 "<container id='cluster2' version='1.0'>",
-                  nodesXml,
-                "</container>" );
+                nodesXml,
+                "</container>");
         try {
             createModel(root, cluster1Elem, cluster2Elem);
             fail("Expected exception");
@@ -195,7 +190,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void builtin_handlers_get_default_threadpool() {
+    void builtin_handlers_get_default_threadpool() {
         createBasicContainerModel();
 
         Handler h1 = getHandler("default", ApplicationStatusHandler.class.getName());
@@ -206,7 +201,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void verify_bindings_for_builtin_handlers() {
+    void verify_bindings_for_builtin_handlers() {
         createBasicContainerModel();
         JdiscBindingsConfig config = root.getConfig(JdiscBindingsConfig.class, "default/container.0");
 
@@ -224,7 +219,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void processing_handler_bindings_can_be_overridden() {
+    void processing_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <processing>",
@@ -242,11 +237,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void serverProviders_are_included_in_components_config() {
+    void serverProviders_are_included_in_components_config() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
-                "  <server id='discServer' />" +
-                "</container>" );
+                        "  <server id='discServer' />" +
+                        "</container>");
 
         createModel(root, clusterElem);
 
@@ -259,7 +254,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void searchHandler_gets_only_search_chains_in_chains_config()  {
+    void searchHandler_gets_only_search_chains_in_chains_config()  {
         createClusterWithProcessingAndSearchChains();
         String searchHandlerConfigId = "default/component/com.yahoo.search.handler.SearchHandler";
         String chainsConfig = getChainsConfig(searchHandlerConfigId);
@@ -268,7 +263,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void processingHandler_gets_only_processing_chains_in_chains_config()  {
+    void processingHandler_gets_only_processing_chains_in_chains_config()  {
         createClusterWithProcessingAndSearchChains();
         String processingHandlerConfigId = "default/component/" + PROCESSING_HANDLER_CLASS;
         String chainsConfig = getChainsConfig(processingHandlerConfigId);
@@ -277,7 +272,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void processingHandler_is_instantiated_from_the_default_bundle() {
+    void processingHandler_is_instantiated_from_the_default_bundle() {
         createClusterWithProcessingAndSearchChains();
         ComponentsConfig.Components config = getComponentInConfig(componentsConfig(), PROCESSING_HANDLER_CLASS);
         assertEquals(PROCESSING_HANDLER_CLASS, config.bundle());
@@ -303,13 +298,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void user_config_can_be_overridden_on_node() {
+    void user_config_can_be_overridden_on_node() {
         Element containerElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <config name=\"prelude.cluster.qr-monitor\">" +
-                "    <requesttimeout>111</requesttimeout>",
+                        "    <requesttimeout>111</requesttimeout>",
                 "  </config> " +
-                "  <nodes>",
+                        "  <nodes>",
                 "    <node hostalias='host1' />",
                 "    <node hostalias='host2'>",
                 "      <config name=\"prelude.cluster.qr-monitor\">",
@@ -321,25 +316,25 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         root = ContentClusterUtils.createMockRoot(new String[]{"host1", "host2"});
         createModel(root, containerElem);
-        ContainerCluster cluster = (ContainerCluster)root.getChildren().get("default");
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         assertEquals(2, cluster.getContainers().size());
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout(), 111);
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout(), 222);
     }
 
     @Test
-    public void component_includes_are_added() {
+    void component_includes_are_added() {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/application/include_dirs");
         VespaModel model = creator.create(true);
         ContainerCluster cluster = model.getContainerClusters().get("default");
         Map<ComponentId, Component<?, ?>> componentsMap = cluster.getComponentsMap();
-        Component<?,?> example = componentsMap.get(
+        Component<?, ?> example = componentsMap.get(
                 ComponentId.fromString("test.Exampledocproc"));
         assertEquals("test.Exampledocproc", example.getComponentId().getName());
     }
 
     @Test
-    public void affinity_is_set() {
+    void affinity_is_set() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <http>",
@@ -348,14 +343,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <nodes cpu-socket-affinity='true'>",
                 "    <node hostalias='node1' />",
                 "  </nodes>" +
-                "</container>");
+                        "</container>");
         createModel(root, clusterElem);
         assertTrue(getContainerCluster("default").getContainers().get(0).getAffinity().isPresent());
         assertEquals(0, getContainerCluster("default").getContainers().get(0).getAffinity().get().cpuSocket());
     }
 
     @Test
-    public void singlenode_servicespec_is_used_with_hosts_xml() throws IOException, SAXException {
+    void singlenode_servicespec_is_used_with_hosts_xml() throws IOException, SAXException {
         String servicesXml = "<container id='default' version='1.0' />";
         String hostsXml = "<hosts>\n" +
                 "    <host name=\"test1.yahoo.com\">\n" +
@@ -371,7 +366,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void endpoints_are_added_to_containers() throws IOException, SAXException {
+    void endpoints_are_added_to_containers() throws IOException, SAXException {
         final var servicesXml = joinLines("",
                 "<container id='comics-search' version='1.0'>",
                 "  <nodes>",
@@ -403,7 +398,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .flatMap(cluster -> cluster.getContainers().stream())
                 .collect(Collectors.toList());
 
-        assertFalse("Missing container objects based on configuration", containers.isEmpty());
+        assertFalse(containers.isEmpty(), "Missing container objects based on configuration");
 
         containers.forEach(container -> {
             final var rotations = container.getServicePropertyString("rotations").split(",");
@@ -413,7 +408,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void singlenode_servicespec_is_used_with_hosted_vespa() throws IOException, SAXException {
+    void singlenode_servicespec_is_used_with_hosted_vespa() throws IOException, SAXException {
         String servicesXml = "<container id='default' version='1.0' />";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
@@ -426,23 +421,27 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(2, model.hostSystem().getHosts().size());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void renderers_named_JsonRenderer_are_not_allowed() {
-        createModel(root, generateContainerElementWithRenderer("JsonRenderer"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void renderers_named_DefaultRenderer_are_not_allowed() {
-        createModel(root, generateContainerElementWithRenderer("XmlRenderer"));
+    @Test
+    void renderers_named_JsonRenderer_are_not_allowed() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            createModel(root, generateContainerElementWithRenderer("JsonRenderer"));
+        });
     }
 
     @Test
-    public void renderers_named_something_else_are_allowed() {
+    void renderers_named_DefaultRenderer_are_not_allowed() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            createModel(root, generateContainerElementWithRenderer("XmlRenderer"));
+        });
+    }
+
+    @Test
+    void renderers_named_something_else_are_allowed() {
         createModel(root, generateContainerElementWithRenderer("my-little-renderer"));
     }
 
     @Test
-    public void vip_status_handler_uses_file_for_hosted_vespa() throws Exception {
+    void vip_status_handler_uses_file_for_hosted_vespa() throws Exception {
         String servicesXml = "<services>" +
                 "<container version='1.0'>" +
                 nodesXml +
@@ -462,7 +461,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void qrconfig_is_produced() throws IOException, SAXException {
+    void qrconfig_is_produced() throws IOException, SAXException {
         QrConfig qr = getQrConfig(new TestProperties());
         String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
         assertEquals("default.container.0", qr.discriminator());
@@ -501,14 +500,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void control_container_shutdown() throws IOException, SAXException {
+    void control_container_shutdown() throws IOException, SAXException {
         QrConfig qr = getQrConfig(new TestProperties().containerShutdownTimeout(133).containerDumpHeapOnShutdownTimeout(true));
         assertEquals(133.0, qr.shutdown().timeout(), 0.00000000000001);
         assertTrue(qr.shutdown().dumpHeapOnTimeout());
     }
 
     @Test
-    public void environment_vars_are_honoured() {
+    void environment_vars_are_honoured() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <nodes>",
@@ -518,7 +517,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "    </environment-variables>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         root.getConfig(qrStartBuilder, "container/container.0");
@@ -550,26 +549,26 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatAvailableProcessorsFollowFlavor() {
-        verifyAvailableprocessors(false, null,0);
-        verifyAvailableprocessors(true, null,0);
+    void requireThatAvailableProcessorsFollowFlavor() {
+        verifyAvailableprocessors(false, null, 0);
+        verifyAvailableprocessors(true, null, 0);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()), 9);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(1).build()), 2);
     }
 
     @Test
-    public void cluster_with_zookeeper() {
+    void cluster_with_zookeeper() {
         Function<Integer, String> servicesXml = (nodeCount) -> "<container version='1.0' id='default'>" +
-                                                               "<nodes count='" + nodeCount + "'/>" +
-                                                               "<zookeeper/>" +
-                                                               "</container>";
+                "<nodes count='" + nodeCount + "'/>" +
+                "<zookeeper/>" +
+                "</container>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(3);
         {
             VespaModel model = tester.createModel(servicesXml.apply(3), true);
             ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
             assertNotNull(cluster);
-            assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Curator");
+            assertComponentConfigured(cluster, "com.yahoo.vespa.curator.Curator");
             cluster.getContainers().forEach(container -> {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
@@ -584,39 +583,41 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             try {
                 tester.createModel(servicesXml.apply(2), true);
                 fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
         }
         {
             String xmlWithNodes =
                     "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<services>" +
-                    "  <container version='1.0' id='container1'>" +
-                    "     <zookeeper/>" +
-                    "     <nodes of='content1'/>" +
-                    "  </container>" +
-                    "  <content version='1.0' id='content1'>" +
-                    "     <nodes count='3'/>" +
-                    "   </content>" +
-                    "</services>";
+                            "<services>" +
+                            "  <container version='1.0' id='container1'>" +
+                            "     <zookeeper/>" +
+                            "     <nodes of='content1'/>" +
+                            "  </container>" +
+                            "  <content version='1.0' id='content1'>" +
+                            "     <nodes count='3'/>" +
+                            "   </content>" +
+                            "</services>";
             try {
                 tester.createModel(xmlWithNodes, true);
                 fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
         }
     }
 
     @Test
-    public void logs_deployment_spec_deprecations() throws Exception {
+    void logs_deployment_spec_deprecations() throws Exception {
         String containerService = joinLines("<container id='foo' version='1.0'>",
-                                       "  <nodes>",
-                                       "    <node hostalias='host1' />",
-                                       "  </nodes>",
-                                       "</container>");
+                "  <nodes>",
+                "    <node hostalias='host1' />",
+                "  </nodes>",
+                "</container>");
         String deploymentXml = joinLines("<deployment version='1.0'>",
-                                         "  <prod global-service-id='foo'>",
-                                         "    <region active='true'>us-east-1</region>",
-                                         "  </prod>",
-                                         "</deployment>");
+                "  <prod global-service-id='foo'>",
+                "    <region active='true'>us-east-1</region>",
+                "  </prod>",
+                "</deployment>");
 
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withServices(containerService)
@@ -636,9 +637,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
         assertEquals(Level.WARNING, logger.msgs.get(1).getFirst());
         assertEquals("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
-                     logger.msgs.get(0).getSecond());
+                logger.msgs.get(0).getSecond());
         assertEquals("Element 'region' contains attribute 'active' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
-                     logger.msgs.get(1).getSecond());
+                logger.msgs.get(1).getSecond());
     }
 
     private void assertComponentConfigured(ApplicationContainer container, String id) {

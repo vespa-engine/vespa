@@ -11,15 +11,13 @@ import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Level;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -27,11 +25,11 @@ import static org.junit.Assert.fail;
 public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
+    void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
-                        "search test {\n" +
+                "search test {\n" +
                         "    document test { \n" +
                         "        field a type double { \n" +
                         "            indexing: attribute \n" +
@@ -71,14 +69,14 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
-                     parent.getFirstPhaseRanking().getRoot().toString());
+                parent.getFirstPhaseRanking().getRoot().toString());
         RankProfile child = rankProfileRegistry.get(s, "child").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (9 + attribute(a))",
-                     child.getFirstPhaseRanking().getRoot().toString());
+                child.getFirstPhaseRanking().getRoot().toString());
     }
 
     @Test
-    public void testConstants() throws ParseException {
+    void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -149,7 +147,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testNonTopLevelInlining() throws ParseException {
+    void testNonTopLevelInlining() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -192,31 +190,31 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testFunctionRedefinitionIsIllegal() throws ParseException {
+    void testFunctionRedefinitionIsIllegal() throws ParseException {
         try {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             MockDeployLogger deployLogger = new MockDeployLogger();
             ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
-                                                                new MockFileRegistry(),
-                                                                deployLogger,
-                                                                new TestProperties(),
-                                                                rankProfileRegistry,
-                                                                new QueryProfileRegistry());
+                    new MockFileRegistry(),
+                    deployLogger,
+                    new TestProperties(),
+                    rankProfileRegistry,
+                    new QueryProfileRegistry());
             builder.addSchema(
                     "search test {\n" +
-                    "    document test { }\n" +
-                    "    rank-profile test {\n" +
-                    "        first-phase {\n" +
-                    "            expression: foo\n" +
-                    "        }\n" +
-                    "        function foo(x) {\n" +
-                    "            expression: x + x\n" +
-                    "        }\n" +
-                    "        function inline foo() {\n" +
-                    "            expression: foo(2)\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}\n");
+                            "    document test { }\n" +
+                            "    rank-profile test {\n" +
+                            "        first-phase {\n" +
+                            "            expression: foo\n" +
+                            "        }\n" +
+                            "        function foo(x) {\n" +
+                            "            expression: x + x\n" +
+                            "        }\n" +
+                            "        function inline foo() {\n" +
+                            "            expression: foo(2)\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}\n");
             builder.build(true);
             fail("Expected failure");
         }

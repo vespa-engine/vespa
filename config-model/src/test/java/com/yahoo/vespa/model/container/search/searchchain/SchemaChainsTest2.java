@@ -5,12 +5,12 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.builder.xml.dom.chains.search.DomSearchChainsBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilderTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -19,13 +19,13 @@ public class SchemaChainsTest2 {
 
     private MockRoot root;
 
-    @Before
+    @BeforeEach
     public void prepareTest() {
         root = new MockRoot("root");
     }
 
     @Test
-    public void fail_upon_unresolved_inheritance() {
+    void fail_upon_unresolved_inheritance() {
         final Element searchElem = DomBuilderTest.parse(
                 "<search>",
                 "  <chain id='default' inherits='nonexistent' />",
@@ -37,12 +37,12 @@ public class SchemaChainsTest2 {
             fail("Expected exception when inheriting a nonexistent search chain.");
         } catch (Exception e) {
             assertEquals("Missing chain 'nonexistent'.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void fail_upon_two_user_declared_chains_with_same_name() {
+    void fail_upon_two_user_declared_chains_with_same_name() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 ContainerModelBuilderTest.nodesXml,
@@ -56,12 +56,12 @@ public class SchemaChainsTest2 {
             fail("Expected exception when declaring chains with duplicate id.");
         } catch (Exception e) {
             assertEquals("Both search chain 'same' and search chain 'same' are configured with the id 'same'. All components must have a unique id.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void fail_upon_user_declared_chain_with_same_id_as_builtin_chain() {
+    void fail_upon_user_declared_chain_with_same_id_as_builtin_chain() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 ContainerModelBuilderTest.nodesXml,
@@ -74,7 +74,7 @@ public class SchemaChainsTest2 {
             fail("Expected exception when taking the id from a builtin chain.");
         } catch (Exception e) {
             assertEquals("Both search chain 'vespa' and search chain 'vespa' are configured with the id 'vespa'. All components must have a unique id.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 }

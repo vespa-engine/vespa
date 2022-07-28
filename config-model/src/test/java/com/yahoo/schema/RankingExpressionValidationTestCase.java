@@ -4,17 +4,18 @@ package com.yahoo.schema;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * @author bratseth
  */
 public class RankingExpressionValidationTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testInvalidExpressionProducesException() throws ParseException {
+    void testInvalidExpressionProducesException() throws ParseException {
         assertFailsExpression("&/%(/%&");
         assertFailsExpression("if(a==b,b)");
     }

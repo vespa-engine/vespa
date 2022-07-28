@@ -3,14 +3,14 @@ package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.SearchCoverage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertNull;
 public class DomSchemaCoverageBuilderTest {
 
     @Test
-    public void requireThatDefaultsAreNull() throws Exception {
+    void requireThatDefaultsAreNull() throws Exception {
         SearchCoverage coverage = newSearchCoverage(
                 "<content/>");
         assertNull(coverage.getMinimum());
@@ -27,41 +27,41 @@ public class DomSchemaCoverageBuilderTest {
     }
 
     @Test
-    public void requireThatEmptySearchIsSafe() throws Exception {
+    void requireThatEmptySearchIsSafe() throws Exception {
         SearchCoverage coverage = newSearchCoverage(
                 "<content>" +
-                "  <search/>" +
-                "</content>");
+                        "  <search/>" +
+                        "</content>");
         assertNull(coverage.getMinimum());
         assertNull(coverage.getMinWaitAfterCoverageFactor());
         assertNull(coverage.getMaxWaitAfterCoverageFactor());
     }
 
     @Test
-    public void requireThatEmptyCoverageIsSafe() throws Exception {
+    void requireThatEmptyCoverageIsSafe() throws Exception {
         SearchCoverage coverage = newSearchCoverage(
                 "<content>" +
-                "  <search>" +
-                "    <coverage/>" +
-                "  </search>" +
-                "</content>");
+                        "  <search>" +
+                        "    <coverage/>" +
+                        "  </search>" +
+                        "</content>");
         assertNull(coverage.getMinimum());
         assertNull(coverage.getMinWaitAfterCoverageFactor());
         assertNull(coverage.getMaxWaitAfterCoverageFactor());
     }
 
     @Test
-    public void requireThatSearchCoverageCanBeBuilt() throws Exception {
+    void requireThatSearchCoverageCanBeBuilt() throws Exception {
         SearchCoverage coverage = newSearchCoverage(
                 "<content>" +
-                "  <search>" +
-                "    <coverage>" +
-                "      <minimum>0.11</minimum>" +
-                "      <min-wait-after-coverage-factor>0.23</min-wait-after-coverage-factor>" +
-                "      <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>" +
-                "    </coverage>" +
-                "  </search>" +
-                "</content>");
+                        "  <search>" +
+                        "    <coverage>" +
+                        "      <minimum>0.11</minimum>" +
+                        "      <min-wait-after-coverage-factor>0.23</min-wait-after-coverage-factor>" +
+                        "      <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>" +
+                        "    </coverage>" +
+                        "  </search>" +
+                        "</content>");
         assertEquals(0.11, coverage.getMinimum(), 1E-6);
         assertEquals(0.23, coverage.getMinWaitAfterCoverageFactor(), 1E-6);
         assertEquals(0.58, coverage.getMaxWaitAfterCoverageFactor(), 1E-6);

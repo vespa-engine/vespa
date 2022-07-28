@@ -5,9 +5,10 @@ import java.io.IOException;
 
 import com.yahoo.schema.parser.ParseException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests that search definitions are parsed correctly and that correct line number is reported in
@@ -18,23 +19,23 @@ import static org.junit.Assert.*;
 public class SchemaParsingTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void requireThatIndexingExpressionsCanBeParsed() throws Exception {
+    void requireThatIndexingExpressionsCanBeParsed() throws Exception {
         assertNotNull(ApplicationBuilder.buildFromFile("src/test/examples/simple.sd"));
     }
 
     @Test
-    public void requireThatParseExceptionPositionIsCorrect() throws Exception {
+    void requireThatParseExceptionPositionIsCorrect() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_construct.sd");
         } catch (ParseException e) {
-            if ( ! e.getMessage().contains("at line 5, column 36.")) {
+            if (!e.getMessage().contains("at line 5, column 36.")) {
                 throw e;
             }
         }
     }
 
     @Test
-    public void requireThatParserHandlesLexicalError() throws Exception {
+    void requireThatParserHandlesLexicalError() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_lexical_error.sd");
         } catch (ParseException e) {
@@ -45,7 +46,7 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireErrorWhenJunkAfterSearchBlock() throws IOException, ParseException {
+    void requireErrorWhenJunkAfterSearchBlock() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_junk_at_end.sd");
             fail("Illegal junk at end of SD passed");
@@ -57,7 +58,7 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireErrorWhenMissingClosingSearchBracket() throws IOException, ParseException {
+    void requireErrorWhenMissingClosingSearchBracket() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_no_closing_bracket.sd");
             fail("SD without closing bracket passed");
@@ -69,12 +70,12 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void illegalSearchDefinitionName() throws IOException, ParseException {
+    void illegalSearchDefinitionName() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid-name.sd");
             fail("Name with dash passed");
         } catch (ParseException e) {
-            if ( ! e.getMessage().contains("invalid-name")) {
+            if (!e.getMessage().contains("invalid-name")) {
                 throw e;
             }
         }

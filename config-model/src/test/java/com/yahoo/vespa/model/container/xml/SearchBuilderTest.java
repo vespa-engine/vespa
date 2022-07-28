@@ -14,7 +14,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
@@ -22,12 +22,7 @@ import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -39,13 +34,13 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void gui_search_handler_is_always_included_when_search_is_specified() {
+    void gui_search_handler_is_always_included_when_search_is_specified() {
         createBasicSearchModel();
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertTrue(discBindingsConfig.contains(GUIHandler.BINDING_PATH));
 
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
 
         GUIHandler guiHandler = null;
         for (Handler handler : cluster.getHandlers()) {
@@ -57,7 +52,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void search_handler_bindings_can_be_overridden() {
+    void search_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
@@ -76,7 +71,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void search_handler_bindings_can_be_disabled() {
+    void search_handler_bindings_can_be_disabled() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
@@ -92,7 +87,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void search_handler_binding_can_be_stolen_by_user_configured_handler() {
+    void search_handler_binding_can_be_stolen_by_user_configured_handler() {
         var myHandler = "replaces_search_handler";
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
@@ -112,14 +107,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
     // TODO: remove test when all containers are named 'container'
     @Test
-    public void cluster_with_only_search_gets_qrserver_as_service_name() {
+    void cluster_with_only_search_gets_qrserver_as_service_name() {
         createClusterWithOnlyDefaultChains();
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
         assertEquals(CONTAINER.serviceName, cluster.getContainers().get(0).getServiceName());
     }
 
     @Test
-    public void empty_search_element_gives_default_chains() {
+    void empty_search_element_gives_default_chains() {
         createClusterWithOnlyDefaultChains();
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespaPhases", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("native", "id"));
@@ -127,9 +122,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void query_profiles_registry_component_is_added() {
+    void query_profiles_registry_component_is_added() {
         createClusterWithOnlyDefaultChains();
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
         var queryProfileRegistryId = ComponentId.fromString(QUERY_PROFILE_REGISTRY_CLASS);
         assertTrue(cluster.getComponentsMap().containsKey(queryProfileRegistryId));
     }
@@ -147,7 +142,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void manually_setting_up_search_handler_is_forbidden() {
+    void manually_setting_up_search_handler_is_forbidden() {
         try {
             Element clusterElem = DomBuilderTest.parse(
                     "<container id='default' version='1.0'>",
@@ -164,22 +159,22 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cluster_is_connected_to_content_clusters() {
+    void cluster_is_connected_to_content_clusters() {
         String hosts = hostsXml();
 
         String services = "" +
-                "<services>"+
+                "<services>" +
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='mockhost'/>" +
                 "  </admin>" +
-                "  <container version='1.0' id='container'>"+
+                "  <container version='1.0' id='container'>" +
                 "      <search>" +
                 "        <chain id='mychain' inherits='vespa'/>" +
                 "      </search>" +
-                "      <nodes>"+
-                "        <node hostalias=\"mockhost\" />"+
-                "      </nodes>"+
-                "  </container>"+
+                "      <nodes>" +
+                "        <node hostalias=\"mockhost\" />" +
+                "      </nodes>" +
+                "  </container>" +
                 contentXml() +
                 "</services>";
 
@@ -190,22 +185,22 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cluster_is_connected_to_search_clusters() {
+    void cluster_is_connected_to_search_clusters() {
         String hosts = hostsXml();
 
         String services = "" +
-                "<services>"+
+                "<services>" +
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='mockhost'/>" +
                 "  </admin>" +
-                "  <container version='1.0' id='container'>"+
+                "  <container version='1.0' id='container'>" +
                 "      <search>" +
                 "        <chain id='mychain' inherits='vespa'/>" +
                 "      </search>" +
-                "      <nodes>"+
-                "        <node hostalias=\"mockhost\" />"+
-                "      </nodes>"+
-                "  </container>"+
+                "      <nodes>" +
+                "        <node hostalias=\"mockhost\" />" +
+                "      </nodes>" +
+                "  </container>" +
                 contentXml() +
                 "</services>";
 
@@ -216,7 +211,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void search_handler_has_dedicated_threadpool() {
+    void search_handler_has_dedicated_threadpool() {
         createBasicSearchModel();
 
         Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
@@ -230,7 +225,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void threadpool_configuration_can_be_overridden() {
+    void threadpool_configuration_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
@@ -251,9 +246,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void ExecutionFactory_gets_same_chains_config_as_SearchHandler() {
+    void ExecutionFactory_gets_same_chains_config_as_SearchHandler() {
         createBasicSearchModel();
-        Component<?,?> executionFactory = ((SearchHandler) getComponent("default",SearchHandler.HANDLER_CLASS))
+        Component<?, ?> executionFactory = ((SearchHandler) getComponent("default", SearchHandler.HANDLER_CLASS))
                 .getChildren().get(SearchHandler.EXECUTION_FACTORY_CLASS);
 
         ChainsConfig executionFactoryChainsConfig = root.getConfig(ChainsConfig.class, executionFactory.getConfigId());

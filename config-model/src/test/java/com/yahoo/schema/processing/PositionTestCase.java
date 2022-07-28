@@ -11,12 +11,12 @@ import com.yahoo.schema.document.FieldSet;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test Position processor.
@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 public class PositionTestCase {
 
     @Test
-    public void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
+    void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
         ApplicationBuilder sb = ApplicationBuilder.createFromFiles(Arrays.asList(
                 "src/test/examples/position_base.sd",
                 "src/test/examples/position_inherited.sd"));
@@ -37,7 +37,7 @@ public class PositionTestCase {
     }
 
     @Test
-    public void requireThatPositionCanBeAttribute() throws Exception {
+    void requireThatPositionCanBeAttribute() throws Exception {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/position_attribute.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
@@ -48,18 +48,18 @@ public class PositionTestCase {
     }
 
     @Test
-    public void requireThatPositionCanNotBeIndex() throws Exception {
+    void requireThatPositionCanNotBeIndex() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/position_index.sd");
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'position_index', field 'pos': Indexing of data type 'position' is not " +
-                         "supported, replace 'index' statement with 'attribute'.", e.getMessage());
+                    "supported, replace 'index' statement with 'attribute'.", e.getMessage());
         }
     }
 
     @Test
-    public void requireThatSummaryAloneDoesNotCreateZCurve() throws Exception {
+    void requireThatSummaryAloneDoesNotCreateZCurve() throws Exception {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/position_summary.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
@@ -78,7 +78,7 @@ public class PositionTestCase {
     }
 
     @Test
-    public void requireThatExtraFieldCanBePositionAttribute() throws Exception {
+    void requireThatExtraFieldCanBePositionAttribute() throws Exception {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/position_extra.sd");
         assertNull(schema.getAttribute("pos_ext"));
         assertNull(schema.getAttribute("pos_ext.x"));
@@ -89,7 +89,7 @@ public class PositionTestCase {
     }
 
     @Test
-    public void requireThatPositionArrayIsSupported() throws Exception {
+    void requireThatPositionArrayIsSupported() throws Exception {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/position_array.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
