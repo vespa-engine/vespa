@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * TotalOrderTester implements a total order test for OrderTester
  *
@@ -22,14 +19,14 @@ import static org.junit.Assert.assertTrue;
 
 public class TotalOrderTester<T extends Comparable<? super T>> extends OrderTester<T> {
     protected void lessTest(T a, T b) throws AssertionError {
-        assertTrue(a + " must be less than " + b, a.compareTo(b) <= -1);
+        JunitCompat.assertTrue(a + " must be less than " + b, a.compareTo(b) <= -1);
     }
 
     protected void greaterTest(T a, T b) throws AssertionError {
-        assertTrue(a + " must be greater than " + b, a.compareTo(b) >= 1);
+        JunitCompat.assertTrue(a + " must be greater than " + b, a.compareTo(b) >= 1);
     }
 
     protected void equalTest(T a, T b) throws AssertionError {
-        assertEquals(a + " must be compared equal to " + b, 0, a.compareTo(b));
+        JunitCompat.assertEquals(a + " must be compared equal to " + b, 0, a.compareTo(b));
     }
 }
