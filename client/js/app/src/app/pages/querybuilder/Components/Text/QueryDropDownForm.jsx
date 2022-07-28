@@ -1,8 +1,13 @@
+import React, { useContext, useState } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import React, { useCallback, useContext, useState } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 
-export default function QueryDropdownForm({ choices, id, child = false }) {
+export default function QueryDropdownForm({
+  choices,
+  id,
+  child = false,
+  initial,
+}) {
   const {
     inputs,
     setInputs,
@@ -28,6 +33,8 @@ export default function QueryDropdownForm({ choices, id, child = false }) {
       let parentTypes = newInputs[index].type;
       let children = newInputs[index].children;
       let childChoices = childMap[parentTypes];
+      //TODO: try to rafactor this loop into a separate function that can be
+      //used everywhere in the code similar loops are used
       for (let i = 3; i < id.length; i += 2) {
         currentId = id.substring(0, i);
         index = children.findIndex((element) => element.id === currentId);
@@ -62,6 +69,7 @@ export default function QueryDropdownForm({ choices, id, child = false }) {
       onChange={updateType}
       choices={choices}
       value={choice}
+      initial={initial}
     ></SimpleDropDownForm>
   );
 }

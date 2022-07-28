@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext } from 'react';
 import { ResponseContext } from '../Contexts/ResponseContext';
 
 export default function ResponseBox() {

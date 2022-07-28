@@ -8,7 +8,7 @@ import AddPropertyButton from '../Buttons/AddPropertyButton';
 import QueryInputChild from './QueryInputChild';
 
 export default function QueryInput() {
-  const { inputs, setInputs, levelZeroParameters, childMap } =
+  const { inputs, setInputs, levelZeroParameters } =
     useContext(QueryInputContext);
 
   function removeRow(id) {
@@ -36,8 +36,12 @@ export default function QueryInput() {
 
   const inputList = inputs.map((value) => {
     return (
-      <div key={value.id} id={value.id} className="queryinput">
-        <QueryDropdownForm choices={levelZeroParameters} id={value.id} />
+      <div key={value.id + value.typeof} id={value.id} className="queryinput">
+        <QueryDropdownForm
+          choices={levelZeroParameters}
+          id={value.id}
+          initial={value.type}
+        />
         {value.hasChildren ? (
           <>
             <AddPropertyButton id={value.id} />
@@ -49,6 +53,7 @@ export default function QueryInput() {
             size="30"
             onChange={updateInput}
             placeholder={setPlaceholder(value.id)}
+            initial={value.input}
           />
         )}
         <OverlayTrigger

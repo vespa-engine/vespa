@@ -7,10 +7,11 @@ export default function SimpleDropDownForm({
   className = 'input',
   onChange,
   value,
+  initial,
 }) {
   const { selectedItems } = useContext(QueryInputContext);
 
-  //FIXME: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
+  //TODO: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
   let filtered = Object.keys(choices).filter(
     (choice) => !selectedItems.includes(choice)
   );
@@ -30,7 +31,12 @@ export default function SimpleDropDownForm({
 
   return (
     <form id={id}>
-      <select className={className} id={id} value={value} onChange={onChange}>
+      <select
+        className={className}
+        id={id}
+        defaultValue={initial}
+        onChange={onChange}
+      >
         {options}
       </select>
     </form>
