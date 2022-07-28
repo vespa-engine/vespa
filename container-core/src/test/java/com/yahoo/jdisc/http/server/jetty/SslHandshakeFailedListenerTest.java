@@ -3,7 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import org.eclipse.jetty.io.ssl.SslHandshakeListener;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
@@ -23,13 +23,13 @@ public class SslHandshakeFailedListenerTest {
     SslHandshakeFailedListener listener = new SslHandshakeFailedListener(metrics, "connector", 1234);
 
     @Test
-    public void includes_client_ip_dimension_present_when_peer_available() {
+    void includes_client_ip_dimension_present_when_peer_available() {
         listener.handshakeFailed(handshakeEvent(true), new SSLHandshakeException("Empty server certificate chain"));
         verify(metrics).createContext(eq(Map.of("clientIp", "127.0.0.1", "serverName", "connector", "serverPort", 1234)));
     }
 
     @Test
-    public void does_not_include_client_ip_dimension_present_when_peer_unavailable() {
+    void does_not_include_client_ip_dimension_present_when_peer_unavailable() {
         listener.handshakeFailed(handshakeEvent(false), new SSLHandshakeException("Empty server certificate chain"));
         verify(metrics).createContext(eq(Map.of("serverName", "connector", "serverPort", 1234)));
     }

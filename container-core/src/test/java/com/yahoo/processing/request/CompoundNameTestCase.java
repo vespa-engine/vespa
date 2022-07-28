@@ -6,12 +6,9 @@ import com.yahoo.text.Lowercase;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Module local test of the basic property name building block.
@@ -30,23 +27,24 @@ public class CompoundNameTestCase {
     void verifyStrict(String expected, CompoundName actual) {
         verifyStrict(new CompoundName(expected), actual);
     }
+
     @Test
-    public final void testLast() {
+    final void testLast() {
         assertEquals(NAME.substring(NAME.lastIndexOf('.') + 1), cn.last());
     }
 
     @Test
-    public final void testFirst() {
+    final void testFirst() {
         assertEquals(NAME.substring(0, NAME.indexOf('.')), cn.first());
     }
 
     @Test
-    public final void testRest() {
+    final void testRest() {
         verifyStrict(NAME.substring(NAME.indexOf('.') + 1), cn.rest());
     }
 
     @Test
-    public final void testRestN() {
+    final void testRestN() {
         verifyStrict("a.b.c.d.e", new CompoundName("a.b.c.d.e").rest(0));
         verifyStrict("b.c.d.e", new CompoundName("a.b.c.d.e").rest(1));
         verifyStrict("c.d.e", new CompoundName("a.b.c.d.e").rest(2));
@@ -56,7 +54,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public final void testPrefix() {
+    final void testPrefix() {
         assertTrue(new CompoundName("a.b.c").hasPrefix(new CompoundName("")));
         assertTrue(new CompoundName("a.b.c").hasPrefix(new CompoundName("a")));
         assertTrue(new CompoundName("a.b.c").hasPrefix(new CompoundName("a.b")));
@@ -67,13 +65,13 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void testFromComponents() {
+    void testFromComponents() {
         verifyStrict("a", CompoundName.fromComponents("a"));
         verifyStrict("a.b", CompoundName.fromComponents("a", "b"));
     }
 
     @Test
-    public final void testSize() {
+    final void testSize() {
         Splitter s = Splitter.on('.');
         Iterable<String> i = s.split(NAME);
         int n = 0;
@@ -84,23 +82,23 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public final void testGet() {
+    final void testGet() {
         String s = cn.get(0);
         assertEquals(NAME.substring(0, NAME.indexOf('.')), s);
     }
 
     @Test
-    public final void testIsCompound() {
+    final void testIsCompound() {
         assertTrue(cn.isCompound());
     }
 
     @Test
-    public final void testIsEmpty() {
+    final void testIsEmpty() {
         assertFalse(cn.isEmpty());
     }
 
     @Test
-    public final void testAsList() {
+    final void testAsList() {
         List<String> l = cn.asList();
         Splitter peoplesFront = Splitter.on('.');
         Iterable<String> answer = peoplesFront.split(NAME);
@@ -112,15 +110,15 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public final void testEqualsObject() {
-        assertFalse(cn.equals(NAME));
-        assertFalse(cn.equals(null));
+    final void testEqualsObject() {
+        assertNotEquals(cn, NAME);
+        assertNotEquals(cn, null);
         verifyStrict(cn, cn);
         verifyStrict(cn, new CompoundName(NAME));
     }
 
     @Test
-    public final void testEmptyNonEmpty() {
+    final void testEmptyNonEmpty() {
         assertTrue(new CompoundName("").isEmpty());
         assertEquals(0, new CompoundName("").size());
         assertFalse(new CompoundName("a").isEmpty());
@@ -131,12 +129,12 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public final void testGetLowerCasedName() {
+    final void testGetLowerCasedName() {
         assertEquals(Lowercase.toLowerCase(NAME), cn.getLowerCasedName());
     }
 
     @Test
-    public void testAppendCompound() {
+    void testAppendCompound() {
         verifyStrict("a.b.c.d", new CompoundName("").append(new CompoundName("a.b.c.d")));
         verifyStrict("a.b.c.d", new CompoundName("a").append(new CompoundName("b.c.d")));
         verifyStrict("a.b.c.d", new CompoundName("a.b").append(new CompoundName("c.d")));
@@ -145,7 +143,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void empty_CompoundName_is_prefix_of_any_CompoundName() {
+    void empty_CompoundName_is_prefix_of_any_CompoundName() {
         CompoundName empty = new CompoundName("");
 
         assertTrue(empty.hasPrefix(empty));
@@ -153,7 +151,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void whole_components_must_match_to_be_prefix() {
+    void whole_components_must_match_to_be_prefix() {
         CompoundName stringPrefix = new CompoundName("a");
         CompoundName name         = new CompoundName("aa");
 
@@ -161,28 +159,28 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void testFirstRest() {
+    void testFirstRest() {
         verifyStrict(CompoundName.empty, CompoundName.empty.rest());
 
-        CompoundName n=new CompoundName("on.two.three");
+        CompoundName n = new CompoundName("on.two.three");
         assertEquals("on", n.first());
         verifyStrict("two.three", n.rest());
-        n=n.rest();
+        n = n.rest();
         assertEquals("two", n.first());
         verifyStrict("three", n.rest());
-        n=n.rest();
+        n = n.rest();
         assertEquals("three", n.first());
         verifyStrict("", n.rest());
-        n=n.rest();
+        n = n.rest();
         assertEquals("", n.first());
         verifyStrict("", n.rest());
-        n=n.rest();
+        n = n.rest();
         assertEquals("", n.first());
         verifyStrict("", n.rest());
     }
 
     @Test
-    public void testHashCodeAndEquals() {
+    void testHashCodeAndEquals() {
         CompoundName n1 = new CompoundName("venn.d.a");
         CompoundName n2 = new CompoundName(n1.asList());
         assertEquals(n1.hashCode(), n2.hashCode());
@@ -190,7 +188,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void testAppendString() {
+    void testAppendString() {
         verifyStrict("a", new CompoundName("a").append(""));
         verifyStrict("a", new CompoundName("").append("a"));
         verifyStrict("a.b", new CompoundName("a").append("b"));
@@ -203,14 +201,14 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    public void testEmpty() {
-        CompoundName empty=new CompoundName("");
+    void testEmpty() {
+        CompoundName empty = new CompoundName("");
         assertEquals("", empty.toString());
         assertEquals(0, empty.asList().size());
     }
 
     @Test
-    public void testAsList2() {
+    void testAsList2() {
         assertEquals("[one]", new CompoundName("one").asList().toString());
         assertEquals("[one, two, three]", new CompoundName("one.two.three").asList().toString());
     }

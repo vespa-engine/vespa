@@ -2,11 +2,11 @@
 package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class HostLifeGathererTest {
 
     @Test
-    public void host_is_alive() {
+    void host_is_alive() {
         JsonNode packet = HostLifeGatherer.getHostLifePacket(new MockFileWrapper());
         JsonNode metrics = packet.get("metrics");
         assertEquals("host_life", packet.get("application").textValue());

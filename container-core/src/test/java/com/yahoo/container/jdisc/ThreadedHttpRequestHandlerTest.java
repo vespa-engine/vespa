@@ -3,7 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.container.test.MetricMock;
 import com.yahoo.jdisc.Metric;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executors;
 
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ThreadedHttpRequestHandlerTest {
 
     @Test
-    public void unhandled_exceptions_metric_is_incremented_if_subclassed_handler_throws_exception() {
+    void unhandled_exceptions_metric_is_incremented_if_subclassed_handler_throws_exception() {
         MetricMock metricMock = new MetricMock();
         ThreadedHttpRequestHandlerThrowingException handler = new ThreadedHttpRequestHandlerThrowingException(metricMock);
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
@@ -24,7 +24,7 @@ public class ThreadedHttpRequestHandlerTest {
         String expectedMetricName = "jdisc.http.handler.unhandled_exceptions";
         assertThat(metricMock.innvocations())
                 .containsKey(expectedMetricName);
-        assertThat(((MetricMock.SimpleMetricContext)metricMock.innvocations().get(expectedMetricName).ctx).dimensions)
+        assertThat(((MetricMock.SimpleMetricContext) metricMock.innvocations().get(expectedMetricName).ctx).dimensions)
                 .containsEntry("exception", "DummyException");
     }
 

@@ -4,9 +4,9 @@ package com.yahoo.container.logging;
 import com.yahoo.compress.ZstdCompressor;
 import com.yahoo.container.logging.LogFileHandler.Compression;
 import com.yahoo.io.IOUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.util.zip.GZIPInputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Bob Travis
@@ -35,26 +35,26 @@ import static org.junit.Assert.assertNotEquals;
 public class LogFileHandlerTestCase {
     private static final int BUFFER_SIZE = 0x10000;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Test
-    public void testIt() throws IOException {
-        File root = temporaryFolder.newFolder("logfilehandlertest");
+    void testIt() throws IOException {
+        File root = newFolder(temporaryFolder, "logfilehandlertest");
 
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
         long[] rTimes = {1000, 2000, 10000};
         LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, pattern, rTimes, null, 2048, "thread-name", new StringLogWriter());
         long now = System.currentTimeMillis();
-        long millisPerDay = 60*60*24*1000;
-        long tomorrowDays = (now / millisPerDay) +1;
+        long millisPerDay = 60 * 60 * 24 * 1000;
+        long tomorrowDays = (now / millisPerDay) + 1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
 
-        assertThat(tomorrowMillis+1000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis));
-        assertThat(tomorrowMillis+10000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis+3000));
+        assertThat(tomorrowMillis + 1000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis));
+        assertThat(tomorrowMillis + 10000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis + 3000));
         String message = "test";
         h.publish(message);
-        h.publish( "another test");
+        h.publish("another test");
         h.rotateNow();
         h.publish(message);
         h.flush();
@@ -62,41 +62,42 @@ public class LogFileHandlerTestCase {
     }
 
     @Test
-    public void testSimpleLogging() throws IOException {
-        File logFile = temporaryFolder.newFile("testLogFileG1.txt");
+    void testSimpleLogging() throws IOException {
+        File logFile = File.createTempFile("testLogFileG1.txt", null, temporaryFolder);
 
-      //create logfilehandler
-      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
+        //create logfilehandler
+        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
 
-      //write log
-      h.publish("testDeleteFileFirst1");
-      h.flush();
-      h.shutdown();
+        //write log
+        h.publish("testDeleteFileFirst1");
+        h.flush();
+        h.shutdown();
     }
 
     @Test
-    public void testDeleteFileDuringLogging() throws IOException {
-      File logFile = temporaryFolder.newFile("testLogFileG2.txt");
+    void testDeleteFileDuringLogging() throws IOException {
+        File logFile = File.createTempFile("testLogFileG2.txt", null, temporaryFolder);
 
-      //create logfilehandler
-       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
+        //create logfilehandler
+        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
 
-      //write log
-      h.publish("testDeleteFileDuringLogging1");
-      h.flush();
+        //write log
+        h.publish("testDeleteFileDuringLogging1");
+        h.flush();
 
-      //delete log file
+        //delete log file
         logFile.delete();
 
-      //write log again
-      h.publish("testDeleteFileDuringLogging2");
-      h.flush();
-      h.shutdown();
+        //write log again
+        h.publish("testDeleteFileDuringLogging2");
+        h.flush();
+        h.shutdown();
     }
 
-    @Test(timeout = /*5 minutes*/300_000)
-    public void testSymlink() throws IOException, InterruptedException {
-        File root = temporaryFolder.newFolder("testlogforsymlinkchecking");
+    @Test
+    @Timeout(300_000)
+    void testSymlink() throws IOException, InterruptedException {
+        File root = newFolder(temporaryFolder, "testlogforsymlinkchecking");
         Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
@@ -125,9 +126,10 @@ public class LogFileHandlerTestCase {
         handler.shutdown();
     }
 
-    @Test(timeout = /*5 minutes*/300_000)
-    public void compresses_previous_log_file() throws InterruptedException, IOException {
-        File root = temporaryFolder.newFolder("compressespreviouslogfile");
+    @Test
+    @Timeout(300_000)
+    void compresses_previous_log_file() throws InterruptedException, IOException {
+        File root = newFolder(temporaryFolder, "compressespreviouslogfile");
         LogFileHandler<String> firstHandler = new LogFileHandler<>(
                 Compression.ZSTD, BUFFER_SIZE, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
         firstHandler.publishAndWait("test");
@@ -135,7 +137,7 @@ public class LogFileHandlerTestCase {
 
         assertThat(Files.size(Paths.get(firstHandler.getFileName()))).isEqualTo(5);
         assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
-                   Paths.get(firstHandler.getFileName()).toRealPath().toString());
+                Paths.get(firstHandler.getFileName()).toRealPath().toString());
 
         LogFileHandler<String> secondHandler = new LogFileHandler<>(
                 Compression.ZSTD, BUFFER_SIZE, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
@@ -143,22 +145,24 @@ public class LogFileHandlerTestCase {
         secondHandler.rotateNow();
 
         assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
-                   Paths.get(secondHandler.getFileName()).toRealPath().toString());
+                Paths.get(secondHandler.getFileName()).toRealPath().toString());
         while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) Thread.sleep(1);
 
         assertThat(Files.exists(Paths.get(firstHandler.getFileName() + ".zst"))).isTrue();
         secondHandler.shutdown();
     }
 
-    @Test(timeout = /*5 minutes*/300_000)
-    public void testcompression_gzip() throws InterruptedException, IOException {
+    @Test
+    @Timeout(300_000)
+    void testcompression_gzip() throws InterruptedException, IOException {
         testcompression(
                 Compression.GZIP, "gz",
                 (compressedFile, __) -> uncheck(() -> new String(new GZIPInputStream(Files.newInputStream(compressedFile)).readAllBytes())));
     }
 
-    @Test(timeout = /*5 minutes*/300_000)
-    public void testcompression_zstd() throws InterruptedException, IOException {
+    @Test
+    @Timeout(300_000)
+    void testcompression_zstd() throws InterruptedException, IOException {
         testcompression(
                 Compression.ZSTD, "zst",
                 (compressedFile, uncompressedSize) -> uncheck(() -> {
@@ -173,7 +177,7 @@ public class LogFileHandlerTestCase {
     private void testcompression(Compression compression,
                                  String fileExtension,
                                  BiFunction<Path, Integer, String> decompressor) throws IOException, InterruptedException {
-        File root = temporaryFolder.newFolder("testcompression" + compression.name());
+        File root = newFolder(temporaryFolder, "testcompression" + compression.name());
 
         LogFileHandler<String> h = new LogFileHandler<>(
                 compression, BUFFER_SIZE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, 2048, "thread-name", new StringLogWriter());
@@ -206,5 +210,23 @@ public class LogFileHandlerTestCase {
         public void write(String record, OutputStream outputStream) throws IOException {
             outputStream.write(record.getBytes(StandardCharsets.UTF_8));
         }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 }

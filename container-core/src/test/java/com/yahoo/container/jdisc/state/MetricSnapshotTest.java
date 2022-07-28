@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class MetricSnapshotTest {
 
@@ -19,16 +19,16 @@ public class MetricSnapshotTest {
      * most likely be deprecated.
      */
     @Test
-    public void emptyMetricSetNotAddedToClonedSnapshot() {
+    void emptyMetricSetNotAddedToClonedSnapshot() {
         StateMetricContext ctx = StateMetricContext.newInstance(null);
         MetricSnapshot snapshot = new MetricSnapshot();
         snapshot.add(ctx, "foo", 1234);
         MetricSnapshot newSnapshot = snapshot.createSnapshot();
         assertFalse(newSnapshot.iterator().hasNext());
     }
-    
+
     @Test
-    public void testEquality() {
+    void testEquality() {
         assertEquals(Collections.unmodifiableMap(new HashMap(0)).hashCode(), Collections.emptyMap().hashCode());
         assertEquals(Collections.unmodifiableMap(new HashMap(0)), Collections.emptyMap());
     }

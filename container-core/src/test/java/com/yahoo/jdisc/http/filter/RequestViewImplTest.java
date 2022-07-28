@@ -5,9 +5,9 @@ import com.google.common.collect.Lists;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilterChain.RequestViewImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 public class RequestViewImplTest {
 
     @Test
-    public void header_from_the_parent_request_is_available() throws Exception {
+    void header_from_the_parent_request_is_available() throws Exception {
         final String HEADER = "single-header";
 
         HeaderFields parentHeaders = new HeaderFields();
@@ -32,7 +32,7 @@ public class RequestViewImplTest {
 
 
     @Test
-    public void multi_value_header_from_the_parent_request_is_available() throws Exception {
+    void multi_value_header_from_the_parent_request_is_available() throws Exception {
         final String HEADER = "list-header";
 
         HeaderFields parentHeaders = new HeaderFields();

@@ -9,8 +9,8 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 
 import java.util.Collection;
@@ -20,13 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -36,7 +30,7 @@ import static org.junit.Assert.fail;
 public class ContainerTest extends ContainerTestBase {
 
     @Test
-    public void components_can_be_created_from_config() {
+    void components_can_be_created_from_config() {
         writeBootstrapConfigs();
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
 
@@ -49,7 +43,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void components_are_reconfigured_after_config_update_without_bootstrap_configs() {
+    void components_are_reconfigured_after_config_update_without_bootstrap_configs() {
         writeBootstrapConfigs();
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
 
@@ -71,7 +65,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void graph_is_updated_after_bootstrap_update() {
+    void graph_is_updated_after_bootstrap_update() {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
         writeBootstrapConfigs("id1");
 
@@ -99,7 +93,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void component_is_deconstructed_when_not_reused() {
+    void component_is_deconstructed_when_not_reused() {
         writeBootstrapConfigs("id1", DestructableComponent.class);
 
         Container container = newContainer(dirConfigSource);
@@ -113,9 +107,9 @@ public class ContainerTest extends ContainerTestBase {
         assertTrue(componentToDestruct.deconstructed);
     }
 
-    @Ignore  // because logAndDie is impossible(?) to verify programmatically
+    @Disabled  // because logAndDie is impossible(?) to verify programmatically
     @Test
-    public void manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
+    void manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
         Container container = newContainer(dirConfigSource);
         try {
@@ -127,7 +121,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void previous_graph_is_retained_when_new_graph_contains_component_that_throws_exception_in_ctor() {
+    void previous_graph_is_retained_when_new_graph_contains_component_that_throws_exception_in_ctor() {
         ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
 
         writeBootstrapConfigs(simpleComponentEntry);
@@ -161,7 +155,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
+    void previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
         ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
 
         writeBootstrapConfigs(simpleComponentEntry);
@@ -185,7 +179,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void getNewComponentGraph_hangs_waiting_for_valid_config_after_invalid_config() throws Exception {
+    void getNewComponentGraph_hangs_waiting_for_valid_config_after_invalid_config() throws Exception {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
         writeBootstrapConfigs("myId", ComponentTakingConfig.class);
 
@@ -196,7 +190,7 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
 
         assertThrows(IllegalArgumentException.class,
-                     () -> getNewComponentGraph(container, currentGraph));
+                () -> getNewComponentGraph(container, currentGraph));
 
         ExecutorService exec = Executors.newFixedThreadPool(1);
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
@@ -215,7 +209,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void providers_are_destructed() {
+    void providers_are_destructed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
         ComponentDeconstructor deconstructor = (generation, components, bundles) -> {
@@ -226,7 +220,7 @@ public class ContainerTest extends ContainerTestBase {
                     ((Provider<?>) component).deconstruct();
                 }
             });
-            if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
+            if (!bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
         };
 
         Container container = newContainer(dirConfigSource, deconstructor);
@@ -242,7 +236,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    public void providers_are_invoked_only_when_needed() {
+    void providers_are_invoked_only_when_needed() {
         writeBootstrapConfigs("id1", FailOnGetProvider.class);
 
         Container container = newContainer(dirConfigSource);

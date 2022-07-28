@@ -9,7 +9,7 @@ import com.yahoo.security.tls.DefaultTlsContext;
 import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -22,7 +22,7 @@ import java.util.Set;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
  * @author bjorncs
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class TlsContextBasedProviderTest {
 
     @Test
-    public void creates_sslcontextfactory_from_tlscontext() {
+    void creates_sslcontextfactory_from_tlscontext() {
         TlsContext tlsContext = createTlsContext();
         var provider = new SimpleTlsContextBasedProvider(tlsContext);
         DefaultConnectorSsl ssl = new DefaultConnectorSsl();

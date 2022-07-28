@@ -7,7 +7,7 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.*;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,7 +23,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -31,7 +31,7 @@ import static org.junit.Assert.*;
 public class ThreadedRequestHandlerTestCase {
 
     @Test
-    public void requireThatNullExecutorThrowsException() {
+    void requireThatNullExecutorThrowsException() {
         try {
             new ThreadedRequestHandler(null) {
 
@@ -47,7 +47,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatHandlerSetsRequestTimeout() throws InterruptedException {
+    void requireThatHandlerSetsRequestTimeout() throws InterruptedException {
         Executor executor = Executors.newSingleThreadExecutor();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -69,7 +69,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatOverriddenRequestTimeoutIsUsed() throws InterruptedException {
+    void requireThatOverriddenRequestTimeoutIsUsed() throws InterruptedException {
         Executor executor = Executors.newSingleThreadExecutor();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -82,7 +82,7 @@ public class ThreadedRequestHandlerTestCase {
 
         requestHandler.entryLatch.countDown();
         assertTrue(requestHandler.exitLatch.await(60, TimeUnit.SECONDS));
-        assertEquals(1, (long)requestHandler.request.getTimeout(TimeUnit.SECONDS));
+        assertEquals(1, (long) requestHandler.request.getTimeout(TimeUnit.SECONDS));
 
         assertTrue(responseHandler.latch.await(60, TimeUnit.SECONDS));
         assertNull(responseHandler.content.read());
@@ -90,7 +90,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestAndResponseReachHandlers() throws InterruptedException {
+    void requireThatRequestAndResponseReachHandlers() throws InterruptedException {
         Executor executor = Executors.newSingleThreadExecutor();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -119,7 +119,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRejectedExecutionIsHandledGracefully() throws Exception {
+    void requireThatRejectedExecutionIsHandledGracefully() throws Exception {
         // Instrumentation.
         final Executor executor = new Executor() {
             @Override
@@ -150,14 +150,14 @@ public class ThreadedRequestHandlerTestCase {
         }
 
         // Verification.
-        assertEquals("Response handler should be invoked synchronously in this case.", 0, responseHandler.latch.getCount());
+        assertEquals(0, responseHandler.latch.getCount(), "Response handler should be invoked synchronously in this case.");
         assertEquals(Response.Status.SERVICE_UNAVAILABLE, responseHandler.response.getStatus());
         assertNull(responseHandler.content.read());
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatRequestContentIsClosedIfHandlerIgnoresIt() throws InterruptedException {
+    void requireThatRequestContentIsClosedIfHandlerIgnoresIt() throws InterruptedException {
         Executor executor = Executors.newSingleThreadExecutor();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -186,7 +186,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatResponseIsDispatchedIfHandlerIgnoresIt() throws InterruptedException {
+    void requireThatResponseIsDispatchedIfHandlerIgnoresIt() throws InterruptedException {
         Executor executor = Executors.newSingleThreadExecutor();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -207,7 +207,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestContentIsClosedAndResponseIsDispatchedIfHandlerIgnoresIt()
+    void requireThatRequestContentIsClosedAndResponseIsDispatchedIfHandlerIgnoresIt()
             throws InterruptedException
     {
         Executor executor = Executors.newSingleThreadExecutor();
@@ -360,7 +360,7 @@ public class ThreadedRequestHandlerTestCase {
     }
 
     @Test
-    public void testMaxPendingOutputStream() throws IOException, ExecutionException, InterruptedException {
+    void testMaxPendingOutputStream() throws IOException, ExecutionException, InterruptedException {
         ReadableContentChannel buffer = new ReadableContentChannel();
         MaxPendingContentChannelOutputStream limited = new MaxPendingContentChannelOutputStream(buffer, 2);
 
@@ -375,7 +375,8 @@ public class ThreadedRequestHandlerTestCase {
             future.get(100, TimeUnit.MILLISECONDS);
             fail("Should not be able to write now");
         }
-        catch (TimeoutException expected) { }
+        catch (TimeoutException expected) {
+        }
 
         // Free buffer capacity, so write completes, then drain buffer.
         assertEquals(2, buffer.read().capacity());
@@ -390,12 +391,14 @@ public class ThreadedRequestHandlerTestCase {
             limited.send(ByteBuffer.allocate(3));
             fail("Should throw");
         }
-        catch (IOException expected) { }
+        catch (IOException expected) {
+        }
         try {
             limited.send(ByteBuffer.allocate(3));
             fail("Should throw");
         }
-        catch (IOException expected) { }
+        catch (IOException expected) {
+        }
     }
 
 }

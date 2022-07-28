@@ -24,7 +24,6 @@ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -38,7 +37,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * A simple http client for testing
@@ -186,14 +185,14 @@ public class SimpleHttpClient implements AutoCloseable {
         }
 
         public ResponseValidator expectStatusCode(Matcher<Integer> matcher) {
-            MatcherAssert.assertThat(response.getCode(), matcher);
+            assertThat(response.getCode(), matcher);
             return this;
         }
 
         public ResponseValidator expectHeader(String headerName, Matcher<String> matcher) {
             Header firstHeader = response.getFirstHeader(headerName);
             String headerValue = firstHeader != null ? firstHeader.getValue() : null;
-            MatcherAssert.assertThat(headerValue, matcher);
+            assertThat(headerValue, matcher);
             assertNotNull(firstHeader);
             return this;
         }
@@ -205,7 +204,7 @@ public class SimpleHttpClient implements AutoCloseable {
         }
 
         public ResponseValidator expectContent(final Matcher<String> matcher) {
-            MatcherAssert.assertThat(content, matcher);
+            assertThat(content, matcher);
             return this;
         }
 

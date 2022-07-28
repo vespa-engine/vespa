@@ -5,16 +5,16 @@ import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.osgi.Osgi;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -29,7 +29,7 @@ public class ApplicationBundleLoaderTest {
     private ApplicationBundleLoader bundleLoader;
     private TestOsgi osgi;
 
-    @Before
+    @BeforeEach
     public void setup() {
         osgi = new TestOsgi(testBundles());
         var bundleInstaller = new TestBundleInstaller(MockFileAcquirer.returnFile(null));
@@ -38,12 +38,12 @@ public class ApplicationBundleLoaderTest {
     }
 
     @Test
-    public void bundles_are_installed_and_started() {
+    void bundles_are_installed_and_started() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertEquals(1, osgi.getInstalledBundles().size());
 
         // The bundle is installed and started
-        TestBundle installedBundle = (TestBundle)osgi.getInstalledBundles().get(0);
+        TestBundle installedBundle = (TestBundle) osgi.getInstalledBundles().get(0);
         assertEquals(BUNDLE_1.getSymbolicName(), installedBundle.getSymbolicName());
         assertTrue(installedBundle.started);
 
@@ -53,7 +53,7 @@ public class ApplicationBundleLoaderTest {
     }
 
     @Test
-    public void new_bundle_can_be_installed_in_reconfig() {
+    void new_bundle_can_be_installed_in_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
 
@@ -78,7 +78,7 @@ public class ApplicationBundleLoaderTest {
     }
 
     @Test
-    public void unused_bundle_is_marked_obsolete_after_reconfig() {
+    void unused_bundle_is_marked_obsolete_after_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
 

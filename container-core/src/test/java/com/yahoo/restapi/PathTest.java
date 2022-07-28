@@ -1,16 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -18,7 +14,7 @@ import static org.junit.Assert.fail;
 public class PathTest {
 
     @Test
-    public void testPath() {
+    void testPath() {
         assertFalse(new Path(URI.create("")).matches("/a/{foo}/bar/{b}"));
         assertFalse(new Path(URI.create("///")).matches("/a/{foo}/bar/{b}"));
         assertFalse(new Path(URI.create("///foo")).matches("/a/{foo}/bar/{b}"));
@@ -30,7 +26,7 @@ public class PathTest {
     }
 
     @Test
-    public void testPathWithRest() {
+    void testPathWithRest() {
         {
             Path path = new Path(URI.create("/a/1/bar/fuz/"));
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
@@ -65,21 +61,23 @@ public class PathTest {
     }
 
     @Test
-    public void testUrlEncodedPath() {
+    void testUrlEncodedPath() {
         assertTrue(new Path(URI.create("/a/%62/c")).matches("/a/b/c"));
-        assertFalse(new Path(URI.create("/a/b%2fc"), __ -> { }).matches("/a/b/c"));
+        assertFalse(new Path(URI.create("/a/b%2fc"), __ -> {
+        }).matches("/a/b/c"));
         assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e")).getMessage());
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e")).getMessage());
 
-        Path path = new Path(URI.create("/%61/%2f/%63"), __ -> { });
+        Path path = new Path(URI.create("/%61/%2f/%63"), __ -> {
+        });
         assertTrue(path.matches("/a/{slash}/{c}"));
         assertEquals("/", path.get("slash"));
         assertEquals("c", path.get("c"));
     }
 
     @Test
-    public void testInvalidPaths() {
+    void testInvalidPaths() {
         assertInvalid(URI.create("/foo/../bar"));
         assertInvalid(URI.create("/foo/%2e%2e/bar"));
         assertInvalidPathSpec(URI.create("/foo/bar"), "/foo/bar/..");

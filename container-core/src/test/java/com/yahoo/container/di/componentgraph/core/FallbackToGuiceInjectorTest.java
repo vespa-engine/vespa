@@ -11,18 +11,15 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -36,7 +33,7 @@ public class FallbackToGuiceInjectorTest {
     private final Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs = new HashMap<>();
 
 
-    @Before
+    @BeforeEach
     public void createGraph() {
         injector = Guice.createInjector();
         componentGraph = new ComponentGraph(0);
@@ -70,7 +67,7 @@ public class FallbackToGuiceInjectorTest {
     }
 
     @Test
-    public void guice_injector_is_used_when_no_global_component_exists() {
+    void guice_injector_is_used_when_no_global_component_exists() {
         setInjector(
                 Guice.createInjector(new AbstractModule() {
                     @Override
@@ -89,7 +86,7 @@ public class FallbackToGuiceInjectorTest {
     }
 
     @Test
-    public void guice_injector_creates_a_new_instance_with_default_ctor_when_no_explicit_binding_exists() {
+    void guice_injector_creates_a_new_instance_with_default_ctor_when_no_explicit_binding_exists() {
         setInjector(emptyGuiceInjector());
         register(ComponentTakingDefaultString.class);
         complete();
@@ -99,7 +96,7 @@ public class FallbackToGuiceInjectorTest {
     }
 
     @Test
-    public void guice_injector_fails_when_no_explicit_binding_exists_and_class_has_no_default_ctor() {
+    void guice_injector_fails_when_no_explicit_binding_exists_and_class_has_no_default_ctor() {
         setInjector(emptyGuiceInjector());
         register(ComponentThatCannotBeConstructed.class);
         try {

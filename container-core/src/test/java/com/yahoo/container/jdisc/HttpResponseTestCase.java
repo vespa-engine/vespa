@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.jdisc.Response;
 import com.yahoo.text.Utf8;
 
@@ -37,45 +37,45 @@ public class HttpResponseTestCase {
 
     HttpResponse r;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         r = new TestResponse(Response.Status.OK);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         r = null;
     }
 
     @Test
-    public final void testRender() throws IOException {
+    final void testRender() throws IOException {
         ByteArrayOutputStream o = new ByteArrayOutputStream(1024);
         r.render(o);
         assertEquals(COM_YAHOO_CONTAINER_JDISC_HTTP_RESPONSE_TEST_CASE_TEST_RESPONSE, Utf8.toString(o.toByteArray()));
     }
 
     @Test
-    public final void testGetStatus() {
+    final void testGetStatus() {
         assertEquals(Response.Status.OK, r.getStatus());
     }
 
     @Test
-    public final void testHeaders() {
+    final void testHeaders() {
         assertNotNull(r.headers());
     }
 
     @Test
-    public final void testGetJdiscResponse() {
+    final void testGetJdiscResponse() {
         assertNotNull(r.getJdiscResponse());
     }
 
     @Test
-    public final void testGetContentType() {
+    final void testGetContentType() {
         assertEquals(HttpResponse.DEFAULT_MIME_TYPE, r.getContentType());
     }
 
     @Test
-    public final void testGetCharacterEncoding() {
+    final void testGetCharacterEncoding() {
         assertEquals(HttpResponse.DEFAULT_CHARACTER_ENCODING, r.getCharacterEncoding());
     }
 

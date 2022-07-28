@@ -2,15 +2,15 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.osgi.Osgi;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -25,25 +25,25 @@ public class PlatformBundleLoaderTest {
     private PlatformBundleLoader bundleLoader;
     private TestOsgi osgi;
 
-    @Before
+    @BeforeEach
     public void setup() {
         osgi = new TestOsgi(testBundles());
         bundleLoader = new PlatformBundleLoader(osgi, new TestBundleInstaller());
     }
 
     @Test
-    public void bundles_are_installed_and_started() {
+    void bundles_are_installed_and_started() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertEquals(1, osgi.getInstalledBundles().size());
 
         // The bundle is installed and started
-        TestBundle installedBundle = (TestBundle)osgi.getInstalledBundles().get(0);
+        TestBundle installedBundle = (TestBundle) osgi.getInstalledBundles().get(0);
         assertEquals(BUNDLE_1.getSymbolicName(), installedBundle.getSymbolicName());
         assertTrue(installedBundle.started);
     }
 
     @Test
-    public void bundles_cannot_be_added_by_later_calls() {
+    void bundles_cannot_be_added_by_later_calls() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         bundleLoader.useBundles(List.of(BUNDLE_2_REF));  // Should be a NOP
 

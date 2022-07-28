@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,7 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ExceptionWrapperTest {
 
     @Test
-    public final void requireNoMessageIsOK() {
+    final void requireNoMessageIsOK() {
         final Throwable t = new Throwable();
         final ExceptionWrapper e = new ExceptionWrapper(t);
         final String expected = "Throwable() at com.yahoo.jdisc.http.server.jetty.ExceptionWrapperTest(ExceptionWrapperTest.java:19)";
@@ -24,7 +24,7 @@ public class ExceptionWrapperTest {
     }
 
     @Test
-    public final void requireAllWrappedLevelsShowUp() {
+    final void requireAllWrappedLevelsShowUp() {
         final Throwable t0 = new Throwable("t0");
         final Throwable t1 = new Throwable("t1", t0);
         final Throwable t2 = new Throwable("t2", t1);
@@ -37,7 +37,7 @@ public class ExceptionWrapperTest {
     }
 
     @Test
-    public final void requireMixOfMessageAndNoMessageWorks() {
+    final void requireMixOfMessageAndNoMessageWorks() {
         final Throwable t0 = new Throwable("t0");
         final Throwable t1 = new Throwable(t0);
         final Throwable t2 = new Throwable("t2", t1);

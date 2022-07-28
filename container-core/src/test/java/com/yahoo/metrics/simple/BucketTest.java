@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,10 +13,9 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
@@ -28,18 +28,18 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 public class BucketTest {
     private Bucket bucket;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         bucket = new Bucket();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         bucket = null;
     }
 
     @Test
-    public final void testEntrySet() {
+    final void testEntrySet() {
         assertEquals(0, bucket.entrySet().size());
         for (int i = 0; i < 4; ++i) {
             bucket.put(new Sample(new Measurement(i), new Identifier("nalle_" + i, null), AssumedType.GAUGE));
@@ -47,7 +47,7 @@ public class BucketTest {
         assertEquals(4, bucket.entrySet().size());
         for (int i = 0; i < 4; ++i) {
             bucket.put(new Sample(new Measurement(i), new Identifier("nalle",
-                    new Point(new ImmutableMap.Builder<String, Integer>().put("dim", Integer.valueOf(i)).build())),
+                            new Point(new ImmutableMap.Builder<String, Integer>().put("dim", Integer.valueOf(i)).build())),
                     AssumedType.GAUGE));
         }
         assertEquals(8, bucket.entrySet().size());
@@ -55,23 +55,23 @@ public class BucketTest {
         for (Entry<Identifier, UntypedMetric> x : bucket.entrySet()) {
             String metricName = x.getKey().getName();
             switch (metricName) {
-            case "nalle":
-                ++nalle;
-                break;
-            case "nalle_0":
-                ++nalle0;
-                break;
-            case "nalle_1":
-                ++nalle1;
-                break;
-            case "nalle_2":
-                ++nalle2;
-                break;
-            case "nalle_3":
-                ++nalle3;
-                break;
-            default:
-                throw new IllegalStateException();
+                case "nalle":
+                    ++nalle;
+                    break;
+                case "nalle_0":
+                    ++nalle0;
+                    break;
+                case "nalle_1":
+                    ++nalle1;
+                    break;
+                case "nalle_2":
+                    ++nalle2;
+                    break;
+                case "nalle_3":
+                    ++nalle3;
+                    break;
+                default:
+                    throw new IllegalStateException();
             }
         }
         assertEquals(4, nalle);
@@ -82,7 +82,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testPutSampleWithUnsupportedType() {
+    final void testPutSampleWithUnsupportedType() {
         boolean caughtIt = false;
         try {
             bucket.put(new Sample(new Measurement(1), new Identifier("nalle", null), AssumedType.NONE));
@@ -93,7 +93,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testPutIdentifierUntypedValue() {
+    final void testPutIdentifierUntypedValue() {
         UntypedMetric v = new UntypedMetric(null);
         v.add(2);
         bucket.put(new Sample(new Measurement(3), new Identifier("nalle", null), AssumedType.GAUGE));
@@ -106,10 +106,10 @@ public class BucketTest {
     }
 
     @Test
-    public final void testHasIdentifier() {
+    final void testHasIdentifier() {
         for (int i = 0; i < 4; ++i) {
             bucket.put(new Sample(new Measurement(i), new Identifier("nalle_" + i, new Point(
-                    new ImmutableMap.Builder<String, Integer>().put(String.valueOf(i), Integer.valueOf(i)).build())),
+                            new ImmutableMap.Builder<String, Integer>().put(String.valueOf(i), Integer.valueOf(i)).build())),
                     AssumedType.GAUGE));
         }
         for (int i = 0; i < 4; ++i) {
@@ -119,7 +119,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testOkMerge() {
+    final void testOkMerge() {
         bucket.put(new Sample(new Measurement(2), new Identifier("nalle", null), AssumedType.GAUGE));
         Bucket otherNew = new Bucket();
         otherNew.put(new Sample(new Measurement(3), new Identifier("nalle", null), AssumedType.GAUGE));
@@ -138,7 +138,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testMergeDifferentMetrics() {
+    final void testMergeDifferentMetrics() {
         bucket.put(new Sample(new Measurement(2), new Identifier("nalle", null), AssumedType.GAUGE));
         Bucket otherNew = new Bucket();
         otherNew.put(new Sample(new Measurement(3), new Identifier("other", null), AssumedType.GAUGE));
@@ -188,7 +188,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testMismatchedMerge() {
+    final void testMismatchedMerge() {
         Logger log = Logger.getLogger(Bucket.class.getName());
         boolean[] loggingMarker = new boolean[1];
         loggingMarker[0] = false;
@@ -205,7 +205,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testGetAllMetricNames() {
+    final void testGetAllMetricNames() {
         twoMetricsUniqueDimensions();
         Collection<String> names = bucket.getAllMetricNames();
         assertEquals(2, names.size());
@@ -214,7 +214,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testGetValuesForMetric() {
+    final void testGetValuesForMetric() {
         twoMetricsUniqueDimensions();
         Collection<Entry<Point, UntypedMetric>> values = bucket.getValuesForMetric("nalle");
         assertEquals(4, values.size());
@@ -231,7 +231,7 @@ public class BucketTest {
     }
 
     @Test
-    public final void testGetValuesByMetricName() {
+    final void testGetValuesByMetricName() {
         twoMetricsUniqueDimensions();
         Map<String, List<Entry<Point, UntypedMetric>>> values = bucket.getValuesByMetricName();
         assertEquals(2, values.size());

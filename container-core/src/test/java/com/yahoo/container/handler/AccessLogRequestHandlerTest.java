@@ -3,13 +3,13 @@ package com.yahoo.container.handler;
 
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.CircularArrayAccessLogKeeper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class AccessLogRequestHandlerTest {
@@ -20,7 +20,7 @@ public class AccessLogRequestHandlerTest {
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     @Test
-    public void testOneLogLine() throws IOException {
+    void testOneLogLine() throws IOException {
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);
         response.render(out);
@@ -28,14 +28,14 @@ public class AccessLogRequestHandlerTest {
     }
 
     @Test
-    public void testEmpty() throws IOException {
+    void testEmpty() throws IOException {
         HttpResponse response = handler.handle(null);
         response.render(out);
         assertEquals("{\"entries\":[]}", out.toString());
     }
 
     @Test
-    public void testManyLogLines() throws IOException {
+    void testManyLogLines() throws IOException {
         keeper.addUri("foo");
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);

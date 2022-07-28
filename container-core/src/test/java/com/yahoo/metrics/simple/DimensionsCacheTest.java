@@ -1,17 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
 /**
@@ -24,18 +24,18 @@ public class DimensionsCacheTest {
     private static final int POINTS_TO_KEEP = 3;
     DimensionCache cache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         cache = new DimensionCache(POINTS_TO_KEEP);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         cache = null;
     }
 
     @Test
-    public final void smokeTest() {
+    final void smokeTest() {
         String metricName = "testMetric";
         Bucket first = new Bucket();
         for (int i = 0; i < 4; ++i) {
@@ -53,11 +53,11 @@ public class DimensionsCacheTest {
                 newestFound = true;
             }
         }
-        assertTrue("Kept newest measurement when padding points.", newestFound);
+        assertTrue(newestFound, "Kept newest measurement when padding points.");
     }
 
     @Test
-    public final void testNoBoomWithEmptyBuckets() {
+    final void testNoBoomWithEmptyBuckets() {
         Bucket check = new Bucket();
         cache.updateDimensionPersistence(null, new Bucket());
         cache.updateDimensionPersistence(null, new Bucket());
@@ -66,7 +66,7 @@ public class DimensionsCacheTest {
     }
 
     @Test
-    public final void testUpdateWithNullThenDataThenData() {
+    final void testUpdateWithNullThenDataThenData() {
         Bucket first = new Bucket();
         populateDimensionLessValue("one", first, 2);
         cache.updateDimensionPersistence(null, first);
@@ -80,7 +80,7 @@ public class DimensionsCacheTest {
     }
 
     @Test
-    public final void requireThatOldDataIsForgotten() {
+    final void requireThatOldDataIsForgotten() {
         Bucket first = new Bucket(); // "now" as timestamp
         populateDimensionLessValue("one", first, 2);
         cache.updateDimensionPersistence(first, new Bucket());
@@ -96,7 +96,7 @@ public class DimensionsCacheTest {
     }
 
     @Test
-    public final void testUpdateWithNullThenDataThenNoDataThenData() {
+    final void testUpdateWithNullThenDataThenNoDataThenData() {
         Bucket first = new Bucket();
         Bucket second = new Bucket();
         populateDimensionLessValue("first", first, 1.0d);
