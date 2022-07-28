@@ -8,8 +8,10 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -88,6 +90,19 @@ public class ComponentRegistryNode extends Node {
     @Override
     public String label() {
         return String.format("{ComponentRegistry\\<%s\\>|%s}", componentClass.getSimpleName(), Node.packageName(componentClass));
+    }
+
+    /**
+     * Inject all components of the appropriate type to this component registry.
+     * However, no Providers will be injected if there are any non-Provider components.
+     */
+    void injectAll(Collection<ComponentNode> componentNodes) {
+        Map<Boolean, List<ComponentNode>> providerOrNot = componentNodes.stream().collect(Collectors.partitioningBy(ComponentNode::isProvider));
+        if (providerOrNot.get(false).isEmpty()) {
+            componentNodes.forEach(this::inject);
+        } else {
+            providerOrNot.get(false).forEach(this::inject);
+        }
     }
 
     private static ComponentId componentId(Class<?> componentClass) {

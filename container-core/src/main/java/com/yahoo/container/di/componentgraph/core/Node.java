@@ -8,7 +8,6 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -62,10 +61,6 @@ public abstract class Node {
 
     public void inject(Node component) {
         componentsToInject.add(component);
-    }
-
-    public void injectAll(Collection<ComponentNode> componentNodes) {
-        componentNodes.forEach(this::inject);
     }
 
     public abstract Class<?> instanceType();

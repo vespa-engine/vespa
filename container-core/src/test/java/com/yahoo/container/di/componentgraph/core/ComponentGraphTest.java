@@ -350,7 +350,21 @@ public class ComponentGraphTest {
         assertNotNull(injectedComponent);
     }
 
-    //TODO: move
+    @Test
+    public void injected_component_registry_does_not_include_providers_when_a_concrete_instance_exists() {
+        ComponentGraph componentGraph = new ComponentGraph();
+
+        componentGraph.add(mockComponentNode(SimpleComponent.class));
+        componentGraph.add(mockComponentNode(ComponentTakingAllSimpleComponents.class));
+
+        // Using a provider that throws also verifies that the concrete instance is injected, not the Provider.
+        componentGraph.add(mockComponentNode(SimpleComponentProviderThatThrows.class));
+        componentGraph.complete();
+
+        ComponentTakingAllSimpleComponents instance = componentGraph.getInstance(ComponentTakingAllSimpleComponents.class);
+        assertEquals(1, instance.simpleComponents.allComponents().size());
+    }
+
     @Test
     public void check_if_annotation_is_a_binding_annotation() {
         assertTrue(isBindingAnnotation(Names.named("name")));

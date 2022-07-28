@@ -98,6 +98,10 @@ public class ComponentNode extends Node {
         return ret;
     }
 
+    boolean isProvider() {
+        return Provider.class.isAssignableFrom(clazz);
+    }
+
     private static List<Class<?>> allSuperClasses(Class<?> clazz) {
         List<Class<?>> ret = new ArrayList<>();
         while (clazz != null) {
@@ -109,7 +113,7 @@ public class ComponentNode extends Node {
 
     @Override
     public Class<?> componentType() {
-        if (Provider.class.isAssignableFrom(clazz)) {
+        if (isProvider()) {
             //TODO: Test what happens if you ask for something that isn't a class, e.g. a parameterized type.
 
             List<Type> allGenericInterfaces = allSuperClasses(clazz).stream().flatMap(c -> Arrays.stream(c.getGenericInterfaces())).collect(Collectors.toList());
