@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
@@ -13,7 +13,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -27,178 +27,178 @@ public class ConsoleLogFormatterTestCase {
     // TODO: Should (at least) use ConsoleLogFormatter.ABSENCE_REPLACEMENT instead of literal '-'. See ticket 7128315.
 
     @Test
-    public void requireThatMillisecondsArePadded() {
+    void requireThatMillisecondsArePadded() {
         for (int i = 0; i < 10000; ++i) {
             LogEntry entry = new MyEntry(i, 0, null);
             Instant instant = Instant.ofEpochMilli(i);
             assertEquals(String.format("%d.%06d\t-\t-\t-\t-\tunknown\t", instant.getEpochSecond(), instant.getNano() / 1000),
-                         SIMPLE_FORMATTER.formatEntry(entry));
+                    SIMPLE_FORMATTER.formatEntry(entry));
         }
     }
 
     @Test
-    public void requireThatHostNameIsIncluded() {
+    void requireThatHostNameIsIncluded() {
         assertEquals("0.000000\thostName\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter("hostName", null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter("hostName", null, null).formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatHostNameIsOptional() {
+    void requireThatHostNameIsOptional() {
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter("", null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter("", null, null).formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(" ", null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(" ", null, null).formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatProcessIdIsIncluded() {
+    void requireThatProcessIdIsIncluded() {
         assertEquals("0.000000\t-\tprocessId\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, "processId", null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, "processId", null).formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatProcessIdIsOptional() {
+    void requireThatProcessIdIsOptional() {
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, "", null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, "", null).formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, " ", null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, " ", null).formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatProcessIdIncludesThreadIdWhenAvailable() {
+    void requireThatProcessIdIncludesThreadIdWhenAvailable() {
         LogEntry entry = new MyEntry(0, 0, null).putProperty("THREAD_ID", "threadId");
         assertEquals("0.000000\t-\tprocessId/threadId\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, "processId", null).formatEntry(entry));
+                new ConsoleLogFormatter(null, "processId", null).formatEntry(entry));
     }
 
     @Test
-    public void requireThatServiceNameIsIncluded() {
+    void requireThatServiceNameIsIncluded() {
         assertEquals("0.000000\t-\t-\tserviceName\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, "serviceName").formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, "serviceName").formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatServiceNameIsOptional() {
+    void requireThatServiceNameIsOptional() {
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, null).formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, "").formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, "").formatEntry(SIMPLE_ENTRY));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     new ConsoleLogFormatter(null, null, " ").formatEntry(SIMPLE_ENTRY));
+                new ConsoleLogFormatter(null, null, " ").formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatBundleNameIsIncluded() {
+    void requireThatBundleNameIsIncluded() {
         LogEntry entry = new MyEntry(0, 0, null).setBundleSymbolicName("bundleName");
         assertEquals("0.000000\t-\t-\t-\tbundleName\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatBundleNameIsOptional() {
+    void requireThatBundleNameIsOptional() {
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(SIMPLE_ENTRY));
+                SIMPLE_FORMATTER.formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatLoggerNameIsIncluded() {
+    void requireThatLoggerNameIsIncluded() {
         LogEntry entry = new MyEntry(0, 0, null).putProperty("LOGGER_NAME", "loggerName");
         assertEquals("0.000000\t-\t-\t-\t/loggerName\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatLoggerNameIsOptional() {
+    void requireThatLoggerNameIsOptional() {
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(SIMPLE_ENTRY));
+                SIMPLE_FORMATTER.formatEntry(SIMPLE_ENTRY));
     }
 
     @Test
-    public void requireThatBundleAndLoggerNameIsCombined() {
+    void requireThatBundleAndLoggerNameIsCombined() {
         LogEntry entry = new MyEntry(0, 0, null).setBundleSymbolicName("bundleName")
-                                                .putProperty("LOGGER_NAME", "loggerName");
+                .putProperty("LOGGER_NAME", "loggerName");
         assertEquals("0.000000\t-\t-\t-\tbundleName/loggerName\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatLevelNameIsIncluded() {
+    void requireThatLevelNameIsIncluded() {
         ConsoleLogFormatter formatter = SIMPLE_FORMATTER;
         assertEquals("0.000000\t-\t-\t-\t-\terror\t",
-                     formatter.formatEntry(new MyEntry(0, LogService.LOG_ERROR, null)));
+                formatter.formatEntry(new MyEntry(0, LogService.LOG_ERROR, null)));
         assertEquals("0.000000\t-\t-\t-\t-\twarning\t",
-                     formatter.formatEntry(new MyEntry(0, LogService.LOG_WARNING, null)));
+                formatter.formatEntry(new MyEntry(0, LogService.LOG_WARNING, null)));
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\t",
-                     formatter.formatEntry(new MyEntry(0, LogService.LOG_INFO, null)));
+                formatter.formatEntry(new MyEntry(0, LogService.LOG_INFO, null)));
         assertEquals("0.000000\t-\t-\t-\t-\tdebug\t",
-                     formatter.formatEntry(new MyEntry(0, LogService.LOG_DEBUG, null)));
+                formatter.formatEntry(new MyEntry(0, LogService.LOG_DEBUG, null)));
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     formatter.formatEntry(new MyEntry(0, 69, null)));
+                formatter.formatEntry(new MyEntry(0, 69, null)));
     }
 
     @Test
-    public void requireThatMessageIsIncluded() {
+    void requireThatMessageIsIncluded() {
         LogEntry entry = new MyEntry(0, 0, "message");
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\tmessage",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatMessageIsOptional() {
+    void requireThatMessageIsOptional() {
         LogEntry entry = new MyEntry(0, 0, null);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatMessageIsEscaped() {
+    void requireThatMessageIsEscaped() {
         LogEntry entry = new MyEntry(0, 0, "\\\n\r\t");
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\\\\\n\\r\\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatExceptionIsIncluded() {
+    void requireThatExceptionIsIncluded() {
         Throwable t = new Throwable();
         LogEntry entry = new MyEntry(0, 0, null).setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\n" + formatThrowable(t),
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatExceptionIsEscaped() {
+    void requireThatExceptionIsEscaped() {
         Throwable t = new Throwable("\\\n\r\t");
         LogEntry entry = new MyEntry(0, 0, null).setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\n" + formatThrowable(t),
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatExceptionIsSimplifiedForInfoEntries() {
+    void requireThatExceptionIsSimplifiedForInfoEntries() {
         Throwable t = new Throwable("exception");
         LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: exception",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatSimplifiedExceptionIsEscaped() {
+    void requireThatSimplifiedExceptionIsEscaped() {
         Throwable t = new Throwable("\\\n\r\t");
         LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: \\\\\\n\\r\\t",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
-    public void requireThatSimplifiedExceptionMessageIsOptional() {
+    void requireThatSimplifiedExceptionMessageIsOptional() {
         Throwable t = new Throwable();
         LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: java.lang.Throwable",
-                     SIMPLE_FORMATTER.formatEntry(entry));
+                SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     private static String formatThrowable(Throwable t) {

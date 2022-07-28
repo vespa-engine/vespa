@@ -3,11 +3,11 @@ package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNotNull;
 public class CurrentContainerTestCase {
 
     @Test
-    public void requireThatNewRequestsCreateSnapshot() throws Exception {
+    void requireThatNewRequestsCreateSnapshot() throws Exception {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request request = new Request(driver, URI.create("http://host/path"));

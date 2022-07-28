@@ -2,13 +2,13 @@
 package com.yahoo.jdisc.application;
 
 import com.yahoo.jdisc.Metric;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 /**
@@ -17,14 +17,14 @@ import static org.junit.Assert.assertSame;
 public class ContainerThreadTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         MetricConsumer consumer = new MyConsumer();
         ContainerThread thread = new ContainerThread(new MyTask(), consumer);
         assertSame(consumer, thread.consumer());
     }
 
     @Test
-    public void requireThatTaskIsRun() throws InterruptedException {
+    void requireThatTaskIsRun() throws InterruptedException {
         MyTask task = new MyTask();
         ContainerThread thread = new ContainerThread(task, null);
         thread.start();

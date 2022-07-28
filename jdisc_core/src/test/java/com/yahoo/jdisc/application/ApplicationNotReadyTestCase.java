@@ -4,11 +4,11 @@ package com.yahoo.jdisc.application;
 import com.google.inject.Inject;
 import com.google.inject.ProvisionException;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 public class ApplicationNotReadyTestCase {
 
     @Test
-    public void requireThatExceptionIsThrown() {
+    void requireThatExceptionIsThrown() {
         try {
             TestDriver.newInjectedApplicationInstanceWithoutOsgi(MyApplication.class);
             fail();

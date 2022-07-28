@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class BlockingContentWriterTestCase {
 
     @Test
-    public void requireThatContentChannelIsNotNull() {
+    void requireThatContentChannelIsNotNull() {
         try {
             new BlockingContentWriter(null);
             fail();
@@ -27,7 +27,7 @@ public class BlockingContentWriterTestCase {
     }
 
     @Test
-    public void requireThatWriteDeliversBuffer() throws InterruptedException {
+    void requireThatWriteDeliversBuffer() throws InterruptedException {
         MyContent content = MyContent.newNonBlockingContent();
         BlockingContentWriter writer = new BlockingContentWriter(content);
         ByteBuffer buf = ByteBuffer.allocate(69);
@@ -36,7 +36,7 @@ public class BlockingContentWriterTestCase {
     }
 
     @Test
-    public void requireThatWriteIsBlocking() throws Exception {
+    void requireThatWriteIsBlocking() throws Exception {
         MyContent content = MyContent.newBlockingContent();
         BlockingContentWriter writer = new BlockingContentWriter(content);
         FutureTask<Boolean> task = new FutureTask<>(new WriteTask(writer, ByteBuffer.allocate(69)));
@@ -53,7 +53,7 @@ public class BlockingContentWriterTestCase {
     }
 
     @Test
-    public void requireThatWriteExceptionIsThrown() throws Exception {
+    void requireThatWriteExceptionIsThrown() throws Exception {
         Throwable throwMe = new RuntimeException();
         try {
             new BlockingContentWriter(MyContent.newFailedContent(throwMe)).write(ByteBuffer.allocate(69));
@@ -76,7 +76,7 @@ public class BlockingContentWriterTestCase {
     }
 
     @Test
-    public void requireThatCloseIsBlocking() throws Exception {
+    void requireThatCloseIsBlocking() throws Exception {
         MyContent content = MyContent.newBlockingContent();
         BlockingContentWriter writer = new BlockingContentWriter(content);
         FutureTask<Boolean> task = new FutureTask<>(new CloseTask(writer));
@@ -93,7 +93,7 @@ public class BlockingContentWriterTestCase {
     }
 
     @Test
-    public void requireThatCloseExceptionIsThrown() throws Exception {
+    void requireThatCloseExceptionIsThrown() throws Exception {
         Throwable throwMe = new RuntimeException();
         try {
             new BlockingContentWriter(MyContent.newFailedContent(throwMe)).close();

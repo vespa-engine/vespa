@@ -6,12 +6,12 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertSame;
 public class RequestDeniedTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request request = new Request(driver, URI.create("http://host/path"));
@@ -30,7 +30,7 @@ public class RequestDeniedTestCase {
     }
 
     @Test
-    public void requireThatRequestDeniedIsThrown() {
+    void requireThatRequestDeniedIsThrown() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         RequestHandler requestHandler = new MyRequestHandler();

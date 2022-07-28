@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,8 +11,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -21,15 +21,15 @@ import static org.junit.Assert.assertTrue;
 public class AbstractContentOutputStreamTestCase {
 
     @Test
-    public void requireThatStreamCanBeWrittenTo() throws IOException {
+    void requireThatStreamCanBeWrittenTo() throws IOException {
         MyOutputStream out = new MyOutputStream();
         int len = 2 * AbstractContentOutputStream.BUFFERSIZE;
         for (int i = 0; i < len; ++i) {
             out.write(69);
-            out.write(new byte[] { });
-            out.write(new byte[] { 6, 9 });
-            out.write(new byte[] { 6, 69, 9 }, 1, 0); // zero length
-            out.write(new byte[] { 6, 69, 9 }, 1, 1);
+            out.write(new byte[]{});
+            out.write(new byte[]{6, 9});
+            out.write(new byte[]{6, 69, 9}, 1, 0); // zero length
+            out.write(new byte[]{6, 69, 9}, 1, 1);
         }
         out.close();
 
@@ -45,7 +45,7 @@ public class AbstractContentOutputStreamTestCase {
     }
 
     @Test
-    public void requireThatBigBuffersAreWrittenInOrder() throws IOException {
+    void requireThatBigBuffersAreWrittenInOrder() throws IOException {
         MyOutputStream out = new MyOutputStream();
         out.write(6);
         out.write(new byte[2 * AbstractContentOutputStream.BUFFERSIZE]);
@@ -62,7 +62,7 @@ public class AbstractContentOutputStreamTestCase {
     }
 
     @Test
-    public void requireThatEmptyBuffersAreNotFlushed() throws Exception {
+    void requireThatEmptyBuffersAreNotFlushed() throws Exception {
         MyOutputStream out = new MyOutputStream();
         out.close();
         assertTrue(out.writes.isEmpty());
@@ -70,9 +70,9 @@ public class AbstractContentOutputStreamTestCase {
     }
 
     @Test
-    public void requireThatNoExcessiveBytesAreWritten() throws Exception {
+    void requireThatNoExcessiveBytesAreWritten() throws Exception {
         MyOutputStream out = new MyOutputStream();
-        out.write(new byte[] { 6, 9 });
+        out.write(new byte[]{6, 9});
         out.close();
 
         InputStream in = out.toInputStream();
@@ -85,7 +85,7 @@ public class AbstractContentOutputStreamTestCase {
     }
 
     @Test
-    public void requireThatWrittenArraysAreCopied() throws Exception {
+    void requireThatWrittenArraysAreCopied() throws Exception {
         MyOutputStream out = new MyOutputStream();
         byte[] buf = new byte[1];
         for (byte b = 0; b < 127; ++b) {

@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.handler;
 
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,11 +10,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 public class UnsafeContentInputStreamTestCase {
 
     @Test
-    public void requireThatBytesCanBeRead() throws IOException {
+    void requireThatBytesCanBeRead() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("Hello ");
@@ -35,7 +35,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void testMark() throws IOException {
+    void testMark() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("Hello ");
@@ -71,13 +71,13 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatReadAfterResetIncludesDataAfterMark() throws IOException {
+    void requireThatReadAfterResetIncludesDataAfterMark() throws IOException {
         ReadableContentChannel content = new ReadableContentChannel();
         UnsafeContentInputStream in = new UnsafeContentInputStream(content);
-        byte[] outBuf = new byte[] {1, 2, 3};
+        byte[] outBuf = new byte[]{1, 2, 3};
         content.write(ByteBuffer.wrap(outBuf), null);
         in.mark(4);
-        assertEquals(3, in.read(new byte[] {101, 102, 103, 104}));
+        assertEquals(3, in.read(new byte[]{101, 102, 103, 104}));
         in.reset();
         byte[] inBuf = new byte[4];
         int read = in.read(inBuf);
@@ -86,7 +86,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatCompletionsAreCalledWithDeprecatedContentWriter() throws IOException {
+    void requireThatCompletionsAreCalledWithDeprecatedContentWriter() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("foo");
@@ -101,7 +101,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatCompletionsAreCalled() throws IOException {
+    void requireThatCompletionsAreCalled() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("foo");
@@ -116,7 +116,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatCloseDrainsStreamWithDeprecatedContentWriter() {
+    void requireThatCloseDrainsStreamWithDeprecatedContentWriter() {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("foo");
@@ -127,7 +127,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatCloseDrainsStream() {
+    void requireThatCloseDrainsStream() {
         BufferedContentChannel channel = new BufferedContentChannel();
         FastContentWriter writer = new FastContentWriter(channel);
         writer.write("foo");
@@ -138,11 +138,11 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatAvailableIsNotBlocking() throws IOException {
+    void requireThatAvailableIsNotBlocking() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         InputStream stream = asInputStream(channel);
         assertEquals(0, stream.available());
-        channel.write(ByteBuffer.wrap(new byte[] { 6, 9 }), null);
+        channel.write(ByteBuffer.wrap(new byte[]{6, 9}), null);
         assertTrue(stream.available() > 0);
         assertEquals(6, stream.read());
         assertTrue(stream.available() > 0);
@@ -154,11 +154,11 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatReadLargeArrayIsNotBlocking() throws IOException {
+    void requireThatReadLargeArrayIsNotBlocking() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
         InputStream stream = asInputStream(channel);
         assertEquals(0, stream.available());
-        channel.write(ByteBuffer.wrap(new byte[] { 6, 9 }), null);
+        channel.write(ByteBuffer.wrap(new byte[]{6, 9}), null);
         assertTrue(stream.available() > 0);
         byte[] buf = new byte[69];
         assertEquals(2, stream.read(buf));
@@ -171,12 +171,12 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     @Test
-    public void requireThatAllByteValuesCanBeRead() throws IOException {
+    void requireThatAllByteValuesCanBeRead() throws IOException {
         ReadableContentChannel content = new ReadableContentChannel();
         InputStream in = new UnsafeContentInputStream(content);
         for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; ++i) {
-            content.write(ByteBuffer.wrap(new byte[] { (byte)i }), null);
-            assertEquals(i, (byte)in.read());
+            content.write(ByteBuffer.wrap(new byte[]{(byte) i}), null);
+            assertEquals(i, (byte) in.read());
         }
     }
 

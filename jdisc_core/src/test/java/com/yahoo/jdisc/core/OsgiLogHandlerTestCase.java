@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.logging.Handler;
@@ -14,11 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Simon Thoresen Hult
@@ -26,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class OsgiLogHandlerTestCase {
 
     @Test
-    public void requireThatLogRecordsArePublishedToLogService() {
+    void requireThatLogRecordsArePublishedToLogService() {
         MyLogService logService = new MyLogService();
         Logger log = newLogger(logService);
 
@@ -43,7 +42,7 @@ public class OsgiLogHandlerTestCase {
     }
 
     @Test
-    public void requireThatStadardLogLevelsAreConverted() {
+    void requireThatStadardLogLevelsAreConverted() {
         assertLogLevel(LogService.LOG_ERROR, Level.SEVERE);
         assertLogLevel(LogService.LOG_WARNING, Level.WARNING);
         assertLogLevel(LogService.LOG_INFO, Level.INFO);
@@ -54,7 +53,7 @@ public class OsgiLogHandlerTestCase {
     }
 
     @Test
-    public void requireThatCustomLogLevelsAreConverted() {
+    void requireThatCustomLogLevelsAreConverted() {
         for (int i = Level.ALL.intValue() - 69; i < Level.OFF.intValue() + 69; ++i) {
             int expectedLevel;
             if (i >= Level.SEVERE.intValue()) {
@@ -71,7 +70,7 @@ public class OsgiLogHandlerTestCase {
     }
 
     @Test
-    public void requireThatJdk14PropertiesAreAvailableThroughServiceReference() {
+    void requireThatJdk14PropertiesAreAvailableThroughServiceReference() {
         MyLogService logService = new MyLogService();
 
         Logger log = newLogger(logService);
@@ -93,19 +92,19 @@ public class OsgiLogHandlerTestCase {
 
         ServiceReference<?> ref = logService.lastServiceReference;
         assertNotNull(ref);
-        assertTrue(Arrays.equals(new String[] { "LEVEL",
-                                                "LOGGER_NAME",
-                                                "MESSAGE",
-                                                "MILLIS",
-                                                "PARAMETERS",
-                                                "RESOURCE_BUNDLE",
-                                                "RESOURCE_BUNDLE_NAME",
-                                                "SEQUENCE_NUMBER",
-                                                "SOURCE_CLASS_NAME",
-                                                "SOURCE_METHOD_NAME",
-                                                "THREAD_ID",
-                                                "THROWN" },
-                                 ref.getPropertyKeys()));
+        assertArrayEquals(new String[]{"LEVEL",
+                "LOGGER_NAME",
+                "MESSAGE",
+                "MILLIS",
+                "PARAMETERS",
+                "RESOURCE_BUNDLE",
+                "RESOURCE_BUNDLE_NAME",
+                "SEQUENCE_NUMBER",
+                "SOURCE_CLASS_NAME",
+                "SOURCE_METHOD_NAME",
+                "THREAD_ID",
+                "THROWN"},
+                ref.getPropertyKeys());
         assertEquals(Level.INFO, ref.getProperty("LEVEL"));
         assertEquals("loggerName", ref.getProperty("LOGGER_NAME"));
         assertEquals("message", ref.getProperty("MESSAGE"));

@@ -2,17 +2,17 @@
 package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.service.log.LogListener;
 import org.osgi.service.log.LogReaderService;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 public class ConsoleLogManagerTestCase {
 
     @Test
-    public void requireThatManagerCanNotBeInstalledTwice() throws BundleException {
+    void requireThatManagerCanNotBeInstalledTwice() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
 
@@ -38,7 +38,7 @@ public class ConsoleLogManagerTestCase {
     }
 
     @Test
-    public void requireThatManagerCanBeUninstalledTwice() throws BundleException {
+    void requireThatManagerCanBeUninstalledTwice() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
 
@@ -52,7 +52,7 @@ public class ConsoleLogManagerTestCase {
     }
 
     @Test
-    public void requireThatLogReaderServicesAreTracked() throws BundleException {
+    void requireThatLogReaderServicesAreTracked() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
         BundleContext ctx = felix.bundleContext();

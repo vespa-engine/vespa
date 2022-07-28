@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.handler;
 
 import com.yahoo.jdisc.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,13 +13,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 public class ResponseDispatchTestCase {
 
     @Test
-    public void requireThatFactoryMethodsWork() throws Exception {
+    void requireThatFactoryMethodsWork() throws Exception {
         {
             FutureResponse handler = new FutureResponse();
             ResponseDispatch.newInstance(69).dispatch(handler);
@@ -78,7 +78,7 @@ public class ResponseDispatchTestCase {
     }
 
     @Test
-    public void requireThatResponseCanBeDispatched() throws Exception {
+    void requireThatResponseCanBeDispatched() throws Exception {
         final Response response = new Response(Response.Status.OK);
         final List<ByteBuffer> writtenContent = Arrays.asList(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
         ResponseDispatch dispatch = new ResponseDispatch() {
@@ -109,7 +109,7 @@ public class ResponseDispatchTestCase {
     }
 
     @Test
-    public void requireThatStreamCanBeConnected() throws IOException {
+    void requireThatStreamCanBeConnected() throws IOException {
         ReadableContentChannel responseContent = new ReadableContentChannel();
         OutputStream out = new FastContentOutputStream(new ResponseDispatch() {
 
@@ -129,7 +129,7 @@ public class ResponseDispatchTestCase {
     }
 
     @Test
-    public void requireThatCancelIsUnsupported() {
+    void requireThatCancelIsUnsupported() {
         ResponseDispatch dispatch = ResponseDispatch.newInstance(69);
         assertFalse(dispatch.isCancelled());
         try {
@@ -149,7 +149,7 @@ public class ResponseDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchClosesContentIfWriteThrowsException() {
+    void requireThatDispatchClosesContentIfWriteThrowsException() {
         final AtomicBoolean closed = new AtomicBoolean(false);
         try {
             ResponseDispatch.newInstance(6, ByteBuffer.allocate(9)).dispatch(
@@ -173,12 +173,12 @@ public class ResponseDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchCanBeListenedTo() throws InterruptedException {
+    void requireThatDispatchCanBeListenedTo() throws InterruptedException {
         RunnableLatch listener = new RunnableLatch();
         ReadableContentChannel responseContent = new ReadableContentChannel();
         ResponseDispatch.newInstance(6, ByteBuffer.allocate(9))
-                        .dispatch(new MyResponseHandler(responseContent))
-                        .whenComplete((__, ___) -> listener.run());
+                .dispatch(new MyResponseHandler(responseContent))
+                .whenComplete((__, ___) -> listener.run());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         assertNotNull(responseContent.read());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));

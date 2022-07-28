@@ -5,7 +5,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,12 +16,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 public class RequestDispatchTestCase {
 
     @Test
-    public void requireThatRequestCanBeDispatched() throws Exception {
+    void requireThatRequestCanBeDispatched() throws Exception {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         final List<ByteBuffer> writtenContent = Arrays.asList(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
         ReadableContentChannel receivedContent = new ReadableContentChannel();
@@ -62,7 +62,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatStreamCanBeConnected() throws IOException {
+    void requireThatStreamCanBeConnected() throws IOException {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         ReadableContentChannel content = new ReadableContentChannel();
@@ -84,7 +84,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatCancelIsUnsupported() {
+    void requireThatCancelIsUnsupported() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         RequestDispatch dispatch = driver.newRequestDispatch("http://localhost/", new FutureResponse());
         assertFalse(dispatch.isCancelled());
@@ -106,7 +106,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchHandlesConnectException() {
+    void requireThatDispatchHandlesConnectException() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://localhost/", new AbstractRequestHandler() {
@@ -127,7 +127,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchHandlesWriteException() {
+    void requireThatDispatchHandlesWriteException() {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         Response response = new Response(Response.Status.OK);
@@ -165,7 +165,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchHandlesCloseException() {
+    void requireThatDispatchHandlesCloseException() {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         Response response = new Response(Response.Status.OK);
@@ -203,7 +203,7 @@ public class RequestDispatchTestCase {
     }
 
     @Test
-    public void requireThatDispatchCanBeListenedTo() throws InterruptedException {
+    void requireThatDispatchCanBeListenedTo() throws InterruptedException {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         ReadableContentChannel requestContent = new ReadableContentChannel();
@@ -220,7 +220,7 @@ public class RequestDispatchTestCase {
         }.dispatch().whenComplete((__, ___) -> listener.run());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         ContentChannel responseContent = ResponseDispatch.newInstance(Response.Status.OK)
-                                                         .connect(requestHandler.responseHandler);
+                .connect(requestHandler.responseHandler);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         assertNull(requestContent.read());
         assertTrue(listener.await(600, TimeUnit.SECONDS));

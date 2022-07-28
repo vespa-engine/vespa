@@ -3,10 +3,10 @@ package com.yahoo.jdisc.test;
 
 import com.google.inject.AbstractModule;
 import com.yahoo.jdisc.Request;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 /**
@@ -15,12 +15,12 @@ import static org.junit.Assert.assertSame;
 public class NonWorkingRequestTestCase {
 
     @Test
-    public void requireThatFactoryMethodWorks() {
+    void requireThatFactoryMethodWorks() {
         assertNotNull(NonWorkingRequest.newInstance("scheme://host/path"));
     }
 
     @Test
-    public void requireThatGuiceModulesAreInjected() {
+    void requireThatGuiceModulesAreInjected() {
         Object obj = new Object();
         Request request = NonWorkingRequest.newInstance("scheme://host/path", new AbstractModule() {
 

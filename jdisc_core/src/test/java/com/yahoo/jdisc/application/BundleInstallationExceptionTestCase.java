@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
@@ -9,9 +9,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 public class BundleInstallationExceptionTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Throwable t = new Throwable("foo");
         Collection<Bundle> bundles = new LinkedList<>();
         bundles.add(Mockito.mock(Bundle.class));
@@ -31,7 +31,7 @@ public class BundleInstallationExceptionTestCase {
     }
 
     @Test
-    public void requireThatBundlesCollectionIsDefensivelyCopied() {
+    void requireThatBundlesCollectionIsDefensivelyCopied() {
         Collection<Bundle> bundles = new LinkedList<>();
         bundles.add(Mockito.mock(Bundle.class));
         BundleInstallationException e = new BundleInstallationException(bundles, new Throwable());
@@ -40,9 +40,9 @@ public class BundleInstallationExceptionTestCase {
     }
 
     @Test
-    public void requireThatBundlesCollectionIsUnmodifiable() {
+    void requireThatBundlesCollectionIsUnmodifiable() {
         BundleInstallationException e = new BundleInstallationException(Arrays.asList(Mockito.mock(Bundle.class)),
-                                                                        new Throwable());
+                new Throwable());
         try {
             e.installedBundles().add(Mockito.mock(Bundle.class));
             fail();

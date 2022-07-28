@@ -11,7 +11,7 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationRestartTestCase {
 
     @Test
-    public void requireThatStopStartDoesNotBreakShutdown() throws Exception {
+    void requireThatStopStartDoesNotBreakShutdown() throws Exception {
         ApplicationLoader loader = newApplicationLoader();
         loader.init(null, false);
         loader.start();
@@ -40,7 +40,7 @@ public class ApplicationRestartTestCase {
     }
 
     @Test
-    public void requireThatDestroyInitDoesNotBreakShutdown() throws Exception {
+    void requireThatDestroyInitDoesNotBreakShutdown() throws Exception {
         ApplicationLoader loader = newApplicationLoader();
         loader.init(null, false);
         loader.start();

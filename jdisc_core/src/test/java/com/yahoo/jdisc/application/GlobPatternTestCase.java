@@ -1,18 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 public class GlobPatternTestCase {
 
     @Test
-    public void requireThatCompileCreatesExpectedParts() {
+    void requireThatCompileCreatesExpectedParts() {
         assertToString("foo");
         assertToString("*foo");
         assertToString("*oo");
@@ -38,7 +38,7 @@ public class GlobPatternTestCase {
     }
 
     @Test
-    public void requireThatGlobMatcherWorks() {
+    void requireThatGlobMatcherWorks() {
         assertMatch("foo", "foo", Collections.<String>emptyList());
         assertNotMatch("foo", "bar");
 
@@ -81,7 +81,7 @@ public class GlobPatternTestCase {
     }
 
     @Test
-    public void requireThatGlobPatternOrdersMoreSpecificFirst() {
+    void requireThatGlobPatternOrdersMoreSpecificFirst() {
         assertCompareEq("foo", "foo");
         assertCompareLt("foo", "foo*");
         assertCompareLt("foo", "*foo");
@@ -112,15 +112,15 @@ public class GlobPatternTestCase {
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
-        assertTrue(GlobPattern.compile("foo").equals(GlobPattern.compile("foo")));
-        assertFalse(GlobPattern.compile("foo").equals(GlobPattern.compile("bar")));
+    void requireThatEqualsIsImplemented() {
+        assertEquals(GlobPattern.compile("foo"), GlobPattern.compile("foo"));
+        assertNotEquals(GlobPattern.compile("foo"), GlobPattern.compile("bar"));
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
-        assertTrue(GlobPattern.compile("foo").hashCode() == GlobPattern.compile("foo").hashCode());
-        assertFalse(GlobPattern.compile("foo").hashCode() == GlobPattern.compile("bar").hashCode());
+    void requireThatHashCodeIsImplemented() {
+        assertEquals(GlobPattern.compile("foo").hashCode(), GlobPattern.compile("foo").hashCode());
+        assertNotNull(GlobPattern.compile("bar").hashCode());
     }
 
     private static void assertCompareLt(String lhs, String rhs) {

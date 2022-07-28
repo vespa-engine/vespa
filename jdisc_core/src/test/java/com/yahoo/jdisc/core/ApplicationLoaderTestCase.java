@@ -16,7 +16,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.BundleContext;
 
 import java.nio.ByteBuffer;
@@ -27,12 +27,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -41,9 +41,9 @@ import static org.junit.Assert.fail;
 public class ApplicationLoaderTestCase {
 
     @Test
-    public void requireThatStartFailsWithoutApplication() throws Exception {
+    void requireThatStartFailsWithoutApplication() throws Exception {
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                                                         Collections.<Module>emptyList());
+                Collections.<Module>emptyList());
         try {
             loader.init(null, false);
             loader.start();
@@ -54,25 +54,25 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatStopDoesNotFailWithoutStart() throws Exception {
+    void requireThatStopDoesNotFailWithoutStart() throws Exception {
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                                                         Collections.<Module>emptyList());
+                Collections.<Module>emptyList());
         loader.stop();
         loader.destroy();
     }
 
     @Test
-    public void requireThatDestroyDoesNotFailWithActiveContainer() throws Exception {
+    void requireThatDestroyDoesNotFailWithActiveContainer() throws Exception {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         assertNull(driver.activateContainer(driver.newContainerBuilder()));
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatApplicationStartExceptionUnsetsAndDestroysApplication() throws Exception {
+    void requireThatApplicationStartExceptionUnsetsAndDestroysApplication() throws Exception {
         MyApplication app = MyApplication.newStartException();
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                                                         Arrays.asList(new MyApplicationModule(app)));
+                Arrays.asList(new MyApplicationModule(app)));
         loader.init(null, false);
         try {
             loader.start();
@@ -94,10 +94,10 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatApplicationStopExceptionDestroysApplication() throws Exception {
+    void requireThatApplicationStopExceptionDestroysApplication() throws Exception {
         MyApplication app = MyApplication.newStopException();
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                                                         Arrays.asList(new MyApplicationModule(app)));
+                Arrays.asList(new MyApplicationModule(app)));
         loader.init(null, false);
         loader.start();
         try {
@@ -110,7 +110,7 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatApplicationDestroyIsCalledAfterContainerTermination() throws InterruptedException {
+    void requireThatApplicationDestroyIsCalledAfterContainerTermination() throws InterruptedException {
         MyApplication app = MyApplication.newInstance();
         TestDriver driver = TestDriver.newInjectedApplicationInstance(app);
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -125,7 +125,7 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatContainerActivatorReturnsPrev() throws Exception {
+    void requireThatContainerActivatorReturnsPrev() throws Exception {
         TestDriver driver = TestDriver.newInjectedApplicationInstance(MyApplication.newInstance());
         assertNull(driver.activateContainer(driver.newContainerBuilder()));
         assertNotNull(driver.activateContainer(null));
@@ -133,7 +133,7 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatOsgiServicesAreRegistered() {
+    void requireThatOsgiServicesAreRegistered() {
         TestDriver driver = TestDriver.newSimpleApplicationInstance();
         BundleContext ctx = driver.osgiFramework().bundleContext();
         Object service = ctx.getService(ctx.getServiceReference(CurrentContainer.class.getName()));
@@ -142,7 +142,7 @@ public class ApplicationLoaderTestCase {
     }
 
     @Test
-    public void requireThatThreadFactoryCanBeBound() {
+    void requireThatThreadFactoryCanBeBound() {
         final ThreadFactory factory = Executors.defaultThreadFactory();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 

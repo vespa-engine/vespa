@@ -4,12 +4,12 @@ package com.yahoo.jdisc.core;
 import com.google.inject.Guice;
 import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.application.BindingSetSelector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -18,13 +18,13 @@ import static org.junit.Assert.assertTrue;
 public class DefaultBindingSelectorTestCase {
 
     @Test
-    public void requireThatClassIsInjectedByDefault() {
+    void requireThatClassIsInjectedByDefault() {
         BindingSetSelector selector = Guice.createInjector().getInstance(BindingSetSelector.class);
         assertTrue(selector instanceof DefaultBindingSelector);
     }
 
     @Test
-    public void requireThatDefaultSetIsAlwaysSelected() {
+    void requireThatDefaultSetIsAlwaysSelected() {
         DefaultBindingSelector selector = new DefaultBindingSelector();
         assertEquals(BindingSet.DEFAULT, selector.select(null));
         for (int i = 0; i < 69; ++i) {

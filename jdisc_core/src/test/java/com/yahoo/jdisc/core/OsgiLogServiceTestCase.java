@@ -3,15 +3,15 @@ package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.service.log.LogReaderService;
 import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -20,12 +20,12 @@ import static org.junit.Assert.fail;
 public class OsgiLogServiceTestCase {
 
     @Test
-    public void requireThatLogServiceIsRegistered() throws BundleException, InterruptedException {
+    void requireThatLogServiceIsRegistered() throws BundleException, InterruptedException {
         OsgiFramework osgi = TestDriver.newOsgiFramework();
         osgi.start();
 
-        ServiceTracker<?,?> logs = newTracker(osgi, LogService.class);
-        ServiceTracker<?,?> logReaders = newTracker(osgi, LogReaderService.class);
+        ServiceTracker<?, ?> logs = newTracker(osgi, LogService.class);
+        ServiceTracker<?, ?> logReaders = newTracker(osgi, LogReaderService.class);
         assertEquals(1, logs.getTrackingCount());
         assertEquals(1, logReaders.getTrackingCount());
 
@@ -38,7 +38,7 @@ public class OsgiLogServiceTestCase {
     }
 
     @Test
-    public void requireThatLogServiceCanNotBeStartedTwice() throws BundleException {
+    void requireThatLogServiceCanNotBeStartedTwice() throws BundleException {
         OsgiFramework osgi = TestDriver.newOsgiFramework();
         osgi.start();
 
@@ -57,7 +57,7 @@ public class OsgiLogServiceTestCase {
     }
 
     @Test
-    public void requireThatLogServiceCanNotBeStoppedTwice() throws BundleException {
+    void requireThatLogServiceCanNotBeStoppedTwice() throws BundleException {
         OsgiFramework osgi = TestDriver.newOsgiFramework();
         osgi.start();
 
@@ -77,7 +77,7 @@ public class OsgiLogServiceTestCase {
     }
 
     @Test
-    public void requireThatUnstartedLogServiceCanNotBeStopped() throws BundleException {
+    void requireThatUnstartedLogServiceCanNotBeStopped() throws BundleException {
         try {
             new OsgiLogService().stop();
             fail();
@@ -87,7 +87,7 @@ public class OsgiLogServiceTestCase {
     }
 
     @Test
-    public void requireThatLogServiceCanNotStartWithoutBundleContext() throws BundleException {
+    void requireThatLogServiceCanNotStartWithoutBundleContext() throws BundleException {
         try {
             new OsgiLogService().start(null);
             fail();

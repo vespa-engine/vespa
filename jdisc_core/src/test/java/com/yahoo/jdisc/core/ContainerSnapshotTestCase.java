@@ -11,16 +11,16 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class ContainerSnapshotTestCase {
 
     @Test
-    public void requireThatServerHandlerCanBeResolved() {
+    void requireThatServerHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://foo/*", MyRequestHandler.newInstance());
@@ -59,7 +59,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    public void requireThatClientHandlerCanBeResolved() {
+    void requireThatClientHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.clientBindings().bind("http://foo/*", MyRequestHandler.newInstance());
@@ -89,7 +89,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    public void requireThatClientBindingsAreUsed() {
+    void requireThatClientBindingsAreUsed() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.clientBindings().bind("http://host/path", MyRequestHandler.newInstance());
@@ -101,7 +101,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    public void requireThatBindingMatchIsSetByResolveHandler() {
+    void requireThatBindingMatchIsSetByResolveHandler() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://*/*", MyRequestHandler.newInstance());
@@ -121,7 +121,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    public void requireThatNewRequestHasSameSnapshot() {
+    void requireThatNewRequestHasSameSnapshot() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request foo = new Request(driver, URI.create("http://host/foo"));
@@ -133,7 +133,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    public void requireThatActiveInjectorIsUsed() {
+    void requireThatActiveInjectorIsUsed() {
         final Object obj = new Object();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 

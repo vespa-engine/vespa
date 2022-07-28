@@ -4,12 +4,12 @@ package com.yahoo.jdisc.handler;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -18,14 +18,14 @@ import static org.junit.Assert.fail;
 public class BindingNotFoundTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         URI uri = URI.create("http://host/path");
         BindingNotFoundException e = new BindingNotFoundException(uri);
         assertEquals(uri, e.uri());
     }
 
     @Test
-    public void requireThatBindingNotFoundIsThrown() {
+    void requireThatBindingNotFoundIsThrown() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request request = new Request(driver, URI.create("http://host/path"));

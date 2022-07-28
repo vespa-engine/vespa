@@ -2,9 +2,9 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.service.ClientProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class NonWorkingClientTestCase {
 
     @Test
-    public void requireThatHandleRequestThrowsException() {
+    void requireThatHandleRequestThrowsException() {
         ClientProvider client = new NonWorkingClientProvider();
         try {
             client.handleRequest(null, null);
@@ -24,7 +24,7 @@ public class NonWorkingClientTestCase {
     }
 
     @Test
-    public void requireThatHandleTimeoutThrowsException() {
+    void requireThatHandleTimeoutThrowsException() {
         ClientProvider client = new NonWorkingClientProvider();
         try {
             client.handleTimeout(null, null);
@@ -35,19 +35,19 @@ public class NonWorkingClientTestCase {
     }
 
     @Test
-    public void requireThatStartDoesNotThrow() {
+    void requireThatStartDoesNotThrow() {
         ClientProvider client = new NonWorkingClientProvider();
         client.start();
     }
 
     @Test
-    public void requireThatRetainDoesNotThrow() {
+    void requireThatRetainDoesNotThrow() {
         ClientProvider client = new NonWorkingClientProvider();
         client.release();
     }
 
     @Test
-    public void requireThatReleaseDoesNotThrow() {
+    void requireThatReleaseDoesNotThrow() {
         ClientProvider client = new NonWorkingClientProvider();
         client.release();
     }

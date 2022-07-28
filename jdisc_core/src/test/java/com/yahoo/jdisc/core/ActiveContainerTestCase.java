@@ -14,12 +14,13 @@ import com.yahoo.jdisc.test.TestDriver;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertSame;
 public class ActiveContainerTestCase {
 
     @Test
-    public void requireThatGuiceAccessorWorks() {
+    void requireThatGuiceAccessorWorks() {
         final Object obj = new Object();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 
@@ -42,7 +43,7 @@ public class ActiveContainerTestCase {
     }
 
     @Test
-    public void requireThatServerAccessorWorks() {
+    void requireThatServerAccessorWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         ServerProvider foo = new NonWorkingServerProvider();
@@ -61,7 +62,7 @@ public class ActiveContainerTestCase {
     }
 
     @Test
-    public void requireThatServerBindingAccessorWorks() {
+    void requireThatServerBindingAccessorWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         RequestHandler foo = new NonWorkingRequestHandler();
@@ -103,7 +104,7 @@ public class ActiveContainerTestCase {
     }
 
     @Test
-    public void requireThatClientBindingAccessorWorks() {
+    void requireThatClientBindingAccessorWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         RequestHandler foo = new NonWorkingRequestHandler();
@@ -145,7 +146,7 @@ public class ActiveContainerTestCase {
     }
 
     @Test
-    public void requireThatDefaultBindingsAreAlwaysCreated() {
+    void requireThatDefaultBindingsAreAlwaysCreated() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         ActiveContainer container = new ActiveContainer(builder);

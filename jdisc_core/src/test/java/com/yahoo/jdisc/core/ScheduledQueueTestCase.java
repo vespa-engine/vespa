@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -11,9 +11,9 @@ import java.util.Queue;
 import static com.yahoo.jdisc.core.ScheduledQueue.MILLIS_PER_SLOT;
 import static com.yahoo.jdisc.core.ScheduledQueue.NUM_SLOTS;
 import static com.yahoo.jdisc.core.ScheduledQueue.NUM_SLOTS_UNDILATED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,21 +21,21 @@ import static org.junit.Assert.fail;
 public class ScheduledQueueTestCase {
 
     @Test
-    public void requireThatSlotMaskPreventsOverflow() {
+    void requireThatSlotMaskPreventsOverflow() {
         for (int slot = 0; slot < NUM_SLOTS * 2; ++slot) {
             assertTrue((slot & ScheduledQueue.SLOT_MASK) < NUM_SLOTS);
         }
     }
 
     @Test
-    public void requireThatIterShiftDiscardsSlotBits() {
+    void requireThatIterShiftDiscardsSlotBits() {
         for (int slot = 0; slot < NUM_SLOTS * 2; ++slot) {
             assertEquals(slot / NUM_SLOTS, slot >> ScheduledQueue.ITER_SHIFT);
         }
     }
 
     @Test
-    public void requireThatNewEntryDoesNotAcceptNull() {
+    void requireThatNewEntryDoesNotAcceptNull() {
         ScheduledQueue queue = new ScheduledQueue(0);
         try {
             queue.newEntry(null);
@@ -46,7 +46,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatEntriesCanBeScheduled() {
+    void requireThatEntriesCanBeScheduled() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = new Object();
         ScheduledQueue.Entry entry = queue.newEntry(foo);
@@ -57,7 +57,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatEntriesCanBeRescheduled() {
+    void requireThatEntriesCanBeRescheduled() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = new Object();
         ScheduledQueue.Entry entry = queue.newEntry(foo);
@@ -69,7 +69,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatEntriesCanBeUnscheduled() {
+    void requireThatEntriesCanBeUnscheduled() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = new Object();
         ScheduledQueue.Entry entry = queue.newEntry(foo);
@@ -80,7 +80,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatDrainToOnlyDrainsExpiredEntries() {
+    void requireThatDrainToOnlyDrainsExpiredEntries() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = scheduleAt(queue, 100);
         Object bar = scheduleAt(queue, 300);
@@ -93,7 +93,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatEntriesDoNotExpireMoreThanOnce() {
+    void requireThatEntriesDoNotExpireMoreThanOnce() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = scheduleAt(queue, NUM_SLOTS * MILLIS_PER_SLOT + 50);
 
@@ -108,7 +108,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatNegativeScheduleTranslatesToNow() {
+    void requireThatNegativeScheduleTranslatesToNow() {
         ScheduledQueue queue = new ScheduledQueue(0);
         Object foo = scheduleAt(queue, -100);
 
@@ -116,7 +116,7 @@ public class ScheduledQueueTestCase {
     }
 
     @Test
-    public void requireThatDrainToPerformsTimeDilationWhenOverloaded() {
+    void requireThatDrainToPerformsTimeDilationWhenOverloaded() {
         ScheduledQueue queue = new ScheduledQueue(0);
         List<Object> payloads = new LinkedList<>();
         for (int i = 1; i <= NUM_SLOTS_UNDILATED + 1; ++i) {

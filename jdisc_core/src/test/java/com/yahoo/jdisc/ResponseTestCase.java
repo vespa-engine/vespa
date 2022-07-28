@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class ResponseTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Response response = new Response(69);
         assertEquals(69, response.getStatus());
         response.setStatus(96);
@@ -27,7 +27,7 @@ public class ResponseTestCase {
     }
 
     @Test
-    public void requireThatStatusCodesDoNotChange() {
+    void requireThatStatusCodesDoNotChange() {
         assertEquals(100, Response.Status.CONTINUE);
         assertEquals(101, Response.Status.SWITCHING_PROTOCOLS);
         assertEquals(102, Response.Status.PROCESSING);

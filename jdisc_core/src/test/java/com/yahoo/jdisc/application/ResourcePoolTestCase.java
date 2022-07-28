@@ -6,12 +6,12 @@ import com.google.inject.Key;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 public class ResourcePoolTestCase {
 
     @Test
-    public void requireThatAddReturnsArgument() {
+    void requireThatAddReturnsArgument() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyResource foo = new MyResource();
         assertSame(foo, new ResourcePool(driver.newContainerBuilder()).add(foo));
@@ -28,7 +28,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatAddDoesNotRetainArgument() {
+    void requireThatAddDoesNotRetainArgument() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyResource foo = new MyResource();
         assertEquals(1, foo.retainCount());
@@ -38,12 +38,12 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatAddCanBeUsedWithoutContainerBuilder() {
+    void requireThatAddCanBeUsedWithoutContainerBuilder() {
         new ResourcePool().add(new MyResource());
     }
 
     @Test
-    public void requireThatRetainReturnsArgument() {
+    void requireThatRetainReturnsArgument() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyResource foo = new MyResource();
         assertSame(foo, new ResourcePool(driver.newContainerBuilder()).retain(foo));
@@ -51,7 +51,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatRetainRetainsArgument() {
+    void requireThatRetainRetainsArgument() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyResource foo = new MyResource();
         assertEquals(1, foo.retainCount());
@@ -61,12 +61,12 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatRetainCanBeUsedWithoutContainerBuilder() {
+    void requireThatRetainCanBeUsedWithoutContainerBuilder() {
         new ResourcePool().retain(new MyResource());
     }
 
     @Test
-    public void requireThatGetReturnsBoundInstance() {
+    void requireThatGetReturnsBoundInstance() {
         final MyResource foo = new MyResource();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 
@@ -82,7 +82,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatGetDoesNotRetainArgument() {
+    void requireThatGetDoesNotRetainArgument() {
         final MyResource foo = new MyResource();
         assertEquals(1, foo.retainCount());
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
@@ -101,7 +101,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatGetCanNotBeUsedWithoutContainerBuilder() {
+    void requireThatGetCanNotBeUsedWithoutContainerBuilder() {
         ResourcePool pool = new ResourcePool();
         try {
             pool.get(MyResource.class);
@@ -118,7 +118,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatResourcesAreReleasedOnDestroy() {
+    void requireThatResourcesAreReleasedOnDestroy() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
 
         ResourcePool pool = new ResourcePool(driver.newContainerBuilder());
@@ -152,7 +152,7 @@ public class ResourcePoolTestCase {
     }
 
     @Test
-    public void requireThatAutoCloseCallsRelease() throws Exception {
+    void requireThatAutoCloseCallsRelease() throws Exception {
         MyResource foo = new MyResource();
         assertEquals(1, foo.retainCount());
         try (ResourcePool pool = new ResourcePool()) {

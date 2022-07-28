@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Constants;
 
 import java.util.Arrays;
@@ -9,9 +9,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class FelixParamsTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         FelixParams params = new FelixParams();
         params.setCachePath("foo");
         assertEquals("foo", params.getCachePath());
@@ -28,7 +28,7 @@ public class FelixParamsTestCase {
     }
 
     @Test
-    public void requireThatSystemPackagesAreNotReplaced() {
+    void requireThatSystemPackagesAreNotReplaced() {
         String systemPackages = ExportPackages.getSystemPackages();
 
         FelixParams params = new FelixParams(systemPackages);
@@ -46,7 +46,7 @@ public class FelixParamsTestCase {
     }
 
     @Test
-    public void requireThatExportsAreIncludedInConfig() {
+    void requireThatExportsAreIncludedInConfig() {
         FelixParams params = new FelixParams();
         Map<String, String> config = params.toConfig();
         assertNotNull(config);
