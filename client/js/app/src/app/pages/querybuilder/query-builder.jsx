@@ -6,15 +6,14 @@ import { QueryInputProvider } from './Components/Contexts/QueryInputContext';
 import SendQuery from './Components/Text/SendQuery';
 import { ResponseProvider } from './Components/Contexts/ResponseContext';
 import ResponseBox from './Components/Text/ResponseBox';
-
-import '../../styles/agency.css';
-import '../../styles/vespa.css';
 import ShowQueryButton from './Components/Buttons/ShowQueryButton';
 import { QueryProvider } from './Components/Contexts/QueryContext';
 import PasteJSONButton from './Components/Buttons/PasteJSONButton';
 import CopyResponseButton from './Components/Buttons/CopyResponseButton';
+import DownloadJSONButton from './Components/Buttons/DownloadJSONButton';
 
-//import 'bootstrap/dist/css/bootstrap.min.css'; //TODO: Find out how to get this css
+import '../../styles/agency.css';
+import '../../styles/vespa.css';
 
 export function QueryBuilder() {
   return (
@@ -43,6 +42,7 @@ export function QueryBuilder() {
             <TextBox className="response">Response</TextBox>
             <ResponseBox />
             <CopyResponseButton />
+            <DownloadJSONButton />
           </ResponseProvider>
           <br />
           <br />

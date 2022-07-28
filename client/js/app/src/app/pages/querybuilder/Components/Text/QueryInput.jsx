@@ -8,7 +8,7 @@ import AddPropertyButton from '../Buttons/AddPropertyButton';
 import QueryInputChild from './QueryInputChild';
 
 export default function QueryInput() {
-  const { inputs, setInputs, levelZeroParameters, childMap } =
+  const { inputs, setInputs, levelZeroParameters } =
     useContext(QueryInputContext);
 
   function removeRow(id) {

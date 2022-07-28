@@ -40,6 +40,7 @@ export const QueryInputProvider = (prop) => {
     recall: { name: 'recall', type: 'List', hasChildren: false },
     user: { name: 'user', type: 'String', hasChildren: false },
     metrics: { name: 'metrics', type: 'Parent', hasChildren: true },
+    trace: { name: 'trace', type: 'Parent', hasChildren: true },
   };
 
   // Children of the levelZeroParameters that have child attributes
