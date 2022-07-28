@@ -2,13 +2,13 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Vtag;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -16,13 +16,13 @@ import static org.junit.Assert.assertTrue;
 public class ClusterMembershipTest {
 
     @Test
-    public void testContainerServiceInstance() {
+    void testContainerServiceInstance() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
-    public void testSerializationWithOptionalParts() {
+    void testSerializationWithOptionalParts() {
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion, Optional.empty());
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
@@ -56,42 +56,42 @@ public class ClusterMembershipTest {
     }
 
     @Test
-    public void testServiceInstance() {
+    void testServiceInstance() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
     @Test
-    public void testServiceInstanceWithGroup() {
+    void testServiceInstanceWithGroup() {
         ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                .group(ClusterSpec.Group.from(4))
-                .vespaVersion("6.42")
-                .build();
+                               .group(ClusterSpec.Group.from(4))
+                               .vespaVersion("6.42")
+                               .build();
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
     @Test
-    public void testServiceInstanceWithGroupFromString() {
+    void testServiceInstanceWithGroupFromString() {
         assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
     @Test
-    public void testServiceInstanceWithRetire() {
+    void testServiceInstanceWithRetire() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
-    public void testServiceInstanceWithGroupAndRetire() {
+    void testServiceInstanceWithGroupAndRetire() {
         ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                .group(ClusterSpec.Group.from(4))
-                .vespaVersion("6.42")
-                .build();
+                               .group(ClusterSpec.Group.from(4))
+                               .vespaVersion("6.42")
+                               .build();
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
-    public void testServiceInstanceWithGroupAndRetireFromString() {
+    void testServiceInstanceWithGroupAndRetireFromString() {
         assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
     }
 

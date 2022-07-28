@@ -2,9 +2,9 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.test.TotalOrderTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -27,12 +27,12 @@ public class TenantTest extends IdentifierTestBase<TenantName> {
     }
 
     @Test
-    public void testComparator() {
+    void testComparator() {
         assertEquals(0, TenantName.defaultName().compareTo(TenantName.defaultName()));
 
         new TotalOrderTester<TenantName>()
-                .theseObjects(TenantName.from("a"), TenantName.from("a"))
-                .areLessThan(TenantName.from("b"))
-                .testOrdering();
+                               .theseObjects(TenantName.from("a"), TenantName.from("a"))
+                               .areLessThan(TenantName.from("b"))
+                               .testOrdering();
     }
 }

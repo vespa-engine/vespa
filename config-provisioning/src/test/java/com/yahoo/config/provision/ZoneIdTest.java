@@ -2,10 +2,10 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.config.provision.zone.ZoneId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author hmusum
@@ -16,14 +16,14 @@ public class ZoneIdTest {
     private static final RegionName region = RegionName.from("moon-dark-side-1");
 
     @Test
-    public void testCreatingZoneId() {
+    void testCreatingZoneId() {
         ZoneId zoneId = ZoneId.from(environment, region);
         assertEquals(region, zoneId.region());
         assertEquals(environment, zoneId.environment());
     }
 
     @Test
-    public void testSerializingAndDeserializing() {
+    void testSerializingAndDeserializing() {
         ZoneId zoneId = ZoneId.from(environment, region);
         assertEquals(environment.value() + "." + region.value(), zoneId.value());
         assertEquals(ZoneId.from(zoneId.value()), zoneId);
