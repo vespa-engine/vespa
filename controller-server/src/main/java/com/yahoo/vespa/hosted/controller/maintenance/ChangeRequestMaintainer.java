@@ -70,6 +70,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                     var vcmr = existingChangeRequests
                             .getOrDefault(changeRequest.getId(), new VespaChangeRequest(changeRequest, zone))
                             .withSource(changeRequest.getChangeRequestSource())
+                            .withImpact(changeRequest.getImpact())
                             .withApproval(changeRequest.getApproval());
                     logger.fine(() -> "Storing " + vcmr);
                     curator.writeChangeRequest(vcmr);
