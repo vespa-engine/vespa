@@ -17,12 +17,12 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.text.Utf8String;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -30,12 +30,12 @@ import static org.junit.Assert.*;
 public class RPCNetworkTestCase {
 
     @Test
-    public void requireThatProtocolEncodeExceptionIsCaught() throws Exception {
+    void requireThatProtocolEncodeExceptionIsCaught() throws Exception {
         RuntimeException e = new RuntimeException();
 
         Slobrok slobrok = new Slobrok();
         TestServer server = new TestServer(new MessageBusParams().addProtocol(MyProtocol.newEncodeException(e)),
-                                           new RPCNetworkParams().setSlobrokConfigId(slobrok.configId()));
+                new RPCNetworkParams().setSlobrokConfigId(slobrok.configId()));
         Receptor receptor = new Receptor();
         SourceSession src = server.mb.createSourceSession(
                 new SourceSessionParams().setTimeout(600.0).setReplyHandler(receptor));
@@ -50,7 +50,7 @@ public class RPCNetworkTestCase {
         e.printStackTrace(new PrintWriter(expected));
 
         String actual = reply.getError(0).toString();
-        assertTrue(actual, actual.contains(expected.toString()));
+        assertTrue(actual.contains(expected.toString()), actual);
     }
 
     private static class MyMessage extends Message {

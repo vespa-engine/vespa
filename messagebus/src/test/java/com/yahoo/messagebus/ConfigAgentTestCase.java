@@ -4,26 +4,24 @@ package com.yahoo.messagebus;
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigURI;
 import com.yahoo.messagebus.routing.RoutingSpec;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class ConfigAgentTestCase {
 
-    @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    @TempDir
+    public File tmpFolder;
 
     @Test
-    public void testRoutingConfig() throws InterruptedException {
+    void testRoutingConfig() throws InterruptedException {
         LocalHandler handler = new LocalHandler();
         assertFalse(testHalf(handler.spec));
         assertFalse(testFull(handler.spec));

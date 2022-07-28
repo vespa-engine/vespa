@@ -4,9 +4,9 @@ package com.yahoo.messagebus;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class ProtocolRepositoryTestCase {
 
     @Test
-    public void requireThatPolicyCanBeNull() {
+    void requireThatPolicyCanBeNull() {
         ProtocolRepository repo = new ProtocolRepository();
         SimpleProtocol protocol = new SimpleProtocol();
         repo.putProtocol(protocol);
@@ -22,7 +22,7 @@ public class ProtocolRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPolicyCanBeCreated() {
+    void requireThatPolicyCanBeCreated() {
         ProtocolRepository repo = new ProtocolRepository();
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new MyFactory());
@@ -31,7 +31,7 @@ public class ProtocolRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPolicyIsCached() {
+    void requireThatPolicyIsCached() {
         ProtocolRepository repo = new ProtocolRepository();
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new MyFactory());
@@ -46,7 +46,7 @@ public class ProtocolRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPolicyParamIsPartOfCacheKey() {
+    void requireThatPolicyParamIsPartOfCacheKey() {
         ProtocolRepository repo = new ProtocolRepository();
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new MyFactory());
@@ -61,7 +61,7 @@ public class ProtocolRepositoryTestCase {
     }
 
     @Test
-    public void requireThatCreatePolicyExceptionIsCaught() {
+    void requireThatCreatePolicyExceptionIsCaught() {
         ProtocolRepository repo = new ProtocolRepository();
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new SimpleProtocol.PolicyFactory() {

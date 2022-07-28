@@ -7,17 +7,14 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.concurrent.Timer;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -28,14 +25,14 @@ public class TargetPoolTestCase {
     private List<TestServer> servers;
     private Supervisor orb;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         servers = new ArrayList<>();
         orb = new Supervisor(new Transport());
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         slobrok.stop();
         for (TestServer server : servers) {
@@ -45,7 +42,7 @@ public class TargetPoolTestCase {
     }
 
     @Test
-    public void testConnectionCycling()  {
+    void testConnectionCycling()  {
         // Necessary setup to be able to resolve targets.
         RPCServiceAddress adr1 = registerServer();
 
@@ -75,8 +72,9 @@ public class TargetPoolTestCase {
         target3.subRef();
         target4.subRef();
     }
+
     @Test
-    public void testConnectionExpire()  {
+    void testConnectionExpire()  {
         // Necessary setup to be able to resolve targets.
         RPCServiceAddress adr1 = registerServer();
         RPCServiceAddress adr2 = registerServer();
@@ -87,9 +85,12 @@ public class TargetPoolTestCase {
 
         // Assert that all connections expire.
         RPCTarget target;
-        assertNotNull(target = pool.getTarget(orb, adr1)); target.subRef();
-        assertNotNull(target = pool.getTarget(orb, adr2)); target.subRef();
-        assertNotNull(target = pool.getTarget(orb, adr3)); target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr1));
+        target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr2));
+        target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr3));
+        target.subRef();
         assertEquals(3, pool.size());
         for (int i = 0; i < 10; ++i) {
             pool.flushTargets(false);
@@ -100,20 +101,26 @@ public class TargetPoolTestCase {
         assertEquals(0, pool.size());
 
         // Assert that only idle connections expire.
-        assertNotNull(target = pool.getTarget(orb, adr1)); target.subRef();
-        assertNotNull(target = pool.getTarget(orb, adr2)); target.subRef();
-        assertNotNull(target = pool.getTarget(orb, adr3)); target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr1));
+        target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr2));
+        target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr3));
+        target.subRef();
         assertEquals(3, pool.size());
         timer.millis += 444;
         pool.flushTargets(false);
         assertEquals(3, pool.size());
-        assertNotNull(target = pool.getTarget(orb, adr2)); target.subRef();
-        assertNotNull(target = pool.getTarget(orb, adr3)); target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr2));
+        target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr3));
+        target.subRef();
         assertEquals(3, pool.size());
         timer.millis += 444;
         pool.flushTargets(false);
         assertEquals(2, pool.size());
-        assertNotNull(target = pool.getTarget(orb, adr3)); target.subRef();
+        assertNotNull(target = pool.getTarget(orb, adr3));
+        target.subRef();
         timer.millis += 444;
         pool.flushTargets(false);
         assertEquals(1, pool.size());

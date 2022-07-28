@@ -9,12 +9,12 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.QueueAdapter;
 import com.yahoo.messagebus.test.SimpleMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author havardpe
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 public class LoadBalanceTestCase {
 
     @Test
-    public void testLoadBalance() throws ListenFailedException {
+    void testLoadBalance() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer src = new TestServer("src", null, slobrok, null);
         TestServer dst1 = new TestServer("dst/1", null, slobrok, null);
@@ -32,14 +32,14 @@ public class LoadBalanceTestCase {
         // set up handlers
         final QueueAdapter sq = new QueueAdapter();
         SourceSession ss = src.mb.createSourceSession(new SourceSessionParams().setTimeout(600.0).setThrottlePolicy(null)
-                                                      .setReplyHandler(new ReplyHandler() {
-            @Override
-            public void handleReply(Reply reply) {
-                System.out.println(Thread.currentThread().getName() + ": Reply '" +
-                                   ((SimpleMessage)reply.getMessage()).getValue() + "' received at source.");
-                sq.handleReply(reply);
-            }
-        }));
+                .setReplyHandler(new ReplyHandler() {
+                    @Override
+                    public void handleReply(Reply reply) {
+                        System.out.println(Thread.currentThread().getName() + ": Reply '" +
+                                ((SimpleMessage) reply.getMessage()).getValue() + "' received at source.");
+                        sq.handleReply(reply);
+                    }
+                }));
         SimpleDestination h1 = new SimpleDestination(dst1.mb, dst1.net.getIdentity());
         SimpleDestination h2 = new SimpleDestination(dst2.mb, dst2.net.getIdentity());
         SimpleDestination h3 = new SimpleDestination(dst3.mb, dst3.net.getIdentity());

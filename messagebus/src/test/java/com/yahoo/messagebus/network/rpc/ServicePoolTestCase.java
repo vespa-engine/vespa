@@ -4,10 +4,9 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -15,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class ServicePoolTestCase {
 
     @Test
-    public void testMaxSize() throws ListenFailedException {
+    void testMaxSize() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         RPCNetwork net = new RPCNetwork(new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
         RPCServicePool pool = new RPCServicePool(net, 2);
@@ -23,30 +22,30 @@ public class ServicePoolTestCase {
         pool.resolve("foo");
         assertEquals(1, pool.getSize());
         assertTrue(pool.hasService("foo"));
-        assertTrue(!pool.hasService("bar"));
-        assertTrue(!pool.hasService("baz"));
+        assertFalse(pool.hasService("bar"));
+        assertFalse(pool.hasService("baz"));
 
         pool.resolve("foo");
         assertEquals(1, pool.getSize());
         assertTrue(pool.hasService("foo"));
-        assertTrue(!pool.hasService("bar"));
-        assertTrue(!pool.hasService("baz"));
+        assertFalse(pool.hasService("bar"));
+        assertFalse(pool.hasService("baz"));
 
         pool.resolve("bar");
         assertEquals(2, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
-        assertTrue(!pool.hasService("baz"));
+        assertFalse(pool.hasService("baz"));
 
         pool.resolve("baz");
         assertEquals(2, pool.getSize());
-        assertTrue(!pool.hasService("foo"));
+        assertFalse(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
         assertTrue(pool.hasService("baz"));
 
         pool.resolve("bar");
         assertEquals(2, pool.getSize());
-        assertTrue(!pool.hasService("foo"));
+        assertFalse(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
         assertTrue(pool.hasService("baz"));
 
@@ -54,7 +53,7 @@ public class ServicePoolTestCase {
         assertEquals(2, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
-        assertTrue(!pool.hasService("baz"));
+        assertFalse(pool.hasService("baz"));
 
         slobrok.stop();
     }

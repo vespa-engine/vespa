@@ -8,14 +8,15 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +28,7 @@ public class TraceTripTestCase {
     TestServer pxy;
     TestServer dst;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME)
                                  .addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"))
@@ -40,7 +41,7 @@ public class TraceTripTestCase {
         dst = new TestServer("test/dst", table, slobrok, null);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dst.destroy();
         pxy.destroy();
@@ -49,7 +50,7 @@ public class TraceTripTestCase {
     }
 
     @Test
-    public void testTrip() {
+    void testTrip() {
         Receptor src_rr = new Receptor();
         SourceSession src_s = src.mb.createSourceSession(src_rr);
 
@@ -66,18 +67,18 @@ public class TraceTripTestCase {
         src_s.send(msg, "test");
         Reply reply = src_rr.getReply(60);
         reply.getTrace().trace(1, "Client reply", false);
-        assertTrue(reply.getNumErrors() == 0);
+        assertEquals(reply.getNumErrors(), 0);
 
         TraceNode t = new TraceNode()
-                      .addChild("Client message")
-                      .addChild("Proxy message")
-                      .addChild("Server message")
-                      .addChild("Server reply")
-                      .addChild("Proxy reply")
-                      .addChild("Client reply");
+                .addChild("Client message")
+                .addChild("Proxy message")
+                .addChild("Server message")
+                .addChild("Server reply")
+                .addChild("Proxy reply")
+                .addChild("Client reply");
         System.out.println("reply: " + reply.getTrace().getRoot().encode());
         System.out.println("want : " + t.encode());
-        assertTrue(reply.getTrace().getRoot().encode().equals(t.encode()));
+        assertEquals(reply.getTrace().getRoot().encode(), t.encode());
     }
 
     private static class Proxy implements MessageHandler, ReplyHandler {

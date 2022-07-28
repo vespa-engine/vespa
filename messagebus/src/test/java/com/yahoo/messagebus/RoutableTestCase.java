@@ -8,22 +8,18 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleReply;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RoutableTestCase {
 
     private final double delta = 0.00000001;
 
     @Test
-    public void testMessageContext() throws ListenFailedException {
+    void testMessageContext() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer srcServer = new TestServer("src", null, slobrok, null);
         TestServer dstServer = new TestServer("dst", null, slobrok, null);
@@ -39,10 +35,10 @@ public class RoutableTestCase {
         msg.setContext(context);
         assertTrue(srcSession.send(msg, "dst/session", true).isAccepted());
 
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
 
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertSame(reply.getContext(), context);
 
@@ -54,7 +50,7 @@ public class RoutableTestCase {
     }
 
     @Test
-    public void testMessageSwapState() {
+    void testMessageSwapState() {
         Message foo = new SimpleMessage("foo");
         Route fooRoute = Route.parse("foo");
         foo.setRoute(fooRoute);
@@ -80,7 +76,7 @@ public class RoutableTestCase {
     }
 
     @Test
-    public void testReplySwapState() {
+    void testReplySwapState() {
         Reply foo = new SimpleReply("foo");
         Message fooMsg = new SimpleMessage("foo");
         foo.setMessage(fooMsg);
@@ -104,7 +100,7 @@ public class RoutableTestCase {
     }
 
     @Test
-    public void testMessageDiscard() {
+    void testMessageDiscard() {
         Receptor handler = new Receptor();
         Message msg = new SimpleMessage("foo");
         msg.pushHandler(handler);
@@ -114,7 +110,7 @@ public class RoutableTestCase {
     }
 
     @Test
-    public void testReplyDiscard() {
+    void testReplyDiscard() {
         Receptor handler = new Receptor();
         Message msg = new SimpleMessage("foo");
         msg.pushHandler(handler);
