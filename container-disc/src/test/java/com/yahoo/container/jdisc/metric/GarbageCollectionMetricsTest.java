@@ -3,13 +3,13 @@ package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.LinkedList;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
  */
 public class GarbageCollectionMetricsTest {
     @Test
-    public void gc_metrics_are_collected_in_a_sliding_window() {
+    void gc_metrics_are_collected_in_a_sliding_window() {
         ManualClock clock = new ManualClock();
         Metric metric = mock(Metric.class);
         int garbageCollectors = ManagementFactory.getGarbageCollectorMXBeans().size();

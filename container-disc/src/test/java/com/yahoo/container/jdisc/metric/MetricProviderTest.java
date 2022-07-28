@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc.metric;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.MetricConsumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.concurrent.Callable;
@@ -13,9 +13,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class MetricProviderTest {
 
     @Test
-    public void requireThatMetricProviderDelegatesToConsumerFactory() {
+    void requireThatMetricProviderDelegatesToConsumerFactory() {
         MetricConsumer consumer = Mockito.mock(MetricConsumer.class);
         MetricProvider provider = MetricProviders.newInstance(consumer);
 
@@ -38,7 +38,7 @@ public class MetricProviderTest {
     }
 
     @Test
-    public void requireThatThreadLocalConsumersAreProvided() throws Exception {
+    void requireThatThreadLocalConsumersAreProvided() throws Exception {
         AtomicInteger cnt = new AtomicInteger(0);
         final MetricProvider metricProvider = MetricProviders.newInstance(MetricConsumerFactories.newCounter(cnt));
         assertEquals(0, cnt.get());

@@ -6,8 +6,8 @@ import com.yahoo.container.bundle.MockBundle;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -23,13 +23,13 @@ import static org.junit.Assert.assertTrue;
 public class DeconstructorTest {
     public static Deconstructor deconstructor;
 
-    @Before
+    @BeforeEach
     public void init() {
         deconstructor = new Deconstructor();
     }
 
     @Test
-    public void deconstructor_waits_for_completion_on_shutdown() {
+    void deconstructor_waits_for_completion_on_shutdown() {
         deconstructor = new Deconstructor();
 
         var slowDeconstructComponent = new SlowDeconstructComponent();
@@ -39,7 +39,7 @@ public class DeconstructorTest {
     }
 
     @Test
-    public void require_abstract_component_destructed() throws InterruptedException {
+    void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
         deconstructor.deconstruct(0, List.of(abstractComponent), emptyList());
 
@@ -48,7 +48,7 @@ public class DeconstructorTest {
     }
 
     @Test
-    public void require_provider_destructed() throws InterruptedException {
+    void require_provider_destructed() throws InterruptedException {
         TestProvider provider = new TestProvider();
         deconstructor.deconstruct(0, List.of(provider), emptyList());
 
@@ -57,7 +57,7 @@ public class DeconstructorTest {
     }
 
     @Test
-    public void require_shared_resource_released() throws InterruptedException {
+    void require_shared_resource_released() throws InterruptedException {
         TestSharedResource sharedResource = new TestSharedResource();
         deconstructor.deconstruct(0, List.of(sharedResource), emptyList());
         waitForDeconstructToComplete(() -> sharedResource.released);
@@ -65,7 +65,7 @@ public class DeconstructorTest {
     }
 
     @Test
-    public void bundles_are_uninstalled() throws InterruptedException {
+    void bundles_are_uninstalled() throws InterruptedException {
         var bundle = new UninstallableMockBundle();
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(0, emptyList(), singleton(bundle));
