@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
