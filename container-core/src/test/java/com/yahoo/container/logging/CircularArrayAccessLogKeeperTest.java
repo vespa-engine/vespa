@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.Matchers.contains;
@@ -14,11 +14,11 @@ public class CircularArrayAccessLogKeeperTest {
     private CircularArrayAccessLogKeeper circularArrayAccessLogKeeper = new CircularArrayAccessLogKeeper();
 
     @Test
-    public void testSizeIsCroppedCorrectly() {
+    void testSizeIsCroppedCorrectly() {
         for (int i = 0; i < CircularArrayAccessLogKeeper.SIZE - 1; i++) {
             circularArrayAccessLogKeeper.addUri(String.valueOf(i));
         }
-        assertThat(circularArrayAccessLogKeeper.getUris().size(), is(CircularArrayAccessLogKeeper.SIZE -1));
+        assertThat(circularArrayAccessLogKeeper.getUris().size(), is(CircularArrayAccessLogKeeper.SIZE - 1));
         circularArrayAccessLogKeeper.addUri("foo");
         assertThat(circularArrayAccessLogKeeper.getUris().size(), is(CircularArrayAccessLogKeeper.SIZE));
         circularArrayAccessLogKeeper.addUri("bar");
@@ -28,12 +28,12 @@ public class CircularArrayAccessLogKeeperTest {
     }
 
     @Test
-    public void testEmpty() {
+    void testEmpty() {
         assertThat(circularArrayAccessLogKeeper.getUris().size(), is(0));
     }
 
     @Test
-    public void testSomeItems() {
+    void testSomeItems() {
         circularArrayAccessLogKeeper.addUri("a");
         circularArrayAccessLogKeeper.addUri("b");
         circularArrayAccessLogKeeper.addUri("b");

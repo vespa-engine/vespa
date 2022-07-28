@@ -7,13 +7,13 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.ModelBuilderAddingAccessControlFilter;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bjorncs
@@ -34,7 +34,7 @@ public class AccessControlFilterValidatorTest {
 
 
     @Test
-    public void validator_fails_with_empty_access_control_filter_chain() throws IOException, SAXException {
+    void validator_fails_with_empty_access_control_filter_chain() throws IOException, SAXException {
         DeployState deployState = createDeployState();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -47,7 +47,7 @@ public class AccessControlFilterValidatorTest {
     }
 
     @Test
-    public void validator_accepts_non_empty_access_control_filter_chain() throws IOException, SAXException {
+    void validator_accepts_non_empty_access_control_filter_chain() throws IOException, SAXException {
         DeployState deployState = createDeployState();
         VespaModel model = new VespaModel(
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),

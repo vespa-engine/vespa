@@ -11,30 +11,29 @@ import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.execution.chain.ChainRegistry;
-import org.junit.After;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MockUserDatabaseClientTest {
 
     private TestDriver driver;
 
     @Test
-    public void testClientExampleProcessor() {
-        Request request=null;
+    void testClientExampleProcessor() {
+        Request request = null;
         try {
-            Chain<Processor> chain = new Chain<>("default",new MockUserDatabaseClient());
+            Chain<Processor> chain = new Chain<>("default", new MockUserDatabaseClient());
             setupJDisc(Collections.singletonList(chain));
             request = createRequest();
             Response response = Execution.createRoot(chain, 0, Execution.Environment.createEmpty()).process(request);
-            MockUserDatabaseClient.User user = (MockUserDatabaseClient.User)response.data().request().properties().get("User");
+            MockUserDatabaseClient.User user = (MockUserDatabaseClient.User) response.data().request().properties().get("User");
             assertNotNull(user);
             assertEquals("foo", user.getId());
         }
@@ -71,7 +70,7 @@ public class MockUserDatabaseClientTest {
         driver.activateContainer(builder);
     }
 
-    @After
+    @AfterEach
     public void shutDownDisc() {
         assertTrue(driver.close());
     }

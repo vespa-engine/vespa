@@ -25,8 +25,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,9 +39,9 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author freva
@@ -77,7 +77,7 @@ public class NotificationsDbTest {
     private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb, new Notifier(curatorDb, new ZoneRegistryMock(SystemName.cd), mailer, flagSource));
 
     @Test
-    public void list_test() {
+    void list_test() {
         assertEquals(notifications, notificationsDb.listNotifications(NotificationSource.from(tenant), false));
         assertEquals(notificationIndices(0, 1, 2, 3), notificationsDb.listNotifications(NotificationSource.from(tenant), true));
         assertEquals(notificationIndices(2, 3), notificationsDb.listNotifications(NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app2")), false));
@@ -87,7 +87,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void add_test() {
+    void add_test() {
         Notification notification1 = notification(12345, Type.deployment, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
         Notification notification2 = notification(12345, Type.deployment, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
 
@@ -103,11 +103,11 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void notifier_test() {
+    void notifier_test() {
         Notification notification1 = notification(12345, Type.deployment, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
         Notification notification2 = notification(12345, Type.applicationPackage, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
         Notification notification3 = notification(12345, Type.reindex, Level.warning, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.defaultId()), new ClusterSpec.Id("content")), "instance msg #2");
-;
+        ;
         var a = notifications.get(0);
         notificationsDb.setNotification(a.source(), a.type(), a.level(), a.messages());
         assertEquals(0, mailer.inbox(email).size());
@@ -126,7 +126,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void remove_single_test() {
+    void remove_single_test() {
         // Remove the 3rd notification
         notificationsDb.removeNotification(NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), Type.deployment);
 
@@ -137,7 +137,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void remove_multiple_test() {
+    void remove_multiple_test() {
         // Remove the 3rd notification
         notificationsDb.removeNotifications(NotificationSource.from(ApplicationId.from(tenant.value(), "app1", "instance1")));
         assertEquals(notificationIndices(0, 1, 2, 3), curatorDb.readNotifications(tenant));
@@ -149,7 +149,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void deployment_metrics_notify_test() {
+    void deployment_metrics_notify_test() {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
         NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));
         List<Notification> expected = new ArrayList<>(notifications);
@@ -172,7 +172,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void feed_blocked_single_cluster_test() {
+    void feed_blocked_single_cluster_test() {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
         NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));
         List<Notification> expected = new ArrayList<>(notifications);
@@ -207,7 +207,7 @@ public class NotificationsDbTest {
     }
 
     @Test
-    public void deployment_metrics_multiple_cluster_test() {
+    void deployment_metrics_multiple_cluster_test() {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
         NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));
         NotificationSource sourceCluster2 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster2"));
@@ -231,7 +231,7 @@ public class NotificationsDbTest {
         assertEquals(expected, curatorDb.readNotifications(tenant));
     }
 
-    @Before
+    @BeforeEach
     public void init() {
         curatorDb.writeNotifications(tenant, notifications);
         curatorDb.writeTenant(cloudTenant);

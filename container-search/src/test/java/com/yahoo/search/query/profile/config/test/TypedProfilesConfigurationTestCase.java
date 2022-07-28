@@ -4,11 +4,9 @@ package com.yahoo.search.query.profile.config.test;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -17,7 +15,7 @@ public class TypedProfilesConfigurationTestCase {
 
     /** Asserts that everything is read correctly from this configuration */
     @Test
-    public void testIt() {
+    void testIt() {
         var registry = QueryProfileConfigurer.createFromConfigId("file:src/test/java/com/yahoo/search/query/profile/config/test/typed-profiles.cfg");
         var types = registry.getTypeRegistry();
 
@@ -33,19 +31,19 @@ public class TypedProfilesConfigurationTestCase {
         assertTrue(testType.getField("myString").isOverridable());
         assertFalse(testType.getField("myInteger").isMandatory());
         assertFalse(testType.getField("myInteger").isOverridable());
-        FieldDescription field= testType.getField("myUserQueryProfile");
+        FieldDescription field = testType.getField("myUserQueryProfile");
         assertEquals("reference to a query profile of type 'user'", field.getType().toInstanceDescription());
         assertTrue(field.getAliases().contains("myqp"));
         assertTrue(field.getAliases().contains("user-profile"));
 
-        QueryProfileType testTypeStrict=types.getComponent("testtypestrict");
+        QueryProfileType testTypeStrict = types.getComponent("testtypestrict");
         assertTrue(testTypeStrict.isStrict());
         assertTrue(testTypeStrict.getMatchAsPath());
         assertEquals(7, testTypeStrict.fields().size());
         assertEquals("reference to a query profile of type 'userstrict'",
-                     testTypeStrict.getField("myUserQueryProfile").getType().toInstanceDescription());
+                testTypeStrict.getField("myUserQueryProfile").getType().toInstanceDescription());
 
-        QueryProfileType user=types.getComponent("user");
+        QueryProfileType user = types.getComponent("user");
         assertFalse(user.isStrict());
         assertFalse(user.getMatchAsPath());
         assertEquals(2, user.fields().size());

@@ -3,17 +3,17 @@ package com.yahoo.schema;
 
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author baldersheim
  */
 public class DiversityTestCase {
     @Test
-    public void testDiversity() throws ParseException {
+    void testDiversity() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -58,8 +58,9 @@ public class DiversityTestCase {
     private static String getMessagePrefix() {
         return "In search definition 'test', rank-profile 'parent': diversity attribute 'b' ";
     }
+
     @Test
-    public void requireSingleNumericOrString() throws ParseException {
+    void requireSingleNumericOrString() throws ParseException {
         ApplicationBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
 
         try {
@@ -71,7 +72,7 @@ public class DiversityTestCase {
     }
 
     @Test
-    public void requireSingle() throws ParseException {
+    void requireSingle() throws ParseException {
         ApplicationBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
 
         try {

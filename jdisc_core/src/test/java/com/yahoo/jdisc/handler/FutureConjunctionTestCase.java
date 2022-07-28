@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -10,10 +10,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,13 +23,17 @@ public class FutureConjunctionTestCase {
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Test
-    public void requireThatAllFuturesAreWaitedFor() throws Exception {
+    void requireThatAllFuturesAreWaitedFor() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         FutureConjunction future = new FutureConjunction();
         CompletableFuture<Boolean> cf = new CompletableFuture<>();
         cf.completeAsync(() -> {
-            try { return latch.await(600, TimeUnit.SECONDS); }
-            catch (InterruptedException e) { return false; }
+            try {
+                return latch.await(600, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e) {
+                return false;
+            }
         }, executor);
         future.addOperand(cf);
         try {
@@ -43,7 +47,7 @@ public class FutureConjunctionTestCase {
     }
 
     @Test
-    public void requireThatGetReturnValueIsAConjunction() throws Exception {
+    void requireThatGetReturnValueIsAConjunction() throws Exception {
         assertTrue(tryGet(true));
         assertTrue(tryGet(true, true));
         assertTrue(tryGet(true, true, true));
@@ -60,7 +64,7 @@ public class FutureConjunctionTestCase {
     }
 
     @Test
-    public void requireThatIsDoneReturnValueIsAConjunction() {
+    void requireThatIsDoneReturnValueIsAConjunction() {
         assertTrue(tryIsDone(true));
         assertTrue(tryIsDone(true, true));
         assertTrue(tryIsDone(true, true, true));
@@ -77,7 +81,7 @@ public class FutureConjunctionTestCase {
     }
 
     @Test
-    public void requireThatCancelReturnValueIsAConjuction() {
+    void requireThatCancelReturnValueIsAConjuction() {
         assertTrue(tryCancel(true));
         assertTrue(tryCancel(true, true));
         assertTrue(tryCancel(true, true, true));
@@ -94,7 +98,7 @@ public class FutureConjunctionTestCase {
     }
 
     @Test
-    public void requireThatIsCancelledReturnValueIsAConjuction() {
+    void requireThatIsCancelledReturnValueIsAConjuction() {
         assertTrue(tryIsCancelled(true));
         assertTrue(tryIsCancelled(true, true));
         assertTrue(tryIsCancelled(true, true, true));
@@ -111,7 +115,7 @@ public class FutureConjunctionTestCase {
     }
 
     @Test
-    public void requireThatConjunctionCanBeListenedTo() throws InterruptedException {
+    void requireThatConjunctionCanBeListenedTo() throws InterruptedException {
         FutureConjunction conjunction = new FutureConjunction();
         RunnableLatch listener = new RunnableLatch();
         conjunction.addListener(listener, Runnable::run);

@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple;
 
-import static org.junit.Assert.*;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -10,9 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Functional tests for counters.
@@ -23,18 +22,18 @@ public class CounterTest {
 
     MetricReceiver receiver;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         receiver = new MetricReceiver.MockReceiver();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         receiver = null;
     }
 
     @Test
-    public final void testAdd() throws InterruptedException {
+    final void testAdd() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Counter c = receiver.declareCounter(metricName);
         c.add();
@@ -48,7 +47,7 @@ public class CounterTest {
     }
 
     @Test
-    public final void testAddLong() throws InterruptedException {
+    final void testAddLong() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Counter c = receiver.declareCounter(metricName);
         final long twoToThePowerOfFourtyeight = 65536L * 65536L * 65536L;
@@ -63,7 +62,7 @@ public class CounterTest {
     }
 
     @Test
-    public final void testAddPoint() throws InterruptedException {
+    final void testAddPoint() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Counter c = receiver.declareCounter(metricName, p);
@@ -75,10 +74,10 @@ public class CounterTest {
         assertEquals(1, x.size());
         assertEquals(p, x.get(0).getKey());
         assertEquals(1, x.get(0).getValue().getCount());
-        }
+    }
 
     @Test
-    public final void testAddLongPoint() throws InterruptedException {
+    final void testAddLongPoint() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Counter c = receiver.declareCounter(metricName, p);

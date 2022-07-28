@@ -5,15 +5,15 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SummaryConsistencyTestCase {
 
     @Test
-    public void attribute_combiner_transform_is_set_when_source_is_array_of_struct_with_only_struct_field_attributes() throws ParseException {
+    void attribute_combiner_transform_is_set_when_source_is_array_of_struct_with_only_struct_field_attributes() throws ParseException {
         String sd = joinLines(
                 "search structmemorysummary {",
                 "  document structmemorysummary {",

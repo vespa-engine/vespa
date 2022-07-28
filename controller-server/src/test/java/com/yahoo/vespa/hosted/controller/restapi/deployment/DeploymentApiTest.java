@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
     private final static String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/deployment/responses/";
 
     @Test
-    public void testDeploymentApi() {
+    void testDeploymentApi() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         DeploymentTester deploymentTester = new DeploymentTester(new ControllerTester(tester));
         Version version = Version.fromString("4.9");
@@ -43,8 +43,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         ApplicationPackage emptyPackage = new ApplicationPackageBuilder().instances("default")
-                                                                         .allow(ValidationId.deploymentRemoval)
-                                                                         .build();
+                .allow(ValidationId.deploymentRemoval)
+                .build();
 
         // Deploy application without any declared jobs on the oldest version.
         var oldAppWithoutDeployment = deploymentTester.newDeploymentContext("tenant4", "application4", "default");

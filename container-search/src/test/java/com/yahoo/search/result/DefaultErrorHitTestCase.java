@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Iterator;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Steinar Knutsen
@@ -17,13 +16,13 @@ public class DefaultErrorHitTestCase {
     private static final String SOURCE = "nalle";
     DefaultErrorHit de;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         de = new DefaultErrorHit(SOURCE, ErrorMessage.createUnspecifiedError("DefaultErrorHitTestCase"));
     }
 
     @Test
-    public void testSetSourceTakeTwo() {
+    void testSetSourceTakeTwo() {
         assertEquals(SOURCE, de.getSource());
         de.setSource(null);
         assertNull(de.getSource());
@@ -36,19 +35,19 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertEquals("Error: Source 'nalle': 5: Unspecified error: DefaultErrorHitTestCase", de.toString());
     }
 
     @Test
-    public void testSetMainError() {
+    void testSetMainError() {
         ErrorMessage e = ErrorMessage.createBackendCommunicationError("abc");
         assertNull(e.getSource());
         de.addError(e);
         assertEquals(SOURCE, e.getSource());
         boolean caught = false;
         try {
-            new DefaultErrorHit(SOURCE, (ErrorMessage)null);
+            new DefaultErrorHit(SOURCE, (ErrorMessage) null);
         } catch (NullPointerException ex) {
             caught = true;
         }
@@ -64,7 +63,7 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public void testAddError() {
+    void testAddError() {
         ErrorMessage e = ErrorMessage.createBackendCommunicationError("ljkhlkjh");
         assertNull(e.getSource());
         de.addError(e);
@@ -79,7 +78,7 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public void testAddErrors() {
+    void testAddErrors() {
         DefaultErrorHit other = new DefaultErrorHit("abc", ErrorMessage.createBadRequest("sdasd"));
         de.addErrors(other);
         int i = 0;
@@ -98,7 +97,7 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public void testHasOnlyErrorCode() {
+    void testHasOnlyErrorCode() {
         assertTrue(de.hasOnlyErrorCode(com.yahoo.container.protect.Error.UNSPECIFIED.code));
         assertFalse(de.hasOnlyErrorCode(com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR.code));
 

@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test UnicodePropertyDump gives expected data.
@@ -17,7 +17,7 @@ import org.junit.Test;
 public class UnicodePropertyDumpTestCase {
 
     @Test
-    public final void testMain() throws IOException {
+    final void testMain() throws IOException {
         ByteArrayOutputStream toCheck;
         PrintStream out;
         toCheck = new ByteArrayOutputStream();

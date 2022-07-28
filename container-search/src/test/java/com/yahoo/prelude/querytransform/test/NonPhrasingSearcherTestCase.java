@@ -7,9 +7,9 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.NonPhrasingSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests non-phrasing
@@ -21,58 +21,58 @@ public class NonPhrasingSearcherTestCase {
     private Searcher searcher;
 
     @Test
-    public void testSingleWordNonPhrasing() {
-        searcher=
-            new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testSingleWordNonPhrasing() {
+        searcher =
+                new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=void+aword+kanoo");
+        Query query = new Query("?query=void+aword+kanoo");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals("WEAKAND(100) void kanoo", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testMultipleWordNonPhrasing() {
-        searcher=
-            new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testMultipleWordNonPhrasing() {
+        searcher =
+                new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=void+tudor+vidor+kanoo");
+        Query query = new Query("?query=void+tudor+vidor+kanoo");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
-        assertEquals(2,item.getItemCount());
-        assertEquals("void",((WordItem)item.getItem(0)).getWord());
-        assertEquals("kanoo",((WordItem)item.getItem(1)).getWord());
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(2, item.getItemCount());
+        assertEquals("void", ((WordItem) item.getItem(0)).getWord());
+        assertEquals("kanoo", ((WordItem) item.getItem(1)).getWord());
     }
 
     @Test
-    public void testNoNonPhrasingIfNoOtherPhrases() {
-        searcher=
-            new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testNoNonPhrasingIfNoOtherPhrases() {
+        searcher =
+                new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=tudor+vidor");
+        Query query = new Query("?query=tudor+vidor");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
-        assertEquals(2,item.getItemCount());
-        assertEquals("tudor",((WordItem)item.getItem(0)).getWord());
-        assertEquals("vidor",((WordItem)item.getItem(1)).getWord());
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(2, item.getItemCount());
+        assertEquals("tudor", ((WordItem) item.getItem(0)).getWord());
+        assertEquals("vidor", ((WordItem) item.getItem(1)).getWord());
     }
 
     @Test
-    public void testNoNonPhrasingIfSuggestOnly() {
-        searcher=
-            new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testNoNonPhrasingIfSuggestOnly() {
+        searcher =
+                new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=void+tudor+vidor+kanoo&suggestonly=true");
+        Query query = new Query("?query=void+tudor+vidor+kanoo&suggestonly=true");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
-        assertEquals(4,item.getItemCount());
-        assertEquals("void",((WordItem)item.getItem(0)).getWord());
-        assertEquals("tudor",((WordItem)item.getItem(1)).getWord());
-        assertEquals("vidor",((WordItem)item.getItem(2)).getWord());
-        assertEquals("kanoo",((WordItem)item.getItem(3)).getWord());
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(4, item.getItemCount());
+        assertEquals("void", ((WordItem) item.getItem(0)).getWord());
+        assertEquals("tudor", ((WordItem) item.getItem(1)).getWord());
+        assertEquals("vidor", ((WordItem) item.getItem(2)).getWord());
+        assertEquals("kanoo", ((WordItem) item.getItem(3)).getWord());
     }
 
 }

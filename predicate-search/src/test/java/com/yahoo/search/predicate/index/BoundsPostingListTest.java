@@ -2,15 +2,13 @@
 package com.yahoo.search.predicate.index;
 
 import com.google.common.primitives.Ints;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test lies in com.yahoo.search.predicate to get access to some methods of PredicateIndex.
@@ -20,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class BoundsPostingListTest {
 
     @Test
-    public void requireThatPostingListChecksBounds() {
+    void requireThatPostingListChecksBounds() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
         List<Integer> docIds = new ArrayList<>();
         List<Integer> dataRefs = new ArrayList<>();
@@ -72,13 +70,13 @@ public class BoundsPostingListTest {
     }
 
     private void checkNext(BoundsPostingList postingList, int movePast, int docId, int intervalCount) {
-        assertTrue("Unable to move past " + movePast, postingList.nextDocument(movePast));
+        assertTrue(postingList.nextDocument(movePast), "Unable to move past " + movePast);
         assertEquals(intervalCount > 0, postingList.prepareIntervals());
         assertEquals(docId, postingList.getDocId());
         for (int i = 0; i < intervalCount - 1; ++i) {
-            assertTrue("Too few intervals, expected " + intervalCount, postingList.nextInterval());
+            assertTrue(postingList.nextInterval(), "Too few intervals, expected " + intervalCount);
         }
-        assertFalse("Too many intervals, expected " + intervalCount, postingList.nextInterval());
+        assertFalse(postingList.nextInterval(), "Too many intervals, expected " + intervalCount);
     }
 
 }

@@ -4,7 +4,7 @@ package com.yahoo.jdisc.benchmark;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.application.UriPattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class BindingMatchingTestCase {
     private static final ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADS);
 
     @Test
-    public void runThroughtputMeasurements() throws Exception {
+    void runThroughtputMeasurements() throws Exception {
         System.err.format("%15s%15s%15s%15s%15s%15s%15s%15s\n",
                 "No. of Bindings", "1 thread", "2 thread", "4 thread", "8 thread", "16 thread", "32 thread", "64 thread");
         for (int numBindings : Arrays.asList(1, 10, 25, 50, 100, 250)) {

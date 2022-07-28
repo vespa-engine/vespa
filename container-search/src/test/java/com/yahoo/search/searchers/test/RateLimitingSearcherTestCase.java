@@ -14,15 +14,13 @@ import com.yahoo.search.config.RateLimitingConfig;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.RateLimitingSearcher;
 import com.yahoo.yolean.chain.After;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import com.yahoo.test.ManualClock;
 
 import java.time.Duration;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for RateLimitingSearcher
@@ -32,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 public class RateLimitingSearcherTestCase {
 
     @Test
-    public void testRateLimiting() {
+    void testRateLimiting() {
         RateLimitingConfig.Builder rateLimitingConfig = new RateLimitingConfig.Builder();
         rateLimitingConfig.maxAvailableCapacity(4);
         rateLimitingConfig.capacityIncrement(2);
@@ -46,36 +44,36 @@ public class RateLimitingSearcherTestCase {
         MetricReceiver.MockReceiver metric = new MetricReceiver.MockReceiver();
 
         Chain<Searcher> chain = new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
-                                                                             new ClusterInfoConfig(clusterInfoConfig),
-                                                                             metric, clock),
-                                                     new CostSettingSearcher());
-        assertEquals("'rate' request are available initially", 2, tryRequests(chain, "id1"));
-        assertTrue("However, don't reject if we dryRun", executeWasAllowed(chain, "id1", true));
+                        new ClusterInfoConfig(clusterInfoConfig),
+                        metric, clock),
+                new CostSettingSearcher());
+        assertEquals(2, tryRequests(chain, "id1"), "'rate' request are available initially");
+        assertTrue(executeWasAllowed(chain, "id1", true), "However, don't reject if we dryRun");
         clock.advance(Duration.ofMillis(1500)); // causes 2 new requests to become available
-        assertEquals("'rate' new requests became available", 2, tryRequests(chain, "id1"));
+        assertEquals(2, tryRequests(chain, "id1"), "'rate' new requests became available");
 
-        assertEquals("Another id", 2, tryRequests(chain, "id2"));
-
-        clock.advance(Duration.ofMillis(1000000));
-        assertEquals("'maxAvailableCapacity' request became available", 4, tryRequests(chain, "id2"));
-
-        assertFalse("If quota is set to 0, all requests are rejected, even initially", executeWasAllowed(chain, "id3", 0));
+        assertEquals(2, tryRequests(chain, "id2"), "Another id");
 
         clock.advance(Duration.ofMillis(1000000));
-        assertTrue("A single query which costs more than capacity is allowed as cost is calculated after allowing it",
-                   executeWasAllowed(chain, "id1", 8, 8, false));
-        assertFalse("capacity is -4: disallowing", executeWasAllowed(chain, "id1"));
+        assertEquals(4, tryRequests(chain, "id2"), "'maxAvailableCapacity' request became available");
+
+        assertFalse(executeWasAllowed(chain, "id3", 0), "If quota is set to 0, all requests are rejected, even initially");
+
+        clock.advance(Duration.ofMillis(1000000));
+        assertTrue(executeWasAllowed(chain, "id1", 8, 8, false),
+                "A single query which costs more than capacity is allowed as cost is calculated after allowing it");
+        assertFalse(executeWasAllowed(chain, "id1"), "capacity is -4: disallowing");
         clock.advance(Duration.ofMillis(1000));
-        assertFalse("capacity is -2: disallowing", executeWasAllowed(chain, "id1"));
+        assertFalse(executeWasAllowed(chain, "id1"), "capacity is -2: disallowing");
         clock.advance(Duration.ofMillis(1000));
-        assertFalse("capacity is 0: disallowing", executeWasAllowed(chain, "id1"));
+        assertFalse(executeWasAllowed(chain, "id1"), "capacity is 0: disallowing");
         clock.advance(Duration.ofMillis(1000));
         assertTrue(executeWasAllowed(chain, "id1"));
 
         // check metrics
-        Map<Point,UntypedMetric> map = metric.getSnapshot().getMapForMetric("requestsOverQuota");
-        assertEquals(requestsToTry-2 + 1 + requestsToTry-2 + 3, map.get(metric.point("id", "id1")).getCount());
-        assertEquals(requestsToTry-2 + requestsToTry-4,         map.get(metric.point("id", "id2")).getCount());
+        Map<Point, UntypedMetric> map = metric.getSnapshot().getMapForMetric("requestsOverQuota");
+        assertEquals(requestsToTry - 2 + 1 + requestsToTry - 2 + 3, map.get(metric.point("id", "id1")).getCount());
+        assertEquals(requestsToTry - 2 + requestsToTry - 4,         map.get(metric.point("id", "id2")).getCount());
     }
 
     private int requestsToTry = 50;

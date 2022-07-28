@@ -6,13 +6,13 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -26,7 +26,7 @@ public class RealFlagRepositoryTest {
     private final RealFlagRepository repository = new RealFlagRepository(configServerApi);
 
     @Test
-    public void test() {
+    void test() {
         WireFlagDataList list = new WireFlagDataList();
         list.flags = new ArrayList<>();
         list.flags.add(new WireFlagData());

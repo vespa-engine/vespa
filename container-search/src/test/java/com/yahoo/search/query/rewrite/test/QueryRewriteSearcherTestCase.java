@@ -10,8 +10,8 @@ import com.yahoo.search.intent.model.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Generic Test Cases for QueryRewriteSearcher
@@ -36,7 +36,7 @@ public class QueryRewriteSearcherTestCase {
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
@@ -61,7 +61,7 @@ public class QueryRewriteSearcherTestCase {
      * Query will be passed to next rewriter
      */
     @Test
-    public void testInvalidFSAConfigPath() {
+    void testInvalidFSAConfigPath() {
         // Instantiate Name Rewriter with fake FSA path
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(FAKE_FSA_CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
@@ -80,9 +80,9 @@ public class QueryRewriteSearcherTestCase {
         QueryRewriteSearcherTestUtils utilsWithFakePath = new QueryRewriteSearcherTestUtils(execution);
 
         utilsWithFakePath.assertRewrittenQuery("?query=will smith&type=all&" +
-                                               NAME_REWRITER_NAME + "." +
-                                               RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true",
-                                               "query 'AND will smith'");
+                NAME_REWRITER_NAME + "." +
+                RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true",
+                "query 'AND will smith'");
     }
 
     /**
@@ -90,19 +90,19 @@ public class QueryRewriteSearcherTestCase {
      * It should skip to the next rewriter
      */
     @Test
-    public void testExceptionInRewriter() {
+    void testExceptionInRewriter() {
         utils.assertRewrittenQuery("?query=will smith&type=all&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
-                                   "query 'OR (AND will smith) " +
-                                   "\"will smith\" \"will smith movies\" " +
-                                   "\"will smith news\" \"will smith imdb\" " +
-                                   "\"will smith lyrics\" \"will smith dead\" " +
-                                   "\"will smith nfl\" \"will smith new movie hancock\" " +
-                                   "\"will smith biography\"'");
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
+                "query 'OR (AND will smith) " +
+                        "\"will smith\" \"will smith movies\" " +
+                        "\"will smith news\" \"will smith imdb\" " +
+                        "\"will smith lyrics\" \"will smith dead\" " +
+                        "\"will smith nfl\" \"will smith new movie hancock\" " +
+                        "\"will smith biography\"'");
     }
 
     /**
@@ -110,26 +110,26 @@ public class QueryRewriteSearcherTestCase {
      * Query will be rewritten twice
      */
     @Test
-    public void testTwoRewritersInChain() {
+    void testTwoRewritersInChain() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("wills smith", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith", 1.0,
-                                                             false, true));
+                utils.createInterpretation("wills smith", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&type=all&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith) " +
-                                   "\"will smith\" \"will smith movies\" " +
-                                   "\"will smith news\" \"will smith imdb\" " +
-                                   "\"will smith lyrics\" \"will smith dead\" " +
-                                   "\"will smith nfl\" \"will smith new movie hancock\" " +
-                                   "\"will smith biography\"'",
-                                   intentModel);
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
+                "query 'OR (AND willl smith) (AND will smith) " +
+                        "\"will smith\" \"will smith movies\" " +
+                        "\"will smith news\" \"will smith imdb\" " +
+                        "\"will smith lyrics\" \"will smith dead\" " +
+                        "\"will smith nfl\" \"will smith new movie hancock\" " +
+                        "\"will smith biography\"'",
+                intentModel);
     }
 
 }

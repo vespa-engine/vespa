@@ -13,10 +13,10 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests guards against in single item phrases.
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNull;
 public class WashPhrasesTestCase {
 
     @Test
-    public void testSimplePositive() {
+    void testSimplePositive() {
         PhraseItem root = new PhraseItem();
 
         root.addItem(new WordItem("abc"));
@@ -34,7 +34,7 @@ public class WashPhrasesTestCase {
     }
 
     @Test
-    public void testPositive1() {
+    void testPositive1() {
         AndItem root = new AndItem();
 
         root.addItem(new WordItem("a"));
@@ -47,7 +47,7 @@ public class WashPhrasesTestCase {
     }
 
     @Test
-    public void testPositive2() {
+    void testPositive2() {
         AndItem root = new AndItem();
 
         root.addItem(new WordItem("a"));
@@ -64,22 +64,22 @@ public class WashPhrasesTestCase {
     }
 
     @Test
-    public void testNoTerms() {
+    void testNoTerms() {
         assertNull(transformQuery("\"\""));
     }
 
     @Test
-    public void testNegative1() {
+    void testNegative1() {
         assertEquals("\"abc def\"", transformQuery("\"abc def\""));
     }
 
     @Test
-    public void testNegative2() {
+    void testNegative2() {
         assertEquals("AND a \"abc def\" b", transformQuery("a \"abc def\" b"));
     }
-    @Test
 
-    public void testNegative3() {
+    @Test
+    void testNegative3() {
         AndItem root = new AndItem();
 
         root.addItem(new WordItem("a"));

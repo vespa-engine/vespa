@@ -5,13 +5,13 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author gjoranv
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 public class FilterChainsTest extends DomBuilderTest {
     private Http http;
 
-    @Before
+    @BeforeEach
     public void setupFilterChains() {
         http = new HttpBuilder().build(root.getDeployState(), root, servicesXml());
         root.freezeModelTopology();
@@ -40,18 +40,18 @@ public class FilterChainsTest extends DomBuilderTest {
     }
 
     @Test
-    public void chains_are_built() {
+    void chains_are_built() {
         assertNotNull(getChain("myChain"));
     }
 
     @Test
-    public void filters_outside_chains_are_built() {
-        Filter outerFilter = (Filter)http.getFilterChains().componentsRegistry().getComponent("outer");
+    void filters_outside_chains_are_built() {
+        Filter outerFilter = (Filter) http.getFilterChains().componentsRegistry().getComponent("outer");
         assertNotNull(outerFilter);
     }
 
     @Test
-    public void filters_in_chains_are_built() {
+    void filters_in_chains_are_built() {
         Filter filter = first(getChain("myChain").getInnerComponents());
         assertNotNull(filter);
         assertEquals("inner", filter.getComponentId().getName());

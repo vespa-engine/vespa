@@ -4,7 +4,7 @@ package com.yahoo.jdisc.http;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -13,10 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,7 +24,7 @@ import static org.mockito.Mockito.when;
 public class HttpRequestTestCase {
 
     @Test
-    public void requireThatSimpleServerConstructorsUseReasonableDefaults() {
+    void requireThatSimpleServerConstructorsUseReasonableDefaults() {
         URI uri = URI.create("http://localhost/");
         HttpRequest request = HttpRequest.newServerRequest(mockContainer(), uri);
         assertTrue(request.isServerRequest());
@@ -49,7 +46,7 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatSimpleClientConstructorsUseReasonableDefaults() {
+    void requireThatSimpleClientConstructorsUseReasonableDefaults() {
         Request parent = new Request(mockContainer(), URI.create("http://localhost/"));
 
         URI uri = URI.create("http://remotehost/");
@@ -73,11 +70,11 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         URI uri = URI.create("http://localhost/path?foo=bar&foo=baz&cox=69");
         InetSocketAddress address = new InetSocketAddress("remotehost", 69);
         final HttpRequest request = HttpRequest.newServerRequest(mockContainer(), uri, HttpRequest.Method.GET,
-                                                                 HttpRequest.Version.HTTP_1_1, address, 1L);
+                HttpRequest.Version.HTTP_1_1, address, 1L);
         assertEquals(uri, request.getUri());
 
         assertEquals(HttpRequest.Method.GET, request.getMethod());
@@ -110,7 +107,7 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatHttp10EncodingIsNeverChunked() throws Exception {
+    void requireThatHttp10EncodingIsNeverChunked() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         assertFalse(request.isChunked());
         request.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
@@ -118,20 +115,20 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatHttp11EncodingIsNotChunkedByDefault() throws Exception {
+    void requireThatHttp11EncodingIsNotChunkedByDefault() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_1);
         assertFalse(request.isChunked());
     }
 
     @Test
-    public void requireThatHttp11EncodingCanBeChunked() throws Exception {
+    void requireThatHttp11EncodingCanBeChunked() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_1);
         request.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
         assertTrue(request.isChunked());
     }
 
     @Test
-    public void requireThatHttp10ConnectionIsAlwaysClose() throws Exception {
+    void requireThatHttp10ConnectionIsAlwaysClose() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         assertFalse(request.isKeepAlive());
         request.headers().add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
@@ -139,39 +136,39 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatHttp11ConnectionIsKeepAliveByDefault() throws Exception {
+    void requireThatHttp11ConnectionIsKeepAliveByDefault() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_1);
         assertTrue(request.isKeepAlive());
     }
 
     @Test
-    public void requireThatHttp11ConnectionCanBeClose() throws Exception {
+    void requireThatHttp11ConnectionCanBeClose() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_1);
         request.headers().add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         assertFalse(request.isKeepAlive());
     }
 
     @Test
-    public void requireThatHttp10NeverHasChunkedResponse() throws Exception {
+    void requireThatHttp10NeverHasChunkedResponse() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         assertFalse(request.hasChunkedResponse());
     }
 
     @Test
-    public void requireThatHttp11HasDefaultChunkedResponse() throws Exception {
+    void requireThatHttp11HasDefaultChunkedResponse() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_1);
         assertTrue(request.hasChunkedResponse());
     }
 
     @Test
-    public void requireThatHttp11CanDisableChunkedResponse() throws Exception {
+    void requireThatHttp11CanDisableChunkedResponse() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         request.headers().add(com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING, "true");
         assertFalse(request.hasChunkedResponse());
     }
 
     @Test
-    public void requireThatCookieHeaderCanBeEncoded() throws Exception {
+    void requireThatCookieHeaderCanBeEncoded() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         request.encodeCookieHeader(cookies);
@@ -181,7 +178,7 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    public void requireThatCookieHeaderCanBeDecoded() throws Exception {
+    void requireThatCookieHeaderCanBeDecoded() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         request.encodeCookieHeader(cookies);

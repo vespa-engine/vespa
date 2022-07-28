@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author mpolden
@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 public class AliasTargetTest {
 
     @Test
-    public void packing() {
+    void packing() {
         List<AliasTarget> tests = List.of(
                 new LatencyAliasTarget(HostName.of("foo.example.com"), "dns-zone-1", ZoneId.from("prod.us-north-1")),
                 new WeightedAliasTarget(HostName.of("bar.example.com"), "dns-zone-2", ZoneId.from("prod.us-north-2"), 50)

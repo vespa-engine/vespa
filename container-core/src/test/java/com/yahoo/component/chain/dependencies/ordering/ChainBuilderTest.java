@@ -8,7 +8,7 @@ import com.yahoo.component.chain.Phase;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +18,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -56,7 +56,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testRegular() throws Exception {
+    void testRegular() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
 
         addAtoG(chainBuilder);
@@ -64,13 +64,13 @@ public class ChainBuilderTest {
         Chain<ChainedComponent> res = chainBuilder.orderNodes();
 
         Iterator<ChainedComponent> i = res.components().iterator();
-        for (char j=0; j< 'G' - 'A'; ++j) {
-            assertEquals(String.valueOf((char)('A' + j)), name(i.next()));
+        for (char j = 0; j < 'G' - 'A'; ++j) {
+            assertEquals(String.valueOf((char) ('A' + j)), name(i.next()));
         }
     }
 
     @Test
-    public void testCycle() throws Exception {
+    void testCycle() throws Exception {
 
         ChainBuilder chainBuilder = createDependencyHandler();
 
@@ -88,7 +88,7 @@ public class ChainBuilderTest {
 
 
     @Test
-    public void testPhaseAndSearcher() {
+    void testPhaseAndSearcher() {
         ChainBuilder depHandler = newChainBuilder();
         depHandler.addPhase(new Phase("phase1", set("phase2"), Collections.<String>emptySet()));
         depHandler.addPhase(new Phase("phase2", set("phase3"), set("phase1")));
@@ -103,7 +103,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testInputOrderPreservedWhenProvidesOverlap() {
+    void testInputOrderPreservedWhenProvidesOverlap() {
         ChainBuilder chainBuilder = newChainBuilder();
 
         A a1 = new A();
@@ -136,38 +136,38 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testAfterAll1() throws Exception {
+    void testAfterAll1() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
         ChainedComponent afterAll1 = new AfterAll();
         chainBuilder.addComponent(afterAll1);
         addAtoG(chainBuilder);
 
-        List<ChainedComponent> resolution= chainBuilder.orderNodes().components();
-        assertEquals(afterAll1,resolution.get(resolution.size()-1));
+        List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
+        assertEquals(afterAll1, resolution.get(resolution.size() - 1));
     }
 
     @Test
-    public void testAfterAll2() throws Exception {
+    void testAfterAll2() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
         addAtoG(chainBuilder);
         ChainedComponent afterAll1 = new AfterAll();
         chainBuilder.addComponent(afterAll1);
 
         List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
-        assertEquals(afterAll1,resolution.get(resolution.size()-1));
+        assertEquals(afterAll1, resolution.get(resolution.size() - 1));
     }
 
     @Test
-    public void testAfterImplicitProvides()
+    void testAfterImplicitProvides()
             throws InstantiationException, IllegalAccessException {
         ChainBuilder chainBuilder = createDependencyHandler();
-        ChainedComponent afterProvidesNothing=new AfterProvidesNothing();
-        ChainedComponent providesNothing=new ProvidesNothing();
+        ChainedComponent afterProvidesNothing = new AfterProvidesNothing();
+        ChainedComponent providesNothing = new ProvidesNothing();
         chainBuilder.addComponent(afterProvidesNothing);
         chainBuilder.addComponent(providesNothing);
         List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
-        assertEquals(providesNothing,resolution.get(0));
-        assertEquals(afterProvidesNothing,resolution.get(1));
+        assertEquals(providesNothing, resolution.get(0));
+        assertEquals(afterProvidesNothing, resolution.get(1));
     }
 
     private ChainBuilder createDependencyHandler() {

@@ -4,7 +4,7 @@ package com.yahoo.schema.derived;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.schema.ApplicationBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests deriving a configuration with references from multiple .sd files
@@ -14,11 +14,11 @@ import org.junit.Test;
 public class ReferenceFromSeveralTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testDocManConfigs() throws Exception {
+    void testDocManConfigs() throws Exception {
         var logger = new TestableDeployLogger();
         var props = new TestProperties();
         ApplicationBuilder builder = ApplicationBuilder.createFromDirectory
-            ("src/test/derived/reference_from_several/", new MockFileRegistry(), logger, props);
+                ("src/test/derived/reference_from_several/", new MockFileRegistry(), logger, props);
         derive("reference_from_several", builder, builder.getSchema("foo"));
         assertCorrectConfigFiles("reference_from_several");
     }

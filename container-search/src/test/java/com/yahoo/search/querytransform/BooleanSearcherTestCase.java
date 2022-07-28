@@ -8,12 +8,12 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test BooleanSearcher
@@ -27,13 +27,13 @@ public class BooleanSearcherTestCase {
                 Execution.Context.createContextStub());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         exec = buildExec();
     }
 
     @Test
-    public void requireThatAttributeMapToSingleFeature() {
+    void requireThatAttributeMapToSingleFeature() {
         PredicateQueryItem item = buildPredicateQueryItem("{gender:female}", null);
         assertEquals(1, item.getFeatures().size());
         assertEquals(0, item.getRangeFeatures().size());
@@ -43,7 +43,7 @@ public class BooleanSearcherTestCase {
     }
 
     @Test
-    public void requireThatAttributeListMapToMultipleFeatures() {
+    void requireThatAttributeListMapToMultipleFeatures() {
         PredicateQueryItem item = buildPredicateQueryItem("{gender:[female,male]}", null);
         assertEquals(2, item.getFeatures().size());
         assertEquals(0, item.getRangeFeatures().size());
@@ -51,7 +51,7 @@ public class BooleanSearcherTestCase {
     }
 
     @Test
-    public void requireThatRangeAttributesMapToRangeTerm() {
+    void requireThatRangeAttributesMapToRangeTerm() {
         PredicateQueryItem item = buildPredicateQueryItem(null, "{age:25}");
         assertEquals(0, item.getFeatures().size());
         assertEquals(1, item.getRangeFeatures().size());
@@ -63,17 +63,17 @@ public class BooleanSearcherTestCase {
     }
 
     @Test
-    public void requireThatQueryWithoutBooleanPropertiesIsUnchanged() {
+    void requireThatQueryWithoutBooleanPropertiesIsUnchanged() {
         Query q = new Query("");
         q.getModel().getQueryTree().setRoot(new WordItem("foo", "otherfield"));
         Result r = exec.search(q);
 
-        WordItem root = (WordItem)r.getQuery().getModel().getQueryTree().getRoot();
+        WordItem root = (WordItem) r.getQuery().getModel().getQueryTree().getRoot();
         assertEquals("foo", root.getWord());
     }
 
     @Test
-    public void requireThatBooleanSearcherCanBuildPredicateQueryItem() {
+    void requireThatBooleanSearcherCanBuildPredicateQueryItem() {
         PredicateQueryItem root = buildPredicateQueryItem("{gender:female}", "{age:23:[2, 3, 5]}");
 
         Collection<PredicateQueryItem.Entry> features = root.getFeatures();
@@ -92,7 +92,7 @@ public class BooleanSearcherTestCase {
     }
 
     @Test
-    public void requireThatKeysAndValuesCanContainSpaces() {
+    void requireThatKeysAndValuesCanContainSpaces() {
         PredicateQueryItem item = buildPredicateQueryItem("{'My Key':'My Value'}", null);
         assertEquals(1, item.getFeatures().size());
         assertEquals(0, item.getRangeFeatures().size());

@@ -13,9 +13,9 @@ import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.querytransform.SortingDegrader;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class SortingDegraderTestCase {
 
     @Test
-    public void testDegradingAscending() {
+    void testDegradingAscending() {
         Query query = new Query("?ranking.sorting=%2ba1%20-a2");
         execute(query);
         assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
@@ -33,7 +33,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingDescending() {
+    void testDegradingDescending() {
         Query query = new Query("?ranking.sorting=-a1%20-a2");
         execute(query);
         assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
@@ -42,7 +42,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingNonDefaultMaxHits() {
+    void testDegradingNonDefaultMaxHits() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxHits=37");
         execute(query);
         assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
@@ -51,7 +51,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingNonDefaultMaxFilterCoverage() {
+    void testDegradingNonDefaultMaxFilterCoverage() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxFilterCoverage=0.37");
         execute(query);
         assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
@@ -60,7 +60,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingNonDefaultIllegalMaxFilterCoverage() {
+    void testDegradingNonDefaultIllegalMaxFilterCoverage() {
         try {
             Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxFilterCoverage=37");
             assertTrue(false);
@@ -75,7 +75,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testNoDegradingWhenGrouping() {
+    void testNoDegradingWhenGrouping() {
         Query query = new Query("?ranking.sorting=%2ba1%20-a2&select=all(group(a1)%20each(output(a1)))");
         execute(query);
         assertNull(query.getRanking().getMatchPhase().getAttribute());
@@ -83,28 +83,28 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testNoDegradingWhenNonFastSearchAttribute() {
+    void testNoDegradingWhenNonFastSearchAttribute() {
         Query query = new Query("?ranking.sorting=%2bnonFastSearchAttribute%20-a2");
         execute(query);
         assertNull(query.getRanking().getMatchPhase().getAttribute());
     }
 
     @Test
-    public void testNoDegradingWhenNonNumericalAttribute() {
+    void testNoDegradingWhenNonNumericalAttribute() {
         Query query = new Query("?ranking.sorting=%2bstringAttribute%20-a2");
         execute(query);
         assertNull(query.getRanking().getMatchPhase().getAttribute());
     }
 
     @Test
-    public void testNoDegradingWhenTurnedOff() {
+    void testNoDegradingWhenTurnedOff() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&sorting.degrading=false");
         execute(query);
         assertNull(query.getRanking().getMatchPhase().getAttribute());
     }
 
     @Test
-    public void testAccessAllDegradingParametersInQuery() {
+    void testAccessAllDegradingParametersInQuery() {
         Query query = new Query("?ranking.matchPhase.maxHits=555&ranking.matchPhase.attribute=foo&ranking.matchPhase.ascending=true");
         execute(query);
 
@@ -118,7 +118,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingWithLargeMaxHits() {
+    void testDegradingWithLargeMaxHits() {
         Query query = new Query("?ranking.sorting=%2ba1%20-a2");
         query.properties().set(DefaultProperties.MAX_HITS, 13 * 1000);
         query.properties().set(DefaultProperties.MAX_OFFSET, 8 * 1000);
@@ -129,7 +129,7 @@ public class SortingDegraderTestCase {
     }
 
     @Test
-    public void testDegradingWithoutPaginationSupport() {
+    void testDegradingWithoutPaginationSupport() {
         Query query = new Query("?ranking.sorting=%2ba1%20-a2&hits=7&offset=1");
         query.properties().set(DefaultProperties.MAX_HITS, 13 * 1000);
         query.properties().set(DefaultProperties.MAX_OFFSET, 8 * 1000);

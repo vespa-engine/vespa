@@ -2,25 +2,23 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class StreamingValidatorTest {
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void document_references_are_forbidden_in_streaming_search() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For streaming search cluster 'content.ad': Attribute 'campaign_ref' has type 'Reference<campaign>'. " +
-                        "Document references and imported fields are not allowed in streaming search.");
-        new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/document_references_validation/")
-                .create();
+    void document_references_are_forbidden_in_streaming_search() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/document_references_validation/")
+                    .create();
+        });
+        assertTrue(exception.getMessage().contains("For streaming search cluster 'content.ad': Attribute 'campaign_ref' has type 'Reference<campaign>'. " +
+                "Document references and imported fields are not allowed in streaming search."));
     }
 }

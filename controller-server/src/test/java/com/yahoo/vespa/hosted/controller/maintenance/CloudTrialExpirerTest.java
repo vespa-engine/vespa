@@ -12,13 +12,13 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author ogronnesby
@@ -30,35 +30,35 @@ public class CloudTrialExpirerTest {
     private final CloudTrialExpirer expirer = new CloudTrialExpirer(tester.controller(), Duration.ofMinutes(5));
 
     @Test
-    public void expire_inactive_tenant() {
+    void expire_inactive_tenant() {
         registerTenant("trial-tenant", "trial", Duration.ofDays(14).plusMillis(1));
         expirer.maintain();
         assertPlan("trial-tenant", "none");
     }
 
     @Test
-    public void tombstone_inactive_none() {
+    void tombstone_inactive_none() {
         registerTenant("none-tenant", "none", Duration.ofDays(365).plusMillis(1));
         expirer.maintain();
         assertEquals(Tenant.Type.deleted, tester.controller().tenants().get(TenantName.from("none-tenant"), true).get().type());
     }
 
     @Test
-    public void keep_inactive_nontrial_tenants() {
+    void keep_inactive_nontrial_tenants() {
         registerTenant("not-a-trial-tenant", "pay-as-you-go", Duration.ofDays(30));
         expirer.maintain();
         assertPlan("not-a-trial-tenant", "pay-as-you-go");
     }
 
     @Test
-    public void keep_active_trial_tenants() {
+    void keep_active_trial_tenants() {
         registerTenant("active-trial-tenant", "trial", Duration.ofHours(14).minusMillis(1));
         expirer.maintain();
         assertPlan("active-trial-tenant", "trial");
     }
 
     @Test
-    public void keep_inactive_exempt_tenants() {
+    void keep_inactive_exempt_tenants() {
         registerTenant("exempt-trial-tenant", "trial", Duration.ofDays(40));
         ((InMemoryFlagSource) tester.controller().flagSource()).withListFlag(PermanentFlags.EXTENDED_TRIAL_TENANTS.id(), List.of("exempt-trial-tenant"), String.class);
         expirer.maintain();
@@ -66,7 +66,7 @@ public class CloudTrialExpirerTest {
     }
 
     @Test
-    public void keep_inactive_trial_tenants_with_deployments() {
+    void keep_inactive_trial_tenants_with_deployments() {
         registerTenant("with-deployments", "trial", Duration.ofDays(30));
         registerDeployment("with-deployments", "my-app", "default");
         expirer.maintain();
@@ -74,7 +74,7 @@ public class CloudTrialExpirerTest {
     }
 
     @Test
-    public void delete_tenants_with_applications_with_no_deployments() {
+    void delete_tenants_with_applications_with_no_deployments() {
         registerTenant("with-apps", "trial", Duration.ofDays(366));
         tester.createApplication("with-apps", "app1", "instance1");
         expirer.maintain();
@@ -84,7 +84,7 @@ public class CloudTrialExpirerTest {
     }
 
     @Test
-    public void keep_tenants_without_applications_that_are_idle() {
+    void keep_tenants_without_applications_that_are_idle() {
         registerTenant("active", "none", Duration.ofDays(364));
         expirer.maintain();
         assertPlan("active", "none");

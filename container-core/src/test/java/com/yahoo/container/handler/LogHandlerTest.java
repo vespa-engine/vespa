@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,13 +15,13 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class LogHandlerTest {
 
     @Test
-    public void handleCorrectlyParsesQueryParameters() throws IOException {
+    void handleCorrectlyParsesQueryParameters() throws IOException {
         MockLogReader mockLogReader = new MockLogReader();
         LogHandler logHandler = new LogHandler(mock(Executor.class), mockLogReader);
 

@@ -5,13 +5,13 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author hmusum
@@ -19,7 +19,7 @@ import static org.junit.Assert.fail;
 public class DeploymentSpecValidatorTest {
 
     @Test
-    public void testDeploymentWithNonExistentGlobalId() {
+    void testDeploymentWithNonExistentGlobalId() {
         var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
                 "<deployment version='1.0'>" +
                 "  <test />" +
@@ -28,23 +28,23 @@ public class DeploymentSpecValidatorTest {
                 "  </prod>" +
                 "</deployment>";
         assertValidationError("Attribute 'globalServiceId' in instance default: 'non-existing' specified in " +
-                              "deployment.xml does not match any container cluster ID", deploymentXml);
+                "deployment.xml does not match any container cluster ID", deploymentXml);
     }
 
     @Test
-    public void testEndpointNonExistentContainerId() {
+    void testEndpointNonExistentContainerId() {
         var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
-                            "<deployment version='1.0'>" +
-                            "  <test />" +
-                            "  <prod>" +
-                            "    <region active='true'>us-east</region>" +
-                            "  </prod>" +
-                            "  <endpoints>" +
-                            "    <endpoint container-id='non-existing'/>" +
-                            "  </endpoints>" +
-                            "</deployment>";
+                "<deployment version='1.0'>" +
+                "  <test />" +
+                "  <prod>" +
+                "    <region active='true'>us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint container-id='non-existing'/>" +
+                "  </endpoints>" +
+                "</deployment>";
         assertValidationError("Endpoint 'default' in instance default: 'non-existing' specified in " +
-                              "deployment.xml does not match any container cluster ID", deploymentXml);
+                "deployment.xml does not match any container cluster ID", deploymentXml);
     }
 
     private static void assertValidationError(String message, String deploymentXml) {

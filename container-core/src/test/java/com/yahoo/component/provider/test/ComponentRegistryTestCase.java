@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.provider.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
@@ -48,7 +47,7 @@ public class ComponentRegistryTestCase {
         return new TestComponent(idInNamespace(namespace));
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         registry = new ComponentRegistry<>();
 
@@ -58,19 +57,19 @@ public class ComponentRegistryTestCase {
     }
 
     @Test
-    public void testAllPresent() {
+    void testAllPresent() {
         assertEquals(3, registry.getComponentCount());
     }
 
     @Test
-    public void testIdNamespaceLookup() {
+    void testIdNamespaceLookup() {
         assertEquals(component1,  registry.getComponent(idInNamespace(namespace1)));
         assertEquals(component2,  registry.getComponent(idInNamespace(namespace2)));
         assertEquals(component21, registry.getComponent(idInNamespace(namespace21)));
     }
 
     @Test
-    public void testSpecNamespaceLookup() {
+    void testSpecNamespaceLookup() {
         assertEquals(component1, registry.getComponent(specInNamespace(namespace1)));
 
         // Version for namespace must match the specification exactly, so do not return version '1' when an
@@ -80,7 +79,7 @@ public class ComponentRegistryTestCase {
     }
 
     @Test
-    public void testInnerComponentNotMixedWithTopLevelComponent() {
+    void testInnerComponentNotMixedWithTopLevelComponent() {
         assertNull(registry.getComponent(componentName));
 
         TestComponent topLevel = new TestComponent(new ComponentId(componentName));

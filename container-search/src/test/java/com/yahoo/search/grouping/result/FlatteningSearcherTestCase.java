@@ -23,15 +23,15 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
 import com.yahoo.searchlib.expression.StringResultNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -39,42 +39,42 @@ import static org.junit.Assert.assertTrue;
 public class FlatteningSearcherTestCase {
 
     @Test
-    public void testFlatteningSearcher() {
+    void testFlatteningSearcher() {
         Query query = new Query("?query=test");
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) output(count()) each(each(output(summary(bar)))))"));
 
         Grouping group0 = new Grouping(0);
         group0.setRoot(new Group()
-                               .addAggregationResult(new ExpressionCountAggregationResult(new SparseSketch(), sketch -> 69))
-                               .addChild(new Group().setId(new StringResultNode("unique1"))
-                                                    .addAggregationResult(new HitsAggregationResult(3, "bar")
-                                                    )
-                               )
-                               .addChild(new Group().setId(new StringResultNode("unique2"))
-                                                    .addAggregationResult(new HitsAggregationResult(3, "bar")
-                                                    )
-                               ));
+                .addAggregationResult(new ExpressionCountAggregationResult(new SparseSketch(), sketch -> 69))
+                .addChild(new Group().setId(new StringResultNode("unique1"))
+                        .addAggregationResult(new HitsAggregationResult(3, "bar")
+                        )
+                )
+                .addChild(new Group().setId(new StringResultNode("unique2"))
+                        .addAggregationResult(new HitsAggregationResult(3, "bar")
+                        )
+                ));
         Grouping group1 = new Grouping(0);
         group1.setRoot(new Group()
-                               .addChild(new Group().setId(new StringResultNode("unique1"))
-                                                    .addAggregationResult(new HitsAggregationResult(3, "bar")
-                                                                                  .addHit(fs4Hit(0.7))
-                                                                                  .addHit(fs4Hit(0.6))
-                                                                                  .addHit(fs4Hit(0.3))
-                                                    )
-                               )
-                               .addChild(new Group().setId(new StringResultNode("unique2"))
-                                                    .addAggregationResult(new HitsAggregationResult(3, "bar")
-                                                                                  .addHit(fs4Hit(0.5))
-                                                                                  .addHit(fs4Hit(0.4))
-                                                    )
-                               ));
+                .addChild(new Group().setId(new StringResultNode("unique1"))
+                        .addAggregationResult(new HitsAggregationResult(3, "bar")
+                                .addHit(fs4Hit(0.7))
+                                .addHit(fs4Hit(0.6))
+                                .addHit(fs4Hit(0.3))
+                        )
+                )
+                .addChild(new Group().setId(new StringResultNode("unique2"))
+                        .addAggregationResult(new HitsAggregationResult(3, "bar")
+                                .addHit(fs4Hit(0.5))
+                                .addHit(fs4Hit(0.4))
+                        )
+                ));
         Execution execution = newExecution(new FlatteningSearcher(),
-                                           new GroupingExecutor(ComponentId.fromString("grouping")),
-                                           new ResultProvider(Arrays.asList(
-                                                   new GroupingListHit(List.of(group0), null),
-                                                   new GroupingListHit(List.of(group1), null))));
+                new GroupingExecutor(ComponentId.fromString("grouping")),
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(group0), null),
+                        new GroupingListHit(List.of(group1), null))));
         Result result = execution.search(query);
         assertEquals(5, result.hits().size());
         assertFlat(result);

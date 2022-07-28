@@ -10,14 +10,14 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationShutdownTestCase {
 
     @Test
-    public void requireThatStopWaitsForPreviousContainer() throws Exception {
+    void requireThatStopWaitsForPreviousContainer() throws Exception {
         Context ctx = new Context();
         MyRequestHandler requestHandler = new MyRequestHandler();
         ctx.activateContainer(requestHandler);
@@ -38,7 +38,7 @@ public class ApplicationShutdownTestCase {
     }
 
     @Test
-    public void requireThatStopWaitsForAllPreviousContainers() {
+    void requireThatStopWaitsForAllPreviousContainers() {
         Context ctx = new Context();
         MyRequestHandler requestHandlerA = new MyRequestHandler();
         ctx.activateContainer(requestHandlerA);

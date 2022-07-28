@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,12 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -25,7 +26,7 @@ import static org.junit.Assert.fail;
 public class HeaderFieldsTestCase {
 
     @Test
-    public void requireThatSizeWorksAsExpected() {
+    void requireThatSizeWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertEquals(0, headers.size());
         headers.add("foo", "bar");
@@ -41,7 +42,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatIsEmptyWorksAsExpected() {
+    void requireThatIsEmptyWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertTrue(headers.isEmpty());
         headers.add("foo", "bar");
@@ -51,7 +52,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatContainsKeyWorksAsExpected() {
+    void requireThatContainsKeyWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertFalse(headers.containsKey("foo"));
         assertFalse(headers.containsKey("FOO"));
@@ -61,7 +62,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatContainsValueWorksAsExpected() {
+    void requireThatContainsValueWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertFalse(headers.containsValue(Arrays.asList("bar")));
         headers.add("foo", "bar");
@@ -69,7 +70,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatContainsWorksAsExpected() {
+    void requireThatContainsWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertFalse(headers.contains("foo", "bar"));
         assertFalse(headers.contains("FOO", "bar"));
@@ -83,7 +84,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatContainsIgnoreCaseWorksAsExpected() {
+    void requireThatContainsIgnoreCaseWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertFalse(headers.containsIgnoreCase("foo", "bar"));
         assertFalse(headers.containsIgnoreCase("FOO", "bar"));
@@ -97,7 +98,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatAddStringWorksAsExpected() {
+    void requireThatAddStringWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
@@ -107,7 +108,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatAddListWorksAsExpected() {
+    void requireThatAddListWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.get("foo"));
         headers.add("foo", Arrays.asList("bar"));
@@ -117,7 +118,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatAddAllWorksAsExpected() {
+    void requireThatAddAllWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -134,7 +135,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatPutStringWorksAsExpected() {
+    void requireThatPutStringWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.get("foo"));
         headers.put("foo", "bar");
@@ -144,7 +145,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatPutListWorksAsExpected() {
+    void requireThatPutListWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.get("foo"));
         headers.put("foo", Arrays.asList("bar"));
@@ -154,7 +155,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatPutAllWorksAsExpected() {
+    void requireThatPutAllWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -171,7 +172,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatRemoveWorksAsExpected() {
+    void requireThatRemoveWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         headers.put("foo", Arrays.asList("bar", "baz"));
         assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
@@ -181,7 +182,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatRemoveStringWorksAsExpected() {
+    void requireThatRemoveStringWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         headers.put("foo", Arrays.asList("bar", "baz"));
         assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
@@ -194,7 +195,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatClearWorksAsExpected() {
+    void requireThatClearWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -206,7 +207,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatGetWorksAsExpected() {
+    void requireThatGetWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
@@ -214,7 +215,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatGetFirstWorksAsExpected() {
+    void requireThatGetFirstWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertNull(headers.getFirst("foo"));
         headers.add("foo", Arrays.asList("bar", "baz"));
@@ -222,7 +223,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatIsTrueWorksAsExpected() {
+    void requireThatIsTrueWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertFalse(headers.isTrue("foo"));
         headers.put("foo", Arrays.asList("true"));
@@ -240,7 +241,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatKeySetWorksAsExpected() {
+    void requireThatKeySetWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertTrue(headers.keySet().isEmpty());
         headers.add("foo", "bar");
@@ -250,7 +251,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatValuesWorksAsExpected() {
+    void requireThatValuesWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertTrue(headers.values().isEmpty());
         headers.add("foo", "bar");
@@ -266,7 +267,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatEntrySetWorksAsExpected() {
+    void requireThatEntrySetWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertTrue(headers.entrySet().isEmpty());
         headers.put("foo", Arrays.asList("bar", "baz"));
@@ -280,7 +281,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatEntriesWorksAsExpected() {
+    void requireThatEntriesWorksAsExpected() {
         HeaderFields headers = new HeaderFields();
         assertTrue(headers.entries().isEmpty());
         headers.put("foo", Arrays.asList("bar", "baz"));
@@ -299,7 +300,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatEntryIsUnmodifiable() {
+    void requireThatEntryIsUnmodifiable() {
         HeaderFields headers = new HeaderFields();
         headers.put("foo", "bar");
         Map.Entry<String, String> entry = headers.entries().get(0);
@@ -312,7 +313,7 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatEntriesAreUnmodifiable() {
+    void requireThatEntriesAreUnmodifiable() {
         HeaderFields headers = new HeaderFields();
         headers.put("foo", "bar");
         List<Map.Entry<String, String>> entries = headers.entries();
@@ -331,25 +332,25 @@ public class HeaderFieldsTestCase {
     }
 
     @Test
-    public void requireThatEqualsWorksAsExpected() {
+    void requireThatEqualsWorksAsExpected() {
         HeaderFields lhs = new HeaderFields();
         HeaderFields rhs = new HeaderFields();
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
         lhs.add("foo", "bar");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.add("foo", "bar");
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatHashCodeWorksAsExpected() {
+    void requireThatHashCodeWorksAsExpected() {
         HeaderFields lhs = new HeaderFields();
         HeaderFields rhs = new HeaderFields();
-        assertTrue(lhs.hashCode() == rhs.hashCode());
+        assertEquals(lhs.hashCode(), rhs.hashCode());
         lhs.add("foo", "bar");
         assertTrue(lhs.hashCode() != rhs.hashCode());
         rhs.add("foo", "bar");
-        assertTrue(lhs.hashCode() == rhs.hashCode());
+        assertEquals(lhs.hashCode(), rhs.hashCode());
     }
 
     private static class MyEntry implements Map.Entry<String, String> {

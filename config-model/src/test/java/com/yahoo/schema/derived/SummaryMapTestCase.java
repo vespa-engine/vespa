@@ -12,16 +12,15 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Tests summary map extraction
  *
@@ -29,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
-    public void testDeriving() throws IOException, ParseException {
+    void testDeriving() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryMap summaryMap = new SummaryMap(schema);
 
@@ -76,8 +75,9 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
 
         assertFalse(transforms.hasNext());
     }
+
     @Test
-    public void testPositionDeriving() {
+    void testPositionDeriving() {
         Schema schema = new Schema("store", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("store");
         schema.addDocument(document);
@@ -85,7 +85,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
         new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
-                                 true, false, Set.of());
+                true, false, Set.of());
         SummaryMap summaryMap = new SummaryMap(schema);
 
         Iterator<FieldResultTransform> transforms = summaryMap.resultTransforms().values().iterator();
@@ -105,18 +105,18 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
 
         transform = transforms.next();
         assertEquals("location_zcurve", transform.getFieldName());
-        assertEquals(SummaryTransform.ATTRIBUTE,transform.getTransform());
+        assertEquals(SummaryTransform.ATTRIBUTE, transform.getTransform());
 
         transform = transforms.next();
         assertEquals("documentid", transform.getFieldName());
-        assertEquals(SummaryTransform.DOCUMENT_ID,transform.getTransform());
+        assertEquals(SummaryTransform.DOCUMENT_ID, transform.getTransform());
 
         assertFalse(transforms.hasNext());
 
         SummarymapConfig.Builder scb = new SummarymapConfig.Builder();
         summaryMap.getConfig(scb);
         SummarymapConfig c = scb.build();
-        
+
         assertEquals(-1, c.defaultoutputclass());
         assertEquals(c.override().size(), 5);
 
@@ -127,7 +127,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         assertEquals(c.override(1).field(), "rankfeatures");
         assertEquals(c.override(1).command(), "rankfeatures");
         assertEquals(c.override(1).arguments(), "");
-        
+
         assertEquals(c.override(2).field(), "summaryfeatures");
         assertEquals(c.override(2).command(), "summaryfeatures");
         assertEquals(c.override(2).arguments(), "");
@@ -138,7 +138,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testFailOnSummaryFieldSourceCollision() {
+    void testFailOnSummaryFieldSourceCollision() {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void source_field_is_passed_as_argument_in_matched_elements_filter_transforms() throws ParseException {
+    void source_field_is_passed_as_argument_in_matched_elements_filter_transforms() throws ParseException {
         assertOverride(joinLines("field my_field type map<string, string> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
@@ -163,7 +163,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void commands_that_are_dynamic_and_require_the_query() {
+    void commands_that_are_dynamic_and_require_the_query() {
         assertTrue(SummaryMap.isDynamicCommand("dynamicteaser"));
         assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()));
         assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
@@ -171,7 +171,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void documentid_summary_field_has_corresponding_summary_transform() throws ParseException {
+    void documentid_summary_field_has_corresponding_summary_transform() throws ParseException {
         var schema = buildSchema("field foo type string { indexing: summary }",
                 joinLines("document-summary bar {",
                         "    summary documentid type string {}",
@@ -180,7 +180,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void documentid_summary_transform_requires_disk_access() {
+    void documentid_summary_transform_requires_disk_access() {
         assertFalse(SummaryTransform.DOCUMENT_ID.isInMemory());
     }
 

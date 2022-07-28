@@ -11,11 +11,9 @@ import com.yahoo.schema.document.Dictionary;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test configuration of dictionary control.
@@ -33,19 +31,20 @@ public class DictionaryTestCase {
         ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
         return sb.getSchema();
     }
+
     @Test
-    public void testDefaultDictionarySettings() throws ParseException {
+    void testDefaultDictionarySettings() throws ParseException {
         String def = TestUtil.joinLines(
-                        "search test {",
-                        "    document test {",
-                        "        field s1 type string {",
-                        "            indexing: attribute | summary",
-                        "        }",
-                        "        field n1 type int {",
-                        "            indexing: summary | attribute",
-                        "        }",
-                        "    }",
-                        "}");
+                "search test {",
+                "    document test {",
+                "        field s1 type string {",
+                "            indexing: attribute | summary",
+                "        }",
+                "        field n1 type int {",
+                "            indexing: summary | attribute",
+                "        }",
+                "    }",
+                "}");
         Schema schema = createSearch(def);
         assertNull(schema.getAttribute("s1").getDictionary());
         assertNull(schema.getAttribute("n1").getDictionary());
@@ -103,64 +102,75 @@ public class DictionaryTestCase {
     }
 
     @Test
-    public void testCasedBtreeSettings() throws ParseException {
+    void testCasedBtreeSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.BTREE, "int", "dictionary:cased");
     }
 
     @Test
-    public void testNumericBtreeSettings() throws ParseException {
+    void testNumericBtreeSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.BTREE, "int", "dictionary:btree");
     }
+
     @Test
-    public void testNumericHashSettings() throws ParseException {
+    void testNumericHashSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.HASH, "int", "dictionary:hash");
     }
+
     @Test
-    public void testNumericBtreeAndHashSettings() throws ParseException {
+    void testNumericBtreeAndHashSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "int", "dictionary:btree", "dictionary:hash");
     }
+
     @Test
-    public void testNumericArrayBtreeAndHashSettings() throws ParseException {
+    void testNumericArrayBtreeAndHashSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "array<int>", "dictionary:btree", "dictionary:hash");
     }
+
     @Test
-    public void testNumericWSetBtreeAndHashSettings() throws ParseException {
+    void testNumericWSetBtreeAndHashSettings() throws ParseException {
         verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "weightedset<int>", "dictionary:btree", "dictionary:hash");
     }
+
     @Test
-    public void testStringBtreeSettings() throws ParseException {
+    void testStringBtreeSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED, "dictionary:btree");
     }
+
     @Test
-    public void testStringBtreeUnCasedSettings() throws ParseException {
+    void testStringBtreeUnCasedSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED, "dictionary { btree\nuncased\n}");
     }
+
     @Test
-    public void testStringBtreeCasedSettings() throws ParseException {
+    void testStringBtreeCasedSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED, "dictionary { btree\ncased\n}", "match:cased");
     }
+
     @Test
-    public void testStringHashSettings() throws ParseException {
+    void testStringHashSettings() throws ParseException {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary:hash");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
+
     @Test
-    public void testStringHashUnCasedSettings() throws ParseException {
+    void testStringHashUnCasedSettings() throws ParseException {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nuncased\n}");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
+
     @Test
-    public void testStringHashBothCasedSettings() throws ParseException {
+    void testStringHashBothCasedSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}", "match:cased");
     }
+
     @Test
-    public void testStringHashCasedSettings() throws ParseException {
+    void testStringHashCasedSettings() throws ParseException {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}");
             fail();
@@ -168,24 +178,28 @@ public class DictionaryTestCase {
             assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
+
     @Test
-    public void testStringBtreeHashSettings() throws ParseException {
+    void testStringBtreeHashSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary{hash\nbtree\n}");
     }
+
     @Test
-    public void testStringBtreeHashUnCasedSettings() throws ParseException {
+    void testStringBtreeHashUnCasedSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nbtree\nuncased\n}");
     }
+
     @Test
-    public void testStringBtreeHashCasedSettings() throws ParseException {
+    void testStringBtreeHashCasedSettings() throws ParseException {
         try {
             verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED, "dictionary { btree\nhash\ncased\n}");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
+
     @Test
-    public void testNonNumericFieldsFailsDictionaryControl() throws ParseException {
+    void testNonNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
                 "schema test {",
                 "    document test {",
@@ -202,8 +216,9 @@ public class DictionaryTestCase {
             assertEquals("For schema 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
         }
     }
+
     @Test
-    public void testNonFastSearchNumericFieldsFailsDictionaryControl() throws ParseException {
+    void testNonFastSearchNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
                 "schema test {",
                 "    document test {",
@@ -222,7 +237,7 @@ public class DictionaryTestCase {
     }
 
     @Test
-    public void testCasingForNonFastSearch() throws ParseException {
+    void testCasingForNonFastSearch() throws ParseException {
         String def = TestUtil.joinLines(
                 "schema test {",
                 "    document test {",

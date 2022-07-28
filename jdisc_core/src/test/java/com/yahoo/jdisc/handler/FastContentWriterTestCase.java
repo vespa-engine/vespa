@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.nio.ByteBuffer;
@@ -15,14 +15,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class FastContentWriterTestCase {
 
     @Test
-    public void requireThatContentCanBeWritten() throws ExecutionException, InterruptedException {
+    void requireThatContentCanBeWritten() throws ExecutionException, InterruptedException {
         ReadableContentChannel content = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(content);
 
@@ -50,7 +50,7 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatStringsAreUtf8Encoded() {
+    void requireThatStringsAreUtf8Encoded() {
         ReadableContentChannel content = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(content);
 
@@ -65,7 +65,7 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatCancelThrowsUnsupportedOperation() {
+    void requireThatCancelThrowsUnsupportedOperation() {
         try {
             new FastContentWriter(Mockito.mock(ContentChannel.class)).cancel(true);
             fail();
@@ -75,7 +75,7 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatCancelIsAlwaysFalse() {
+    void requireThatCancelIsAlwaysFalse() {
         FastContentWriter writer = new FastContentWriter(Mockito.mock(ContentChannel.class));
         assertFalse(writer.isCancelled());
         try {
@@ -88,11 +88,11 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatGetThrowsTimeoutUntilCloseCompletionHandlerIsCalled() throws Exception {
+    void requireThatGetThrowsTimeoutUntilCloseCompletionHandlerIsCalled() throws Exception {
         ReadableContentChannel buf = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(buf);
 
-        out.write(new byte[] { 6, 9 });
+        out.write(new byte[]{6, 9});
         assertFalse(out.isDone());
         try {
             out.get(100, TimeUnit.MILLISECONDS);
@@ -126,11 +126,11 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatSyncWriteExceptionFailsFuture() throws InterruptedException {
+    void requireThatSyncWriteExceptionFailsFuture() throws InterruptedException {
         IllegalStateException expected = new IllegalStateException();
         ContentChannel content = Mockito.mock(ContentChannel.class);
         Mockito.doThrow(expected)
-               .when(content).write(Mockito.any(ByteBuffer.class), Mockito.any(CompletionHandler.class));
+                .when(content).write(Mockito.any(ByteBuffer.class), Mockito.any(CompletionHandler.class));
         FastContentWriter out = new FastContentWriter(content);
         try {
             out.write("foo");
@@ -147,11 +147,11 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatSyncCloseExceptionFailsFuture() throws InterruptedException {
+    void requireThatSyncCloseExceptionFailsFuture() throws InterruptedException {
         IllegalStateException expected = new IllegalStateException();
         ContentChannel content = Mockito.mock(ContentChannel.class);
         Mockito.doThrow(expected)
-               .when(content).close(Mockito.any(CompletionHandler.class));
+                .when(content).close(Mockito.any(CompletionHandler.class));
         FastContentWriter out = new FastContentWriter(content);
         try {
             out.close();
@@ -168,7 +168,7 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatAsyncExceptionFailsFuture() throws InterruptedException {
+    void requireThatAsyncExceptionFailsFuture() throws InterruptedException {
         IllegalStateException expected = new IllegalStateException();
         ReadableContentChannel content = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(content);
@@ -183,13 +183,13 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatWriterCanBeListenedTo() throws InterruptedException {
+    void requireThatWriterCanBeListenedTo() throws InterruptedException {
         ReadableContentChannel buf = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(buf);
         RunnableLatch listener = new RunnableLatch();
         out.addListener(listener, Runnable::run);
 
-        out.write(new byte[] { 6, 9 });
+        out.write(new byte[]{6, 9});
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         assertNotNull(buf.read());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
@@ -200,7 +200,7 @@ public class FastContentWriterTestCase {
     }
 
     @Test
-    public void requireThatWriterIsThreadSafe() throws Exception {
+    void requireThatWriterIsThreadSafe() throws Exception {
         final CountDownLatch latch = new CountDownLatch(2);
         final ReadableContentChannel content = new ReadableContentChannel();
         Future<Integer> read = Executors.newSingleThreadExecutor().submit(new Callable<Integer>() {
@@ -235,6 +235,6 @@ public class FastContentWriterTestCase {
             }
         });
         assertEquals(read.get(600, TimeUnit.SECONDS),
-                     write.get(600, TimeUnit.SECONDS));
+                write.get(600, TimeUnit.SECONDS));
     }
 }

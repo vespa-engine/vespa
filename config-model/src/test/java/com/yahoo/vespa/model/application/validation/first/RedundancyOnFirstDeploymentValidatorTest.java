@@ -7,10 +7,10 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -22,22 +22,22 @@ public class RedundancyOnFirstDeploymentValidatorTest {
                                                                                      .setHostedVespa(true));
 
     @Test
-    public void testRedundancyOnFirstDeploymentValidation() {
+    void testRedundancyOnFirstDeploymentValidation() {
         try {
             tester.deploy(null, getServices(1), Environment.prod, null);
             fail("Expected exception due to redundancy 1");
         }
         catch (IllegalArgumentException expected) {
             assertEquals("redundancy-one: " +
-                         "content cluster 'contentClusterId' has redundancy 1, which will cause it to lose data if a node fails. " +
-                         "This requires an override on first deployment in a production zone. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.redundancyOne),
-                         Exceptions.toMessageString(expected));
+                    "content cluster 'contentClusterId' has redundancy 1, which will cause it to lose data if a node fails. " +
+                    "This requires an override on first deployment in a production zone. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.redundancyOne),
+                    Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testOverridingRedundancyOnFirstDeploymentValidation() {
+    void testOverridingRedundancyOnFirstDeploymentValidation() {
         tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride); // Allowed due to override
     }
 

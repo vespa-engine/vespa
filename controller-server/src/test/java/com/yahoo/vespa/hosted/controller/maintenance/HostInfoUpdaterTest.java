@@ -8,15 +8,15 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.NodeEntity;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class HostInfoUpdaterTest {
 
     @Test
-    public void maintain() {
+    void maintain() {
         ControllerTester tester = new ControllerTester();
         tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
         addNodeEntities(tester);
@@ -36,8 +36,8 @@ public class HostInfoUpdaterTest {
         List<Node> nodes = allNodes(tester);
         assertFalse(nodes.isEmpty());
         for (var node : nodes) {
-            assertEquals("Node " + node.hostname().value() + (node.type().isHost() ? " has" : " does not have")
-                         + " switch hostname", node.type().isHost(), node.switchHostname().isPresent());
+            assertEquals(node.type().isHost(), node.switchHostname().isPresent(), "Node " + node.hostname().value() + (node.type().isHost() ? " has" : " does not have")
+                    + " switch hostname");
             if (node.type().isHost()) {
                 assertEquals("tor-" + node.hostname().value(), node.switchHostname().get());
             }
@@ -85,18 +85,18 @@ public class HostInfoUpdaterTest {
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
         Node configNode = Node.builder().hostname(HostName.of("cfg3" + hostnameSuffix))
-                              .type(NodeType.config)
-                              .build();
+                .type(NodeType.config)
+                .build();
         Node configHost = Node.builder().hostname(HostName.of("cfghost3" + hostnameSuffix))
-                              .type(NodeType.confighost)
-                              .build();
+                .type(NodeType.confighost)
+                .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
         NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "RD350G", "Lenovo", switchHostname);
         tester.serviceRegistry().entityService().addNodeEntity(configNodeEntity);
         maintainer.maintain();
         assertEquals(switchHostname, getNode(configHost.hostname(), tester).switchHostname().get());
-        assertTrue("Switch hostname is not set for non-host", getNode(configNode.hostname(), tester).switchHostname().isEmpty());
+        assertTrue(getNode(configNode.hostname(), tester).switchHostname().isEmpty(), "Switch hostname is not set for non-host");
     }
 
     private static Node getNode(HostName hostname, ControllerTester tester) {

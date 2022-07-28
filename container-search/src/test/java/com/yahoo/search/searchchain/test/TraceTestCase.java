@@ -10,7 +10,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Tests tracing scenarios where traces from multiple executions over the same query are involved.
@@ -30,27 +30,27 @@ import static org.junit.Assert.assertFalse;
 public class TraceTestCase {
 
     @Test
-    public void testTracingOnCorrectAPIUseNonParallel() {
-        assertTracing(true,false);
+    void testTracingOnCorrectAPIUseNonParallel() {
+        assertTracing(true, false);
     }
 
     @Test
-    public void testTracingOnIncorrectAPIUseNonParallel() {
-        assertTracing(false,false);
+    void testTracingOnIncorrectAPIUseNonParallel() {
+        assertTracing(false, false);
     }
 
     @Test
-    public void testTracingOnCorrectAPIUseParallel() {
+    void testTracingOnCorrectAPIUseParallel() {
         assertTracing(true, true);
     }
 
     @Test
-    public void testTracingOnIncorrectAPIUseParallel() {
-        assertTracing(false,true);
+    void testTracingOnIncorrectAPIUseParallel() {
+        assertTracing(false, true);
     }
 
     @Test
-    public void testTraceWithQuery() {
+    void testTraceWithQuery() {
         testQueryInTrace(true, "trace.query=true");
         testQueryInTrace(false, "trace.query=false");
         testQueryInTrace(true, "");
@@ -71,13 +71,13 @@ public class TraceTestCase {
             assertEquals("    During tracer1: 0", trace.next());
     }
 
-    @Test 
-    public void testTraceInvocationsUnfillableHits() {
+    @Test
+    void testTraceInvocationsUnfillableHits() {
         final int traceLevel = 5;
         Query query = new Query("?trace.level=" + traceLevel);
-        Chain<Searcher> forkingChain = new Chain<>(new Tracer("tracer1"), 
-                                                   new Tracer("tracer2"), 
-                                                   new Backend("backend1", false));
+        Chain<Searcher> forkingChain = new Chain<>(new Tracer("tracer1"),
+                new Tracer("tracer2"),
+                new Backend("backend1", false));
         Execution execution = new Execution(forkingChain, Execution.Context.createContextStub());
         Result result = execution.search(query);
         execution.fill(result, "mySummary");
@@ -104,12 +104,12 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testTraceInvocationsFillableHits() {
+    void testTraceInvocationsFillableHits() {
         final int traceLevel = 5;
         Query query = new Query("?tracelevel=" + traceLevel);
         Chain<Searcher> forkingChain = new Chain<>(new Tracer("tracer1"),
-                                                   new Tracer("tracer2"),
-                                                   new Backend("backend1", true));
+                new Tracer("tracer2"),
+                new Backend("backend1", true));
         Execution execution = new Execution(forkingChain, Execution.Context.createContextStub());
         Result result = execution.search(query);
         execution.fill(result, "mySummary");

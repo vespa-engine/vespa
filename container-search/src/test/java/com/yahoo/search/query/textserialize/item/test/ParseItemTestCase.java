@@ -19,13 +19,11 @@ import com.yahoo.search.query.textserialize.item.ItemContext;
 import com.yahoo.search.query.textserialize.item.ItemFormHandler;
 import com.yahoo.search.query.textserialize.parser.ParseException;
 import com.yahoo.search.query.textserialize.parser.Parser;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -40,12 +38,12 @@ public class ParseItemTestCase {
     }
 
     @Test
-    public void parse_and() throws ParseException {
+    void parse_and() throws ParseException {
         assertTrue(parse("(AND)") instanceof AndItem);
     }
 
     @Test
-    public void parse_and_with_children() throws ParseException {
+    void parse_and_with_children() throws ParseException {
         AndItem andItem = (AndItem) parse("(AND (WORD 'first') (WORD 'second'))");
 
         assertEquals(2, andItem.getItemCount());
@@ -53,116 +51,120 @@ public class ParseItemTestCase {
     }
 
     @Test
-    public void parse_or() throws ParseException {
+    void parse_or() throws ParseException {
         assertTrue(parse("(OR)") instanceof OrItem);
     }
 
     @Test
-    public void parse_and_not_rest() throws ParseException {
+    void parse_and_not_rest() throws ParseException {
         assertTrue(parse("(AND-NOT-REST)") instanceof NotItem);
     }
 
     @Test
-    public void parse_and_not_rest_with_children() throws ParseException {
+    void parse_and_not_rest_with_children() throws ParseException {
         NotItem notItem = (NotItem) parse("(AND-NOT-REST (WORD 'positive') (WORD 'negative'))");
         assertEquals("positive", getWord(notItem.getPositiveItem()));
         assertEquals("negative", getWord(notItem.getItem(1)));
     }
 
     @Test
-    public void parse_and_not_rest_with_only_negated_children() throws ParseException {
+    void parse_and_not_rest_with_only_negated_children() throws ParseException {
         NotItem notItem = (NotItem) parse("(AND-NOT-REST null (WORD 'negated-item'))");
         assertTrue(notItem.getPositiveItem() instanceof TrueItem);
         assertTrue(notItem.getItem(1) instanceof WordItem);
     }
 
     @Test
-    public void parse_rank() throws ParseException {
+    void parse_rank() throws ParseException {
         assertTrue(parse("(RANK (WORD 'first'))") instanceof RankItem);
     }
 
     @Test
-    public void parse_word() throws ParseException {
+    void parse_word() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD 'text')");
         assertEquals("text", wordItem.getWord());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void fail_when_word_given_multiple_strings() throws ParseException {
-        parse("(WORD 'one' 'invalid')");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void fail_when_word_given_no_string() throws ParseException {
-        parse("(WORD)");
+    @Test
+    void fail_when_word_given_multiple_strings() throws ParseException {
+        assertThrows(IllegalArgumentException.class, () -> {
+            parse("(WORD 'one' 'invalid')");
+        });
     }
 
     @Test
-    public void parse_int() throws ParseException {
+    void fail_when_word_given_no_string() throws ParseException {
+        assertThrows(IllegalArgumentException.class, () -> {
+            parse("(WORD)");
+        });
+    }
+
+    @Test
+    void parse_int() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;]')");
         assertEquals("[42;]", intItem.getNumber());
     }
 
     @Test
-    public void parse_range() throws ParseException {
+    void parse_range() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;73]')");
         assertEquals("[42;73]", intItem.getNumber());
     }
 
     @Test
-    public void parse_range_withlimit() throws ParseException {
+    void parse_range_withlimit() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;73;32]')");
         assertEquals("[42;73;32]", intItem.getNumber());
     }
 
     @Test
-    public void parse_prefix() throws ParseException {
+    void parse_prefix() throws ParseException {
         PrefixItem prefixItem = (PrefixItem) parse("(PREFIX 'word')");
         assertEquals("word", prefixItem.getWord());
     }
 
     @Test
-    public void parse_subString() throws ParseException {
+    void parse_subString() throws ParseException {
         SubstringItem subStringItem = (SubstringItem) parse("(SUBSTRING 'word')");
         assertEquals("word", subStringItem.getWord());
     }
 
     @Test
-    public void parse_exactString() throws ParseException {
+    void parse_exactString() throws ParseException {
         ExactStringItem subStringItem = (ExactStringItem) parse("(EXACT 'word')");
         assertEquals("word", subStringItem.getWord());
     }
 
     @Test
-    public void parse_suffix() throws ParseException {
+    void parse_suffix() throws ParseException {
         SuffixItem suffixItem = (SuffixItem) parse("(SUFFIX 'word')");
         assertEquals("word", suffixItem.getWord());
     }
 
     @Test
-    public void parse_phrase() throws ParseException {
+    void parse_phrase() throws ParseException {
         PhraseItem phraseItem = (PhraseItem) parse("(PHRASE (WORD 'word'))");
         assertTrue(phraseItem.getItem(0) instanceof WordItem);
     }
 
     @Test
-    public void parse_near() throws ParseException {
+    void parse_near() throws ParseException {
         assertTrue(parse("(NEAR)") instanceof NearItem);
     }
 
     @Test
-    public void parse_onear() throws ParseException {
+    void parse_onear() throws ParseException {
         assertTrue(parse("(ONEAR)") instanceof ONearItem);
     }
 
     @Test
-    public void parse_near_with_distance() throws ParseException {
+    void parse_near_with_distance() throws ParseException {
         NearItem nearItem = (NearItem) parse("(NEAR {'distance' 42} (WORD 'first'))");
         assertEquals(42, nearItem.getDistance());
     }
 
     @Test
-    public void parse_items_with_connectivity() throws ParseException {
+    void parse_items_with_connectivity() throws ParseException {
         AndItem andItem = (AndItem) parse("(AND (WORD {'id' '1'} 'first') (WORD {'connectivity' ['1' 23.5]} 'second'))");
         WordItem secondItem = (WordItem) andItem.getItem(1);
 
@@ -171,13 +173,13 @@ public class ParseItemTestCase {
     }
 
     @Test
-    public void parse_word_with_index() throws ParseException {
+    void parse_word_with_index() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD {'index' 'someIndex'} 'text')");
         assertEquals("someIndex", wordItem.getIndexName());
     }
 
     @Test
-    public void parse_unicode_word() throws ParseException {
+    void parse_unicode_word() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD 'trăm')");
         assertEquals("trăm", wordItem.getWord());
     }

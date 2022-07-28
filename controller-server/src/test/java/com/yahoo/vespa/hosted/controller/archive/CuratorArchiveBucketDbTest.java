@@ -7,7 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import org.apache.curator.shaded.com.google.common.collect.Streams;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Optional;
@@ -16,12 +16,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CuratorArchiveBucketDbTest {
 
     @Test
-    public void archiveUriFor() {
+    void archiveUriFor() {
         ControllerTester tester = new ControllerTester(SystemName.Public);
         CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(tester.controller());
 

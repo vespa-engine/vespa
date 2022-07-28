@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -10,8 +10,8 @@ import java.io.UncheckedIOException;
 import java.util.Random;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.ZstdCompressingInputStream.compressor;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class ZstdCompressingInputStreamTest {
 
     @Test
-    public void compression_test() throws Exception {
+    void compression_test() throws Exception {
         Random rnd = new Random();
         byte[] data = new byte[(int) (100_000 * (10 + rnd.nextDouble()))];
         rnd.nextBytes(data);
@@ -27,9 +27,9 @@ public class ZstdCompressingInputStreamTest {
     }
 
     @Test
-    public void compress_empty_file_test() {
+    void compress_empty_file_test() {
         byte[] compressedData = compress(new byte[0], 1 << 10);
-        assertEquals("zstd compressing an empty file results in a 13 bytes file", 13, compressedData.length);
+        assertEquals(13, compressedData.length, "zstd compressing an empty file results in a 13 bytes file");
     }
 
     private static void assertCompression(byte[] data, int bufferSize) {

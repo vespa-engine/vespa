@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -12,10 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FileSyncTest {
     private final TestTaskContext taskContext = new TestTaskContext();
@@ -31,7 +28,7 @@ public class FileSyncTest {
     private String permissions = "rw-r-xr--";
 
     @Test
-    public void trivial() {
+    void trivial() {
         assertConvergence("Creating file /dir/file.txt",
                 "Changing user ID of /dir/file.txt from 1 to 123",
                 "Changing group ID of /dir/file.txt from 2 to 456",

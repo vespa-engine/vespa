@@ -10,7 +10,7 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationEnvironmentModuleTestCase {
 
     @Test
-    public void requireThatBindingsExist() {
+    void requireThatBindingsExist() {
         List<Class<?>> expected = new LinkedList<>();
         expected.add(ContainerActivator.class);
         expected.add(ContainerBuilder.class);
@@ -49,10 +49,10 @@ public class ApplicationEnvironmentModuleTestCase {
     }
 
     @Test
-    public void requireThatContainerBuilderCanBeInjected() {
+    void requireThatContainerBuilderCanBeInjected() {
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(), emptyList());
         assertNotNull(new ApplicationEnvironmentModule(loader).containerBuilder());
         assertNotNull(Guice.createInjector(new ApplicationEnvironmentModule(loader))
-                           .getInstance(ContainerBuilder.class));
+                .getInstance(ContainerBuilder.class));
     }
 }

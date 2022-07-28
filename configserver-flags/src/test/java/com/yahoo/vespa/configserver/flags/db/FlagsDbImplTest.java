@@ -9,24 +9,22 @@ import com.yahoo.vespa.flags.json.Condition;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
 import com.yahoo.vespa.flags.json.WhitelistCondition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Optional;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
  */
 public class FlagsDbImplTest {
     @Test
-    public void test() {
+    void test() {
         MockCurator curator = new MockCurator();
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
@@ -48,9 +46,9 @@ public class FlagsDbImplTest {
         FlagData data2 = new FlagData(flagId2, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
         db.setValue(flagId2, data2);
         Map<FlagId, FlagData> flags = db.getAllFlagData();
-        assertThat(flags.size(), equalTo(2));
-        assertThat(flags.get(flagId), notNullValue());
-        assertThat(flags.get(flagId2), notNullValue());
+        assertEquals(flags.size(), 2);
+        assertNotNull(flags.get(flagId));
+        assertNotNull(flags.get(flagId2));
 
         db.removeValue(flagId2);
         assertFalse(db.getValue(flagId2).isPresent());

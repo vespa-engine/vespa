@@ -23,12 +23,11 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -37,13 +36,7 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 
 import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -56,17 +49,17 @@ public class SearchHandlerTest {
 
     private static String tempDir = "";
 
-    @Rule
-    public TemporaryFolder tempfolder = new TemporaryFolder();
+    @TempDir
+    public File tempfolder;
 
     private RequestHandlerTestDriver driver = null;
     private HandlersConfigurerTestWrapper configurer = null;
     private MockMetric metric;
     private SearchHandler searchHandler;
 
-    @Before
+    @BeforeEach
     public void startUp() throws IOException {
-        File cfgDir = tempfolder.newFolder("SearchHandlerTestCase");
+        File cfgDir = newFolder(tempfolder, "SearchHandlerTestCase");
         tempDir = cfgDir.getAbsolutePath();
         String configId = "dir:" + tempDir;
 
@@ -79,7 +72,7 @@ public class SearchHandlerTest {
         driver = new RequestHandlerTestDriver(searchHandler);
     }
 
-    @After
+    @AfterEach
     public void shutDown() {
         if (configurer != null) configurer.shutdown();
         if (driver != null) driver.close();
@@ -98,30 +91,30 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testNullQuery() {
+    void testNullQuery() {
         assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                     "<result total-hit-count=\"0\">\n" +
-                     "  <hit relevancy=\"1.0\">\n" +
-                     "    <field name=\"relevancy\">1.0</field>\n" +
-                     "    <field name=\"uri\">testHit</field>\n" +
-                     "  </hit>\n" +
-                     "</result>\n",
-                     driver.sendRequest("http://localhost?format=xml").readAll()
-            );
+                "<result total-hit-count=\"0\">\n" +
+                "  <hit relevancy=\"1.0\">\n" +
+                "    <field name=\"relevancy\">1.0</field>\n" +
+                "    <field name=\"uri\">testHit</field>\n" +
+                "  </hit>\n" +
+                "</result>\n",
+                driver.sendRequest("http://localhost?format=xml").readAll()
+        );
     }
 
     @Test
-    public void testFailing() {
-         assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=classLoadingError").readAll().contains("NoClassDefFoundError"));
+    void testFailing() {
+        assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=classLoadingError").readAll().contains("NoClassDefFoundError"));
     }
 
     @Test
-    public synchronized void testPluginError() {
+    synchronized void testPluginError() {
         assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=exceptionInPlugin").readAll().contains("NullPointerException"));
     }
 
     @Test
-    public synchronized void testWorkingReconfiguration() throws Exception {
+    synchronized void testWorkingReconfiguration() throws Exception {
         assertJsonResult("http://localhost?query=abc", driver);
 
         // reconfiguration
@@ -131,17 +124,17 @@ public class SearchHandlerTest {
 
         // ...and check the resulting config
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
-        assertNotNull("Have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"));
-        assertNull("Don't have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"));
+        assertNotSame(searchHandler, newSearchHandler, "Have a new instance of the search handler");
+        assertNotNull(fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"), "Have the new search chain");
+        assertNull(fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"), "Don't have the new search chain");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             assertJsonResult("http://localhost?query=abc", newDriver);
         }
     }
 
     @Test
-    @Ignore //TODO: Must be done at the ConfiguredApplication level, not handlers configurer? Also, this must be rewritten as the above
-    public synchronized void testFailedReconfiguration() throws Exception {
+    @Disabled //TODO: Must be done at the ConfiguredApplication level, not handlers configurer? Also, this must be rewritten as the above
+    synchronized void testFailedReconfiguration() throws Exception {
         assertXmlResult(driver);
 
         // attempt reconfiguration
@@ -150,15 +143,15 @@ public class SearchHandlerTest {
         configurer.reloadConfig();
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
         RequestHandler newMockHandler = configurer.getRequestHandlerRegistry().getComponent("com.yahoo.search.handler.test.MockHandler");
-        assertSame("Reconfiguration failed: Kept the existing instance of the search handler", searchHandler, newSearchHandler);
-        assertNull("Reconfiguration failed: No mock handler", newMockHandler);
+        assertSame(searchHandler, newSearchHandler, "Reconfiguration failed: Kept the existing instance of the search handler");
+        assertNull(newMockHandler, "Reconfiguration failed: No mock handler");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(searchHandler)) {
             assertXmlResult(newDriver);
         }
     }
 
     @Test
-    public void testResponseBasics() {
+    void testResponseBasics() {
         Query q = new Query("?query=dummy&tracelevel=3");
         q.trace("nalle", 1);
         Result r = new Result(q);
@@ -172,13 +165,13 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testInvalidYqlQuery() throws Exception {
+    void testInvalidYqlQuery() throws Exception {
         IOUtils.copyDirectory(new File(testDir, "config_yql"), new File(tempDir), 1);
         generateComponentsConfigForActive();
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
+        assertNotSame(searchHandler, newSearchHandler, "Have a new instance of the search handler");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
                     "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
@@ -189,7 +182,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testRequestType() throws Exception {
+    void testRequestType() throws Exception {
         IOUtils.copyDirectory(new File(testDir, "config_yql"), new File(tempDir), 1);
         generateComponentsConfigForActive();
         configurer.reloadConfig();
@@ -205,14 +198,14 @@ public class SearchHandlerTest {
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test
-    public void testInvalidQueryParamWithQueryProfile() throws Exception {
+    void testInvalidQueryParamWithQueryProfile() throws Exception {
         try (RequestHandlerTestDriver newDriver = driverWithConfig("config_invalid_param")) {
             testInvalidQueryParam(newDriver);
         }
     }
 
     @Test
-    public void testInvalidQueryParamWithoutQueryProfile() {
+    void testInvalidQueryParamWithoutQueryProfile() {
         testInvalidQueryParam(driver);
     }
     private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) {
@@ -225,7 +218,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testResultStatus() {
+    void testResultStatus() {
         assertEquals(200, httpStatus(result().build()));
         assertEquals(200, httpStatus(result().withHit().build()));
         assertEquals(200, httpStatus(result().withGroups().build()));
@@ -238,7 +231,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testWebServiceStatus() {
+    void testWebServiceStatus() {
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 driver.sendRequest("http://localhost/search/?query=web_service_status_code");
         String response = responseHandler.readAll();
@@ -247,32 +240,32 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testNormalResultImplicitDefaultRendering() {
+    void testNormalResultImplicitDefaultRendering() {
         assertJsonResult("http://localhost?query=abc", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRendering() {
+    void testNormalResultExplicitDefaultRendering() {
         assertJsonResult("http://localhost?query=abc&format=default", driver);
     }
 
     @Test
-    public void testNormalResultXmlAliasRendering() {
+    void testNormalResultXmlAliasRendering() {
         assertXmlResult("http://localhost?query=abc&format=xml", driver);
     }
 
     @Test
-    public void testNormalResultJsonAliasRendering() {
+    void testNormalResultJsonAliasRendering() {
         assertJsonResult("http://localhost?query=abc&format=json", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName1() {
+    void testNormalResultExplicitDefaultRenderingFullRendererName1() {
         assertXmlResult("http://localhost?query=abc&format=XmlRenderer", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName2() {
+    void testNormalResultExplicitDefaultRenderingFullRendererName2() {
         assertJsonResult("http://localhost?query=abc&format=JsonRenderer", driver);
     }
 
@@ -319,7 +312,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testFaultyHandlers() throws Exception {
+    void testFaultyHandlers() throws Exception {
         assertHandlerResponse(500, null, "NullReturning");
         assertHandlerResponse(500, null, "NullReturningAsync");
         assertHandlerResponse(500, null, "Throwing");
@@ -327,7 +320,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    public void testForwardingHandlers() throws Exception {
+    void testForwardingHandlers() throws Exception {
         assertHandlerResponse(200, jsonResult, "ForwardingAsync");
 
         // Fails because we are forwarding from a sync to an async handler -
@@ -341,9 +334,9 @@ public class SearchHandlerTest {
         try (RequestHandlerTestDriver forwardingDriver = new RequestHandlerTestDriver(forwardingHandler)) {
             RequestHandlerTestDriver.MockResponseHandler response = forwardingDriver.sendRequest("http://localhost/" + handlerName + "?query=test");
             response.awaitResponse();
-            assertEquals("Expected HTTP status", status, response.getStatus());
+            assertEquals(status, response.getStatus(), "Expected HTTP status");
             if (responseData == null)
-                assertNull("Connection closed with no data", response.read());
+                assertNull(response.read(), "Connection closed with no data");
             else
                 assertEquals(responseData, response.readAll());
         }
@@ -355,7 +348,7 @@ public class SearchHandlerTest {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertNotSame("Should have a new instance of the search handler", searchHandler, newSearchHandler);
+        assertNotSame(searchHandler, newSearchHandler, "Should have a new instance of the search handler");
         return new RequestHandlerTestDriver(newSearchHandler);
     }
 
@@ -387,6 +380,15 @@ public class SearchHandlerTest {
 
             return result;
         }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
     }
 
     /** Referenced from config */
@@ -395,6 +397,15 @@ public class SearchHandlerTest {
         @Override
         public Result search(Query query, Execution execution) {
             throw new NoClassDefFoundError(); // Simulate typical OSGi problem
+        }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
         }
     }
 
@@ -411,6 +422,15 @@ public class SearchHandlerTest {
             }
             return result;
         }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
     }
 
     /** Referenced from config */
@@ -420,6 +440,15 @@ public class SearchHandlerTest {
         public Result search(Query query, Execution execution) {
             Result result = execution.search(query);
             result.hits().add(new Hit("HelloWorld"));
+            return result;
+        }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
             return result;
         }
     }
@@ -433,6 +462,15 @@ public class SearchHandlerTest {
             Hit hit = new Hit("Query");
             hit.setField("query", query.yqlRepresentation());
             result.hits().add(hit);
+            return result;
+        }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
             return result;
         }
     }
@@ -459,6 +497,15 @@ public class SearchHandlerTest {
             }
         }
 
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+
     }
 
     /** Referenced from config */
@@ -483,6 +530,15 @@ public class SearchHandlerTest {
             }
         }
 
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+
     }
 
     /** Referenced from config */
@@ -495,6 +551,15 @@ public class SearchHandlerTest {
         @Override
         public HttpResponse handle(HttpRequest httpRequest) {
             return null;
+        }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
         }
 
     }
@@ -511,6 +576,15 @@ public class SearchHandlerTest {
             return null;
         }
 
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+
     }
 
     /** Referenced from config */
@@ -525,6 +599,15 @@ public class SearchHandlerTest {
             throw new RuntimeException();
         }
 
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+
     }
 
     /** Referenced from config */
@@ -537,6 +620,15 @@ public class SearchHandlerTest {
         @Override
         public HttpResponse handle(HttpRequest httpRequest) {
             throw new RuntimeException();
+        }
+
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
         }
 
     }
@@ -564,6 +656,24 @@ public class SearchHandlerTest {
 
         public Result build() { return result; }
 
+        private static File newFolder(File root, String... subDirs) throws IOException {
+            String subFolder = String.join("/", subDirs);
+            File result = new File(root, subFolder);
+            if (!result.mkdirs()) {
+                throw new IOException("Couldn't create folders " + root);
+            }
+            return result;
+        }
+
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }

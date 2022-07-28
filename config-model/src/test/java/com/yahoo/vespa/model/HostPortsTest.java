@@ -5,13 +5,14 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.NetworkPorts;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -20,13 +21,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HostPortsTest {
 
     @Test
-    public void next_available_baseport_is_BASE_PORT_when_no_ports_have_been_reserved() {
+    void next_available_baseport_is_BASE_PORT_when_no_ports_have_been_reserved() {
         HostPorts host = new HostPorts("myhostname");
         assertThat(host.nextAvailableBaseport(1), is(HostPorts.BASE_PORT));
     }
 
     @Test
-    public void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
+    void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
         HostPorts host = new HostPorts("myhostname");
         MockRoot root = new MockRoot();
         host.reservePort(new TestService(root, 1), HostPorts.BASE_PORT, "foo");
@@ -34,7 +35,7 @@ public class HostPortsTest {
     }
 
     @Test
-    public void no_available_baseport_when_service_requires_more_consecutive_ports_than_available() {
+    void no_available_baseport_when_service_requires_more_consecutive_ports_than_available() {
         HostPorts host = new HostPorts("myhostname");
         MockRoot root = new MockRoot();
 
@@ -51,32 +52,36 @@ public class HostPortsTest {
     }
 
     @Test
-    public void port_above_vespas_port_range_can_be_reserved() {
+    void port_above_vespas_port_range_can_be_reserved() {
         HostPorts host = new HostPorts("myhostname");
         MockRoot root = new MockRoot();
         host.allocatePorts(new TestService(root, 1), HostPorts.BASE_PORT + HostPorts.MAX_PORTS + 1);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void allocating_same_port_throws_exception() {
-        HostPorts host = new HostPorts("myhostname");
-        MockRoot root = new MockRoot();
-        TestService service1 = new TestService(root, 1);
-        TestService service2 = new TestService(root, 1);
+    @Test
+    void allocating_same_port_throws_exception() {
+        assertThrows(RuntimeException.class, () -> {
+            HostPorts host = new HostPorts("myhostname");
+            MockRoot root = new MockRoot();
+            TestService service1 = new TestService(root, 1);
+            TestService service2 = new TestService(root, 1);
 
-        host.allocatePorts(service1, HostPorts.BASE_PORT);
-        host.allocatePorts(service2, HostPorts.BASE_PORT);
+            host.allocatePorts(service1, HostPorts.BASE_PORT);
+            host.allocatePorts(service2, HostPorts.BASE_PORT);
+        });
     }
 
-    @Test(expected = RuntimeException.class)
-    public void allocating_overlapping_ports_throws_exception() {
-        HostPorts host = new HostPorts("myhostname");
-        MockRoot root = new MockRoot();
-        TestService service2 = new TestService(root, 2);
-        TestService service1 = new TestService(root, 1);
+    @Test
+    void allocating_overlapping_ports_throws_exception() {
+        assertThrows(RuntimeException.class, () -> {
+            HostPorts host = new HostPorts("myhostname");
+            MockRoot root = new MockRoot();
+            TestService service2 = new TestService(root, 2);
+            TestService service1 = new TestService(root, 1);
 
-        host.allocatePorts(service2, HostPorts.BASE_PORT);
-        host.allocatePorts(service1, HostPorts.BASE_PORT + 1);
+            host.allocatePorts(service2, HostPorts.BASE_PORT);
+            host.allocatePorts(service1, HostPorts.BASE_PORT + 1);
+        });
     }
 
     NetworkPorts emulOldPorts() {
@@ -87,7 +92,7 @@ public class HostPortsTest {
     }
 
     @Test
-    public void use_old_port_when_available() {
+    void use_old_port_when_available() {
         HostPorts host = new HostPorts("myhostname");
         host.addNetworkPorts(emulOldPorts());
 

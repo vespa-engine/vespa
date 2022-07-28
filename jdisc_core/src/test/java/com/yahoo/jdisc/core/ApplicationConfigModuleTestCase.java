@@ -15,9 +15,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.Test;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class ApplicationConfigModuleTestCase {
 
     @Test
-    public void requireThatEntriesAreBoundWithLowerCaseKeys() {
+    void requireThatEntriesAreBoundWithLowerCaseKeys() {
         Map<String, String> config = new HashMap<>();
         config.put("foo_key", "foo");
         config.put("BAR_key", "bar");
@@ -38,7 +39,7 @@ public class ApplicationConfigModuleTestCase {
     }
 
     @Test
-    public void requireThatEntriesAreBoundWithUnmodifiedValue() {
+    void requireThatEntriesAreBoundWithUnmodifiedValue() {
         Map<String, String> config = new HashMap<>();
         config.put("foo", "foo_val");
         config.put("bar", "BAR_val");
@@ -51,7 +52,7 @@ public class ApplicationConfigModuleTestCase {
     }
 
     @Test
-    public void requireThatUpperCaseKeysPrecedeLowerCaseKeys() {
+    void requireThatUpperCaseKeysPrecedeLowerCaseKeys() {
         Map<String, String> config = new HashMap<>();
         config.put("foo", "lower-case");
         assertBinding(config, "foo", "lower-case");
@@ -67,7 +68,7 @@ public class ApplicationConfigModuleTestCase {
     }
 
     @Test
-    public void requireThatNullFileNameThrowsException() throws IOException {
+    void requireThatNullFileNameThrowsException() throws IOException {
         try {
             ApplicationConfigModule.newInstanceFromFile(null);
             fail();
@@ -77,7 +78,7 @@ public class ApplicationConfigModuleTestCase {
     }
 
     @Test
-    public void requireThatFileNotFoundThrowsException() throws IOException {
+    void requireThatFileNotFoundThrowsException() throws IOException {
         try {
             ApplicationConfigModule.newInstanceFromFile("/file/not/found");
             fail();
@@ -87,7 +88,7 @@ public class ApplicationConfigModuleTestCase {
     }
 
     @Test
-    public void requireThatPropertieFilesCanBeRead() throws IOException {
+    void requireThatPropertieFilesCanBeRead() throws IOException {
         Properties props = new Properties();
         props.put("foo_key", "foo_val");
 

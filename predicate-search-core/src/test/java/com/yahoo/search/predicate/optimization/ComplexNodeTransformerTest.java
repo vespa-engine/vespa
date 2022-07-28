@@ -4,9 +4,9 @@ package com.yahoo.search.predicate.optimization;
 import com.yahoo.document.predicate.FeatureRange;
 import com.yahoo.document.predicate.Predicate;
 import com.yahoo.document.predicate.RangePartition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -29,7 +29,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatSingleValueRangesAreConverted() {
+    void requireThatSingleValueRangesAreConverted() {
         testConvert("foo in [0..0]", "foo in [0..0 (foo=0+[..0])]");
         testConvert("foo in [5..5]", "foo in [5..5 (foo=0+[5..5])]");
         testConvert("foo in [9..9]", "foo in [9..9 (foo=0+[9..])]");
@@ -40,7 +40,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatVeryShortRangesAreConverted() {
+    void requireThatVeryShortRangesAreConverted() {
         testConvert("foo in [10..17]", "foo in [10..17 (foo=10+[..7])]");
         testConvert("foo in [12..19]", "foo in [12..19 (foo=10+[2..])]");
         testConvert("foo in [11..18]", "foo in [11..18 (foo=10+[1..8])]");
@@ -53,7 +53,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatShortRangeIsConverted() {
+    void requireThatShortRangeIsConverted() {
         testConvert("foo in [9..19]", "foo in [9..19 (foo=0+[9..],foo=10-19)]");
         testConvert("foo in [10..19]", "foo in [10..19 (foo=10-19)]");
         testConvert("foo in [10..20]", "foo in [10..20 (foo=20+[..0],foo=10-19)]");
@@ -67,7 +67,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatMediumRangeIsConverted() {
+    void requireThatMediumRangeIsConverted() {
         testConvert("foo in [10..39]", "foo in [10..39 (foo=10-19,foo=20-29,foo=30-39)]");
         testConvert("foo in [10..38]", "foo in [10..38 (foo=30+[..8],foo=10-19,foo=20-29)]");
         testConvert("foo in [18..39]", "foo in [18..39 (foo=10+[8..],foo=20-29,foo=30-39)]");
@@ -80,7 +80,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatLargeRangeIsConverted() {
+    void requireThatLargeRangeIsConverted() {
         testConvert("foo in [10..199]", "foo in [10..199 (foo=10-19,foo=20-29,foo=30-39,foo=40-49,foo=50-59,foo=60-69,foo=70-79,foo=80-89,foo=90-99,foo=100-199)]");
         testConvert("foo in [8..207]", "foo in [8..207 (foo=0+[8..],foo=200+[..7],foo=10-19,foo=20-29,foo=30-39,foo=40-49,foo=50-59,foo=60-69,foo=70-79,foo=80-89,foo=90-99,foo=100-199)]");
         testConvert("foo in [999..2001]", "foo in [999..2001 (foo=990+[9..],foo=2000+[..1],foo=1000-1999)]");
@@ -94,7 +94,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatLongMaxIsConverted() {
+    void requireThatLongMaxIsConverted() {
         testConvert("foo in [0..9223372036854775807]",
                 "foo in [0..9223372036854775807 (" +
                         "foo=9223372036854775800+[..7]," +
@@ -184,7 +184,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatLongMinIsConverted() {
+    void requireThatLongMinIsConverted() {
         testConvert("foo in [-9223372036854775808..-1]",
                 "foo in [-9223372036854775808..-1 (" +
                         "foo=-9223372036854775800+[..8]," +
@@ -273,7 +273,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatLowAritiesWork() {
+    void requireThatLowAritiesWork() {
         testConvert("foo in [10..39]", "foo in [10..39 (foo=10-11,foo=12-15,foo=32-39,foo=16-31)]", 2);
         testConvert("foo in [2..32]", "foo in [2..32 (foo=32+[..0],foo=2-3,foo=4-7,foo=8-15,foo=16-31)]", 2);
         testConvert("foo in [-31..63]", "foo in [-31..63 (foo=-31-0,foo=0-63)]", 2);
@@ -327,7 +327,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatHighAritiesWork() {
+    void requireThatHighAritiesWork() {
         testConvert("foo in [10..39]", "foo in [10..39 (foo=0+[10..39])]", 1000);
         testConvert("foo in [9000..11000]", "foo in [9000..11000 (foo=0+[9000..],foo=10000+[..1000])]", 10000);
         testConvert("foo in [10..39]", "foo in [10..39 (foo=0+[10..39])]", 16384);
@@ -338,13 +338,13 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatOpenRangesWork() {
+    void requireThatOpenRangesWork() {
         testConvert("foo in [-7..]", "foo in [-7.. (foo=-7-0,foo=0-9223372036854775807)]", 2);
         testConvert("foo in [..7]", "foo in [..7 (foo=-9223372036854775808+[..0],foo=-9223372036854775807-0,foo=0-7)]", 2);
     }
 
     @Test
-    public void requireThatUpperAndLowerBoundsWork() {
+    void requireThatUpperAndLowerBoundsWork() {
         lowerBound = -999;
         upperBound = 999;
         testConvert("foo in [-9..]", "foo in [-9.. (foo=-9-0,foo=0-999)]", 10);
@@ -353,7 +353,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatUpperAndLowerBoundsPruneClosedRanges() {
+    void requireThatUpperAndLowerBoundsPruneClosedRanges() {
         lowerBound = -999;
         upperBound = 999;
         testConvert("foo in [0..10000]", "foo in [0..10000 (foo=0-999)]", 10);
@@ -364,7 +364,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatRangesOutsideBoundsAreSimplifiedToOneImpossibleRange() {
+    void requireThatRangesOutsideBoundsAreSimplifiedToOneImpossibleRange() {
         lowerBound = 900;
         upperBound = 999;
         testConvert("foo in [0..100]", "foo in [0..100 (foo=-9223372036854775799-9223372036854775790)]", 10);
@@ -380,7 +380,7 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatUpperAndLowerBoundsAreAdjustedWithArity() {
+    void requireThatUpperAndLowerBoundsAreAdjustedWithArity() {
         lowerBound = -999;
         upperBound = 999;
         testConvert("foo in [0..10000]", "foo in [0..10000 (foo=0-999)]", 10);
@@ -592,10 +592,10 @@ public class ComplexNodeTransformerTest {
     }
 
     @Test
-    public void requireThatExistingPartitionsAreCleared() {
+    void requireThatExistingPartitionsAreCleared() {
         testConvert("foo in [10..19]", "foo in [10..19 (foo=10-19)]");
         Predicate p = Predicate.fromString("foo in [10..19]");
-        ((FeatureRange)p).addPartition(new RangePartition("foo", 10000L, 20000L, false));
+        ((FeatureRange) p).addPartition(new RangePartition("foo", 10000L, 20000L, false));
         ComplexNodeTransformer tranformer = new ComplexNodeTransformer();
         Predicate converted = tranformer.process(p, new PredicateOptions(10, lowerBound, upperBound));
         assertEquals("foo in [10..19 (foo=10-19)]", converted.toString());

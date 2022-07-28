@@ -3,7 +3,7 @@ package com.yahoo.vespa.zookeeper.client;
 
 import com.yahoo.security.tls.TlsContext;
 import org.apache.zookeeper.client.ZKClientConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -17,8 +17,8 @@ import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_CLIENTA
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY;
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_ENABLED_CIPHERSUITES_PROPERTY;
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_ENABLED_PROTOCOLS_PROPERTY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests the zookeeper client config builder.
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNull;
 public class ZkClientConfigBuilderTest {
 
     @Test
-    public void config_when_not_using_tls_context() {
+    void config_when_not_using_tls_context() {
         ZkClientConfigBuilder builder = new ZkClientConfigBuilder(null);
         ZKClientConfig config = builder.toConfig();
         assertEquals("false", config.getProperty(CLIENT_SECURE_PROPERTY));
@@ -36,7 +36,7 @@ public class ZkClientConfigBuilderTest {
     }
 
     @Test
-    public void config_when_using_system_tls_context() {
+    void config_when_using_system_tls_context() {
         ZkClientConfigBuilder builder = new ZkClientConfigBuilder(new MockTlsContext());
         ZKClientConfig config = builder.toConfig();
         assertEquals("true", config.getProperty(CLIENT_SECURE_PROPERTY));

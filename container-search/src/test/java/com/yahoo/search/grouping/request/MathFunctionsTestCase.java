@@ -1,19 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Einar M R Rosenvinge
  */
 public class MathFunctionsTestCase {
-    
+
     @Test
-    public void testMathFunctions() {
+    void testMathFunctions() {
         //if this fails, update the count AND add a test in each of the two blocks below
         assertEquals(21, MathFunctions.Function.values().length);
 

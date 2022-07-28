@@ -7,10 +7,12 @@ import com.yahoo.config.FileReference;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ContainerTest.ComponentTakingConfig;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.osgi.framework.Bundle;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Set;
 
@@ -26,17 +28,20 @@ public class ContainerTestBase {
     private ComponentGraph componentGraph;
     protected DirConfigSource dirConfigSource = null;
 
-    @Before
+    @TempDir
+    File tmpDir;
+
+    @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource("ContainerTest-");
+        dirConfigSource = new DirConfigSource(tmpDir, "ContainerTest-");
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         dirConfigSource.cleanup();
     }
 
-    @Before
+    @BeforeEach
     public void createGraph() {
         componentGraph = new ComponentGraph(0);
     }

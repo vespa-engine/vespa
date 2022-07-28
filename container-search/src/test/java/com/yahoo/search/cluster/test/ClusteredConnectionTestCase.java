@@ -12,14 +12,14 @@ import com.yahoo.search.cluster.Hasher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author bratseth
@@ -27,83 +27,83 @@ import static org.junit.Assert.assertNull;
 public class ClusteredConnectionTestCase {
 
     @Test
-    public void testClustering() {
-        Connection connection0=new Connection("0");
-        Connection connection1=new Connection("1");
-        Connection connection2=new Connection("2");
-        List<Connection> connections=new ArrayList<>();
+    void testClustering() {
+        Connection connection0 = new Connection("0");
+        Connection connection1 = new Connection("1");
+        Connection connection2 = new Connection("2");
+        List<Connection> connections = new ArrayList<>();
         connections.add(connection0);
         connections.add(connection1);
         connections.add(connection2);
         MyBackend myBackend = new MyBackend(new ComponentId("test"), connections);
 
         Result r;
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals("from:2",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
-        assertEquals("from:1",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
+        assertEquals("from:2", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
+        assertEquals("from:1", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
 
         connection2.setInService(false);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
-        assertEquals("from:1",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
+        assertEquals("from:1", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
 
         connection1.setInService(false);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
 
         connection0.setInService(false);
         r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertEquals("Failed calling connection '2' in searcher 'test' for query 'NULL': Connection failed",
-                     r.hits().getError().getDetailedMessage());
+                r.hits().getError().getDetailedMessage());
 
         connection0.setInService(true);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
 
         connection1.setInService(true);
         connection2.setInService(true);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals("from:2",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
-        assertEquals("from:1",r.hits().get(0).getId().stringValue());
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
-        assertEquals("from:0",r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(1));
+        assertEquals("from:2", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(2));
+        assertEquals("from:1", r.hits().get(0).getId().stringValue());
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(3));
+        assertEquals("from:0", r.hits().get(0).getId().stringValue());
     }
 
     @Test
-    public void testClusteringWithPing() {
-        Connection connection0=new Connection("0");
-        Connection connection1=new Connection("1");
-        Connection connection2=new Connection("2");
-        List<Connection> connections=new ArrayList<>();
+    void testClusteringWithPing() {
+        Connection connection0 = new Connection("0");
+        Connection connection1 = new Connection("1");
+        Connection connection2 = new Connection("2");
+        List<Connection> connections = new ArrayList<>();
         connections.add(connection0);
         connections.add(connection1);
         connections.add(connection2);
-        MyBackend myBackend=new MyBackend(new ComponentId("test"),connections);
+        MyBackend myBackend = new MyBackend(new ComponentId("test"), connections);
 
         Result r;
 
@@ -114,14 +114,14 @@ public class ClusteredConnectionTestCase {
         connection1.setInService(false);
         connection0.setInService(false);
         forcePing(myBackend);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertEquals("No backends in service. Try later", r.hits().getError().getMessage());
 
         connection2.setInService(true);
         connection1.setInService(true);
         connection0.setInService(true);
         forcePing(myBackend);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertNull(r.hits().getError());
     }
 

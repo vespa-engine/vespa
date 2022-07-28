@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -12,47 +12,47 @@ import java.io.IOException;
 public class AnnotationsTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void requireThatStructRegistersIfOnlyUsedByAnnotation() throws IOException, ParseException {
+    void requireThatStructRegistersIfOnlyUsedByAnnotation() throws IOException, ParseException {
         assertCorrectDeriving("annotationsstruct");
     }
 
     @Test
-    public void requireThatStructRegistersIfOnlyUsedAsArrayByAnnotation() throws IOException, ParseException {
+    void requireThatStructRegistersIfOnlyUsedAsArrayByAnnotation() throws IOException, ParseException {
         assertCorrectDeriving("annotationsstructarray");
     }
 
     @Test
-    public void testSimpleAnnotationDeriving() throws IOException, ParseException {
+    void testSimpleAnnotationDeriving() throws IOException, ParseException {
         assertCorrectDeriving("annotationssimple");
     }
 
     @Test
-    public void testAnnotationDerivingWithImplicitStruct() throws IOException, ParseException {
+    void testAnnotationDerivingWithImplicitStruct() throws IOException, ParseException {
         assertCorrectDeriving("annotationsimplicitstruct");
     }
 
     @Test
-    public void testAnnotationDerivingInheritance() throws IOException, ParseException {
+    void testAnnotationDerivingInheritance() throws IOException, ParseException {
         assertCorrectDeriving("annotationsinheritance");
     }
 
     @Test
-    public void testAnnotationDerivingInheritance2() throws IOException, ParseException {
+    void testAnnotationDerivingInheritance2() throws IOException, ParseException {
         assertCorrectDeriving("annotationsinheritance2");
     }
 
     @Test
-    public void testSimpleReference() throws IOException, ParseException {
+    void testSimpleReference() throws IOException, ParseException {
         assertCorrectDeriving("annotationsreference");
     }
 
     @Test
-    public void testAdvancedReference() throws IOException, ParseException {
+    void testAdvancedReference() throws IOException, ParseException {
         assertCorrectDeriving("annotationsreference2");
     }
 
     @Test
-    public void testAnnotationsPolymorphy() throws IOException, ParseException {
+    void testAnnotationsPolymorphy() throws IOException, ParseException {
         assertCorrectDeriving("annotationspolymorphy");
     }
 
@@ -60,7 +60,7 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
      * An annotation declared before document {} should work.
      */
     @Test
-    public void testAnnotationOutsideOfDocumentNew() throws IOException, ParseException {
+    void testAnnotationOutsideOfDocumentNew() throws IOException, ParseException {
         assertCorrectDeriving("annotationsoutsideofdocument");
     }
 }

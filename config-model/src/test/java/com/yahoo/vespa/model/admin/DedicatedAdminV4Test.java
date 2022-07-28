@@ -18,7 +18,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -29,9 +29,7 @@ import java.util.stream.IntStream;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -52,7 +50,7 @@ public class DedicatedAdminV4Test {
             + "</hosts>";
 
     @Test
-    public void testModelBuilding() throws IOException, SAXException {
+    void testModelBuilding() throws IOException, SAXException {
         String services = "<services>" +
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
@@ -74,12 +72,12 @@ public class DedicatedAdminV4Test {
         assertEquals(3, model.getHosts().size());
 
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName);
         // Note: A logserver container is always added on logserver host
         assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
         assertEquals("vespa.routing", monitoring.getClustername());
@@ -93,7 +91,7 @@ public class DedicatedAdminV4Test {
     }
 
     @Test
-    public void testThatThereAre2SlobroksPerContainerCluster() throws IOException, SAXException {
+    void testThatThereAre2SlobroksPerContainerCluster() throws IOException, SAXException {
         String hosts = "<hosts>"
                 + "  <host name=\"myhost0\">"
                 + "    <alias>node0</alias>"
@@ -110,39 +108,39 @@ public class DedicatedAdminV4Test {
                 + "</hosts>";
 
         String servicesWith3JdiscClusters = "<services>" +
-                    "  <admin version='4.0'>" +
-                    "    <nodes count='1' dedicated='true' />" +
-                    "  </admin>" +
-                    "  <container id='a' version='1.0'>" +
-                    "    <search />" +
-                    "    <nodes count='2' dedicated='true' />" +
-                    "  </container>" +
-                    "  <container id='b' version='1.0'>" +
-                    "    <search />" +
-                    "    <nodes count='1' dedicated='true' />" +
-                    "  </container>" +
-                    "  <container id='c' version='1.0'>" +
-                    "    <search />" +
-                    "    <nodes count='1' dedicated='true' />" +
-                    "  </container>" +
-                    "</services>";
+                "  <admin version='4.0'>" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </admin>" +
+                "  <container id='a' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='2' dedicated='true' />" +
+                "  </container>" +
+                "  <container id='b' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </container>" +
+                "  <container id='c' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </container>" +
+                "</services>";
 
         VespaModel model = createModel(hosts, servicesWith3JdiscClusters);
         assertEquals(4, model.getHosts().size());
 
         // 4 slobroks, 2 per cluster where possible
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost2", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost3", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
     }
 
     @Test
-    public void testLogForwarding() throws IOException, SAXException {
+    void testLogForwarding() throws IOException, SAXException {
         String services = "<services>" +
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
@@ -157,16 +155,16 @@ public class DedicatedAdminV4Test {
         assertEquals(3, model.getHosts().size());
 
         assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName);
         // Note: A logserver container is always added on logserver host
         assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host
-        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.toString(), configIds.contains("hosts/myhost"+i+"/logforwarder")));
+        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.contains("hosts/myhost" + i + "/logforwarder"), configIds.toString()));
 
         // First forwarder
         {
@@ -194,7 +192,7 @@ public class DedicatedAdminV4Test {
     }
 
     @Test
-    public void testDedicatedLogserverInHostedVespa() throws IOException, SAXException {
+    void testDedicatedLogserverInHostedVespa() throws IOException, SAXException {
         String services = "<services>" +
                 "  <admin version='4.0'>" +
                 "    <logservers>" +
@@ -209,7 +207,7 @@ public class DedicatedAdminV4Test {
         assertEquals(1, model.getHosts().size());
         // Should create a logserver container on the same node as logserver
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName , LOGSERVER_CONTAINER.serviceName);
+                METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {

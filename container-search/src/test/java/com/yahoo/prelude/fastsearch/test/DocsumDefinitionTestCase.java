@@ -15,15 +15,12 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests docsum class functionality
@@ -33,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class DocsumDefinitionTestCase {
 
     @Test
-    public void testDecoding() {
+    void testDecoding() {
         DocsumDefinitionSet set = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
 

@@ -8,13 +8,14 @@ import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.Field;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.schema.derived.Deriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Einar M R Rosenvinge
@@ -22,14 +23,14 @@ import static org.junit.Assert.assertSame;
 public class FieldOfTypeDocumentTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testDocument() throws IOException {
+    void testDocument() throws IOException {
 
         List<String> sds = new ArrayList<>();
         sds.add("src/test/examples/music.sd");
         sds.add("src/test/examples/fieldoftypedocument.sd");
         DocumentmanagerConfig.Builder value = Deriver.getDocumentManagerConfig(sds);
         assertConfigFile("src/test/examples/fieldoftypedocument.cfg",
-                         new DocumentmanagerConfig(value).toString() + "\n");
+                new DocumentmanagerConfig(value).toString() + "\n");
 
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "raw:" + new DocumentmanagerConfig(value).toString());

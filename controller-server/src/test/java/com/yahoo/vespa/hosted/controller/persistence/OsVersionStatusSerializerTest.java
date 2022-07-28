@@ -8,7 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class OsVersionStatusSerializerTest {
 
     @Test
-    public void serialization() {
+    void serialization() {
         Version version1 = Version.fromString("7.1");
         Version version2 = Version.fromString("7.2");
         Map<OsVersion, List<NodeVersion>> versions = new LinkedHashMap<>();

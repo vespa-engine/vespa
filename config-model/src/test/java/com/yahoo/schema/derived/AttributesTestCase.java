@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -14,22 +14,22 @@ import java.io.IOException;
 public class AttributesTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testDocumentDeriving() throws IOException, ParseException {
+    void testDocumentDeriving() throws IOException, ParseException {
         assertCorrectDeriving("attributes");
     }
 
     @Test
-    public void testArrayOfStructAttribute() throws IOException, ParseException {
+    void testArrayOfStructAttribute() throws IOException, ParseException {
         assertCorrectDeriving("array_of_struct_attribute");
     }
 
     @Test
-    public void testMapOfStructAttribute() throws IOException, ParseException {
+    void testMapOfStructAttribute() throws IOException, ParseException {
         assertCorrectDeriving("map_of_struct_attribute");
     }
 
     @Test
-    public void testMapOfPrimitiveAttribute() throws IOException, ParseException {
+    void testMapOfPrimitiveAttribute() throws IOException, ParseException {
         assertCorrectDeriving("map_attribute");
     }
 

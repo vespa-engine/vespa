@@ -2,15 +2,16 @@
 package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.Cookie;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JDiscCookieWrapperTest {
 
     @Test
-    public void requireThatWrapWorks() {
+    void requireThatWrapWorks() {
         Cookie cookie = new Cookie("name", "value");
         JDiscCookieWrapper wrapper = JDiscCookieWrapper.wrap(cookie);
 
@@ -18,12 +19,12 @@ public class JDiscCookieWrapperTest {
         wrapper.setMaxAge(10);
         wrapper.setPath("/path");
 
-        Assert.assertEquals(wrapper.getName(), cookie.getName());
-        Assert.assertEquals(wrapper.getValue(), cookie.getValue());
-        Assert.assertEquals(wrapper.getDomain(), cookie.getDomain());
-        Assert.assertEquals(wrapper.getMaxAge(), cookie.getMaxAge(TimeUnit.SECONDS));
-        Assert.assertEquals(wrapper.getPath(), cookie.getPath());
-        Assert.assertEquals(wrapper.getSecure(), cookie.isSecure());
+        assertEquals(wrapper.getName(), cookie.getName());
+        assertEquals(wrapper.getValue(), cookie.getValue());
+        assertEquals(wrapper.getDomain(), cookie.getDomain());
+        assertEquals(wrapper.getMaxAge(), cookie.getMaxAge(TimeUnit.SECONDS));
+        assertEquals(wrapper.getPath(), cookie.getPath());
+        assertEquals(wrapper.getSecure(), cookie.isSecure());
 
     }
 }

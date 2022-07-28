@@ -25,8 +25,8 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
@@ -39,9 +39,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author andreer
@@ -105,7 +105,7 @@ public class EndpointCertificatesTest {
     private final String testCertName = "testCertName";
     private ZoneId testZone;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         tester.zoneRegistry().exclusiveRoutingIn(tester.zoneRegistry().zones().all().zones());
         testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
@@ -115,7 +115,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void provisions_new_certificate_in_dev() {
+    void provisions_new_certificate_in_dev() {
         ZoneId testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
@@ -126,7 +126,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void provisions_new_certificate_in_prod() {
+    void provisions_new_certificate_in_prod() {
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
@@ -136,7 +136,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void provisions_new_certificate_in_public_prod() {
+    void provisions_new_certificate_in_public_prod() {
         ControllerTester tester = new ControllerTester(SystemName.Public);
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
@@ -160,7 +160,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void reuses_stored_certificate_metadata() {
+    void reuses_stored_certificate_metadata() {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id", Optional.of("leaf-request-uuid"),
                 List.of("vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
                         "default.default.global.vespa.oath.cloud",
@@ -178,7 +178,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void reprovisions_certificate_when_necessary() {
+    void reprovisions_certificate_when_necessary() {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
@@ -189,7 +189,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
+    void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty()));
@@ -209,7 +209,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void includes_zones_in_deployment_spec_when_deploying_to_staging() {
+    void includes_zones_in_deployment_spec_when_deploying_to_staging() {
         DeploymentSpec deploymentSpec = new DeploymentSpecXmlReader(true).read(
                 """
                         <deployment version="1.0">
@@ -233,7 +233,7 @@ public class EndpointCertificatesTest {
     }
 
     @Test
-    public void includes_application_endpoint_when_declared() {
+    void includes_application_endpoint_when_declared() {
         Instance instance = new Instance(ApplicationId.from("t1", "a1", "default"));
         ZoneId zone1 = ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1c"));
         ZoneId zone2 = ZoneId.from(Environment.prod, RegionName.from("aws-us-west-2a"));
@@ -242,14 +242,14 @@ public class EndpointCertificatesTest {
                 .region(zone1.region())
                 .region(zone2.region())
                 .applicationEndpoint("a", "qrs", zone2.region().value(),
-                                     Map.of(InstanceName.from("beta"), 2,
-                                            InstanceName.from("main"), 8))
+                        Map.of(InstanceName.from("beta"), 2,
+                                InstanceName.from("main"), 8))
                 .applicationEndpoint("b", "qrs", zone2.region().value(),
-                                     Map.of(InstanceName.from("beta"), 1,
-                                            InstanceName.from("main"), 1))
+                        Map.of(InstanceName.from("beta"), 1,
+                                InstanceName.from("main"), 1))
                 .applicationEndpoint("c", "qrs", zone1.region().value(),
-                                     Map.of(InstanceName.from("beta"), 4,
-                                            InstanceName.from("main"), 6))
+                        Map.of(InstanceName.from("beta"), 4,
+                                InstanceName.from("main"), 6))
                 .build();
         ControllerTester tester = new ControllerTester(SystemName.Public);
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);

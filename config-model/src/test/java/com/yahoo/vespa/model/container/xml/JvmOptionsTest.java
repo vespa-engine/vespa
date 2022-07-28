@@ -12,7 +12,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import java.io.IOException;
@@ -21,9 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -32,7 +30,7 @@ import static org.junit.Assert.fail;
 public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void verify_jvm_tag_with_attributes() throws IOException, SAXException {
+    void verify_jvm_tag_with_attributes() throws IOException, SAXException {
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <search/>" +
@@ -57,14 +55,14 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void honours_jvm_gc_options() {
+    void honours_jvm_gc_options() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <search/>",
                 "  <nodes jvm-gc-options='-XX:+UseG1GC'>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         root.getConfig(qrStartBuilder, "container/container.0");
@@ -94,7 +92,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void ignores_jvmgcoptions_on_conflicting_jvmoptions() throws IOException, SAXException {
+    void ignores_jvmgcoptions_on_conflicting_jvmoptions() throws IOException, SAXException {
         verifyIgnoreJvmGCOptions(false);
         verifyIgnoreJvmGCOptions(true);
     }
@@ -121,7 +119,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
+    void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
         verifyJvmGCOptions(false, null, null, ContainerCluster.G1GC);
         verifyJvmGCOptions(true, null, null, ContainerCluster.PARALLEL_GC);
         verifyJvmGCOptions(true, "", null, ContainerCluster.PARALLEL_GC);
@@ -133,7 +131,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatValidJvmGcOptionsAreNotLogged() throws IOException, SAXException {
+    void requireThatValidJvmGcOptionsAreNotLogged() throws IOException, SAXException {
         // Valid options, should not log anything
         verifyLoggingOfJvmGcOptions(true, "-XX:+ParallelGCThreads=8");
         verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold=15"); // No + or - after colon
@@ -141,7 +139,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatInvalidJvmGcOptionsFailDeployment() throws IOException, SAXException {
+    void requireThatInvalidJvmGcOptionsFailDeployment() throws IOException, SAXException {
         try {
             buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
                     new TestLogger(),
@@ -164,11 +162,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         List<String> strings = Arrays.asList(invalidOptions.clone());
         // Verify that nothing is logged if there are no invalid options
         if (strings.isEmpty()) {
-            assertEquals(logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "", 0, logger.msgs.size());
+            assertEquals(0, logger.msgs.size(), logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "");
             return;
         }
 
-        assertTrue("Expected 1 or more log messages for invalid JM options, got none", logger.msgs.size() > 0);
+        assertTrue(logger.msgs.size() > 0, "Expected 1 or more log messages for invalid JM options, got none");
         Pair<Level, String> firstOption = logger.msgs.get(0);
         assertEquals(Level.WARNING, firstOption.getFirst());
 
@@ -200,7 +198,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatValidJvmOptionsAreNotLogged() throws IOException, SAXException {
+    void requireThatValidJvmOptionsAreNotLogged() throws IOException, SAXException {
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
         verifyLoggingOfJvmOptions(true, "options", "-Xlog:gc");
@@ -210,12 +208,12 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatInvalidJvmOptionsFailDeployment() throws IOException, SAXException {
+    void requireThatInvalidJvmOptionsFailDeployment() throws IOException, SAXException {
         try {
             buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
-                                     new TestLogger(),
-                                     "options",
-                                     "-Xms2G foo     bar");
+                    new TestLogger(),
+                    "options",
+                    "-Xms2G foo     bar");
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Invalid or misplaced JVM options in services.xml: bar,foo"));

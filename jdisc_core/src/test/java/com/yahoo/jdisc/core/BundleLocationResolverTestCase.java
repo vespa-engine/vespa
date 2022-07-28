@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,13 +14,13 @@ import static org.junit.Assert.assertEquals;
 public class BundleLocationResolverTestCase {
 
     @Test
-    public void requireThatDollarsAreIncludedInLocation() {
+    void requireThatDollarsAreIncludedInLocation() {
         assertLocation("scheme:$foo", "scheme:$foo");
         assertLocation("scheme:foo$bar", "scheme:foo$bar");
     }
 
     @Test
-    public void requireThatCurlyBracesAreIncludedInLocation() {
+    void requireThatCurlyBracesAreIncludedInLocation() {
         assertLocation("scheme:{foo", "scheme:{foo");
         assertLocation("scheme:foo{", "scheme:foo{");
         assertLocation("scheme:foo{bar", "scheme:foo{bar");
@@ -32,14 +32,14 @@ public class BundleLocationResolverTestCase {
     }
 
     @Test
-    public void requireThatUnterminatedPropertiesAreIncludedInLocation() {
+    void requireThatUnterminatedPropertiesAreIncludedInLocation() {
         assertLocation("scheme:${foo", "scheme:${foo");
         assertLocation("scheme:foo${", "scheme:foo${");
         assertLocation("scheme:foo${bar", "scheme:foo${bar");
     }
 
     @Test
-    public void requireThatAllSystemPropertiesAreExpanded() throws IOException {
+    void requireThatAllSystemPropertiesAreExpanded() throws IOException {
         assertCanonicalPath("", "${foo}");
         assertCanonicalPath("barcox", "${foo}bar${baz}cox");
         assertCanonicalPath("foobaz", "foo${bar}baz${cox}");
@@ -50,18 +50,18 @@ public class BundleLocationResolverTestCase {
         System.setProperty("requireThatAllSystemPropertiesAreExpanded.cox", "COX");
         assertCanonicalPath("FOO", "${requireThatAllSystemPropertiesAreExpanded.foo}");
         assertCanonicalPath("FOObarBAZcox", "${requireThatAllSystemPropertiesAreExpanded.foo}bar" +
-                                            "${requireThatAllSystemPropertiesAreExpanded.baz}cox");
+                "${requireThatAllSystemPropertiesAreExpanded.baz}cox");
         assertCanonicalPath("fooBARbazCOX", "foo${requireThatAllSystemPropertiesAreExpanded.bar}" +
-                                            "baz${requireThatAllSystemPropertiesAreExpanded.cox}");
+                "baz${requireThatAllSystemPropertiesAreExpanded.cox}");
     }
 
     @Test
-    public void requireThatUnschemedLocationsAreExpandedToBundleLocationProperty() throws IOException {
+    void requireThatUnschemedLocationsAreExpandedToBundleLocationProperty() throws IOException {
         assertCanonicalPath(BundleLocationResolver.BUNDLE_PATH + "foo", "foo");
     }
 
     @Test
-    public void requireThatFileSchemedLocationsAreCanonicalized() throws IOException {
+    void requireThatFileSchemedLocationsAreCanonicalized() throws IOException {
         assertCanonicalPath("", "file:");
         assertCanonicalPath("foo", "file:foo");
         assertCanonicalPath("foo", "file:./foo");
@@ -71,7 +71,7 @@ public class BundleLocationResolverTestCase {
     }
 
     @Test
-    public void requireThatOtherSchemedLocationsAreUntouched() {
+    void requireThatOtherSchemedLocationsAreUntouched() {
         assertLocation("foo:", "foo:");
         assertLocation("foo:bar", "foo:bar");
         assertLocation("foo:bar/baz", "foo:bar/baz");

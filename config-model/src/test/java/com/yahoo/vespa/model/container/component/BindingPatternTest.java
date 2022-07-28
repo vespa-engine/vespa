@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author bjorncs
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertFalse;
 public class BindingPatternTest {
 
     @Test
-    public void parses_valid_bindings_correctly() {
+    void parses_valid_bindings_correctly() {
         assertBindingParses("http://host:1234/path");
         assertBindingParses("http://host/path");
         assertBindingParses("http://host/");
@@ -25,7 +25,7 @@ public class BindingPatternTest {
     }
 
     @Test
-    public void getters_returns_correct_components() {
+    void getters_returns_correct_components() {
         {
             BindingPattern pattern = SystemBindingPattern.fromPattern("http://host:1234/path/*");
             assertEquals("http", pattern.scheme());
@@ -46,8 +46,7 @@ public class BindingPatternTest {
         BindingPattern pattern = SystemBindingPattern.fromPattern(binding);
         String stringRepresentation = pattern.patternString();
         assertEquals(
-                "Expected string representation of parsed binding to match original binding string",
-                binding, stringRepresentation);
+                binding, stringRepresentation, "Expected string representation of parsed binding to match original binding string");
     }
 
 }

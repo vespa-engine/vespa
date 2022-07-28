@@ -13,7 +13,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Iterator;
@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -45,7 +45,7 @@ public class ThroughputTestCase {
     private static long preventOptimization = 0;
 
     @Test
-    public void runUnthreadedMeasurementsWithWorkload() throws Exception {
+    void runUnthreadedMeasurementsWithWorkload() throws Exception {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         runMeasurements(driver, new UnthreadedHandler(MAX_LOOPS)); // warmup
 
@@ -75,7 +75,7 @@ public class ThroughputTestCase {
     }
 
     @Test
-    public void runThreadedMeasurements() throws Exception {
+    void runThreadedMeasurements() throws Exception {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         runMeasurements(driver, new ThreadedHandler()); // warmup
 

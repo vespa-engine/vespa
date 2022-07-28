@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -12,7 +12,7 @@ import java.io.IOException;
 public class ReferenceFieldsTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void configs_related_to_reference_fields_are_derived() throws IOException, ParseException {
+    void configs_related_to_reference_fields_are_derived() throws IOException, ParseException {
         assertCorrectDeriving("reference_fields", "ad", new TestableDeployLogger());
     }
 }

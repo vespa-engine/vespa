@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.request.parser;
 
 import com.yahoo.search.grouping.request.GroupingOperation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -26,7 +26,7 @@ public class GroupingParserBenchmarkTest {
     }
 
     @Test
-    public void requireThatGroupingParserIsFast() {
+    void requireThatGroupingParserIsFast() {
         List<String> inputs = getInputs();
         long ignore = 0;
         long now = 0;
@@ -39,9 +39,9 @@ public class GroupingParserBenchmarkTest {
             }
         }
         long micros = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - now);
-        System.out.format("%d \u03bcs (avg %.2f)\n", micros, (double)micros / (NUM_RUNS * inputs.size()));
+        System.out.format("%d \u03bcs (avg %.2f)\n", micros, (double) micros / (NUM_RUNS * inputs.size()));
         for (Map.Entry<String, Long> entry : PREV_RESULTS.entrySet()) {
-            System.out.format("%-20s : %4.2f\n", entry.getKey(), (double)micros / entry.getValue());
+            System.out.format("%-20s : %4.2f\n", entry.getKey(), (double) micros / entry.getValue());
         }
         System.out.println("\nignore " + ignore);
     }

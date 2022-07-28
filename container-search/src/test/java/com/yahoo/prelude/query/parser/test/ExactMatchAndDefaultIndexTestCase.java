@@ -7,14 +7,14 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Check default index propagates correctly to the tokenizer.
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class ExactMatchAndDefaultIndexTestCase {
 
     @Test
-    public void testExactMatchTokenization() {
+    void testExactMatchTokenization() {
         SearchDefinition sd = new SearchDefinition("testsd");
         Index index = new Index("testexact");
         index.setExact(true, null);
@@ -39,7 +39,7 @@ public class ExactMatchAndDefaultIndexTestCase {
     }
 
     @Test
-    public void testDefaultIndexSpecialChars() {
+    void testDefaultIndexSpecialChars() {
         Query q = new Query("?query=" + enc("dog & cat") + "&default-index=textsearch");
         assertEquals("WEAKAND(100) textsearch:dog textsearch:cat", q.getModel().getQueryTree().getRoot().toString());
     }

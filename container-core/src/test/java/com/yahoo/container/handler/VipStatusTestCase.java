@@ -5,13 +5,11 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.Metric;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -19,14 +17,14 @@ import static org.junit.Assert.assertTrue;
 public class VipStatusTestCase {
 
     @Test
-    public void testInitializingOrDownRequireAllUp() {
+    void testInitializingOrDownRequireAllUp() {
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
         verifyStatus(clusters, StateMonitor.Status.initializing);
         verifyStatus(clusters, StateMonitor.Status.down);
     }
 
     @Test
-    public void testUpRequireAllDown() {
+    void testUpRequireAllDown() {
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
 
         VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
@@ -54,21 +52,21 @@ public class VipStatusTestCase {
     }
 
     @Test
-    public void testNoClustersConfiguringInitiallyInRotationFalse() {
+    void testNoClustersConfiguringInitiallyInRotationFalse() {
         String[] clusters = {};
         VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, false, new ClustersStatus(), new MetricMock());
         assertFalse(v.isInRotation());
     }
 
     @Test
-    public void testNoClustersConfiguringInitiallyInRotationTrue() {
+    void testNoClustersConfiguringInitiallyInRotationTrue() {
         String[] clusters = {};
         VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
         assertTrue(v.isInRotation());
     }
 
     @Test
-    public void testInRotationMetricFollowsRotationState() {
+    void testInRotationMetricFollowsRotationState() {
         MetricMock metric = new MetricMock();
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
 
@@ -81,17 +79,17 @@ public class VipStatusTestCase {
     }
 
     @Test
-    public void testClusterRemovalRemovedIsDown() {
+    void testClusterRemovalRemovedIsDown() {
         assertClusterRemoval(true, false);
     }
 
     @Test
-    public void testClusterRemovalRemovedIsUp() {
+    void testClusterRemovalRemovedIsUp() {
         assertClusterRemoval(false, false);
     }
 
     @Test
-    public void testClusterRemovalAnotherIsDown() {
+    void testClusterRemovalAnotherIsDown() {
         assertClusterRemoval(false, true);
     }
 

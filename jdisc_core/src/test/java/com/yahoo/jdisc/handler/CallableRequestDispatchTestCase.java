@@ -5,12 +5,12 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class CallableRequestDispatchTestCase {
 
     @Test
-    public void requireThatDispatchIsCalled() throws Exception {
+    void requireThatDispatchIsCalled() throws Exception {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         Response response = new Response(Response.Status.OK);

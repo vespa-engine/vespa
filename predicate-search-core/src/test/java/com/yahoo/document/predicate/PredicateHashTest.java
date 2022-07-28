@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  */
 public class PredicateHashTest{
     @Test
-    public void requireThatShortStringsGetsHashes() {
+    void requireThatShortStringsGetsHashes() {
         assertHashesTo(0x82af3d1de65ec252L, "abcdefg");
         assertHashesTo(0xdc50d922fb0e91d6L, "雅虎");
         assertHashesTo(0x709bd6ff1a84dc14L, "country=日本");
@@ -44,7 +44,7 @@ public class PredicateHashTest{
     }
 
     @Test
-    public void requireThatLongStringsGetsHashes() {
+    void requireThatLongStringsGetsHashes() {
         assertHashesTo(0x79fac97d13f4cc84L, "abcdefghijklmn1234567890");
         assertHashesTo(0xd7af1798f1d5de44L, "abcdefghijklmn1234567890a");
         assertHashesTo(0x5a259ad887478cccL, "abcdefghijklmn1234567890ab");

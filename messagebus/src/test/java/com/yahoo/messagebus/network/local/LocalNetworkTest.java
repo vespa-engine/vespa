@@ -24,15 +24,13 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -40,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class LocalNetworkTest {
 
     @Test
-    public void requireThatLocalNetworkCanSendAndReceive() throws InterruptedException {
+    void requireThatLocalNetworkCanSendAndReceive() throws InterruptedException {
         final LocalWire wire = new LocalWire();
 
         final Server serverA = new Server(wire);
@@ -54,29 +52,29 @@ public class LocalNetworkTest {
 
         Message msg = new SimpleMessage("foo");
         msg.setRoute(new Route().addHop(Hop.parse(intermediate.getConnectionSpec()))
-                                .addHop(Hop.parse(destination.getConnectionSpec())));
+                .addHop(Hop.parse(destination.getConnectionSpec())));
         assertTrue(source.send(msg).isAccepted());
 
         msg = serverB.messages.poll(60, TimeUnit.SECONDS);
         assertTrue(msg instanceof SimpleMessage);
-        assertEquals("foo", ((SimpleMessage)msg).getValue());
+        assertEquals("foo", ((SimpleMessage) msg).getValue());
         intermediate.forward(msg);
 
         msg = serverC.messages.poll(60, TimeUnit.SECONDS);
         assertTrue(msg instanceof SimpleMessage);
-        assertEquals("foo", ((SimpleMessage)msg).getValue());
+        assertEquals("foo", ((SimpleMessage) msg).getValue());
         Reply reply = new SimpleReply("bar");
         reply.swapState(msg);
         destination.reply(reply);
 
         reply = serverB.replies.poll(60, TimeUnit.SECONDS);
         assertTrue(reply instanceof SimpleReply);
-        assertEquals("bar", ((SimpleReply)reply).getValue());
+        assertEquals("bar", ((SimpleReply) reply).getValue());
         intermediate.forward(reply);
 
         reply = serverA.replies.poll(60, TimeUnit.SECONDS);
         assertTrue(reply instanceof SimpleReply);
-        assertEquals("bar", ((SimpleReply)reply).getValue());
+        assertEquals("bar", ((SimpleReply) reply).getValue());
 
         serverA.mbus.destroy();
         serverB.mbus.destroy();
@@ -84,7 +82,7 @@ public class LocalNetworkTest {
     }
 
     @Test
-    public void requireThatUnknownServiceRepliesWithNoAddressForService() throws InterruptedException {
+    void requireThatUnknownServiceRepliesWithNoAddressForService() throws InterruptedException {
         final Server server = new Server(new LocalWire());
         final SourceSession source = server.newSourceSession();
 
@@ -97,7 +95,7 @@ public class LocalNetworkTest {
     }
 
     @Test
-    public void requireThatBlockingSendTimeOutInSendQ() throws InterruptedException {
+    void requireThatBlockingSendTimeOutInSendQ() throws InterruptedException {
         final LocalWire wire = new LocalWire();
 
         final Server serverA = new Server(wire);
@@ -124,24 +122,24 @@ public class LocalNetworkTest {
         assertEquals(ErrorCode.TIMEOUT, res.getError().getCode());
         assertTrue(res.getError().getMessage().endsWith("Timed out in sendQ"));
         long end = SystemTimer.INSTANCE.milliTime();
-        assertTrue(end >= start+TIMEOUT);
-        assertTrue(end < start+5*TIMEOUT);
+        assertTrue(end >= start + TIMEOUT);
+        assertTrue(end < start + 5 * TIMEOUT);
 
         msg = serverB.messages.poll(60, TimeUnit.SECONDS);
         assertTrue(msg instanceof SimpleMessage);
-        assertEquals("foo", ((SimpleMessage)msg).getValue());
+        assertEquals("foo", ((SimpleMessage) msg).getValue());
         intermediate.forward(msg);
 
         msg = serverC.messages.poll(60, TimeUnit.SECONDS);
         assertTrue(msg instanceof SimpleMessage);
-        assertEquals("foo", ((SimpleMessage)msg).getValue());
+        assertEquals("foo", ((SimpleMessage) msg).getValue());
         Reply reply = new SimpleReply("bar");
         reply.swapState(msg);
         destination.reply(reply);
 
         reply = serverB.replies.poll(60, TimeUnit.SECONDS);
         assertTrue(reply instanceof SimpleReply);
-        assertEquals("bar", ((SimpleReply)reply).getValue());
+        assertEquals("bar", ((SimpleReply) reply).getValue());
         intermediate.forward(reply);
 
         reply = serverA.replies.poll(60, TimeUnit.SECONDS);
@@ -150,7 +148,7 @@ public class LocalNetworkTest {
 
         reply = serverA.replies.poll(60, TimeUnit.SECONDS);
         assertTrue(reply instanceof SimpleReply);
-        assertEquals("bar", ((SimpleReply)reply).getValue());
+        assertEquals("bar", ((SimpleReply) reply).getValue());
 
         serverA.mbus.destroy();
         serverB.mbus.destroy();

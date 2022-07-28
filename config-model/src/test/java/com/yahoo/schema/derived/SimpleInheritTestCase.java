@@ -4,7 +4,7 @@ package com.yahoo.schema.derived;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.io.IOException;
 public class SimpleInheritTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testEmptyChild() throws IOException, ParseException {
+    void testEmptyChild() throws IOException, ParseException {
         String name = "emptychild";
         final String expectedResultsDirName = "src/test/derived/" + name + "/";
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author geirst
@@ -19,14 +19,14 @@ import static org.junit.Assert.assertEquals;
 public class TopologicalDocumentTypeSorterTest {
 
     @Test
-    public void require_that_types_without_references_are_returned_in_input_order() {
+    void require_that_types_without_references_are_returned_in_input_order() {
         assertOrder(Arrays.asList("a"), new DocumentTypesBuilder().add("a"));
         assertOrder(Arrays.asList("a", "c", "b"),
                 new DocumentTypesBuilder().add("a").add("c").add("b"));
     }
 
     @Test
-    public void require_that_types_with_references_are_sorted_in_topological_order() {
+    void require_that_types_with_references_are_sorted_in_topological_order() {
         assertOrder(Arrays.asList("b", "a"), new DocumentTypesBuilder()
                 .add("a", Arrays.asList("b"))
                 .add("b"));

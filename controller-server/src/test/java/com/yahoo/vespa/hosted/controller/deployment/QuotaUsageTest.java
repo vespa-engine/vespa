@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.zone.ZoneId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author ogronnesby
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class QuotaUsageTest {
 
     @Test
-    public void testQuotaUsageIsPersisted() {
+    void testQuotaUsageIsPersisted() {
         var tester = new DeploymentTester();
         var context = tester.newDeploymentContext().submit().deploy();
         assertEquals(1.304, context.deployment(ZoneId.from("prod.us-west-1")).quota().rate(), 0.01);

@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -43,9 +43,9 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mortent
@@ -56,7 +56,7 @@ public class MetricsReporterTest {
     private final ZmsClientMock zmsClient = new ZmsClientMock(new AthenzDbMock(), AthenzIdentities.from("mock.identity"));
 
     @Test
-    public void audit_log_metric() {
+    void audit_log_metric() {
         var tester = new ControllerTester();
 
         MetricsReporter metricsReporter = createReporter(tester.controller());
@@ -114,7 +114,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void deployment_fail_ratio() {
+    void deployment_fail_ratio() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -147,7 +147,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void deployment_average_duration() {
+    void deployment_average_duration() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -156,8 +156,8 @@ public class MetricsReporterTest {
         MetricsReporter reporter = createReporter(tester.controller());
 
         var context = tester.newDeploymentContext()
-                            .submit(applicationPackage)
-                            .deploy();
+                .submit(applicationPackage)
+                .deploy();
         reporter.maintain();
         assertEquals(Duration.ZERO, getAverageDeploymentDuration(context.instanceId())); // An exceptionally fast deployment :-)
 
@@ -180,19 +180,19 @@ public class MetricsReporterTest {
 
         // Another deployment starts and stalls for 12 hours
         context.submit(applicationPackage)
-               .triggerJobs();
+                .triggerJobs();
         tester.clock().advance(Duration.ofHours(12));
         reporter.maintain();
 
         assertEquals(Duration.ofHours(12) // hanging system-test
-                             .plus(Duration.ofHours(12)) // hanging staging-test
-                             .plus(Duration.ofMinutes(90)) // previous production job
-                             .dividedBy(3), // Total number of orchestrated jobs
-                     getAverageDeploymentDuration(context.instanceId()));
+                        .plus(Duration.ofHours(12)) // hanging staging-test
+                        .plus(Duration.ofMinutes(90)) // previous production job
+                        .dividedBy(3), // Total number of orchestrated jobs
+                getAverageDeploymentDuration(context.instanceId()));
     }
 
     @Test
-    public void deployments_failing_upgrade() {
+    void deployments_failing_upgrade() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -208,40 +208,40 @@ public class MetricsReporterTest {
 
         // Failing application change is not counted
         context.submit(applicationPackage)
-               .triggerJobs()
-               .failDeployment(systemTest);
+                .triggerJobs()
+                .failDeployment(systemTest);
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Application change completes
         context.deploy();
-        assertFalse("Change deployed", context.instance().change().hasTargets());
+        assertFalse(context.instance().change().hasTargets(), "Change deployed");
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         context.failDeployment(systemTest)
-               .failDeployment(stagingTest);
+                .failDeployment(stagingTest);
         reporter.maintain();
         assertEquals(2, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Test and staging pass and upgrade fails in production
         context.runJob(systemTest)
-               .runJob(stagingTest)
-               .failDeployment(productionUsWest1);
+                .runJob(stagingTest)
+                .failDeployment(productionUsWest1);
         reporter.maintain();
         assertEquals(1, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Upgrade eventually succeeds
         context.runJob(productionUsWest1);
-        assertFalse("Upgrade deployed", context.instance().change().hasTargets());
+        assertFalse(context.instance().change().hasTargets(), "Upgrade deployed");
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
     }
 
     @Test
-    public void deployment_warnings_metric() {
+    void deployment_warnings_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -257,22 +257,22 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void build_time_reporting() {
+    void build_time_reporting() {
         var tester = new DeploymentTester();
         var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
         var context = tester.newDeploymentContext()
-                            .submit(applicationPackage)
-                            .deploy();
+                .submit(applicationPackage)
+                .deploy();
         assertEquals(1000, context.application().revisions().get(context.lastSubmission().get()).buildTime().get().toEpochMilli());
 
         MetricsReporter reporter = createReporter(tester.controller());
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
-                     getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, context.instanceId()));
+                getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, context.instanceId()));
     }
 
     @Test
-    public void name_service_queue_size_metric() {
+    void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("default")
@@ -281,21 +281,21 @@ public class MetricsReporterTest {
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
         var context = tester.newDeploymentContext()
-                            .deferDnsUpdates();
+                .deferDnsUpdates();
         reporter.maintain();
-        assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+        assertEquals(0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue(), "Queue is empty initially");
 
         context.submit(applicationPackage).deploy();
         reporter.maintain();
-        assertEquals("Deployment queues name services requests", 2, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+        assertEquals(2, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue(), "Deployment queues name services requests");
 
         context.flushDnsUpdates();
         reporter.maintain();
-        assertEquals("Queue consumed", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+        assertEquals(0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue(), "Queue consumed");
     }
 
     @Test
-    public void platform_change_duration() {
+    void platform_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
@@ -326,11 +326,12 @@ public class MetricsReporterTest {
             assertPlatformChangeDuration(Duration.ZERO, hosts);
 
             // 1/3 nodes upgrade within timeout
-            assertEquals("Wanted version is raised for all nodes", version,
-                         getNodes(zone, hosts, tester).stream()
-                                                      .map(Node::wantedVersion)
-                                                      .min(Comparator.naturalOrder())
-                                                      .get());
+            assertEquals(version,
+                    getNodes(zone, hosts, tester).stream()
+                            .map(Node::wantedVersion)
+                            .min(Comparator.naturalOrder())
+                            .get(),
+                    "Wanted version is raised for all nodes");
             suspend(hosts, zone, tester);
             var firstHost = hosts.get(0);
             upgradeTo(version, List.of(firstHost), zone, tester);
@@ -351,7 +352,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void os_change_duration() {
+    void os_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
@@ -389,12 +390,13 @@ public class MetricsReporterTest {
             assertOsChangeDuration(Duration.ZERO, hosts);
 
             // Nodes are told to upgrade, but do not suspend yet
-            assertEquals("Wanted OS version is raised for all nodes", nextVersion,
-                         tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.tenantHost.id())).stream()
-                               .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
-            assertTrue("No nodes are suspended", tester.controller().serviceRegistry().configServer()
-                                                       .nodeRepository().list(zone, NodeFilter.all()).stream()
-                                                       .noneMatch(node -> node.serviceState() == Node.ServiceState.allowedDown));
+            assertEquals(nextVersion,
+                    tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.tenantHost.id())).stream()
+                            .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get(),
+                    "Wanted OS version is raised for all nodes");
+            assertTrue(tester.controller().serviceRegistry().configServer()
+                    .nodeRepository().list(zone, NodeFilter.all()).stream()
+                    .noneMatch(node -> node.serviceState() == Node.ServiceState.allowedDown), "No nodes are suspended");
 
             // Another 30 minutes pass
             tester.clock().advance(Duration.ofMinutes(30));
@@ -440,19 +442,19 @@ public class MetricsReporterTest {
 
             // Dimensions used for node count metric are only known OS versions
             Set<Version> versionDimensions = metrics.getMetrics((dimensions) -> true)
-                                                    .entrySet()
-                                                    .stream()
-                                                    .filter(kv -> kv.getValue().containsKey(MetricsReporter.OS_NODE_COUNT))
-                                                    .map(kv -> kv.getKey().getDimensions())
-                                                    .map(dimensions -> dimensions.get("currentVersion"))
-                                                    .map(Version::fromString)
-                                                    .collect(Collectors.toSet());
-            assertTrue("Reports only OS versions", allVersions.containsAll(versionDimensions));
+                    .entrySet()
+                    .stream()
+                    .filter(kv -> kv.getValue().containsKey(MetricsReporter.OS_NODE_COUNT))
+                    .map(kv -> kv.getKey().getDimensions())
+                    .map(dimensions -> dimensions.get("currentVersion"))
+                    .map(Version::fromString)
+                    .collect(Collectors.toSet());
+            assertTrue(allVersions.containsAll(versionDimensions), "Reports only OS versions");
         }
     }
 
     @Test
-    public void broken_system_version() {
+    void broken_system_version() {
         var tester = new DeploymentTester().atMondayMorning();
         var ctx = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build();
@@ -485,7 +487,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void tenant_counter() {
+    void tenant_counter() {
         var tester = new ControllerTester(SystemName.Public);
         tester.createTenant("foo", Tenant.Type.cloud);
         tester.createTenant("bar", Tenant.Type.cloud);
@@ -501,17 +503,17 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void overdue_upgrade_metric() {
+    void overdue_upgrade_metric() {
         ApplicationPackage pkg = new ApplicationPackageBuilder().region("us-west-1")
-                                                                // window 1
-                                                                .blockChange(false, true, "mon-tue", "2-9", "CET")
-                                                                // window 2
-                                                                .blockChange(false, true, "mon-tue", "1-8,11-12", "CET")
-                                                                // window 3
-                                                                .blockChange(false, true, "wed-thu", "0-23", "CET")
-                                                                // window 4 (does not apply to upgrade)
-                                                                .blockChange(true, false, "mon-sun", "0-7", "CET")
-                                                                .build();
+                // window 1
+                .blockChange(false, true, "mon-tue", "2-9", "CET")
+                // window 2
+                .blockChange(false, true, "mon-tue", "1-8,11-12", "CET")
+                // window 3
+                .blockChange(false, true, "wed-thu", "0-23", "CET")
+                // window 4 (does not apply to upgrade)
+                .blockChange(true, false, "mon-sun", "0-7", "CET")
+                .build();
 
         Instant mondayNight = Instant.parse("2021-12-13T23:30:00.00Z");
         DeploymentTester tester = new DeploymentTester().at(mondayNight);
@@ -519,8 +521,8 @@ public class MetricsReporterTest {
         DeploymentContext context = tester.newDeploymentContext();
         Supplier<Duration> metric = () -> {
             reporter.maintain();
-            return Duration.ofSeconds(metrics.getMetric(context.instanceId(),MetricsReporter.DEPLOYMENT_OVERDUE_UPGRADE)
-                                             .get().longValue());
+            return Duration.ofSeconds(metrics.getMetric(context.instanceId(), MetricsReporter.DEPLOYMENT_OVERDUE_UPGRADE)
+                    .get().longValue());
         };
 
         // Deploy completely once
@@ -532,33 +534,33 @@ public class MetricsReporterTest {
 
         // Start production job for upgrade, without completing it
         context.runJob(systemTest)
-               .runJob(stagingTest)
-               .triggerJobs()
-               .assertRunning(productionUsWest1);
-        assertEquals("Upgrade is not overdue yet", Duration.ZERO, metric.get());
+                .runJob(stagingTest)
+                .triggerJobs()
+                .assertRunning(productionUsWest1);
+        assertEquals(Duration.ZERO, metric.get(), "Upgrade is not overdue yet");
 
         // Upgrade continues into block window
         tester.clock().advance(Duration.ofHours(1)); // Tuesday at 00:30 (01:30 CET)
-        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(0).plusMinutes(30), metric.get());
+        assertEquals(Duration.ofHours(0).plusMinutes(30), metric.get(), "Upgrade is overdue measured relative to window 2");
 
         tester.clock().advance(Duration.ofHours(1)); // Tuesday at 01:30 (02:30 CET)
-        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(1).plusMinutes(30), metric.get());
+        assertEquals(Duration.ofHours(1).plusMinutes(30), metric.get(), "Upgrade is overdue measured relative to window 2");
 
         tester.clock().advance(Duration.ofHours(1)); // Tuesday at 02:30 (03:30 CET)
-        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(2).plusMinutes(30), metric.get());
+        assertEquals(Duration.ofHours(2).plusMinutes(30), metric.get(), "Upgrade is overdue measured relative to window 2");
 
         tester.clock().advance(Duration.ofHours(6)); // Tuesday at 08:30 (09:30 CET)
-        assertEquals("Upgrade is overdue measured relative to window 1", Duration.ofHours(8).plusMinutes(30), metric.get());
+        assertEquals(Duration.ofHours(8).plusMinutes(30), metric.get(), "Upgrade is overdue measured relative to window 1");
 
         tester.clock().advance(Duration.ofHours(1)); // Tuesday at 09:30 (10:30 CET)
-        assertEquals("Upgrade is no longer overdue", Duration.ZERO, metric.get());
+        assertEquals(Duration.ZERO, metric.get(), "Upgrade is no longer overdue");
 
         tester.clock().advance(Duration.ofDays(2)); // Thursday at 10:30 (11:30 CET)
-        assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34).plusMinutes(30), metric.get());
+        assertEquals(Duration.ofHours(34).plusMinutes(30), metric.get(), "Upgrade is overdue measure relative to window 3");
     }
 
     @Test
-    public void zms_quota_metrics() {
+    void zms_quota_metrics() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         reporter.maintain();
@@ -576,7 +578,7 @@ public class MetricsReporterTest {
                                 .map(Number::longValue)
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for version " + version));
-        assertEquals("Expected number of nodes are on " + version.toFullString(), n, nodeCount);
+        assertEquals(n, nodeCount, "Expected number of nodes are on " + version.toFullString());
     }
 
     private void assertPlatformNodeCount(int n, Version version) {
@@ -647,15 +649,13 @@ public class MetricsReporterTest {
 
     private void assertPlatformChangeDuration(Duration duration, List<Node> nodes) {
         for (var node : nodes) {
-            assertEquals("Platform change duration of " + node.hostname(),
-                         duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()));
+            assertEquals(duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()), "Platform change duration of " + node.hostname());
         }
     }
 
     private void assertOsChangeDuration(Duration duration, List<Node> nodes) {
         for (var node : nodes) {
-            assertEquals("OS change duration of " + node.hostname(),
-                         duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()));
+            assertEquals(duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()), "OS change duration of " + node.hostname());
         }
     }
 

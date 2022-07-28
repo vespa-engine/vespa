@@ -3,19 +3,15 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.ComparisonFailure;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -25,7 +21,7 @@ public class UnixPathTest {
     private final FileSystem fs = TestFileSystem.create();
 
     @Test
-    public void createParents() {
+    void createParents() {
         Path parentDirectory = fs.getPath("/a/b/c");
         Path filePath = parentDirectory.resolve("bar");
         UnixPath path = new UnixPath(filePath);
@@ -36,7 +32,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void utf8File() {
+    void utf8File() {
         String original = "foo\nbar\n";
         UnixPath path = new UnixPath(fs.getPath("example.txt"));
         path.writeUtf8File(original);
@@ -45,7 +41,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void permissions() {
+    void permissions() {
         String expectedPermissions = "rwxr-x---";
         UnixPath path = new UnixPath(fs.getPath("file.txt"));
         path.writeUtf8File("foo");
@@ -53,13 +49,15 @@ public class UnixPathTest {
         assertEquals(expectedPermissions, path.getPermissions());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void badPermissionsString() {
-        new UnixPath(fs.getPath("file.txt")).setPermissions("abcdefghi");
+    @Test
+    void badPermissionsString() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new UnixPath(fs.getPath("file.txt")).setPermissions("abcdefghi");
+        });
     }
 
     @Test
-    public void owner() {
+    void owner() {
         Path path = fs.getPath("file.txt");
         UnixPath unixPath = new UnixPath(path);
         unixPath.writeUtf8File("foo");
@@ -72,7 +70,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void createDirectoryWithPermissions() {
+    void createDirectoryWithPermissions() {
         Path path = fs.getPath("dir");
         UnixPath unixPath = new UnixPath(path);
         String permissions = "rwxr-xr--";
@@ -82,7 +80,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void createSymbolicLink() {
+    void createSymbolicLink() {
         String original = "foo\nbar\n";
         UnixPath path = new UnixPath(fs.getPath("example.txt"));
         path.writeUtf8File(original);
@@ -94,7 +92,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void readBytesIfExists() {
+    void readBytesIfExists() {
         UnixPath path = new UnixPath(fs.getPath("example.txt"));
         assertFalse(path.readBytesIfExists().isPresent());
         path.writeBytes(new byte[]{42});
@@ -102,7 +100,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void deleteRecursively() throws Exception {
+    void deleteRecursively() throws Exception {
         // Create the following file tree:
         //
         // /dir1
@@ -118,17 +116,17 @@ public class UnixPathTest {
         var link1 = Files.createSymbolicLink(fs.getPath("/link1"), dir2);
 
         new UnixPath(link1).deleteRecursively();
-        assertTrue("Deleting " + link1 + " recursively does not remove " + dir2, Files.exists(dir2));
-        assertTrue("Deleting " + link1 + " recursively does not remove " + file1, Files.exists(file1));
+        assertTrue(Files.exists(dir2), "Deleting " + link1 + " recursively does not remove " + dir2);
+        assertTrue(Files.exists(file1), "Deleting " + link1 + " recursively does not remove " + file1);
 
         new UnixPath(dir1).deleteRecursively();
-        assertFalse(dir1 + " deleted recursively", Files.exists(file1));
-        assertFalse(dir1 + " deleted recursively", Files.exists(dir2));
-        assertFalse(dir1 + " deleted recursively", Files.exists(dir1));
+        assertFalse(Files.exists(file1), dir1 + " deleted recursively");
+        assertFalse(Files.exists(dir2), dir1 + " deleted recursively");
+        assertFalse(Files.exists(dir1), dir1 + " deleted recursively");
     }
 
     @Test
-    public void isEmptyDirectory() {
+    void isEmptyDirectory() {
         var path = new UnixPath((fs.getPath("/foo")));
         assertFalse(path.isEmptyDirectory());
 
@@ -144,7 +142,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void atomicWrite() {
+    void atomicWrite() {
         var path = new UnixPath(fs.getPath("/dir/foo"));
         path.createParents();
         path.writeUtf8File("bar");
@@ -153,7 +151,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void testParentAndFilename() {
+    void testParentAndFilename() {
         var absolutePath = new UnixPath("/foo/bar");
         assertEquals("/foo", absolutePath.getParent().toString());
         assertEquals("bar", absolutePath.getFilename());
@@ -176,7 +174,7 @@ public class UnixPathTest {
             fail("No exception was thrown");
         } catch (RuntimeException e) {
             if (!baseClass.isInstance(e)) {
-                throw new ComparisonFailure("Exception class mismatch", baseClass.getName(), e.getClass().getName());
+                throw new AssertionFailedError("Exception class mismatch", baseClass.getName(), e.getClass().getName());
             }
 
             assertEquals(message, e.getMessage());

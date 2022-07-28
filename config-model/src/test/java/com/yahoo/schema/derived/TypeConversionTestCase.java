@@ -11,11 +11,12 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 /**
  * Tests automatic type conversion using multifield indices
  *
@@ -25,7 +26,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
 
     /** Tests that exact-string stuff is not spilled over to the default index */
     @Test
-    public void testExactStringToStringTypeConversion() {
+    void testExactStringToStringTypeConversion() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
@@ -35,7 +36,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
         document.addField(a);
 
         new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                                 true, false, Set.of());
+                true, false, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));

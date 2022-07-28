@@ -7,12 +7,12 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.EmptyReply;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ProgressPrinterTest {
 
@@ -23,7 +23,7 @@ public class ProgressPrinterTest {
     }
 
     @Test
-    public void testSimple() {
+    void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DummyTimer timer = new DummyTimer();
         timer.ms = 0;
@@ -78,12 +78,12 @@ public class ProgressPrinterTest {
 
         String correct =
                 "\rSuccessfully sent 2 messages so far" +
-                "\rSuccessfully sent 3 messages so far" +
-                "\n\n" +
-                "Messages sent to vespa (route foobar) :\n" +
-                "---------------------------------------\n" +
-                "PutDocument:\tok: 2 msgs/sec: 0.03 failed: 0 ignored: 1 latency(min, max, avg): 0, 0, 0\n" +
-                "UpdateDocument:\tok: 1 msgs/sec: 0.02 failed: 2 ignored: 0 latency(min, max, avg): 0, 0, 0\n";
+                        "\rSuccessfully sent 3 messages so far" +
+                        "\n\n" +
+                        "Messages sent to vespa (route foobar) :\n" +
+                        "---------------------------------------\n" +
+                        "PutDocument:\tok: 2 msgs/sec: 0.03 failed: 0 ignored: 1 latency(min, max, avg): 0, 0, 0\n" +
+                        "UpdateDocument:\tok: 1 msgs/sec: 0.02 failed: 2 ignored: 0 latency(min, max, avg): 0, 0, 0\n";
 
         assertEquals(correct, val);
     }

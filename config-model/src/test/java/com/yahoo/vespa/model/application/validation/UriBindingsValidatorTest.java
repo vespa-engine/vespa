@@ -7,62 +7,63 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class UriBindingsValidatorTest {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void fails_on_user_handler_binding_with_port() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'http://*:4443/my-handler': binding with port is not allowed");
-        runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"));
+    void fails_on_user_handler_binding_with_port() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"));
+        });
+        assertTrue(exception.getMessage().contains("For binding 'http://*:4443/my-handler': binding with port is not allowed"));
     }
 
     @Test
-    public void fails_on_user_handler_binding_with_hostname() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'http://myhostname/my-handler': only binding with wildcard ('*') for hostname is allowed");
-        runUriBindingValidator(true, createServicesXmlWithHandler("http://myhostname/my-handler"));
+    void fails_on_user_handler_binding_with_hostname() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            runUriBindingValidator(true, createServicesXmlWithHandler("http://myhostname/my-handler"));
+        });
+        assertTrue(exception.getMessage().contains("For binding 'http://myhostname/my-handler': only binding with wildcard ('*') for hostname is allowed"));
     }
 
     @Test
-    public void fails_on_user_handler_binding_with_non_http_scheme() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'ftp://*/my-handler': only 'http' is allowed as scheme");
-        runUriBindingValidator(true, createServicesXmlWithHandler("ftp://*/my-handler"));
+    void fails_on_user_handler_binding_with_non_http_scheme() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            runUriBindingValidator(true, createServicesXmlWithHandler("ftp://*/my-handler"));
+        });
+        assertTrue(exception.getMessage().contains("For binding 'ftp://*/my-handler': only 'http' is allowed as scheme"));
     }
 
     @Test
-    public void fails_on_invalid_filter_binding() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'https://*:4443/my-request-filer-chain': binding with port is not allowed");
-        runUriBindingValidator(true, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
+    void fails_on_invalid_filter_binding() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            runUriBindingValidator(true, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
+        });
+        assertTrue(exception.getMessage().contains("For binding 'https://*:4443/my-request-filer-chain': binding with port is not allowed"));
     }
 
     @Test
-    public void allows_valid_user_binding() throws IOException, SAXException {
+    void allows_valid_user_binding() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*/my-handler"));
     }
 
     @Test
-    public void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
+    void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
     }
 
     @Test
-    public void only_restricts_user_bindings_on_hosted() throws IOException, SAXException {
+    void only_restricts_user_bindings_on_hosted() throws IOException, SAXException {
         runUriBindingValidator(false, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
     }
 

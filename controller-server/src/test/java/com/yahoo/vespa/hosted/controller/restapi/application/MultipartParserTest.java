@@ -7,16 +7,16 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -24,25 +24,25 @@ import static org.junit.Assert.fail;
 public class MultipartParserTest {
 
     @Test
-    public void parser() {
+    void parser() {
         String data =
                 "Content-Type: multipart/form-data; boundary=AaB03x\r\n" +
-                "\r\n" +
-                "--AaB03x\r\n" +
-                "Content-Disposition: form-data; name=\"submit-name\"\r\n" +
-                "\r\n" +
-                "Larry\r\n" +
-                "--AaB03x\r\n" +
-                "Content-Disposition: form-data; name=\"submit-address\"\r\n" +
-                "Content-Type: text/plain\r\n" +
-                "\r\n" +
-                "House 1\r\n" +
-                "--AaB03x\r\n" +
-                "Content-Disposition: form-data; name=\"files\"; filename=\"file1.txt\"\r\n" +
-                "Content-Type: text/plain\r\n" +
-                "\r\n" +
-                "... contents of file1.txt ...\r\n" +
-                "--AaB03x--\r\n";
+                        "\r\n" +
+                        "--AaB03x\r\n" +
+                        "Content-Disposition: form-data; name=\"submit-name\"\r\n" +
+                        "\r\n" +
+                        "Larry\r\n" +
+                        "--AaB03x\r\n" +
+                        "Content-Disposition: form-data; name=\"submit-address\"\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "\r\n" +
+                        "House 1\r\n" +
+                        "--AaB03x\r\n" +
+                        "Content-Disposition: form-data; name=\"files\"; filename=\"file1.txt\"\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "\r\n" +
+                        "... contents of file1.txt ...\r\n" +
+                        "--AaB03x--\r\n";
         Map<String, byte[]> parts = parse(data, Long.MAX_VALUE);
         assertEquals(3, parts.size());
         assertTrue(parts.containsKey("submit-name"));
@@ -53,22 +53,22 @@ public class MultipartParserTest {
     }
 
     @Test
-    public void max_length() {
+    void max_length() {
         String part1 = "Larry";
         String part2 = "House 1";
         String data =
                 "Content-Type: multipart/form-data; boundary=AaB03x\r\n" +
-                "\r\n" +
-                "--AaB03x\r\n" +
-                "Content-Disposition: form-data; name=\"submit-name\"\r\n" +
-                "\r\n" +
-                part1 + "\r\n" +
-                "--AaB03x\r\n" +
-                "Content-Disposition: form-data; name=\"submit-address\"\r\n" +
-                "Content-Type: text/plain\r\n" +
-                "\r\n" +
-                part2 + "\r\n" +
-                "--AaB03x--\r\n";
+                        "\r\n" +
+                        "--AaB03x\r\n" +
+                        "Content-Disposition: form-data; name=\"submit-name\"\r\n" +
+                        "\r\n" +
+                        part1 + "\r\n" +
+                        "--AaB03x\r\n" +
+                        "Content-Disposition: form-data; name=\"submit-address\"\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "\r\n" +
+                        part2 + "\r\n" +
+                        "--AaB03x--\r\n";
         parse(data, part1.length() + part2.length());
         try {
             parse(data, part1.length() + part2.length() - 1);

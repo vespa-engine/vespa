@@ -5,8 +5,7 @@ package com.yahoo.schema.derived;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumentTypeManager;
 
-import org.junit.Test;
-import static org.junit.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
 
 /**
  * Verifies that a struct in a document type is preferred over another document type
@@ -17,10 +16,10 @@ import static org.junit.Assert.assertThrows;
 public class NameCollisionTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testNameCollision() throws Exception {
+    void testNameCollision() throws Exception {
         assertCorrectDeriving("namecollision", "collisionstruct",
-                              new TestProperties(),
-                              new TestableDeployLogger());
+                new TestProperties(),
+                new TestableDeployLogger());
         DocumentTypeManager.fromFile("temp/namecollision/documentmanager.cfg");
     }
 

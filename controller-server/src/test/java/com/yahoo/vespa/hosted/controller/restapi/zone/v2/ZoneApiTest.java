@@ -11,15 +11,15 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden
@@ -36,7 +36,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     private ContainerTester tester;
     private ConfigServerProxyMock proxy;
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         tester.serviceRegistry().zoneRegistry()
@@ -46,53 +46,53 @@ public class ZoneApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_requests() {
+    void test_requests() {
         // GET /zone/v2
         tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2"),
-                                                new File("root.json"));
+                new File("root.json"));
 
         // GET /zone/v2/prod/us-north-1
         tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1"),
-                                                "ok");
+                "ok");
 
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "GET");
 
         // GET /zone/v2/nodes/v2/node/?recursive=true
         tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/?recursive=true"),
-                                                "ok");
+                "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "GET");
 
         // POST /zone/v2/dev/us-north-2/nodes/v2/command/restart?hostname=node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
-                                                            "", Method.POST),
-                                                "ok");
+                "", Method.POST),
+                "ok");
 
         // PUT /zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1",
-                                                            "", Method.PUT), "ok");
+                "", Method.PUT), "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "PUT");
 
         // DELETE /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
-                                                            "", Method.DELETE), "ok");
+                "", Method.DELETE), "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "DELETE");
 
         // PATCH /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/node/node1",
-                                                            "{\"currentRestartGeneration\": 1}",
-                                                            Method.PATCH), "ok");
+                "{\"currentRestartGeneration\": 1}",
+                Method.PATCH), "ok");
         assertLastRequest(ZoneId.from("dev", "aws-us-north-2"), 1, "PATCH");
         assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
 
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
+        assertFalse(tester.controller().auditLogger().readLog().entries().isEmpty(), "Actions are logged to audit log");
     }
 
     @Test
-    public void test_invalid_requests() {
+    void test_invalid_requests() {
         // POST /zone/v2/prod/us-north-34/nodes/v2
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-42/nodes/v2",
-                                                            "", Method.POST),
-                                                new File("unknown-zone.json"), 400);
+                "", Method.POST),
+                new File("unknown-zone.json"), 400);
         assertFalse(proxy.lastReceived().isPresent());
     }
 

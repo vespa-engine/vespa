@@ -4,12 +4,12 @@ package com.yahoo.vespa.model.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author bratseth
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNotNull;
 public class FileReferencesRepositoryTestCase {
 
     @Test
-    public void fileDistributor() {
+    void fileDistributor() {
         FileRegistry fileRegistry = new MockFileRegistry();
         FileReferencesRepository fileReferencesRepository = new FileReferencesRepository(fileRegistry);
 

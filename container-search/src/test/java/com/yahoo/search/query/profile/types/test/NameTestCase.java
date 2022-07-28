@@ -8,10 +8,10 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * tests creating invalid names
@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 public class NameTestCase {
 
     @Test
-    public void testNames() {
+    void testNames() {
         assertLegalName("aB");
         assertIllegalName("a.");
         assertLegalName("_a_b");
@@ -33,11 +33,11 @@ public class NameTestCase {
     }
 
     @Test
-    public void testFieldNames() {
+    void testFieldNames() {
         assertLegalFieldName("aB");
         try {
-            QueryProfile profile=new QueryProfile("test");
-            profile.set("a.","anyValue", (QueryProfileRegistry)null);
+            QueryProfile profile = new QueryProfile("test");
+            profile.set("a.", "anyValue", (QueryProfileRegistry) null);
             fail("Should have failed");
         } catch (IllegalArgumentException e) {
             assertEquals("'a.' is not a legal compound name. Names can not end with a dot.", e.getMessage());
@@ -48,12 +48,12 @@ public class NameTestCase {
         assertLegalFieldName("/a/b");
         assertLegalFieldName("/a/b/");
         assertIllegalFieldName("aBc.dooEee.ce_d.-some-other.moreHere",
-                               "Could not set 'aBc.dooEee.ce_d.-some-other.moreHere' to 'anyValue'",
-                               "Illegal name '-some-other'");
+                "Could not set 'aBc.dooEee.ce_d.-some-other.moreHere' to 'anyValue'",
+                "Illegal name '-some-other'");
     }
 
     @Test
-    public void testComponentIdAsCompoundName() {
+    void testComponentIdAsCompoundName() {
         String name = "a/b";
         assertEquals(new CompoundName(name), new QueryProfileType(name).getComponentIdAsCompoundName());
     }

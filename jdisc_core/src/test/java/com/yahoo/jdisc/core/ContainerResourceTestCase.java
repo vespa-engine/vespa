@@ -10,13 +10,13 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class ContainerResourceTestCase {
 
     @Test
-    public void requireThatBoundRequestHandlersAreRetainedOnActivate() {
+    void requireThatBoundRequestHandlersAreRetainedOnActivate() {
         MyRequestHandler foo = new MyRequestHandler();
         MyRequestHandler bar = new MyRequestHandler();
 
@@ -43,7 +43,7 @@ public class ContainerResourceTestCase {
     }
 
     @Test
-    public void requireThatBoundRequestHandlersAreReleasedOnTermination() {
+    void requireThatBoundRequestHandlersAreReleasedOnTermination() {
         MyRequestHandler handler = new MyRequestHandler();
 
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
@@ -62,7 +62,7 @@ public class ContainerResourceTestCase {
     }
 
     @Test
-    public void requireThatServerProvidersAreRetainedOnActivate() {
+    void requireThatServerProvidersAreRetainedOnActivate() {
         MyServerProvider foo = new MyServerProvider();
         MyServerProvider bar = new MyServerProvider();
 
@@ -80,7 +80,7 @@ public class ContainerResourceTestCase {
     }
 
     @Test
-    public void requireThatServerProvidersAreReleasedOnTermination() {
+    void requireThatServerProvidersAreReleasedOnTermination() {
         MyServerProvider server = new MyServerProvider();
 
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();

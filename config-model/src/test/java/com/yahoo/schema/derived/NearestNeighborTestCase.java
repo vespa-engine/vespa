@@ -6,24 +6,25 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class NearestNeighborTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testNearestNeighbor() throws IOException, ParseException {
+    void testNearestNeighbor() throws IOException, ParseException {
         try {
             ComponentId.resetGlobalCountersForTests();
             DerivedConfiguration c = assertCorrectDeriving("nearestneighbor");
 
-            CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig());
+            CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {
+            }).getConfig());
             Query q = new Query("?ranking.features.query(q_vec)=[1,2,3,4,5,6]", // length is 6, not 5
-                                queryProfiles.getComponent("default"));
+                    queryProfiles.getComponent("default"));
             fail("This should fail when q_vec is parsed as a tensor");
         } catch (IllegalArgumentException e) {
             // success

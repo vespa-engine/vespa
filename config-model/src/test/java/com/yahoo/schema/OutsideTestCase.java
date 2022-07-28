@@ -2,12 +2,13 @@
 package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Tests settings outside the document
  *
@@ -16,16 +17,16 @@ import static org.junit.Assert.assertTrue;
 public class OutsideTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testOutsideIndex() throws IOException, ParseException {
+    void testOutsideIndex() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/outsidedoc.sd");
 
-        Index defaultIndex= schema.getIndex("default");
+        Index defaultIndex = schema.getIndex("default");
         assertTrue(defaultIndex.isPrefix());
-        assertEquals("default.default",defaultIndex.aliasIterator().next());
+        assertEquals("default.default", defaultIndex.aliasIterator().next());
     }
 
     @Test
-    public void testOutsideSummary() throws IOException, ParseException {
+    void testOutsideSummary() throws IOException, ParseException {
         ApplicationBuilder.buildFromFile("src/test/examples/outsidesummary.sd");
     }
 

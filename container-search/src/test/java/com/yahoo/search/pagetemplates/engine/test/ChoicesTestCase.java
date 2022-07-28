@@ -9,7 +9,7 @@ import com.yahoo.search.pagetemplates.engine.Resolver;
 import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
 import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.pagetemplates.model.PageElement;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,31 +20,31 @@ import java.util.List;
 public class ChoicesTestCase extends ExecutionAbstractTestCase {
 
     @Test
-    public void testExecution() {
+    void testExecution() {
         // Create the page template (second alternative will be chosen)
-        List<PageElement> pages=new ArrayList<>();
+        List<PageElement> pages = new ArrayList<>();
         pages.add(importPage("AnySource.xml"));
         pages.add(importPage("Choices.xml"));
-        Choice page=Choice.createSingletons(pages);
+        Choice page = Choice.createSingletons(pages);
 
         // Create a federated result
-        Query query=new Query();
-        Result result=new Result(query);
-        result.hits().add(createHits("news",3));
-        result.hits().add(createHits("web",3));
-        result.hits().add(createHits("blog",3));
-        result.hits().add(createHits("images",3));
+        Query query = new Query();
+        Result result = new Result(query);
+        result.hits().add(createHits("news", 3));
+        result.hits().add(createHits("web", 3));
+        result.hits().add(createHits("blog", 3));
+        result.hits().add(createHits("images", 3));
 
         // Resolve
-        Resolver resolver=new DeterministicResolver();
-        Resolution resolution=resolver.resolve(page,query,result);
+        Resolver resolver = new DeterministicResolver();
+        Resolution resolution = resolver.resolve(page, query, result);
 
         // Execute
-        Organizer organizer =new Organizer();
-        organizer.organize(page,resolution,result);
+        Organizer organizer = new Organizer();
+        organizer.organize(page, resolution, result);
 
         // Check rendering
-        assertRendered(result,"ChoicesResult.xml");
+        assertRendered(result, "ChoicesResult.xml");
     }
 
 }

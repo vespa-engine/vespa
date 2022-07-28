@@ -5,18 +5,14 @@ import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,7 +23,7 @@ import static org.mockito.Mockito.when;
 public class HttpResponseTestCase {
 
     @Test
-    public void requireThatAccessorsWork() throws Exception {
+    void requireThatAccessorsWork() throws Exception {
         final HttpResponse response = newResponse(6, "foo");
         assertEquals(6, response.getStatus());
         assertEquals("foo", response.getMessage());
@@ -49,7 +45,7 @@ public class HttpResponseTestCase {
     }
 
     @Test
-    public void requireThatStatusCodesDoNotChange() {
+    void requireThatStatusCodesDoNotChange() {
         assertEquals(HttpResponse.Status.CREATED, 201);
         assertEquals(HttpResponse.Status.ACCEPTED, 202);
         assertEquals(HttpResponse.Status.NON_AUTHORITATIVE_INFORMATION, 203);
@@ -79,14 +75,14 @@ public class HttpResponseTestCase {
     }
 
     @Test
-    public void requireThat5xxIsServerError() {
+    void requireThat5xxIsServerError() {
         for (int i = 0; i < 999; ++i) {
             assertEquals(i >= 500 && i < 600, HttpResponse.isServerError(new Response(i)));
         }
     }
 
     @Test
-    public void requireThatCookieHeaderCanBeEncoded() throws Exception {
+    void requireThatCookieHeaderCanBeEncoded() throws Exception {
         final HttpResponse response = newResponse(69, "foo");
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
@@ -96,18 +92,18 @@ public class HttpResponseTestCase {
     }
 
     @Test
-    public void requireThatMultipleCookieHeadersCanBeEncoded() throws Exception {
+    void requireThatMultipleCookieHeadersCanBeEncoded() throws Exception {
         final HttpResponse response = newResponse(69, "foo");
         final List<Cookie> cookies = Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"));
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(2, headers.size());
         assertEquals(Cookie.toSetCookieHeaders(Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"))),
-                     headers);
+                headers);
     }
 
     @Test
-    public void requireThatCookieHeaderCanBeDecoded() throws Exception {
+    void requireThatCookieHeaderCanBeDecoded() throws Exception {
         final HttpResponse response = newResponse(69, "foo");
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
@@ -115,7 +111,7 @@ public class HttpResponseTestCase {
     }
 
     @Test
-    public void requireThatMultipleCookieHeadersCanBeDecoded() throws Exception {
+    void requireThatMultipleCookieHeadersCanBeDecoded() throws Exception {
         final HttpResponse response = newResponse(69, "foo");
         final List<Cookie> cookies = Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"));
         response.encodeSetCookieHeader(cookies);

@@ -21,18 +21,15 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -53,7 +50,7 @@ public class SendAdapterTestCase {
     DestinationSession dstSession;
     TestProtocol srcProtocol, itrProtocol, dstProtocol;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
         dstServer = new TestServer(
@@ -74,7 +71,7 @@ public class SendAdapterTestCase {
         assertTrue(srcServer.waitSlobrok("*/session", 2));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -92,16 +89,16 @@ public class SendAdapterTestCase {
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    public void requireCorrectVersionSelection() {
-        assertNull(srcServer.net.getSendAdapter(new Version(4,999)));
-        assertNull(srcServer.net.getSendAdapter(new Version(5,0)));
-        assertNull(srcServer.net.getSendAdapter(new Version(6,148)));
-        assertTrue(srcServer.net.getSendAdapter(new Version(6,149)) instanceof RPCSendV2);
-        assertTrue(srcServer.net.getSendAdapter(new Version(9,9999)) instanceof RPCSendV2);
+    void requireCorrectVersionSelection() {
+        assertNull(srcServer.net.getSendAdapter(new Version(4, 999)));
+        assertNull(srcServer.net.getSendAdapter(new Version(5, 0)));
+        assertNull(srcServer.net.getSendAdapter(new Version(6, 148)));
+        assertTrue(srcServer.net.getSendAdapter(new Version(6, 149)) instanceof RPCSendV2);
+        assertTrue(srcServer.net.getSendAdapter(new Version(9, 9999)) instanceof RPCSendV2);
     }
 
     @Test
-    public void requireThatMessagesCanBeSentAcrossAllSupportedVersions() {
+    void requireThatMessagesCanBeSentAcrossAllSupportedVersions() {
         List<Version> versions = Arrays.asList(
                 new Version(6, 149),
                 new Version(9, 999)

@@ -10,20 +10,16 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
  */
 public class SecretStoreValidatorTest {
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
@@ -43,7 +39,7 @@ public class SecretStoreValidatorTest {
     }
 
     @Test
-    public void app_with_athenz_in_deployment_passes_validation() throws Exception {
+    void app_with_athenz_in_deployment_passes_validation() throws Exception {
         DeployState deployState = deployState(servicesXml(), deploymentXml(true));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -51,24 +47,25 @@ public class SecretStoreValidatorTest {
     }
 
     @Test
-    public void app_without_athenz_in_deployment_fails_validation() throws Exception {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "Container cluster 'default' uses a secret store, so an Athenz domain and" +
-                        " an Athenz service must be declared in deployment.xml.");
+    void app_without_athenz_in_deployment_fails_validation() throws Exception {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-        DeployState deployState = deployState(servicesXml(), deploymentXml(false));
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            DeployState deployState = deployState(servicesXml(), deploymentXml(false));
+            VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new SecretStoreValidator().validate(model, deployState);
+            new SecretStoreValidator().validate(model, deployState);
+
+        });
+        assertTrue(exception.getMessage().contains("Container cluster 'default' uses a secret store, so an Athenz domain and" +
+                " an Athenz service must be declared in deployment.xml."));
 
     }
 
     @Test
-    public void app_without_secret_store_passes_validation_without_athenz_in_deployment() throws Exception {
+    void app_without_secret_store_passes_validation_without_athenz_in_deployment() throws Exception {
         String servicesXml = joinLines("<services version='1.0'>",
-                                       "  <container id='default' version='1.0' />",
-                                       "</services>");
+                "  <container id='default' version='1.0' />",
+                "</services>");
         DeployState deployState = deployState(servicesXml, deploymentXml(false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -86,7 +83,7 @@ public class SecretStoreValidatorTest {
                 .properties(new TestProperties().setHostedVespa(true));
         final DeployState deployState = builder.build();
 
-        assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
+        assertTrue(deployState.isHosted(), "Test must emulate a hosted deployment.");
         return deployState;
     }
 }

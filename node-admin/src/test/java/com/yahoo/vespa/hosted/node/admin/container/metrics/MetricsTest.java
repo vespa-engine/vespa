@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container.metrics;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics.APPLICATION_HOST;
 import static com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics.DimensionType.DEFAULT;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -18,38 +18,38 @@ public class MetricsTest {
     private final Metrics metrics = new Metrics();
 
     @Test
-    public void testDefaultValue() {
+    void testDefaultValue() {
         metrics.declareCounter("some.name", hostDimension);
 
         assertEquals(getMetricsForDimension(hostDimension).get("some.name"), 0L);
     }
 
     @Test
-    public void testSimpleIncrementMetric() {
+    void testSimpleIncrementMetric() {
         Counter counter = metrics.declareCounter("a_counter.value", hostDimension);
 
         counter.add(5);
         counter.add(8);
 
         Map<String, Number> latestMetrics = getMetricsForDimension(hostDimension);
-        assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
+        assertEquals(1, latestMetrics.size(), "Expected only 1 metric value to be set");
         assertEquals(latestMetrics.get("a_counter.value"), 13L); // 5 + 8
     }
 
     @Test
-    public void testSimpleGauge() {
+    void testSimpleGauge() {
         Gauge gauge = metrics.declareGauge("test.gauge", hostDimension);
 
         gauge.sample(42);
         gauge.sample(-342.23);
 
         Map<String, Number> latestMetrics = getMetricsForDimension(hostDimension);
-        assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
+        assertEquals(1, latestMetrics.size(), "Expected only 1 metric value to be set");
         assertEquals(latestMetrics.get("test.gauge"), -342.23);
     }
 
     @Test
-    public void testRedeclaringSameGauge() {
+    void testRedeclaringSameGauge() {
         Gauge gauge = metrics.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
@@ -62,7 +62,7 @@ public class MetricsTest {
     }
 
     @Test
-    public void testSameMetricNameButDifferentDimensions() {
+    void testSameMetricNameButDifferentDimensions() {
         Gauge gauge = metrics.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
@@ -76,7 +76,7 @@ public class MetricsTest {
     }
 
     @Test
-    public void testDeletingMetric() {
+    void testDeletingMetric() {
         metrics.declareGauge("test.gauge", hostDimension);
 
         Dimensions differentDimension = new Dimensions.Builder().add("host", "abcd.yahoo.com").build();

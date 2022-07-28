@@ -18,15 +18,11 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.interpretation.Interpretation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -34,50 +30,50 @@ import static org.junit.Assert.fail;
 public class PageTemplateSearcherTestCase {
 
     @Test
-    public void testSearcher() {
+    void testSearcher() {
         PageTemplateSearcher s = new PageTemplateSearcher(createPageTemplateRegistry(), new FirstChoiceResolver());
-        Chain<Searcher> chain = new Chain<>(s,new MockFederator());
+        Chain<Searcher> chain = new Chain<>(s, new MockFederator());
 
         {
             // No template specified, should use default
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.resolver=native.deterministic"));
-            assertSources("source1 source2",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.resolver=native.deterministic"));
+            assertSources("source1 source2", result);
         }
 
         {
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.id=oneSource&page.resolver=native.deterministic"));
-            assertSources("source1",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.id=oneSource&page.resolver=native.deterministic"));
+            assertSources("source1", result);
         }
 
         {
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.id=twoSources&model.sources=source1&page.resolver=native.deterministic"));
-            assertSources("source1",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=foo&page.id=twoSources&model.sources=source1&page.resolver=native.deterministic"));
+            assertSources("source1", result);
         }
 
         {
-            Query query=new Query("?query=foo&page.resolver=native.deterministic");
+            Query query = new Query("?query=foo&page.resolver=native.deterministic");
             addIntentModelSpecifyingSource3(query);
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2", result);
         }
 
         {
-            Query query=new Query("?query=foo&page.id=twoSourcesAndAny&page.resolver=native.deterministic");
+            Query query = new Query("?query=foo&page.id=twoSourcesAndAny&page.resolver=native.deterministic");
             addIntentModelSpecifyingSource3(query);
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2 source3",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2 source3", result);
         }
 
         {
-            Query query=new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
+            Query query = new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
             addIntentModelSpecifyingSource3(query);
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source3",result);
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source3", result);
         }
 
         {
-            Query query=new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
+            Query query = new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
             assertTrue(query.getModel().getSources().isEmpty());
             assertNotNull(result.hits().get("source1"));
             assertNotNull(result.hits().get("source2"));
@@ -85,38 +81,38 @@ public class PageTemplateSearcherTestCase {
         }
 
         {
-            Query query=new Query("?query=foo&page.id=choiceOfSources&page.resolver=native.deterministic");
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2","source2",result);
+            Query query = new Query("?query=foo&page.id=choiceOfSources&page.resolver=native.deterministic");
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2", "source2", result);
         }
 
         {
-            Query query=new Query("?query=foo&page.id=choiceOfSources&page.resolver=test.firstChoice");
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2","source1",result);
+            Query query = new Query("?query=foo&page.id=choiceOfSources&page.resolver=test.firstChoice");
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2", "source1", result);
         }
 
         { // Specifying two templates, should pick the last
-            Query query=new Query("?query=foo&page.id=threeSources+oneSource&page.resolver=native.deterministic");
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2 source3","source1",result);
+            Query query = new Query("?query=foo&page.id=threeSources+oneSource&page.resolver=native.deterministic");
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2 source3", "source1", result);
         }
 
         { // Specifying two templates as a list, should override the page.id setting
-            Query query=new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
-            query.properties().set("page.idList",Arrays.asList("oneSource","threeSources"));
-            Result result=new Execution(chain, Execution.Context.createContextStub()).search(query);
-            assertSources("source1 source2 source3","source1 source2 source3",result);
+            Query query = new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
+            query.properties().set("page.idList", Arrays.asList("oneSource", "threeSources"));
+            Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
+            assertSources("source1 source2 source3", "source1 source2 source3", result);
         }
 
         {
             try {
-                Query query=new Query("?query=foo&page.id=oneSource+choiceOfSources&page.resolver=noneSuch");
+                Query query = new Query("?query=foo&page.id=oneSource+choiceOfSources&page.resolver=noneSuch");
                 new Execution(chain, Execution.Context.createContextStub()).search(query);
                 fail("Expected exception");
             }
             catch (IllegalArgumentException e) {
-                assertEquals("No page template resolver 'noneSuch'",e.getMessage());
+                assertEquals("No page template resolver 'noneSuch'", e.getMessage());
             }
         }
 
@@ -182,9 +178,9 @@ public class PageTemplateSearcherTestCase {
         Set<String> expectedResultSources=new HashSet<>(Arrays.asList(expectedResultSourceString.split(" ")));
         for (String sourceName : Arrays.asList("source1 source2 source3".split(" "))) {
             if (expectedResultSources.contains(sourceName))
-                assertNotNull("Result contains '" + sourceName + "'",result.hits().get(sourceName));
+                assertNotNull(result.hits().get(sourceName),"Result contains '" + sourceName + "'");
             else
-                assertNull("Result does not contain '" + sourceName + "'",result.hits().get(sourceName));
+                assertNull(result.hits().get(sourceName),"Result does not contain '" + sourceName + "'");
         }
     }
 

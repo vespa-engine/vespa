@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that ![a] is interpreted as "default:![a]", not as "!default:[a]",
@@ -16,9 +16,10 @@ public class AutomataNotTestCase extends RuleBaseAbstractTestCase {
         super("automatanot.sr", "semantics.fsa");
     }
 
+    // TODO: MAKE THIS WORK!
     @Test
-    @Ignore // TODO: MAKE THIS WORK!
-    public void testAutomataNot() {
+    @Disabled
+    void testAutomataNot() {
         if (System.currentTimeMillis() > 0) return;
         assertSemantics("carpenter", "carpenter");
         assertSemantics("RANK brukbar busname:brukbar", "brukbar");

@@ -3,14 +3,14 @@ package com.yahoo.search.predicate.index;
 
 import com.google.common.primitives.Ints;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 public class CachedPostingListCounterTest {
 
     @Test
-    public void require_that_docids_are_counted_correctly() {
+    void require_that_docids_are_counted_correctly() {
         int nDocuments = 4;
         byte[] nPostingListsPerDocument = new byte[nDocuments];
         CachedPostingListCounter c = new CachedPostingListCounter(nDocuments);
@@ -35,7 +35,7 @@ public class CachedPostingListCounterTest {
     }
 
     @Test
-    public void require_that_most_costly_posting_lists_are_first_in_bit_vector() {
+    void require_that_most_costly_posting_lists_are_first_in_bit_vector() {
         int nDocuments = 5;
         CachedPostingListCounter c = new CachedPostingListCounter(nDocuments);
         List<PostingList> list = new ArrayList<>();
@@ -43,7 +43,10 @@ public class CachedPostingListCounterTest {
         PostingList p2 = postingList(0, 1, 2, 3, 4);
         PostingList p3 = postingList(1, 2, 3, 4);
         PostingList p4 = postingList(3, 4);
-        list.add(p1); list.add(p2); list.add(p3); list.add(p4);
+        list.add(p1);
+        list.add(p2);
+        list.add(p3);
+        list.add(p4);
         for (int i = 0; i < 100; i++) {
             list.add(postingList(0));
         }
@@ -64,7 +67,7 @@ public class CachedPostingListCounterTest {
     }
 
     @Test
-    public void require_that_cached_docids_are_counted_correctly() {
+    void require_that_cached_docids_are_counted_correctly() {
         int nDocuments = 4;
         byte[] nPostingListsPerDocument = new byte[nDocuments];
         CachedPostingListCounter c = new CachedPostingListCounter(nDocuments);
@@ -82,7 +85,7 @@ public class CachedPostingListCounterTest {
     }
 
     @Test
-    public void require_that_cache_rebuilding_behaves_correctly_for_large_amount_of_posting_lists() {
+    void require_that_cache_rebuilding_behaves_correctly_for_large_amount_of_posting_lists() {
         int nDocuments = 4;
         byte[] nPostingListsPerDocument = new byte[nDocuments];
         CachedPostingListCounter c = new CachedPostingListCounter(nDocuments);

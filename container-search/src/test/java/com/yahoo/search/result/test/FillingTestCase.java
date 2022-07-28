@@ -3,13 +3,11 @@ package com.yahoo.search.result.test;
 
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -17,16 +15,16 @@ import static org.junit.Assert.assertTrue;
 public class FillingTestCase {
 
     @Test
-    public void testFillingAPIConsistency() {
-        HitGroup group=new HitGroup();
+    void testFillingAPIConsistency() {
+        HitGroup group = new HitGroup();
         group.add(new Hit("hit:1"));
         group.add(new Hit("hit:2"));
         assertTrue(group.isFilled("summary"));
     }
 
     @Test
-    public void testFillingAPIConsistencyTwoPhase() {
-        HitGroup group=new HitGroup();
+    void testFillingAPIConsistencyTwoPhase() {
+        HitGroup group = new HitGroup();
         group.add(createNonFilled("hit:1"));
         group.add(createNonFilled("hit:2"));
         assertFalse(group.isFilled("summary"));
@@ -36,8 +34,8 @@ public class FillingTestCase {
     }
 
     @Test
-    public void testFillingAPIConsistencyThreePhase() {
-        HitGroup group=new HitGroup();
+    void testFillingAPIConsistencyThreePhase() {
+        HitGroup group = new HitGroup();
         group.add(createNonFilled("hit:1"));
         group.add(createNonFilled("hit:2"));
         assertFalse(group.isFilled("summary"));
@@ -54,7 +52,7 @@ public class FillingTestCase {
     }
 
     @Test
-    public void testPartiallyFilledWith2Hits() {
+    void testPartiallyFilledWith2Hits() {
         Hit hit1 = new Hit("id1");
         Hit hit2 = new Hit("id2");
 
@@ -69,7 +67,7 @@ public class FillingTestCase {
     }
 
     @Test
-    public void testPartiallyFilledDiverse() {
+    void testPartiallyFilledDiverse() {
         Hit hit1 = new Hit("id1");
         Hit hit2 = new Hit("id2");
         Hit hit3 = new Hit("id3");

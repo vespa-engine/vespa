@@ -3,7 +3,6 @@ package com.yahoo.container.di;
 
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,15 +17,16 @@ import java.util.Random;
  */
 public class DirConfigSource {
 
-    private final TemporaryFolder tempFolder = createTemporaryFolder();
+    private final File tempFolder;
     public final ConfigSource configSource;
 
-    public DirConfigSource(String testSourcePrefix) {
+    public DirConfigSource(File tmpDir, String testSourcePrefix) {
+        this.tempFolder = tmpDir;
         this.configSource = new ConfigSourceSet(testSourcePrefix + new Random().nextLong());
     }
 
     public void writeConfig(String name, String contents) {
-        File file = new File(tempFolder.getRoot(), name + ".cfg");
+        File file = new File(tempFolder, name + ".cfg");
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -39,7 +39,7 @@ public class DirConfigSource {
     }
 
     public String configId() {
-        return "dir:" + tempFolder.getRoot().getPath();
+        return "dir:" + tempFolder.getPath();
     }
 
     public ConfigSource configSource() {
@@ -56,16 +56,6 @@ public class DirConfigSource {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static TemporaryFolder createTemporaryFolder() {
-        TemporaryFolder folder = new TemporaryFolder();
-        try {
-            folder.create();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return folder;
     }
 
 }

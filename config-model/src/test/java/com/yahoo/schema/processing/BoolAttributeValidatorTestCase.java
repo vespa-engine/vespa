@@ -2,12 +2,12 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author geirst
@@ -15,19 +15,19 @@ import static org.junit.Assert.fail;
 public class BoolAttributeValidatorTestCase {
 
     @Test
-    public void array_of_bool_attribute_is_not_supported() throws ParseException {
+    void array_of_bool_attribute_is_not_supported() throws ParseException {
         try {
             createFromString(getSd("field b type array<bool> { indexing: attribute }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'b': Only single value bool attribute fields are supported",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void weigtedset_of_bool_attribute_is_not_supported() throws ParseException {
+    void weigtedset_of_bool_attribute_is_not_supported() throws ParseException {
         try {
             createFromString(getSd("field b type weightedset<bool> { indexing: attribute }"));
             fail("Expected exception");

@@ -6,13 +6,13 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 
@@ -26,19 +26,19 @@ public class NodeResourcesTuningTest {
     private static final double DEFAULT_MEMORY_GAIN = 0.08;
 
     @Test
-    public void require_that_hwinfo_disk_size_is_set() {
+    void require_that_hwinfo_disk_size_is_set() {
         ProtonConfig cfg = configFromDiskSetting(100);
         assertEquals(100 * GB, cfg.hwinfo().disk().size());
     }
 
     @Test
-    public void require_that_hwinfo_memory_size_is_set() {
+    void require_that_hwinfo_memory_size_is_set() {
         assertEquals(24 * GB, configFromMemorySetting(24 + reservedMemoryGb, 0).hwinfo().memory().size());
-        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).hwinfo().memory().size(), 1000);
+        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).hwinfo().memory().size(), 1000);
     }
 
     @Test
-    public void reserved_memory_on_content_node_is_0_5_gb() {
+    void reserved_memory_on_content_node_is_0_5_gb() {
         assertEquals(0.5, reservedMemoryGb, delta);
     }
 
@@ -65,19 +65,19 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    public void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
+    void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
         verify_that_initial_numdocs_is_dependent_of_mode();
 
     }
 
     @Test
-    public void require_that_hwinfo_cpu_cores_is_set() {
+    void require_that_hwinfo_cpu_cores_is_set() {
         ProtonConfig cfg = configFromNumCoresSetting(24);
         assertEquals(24, cfg.hwinfo().cpu().cores());
     }
 
     @Test
-    public void require_that_num_search_threads_and_summary_threads_follow_cores() {
+    void require_that_num_search_threads_and_summary_threads_follow_cores() {
         ProtonConfig cfg = configFromNumCoresSetting(4.5);
         assertEquals(5, cfg.numsearcherthreads());
         assertEquals(5, cfg.numsummarythreads());
@@ -85,7 +85,7 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    public void require_that_num_search_threads_and_considers_explict_num_threads_per_search() {
+    void require_that_num_search_threads_and_considers_explict_num_threads_per_search() {
         ProtonConfig cfg = configFromNumCoresSetting(4.5, 3);
         assertEquals(15, cfg.numsearcherthreads());
         assertEquals(5, cfg.numsummarythreads());
@@ -93,45 +93,45 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    public void require_that_fast_disk_is_reflected_in_proton_config() {
+    void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), delta);
         assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), delta);
     }
 
     @Test
-    public void require_that_slow_disk_is_reflected_in_proton_config() {
+    void require_that_slow_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(false);
         assertEquals(40, cfg.hwinfo().disk().writespeed(), delta);
         assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), delta);
     }
 
     @Test
-    public void require_that_document_store_maxfilesize_is_set_based_on_available_memory() {
+    void require_that_document_store_maxfilesize_is_set_based_on_available_memory() {
         assertDocumentStoreMaxFileSize(256 * MB, 4);
         assertDocumentStoreMaxFileSize(256 * MB, 6);
         assertDocumentStoreMaxFileSize(256 * MB, 8);
         assertDocumentStoreMaxFileSize(256 * MB, 12);
-        assertDocumentStoreMaxFileSize((long)(16*GB*0.02), 16);
-        assertDocumentStoreMaxFileSize((long)(24*GB*0.02), 24);
-        assertDocumentStoreMaxFileSize((long)(32*GB*0.02), 32);
-        assertDocumentStoreMaxFileSize((long)(48*GB*0.02), 48);
-        assertDocumentStoreMaxFileSize((long)(64*GB*0.02), 64);
-        assertDocumentStoreMaxFileSize((long)(128*GB*0.02), 128);
-        assertDocumentStoreMaxFileSize((long)(256*GB*0.02), 256);
-        assertDocumentStoreMaxFileSize((long)(512*GB*0.02), 512);
+        assertDocumentStoreMaxFileSize((long) (16 * GB * 0.02), 16);
+        assertDocumentStoreMaxFileSize((long) (24 * GB * 0.02), 24);
+        assertDocumentStoreMaxFileSize((long) (32 * GB * 0.02), 32);
+        assertDocumentStoreMaxFileSize((long) (48 * GB * 0.02), 48);
+        assertDocumentStoreMaxFileSize((long) (64 * GB * 0.02), 64);
+        assertDocumentStoreMaxFileSize((long) (128 * GB * 0.02), 128);
+        assertDocumentStoreMaxFileSize((long) (256 * GB * 0.02), 256);
+        assertDocumentStoreMaxFileSize((long) (512 * GB * 0.02), 512);
     }
 
     @Test
-    public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
-        assertFlushStrategyMemory((long)(4 * GB * DEFAULT_MEMORY_GAIN), 4);
-        assertFlushStrategyMemory((long)(8 * GB * DEFAULT_MEMORY_GAIN), 8);
-        assertFlushStrategyMemory((long)(24 * GB * DEFAULT_MEMORY_GAIN), 24);
-        assertFlushStrategyMemory((long)(64 * GB * DEFAULT_MEMORY_GAIN), 64);
+    void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
+        assertFlushStrategyMemory((long) (4 * GB * DEFAULT_MEMORY_GAIN), 4);
+        assertFlushStrategyMemory((long) (8 * GB * DEFAULT_MEMORY_GAIN), 8);
+        assertFlushStrategyMemory((long) (24 * GB * DEFAULT_MEMORY_GAIN), 24);
+        assertFlushStrategyMemory((long) (64 * GB * DEFAULT_MEMORY_GAIN), 64);
     }
 
     @Test
-    public void require_that_flush_strategy_tls_size_is_set_based_on_available_disk() {
+    void require_that_flush_strategy_tls_size_is_set_based_on_available_disk() {
         assertFlushStrategyTlsSize(2 * GB, 10);
         assertFlushStrategyTlsSize(2 * GB, 100);
         assertFlushStrategyTlsSize(10 * GB, 500);
@@ -140,31 +140,31 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    public void require_that_summary_read_io_is_set_based_on_disk() {
+    void require_that_summary_read_io_is_set_based_on_disk() {
         assertSummaryReadIo(ProtonConfig.Summary.Read.Io.DIRECTIO, true);
         assertSummaryReadIo(ProtonConfig.Summary.Read.Io.MMAP, false);
     }
 
     @Test
-    public void require_that_search_read_mmap_advise_is_set_based_on_disk() {
+    void require_that_search_read_mmap_advise_is_set_based_on_disk() {
         assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.RANDOM, true);
         assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.NORMAL, false);
     }
 
     @Test
-    public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1*GB / 25, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
-        assertEquals(256*GB / 25, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
+    void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
+        assertEquals(1 * GB / 25, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
+        assertEquals(256 * GB / 25, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
     }
 
     @Test
-    public void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
-        assertEquals(combinedFactor * 1*GB / 25, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
-        assertEquals(combinedFactor * 256*GB / 25, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
+    void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
+        assertEquals(combinedFactor * 1 * GB / 25, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 256 * GB / 25, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
     }
 
     @Test
-    public void require_that_docker_node_is_tagged_with_shared_disk() {
+    void require_that_docker_node_is_tagged_with_shared_disk() {
         assertSharedDisk(true, true);
     }
 

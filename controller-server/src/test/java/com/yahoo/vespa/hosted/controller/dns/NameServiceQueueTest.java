@@ -9,13 +9,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden
@@ -23,18 +23,18 @@ import static org.junit.Assert.assertTrue;
 public class NameServiceQueueTest {
 
     @Test
-    public void test_queue() {
+    void test_queue() {
         var nameService = new MemoryNameService();
         var r1 = new Record(Record.Type.CNAME, RecordName.from("cname.vespa.oath.cloud"), RecordData.from("example.com"));
         var r2 = new Record(Record.Type.TXT, RecordName.from("txt.example.com"), RecordData.from("text"));
         var r3 = List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                    new LatencyAliasTarget(HostName.of("alias1"),
-                                                           "dns-zone-01",
-                                                           ZoneId.from("prod", "us-north-1")).pack()),
-                         new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                    new LatencyAliasTarget(HostName.of("alias2"),
-                                                           "dns-zone-02",
-                                                           ZoneId.from("prod", "us-north-2")).pack()));
+                        new LatencyAliasTarget(HostName.of("alias1"),
+                                "dns-zone-01",
+                                ZoneId.from("prod", "us-north-1")).pack()),
+                new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
+                        new LatencyAliasTarget(HostName.of("alias2"),
+                                "dns-zone-02",
+                                ZoneId.from("prod", "us-north-2")).pack()));
         var req1 = new CreateRecord(r1);
         var req2 = new CreateRecords(List.of(r2));
         var req3 = new CreateRecords(r3);
@@ -64,17 +64,17 @@ public class NameServiceQueueTest {
 
         // Dispatch removals
         queue = queue.with(req4).with(req5).dispatchTo(nameService, 2);
-        assertTrue("Removed " + r2, nameService.findRecords(r2.type(), r2.name()).isEmpty());
-        assertTrue("Removed " + r3, nameService.findRecords(Record.Type.ALIAS, r3.get(0).name()).isEmpty());
+        assertTrue(nameService.findRecords(r2.type(), r2.name()).isEmpty(), "Removed " + r2);
+        assertTrue(nameService.findRecords(Record.Type.ALIAS, r3.get(0).name()).isEmpty(), "Removed " + r3);
 
         // Dispatch removals by data
         queue = queue.with(req6).dispatchTo(nameService, 1);
         assertTrue(queue.requests().isEmpty());
-        assertTrue("Removed " + r1, nameService.findRecords(Record.Type.CNAME, r1.name()).isEmpty());
+        assertTrue(nameService.findRecords(Record.Type.CNAME, r1.name()).isEmpty(), "Removed " + r1);
 
         // Keep n last requests
         queue = queue.with(req1).with(req2).with(req3).with(req4).with(req6)
-                     .last(2);
+                .last(2);
         assertEquals(List.of(req4, req6), List.copyOf(queue.requests()));
         assertSame(queue, queue.last(2));
         assertSame(queue, queue.last(10));
@@ -82,7 +82,7 @@ public class NameServiceQueueTest {
 
         // Keep n first requests
         queue = NameServiceQueue.EMPTY.with(req1).with(req2).with(req3).with(req4).with(req6)
-                                      .first(3);
+                .first(3);
         assertEquals(List.of(req1, req2, req3), List.copyOf(queue.requests()));
         assertSame(queue, queue.first(3));
         assertSame(queue, queue.first(10));

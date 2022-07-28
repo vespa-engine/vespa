@@ -5,15 +5,12 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author geirst
@@ -61,7 +58,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
+    void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
         assertLimits(0.4, 0.7, 0.76, 0.85,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7));
         assertLimits(0.4, 0.8, 0.76, 0.9,
@@ -71,7 +68,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void content_node_limits_can_be_set_explicit() {
+    void content_node_limits_can_be_set_explicit() {
         assertLimits(0.4, 0.7, 0.9, 0.95,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7).nodeDisk(0.9).nodeMemory(0.95));
         assertLimits(0.4, 0.8, 0.95, 0.9,
@@ -81,7 +78,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void cluster_controller_limits_are_equal_to_content_node_limits_minus_one_percent_if_not_set() {
+    void cluster_controller_limits_are_equal_to_content_node_limits_minus_one_percent_if_not_set() {
         assertLimits(0.89, 0.94, 0.9, 0.95,
                 new Fixture().nodeDisk(0.9).nodeMemory(0.95));
         assertLimits(0.89, 0.8, 0.9, 0.9,
@@ -93,7 +90,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void limits_are_derived_from_the_other_if_not_set() {
+    void limits_are_derived_from_the_other_if_not_set() {
         assertLimits(0.6, 0.94, 0.84, 0.95,
                 new Fixture().ctrlDisk(0.6).nodeMemory(0.95));
         assertLimits(0.89, 0.7, 0.9, 0.85,
@@ -101,13 +98,13 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
+    void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
         assertLimits(0.75, 0.8, 0.9, 0.9,
                 new Fixture(true));
     }
 
     @Test
-    public void hosted_exception_is_thrown_when_resource_limits_are_specified() {
+    void hosted_exception_is_thrown_when_resource_limits_are_specified() {
         try {
             hostedBuild();
             fail();
@@ -117,7 +114,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void hosted_limits_from_feature_flag_are_used() {
+    void hosted_limits_from_feature_flag_are_used() {
         TestProperties featureFlags = new TestProperties();
         featureFlags.setResourceLimitDisk(0.85);
         featureFlags.setResourceLimitMemory(0.90);
@@ -129,7 +126,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void exception_is_thrown_when_resource_limits_are_out_of_range() {
+    void exception_is_thrown_when_resource_limits_are_out_of_range() {
         TestProperties featureFlags = new TestProperties();
         featureFlags.setResourceLimitDisk(1.1);
 
@@ -188,7 +185,7 @@ public class ClusterResourceLimitsTest {
         if (expLimit == null) {
             assertFalse(actLimit.isPresent());
         } else {
-            assertEquals(limitType + " limit not as expected", expLimit, actLimit.get(), 0.00001);
+            assertEquals(expLimit, actLimit.get(), 0.00001, limitType + " limit not as expected");
         }
     }
 

@@ -4,9 +4,10 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.metrics.MetricsmanagerConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 /**
@@ -44,7 +45,7 @@ public class MonitoringConfigSnoopTest {
     }
 
     @Test
-    public void correct_config_is_snooped() {
+    void correct_config_is_snooped() {
         initRoot(60);
         assertEquals(2, getConfig().snapshot().periods().size());
         assertEquals(60, getConfig().snapshot().periods(0));
@@ -52,7 +53,7 @@ public class MonitoringConfigSnoopTest {
     }
 
     @Test
-    public void correct_config_is_snooped_default_interval() {
+    void correct_config_is_snooped_default_interval() {
         String getAdminXmlIntervalNotSpecified = "<admin version='2.0'>"
                 + "  <adminserver hostalias='mockhost' />"
                 + "</admin>";
@@ -64,8 +65,10 @@ public class MonitoringConfigSnoopTest {
         assertEquals(300, getConfig().snapshot().periods(1));
     }
 
-    @Test(expected = Exception.class)
-    public void invalid_model_1() {
-        initRoot(120);
+    @Test
+    void invalid_model_1() {
+        assertThrows(Exception.class, () -> {
+            initRoot(120);
+        });
     }
 }

@@ -14,10 +14,10 @@ import com.yahoo.search.handler.HttpSearchResponse;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests using query profiles in searches
@@ -26,13 +26,13 @@ import static org.junit.Assert.assertNotNull;
  */
 public class QueryProfileIntegrationTestCase {
 
-    @org.junit.After
+    @org.junit.jupiter.api.AfterEach
     public void tearDown() {
         System.getProperties().remove("config.id");
     }
 
     @Test
-    public void testUntyped() {
+    void testUntyped() {
         String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/untyped";
         System.setProperty("config.id", configId);
         Container container = new Container();
@@ -41,79 +41,79 @@ public class QueryProfileIntegrationTestCase {
 
         // Should get "default" query profile containing the "test" search chain containing the "test" searcher
         HttpRequest request = HttpRequest.createTestRequest("search", Method.GET);
-        HttpSearchResponse response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        HttpSearchResponse response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:test"));
 
         // Should get the "test' query profile containing the "default" search chain containing the "default" searcher
         request = HttpRequest.createTestRequest("search?queryProfile=test", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:default"));
 
         // Should get "default" query profile, but override the search chain to default
         request = HttpRequest.createTestRequest("search?searchChain=default", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:default"));
 
         // Tests a profile setting hits and offset
         request = HttpRequest.createTestRequest("search?queryProfile=hitsoffset", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertEquals(20, response.getQuery().getHits());
         assertEquals(80, response.getQuery().getOffset());
 
         // Tests a non-resolved profile request
         request = HttpRequest.createTestRequest("search?queryProfile=none", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertNotNull("Got an error", response.getResult().hits().getError());
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
+        assertNotNull(response.getResult().hits().getError(), "Got an error");
         assertEquals("Could not resolve query profile 'none'", response.getResult().hits().getError().getDetailedMessage());
 
         // Tests that properties in objects owned by query is handled correctly
         request = HttpRequest.createTestRequest("search?query=word&queryProfile=test", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertEquals("index" ,response.getQuery().getModel().getDefaultIndex());
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
+        assertEquals("index", response.getQuery().getModel().getDefaultIndex());
         assertEquals("WEAKAND(100) index:word", response.getQuery().getModel().getQueryTree().toString());
         configurer.shutdown();
     }
 
     @Test
-    public void testTyped() {
+    void testTyped() {
         String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/typed";
         System.setProperty("config.id", configId);
         Container container = new Container();
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, configId);
-        SearchHandler searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
+        SearchHandler searchHandler = (SearchHandler) configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
 
         // Should get "default" query profile containing the "test" search chain containing the "test" searcher
         HttpRequest request = HttpRequest.createTestRequest("search", Method.GET);
-        HttpSearchResponse response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        HttpSearchResponse response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:test"));
 
         // Should get the "test' query profile containing the "default" search chain containing the "default" searcher
         request = HttpRequest.createTestRequest("search?queryProfile=test", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:default"));
 
         // Should get "default" query profile, but override the search chain to default
         request = HttpRequest.createTestRequest("search?searchChain=default", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertNotNull(response.getResult().hits().get("from:default"));
 
         // Tests a profile setting hits and offset
         request = HttpRequest.createTestRequest("search?queryProfile=hitsoffset", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertEquals(22,response.getQuery().getHits());
-        assertEquals(80,response.getQuery().getOffset());
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
+        assertEquals(22, response.getQuery().getHits());
+        assertEquals(80, response.getQuery().getOffset());
 
         // Tests a non-resolved profile request
         request = HttpRequest.createTestRequest("search?queryProfile=none", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertNotNull("Got an error",response.getResult().hits().getError());
-        assertEquals("Could not resolve query profile 'none'",response.getResult().hits().getError().getDetailedMessage());
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
+        assertNotNull(response.getResult().hits().getError(), "Got an error");
+        assertEquals("Could not resolve query profile 'none'", response.getResult().hits().getError().getDetailedMessage());
 
         // Test overriding a sub-profile in the request
         request = HttpRequest.createTestRequest("search?queryProfile=root&sub=newsub", Method.GET);
-        response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertEquals("newsubvalue1",response.getQuery().properties().get("sub.value1"));
-        assertEquals("newsubvalue2",response.getQuery().properties().get("sub.value2"));
+        response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
+        assertEquals("newsubvalue1", response.getQuery().properties().get("sub.value1"));
+        assertEquals("newsubvalue2", response.getQuery().properties().get("sub.value2"));
         configurer.shutdown();
     }
 

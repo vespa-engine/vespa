@@ -2,10 +2,10 @@
 package com.yahoo.config.model.producer;
 
 import com.yahoo.cloud.config.log.LogdConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verifies some of the logic in the abstract config producer that is not tested in other classes.
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class AbstractConfigProducerTest {
 
     @Test
-    public void require_that_interface_is_found_if_directly_implemented() throws ReflectiveOperationException {
+    void require_that_interface_is_found_if_directly_implemented() throws ReflectiveOperationException {
         MockLogdProducer producer = new MockLogdProducer("mocky");
         ClassLoader loader = producer.getConfigClassLoader(LogdConfig.Producer.class.getName());
         assertNotNull(loader);
@@ -29,7 +29,7 @@ public class AbstractConfigProducerTest {
     }
 
     @Test
-    public void require_that_interface_is_found_if_inherited() throws ReflectiveOperationException {
+    void require_that_interface_is_found_if_inherited() throws ReflectiveOperationException {
         MockLogdProducerSubclass producer = new MockLogdProducerSubclass("mocky");
         ClassLoader loader = producer.getConfigClassLoader(LogdConfig.Producer.class.getName());
         assertNotNull(loader);

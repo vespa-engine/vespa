@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,10 +10,9 @@ import java.util.Map;
 import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -41,7 +38,7 @@ public class YqlFieldAndSourceTestCase {
     private Execution.Context context;
     private Execution execution;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Query query = new Query("?query=test");
 
@@ -80,7 +77,7 @@ public class YqlFieldAndSourceTestCase {
         return new SchemaInfo(List.of(schema.build()), Map.of());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         searchChain = null;
         context = null;
@@ -88,7 +85,7 @@ public class YqlFieldAndSourceTestCase {
     }
 
     @Test
-    public final void testTrivial() {
+    final void testTrivial() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD1);
         Result result = execution.search(query);
         execution.fill(result);
@@ -98,7 +95,7 @@ public class YqlFieldAndSourceTestCase {
     }
 
     @Test
-    public final void testWithOnlyAttribute() {
+    final void testWithOnlyAttribute() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD2);
         Result result = execution.search(query);
         execution.fill(result, THIRD_OPTION);
@@ -109,7 +106,7 @@ public class YqlFieldAndSourceTestCase {
     }
 
     @Test
-    public final void testWithOnlyDiskfieldCorrectClassRequested() {
+    final void testWithOnlyDiskfieldCorrectClassRequested() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD3);
         Result result = execution.search(query);
         execution.fill(result, THIRD_OPTION);
@@ -120,7 +117,7 @@ public class YqlFieldAndSourceTestCase {
     }
 
     @Test
-    public final void testTrivialCaseWithOnlyDiskfieldWrongClassRequested() {
+    final void testTrivialCaseWithOnlyDiskfieldWrongClassRequested() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD1);
         Result result = execution.search(query);
         execution.fill(result, THIRD_OPTION);

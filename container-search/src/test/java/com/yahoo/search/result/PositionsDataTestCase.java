@@ -3,9 +3,9 @@ package com.yahoo.search.result;
 
 import com.yahoo.data.access.simple.Value;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Arne Juul
@@ -13,7 +13,7 @@ import org.junit.Test;
 public class PositionsDataTestCase {
 
     @Test
-    public void testRenderingOfSinglePosition() {
+    void testRenderingOfSinglePosition() {
         Value.ObjectValue pos = createPosition(-122057174, 37374821, "N37.374821;W122.057174");
 
         PositionsData pd = new PositionsData(pos.inspect());
@@ -23,7 +23,7 @@ public class PositionsDataTestCase {
     }
 
     @Test
-    public void testRenderingOfMultiplePositions() {
+    void testRenderingOfMultiplePositions() {
         Value.ArrayValue arr = new Value.ArrayValue();
         arr.add(createPosition(-122057174, 37374821, "N37.374821;W122.057174"));
         arr.add(createPosition(3, -7, "S0.000007;E0.000003"));
@@ -31,9 +31,9 @@ public class PositionsDataTestCase {
         PositionsData pd = new PositionsData(arr.inspect());
 
         assertXml("<position x=\"-122057174\" y=\"37374821\" latlong=\"N37.374821;W122.057174\" />" +
-                  "<position x=\"3\" y=\"-7\" latlong=\"S0.000007;E0.000003\" />", pd);
+                "<position x=\"3\" y=\"-7\" latlong=\"S0.000007;E0.000003\" />", pd);
         assertJson("[{\"x\":-122057174,\"y\":37374821,\"latlong\":\"N37.374821;W122.057174\"}," +
-                  "{\"x\":3,\"y\":-7,\"latlong\":\"S0.000007;E0.000003\"}]", pd);
+                "{\"x\":3,\"y\":-7,\"latlong\":\"S0.000007;E0.000003\"}]", pd);
     }
 
     private Value.ObjectValue createPosition(long x, long y, String latlong) {

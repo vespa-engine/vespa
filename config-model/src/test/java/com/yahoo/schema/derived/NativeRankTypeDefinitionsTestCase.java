@@ -3,11 +3,11 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.RankType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testing stuff related to native rank type definitions
@@ -16,15 +16,16 @@ import static org.junit.Assert.*;
  */
 public class NativeRankTypeDefinitionsTestCase extends AbstractSchemaTestCase {
     @Test
-    public void testTables() {
+    void testTables() {
         assertEquals(NativeTable.Type.FIRST_OCCURRENCE.getName(), "firstOccurrenceTable");
         assertEquals(NativeTable.Type.OCCURRENCE_COUNT.getName(), "occurrenceCountTable");
         assertEquals(NativeTable.Type.PROXIMITY.getName(), "proximityTable");
         assertEquals(NativeTable.Type.REVERSE_PROXIMITY.getName(), "reverseProximityTable");
         assertEquals(NativeTable.Type.WEIGHT.getName(), "weightTable");
     }
+
     @Test
-    public void testDefinitions() {
+    void testDefinitions() {
         NativeRankTypeDefinitionSet defs = new NativeRankTypeDefinitionSet("default");
 
         NativeRankTypeDefinition rank;

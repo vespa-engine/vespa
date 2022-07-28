@@ -13,7 +13,7 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.UnboundBooleanFlag;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,10 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author hakonhall
@@ -44,7 +42,7 @@ public class FlagsHandlerTest {
     private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testContext(), flagsDb);
 
     @Test
-    public void testV1() {
+    void testV1() {
         String expectedResponse = "{" +
                 Stream.of("data", "defined")
                         .map(name -> "\"" + name + "\":{\"url\":\"https://foo.com:4443/flags/v1/" + name + "\"}")
@@ -55,7 +53,7 @@ public class FlagsHandlerTest {
     }
 
     @Test
-    public void testDefined() {
+    void testDefined() {
         try (Flags.Replacer replacer = Flags.clearFlagsForTesting()) {
             fixUnusedWarning(replacer);
             Flags.defineFeatureFlag("id", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc", "mod", FetchVector.Dimension.HOSTNAME);
@@ -70,7 +68,7 @@ public class FlagsHandlerTest {
     private void fixUnusedWarning(Flags.Replacer replacer) { }
 
     @Test
-    public void testData() {
+    void testData() {
         // PUT flag with ID id1
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG1.id(),
                 "{\n" +
@@ -96,8 +94,8 @@ public class FlagsHandlerTest {
                 "", "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}]}");
 
         // Verify absent port => absent in response
-        assertThat(handleWithPort(Method.GET, -1, "/data", "", 200),
-                is("{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com/flags/v1/data/id1\"}]}"));
+        assertEquals(handleWithPort(Method.GET, -1, "/data", "", 200),
+                "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com/flags/v1/data/id1\"}]}");
 
         // PUT id2
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG2.id(),
@@ -163,25 +161,24 @@ public class FlagsHandlerTest {
     }
 
     @Test
-    public void testForcing() {
-        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef"), "", 400),
-                containsString("There is no flag 'undef'"));
+    void testForcing() {
+        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef"), "", 400)).contains("There is no flag 'undef'");
 
-        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef") + "?force=true", "", 400),
-                containsString("No content to map due to end-of-input"));
+        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef") + "?force=true", "", 400)).
+                contains("No content to map due to end-of-input");
 
-        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{}", 400),
-                containsString("Flag ID missing"));
+        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{}", 400)).
+                contains("Flag ID missing");
 
-        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 400),
-                containsString("Wrong type of JsonNode: STRING"));
+        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 400)).
+                contains("Wrong type of JsonNode: STRING");
 
-        assertThat(handle(Method.PUT, "/data/" + FLAG1.id() + "?force=true", "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 200),
-                is(""));
+        assertEquals(handle(Method.PUT, "/data/" + FLAG1.id() + "?force=true", "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 200),
+                "");
     }
 
     private void verifySuccessfulRequest(Method method, String pathSuffix, String requestBody, String expectedResponseBody) {
-        assertThat(handle(method, pathSuffix, requestBody, 200), is(expectedResponseBody));
+        assertEquals(handle(method, pathSuffix, requestBody, 200), expectedResponseBody);
     }
 
     private String handle(Method method, String pathSuffix, String requestBody, int expectedStatus) {

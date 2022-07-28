@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.jdisc.test.TestTimer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.file.Files;
@@ -16,9 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,7 +27,7 @@ public class ProcessFactoryImplTest {
     private final ProcessFactoryImpl processFactory = new ProcessFactoryImpl(starter, timer);
 
     @Test
-    public void testSpawn() {
+    void testSpawn() {
         CommandLine commandLine = mock(CommandLine.class);
         when(commandLine.getArguments()).thenReturn(List.of("program"));
         when(commandLine.getRedirectStderrToStdoutInsteadOfDiscard()).thenReturn(true);
@@ -53,17 +51,22 @@ public class ProcessFactoryImplTest {
     }
 
     @Test
-    public void testSpawnWithPersistentOutputFile() {
+    void testSpawnWithPersistentOutputFile() {
 
         class TemporaryFile implements AutoCloseable {
             private final Path path;
+
             private TemporaryFile() {
                 String outputFileName = ProcessFactoryImplTest.class.getSimpleName() + "-temporary-test-file.out";
                 FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(
                         PosixFilePermissions.fromString("rw-------"));
                 path = uncheck(() -> Files.createTempFile(outputFileName, ".out", fileAttribute));
             }
-            @Override public void close() { uncheck(() -> Files.deleteIfExists(path)); }
+
+            @Override
+            public void close() {
+                uncheck(() -> Files.deleteIfExists(path));
+            }
         }
 
         try (TemporaryFile outputPath = new TemporaryFile()) {

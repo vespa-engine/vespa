@@ -6,11 +6,11 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests rank profile imported model evaluation
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class MlModelsTest {
 
     @Test
-    public void testMl_serving() throws IOException {
+    void testMl_serving() throws IOException {
         Path appDir = Path.fromString("src/test/cfg/application/ml_models");
         Path storedAppDir = appDir.append("copy");
         try {
@@ -31,9 +31,9 @@ public class MlModelsTest {
             storedAppDir.toFile().mkdirs();
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+                    storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.SCHEMAS_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.SCHEMAS_DIR).toFile());
+                    storedAppDir.append(ApplicationPackage.SCHEMAS_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester("ml_models", storedAppDir);
             verify(storedTester.createVespaModel());
         }
@@ -44,8 +44,7 @@ public class MlModelsTest {
     }
 
     private void verify(VespaModel model) {
-        assertEquals("Global models are created (although not used directly here)",
-                     3, model.rankProfileList().getRankProfiles().size());
+        assertEquals(3, model.rankProfileList().getRankProfiles().size(), "Global models are created (although not used directly here)");
 
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         model.getSearchClusters().get(0).getConfig(builder);

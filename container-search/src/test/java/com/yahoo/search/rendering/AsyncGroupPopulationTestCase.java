@@ -13,7 +13,7 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test adding hits to a hit group during rendering.
@@ -98,7 +98,7 @@ public class AsyncGroupPopulationTestCase {
     }
 
     @Test
-    public final void test() throws InterruptedException, ExecutionException,
+    final void test() throws InterruptedException, ExecutionException,
             IOException {
         String rawExpected = "{"
                 + "    \"root\": {"

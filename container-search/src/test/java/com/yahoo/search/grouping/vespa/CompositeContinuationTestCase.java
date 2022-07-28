@@ -2,11 +2,11 @@
 package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class CompositeContinuationTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         CompositeContinuation cnt = new CompositeContinuation();
         Iterator<EncodableContinuation> it = cnt.iterator();
         assertFalse(it.hasNext());
@@ -37,51 +37,51 @@ public class CompositeContinuationTestCase {
     }
 
     @Test
-    public void requireThatCompositeContinuationsAreFlattened() {
+    void requireThatCompositeContinuationsAreFlattened() {
         assertEncode("BCBCBCBEBGBCBKCBACBKCCK",
-                     newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
+                newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
         assertEncode("BCBBBBBDBFBCBJBPCBJCCJ",
-                     newComposite(newComposite(newOffset(-1, -1, -2, -3)), newComposite(newOffset(-5, -8, -13, -21))));
+                newComposite(newComposite(newOffset(-1, -1, -2, -3)), newComposite(newOffset(-5, -8, -13, -21))));
     }
 
     @Test
-    public void requireThatEmptyStringCanBeDecoded() {
+    void requireThatEmptyStringCanBeDecoded() {
         assertDecode("", new CompositeContinuation());
     }
 
     @Test
-    public void requireThatCompositeContinuationsCanBeDecoded() {
+    void requireThatCompositeContinuationsCanBeDecoded() {
         assertDecode("BCBCBCBEBGBCBKCBACBKCCK",
-                     newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
+                newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
         assertDecode("BCBBBBBDBFBCBJBPCBJCCJ",
-                     newComposite(newOffset(-1, -1, -2, -3), newOffset(-5, -8, -13, -21)));
+                newComposite(newOffset(-1, -1, -2, -3), newOffset(-5, -8, -13, -21)));
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(newComposite().hashCode(), newComposite().hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         CompositeContinuation cnt = newComposite();
-        assertFalse(cnt.equals(new Object()));
+        assertNotEquals(cnt, new Object());
         assertEquals(cnt, newComposite());
-        assertFalse(cnt.equals(newComposite(newOffset(1, 1, 2, 3))));
-        assertFalse(cnt.equals(newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21))));
-        assertFalse(cnt.equals(newComposite(newOffset(5, 8, 13, 21))));
+        assertNotEquals(cnt, newComposite(newOffset(1, 1, 2, 3)));
+        assertNotEquals(cnt, newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
+        assertNotEquals(cnt, newComposite(newOffset(5, 8, 13, 21)));
 
         cnt = newComposite(newOffset(1, 1, 2, 3));
-        assertFalse(cnt.equals(new Object()));
+        assertNotEquals(cnt, new Object());
         assertEquals(cnt, newComposite(newOffset(1, 1, 2, 3)));
-        assertFalse(cnt.equals(newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21))));
-        assertFalse(cnt.equals(newComposite(newOffset(5, 8, 13, 21))));
+        assertNotEquals(cnt, newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
+        assertNotEquals(cnt, newComposite(newOffset(5, 8, 13, 21)));
 
         cnt = newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21));
-        assertFalse(cnt.equals(new Object()));
-        assertFalse(cnt.equals(newComposite(newOffset(1, 1, 2, 3))));
+        assertNotEquals(cnt, new Object());
+        assertNotEquals(cnt, newComposite(newOffset(1, 1, 2, 3)));
         assertEquals(cnt, newComposite(newOffset(1, 1, 2, 3), newOffset(5, 8, 13, 21)));
-        assertFalse(cnt.equals(newComposite(newOffset(5, 8, 13, 21))));
+        assertNotEquals(cnt, newComposite(newOffset(5, 8, 13, 21)));
     }
 
     private static CompositeContinuation newComposite(EncodableContinuation... children) {

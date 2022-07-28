@@ -7,10 +7,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests that properties can not be set even if they are native, if declared not settable in the query profile
@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 public class NativePropertiesTestCase {
 
     @Test
-    public void testNativeInStrict() {
+    void testNativeInStrict() {
         QueryProfileType strictType = new QueryProfileType("strict");
         strictType.setStrict(true);
         QueryProfile strict = new QueryProfile("profile");
@@ -39,7 +39,7 @@ public class NativePropertiesTestCase {
         } catch (IllegalArgumentException e) {
             // As expected.
             assertTrue(Exceptions.toMessageString(e).contains(
-                            "Could not set 'notnative' to '5':"
+                    "Could not set 'notnative' to '5':"
                             + " 'notnative' is not declared in query profile type 'strict', and the type is strict"));
         }
     }

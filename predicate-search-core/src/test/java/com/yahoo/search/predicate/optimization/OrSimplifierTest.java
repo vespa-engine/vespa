@@ -2,18 +2,18 @@
 package com.yahoo.search.predicate.optimization;
 
 import com.yahoo.document.predicate.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrSimplifierTest {
 
     @Test
-    public void require_that_or_with_feature_sets_of_same_key_is_simplified_to_single_feature_set() {
+    void require_that_or_with_feature_sets_of_same_key_is_simplified_to_single_feature_set() {
         Predicate p =
                 or(
                         feature("key1").inSet("value1", "value4"),
@@ -24,7 +24,7 @@ public class OrSimplifierTest {
     }
 
     @Test
-    public void require_that_or_with_feature_sets_of_different_keys_is_simplified() {
+    void require_that_or_with_feature_sets_of_different_keys_is_simplified() {
         Predicate p =
                 or(
                         feature("key1").inSet("value1", "value3"),
@@ -39,7 +39,7 @@ public class OrSimplifierTest {
     }
 
     @Test
-    public void require_that_conversion_is_recursive_and_cascades() {
+    void require_that_conversion_is_recursive_and_cascades() {
         Predicate p =
                 or(
                         feature("key1").inSet("value1", "value4"),
@@ -52,7 +52,7 @@ public class OrSimplifierTest {
     }
 
     @Test
-    public void require_that_or_below_and_is_converted() {
+    void require_that_or_below_and_is_converted() {
         Predicate p =
                 and(
                         or(
@@ -67,7 +67,7 @@ public class OrSimplifierTest {
     }
 
     @Test
-    public void require_that_or_below_not_is_converted() {
+    void require_that_or_below_not_is_converted() {
         Predicate p =
                 not(
                         or(
@@ -78,7 +78,7 @@ public class OrSimplifierTest {
     }
 
     @Test
-    public void require_that_non_feature_set_nodes_are_left_untouched() {
+    void require_that_non_feature_set_nodes_are_left_untouched() {
         Predicate p =
                 or(
                         feature("key1").inSet("value1"),

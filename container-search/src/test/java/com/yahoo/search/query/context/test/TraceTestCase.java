@@ -3,15 +3,15 @@ package com.yahoo.search.query.context.test;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Steinar Knutsen
@@ -19,8 +19,8 @@ import static org.junit.Assert.assertTrue;
 public class TraceTestCase {
 
     @Test
-    public void testBasicTracing() {
-        Query query=new Query();
+    void testBasicTracing() {
+        Query query = new Query();
         QueryContext h = query.getContext(true);
         h.trace("first message", 0);
         h.trace("second message", 0);
@@ -28,8 +28,8 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testCloning() throws IOException {
-        Query query=new Query();
+    void testCloning() throws IOException {
+        Query query = new Query();
         QueryContext h = query.getContext(true);
         h.trace("first message", 0);
         QueryContext h2 = query.clone().getContext(true);
@@ -49,19 +49,19 @@ public class TraceTestCase {
         assertEquals(toplevel, finishedBelow);
         // basic sanity test
         assertEquals("trace: [ [ " +
-                     "first message second message third message " +
-                     "fourth message fifth message ] ]",h.toString());
+                "first message second message third message " +
+                "fourth message fifth message ] ]", h.toString());
         Iterator<String> i = h.getTrace().traceNode().root().descendants(String.class).iterator();
-        assertEquals("first message",i.next());
-        assertEquals("second message",i.next());
-        assertEquals("third message",i.next());
-        assertEquals("fourth message",i.next());
-        assertEquals("fifth message",i.next());
+        assertEquals("first message", i.next());
+        assertEquals("second message", i.next());
+        assertEquals("third message", i.next());
+        assertEquals("fourth message", i.next());
+        assertEquals("fifth message", i.next());
     }
 
     @Test
-    public void testEmpty() throws IOException {
-        Query query=new Query();
+    void testEmpty() throws IOException {
+        Query query = new Query();
         QueryContext h = query.getContext(true);
         Writer w = new StringWriter();
         h.render(w);
@@ -69,20 +69,20 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testEmptySubSequence() {
-        Query query=new Query();
+    void testEmptySubSequence() {
+        Query query = new Query();
         QueryContext h = query.getContext(true);
         query.clone().getContext(true);
         Writer w = new StringWriter();
         try {
             h.render(w);
         } catch (IOException e) {
-            assertTrue("rendering empty subsequence crashed", false);
+            assertTrue(false, "rendering empty subsequence crashed");
         }
     }
 
     @Test
-    public void testAttachedTraces() throws IOException {
+    void testAttachedTraces() throws IOException {
         String needle0 = "nalle";
         String needle1 = "tralle";
         String needle2 = "trolle";
@@ -101,10 +101,10 @@ public class TraceTestCase {
         int tralle = trace.indexOf(needle1);
         int trolle = trace.indexOf(needle2);
         int bamse = trace.indexOf(needle3);
-        assertTrue("Could not find first manual context to main query.", nalle > 0);
-        assertTrue("Could not find second manual context to main query.", bamse > 0);
-        assertTrue("Could not find first manual context to attached query.", tralle > 0);
-        assertTrue("Could not find second manual context to attached query.", trolle > 0);
+        assertTrue(nalle > 0, "Could not find first manual context to main query.");
+        assertTrue(bamse > 0, "Could not find second manual context to main query.");
+        assertTrue(tralle > 0, "Could not find first manual context to attached query.");
+        assertTrue(trolle > 0, "Could not find second manual context to attached query.");
     }
 
 }

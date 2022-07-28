@@ -3,15 +3,15 @@ package com.yahoo.jdisc.handler;
 
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.test.NonWorkingContentChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertSame;
 public class FutureResponseTestCase {
 
     @Test
-    public void requireThatCancelIsUnsupported() {
+    void requireThatCancelIsUnsupported() {
         FutureResponse future = new FutureResponse();
         assertFalse(future.isCancelled());
         try {
@@ -39,7 +39,7 @@ public class FutureResponseTestCase {
     }
 
     @Test
-    public void requireThatCompletionIsDoneWhenHandlerIsCalled() {
+    void requireThatCompletionIsDoneWhenHandlerIsCalled() {
         FutureResponse future = new FutureResponse();
         assertFalse(future.isDone());
         future.handleResponse(new Response(69));
@@ -47,7 +47,7 @@ public class FutureResponseTestCase {
     }
 
     @Test
-    public void requireThatResponseBecomesAvailable() throws Exception {
+    void requireThatResponseBecomesAvailable() throws Exception {
         FutureResponse future = new FutureResponse();
         try {
             future.get(0, TimeUnit.MILLISECONDS);
@@ -61,7 +61,7 @@ public class FutureResponseTestCase {
     }
 
     @Test
-    public void requireThatResponseContentIsReturnedToCaller() throws Exception {
+    void requireThatResponseContentIsReturnedToCaller() throws Exception {
         ContentChannel content = new NonWorkingContentChannel();
         FutureResponse future = new FutureResponse(content);
         Response response = new Response(Response.Status.OK);
@@ -69,7 +69,7 @@ public class FutureResponseTestCase {
     }
 
     @Test
-    public void requireThatResponseCanBeListenedTo() throws InterruptedException {
+    void requireThatResponseCanBeListenedTo() throws InterruptedException {
         FutureResponse response = new FutureResponse();
         RunnableLatch listener = new RunnableLatch();
         response.addListener(listener, Runnable::run);

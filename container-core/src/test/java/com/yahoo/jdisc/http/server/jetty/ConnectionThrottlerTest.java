@@ -6,11 +6,11 @@ import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.statistic.RateStatistic;
 import org.eclipse.jetty.util.thread.Scheduler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,14 +23,14 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 public class ConnectionThrottlerTest {
 
     @Test
-    public void throttles_when_any_resource_check_exceeds_configured_threshold() {
+    void throttles_when_any_resource_check_exceeds_configured_threshold() {
         Runtime runtime = mock(Runtime.class);
         when(runtime.maxMemory()).thenReturn(100l);
         RateStatistic rateStatistic = new RateStatistic(1, TimeUnit.HOURS);
         MockScheduler scheduler = new MockScheduler();
         ConnectorConfig.Throttling config = new ConnectorConfig.Throttling(new ConnectorConfig.Throttling.Builder()
-                                                                                   .maxHeapUtilization(0.8)
-                                                                                   .maxAcceptRate(1));
+                .maxHeapUtilization(0.8)
+                .maxAcceptRate(1));
 
         AbstractConnector connector = mock(AbstractConnector.class);
 

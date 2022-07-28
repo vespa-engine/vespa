@@ -15,13 +15,11 @@ import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for using the content model to create indexed search clusters.
@@ -111,7 +109,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireMultipleDocumentTypes() {
+    void requireMultipleDocumentTypes() {
         VespaModelCreatorWithMockPkg creator = getIndexedVespaModelCreator();
         VespaModel model = creator.create();
         DeployState deployState = creator.deployState;
@@ -126,7 +124,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireIndexedOnlyServices() {
+    void requireIndexedOnlyServices() {
         VespaModel model = getIndexedVespaModel();
         // TODO
         // HostResource h = model.getHostSystem().getHosts().get(0);
@@ -155,7 +153,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireProtonStreamingOnly() {
+    void requireProtonStreamingOnly() {
         VespaModel model = getStreamingVespaModel();
         // TODO
         // HostResource h = model.getHostSystem().getHosts().get(0);
@@ -173,7 +171,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireCorrectClusterList() {
+    void requireCorrectClusterList() {
         VespaModel model = getStreamingVespaModel();
         ContentCluster s = model.getContentClusters().get("test");
         assertNotNull(s);
@@ -185,38 +183,38 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void testContentSummaryStore() {
-        String services=
+    void testContentSummaryStore() {
+        String services =
                 "<services version='1.0'>" +
-                "<admin version='2.0'><adminserver hostalias='node0' /></admin>" +
-                "<content id='docstore' version='1.0'>\n" +
-                "    <redundancy>1</redundancy>\n" +
-                "    <documents>\n" +
-                "      <document mode='index' type='docstorebench'/>\n" +
-                "    </documents>\n" +
-                "    <group>\n" +
-                "      <node distribution-key='0' hostalias='node0'/>\n" +
-                "    </group>\n" +
-                "    <engine>\n" +
-                "      <proton>\n" +
-                "        <searchable-copies>1</searchable-copies>\n" +
-                "        <tuning>\n" +
-                "          <searchnode>\n" +
-                "            <summary>\n" +
-                "              <store>\n" +
-                "                <logstore>\n" +
-                "                  <chunk>\n" +
-                "                    <maxsize>2048</maxsize>\n" +
-                "                  </chunk>\n" +
-                "                </logstore>\n" +
-                "              </store>\n" +
-                "            </summary>\n" +
-                "          </searchnode>\n" +
-                "        </tuning>\n" +
-                "      </proton>\n" +
-                "    </engine>\n" +
-                "  </content>\n" +
-                "  </services>";
+                        "<admin version='2.0'><adminserver hostalias='node0' /></admin>" +
+                        "<content id='docstore' version='1.0'>\n" +
+                        "    <redundancy>1</redundancy>\n" +
+                        "    <documents>\n" +
+                        "      <document mode='index' type='docstorebench'/>\n" +
+                        "    </documents>\n" +
+                        "    <group>\n" +
+                        "      <node distribution-key='0' hostalias='node0'/>\n" +
+                        "    </group>\n" +
+                        "    <engine>\n" +
+                        "      <proton>\n" +
+                        "        <searchable-copies>1</searchable-copies>\n" +
+                        "        <tuning>\n" +
+                        "          <searchnode>\n" +
+                        "            <summary>\n" +
+                        "              <store>\n" +
+                        "                <logstore>\n" +
+                        "                  <chunk>\n" +
+                        "                    <maxsize>2048</maxsize>\n" +
+                        "                  </chunk>\n" +
+                        "                </logstore>\n" +
+                        "              </store>\n" +
+                        "            </summary>\n" +
+                        "          </searchnode>\n" +
+                        "        </tuning>\n" +
+                        "      </proton>\n" +
+                        "    </engine>\n" +
+                        "  </content>\n" +
+                        "  </services>";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("docstorebench");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
@@ -225,21 +223,21 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void testMixedIndexAndStoreOnly() {
-        String services=
+    void testMixedIndexAndStoreOnly() {
+        String services =
                 "<services version='1.0'>" +
-                "  <admin version='2.0'><adminserver hostalias='node0' /></admin>" +
-                "  <content id='docstore' version=\"1.0\">" +
-                "    <redundancy>1</redundancy>" +
-                "    <documents>" +
-                "      <document type=\"index_me\" mode=\"index\"/>" +
-                "      <document type=\"store_me\" mode=\"store-only\"/>" +
-                "    </documents>" +
-                "    <group>" +
-                "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
-                "    </group>" +
-                "  </content>" +
-                "</services>";
+                        "  <admin version='2.0'><adminserver hostalias='node0' /></admin>" +
+                        "  <content id='docstore' version=\"1.0\">" +
+                        "    <redundancy>1</redundancy>" +
+                        "    <documents>" +
+                        "      <document type=\"index_me\" mode=\"index\"/>" +
+                        "      <document type=\"store_me\" mode=\"store-only\"/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                        "    </group>" +
+                        "  </content>" +
+                        "</services>";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("index_me", "store_me");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
@@ -254,7 +252,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
+    void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
         VespaModel model = getIndexedVespaModel();
         ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertEquals("container/container.0", cluster.getContainers().get(0).getConfigId());

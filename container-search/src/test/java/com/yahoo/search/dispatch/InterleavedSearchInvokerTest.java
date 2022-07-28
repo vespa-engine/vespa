@@ -20,7 +20,7 @@ import com.yahoo.searchlib.aggregation.MinAggregationResult;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -38,11 +38,7 @@ import java.util.stream.StreamSupport;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author ollivir
@@ -55,7 +51,7 @@ public class InterleavedSearchInvokerTest {
     private final List<SearchInvoker> invokers = new ArrayList<>();
 
     @Test
-    public void requireThatAdaptiveTimeoutsAreNotUsedWithFullCoverageRequirement() throws IOException {
+    void requireThatAdaptiveTimeoutsAreNotUsedWithFullCoverageRequirement() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), 1, 3);
         SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 3);
 
@@ -65,11 +61,11 @@ public class InterleavedSearchInvokerTest {
 
         invoker.search(query, null);
 
-        assertTrue("All test scenario events processed", expectedEvents.isEmpty());
+        assertTrue(expectedEvents.isEmpty(), "All test scenario events processed");
     }
 
     @Test
-    public void requireThatTimeoutsAreNotMarkedAsAdaptive() throws IOException {
+    void requireThatTimeoutsAreNotMarkedAsAdaptive() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), 1, 3);
         SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 3);
 
@@ -79,15 +75,15 @@ public class InterleavedSearchInvokerTest {
 
         Result result = invoker.search(query, null);
 
-        assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNull("Result is not marked as an error", result.hits().getErrorHit());
+        assertTrue(expectedEvents.isEmpty(), "All test scenario events processed");
+        assertNull(result.hits().getErrorHit(), "Result is not marked as an error");
         var message = findTrace(result, "Backend communication timeout");
-        assertTrue("Timeout should be reported in a trace message", message.isPresent());
-        assertTrue("Degradation reason is a normal timeout", result.getCoverage(false).isDegradedByTimeout());
+        assertTrue(message.isPresent(), "Timeout should be reported in a trace message");
+        assertTrue(result.getCoverage(false).isDegradedByTimeout(), "Degradation reason is a normal timeout");
     }
 
     @Test
-    public void requireThatAdaptiveTimeoutDecreasesTimeoutWhenCoverageIsReached() throws IOException {
+    void requireThatAdaptiveTimeoutDecreasesTimeoutWhenCoverageIsReached() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(50.0), 1, 4);
         SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 4);
 
@@ -98,15 +94,15 @@ public class InterleavedSearchInvokerTest {
 
         Result result = invoker.search(query, null);
 
-        assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNull("Result is not marked as an error", result.hits().getErrorHit());
+        assertTrue(expectedEvents.isEmpty(), "All test scenario events processed");
+        assertNull(result.hits().getErrorHit(), "Result is not marked as an error");
         var message = findTrace(result, "Backend communication timeout");
-        assertTrue("Timeout should be reported in a trace message", message.isPresent());
-        assertTrue("Degradataion reason is an adaptive timeout", result.getCoverage(false).isDegradedByAdapativeTimeout());
+        assertTrue(message.isPresent(), "Timeout should be reported in a trace message");
+        assertTrue(result.getCoverage(false).isDegradedByAdapativeTimeout(), "Degradataion reason is an adaptive timeout");
     }
 
     @Test
-    public void requireCorrectCoverageCalculationWhenAllNodesOk() throws IOException {
+    void requireCorrectCoverageCalculationWhenAllNodesOk() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
         invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
@@ -127,7 +123,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireCorrectCoverageCalculationWhenResultsAreLimitedByMatchPhase() throws IOException {
+    void requireCorrectCoverageCalculationWhenResultsAreLimitedByMatchPhase() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(10101, 50155, 50155, 1, 1, DEGRADED_BY_MATCH_PHASE)));
         invokers.add(new MockInvoker(1, createCoverage(13319, 49845, 49845, 1, 1, DEGRADED_BY_MATCH_PHASE)));
@@ -149,11 +145,11 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireCorrectCoverageCalculationWhenResultsAreLimitedBySoftTimeout() throws IOException {
+    void requireCorrectCoverageCalculationWhenResultsAreLimitedBySoftTimeout() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(5000, 50155, 50155, 1, 1, DEGRADED_BY_TIMEOUT)));
         invokers.add(new MockInvoker(1, createCoverage(4900, 49845, 49845, 1, 1, DEGRADED_BY_TIMEOUT)));
-        SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()),0);
+        SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 0);
 
         expectedEvents.add(new Event(null, 100, 0));
         expectedEvents.add(new Event(null, 200, 1));
@@ -171,7 +167,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireCorrectCoverageCalculationWhenOneNodeIsUnexpectedlyDown() throws IOException {
+    void requireCorrectCoverageCalculationWhenOneNodeIsUnexpectedlyDown() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
         invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
@@ -231,13 +227,13 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatTopKProbabilityOverrideTakesEffect() throws IOException {
+    void requireThatTopKProbabilityOverrideTakesEffect() throws IOException {
         validateThatTopKProbabilityOverrideTakesEffect(null, 8, new Group(0, List.of()));
         validateThatTopKProbabilityOverrideTakesEffect(0.8, 7, new Group(0, List.of()));
     }
 
     @Test
-    public void requireThatTopKProbabilityOverrideIsDisabledOnContentSkew() throws IOException {
+    void requireThatTopKProbabilityOverrideIsDisabledOnContentSkew() throws IOException {
         Node node0 = new Node(0, "host0", 0);
         Node node1 = new Node(1, "host1", 0);
         Group group = new Group(0, List.of(node0, node1));
@@ -249,7 +245,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatTopKProbabilityOverrideIsDisabledOnLittleContent() throws IOException {
+    void requireThatTopKProbabilityOverrideIsDisabledOnLittleContent() throws IOException {
         Node node0 = new Node(0, "host0", 0);
         Node node1 = new Node(1, "host1", 0);
         Group group = new Group(0, List.of(node0, node1));
@@ -261,7 +257,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
+    void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
         InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, new Group(0, List.of()));
         query.setHits(12);
         Result result = invoker.search(query, null);
@@ -281,7 +277,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatMergeOfConcreteHitsObeyOffset() throws IOException {
+    void requireThatMergeOfConcreteHitsObeyOffset() throws IOException {
         InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, new Group(0, List.of()));
         query.setHits(3);
         query.setOffset(5);
@@ -303,7 +299,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatMergeOfConcreteHitsObeyOffsetWithAuxilliaryStuff() throws IOException {
+    void requireThatMergeOfConcreteHitsObeyOffsetWithAuxilliaryStuff() throws IOException {
         InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5Aux, B5Aux, new Group(0, List.of()));
         query.setHits(3);
         query.setOffset(5);
@@ -327,7 +323,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireThatGroupingsAreMerged() throws IOException {
+    void requireThatGroupingsAreMerged() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         List<SearchInvoker> invokers = new ArrayList<>();
 
@@ -386,7 +382,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
-    public void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpected() throws IOException {
+    void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpected() throws IOException {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
         Coverage errorCoverage = new Coverage(0, 0, 0);
@@ -468,7 +464,7 @@ public class InterleavedSearchInvokerTest {
 
         public SearchInvoker process(Query query, long currentTimeout) {
             if (expectedTimeout != null) {
-                assertEquals("Expecting timeout to be " + expectedTimeout, (long) expectedTimeout, currentTimeout);
+                assertEquals((long) expectedTimeout, currentTimeout, "Expecting timeout to be " + expectedTimeout);
             }
             clock.advance(Duration.ofMillis(delay));
             if (query.getTimeLeft() < 0) {

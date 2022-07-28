@@ -1,12 +1,12 @@
 package com.yahoo.jdisc.core;
 
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -15,8 +15,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for {@link ExportPackages}.
@@ -49,22 +49,22 @@ public class ExportPackagesIT {
             "javax.activation.jar"
     ).map(f -> JAR_PATH + f).toList();
 
-    @ClassRule
-    public static TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    public static File tempFolder;
 
     @Test
-    public void exported_packages_are_not_changed_unintentionally() throws Exception {
+    void exported_packages_are_not_changed_unintentionally() throws Exception {
         Properties actualProperties = getPropertiesFromFile(createPropertiesFile());
         String actualValue = actualProperties.getProperty(ExportPackages.EXPORT_PACKAGES);
-        assertNotNull("Missing exportPackages property in file.", actualValue);
+        assertNotNull(actualValue, "Missing exportPackages property in file.");
 
         Properties expectedProperties = getPropertiesFromFile(expectedExportPackages);
         String expectedValue = expectedProperties.getProperty(ExportPackages.EXPORT_PACKAGES);
-        assertNotNull("Missing exportPackages property in file.", expectedValue);
+        assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
         Set<String> actualPackages = getPackages(actualValue);
         Set<String> expectedPackages = getPackages(expectedValue);
-        if (! actualPackages.equals(expectedPackages)) {
+        if (!actualPackages.equals(expectedPackages)) {
             StringBuilder message = getDiff(actualPackages, expectedPackages);
             message.append("\n\nIf this test fails due to an intentional change in exported packages, run the following command:\n")
                     .append("$ cp jdisc_core/target/classes/exportPackages.properties jdisc_core/src/test/resources/")
@@ -116,7 +116,7 @@ public class ExportPackagesIT {
     }
 
     private static File createPropertiesFile() throws IOException {
-        File file = tempFolder.newFile(ExportPackages.PROPERTIES_FILE);
+        File file = Paths.get(tempFolder.toString(), ExportPackages.PROPERTIES_FILE).toFile();
         String[] args = Stream.concat(Stream.of(file.getAbsolutePath()),
                                       RE_EXPORTED_BUNDLES.stream()).toArray(String[]::new);
         ExportPackages.main(args);

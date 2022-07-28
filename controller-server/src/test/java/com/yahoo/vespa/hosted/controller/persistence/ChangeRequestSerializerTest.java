@@ -6,13 +6,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author olaa
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class ChangeRequestSerializerTest {
 
     @Test
-    public void reserialization_equality() {
+    void reserialization_equality() {
         var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, ZonedDateTime.now(), ZonedDateTime.now());
         var actionPlan = List.of(
                 new HostAction("host1", HostAction.State.RETIRING, Instant.now()),

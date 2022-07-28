@@ -10,13 +10,13 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class NotificationsSerializerTest {
 
     @Test
-    public void serialization_test() throws IOException {
+    void serialization_test() throws IOException {
         NotificationsSerializer serializer = new NotificationsSerializer();
         TenantName tenantName = TenantName.from("tenant1");
         List<Notification> notifications = List.of(
@@ -42,20 +42,20 @@ public class NotificationsSerializerTest {
         Slime serialized = serializer.toSlime(notifications);
         assertEquals("{\"notifications\":[" +
                 "{" +
-                    "\"at\":1234000," +
-                    "\"type\":\"applicationPackage\"," +
-                    "\"level\":\"warning\"," +
-                    "\"messages\":[\"Something something deprecated...\"]," +
-                    "\"application\":\"app1\"" +
+                "\"at\":1234000," +
+                "\"type\":\"applicationPackage\"," +
+                "\"level\":\"warning\"," +
+                "\"messages\":[\"Something something deprecated...\"]," +
+                "\"application\":\"app1\"" +
                 "},{" +
-                    "\"at\":2345000," +
-                    "\"type\":\"deployment\"," +
-                    "\"level\":\"error\"," +
-                    "\"messages\":[\"Failed to deploy: Node allocation failure\"]," +
-                    "\"application\":\"app1\"," +
-                    "\"instance\":\"instance1\"," +
-                    "\"jobId\":\"test.us-east-1\"," +
-                    "\"runNumber\":12" +
+                "\"at\":2345000," +
+                "\"type\":\"deployment\"," +
+                "\"level\":\"error\"," +
+                "\"messages\":[\"Failed to deploy: Node allocation failure\"]," +
+                "\"application\":\"app1\"," +
+                "\"instance\":\"instance1\"," +
+                "\"jobId\":\"test.us-east-1\"," +
+                "\"runNumber\":12" +
                 "}]}", new String(SlimeUtils.toJsonBytes(serialized)));
 
         List<Notification> deserialized = serializer.fromSlime(tenantName, serialized);

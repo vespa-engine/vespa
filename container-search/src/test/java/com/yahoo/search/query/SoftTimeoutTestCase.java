@@ -2,8 +2,9 @@
 package com.yahoo.search.query;
 
 import com.yahoo.search.Query;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -11,7 +12,7 @@ import static org.junit.Assert.*;
 public class SoftTimeoutTestCase {
 
     @Test
-    public void testDefaultsInQuery() {
+    void testDefaultsInQuery() {
         Query query = new Query("?query=test");
         assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertNull(query.getRanking().getSoftTimeout().getFactor());
@@ -19,7 +20,7 @@ public class SoftTimeoutTestCase {
     }
 
     @Test
-    public void testQueryOverride() {
+    void testQueryOverride() {
         Query query = new Query("?query=test&ranking.softtimeout.factor=0.7&ranking.softtimeout.tailcost=0.3");
         assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertEquals(Double.valueOf(0.7), query.getRanking().getSoftTimeout().getFactor());
@@ -31,16 +32,16 @@ public class SoftTimeoutTestCase {
     }
 
     @Test
-    public void testDisable() {
-        Query query=new Query("?query=test&ranking.softtimeout.enable=false");
+    void testDisable() {
+        Query query = new Query("?query=test&ranking.softtimeout.enable=false");
         assertFalse(query.getRanking().getSoftTimeout().getEnable());
         query.prepare();
         assertEquals("false", query.getRanking().getProperties().get("vespa.softtimeout.enable").get(0));
     }
 
     @Test
-    public void testEnable() {
-        Query query=new Query("?query=test&ranking.softtimeout.enable=true");
+    void testEnable() {
+        Query query = new Query("?query=test&ranking.softtimeout.enable=true");
         assertTrue(query.getRanking().getSoftTimeout().getEnable());
         query.prepare();
         assertEquals("true", query.getRanking().getProperties().get("vespa.softtimeout.enable").get(0));
@@ -57,7 +58,7 @@ public class SoftTimeoutTestCase {
     }
 
     @Test
-    public void testLimits() {
+    void testLimits() {
         verifyException("factor", "-0.1");
         verifyException("factor", "1.1");
         verifyException("tailcost", "-0.1");

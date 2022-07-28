@@ -7,13 +7,10 @@ import com.yahoo.schema.processing.ImportedFieldsResolver;
 import com.yahoo.schema.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Schema tests that don't depend on files.
@@ -23,17 +20,17 @@ import static org.junit.Assert.fail;
 public class SchemaTestCase {
 
     @Test
-    public void testValidationOfInheritedSchema() throws ParseException {
+    void testValidationOfInheritedSchema() throws ParseException {
         try {
             String schema = joinLines(
                     "schema test inherits nonesuch {" +
-                    "  document test inherits nonesuch {" +
-                    "  }" +
-                    "}");
+                            "  document test inherits nonesuch {" +
+                            "  }" +
+                            "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
-                         logger.entries.get(0).message);
+                    logger.entries.get(0).message);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -42,129 +39,129 @@ public class SchemaTestCase {
     }
 
     @Test
-    public void testValidationOfSchemaAndDocumentInheritanceConsistency() throws ParseException {
+    void testValidationOfSchemaAndDocumentInheritanceConsistency() throws ParseException {
         try {
             String parent = joinLines(
                     "schema parent {" +
-                    "  document parent {" +
-                    "    field pf1 type string {" +
-                    "      indexing: summary" +
-                    "    }" +
-                    "  }" +
-                    "}");
+                            "  document parent {" +
+                            "    field pf1 type string {" +
+                            "      indexing: summary" +
+                            "    }" +
+                            "  }" +
+                            "}");
             String child = joinLines(
                     "schema child inherits parent {" +
-                    "  document child {" +
-                    "    field cf1 type string {" +
-                    "      indexing: summary" +
-                    "    }" +
-                    "  }" +
-                    "}");
+                            "  document child {" +
+                            "    field cf1 type string {" +
+                            "      indexing: summary" +
+                            "    }" +
+                            "  }" +
+                            "}");
             ApplicationBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
-                         "but its document type does not inherit the parent's document type"
-                         , e.getMessage());
+                    "but its document type does not inherit the parent's document type"
+            , e.getMessage());
         }
     }
 
     @Test
-    public void testSchemaInheritance() throws ParseException {
+    void testSchemaInheritance() throws ParseException {
         String parentLines = joinLines(
                 "schema parent {" +
-                "  document parent {" +
-                "    field pf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  fieldset parent_set {" +
-                "    fields: pf1" +
-                "  }" +
-                "  stemming: none" +
-                "  index parent_index {" +
-                "    stemming: best" +
-                "  }" +
-                "  field parent_field type string {" +
-                "      indexing: input pf1 | lowercase | index | attribute | summary" +
-                "  }" +
-                "  rank-profile parent_profile {" +
-                "  }" +
-                "  constant parent_constant {" +
-                "    file: constants/my_constant_tensor_file.json" +
-                "    type: tensor<float>(x{},y{})" +
-                "  }" +
-                "  onnx-model parent_model {" +
-                "    file: models/my_model.onnx" +
-                "  }" +
-                "  document-summary parent_summary {" +
-                "    summary pf1 type string {}" +
-                "  }" +
-                "  import field parentschema_ref.name as parent_imported {}" +
-                "  raw-as-base64-in-summary" +
-                "}");
+                        "  document parent {" +
+                        "    field pf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  fieldset parent_set {" +
+                        "    fields: pf1" +
+                        "  }" +
+                        "  stemming: none" +
+                        "  index parent_index {" +
+                        "    stemming: best" +
+                        "  }" +
+                        "  field parent_field type string {" +
+                        "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                        "  }" +
+                        "  rank-profile parent_profile {" +
+                        "  }" +
+                        "  constant parent_constant {" +
+                        "    file: constants/my_constant_tensor_file.json" +
+                        "    type: tensor<float>(x{},y{})" +
+                        "  }" +
+                        "  onnx-model parent_model {" +
+                        "    file: models/my_model.onnx" +
+                        "  }" +
+                        "  document-summary parent_summary {" +
+                        "    summary pf1 type string {}" +
+                        "  }" +
+                        "  import field parentschema_ref.name as parent_imported {}" +
+                        "  raw-as-base64-in-summary" +
+                        "}");
         String child1Lines = joinLines(
                 "schema child1 inherits parent {" +
-                "  document child1 inherits parent {" +
-                "    field c1f1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  fieldset child1_set {" +
-                "    fields: c1f1, pf1" +
-                "  }" +
-                "  stemming: shortest" +
-                "  index child1_index {" +
-                "    stemming: shortest" +
-                "  }" +
-                "  field child1_field type string {" +
-                "      indexing: input pf1 | lowercase | index | attribute | summary" +
-                "  }" +
-                "  rank-profile child1_profile inherits parent_profile {" +
-                "    constants {" +
-                "      child1_constant tensor<float>(x{},y{}): file:constants/my_constant_tensor_file.json" +
-                "    }" +
-                "  }" +
-                "  onnx-model child1_model {" +
-                "    file: models/my_model.onnx" +
-                "  }" +
-                "  document-summary child1_summary inherits parent_summary {" +
-                "    summary c1f1 type string {}" +
-                "  }" +
-                "  import field parentschema_ref.name as child1_imported {}" +
-                "}");
+                        "  document child1 inherits parent {" +
+                        "    field c1f1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  fieldset child1_set {" +
+                        "    fields: c1f1, pf1" +
+                        "  }" +
+                        "  stemming: shortest" +
+                        "  index child1_index {" +
+                        "    stemming: shortest" +
+                        "  }" +
+                        "  field child1_field type string {" +
+                        "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                        "  }" +
+                        "  rank-profile child1_profile inherits parent_profile {" +
+                        "    constants {" +
+                        "      child1_constant tensor<float>(x{},y{}): file:constants/my_constant_tensor_file.json" +
+                        "    }" +
+                        "  }" +
+                        "  onnx-model child1_model {" +
+                        "    file: models/my_model.onnx" +
+                        "  }" +
+                        "  document-summary child1_summary inherits parent_summary {" +
+                        "    summary c1f1 type string {}" +
+                        "  }" +
+                        "  import field parentschema_ref.name as child1_imported {}" +
+                        "}");
         String child2Lines = joinLines(
                 "schema child2 inherits parent {" +
-                "  document child2 inherits parent {" +
-                "    field c2f1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  fieldset child2_set {" +
-                "    fields: c2f1, pf1" +
-                "  }" +
-                "  stemming: shortest" +
-                "  index child2_index {" +
-                "    stemming: shortest" +
-                "  }" +
-                "  field child2_field type string {" +
-                "      indexing: input pf1 | lowercase | index | attribute | summary" +
-                "  }" +
-                "  rank-profile child2_profile inherits parent_profile {" +
-                "  }" +
-                "  constant child2_constant {" +
-                "    file: constants/my_constant_tensor_file.json" +
-                "    type: tensor<float>(x{},y{})" +
-                "  }" +
-                "  onnx-model child2_model {" +
-                "    file: models/my_model.onnx" +
-                "  }" +
-                "  document-summary child2_summary inherits parent_summary {" +
-                "    summary c2f1 type string {}" +
-                "  }" +
-                "  import field parentschema_ref.name as child2_imported {}" +
-                "}");
+                        "  document child2 inherits parent {" +
+                        "    field c2f1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  fieldset child2_set {" +
+                        "    fields: c2f1, pf1" +
+                        "  }" +
+                        "  stemming: shortest" +
+                        "  index child2_index {" +
+                        "    stemming: shortest" +
+                        "  }" +
+                        "  field child2_field type string {" +
+                        "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                        "  }" +
+                        "  rank-profile child2_profile inherits parent_profile {" +
+                        "  }" +
+                        "  constant child2_constant {" +
+                        "    file: constants/my_constant_tensor_file.json" +
+                        "    type: tensor<float>(x{},y{})" +
+                        "  }" +
+                        "  onnx-model child2_model {" +
+                        "    file: models/my_model.onnx" +
+                        "  }" +
+                        "  document-summary child2_summary inherits parent_summary {" +
+                        "    summary c2f1 type string {}" +
+                        "  }" +
+                        "  import field parentschema_ref.name as child2_imported {}" +
+                        "}");
 
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
@@ -259,55 +256,55 @@ public class SchemaTestCase {
     }
 
     @Test
-    public void testSchemaInheritanceEmptyChildren() throws ParseException {
+    void testSchemaInheritanceEmptyChildren() throws ParseException {
         String parentLines = joinLines(
                 "schema parent {" +
-                "  document parent {" +
-                "    field pf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "  fieldset parent_set {" +
-                "    fields: pf1" +
-                "  }" +
-                "  stemming: none" +
-                "  index parent_index {" +
-                "    stemming: best" +
-                "  }" +
-                "  field parent_field type string {" +
-                "      indexing: input pf1 | lowercase | index | attribute | summary" +
-                "  }" +
-                "  rank-profile parent_profile {" +
-                "  }" +
-                "  constant parent_constant {" +
-                "    file: constants/my_constant_tensor_file.json" +
-                "    type: tensor<float>(x{},y{})" +
-                "  }" +
-                "  onnx-model parent_model {" +
-                "    file: models/my_model.onnx" +
-                "  }" +
-                "  document-summary parent_summary {" +
-                "    summary pf1 type string {}" +
-                "  }" +
-                "  import field parentschema_ref.name as parent_imported {}" +
-                "  raw-as-base64-in-summary" +
-                "}");
+                        "  document parent {" +
+                        "    field pf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "  fieldset parent_set {" +
+                        "    fields: pf1" +
+                        "  }" +
+                        "  stemming: none" +
+                        "  index parent_index {" +
+                        "    stemming: best" +
+                        "  }" +
+                        "  field parent_field type string {" +
+                        "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                        "  }" +
+                        "  rank-profile parent_profile {" +
+                        "  }" +
+                        "  constant parent_constant {" +
+                        "    file: constants/my_constant_tensor_file.json" +
+                        "    type: tensor<float>(x{},y{})" +
+                        "  }" +
+                        "  onnx-model parent_model {" +
+                        "    file: models/my_model.onnx" +
+                        "  }" +
+                        "  document-summary parent_summary {" +
+                        "    summary pf1 type string {}" +
+                        "  }" +
+                        "  import field parentschema_ref.name as parent_imported {}" +
+                        "  raw-as-base64-in-summary" +
+                        "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
-                "  document child inherits parent {" +
-                "    field cf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "}");
+                        "  document child inherits parent {" +
+                        "    field cf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "}");
         String grandchildLines = joinLines(
                 "schema grandchild inherits child {" +
-                "  document grandchild inherits child {" +
-                "    field gf1 type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "  }" +
-                "}");
+                        "  document grandchild inherits child {" +
+                        "    field gf1 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "  }" +
+                        "}");
 
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
@@ -323,100 +320,100 @@ public class SchemaTestCase {
     }
 
     @Test
-    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed1() throws ParseException {
+    void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed1() throws ParseException {
         try {
             String profile = joinLines(
                     "schema test {" +
-                    "  document test {" +
-                    "    field title type string {" +
-                    "      indexing: summary" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r1 {" +
-                    "    first-phase {" +
-                    "      expression: fieldMatch(title)" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r2 {" +
-                    "    first-phase {" +
-                    "      expression: fieldMatch(title)" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r3 inherits r1, r2 {" +
-                    "  }" +
-                    "}");
+                            "  document test {" +
+                            "    field title type string {" +
+                            "      indexing: summary" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r1 {" +
+                            "    first-phase {" +
+                            "      expression: fieldMatch(title)" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r2 {" +
+                            "    first-phase {" +
+                            "      expression: fieldMatch(title)" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r3 inherits r1, r2 {" +
+                            "  }" +
+                            "}");
             ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Only one of the profiles inherited by rank profile 'r3' can contain first-phase expression, but it is present in multiple",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsAllowedWhenDefinedInChild() throws ParseException {
+    void testInheritingMultipleRankProfilesWithOverlappingConstructsIsAllowedWhenDefinedInChild() throws ParseException {
         String profile = joinLines(
                 "schema test {" +
-                "  document test {" +
-                "    field title type string {" +
-                "      indexing: summary" +
-                "    }" +
-                "    field myFilter type string {" +
-                "      indexing: attribute\n" +
-                "      rank: filter" +
-                "    }" +
-                "  }" +
-                "  rank-profile r1 {" +
-                "    first-phase {" +
-                "      expression: fieldMatch(title)" +
-                "    }" +
-                "  }" +
-                "  rank-profile r2 {" +
-                "    first-phase {" +
-                "      expression: fieldMatch(title)" +
-                "    }" +
-                "  }" +
-                "  rank-profile r3 inherits r1, r2 {" +
-                "    first-phase {" + // Redefined here so this does not cause failure
-                "      expression: nativeRank" +
-                "    }" +
-                "  }" +
-                "}");
+                        "  document test {" +
+                        "    field title type string {" +
+                        "      indexing: summary" +
+                        "    }" +
+                        "    field myFilter type string {" +
+                        "      indexing: attribute\n" +
+                        "      rank: filter" +
+                        "    }" +
+                        "  }" +
+                        "  rank-profile r1 {" +
+                        "    first-phase {" +
+                        "      expression: fieldMatch(title)" +
+                        "    }" +
+                        "  }" +
+                        "  rank-profile r2 {" +
+                        "    first-phase {" +
+                        "      expression: fieldMatch(title)" +
+                        "    }" +
+                        "  }" +
+                        "  rank-profile r3 inherits r1, r2 {" +
+                        "    first-phase {" + // Redefined here so this does not cause failure
+                        "      expression: nativeRank" +
+                        "    }" +
+                        "  }" +
+                        "}");
         var builder = ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
         var r3 = builder.getRankProfileRegistry().resolve(builder.application().schemas().get("test").getDocument(), "r3");
         assertEquals(1, r3.allFilterFields().size());
     }
 
     @Test
-    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed2() throws ParseException {
+    void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed2() throws ParseException {
         try {
             String profile = joinLines(
                     "schema test {" +
-                    "  document test {" +
-                    "    field title type string {" +
-                    "      indexing: summary" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r1 {" +
-                    "    function f1() {" +
-                    "      expression: fieldMatch(title)" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r2 {" +
-                    "    function f1() {" +
-                    "      expression: fieldMatch(title)" +
-                    "    }" +
-                    "  }" +
-                    "  rank-profile r3 inherits r1, r2 {" +
-                    "  }" +
-                    "}");
+                            "  document test {" +
+                            "    field title type string {" +
+                            "      indexing: summary" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r1 {" +
+                            "    function f1() {" +
+                            "      expression: fieldMatch(title)" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r2 {" +
+                            "    function f1() {" +
+                            "      expression: fieldMatch(title)" +
+                            "    }" +
+                            "  }" +
+                            "  rank-profile r3 inherits r1, r2 {" +
+                            "  }" +
+                            "}");
             ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("rank profile 'r3' inherits rank profile 'r2' which contains function 'f1', but this function is already defined in another profile this inherits",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 

@@ -18,7 +18,7 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.App
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -39,8 +39,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -48,15 +48,15 @@ import static org.junit.Assert.assertTrue;
 public class MetricsProxyContainerClusterTest {
 
     @Test
-    public void metrics_proxy_bundle_is_included_in_bundles_config() {
+    void metrics_proxy_bundle_is_included_in_bundles_config() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         PlatformBundlesConfig config = model.getConfig(PlatformBundlesConfig.class, CLUSTER_CONFIG_ID);
         assertTrue(config.bundlePaths().stream()
-                           .anyMatch(p -> p.equals(METRICS_PROXY_BUNDLE_FILE.toString())));
+                .anyMatch(p -> p.equals(METRICS_PROXY_BUNDLE_FILE.toString())));
     }
 
     @Test
-    public void unnecessary_bundles_are_not_installed() {
+    void unnecessary_bundles_are_not_installed() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         PlatformBundlesConfig config = model.getConfig(PlatformBundlesConfig.class, CLUSTER_CONFIG_ID);
 
@@ -67,11 +67,11 @@ public class MetricsProxyContainerClusterTest {
                 ).map(Path::toString).collect(toSet());
 
         assertTrue(config.bundlePaths().stream()
-                            .noneMatch(unnecessaryBundles::contains));
+                .noneMatch(unnecessaryBundles::contains));
     }
 
     @Test
-    public void cluster_is_prepared_so_that_application_metadata_config_is_produced() {
+    void cluster_is_prepared_so_that_application_metadata_config_is_produced() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         ApplicationMetadataConfig config = model.getConfig(ApplicationMetadataConfig.class, CLUSTER_CONFIG_ID);
         assertEquals(MockApplicationPackage.APPLICATION_GENERATION, config.generation());
@@ -79,7 +79,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void http_handlers_are_set_up() {
+    void http_handlers_are_set_up() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         Collection<Handler> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
         Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).collect(toList());
@@ -91,7 +91,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void hosted_application_propagates_application_dimensions() {
+    void hosted_application_propagates_application_dimensions() {
         VespaModel hostedModel = getModel(servicesWithAdminOnly(), hosted);
         ApplicationDimensionsConfig config = getApplicationDimensionsConfig(hostedModel);
 
@@ -105,7 +105,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void all_nodes_are_included_in_metrics_nodes_config() {
+    void all_nodes_are_included_in_metrics_nodes_config() {
         VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
         MetricsNodesConfig config = getMetricsNodesConfig(hostedModel);
         assertEquals(2, config.node().size());

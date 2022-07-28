@@ -30,7 +30,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,9 +50,7 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.applic
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -60,7 +58,7 @@ import static org.junit.Assert.assertTrue;
 public class ContainerClusterTest {
 
     @Test
-    public void requireThatClusterInfoIsPopulated() {
+    void requireThatClusterInfoIsPopulated() {
         ApplicationContainerCluster cluster = newContainerCluster();
         ClusterInfoConfig config = getClusterInfoConfig(cluster);
         assertEquals("name", config.clusterId());
@@ -81,7 +79,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void search_and_docproc_bundles_are_not_installed_for_plain_application_clusters() {
+    void search_and_docproc_bundles_are_not_installed_for_plain_application_clusters() {
         ApplicationContainerCluster cluster = newContainerCluster();
 
         var bundleBuilder = new PlatformBundlesConfig.Builder();
@@ -91,7 +89,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void search_and_docproc_bundles_are_installed_for_application_clusters_with_search() {
+    void search_and_docproc_bundles_are_installed_for_application_clusters_with_search() {
         ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(false), false, null);
 
         var bundleBuilder = new PlatformBundlesConfig.Builder();
@@ -101,10 +99,10 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatWeCanGetTheZoneConfig() {
+    void requireThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
-                                                     .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
-                                                     .build();
+                .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
+                .build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster<?> cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -128,17 +126,17 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
+    void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         boolean hosted = true;
         boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, null, 70);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, !combined, null, 70);
         verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, null, 18);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, null, 0);
-        
+        verifyHeapSizeAsPercentageOfPhysicalMemory(!hosted, !combined, null, 0);
+
         // Explicit value overrides all defaults
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, 67, 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, !combined, 67, 67);
         verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, 68, 68);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, 69, 69);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(!hosted, !combined, 69, 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {
@@ -174,7 +172,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void testClusterControllerResourceUsage() {
+    void testClusterControllerResourceUsage() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(cluster, "host-c1", root.getDeployState());
@@ -194,7 +192,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void search_and_docproc_bundles_are_not_installed_for_cluster_controllers() {
+    void search_and_docproc_bundles_are_not_installed_for_cluster_controllers() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
 
@@ -205,7 +203,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
+    void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(cluster, "host-c1", root.getDeployState());
@@ -220,7 +218,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatJvmArgsControlWorksForHostedAndNot() {
+    void requireThatJvmArgsControlWorksForHostedAndNot() {
         verifyJvmArgs(true, false);
         verifyJvmArgs(true, true);
         verifyJvmArgs(false, false);
@@ -228,7 +226,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
+    void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
         // Empty option if option not set in property
         MockRoot root = createRoot(new DeployState.Builder().build());
         ApplicationContainerCluster cluster = newClusterWithSearch(root);
@@ -246,7 +244,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatWeCanHandleNullJvmOptions() {
+    void requireThatWeCanHandleNullJvmOptions() {
         MockRoot root = createRoot(false);
         ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
@@ -258,7 +256,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatNonHostedUsesExpectedDefaultThreadpoolConfiguration() {
+    void requireThatNonHostedUsesExpectedDefaultThreadpoolConfiguration() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
@@ -270,7 +268,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void container_cluster_has_default_threadpool_provider() {
+    void container_cluster_has_default_threadpool_provider() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
@@ -284,7 +282,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void config_for_default_threadpool_provider_scales_with_node_resources_in_hosted() {
+    void config_for_default_threadpool_provider_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
@@ -301,7 +299,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void jetty_threadpool_scales_with_node_resources_in_hosted() {
+    void jetty_threadpool_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
@@ -318,22 +316,22 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatBundlesForTesterApplicationAreInstalled() {
+    void requireThatBundlesForTesterApplicationAreInstalled() {
         List<String> expectedOnpremBundles =
                 List.of("vespa-testrunner-components-jar-with-dependencies.jar",
                         "vespa-osgi-testrunner-jar-with-dependencies.jar",
                         "tenant-cd-api-jar-with-dependencies.jar");
         verifyTesterApplicationInstalledBundles(Zone.defaultZone(), expectedOnpremBundles);
-        
+
         List<String> expectedPublicBundles = new ArrayList<>(expectedOnpremBundles);
         expectedPublicBundles.add("cloud-tenant-cd-jar-with-dependencies.jar");
         Zone publicZone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
         verifyTesterApplicationInstalledBundles(publicZone, expectedPublicBundles);
-        
+
     }
 
     @Test
-    public void requireCuratorConfig() {
+    void requireCuratorConfig() {
         DeployState state = new DeployState.Builder().build();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
@@ -343,12 +341,12 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         CuratorConfig config = configBuilder.build();
         assertEquals(List.of("host-c1", "host-c2"),
-                     config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
+                config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
         assertTrue(config.zookeeperLocalhostAffinity());
     }
 
     @Test
-    public void requireZooKeeperServerConfig() {
+    void requireZooKeeperServerConfig() {
         DeployState state = new DeployState.Builder().build();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
@@ -365,67 +363,67 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         assertEquals(0, configBuilder.build().myid());
         assertEquals(List.of("host-c1", "host-c2", "host-c3"),
-                     configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
+                configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
 
     }
 
     @Test
-    public void generatesCorrectRoutingInfo() {
+    void generatesCorrectRoutingInfo() {
         // main system:
         assertNames(main,
-                    ApplicationId.from("t1", "a1", "i1"),
-                    Set.of(),
-                    List.of("search-cluster.i1.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "i1"),
+                Set.of(),
+                List.of("search-cluster.i1.a1.t1.endpoint.suffix"));
 
         assertNames(main,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(),
-                    List.of("search-cluster.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(),
+                List.of("search-cluster.a1.t1.endpoint.suffix"));
 
         assertNames(main,
-                    ApplicationId.from("t1", "default", "default"),
-                    Set.of(),
-                    List.of("search-cluster.default.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "default", "default"),
+                Set.of(),
+                List.of("search-cluster.default.t1.endpoint.suffix"));
 
         assertNames(main,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
-                    List.of("search-cluster.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
+                List.of("search-cluster.a1.t1.endpoint.suffix"));
 
         assertNames(main,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
-                           new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4)),
-                    List.of("search-cluster.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
+                        new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4)),
+                List.of("search-cluster.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
 
         // cd system:
         assertNames(cd,
-                    ApplicationId.from("t1", "a1", "i1"),
-                    Set.of(),
-                    List.of("search-cluster.cd.i1.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "i1"),
+                Set.of(),
+                List.of("search-cluster.cd.i1.a1.t1.endpoint.suffix"));
 
         assertNames(cd,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(),
-                    List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
 
         assertNames(cd,
-                    ApplicationId.from("t1", "default", "default"),
-                    Set.of(),
-                    List.of("search-cluster.cd.default.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "default", "default"),
+                Set.of(),
+                List.of("search-cluster.cd.default.t1.endpoint.suffix"));
 
         assertNames(cd,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
-                    List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
 
         assertNames(cd,
-                    ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
-                           new ContainerEndpoint("search-cluster", global, List.of("a.b.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), shared),
-                           new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
-                           new ContainerEndpoint("not-supported", global, List.of("not.supported"), OptionalInt.empty(), exclusive)),
-                    List.of("search-cluster.cd.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
+                        new ContainerEndpoint("search-cluster", global, List.of("a.b.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), shared),
+                        new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
+                        new ContainerEndpoint("not-supported", global, List.of("not.supported"), OptionalInt.empty(), exclusive)),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
 
     }
 
@@ -457,7 +455,7 @@ public class ContainerClusterTest {
 
     private void assertNames(List<String> expectedNames, List<ApplicationClusterEndpoint> endpoints) {
         assertEquals(expectedNames.size(), endpoints.size());
-        expectedNames.forEach(expected -> assertTrue("Endpoint not matched " + expected + " was: " + endpoints, endpoints.stream().anyMatch(e -> Objects.equals(e.dnsName().value(), expected))));
+        expectedNames.forEach(expected -> assertTrue(endpoints.stream().anyMatch(e -> Objects.equals(e.dnsName().value(), expected)), "Endpoint not matched " + expected + " was: " + endpoints));
     }
 
     private boolean endpointsMatch(ContainerEndpoint configuredEndpoint, List<ApplicationClusterEndpoint> clusterEndpoints) {

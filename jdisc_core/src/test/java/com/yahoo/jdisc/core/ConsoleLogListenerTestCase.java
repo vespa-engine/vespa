@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
@@ -11,7 +11,7 @@ import org.osgi.service.log.LogService;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vikas Panwar
@@ -22,7 +22,7 @@ public class ConsoleLogListenerTestCase {
     private static final String PROCESS_ID = ConsoleLogListener.getProcessId();
 
     @Test
-    public void requireThatLogLevelParserKnowsOsgiLogLevels() {
+    void requireThatLogLevelParserKnowsOsgiLogLevels() {
         assertEquals(LogService.LOG_ERROR, ConsoleLogListener.parseLogLevel("ERROR"));
         assertEquals(LogService.LOG_WARNING, ConsoleLogListener.parseLogLevel("WARNING"));
         assertEquals(LogService.LOG_INFO, ConsoleLogListener.parseLogLevel("INFO"));
@@ -30,31 +30,31 @@ public class ConsoleLogListenerTestCase {
     }
 
     @Test
-    public void requireThatLogLevelParserKnowsOff() {
+    void requireThatLogLevelParserKnowsOff() {
         assertEquals(Integer.MIN_VALUE, ConsoleLogListener.parseLogLevel("OFF"));
     }
 
     @Test
-    public void requireThatLogLevelParserKnowsAll() {
+    void requireThatLogLevelParserKnowsAll() {
         assertEquals(Integer.MAX_VALUE, ConsoleLogListener.parseLogLevel("ALL"));
     }
 
     @Test
-    public void requireThatLogLevelParserKnowsIntegers() {
+    void requireThatLogLevelParserKnowsIntegers() {
         for (int i = -69; i < 69; ++i) {
             assertEquals(i, ConsoleLogListener.parseLogLevel(String.valueOf(i)));
         }
     }
 
     @Test
-    public void requireThatLogLevelParserErrorsReturnDefault() {
+    void requireThatLogLevelParserErrorsReturnDefault() {
         assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel(null));
         assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel(""));
         assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel("foo"));
     }
 
     @Test
-    public void requireThatLogEntryWithLevelAboveThresholdIsNotOutput() {
+    void requireThatLogEntryWithLevelAboveThresholdIsNotOutput() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         LogListener listener = new ConsoleLogListener(new PrintStream(out), null, "5");
         for (int i = 0; i < 10; ++i) {
@@ -62,12 +62,12 @@ public class ConsoleLogListenerTestCase {
         }
         // TODO: Should use ConsoleLogFormatter.ABSENCE_REPLACEMENT instead of literal '-'. See ticket 7128315.
         assertEquals("0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n" +
-                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\terror\tmessage\n" +
-                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\twarning\tmessage\n" +
-                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tinfo\tmessage\n" +
-                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tdebug\tmessage\n" +
-                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n",
-                     out.toString());
+                "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\terror\tmessage\n" +
+                "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\twarning\tmessage\n" +
+                "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tinfo\tmessage\n" +
+                "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tdebug\tmessage\n" +
+                "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n",
+                out.toString());
     }
 
     private static class MyEntry implements LogEntry {

@@ -10,9 +10,9 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporarySDField;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author geirst
@@ -21,7 +21,7 @@ public class VsmFieldsTestCase {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void reference_type_field_is_unsearchable() {
+    void reference_type_field_is_unsearchable() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         var sdoc = new SDDocumentType("test");
         schema.addDocument(sdoc);

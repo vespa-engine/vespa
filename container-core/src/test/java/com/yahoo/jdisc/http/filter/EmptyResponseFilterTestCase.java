@@ -7,13 +7,13 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.filter.chain.EmptyResponseFilter;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static com.yahoo.jdisc.http.HttpRequest.Version;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 public class EmptyResponseFilterTestCase {
 
     @Test
-    public void requireThatEmptyFilterDoesNothing() throws Exception {
+    void requireThatEmptyFilterDoesNothing() throws Exception {
         final HttpRequest request = newRequest(Method.GET, "/status.html", Version.HTTP_1_1);
         final HttpResponse lhs = HttpResponse.newInstance(Response.Status.OK);
         final HttpResponse rhs = HttpResponse.newInstance(Response.Status.OK);

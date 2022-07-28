@@ -2,13 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports;
 
 import com.yahoo.test.json.JsonTestHelper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport.Type.SOFT_FAIL;
 import static com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport.Type.UNSPECIFIED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -18,7 +16,7 @@ public class BaseReportTest {
     private static final String JSON_2 = "{\"createdMillis\": 1, \"description\": \"desc\", \"type\": \"SOFT_FAIL\"}";
 
     @Test
-    public void testSerialization1() {
+    void testSerialization1() {
         JsonTestHelper.assertJsonEquals(new BaseReport(1L, "desc", SOFT_FAIL).toJsonNode(),
                 JSON_2);
         JsonTestHelper.assertJsonEquals(new BaseReport(null, "desc", SOFT_FAIL).toJsonNode(),
@@ -39,7 +37,7 @@ public class BaseReportTest {
     }
 
     @Test
-    public void testShouldUpdate() {
+    void testShouldUpdate() {
         BaseReport report = new BaseReport(1L, "desc", SOFT_FAIL);
         assertFalse(report.updates(report));
 
@@ -58,7 +56,7 @@ public class BaseReportTest {
     }
 
     @Test
-    public void testJsonSerialization() {
+    void testJsonSerialization() {
         BaseReport report = BaseReport.fromJson(JSON_2);
         assertEquals(1L, (long) report.getCreatedMillisOrNull());
         assertEquals("desc", report.getDescriptionOrNull());
@@ -67,9 +65,9 @@ public class BaseReportTest {
     }
 
     @Test
-    public void testUnspecifiedType() {
+    void testUnspecifiedType() {
         BaseReport report = new BaseReport(1L, "desc", null);
-        assertEquals(null, report.getTypeOrNull());
+        assertNull(report.getTypeOrNull());
         assertEquals(UNSPECIFIED, report.getType());
     }
 }

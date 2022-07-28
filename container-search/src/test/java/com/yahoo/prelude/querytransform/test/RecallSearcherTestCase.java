@@ -16,12 +16,9 @@ import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,7 +26,7 @@ import static org.junit.Assert.fail;
 public class RecallSearcherTestCase {
 
     @Test
-    public void testIgnoreEmptyProperty() {
+    void testIgnoreEmptyProperty() {
         RecallSearcher searcher = new RecallSearcher();
         Query query = new Query();
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
@@ -38,7 +35,7 @@ public class RecallSearcherTestCase {
     }
 
     @Test
-    public void testDenyRankItems() {
+    void testDenyRankItems() {
         RecallSearcher searcher = new RecallSearcher();
         Query query = new Query("?recall=foo");
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
@@ -46,7 +43,7 @@ public class RecallSearcherTestCase {
     }
 
     @Test
-    public void testParse() {
+    void testParse() {
         List<String> empty = new ArrayList<>();
         assertQueryTree("?query=foo", Arrays.asList("foo"), empty);
         assertQueryTree("?recall=%2bfoo", empty, Arrays.asList("foo"));

@@ -2,14 +2,12 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.messagebus.test.SimpleMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class SequencerTestCase {
 
     @Test
-    public void testSyncNone() {
+    void testSyncNone() {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);
@@ -49,7 +47,7 @@ public class SequencerTestCase {
     }
 
     @Test
-    public void testSyncId() {
+    void testSyncId() {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);

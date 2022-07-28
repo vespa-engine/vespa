@@ -8,13 +8,11 @@ import com.yahoo.search.pagetemplates.model.MapChoice;
 import com.yahoo.search.pagetemplates.model.Placeholder;
 import com.yahoo.search.pagetemplates.model.Section;
 import com.yahoo.search.pagetemplates.model.Source;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -24,13 +22,13 @@ public class MapPageTemplateXMLReadingTestCase {
     private String root="src/test/java/com/yahoo/search/pagetemplates/config/test/examples/mapexamples/";
 
     @Test
-    public void testMap1() {
-        PageTemplateRegistry registry=new PageTemplateXMLReader().read(root);
+    void testMap1() {
+        PageTemplateRegistry registry = new PageTemplateXMLReader().read(root);
         assertCorrectMap1(registry.getComponent("map1"));
     }
 
     private void assertCorrectMap1(PageTemplate page) {
-        assertNotNull("map1 was read",page);
+        assertNotNull(page,"map1 was read");
         Section root=page.getSection();
         assertTrue(((Section)((Section)root.elements(Section.class).get(0)).elements(Section.class).get(0)).elements().get(0) instanceof Placeholder);
         assertTrue(((Section)((Section)root.elements(Section.class).get(0)).elements(Section.class).get(1)).elements().get(0) instanceof Placeholder);

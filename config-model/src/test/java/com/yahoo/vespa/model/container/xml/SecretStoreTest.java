@@ -12,14 +12,14 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author tokle
@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 public class SecretStoreTest  extends ContainerModelBuilderTestBase {
 
     @Test
-    public void secret_store_can_be_set_up() {
+    void secret_store_can_be_set_up() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secret-store type='oath-ckms'>",
@@ -41,7 +41,7 @@ public class SecretStoreTest  extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cloud_secret_store_requires_configured_secret_store() {
+    void cloud_secret_store_requires_configured_secret_store() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secret-store type='cloud'>",
@@ -64,7 +64,7 @@ public class SecretStoreTest  extends ContainerModelBuilderTestBase {
 
 
     @Test
-    public void cloud_secret_store_can_be_set_up() {
+    void cloud_secret_store_can_be_set_up() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secret-store type='cloud'>",
@@ -97,7 +97,7 @@ public class SecretStoreTest  extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cloud_secret_store_fails_to_set_up_in_non_public_zone() {
+    void cloud_secret_store_fails_to_set_up_in_non_public_zone() {
         try {
             Element clusterElem = DomBuilderTest.parse(
                     "<container version='1.0'>",
@@ -118,7 +118,7 @@ public class SecretStoreTest  extends ContainerModelBuilderTestBase {
             createModel(root, state, null, clusterElem);
         } catch (RuntimeException e) {
             assertEquals("Cloud secret store is not supported in non-public system, see the documentation",
-                         e.getMessage());
+                    e.getMessage());
             return;
         }
         fail();

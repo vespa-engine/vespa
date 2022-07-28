@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yahoo.component.chain.Chain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleImporter;
@@ -14,9 +16,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author bratseth
@@ -50,47 +50,47 @@ public class BacktrackingTestCase {
     // Literal terms ---------------
 
     @Test
-    public void testMultilevelBacktrackingLiteralTerms() {
-        assertSemantics("WEAKAND(100) replaced","word1 word2 word5 word8");
+    void testMultilevelBacktrackingLiteralTerms() {
+        assertSemantics("WEAKAND(100) replaced", "word1 word2 word5 word8");
     }
 
     @Test
-    public void testMultilevelBacktrackingWontReorderOthertermsLiteralTerms() {
-        assertSemantics("WEAKAND(100) other1 other2 other3 replaced","other1 other2 other3 word1 word2 word5 word8");
+    void testMultilevelBacktrackingWontReorderOthertermsLiteralTerms() {
+        assertSemantics("WEAKAND(100) other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5 word8");
     }
 
     @Test
-    public void testMultilevelBacktrackingWithMulticompoundMatchLiteralTerms() {
-        assertSemantics("WEAKAND(100) other1 other2 other3 replaced","other1 other2 other3 word1 word2 word5-word8");
+    void testMultilevelBacktrackingWithMulticompoundMatchLiteralTerms() {
+        assertSemantics("WEAKAND(100) other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5-word8");
     }
 
     @Test
-    public void testMultilevelBacktrackingPreservePartialMatchBeforeLiteralTerms() {
-        assertSemantics("WEAKAND(100) word1 word2 word5 replaced","word1 word2 word5 word1 word2 word5 word8");
+    void testMultilevelBacktrackingPreservePartialMatchBeforeLiteralTerms() {
+        assertSemantics("WEAKAND(100) word1 word2 word5 replaced", "word1 word2 word5 word1 word2 word5 word8");
     }
 
     @Test
-    public void testMultilevelBacktrackingPreservePartialMatchAfterLiteralTerms() {
-        assertSemantics("WEAKAND(100) replaced word1 word2 word5","word1 word2 word5 word8 word1 word2 word5 ");
+    void testMultilevelBacktrackingPreservePartialMatchAfterLiteralTerms() {
+        assertSemantics("WEAKAND(100) replaced word1 word2 word5", "word1 word2 word5 word8 word1 word2 word5 ");
     }
 
     // reference terms ---------------
 
     @Test
-    public void testMultilevelBacktrackingReferenceTerms() {
-        assertSemantics("WEAKAND(100) ref:ref1 ref:ref2 ref:ref5 ref:ref8","ref1 ref2 ref5 ref8");
+    void testMultilevelBacktrackingReferenceTerms() {
+        assertSemantics("WEAKAND(100) ref:ref1 ref:ref2 ref:ref5 ref:ref8", "ref1 ref2 ref5 ref8");
     }
 
     @Test
-    public void testMultilevelBacktrackingPreservePartialMatchBeforeReferenceTerms() {
+    void testMultilevelBacktrackingPreservePartialMatchBeforeReferenceTerms() {
         assertSemantics("WEAKAND(100) ref1 ref2 ref5 ref:ref1 ref:ref2 ref:ref5 ref:ref8",
-                        "ref1 ref2 ref5 ref1 ref2 ref5 ref8");
+                "ref1 ref2 ref5 ref1 ref2 ref5 ref8");
     }
 
     @Test
-    public void testMultilevelBacktrackingPreservePartialMatchAfterReferenceTerms() {
+    void testMultilevelBacktrackingPreservePartialMatchAfterReferenceTerms() {
         assertSemantics("WEAKAND(100) ref:ref1 ref:ref2 ref:ref5 ref:ref8 ref1 ref2 ref5",
-                        "ref1 ref2 ref5 ref8 ref1 ref2 ref5");
+                "ref1 ref2 ref5 ref8 ref1 ref2 ref5");
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {

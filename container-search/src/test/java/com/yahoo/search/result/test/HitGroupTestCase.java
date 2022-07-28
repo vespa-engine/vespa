@@ -7,17 +7,13 @@ import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -25,21 +21,21 @@ import static org.junit.Assert.assertTrue;
 public class HitGroupTestCase {
 
     @Test
-    public void testErrorsConsistencyUsingErrorOperations() {
+    void testErrorsConsistencyUsingErrorOperations() {
         HitGroup hits = new HitGroup();
 
         Query query = new Query();
         query.errors().add(ErrorMessage.createIllegalQuery("test1"));
         query.errors().add(ErrorMessage.createTimeout("test2"));
         hits.setQuery(query);
-        
+
         hits.addError(ErrorMessage.createForbidden("test3"));
         hits.addError(ErrorMessage.createUnspecifiedError("test4"));
-        
+
         assertEquals(4, hits.getErrorHit().errors().size());
         assertEquals(0, query.errors().size());
         assertEquals(Optional.of(hits.getErrorHit()), errorHitIn(hits.asList()));
-        
+
         DefaultErrorHit removedErrors = hits.removeErrorHit();
         assertNotNull(removedErrors);
         assertEquals(4, removedErrors.errors().size());
@@ -50,7 +46,7 @@ public class HitGroupTestCase {
     }
 
     @Test
-    public void testErrorsConsistencyUsingHitOperations() {
+    void testErrorsConsistencyUsingHitOperations() {
         HitGroup hits = new HitGroup();
 
         Query query = new Query();
@@ -66,7 +62,7 @@ public class HitGroupTestCase {
         assertEquals(0, query.errors().size());
         assertEquals(Optional.of(hits.getErrorHit()), errorHitIn(hits.asList()));
 
-        DefaultErrorHit removedErrors = (DefaultErrorHit)hits.remove(errors.getId());
+        DefaultErrorHit removedErrors = (DefaultErrorHit) hits.remove(errors.getId());
         assertNotNull(removedErrors);
         assertEquals(4, removedErrors.errors().size());
         assertNull(hits.get(removedErrors.getId().toString()));
@@ -76,39 +72,39 @@ public class HitGroupTestCase {
     }
 
     @Test
-    public void testRecursiveGet() {
+    void testRecursiveGet() {
         // Level 1
-        HitGroup g1=new HitGroup();
+        HitGroup g1 = new HitGroup();
         g1.add(new Hit("1"));
 
         // Level 2
-        HitGroup g1_1=new HitGroup();
+        HitGroup g1_1 = new HitGroup();
         g1_1.add(new Hit("1.1"));
         g1.add(g1_1);
 
-        HitGroup g1_2=new HitGroup();
+        HitGroup g1_2 = new HitGroup();
         g1_2.add(new Hit("1.2"));
         g1.add(g1_2);
 
         // Level 3
-        HitGroup g1_1_1=new HitGroup();
+        HitGroup g1_1_1 = new HitGroup();
         g1_1_1.add(new Hit("1.1.1"));
         g1_1.add(g1_1_1);
 
-        HitGroup g1_1_2=new HitGroup();
+        HitGroup g1_1_2 = new HitGroup();
         g1_1_2.add(new Hit("1.1.2"));
         g1_1.add(g1_1_2);
 
-        HitGroup g1_2_1=new HitGroup();
+        HitGroup g1_2_1 = new HitGroup();
         g1_2_1.add(new Hit("1.2.1"));
         g1_2.add(g1_2_1);
 
-        HitGroup g1_2_2=new HitGroup();
+        HitGroup g1_2_2 = new HitGroup();
         g1_2_2.add(new Hit("1.2.2"));
         g1_2.add(g1_2_2);
 
         // Level 4
-        HitGroup g1_1_1_1=new HitGroup();
+        HitGroup g1_1_1_1 = new HitGroup();
         g1_1_1_1.add(new Hit("1.1.1.1"));
         g1_1_1.add(g1_1_1_1);
 
@@ -121,49 +117,49 @@ public class HitGroupTestCase {
         assertNotNull(g1.get("1.2.2"));
         assertNotNull(g1.get("1.1.1.1"));
 
-        assertNotNull(g1.get("1",-1));
-        assertNotNull(g1.get("1.1",-1));
-        assertNotNull(g1.get("1.2",-1));
-        assertNotNull(g1.get("1.1.1",-1));
-        assertNotNull(g1.get("1.1.2",-1));
-        assertNotNull(g1.get("1.2.1",-1));
-        assertNotNull(g1.get("1.2.2",-1));
-        assertNotNull(g1.get("1.1.1.1",-1));
+        assertNotNull(g1.get("1", -1));
+        assertNotNull(g1.get("1.1", -1));
+        assertNotNull(g1.get("1.2", -1));
+        assertNotNull(g1.get("1.1.1", -1));
+        assertNotNull(g1.get("1.1.2", -1));
+        assertNotNull(g1.get("1.2.1", -1));
+        assertNotNull(g1.get("1.2.2", -1));
+        assertNotNull(g1.get("1.1.1.1", -1));
 
-        assertNotNull(g1.get("1",0));
-        assertNull(g1.get("1.1",0));
-        assertNull(g1.get("1.2",0));
-        assertNull(g1.get("1.1.1",0));
-        assertNull(g1.get("1.1.2",0));
-        assertNull(g1.get("1.2.1",0));
-        assertNull(g1.get("1.2.2",0));
-        assertNull(g1.get("1.1.1.1",0));
+        assertNotNull(g1.get("1", 0));
+        assertNull(g1.get("1.1", 0));
+        assertNull(g1.get("1.2", 0));
+        assertNull(g1.get("1.1.1", 0));
+        assertNull(g1.get("1.1.2", 0));
+        assertNull(g1.get("1.2.1", 0));
+        assertNull(g1.get("1.2.2", 0));
+        assertNull(g1.get("1.1.1.1", 0));
 
-        assertNotNull(g1.get("1",1));
-        assertNotNull(g1.get("1.1",1));
-        assertNotNull(g1.get("1.2",1));
-        assertNull(g1.get("1.1.1",1));
-        assertNull(g1.get("1.1.2",1));
-        assertNull(g1.get("1.2.1",1));
-        assertNull(g1.get("1.2.2",1));
-        assertNull(g1.get("1.1.1.1",1));
+        assertNotNull(g1.get("1", 1));
+        assertNotNull(g1.get("1.1", 1));
+        assertNotNull(g1.get("1.2", 1));
+        assertNull(g1.get("1.1.1", 1));
+        assertNull(g1.get("1.1.2", 1));
+        assertNull(g1.get("1.2.1", 1));
+        assertNull(g1.get("1.2.2", 1));
+        assertNull(g1.get("1.1.1.1", 1));
 
-        assertNotNull(g1.get("1",2));
-        assertNotNull(g1.get("1.1",2));
-        assertNotNull(g1.get("1.2",2));
-        assertNotNull(g1.get("1.1.1",2));
-        assertNotNull(g1.get("1.1.2",2));
-        assertNotNull(g1.get("1.2.1",2));
-        assertNotNull(g1.get("1.2.2",2));
-        assertNull(g1.get("1.1.1.1",2));
+        assertNotNull(g1.get("1", 2));
+        assertNotNull(g1.get("1.1", 2));
+        assertNotNull(g1.get("1.2", 2));
+        assertNotNull(g1.get("1.1.1", 2));
+        assertNotNull(g1.get("1.1.2", 2));
+        assertNotNull(g1.get("1.2.1", 2));
+        assertNotNull(g1.get("1.2.2", 2));
+        assertNull(g1.get("1.1.1.1", 2));
 
-        assertNotNull(g1.get("1.1.1.1",3));
+        assertNotNull(g1.get("1.1.1.1", 3));
 
-        assertNull(g1.get("3",2));
+        assertNull(g1.get("3", 2));
     }
 
     @Test
-    public void testThatHitGroupIsUnFillable() {
+    void testThatHitGroupIsUnFillable() {
         HitGroup hg = new HitGroup("test");
         {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);
@@ -185,7 +181,7 @@ public class HitGroupTestCase {
     }
 
     @Test
-    public void testThatHitGroupIsFillable() {
+    void testThatHitGroupIsFillable() {
         HitGroup hg = new HitGroup("test");
         {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);
@@ -209,7 +205,7 @@ public class HitGroupTestCase {
     }
 
     @Test
-    public void testThatHitGroupIsFillableAfterFillableChangeunderTheHood() {
+    void testThatHitGroupIsFillableAfterFillableChangeunderTheHood() {
         HitGroup hg = new HitGroup("test");
         {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);

@@ -4,10 +4,10 @@ package com.yahoo.schema.processing;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -29,13 +29,13 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
             "}\n";
 
     @Test
-    public void testBoldOnNonString() throws ParseException {
+    void testBoldOnNonString() throws ParseException {
         try {
             ApplicationBuilder.createFromString(boldonnonstring);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("'bolding: on' for non-text field 'year4' (datatype int (code: 0)) is not allowed",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
@@ -50,13 +50,13 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
             "}\n";
 
     @Test
-    public void testBoldOnArray() throws ParseException {
+    void testBoldOnArray() throws ParseException {
         try {
             ApplicationBuilder.createFromString(boldonarray);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("'bolding: on' for non-text field 'myarray' (datatype Array<string> (code: -1486737430)) is not allowed",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 

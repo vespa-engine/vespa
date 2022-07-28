@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple;
 
-import static org.junit.Assert.*;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -10,10 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.metrics.ManagerConfig;
 
 /**
@@ -25,18 +23,18 @@ public class GaugeTest {
 
     MetricReceiver receiver;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         receiver = new MetricReceiver.MockReceiver();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         receiver = null;
     }
 
     @Test
-    public final void testSampleDouble() throws InterruptedException {
+    final void testSampleDouble() throws InterruptedException {
         final String metricName = "unitTestGauge";
         Gauge g = receiver.declareGauge(metricName);
         g.sample(1.0d);
@@ -51,7 +49,7 @@ public class GaugeTest {
     }
 
     @Test
-    public final void testSampleDoublePoint() throws InterruptedException {
+    final void testSampleDoublePoint() throws InterruptedException {
         final String metricName = "unitTestGauge";
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Gauge g = receiver.declareGauge(metricName, p);

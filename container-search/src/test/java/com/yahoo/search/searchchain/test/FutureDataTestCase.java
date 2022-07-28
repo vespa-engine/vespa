@@ -14,16 +14,15 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests using the async capabilities of the Processing parent framework of searchers.
@@ -33,16 +32,16 @@ import static org.junit.Assert.assertTrue;
 public class FutureDataTestCase {
 
     @Test
-    public void testAsyncFederation() throws InterruptedException, ExecutionException {
+    void testAsyncFederation() throws InterruptedException, ExecutionException {
         // Setup environment
         AsyncProviderSearcher asyncProviderSearcher = new AsyncProviderSearcher();
         Searcher syncProviderSearcher = new SyncProviderSearcher();
         Chain<Searcher> asyncSource = new Chain<>(new ComponentId("async"), asyncProviderSearcher);
         Chain<Searcher> syncSource = new Chain<>(new ComponentId("sync"), syncProviderSearcher);
-        SearchChainResolver searchChainResolver=
+        SearchChainResolver searchChainResolver =
                 new SearchChainResolver.Builder().addSearchChain(new ComponentId("sync"), new FederationOptions().setUseByDefault(true)).
-                                                  addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true)).
-                                                  build();
+                        addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true)).
+                        build();
         Chain<Searcher> main = new Chain<>(new FederationSearcher(new ComponentId("federator"), searchChainResolver));
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry();
         searchChainRegistry.register(main);
@@ -54,32 +53,32 @@ public class FutureDataTestCase {
         Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry)).search(query);
         assertNotNull(result);
 
-        HitGroup syncGroup = (HitGroup)result.hits().get("source:sync");
+        HitGroup syncGroup = (HitGroup) result.hits().get("source:sync");
         assertNotNull(syncGroup);
 
-        HitGroup asyncGroup = (HitGroup)result.hits().get("source:async");
+        HitGroup asyncGroup = (HitGroup) result.hits().get("source:async");
         assertNotNull(asyncGroup);
 
-        assertEquals("Got all sync data", 3, syncGroup.size());
+        assertEquals(3, syncGroup.size(), "Got all sync data");
         assertEquals("sync:0", syncGroup.get(0).getId().toString());
         assertEquals("sync:1", syncGroup.get(1).getId().toString());
         assertEquals("sync:2",  syncGroup.get(2).getId().toString());
 
-        assertTrue(asyncGroup.incoming()==asyncProviderSearcher.incomingData);
-        assertEquals("Got no async data yet", 0, asyncGroup.size());
+        assertEquals(asyncGroup.incoming(), asyncProviderSearcher.incomingData);
+        assertEquals(0, asyncGroup.size(), "Got no async data yet");
         asyncProviderSearcher.simulateOneHitIOComplete(new Hit("async:0"));
-        assertEquals("Got no async data yet, as we haven't completed the incoming buffer and there is no data listener", 0, asyncGroup.size());
+        assertEquals(0, asyncGroup.size(), "Got no async data yet, as we haven't completed the incoming buffer and there is no data listener");
         asyncProviderSearcher.simulateOneHitIOComplete(new Hit("async:1"));
         asyncProviderSearcher.simulateAllHitsIOComplete();
-        assertEquals("Got no async data yet, as we haven't pulled it", 0, asyncGroup.size());
+        assertEquals(0, asyncGroup.size(), "Got no async data yet, as we haven't pulled it");
         asyncGroup.completeFuture().get();
-        assertEquals("Completed, so we have the data", 2, asyncGroup.size());
+        assertEquals(2, asyncGroup.size(), "Completed, so we have the data");
         assertEquals("async:0", asyncGroup.get(0).getId().toString());
         assertEquals("async:1", asyncGroup.get(1).getId().toString());
     }
 
     @Test
-    public void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
+    void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
         AsyncProviderSearcher futureDataSource = new AsyncProviderSearcher();
         Chain<Searcher> chain = new Chain<>(Collections.<Searcher>singletonList(futureDataSource));
@@ -89,16 +88,14 @@ public class FutureDataTestCase {
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
 
         // Verify the result prior to completion of delayed data
-        assertEquals("The result has been returned, but no hits are available yet",
-                     0, result.hits().getConcreteSize());
+        assertEquals(0, result.hits().getConcreteSize(), "The result has been returned, but no hits are available yet");
 
         // pretend we're the IO layer and complete delayed data - this is typically done in a callback from jDisc
         futureDataSource.simulateOneHitIOComplete(new Hit("hit:0"));
         futureDataSource.simulateOneHitIOComplete(new Hit("hit:1"));
         futureDataSource.simulateAllHitsIOComplete();
 
-        assertEquals("Async arriving hits are still not visible because we haven't asked for them",
-                0, result.hits().getConcreteSize());
+        assertEquals(0, result.hits().getConcreteSize(), "Async arriving hits are still not visible because we haven't asked for them");
 
         // Results with future hit groups will be passed to rendering directly and start rendering immediately.
         // For this test we block and wait for the data instead:

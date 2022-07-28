@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 
 /**
@@ -17,26 +17,26 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 public class RequestBuilderTestCase {
     HttpRequest.Builder b;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         HttpRequest r = HttpRequest.createTestRequest("http://ssh:22/alpha?bravo=charlie", Method.GET);
         b = new HttpRequest.Builder(r);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         b = null;
     }
 
     @Test
-    public final void testBasic() {
+    final void testBasic() {
         HttpRequest r = b.put("delta", "echo").createDirectRequest();
         assertEquals("charlie", r.getProperty("bravo"));
         assertEquals("echo", r.getProperty("delta"));
     }
 
     @Test
-    public void testRemove() {
+    void testRemove() {
         HttpRequest orig = b.put("delta", "echo").createDirectRequest();
 
         HttpRequest child = new HttpRequest.Builder(orig).removeProperty("delta").createDirectRequest();

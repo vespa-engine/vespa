@@ -5,11 +5,11 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.schema.AbstractSchemaTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests deriving using the Deriver facade
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class DeriverTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testDeriveDocManager() {
+    void testDeriveDocManager() {
         DocumentTypeManager dtm = new DocumentTypeManager(new DocumentmanagerConfig(
                 Deriver.getDocumentManagerConfig(List.of(
                         "src/test/derived/deriver/child.sd",

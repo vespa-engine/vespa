@@ -17,10 +17,10 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
 
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M. Lidal</a>
@@ -32,13 +32,13 @@ public class StemmingSearcherTestCase {
                                                                         "querytransform/test/", null);
 
     @Test
-    public void testStemOnlySomeTerms() {
+    void testStemOnlySomeTerms() {
         assertStem("/search?query=Holes in CVS and Subversion nostem:Found",
-                   "WEAKAND(100) hole in cvs and subversion nostem:Found");
+                "WEAKAND(100) hole in cvs and subversion nostem:Found");
     }
 
     @Test
-    public void testPhraseSegmentTransforms() {
+    void testPhraseSegmentTransforms() {
         Query q1 = buildQueryWithSegmentPhrase();
         executeStemming(q1);
         assertEquals("AND a 'd e'", q1.getModel().getQueryTree().getRoot().toString());
@@ -61,65 +61,65 @@ public class StemmingSearcherTestCase {
     }
 
     @Test
-    public void testPreserveConnectivityToPhrase() {
+    void testPreserveConnectivityToPhrase() {
         Query q1 = buildQueryWithSegmentPhrase();
-        CompositeItem r = (CompositeItem)q1.getModel().getQueryTree().getRoot();
-        WordItem first = (WordItem)r.getItem(0);
-        PhraseSegmentItem second = (PhraseSegmentItem)r.getItem(1);
+        CompositeItem r = (CompositeItem) q1.getModel().getQueryTree().getRoot();
+        WordItem first = (WordItem) r.getItem(0);
+        PhraseSegmentItem second = (PhraseSegmentItem) r.getItem(1);
         first.setConnectivity(second, 1.0d);
         executeStemming(q1);
         assertEquals("AND a 'd e'", q1.getModel().getQueryTree().getRoot().toString());
-        r = (CompositeItem)q1.getModel().getQueryTree().getRoot();
-        first = (WordItem)r.getItem(0);
-        second = (PhraseSegmentItem)r.getItem(1);
+        r = (CompositeItem) q1.getModel().getQueryTree().getRoot();
+        first = (WordItem) r.getItem(0);
+        second = (PhraseSegmentItem) r.getItem(1);
         var origSecond = first.getConnectedItem();
-        assertEquals("Connectivity incorrect.", second, first.getConnectedItem());
+        assertEquals(second, first.getConnectedItem(), "Connectivity incorrect.");
     }
 
     @Test
-    public void testDontStemPrefixes() {
+    void testDontStemPrefixes() {
         assertStem("/search?query=ist*&language=de", "WEAKAND(100) ist*");
     }
 
     @Test
-    public void testStemming() {
+    void testStemming() {
         Query query = new Query("/search?query=");
         executeStemming(query);
         assertTrue(query.getModel().getQueryTree().getRoot() instanceof NullItem);
     }
 
     @Test
-    public void testNounStemming() {
+    void testNounStemming() {
         assertStem("/search?query=noun:towers noun:tower noun:tow",
-                   "WEAKAND(100) noun:tower noun:tower noun:tow");
+                "WEAKAND(100) noun:tower noun:tower noun:tow");
         assertStem("/search?query=notnoun:towers notnoun:tower notnoun:tow",
-                   "WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow");
+                "WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow");
     }
 
     @SuppressWarnings("deprecation")
     @Test
-    public void testEmptyIndexInfo() {
+    void testEmptyIndexInfo() {
         String indexInfoConfigID = "file:src/test/java/com/yahoo/prelude/querytransform/test/emptyindexinfo.cfg";
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
         IndexInfoConfig config = getter.getConfig(indexInfoConfigID);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, (QrSearchersConfig)null));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, (QrSearchersConfig) null));
 
         Query q = new Query(QueryTestCase.httpEncode("?query=cars"));
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
-                      Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
+                Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
         assertEquals("WEAKAND(100) cars", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testLiteralBoost() {
+    void testLiteralBoost() {
         Query q = new Query(QueryTestCase.httpEncode("/search?language=en&search=three"));
         WordItem scratch = new WordItem("trees", true);
         scratch.setStemmed(false);
         q.getModel().getQueryTree().setRoot(scratch);
         executeStemming(q);
-        assertTrue("Expected a set of word alternatives as root.",
-                q.getModel().getQueryTree().getRoot() instanceof WordAlternativesItem);
+        assertTrue(q.getModel().getQueryTree().getRoot() instanceof WordAlternativesItem,
+                "Expected a set of word alternatives as root.");
         WordAlternativesItem w = (WordAlternativesItem) q.getModel().getQueryTree().getRoot();
         boolean foundExpectedBaseForm = false;
         for (WordAlternativesItem.Alternative a : w.getAlternatives()) {
@@ -128,16 +128,16 @@ public class StemmingSearcherTestCase {
                 foundExpectedBaseForm = true;
             }
         }
-        assertTrue("Did not find original word form in query.", foundExpectedBaseForm);
+        assertTrue(foundExpectedBaseForm, "Did not find original word form in query.");
     }
 
     @Test
-    public void testMultipleStemming() {
+    void testMultipleStemming() {
         Query q = new Query(QueryTestCase.httpEncode("/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar"));
         executeStemming(q);
-        assertEquals("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] "+
-                     "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] "+
-                     "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
+                "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
+                "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]", q.getModel().getQueryTree().getRoot().toString());
     }
 
     private Execution.Context newExecutionContext() {

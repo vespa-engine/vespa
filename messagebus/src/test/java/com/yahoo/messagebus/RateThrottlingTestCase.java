@@ -2,15 +2,15 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.messagebus.test.SimpleMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class RateThrottlingTestCase {
 
     @Test
-    public void testPending() {
+    void testPending() {
         CustomTimer timer = new CustomTimer();
         RateThrottlingPolicy policy = new RateThrottlingPolicy(5.0, timer);
         policy.setMaxPendingCount(200);
@@ -35,7 +35,7 @@ public class RateThrottlingTestCase {
     }
 
     @Test
-    public void testRates() {
+    void testRates() {
         assertEquals(10, getActualRate(0.1), 1);
         assertEquals(1000, getActualRate(10), 100);
         assertEquals(500, getActualRate(5), 50);

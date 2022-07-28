@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -12,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 public class TraceTestCase {
 
     @Test
-    public void testEncodeDecode() {
+    void testEncodeDecode() {
         assertEquals("()", TraceNode.decode("").encode());
         assertEquals("()", TraceNode.decode("[xyz").encode());
         assertEquals("([xyz][])", TraceNode.decode("[xyz][]").encode());
@@ -25,12 +24,12 @@ public class TraceTestCase {
         assertEquals("([])", TraceNode.decode("([])").encode());
 
         assertTrue(TraceNode.decode("").isEmpty());
-        assertTrue(!TraceNode.decode("([note])").isEmpty());
+        assertFalse(TraceNode.decode("([note])").isEmpty());
 
         String str =
                 "([[17/Jun/2009:09:02:30 +0200\\] Message (type 1) received at 'dst' for session 'session'.]" +
-                "[[17/Jun/2009:09:02:30 +0200\\] [APP_TRANSIENT_ERROR @ localhost\\]: err1]" +
-                "[[17/Jun/2009:09:02:30 +0200\\] Sending reply (version 4.2) from 'dst'.])";
+                        "[[17/Jun/2009:09:02:30 +0200\\] [APP_TRANSIENT_ERROR @ localhost\\]: err1]" +
+                        "[[17/Jun/2009:09:02:30 +0200\\] Sending reply (version 4.2) from 'dst'.])";
         System.out.println(TraceNode.decode(str).toString());
         assertEquals(str, TraceNode.decode(str).encode());
 
@@ -40,7 +39,7 @@ public class TraceTestCase {
 
         assertTrue(t.isRoot());
         assertTrue(t.isStrict());
-        assertTrue(!t.isLeaf());
+        assertFalse(t.isLeaf());
         assertEquals(4, t.getNumChildren());
 
         {
@@ -55,8 +54,8 @@ public class TraceTestCase {
         }
         {
             TraceNode c = t.getChild(2);
-            assertTrue(!c.isLeaf());
-            assertTrue(!c.isStrict());
+            assertFalse(c.isLeaf());
+            assertFalse(c.isStrict());
             assertEquals(1, c.getNumChildren());
             {
                 TraceNode d = c.getChild(0);
@@ -66,12 +65,12 @@ public class TraceTestCase {
         }
         {
             TraceNode c = t.getChild(3);
-            assertTrue(!c.isStrict());
+            assertFalse(c.isStrict());
             assertEquals(2, c.getNumChildren());
             {
                 TraceNode d = c.getChild(0);
                 assertTrue(d.isStrict());
-                assertTrue(!d.isLeaf());
+                assertFalse(d.isLeaf());
                 assertEquals(1, d.getNumChildren());
                 {
                     TraceNode e = d.getChild(0);
@@ -85,7 +84,7 @@ public class TraceTestCase {
                 assertEquals(1, d.getNumChildren());
                 {
                     TraceNode e = d.getChild(0);
-                    assertTrue(!e.isStrict());
+                    assertFalse(e.isStrict());
                     assertEquals(1, e.getNumChildren());
                     {
                         TraceNode f = e.getChild(0);
@@ -98,7 +97,7 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testReservedChars() {
+    void testReservedChars() {
         TraceNode t = new TraceNode();
         t.addChild("abc(){}[]\\xyz");
         assertEquals("abc(){}[]\\xyz", t.getChild(0).getNote());
@@ -108,7 +107,7 @@ public class TraceTestCase {
             TraceNode t2 = new TraceNode();
             assertTrue(t2.isEmpty());
             t2.swap(t);
-            assertTrue(!t2.isEmpty());
+            assertFalse(t2.isEmpty());
             assertEquals("abc(){}[]\\xyz", t2.getChild(0).getNote());
             assertEquals("([abc(){}[\\]\\\\xyz])", t2.encode());
             t2.clear();
@@ -117,7 +116,7 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testAdd() {
+    void testAdd() {
         TraceNode t1 = TraceNode.decode("([x])");
         TraceNode t2 = TraceNode.decode("([y])");
         TraceNode t3 = TraceNode.decode("([z])");
@@ -137,14 +136,14 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testStrict() {
+    void testStrict() {
         assertEquals("{}", TraceNode.decode("()").setStrict(false).encode());
         assertEquals("{[x]}", TraceNode.decode("([x])").setStrict(false).encode());
         assertEquals("{[x][y]}", TraceNode.decode("([x][y])").setStrict(false).encode());
     }
 
     @Test
-    public void testTraceLevel() {
+    void testTraceLevel() {
         Trace t = new Trace();
         t.setLevel(4);
         assertEquals(4, t.getLevel());
@@ -171,7 +170,7 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testCompact() {
+    void testCompact() {
         assertEquals("()", TraceNode.decode("()").compact().encode());
         assertEquals("()", TraceNode.decode("(())").compact().encode());
         assertEquals("()", TraceNode.decode("(()())").compact().encode());
@@ -201,7 +200,7 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testSort() {
+    void testSort() {
         assertEquals("([b][a][c])", TraceNode.decode("([b][a][c])").sort().encode());
         assertEquals("({[a][b][c]})", TraceNode.decode("({[b][a][c]})").sort().encode());
         assertEquals("(([c][a])([b]))", TraceNode.decode("(([c][a])([b]))").sort().encode());
@@ -211,7 +210,7 @@ public class TraceTestCase {
     }
 
     @Test
-    public void testNormalize() {
+    void testNormalize() {
         TraceNode t1 = TraceNode.decode("({([a][b]{[x][y]([p][q])})([c][d])([e][f])})");
         TraceNode t2 = TraceNode.decode("({([a][b]{[y][x]([p][q])})([c][d])([e][f])})");
         TraceNode t3 = TraceNode.decode("({([a][b]{[y]([p][q])[x]})([c][d])([e][f])})");
@@ -224,13 +223,13 @@ public class TraceTestCase {
 
         assertEquals("({([a][b]{[x][y]([p][q])})([c][d])([e][f])})", t1.compact().encode());
 
-        assertTrue(!t1.compact().encode().equals(t2.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(t3.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(t4.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(t5.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(tx.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(ty.compact().encode()));
-        assertTrue(!t1.compact().encode().equals(tz.compact().encode()));
+        assertNotEquals(t1.compact().encode(), t2.compact().encode());
+        assertNotEquals(t1.compact().encode(), t3.compact().encode());
+        assertNotEquals(t1.compact().encode(), t4.compact().encode());
+        assertNotEquals(t1.compact().encode(), t5.compact().encode());
+        assertNotEquals(t1.compact().encode(), tx.compact().encode());
+        assertNotEquals(t1.compact().encode(), ty.compact().encode());
+        assertNotEquals(t1.compact().encode(), tz.compact().encode());
 
         System.out.println("1: " + t1.normalize().encode());
         System.out.println("2: " + t2.normalize().encode());
@@ -240,19 +239,19 @@ public class TraceTestCase {
         System.out.println("x: " + tx.normalize().encode());
         System.out.println("y: " + ty.normalize().encode());
         System.out.println("z: " + tz.normalize().encode());
-        assertTrue(t1.normalize().encode().equals(t2.normalize().encode()));
-        assertTrue(t1.normalize().encode().equals(t3.normalize().encode()));
-        assertTrue(t1.normalize().encode().equals(t4.normalize().encode()));
-        assertTrue(t1.normalize().encode().equals(t5.normalize().encode()));
-        assertTrue(!t1.normalize().encode().equals(tx.normalize().encode()));
-        assertTrue(!t1.normalize().encode().equals(ty.normalize().encode()));
-        assertTrue(!t1.normalize().encode().equals(tz.normalize().encode()));
+        assertEquals(t1.normalize().encode(), t2.normalize().encode());
+        assertEquals(t1.normalize().encode(), t3.normalize().encode());
+        assertEquals(t1.normalize().encode(), t4.normalize().encode());
+        assertEquals(t1.normalize().encode(), t5.normalize().encode());
+        assertNotEquals(t1.normalize().encode(), tx.normalize().encode());
+        assertNotEquals(t1.normalize().encode(), ty.normalize().encode());
+        assertNotEquals(t1.normalize().encode(), tz.normalize().encode());
 
         assertEquals("({([c][d])([e][f])([a][b]{[x][y]([p][q])})})", t1.normalize().encode());
     }
 
     @Test
-    public void testTraceDump() {
+    void testTraceDump() {
         {
             Trace big = new Trace();
             TraceNode b1 = new TraceNode();
@@ -283,17 +282,17 @@ public class TraceTestCase {
             assertEquals("...\n", s1.toString(0));
             assertEquals("<trace>\n...\n", s1.toString(1));
             assertEquals("<trace>\n"      + // 8    8
-                         "    <trace>\n"  + // 12  20
-                         "        test\n" + // 13  33
-                         "...\n", s1.toString(33));
+                    "    <trace>\n"  + // 12  20
+                    "        test\n" + // 13  33
+                    "...\n", s1.toString(33));
             assertEquals("<trace>\n"  +     // 8   8
-                         "    test\n" +     // 9  17
-                         "    test\n" +     // 9  26
-                         "...\n", s2.toString(26));
+                    "    test\n" +     // 9  17
+                    "    test\n" +     // 9  26
+                    "...\n", s2.toString(26));
             assertEquals("<trace>\n"  +     // 8   8
-                         "    test\n" +     // 9  17
-                         "    test\n" +     // 9  26
-                         "</trace>\n", s2.toString(27));
+                    "    test\n" +     // 9  17
+                    "    test\n" +     // 9  26
+                    "</trace>\n", s2.toString(27));
             assertEquals(s2.toString(27), s2.toString());
         }
     }

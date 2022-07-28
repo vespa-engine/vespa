@@ -4,7 +4,7 @@ package com.yahoo.container.handler.test;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -12,7 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Ulf Lilleengen
@@ -22,7 +23,7 @@ public class MockServiceTest {
     private final File testFile = new File("src/test/java/com/yahoo/container/handler/test/test.txt");
 
     @Test
-    public void testHandlerTextFormat() throws InterruptedException, IOException {
+    void testHandlerTextFormat() throws InterruptedException, IOException {
         HttpResponse response = runHandler(com.yahoo.jdisc.http.HttpRequest.Method.GET, "/foo/bar");
         assertResponse(response, 200, "Hello\nThere!");
 
@@ -34,20 +35,24 @@ public class MockServiceTest {
     }
 
     @Test
-    public void testNoHandlerFound() throws InterruptedException, IOException {
+    void testNoHandlerFound() throws InterruptedException, IOException {
         HttpResponse response = runHandler(com.yahoo.jdisc.http.HttpRequest.Method.DELETE, "/foo/bar");
         assertEquals(404, response.getStatus());
         assertResponseContents(response, "DELETE:/foo/bar was not found");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testUnknownFileType() throws InterruptedException, IOException {
-        runHandlerWithFile(com.yahoo.jdisc.http.HttpRequest.Method.GET, "", new File("nonexistant"));
+    @Test
+    void testUnknownFileType() throws InterruptedException, IOException {
+        assertThrows(IllegalArgumentException.class, () -> {
+            runHandlerWithFile(com.yahoo.jdisc.http.HttpRequest.Method.GET, "", new File("nonexistant"));
+        });
     }
 
-    @Test(expected = FileNotFoundException.class)
-    public void testExceptionResponse() throws InterruptedException, IOException {
-        runHandlerWithFile(com.yahoo.jdisc.http.HttpRequest.Method.GET, "", new File("nonexistant.txt"));
+    @Test
+    void testExceptionResponse() throws InterruptedException, IOException {
+        assertThrows(FileNotFoundException.class, () -> {
+            runHandlerWithFile(com.yahoo.jdisc.http.HttpRequest.Method.GET, "", new File("nonexistant.txt"));
+        });
     }
 
     private void assertResponse(HttpResponse response, int expectedCode, String expectedMessage) throws IOException {

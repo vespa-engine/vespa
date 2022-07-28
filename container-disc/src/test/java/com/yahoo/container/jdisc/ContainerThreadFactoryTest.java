@@ -3,13 +3,13 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.container.jdisc.metric.MetricConsumerProvider;
 import com.yahoo.jdisc.application.ContainerThread;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.concurrent.ThreadFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 public class ContainerThreadFactoryTest {
 
     @Test
-    public void requireThatMetricConsumerProviderCanNotBeNull() {
+    void requireThatMetricConsumerProviderCanNotBeNull() {
         try {
             new ContainerThreadFactory(null);
             fail();
@@ -27,15 +27,15 @@ public class ContainerThreadFactoryTest {
     }
 
     @Test
-    public void requireThatThreadsCreatedAreJDiscContainerThreads() {
+    void requireThatThreadsCreatedAreJDiscContainerThreads() {
         assertEquals(ContainerThread.class,
-                     new ContainerThreadFactory(Mockito.mock(MetricConsumerProvider.class))
-                             .newThread(Mockito.mock(Runnable.class))
-                             .getClass());
+                new ContainerThreadFactory(Mockito.mock(MetricConsumerProvider.class))
+                        .newThread(Mockito.mock(Runnable.class))
+                        .getClass());
     }
 
     @Test
-    public void requireThatThreadFactoryCallsProvider() {
+    void requireThatThreadFactoryCallsProvider() {
         MetricConsumerProvider provider = Mockito.mock(MetricConsumerProvider.class);
         ThreadFactory factory = new ContainerThreadFactory(provider);
         factory.newThread(Mockito.mock(Runnable.class));

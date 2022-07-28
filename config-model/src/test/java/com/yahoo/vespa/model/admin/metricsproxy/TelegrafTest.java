@@ -6,15 +6,13 @@ import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
 import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
 import com.yahoo.component.ComponentId;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -22,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 public class TelegrafTest {
 
     @Test
-    public void telegraf_components_are_set_up_when_cloudwatch_is_configured() {
+    void telegraf_components_are_set_up_when_cloudwatch_is_configured() {
         String services = servicesWithCloudwatch();
         VespaModel hostedModel = getModel(services, hosted);
 
@@ -32,16 +30,16 @@ public class TelegrafTest {
     }
 
     @Test
-    public void telegraf_components_are_not_set_up_when_no_external_systems_are_added_in_services() {
+    void telegraf_components_are_not_set_up_when_no_external_systems_are_added_in_services() {
         String services = String.join("\n",
-                                      "<services>",
-                                      "    <admin version='2.0'>",
-                                      "        <adminserver hostalias='node1'/>",
-                                      "        <metrics>",
-                                      "            <consumer id='foo' />",
-                                      "        </metrics>",
-                                      "    </admin>",
-                                      "</services>");
+                "<services>",
+                "    <admin version='2.0'>",
+                "        <adminserver hostalias='node1'/>",
+                "        <metrics>",
+                "            <consumer id='foo' />",
+                "        </metrics>",
+                "    </admin>",
+                "</services>");
         VespaModel hostedModel = getModel(services, hosted);
 
         var clusterComponents = hostedModel.getAdmin().getMetricsProxyCluster().getComponentsMap();
@@ -50,7 +48,7 @@ public class TelegrafTest {
     }
 
     @Test
-    public void telegraf_config_is_generated_for_cloudwatch_in_services() {
+    void telegraf_config_is_generated_for_cloudwatch_in_services() {
         String services = servicesWithCloudwatch();
         VespaModel hostedModel = getModel(services, hosted);
         TelegrafConfig config = hostedModel.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
@@ -85,25 +83,25 @@ public class TelegrafTest {
     }
 
     @Test
-    public void multiple_cloudwatches_are_allowed_for_the_same_consumer() {
+    void multiple_cloudwatches_are_allowed_for_the_same_consumer() {
         String services = String.join("\n",
-                                      "<services>",
-                                      "    <admin version='2.0'>",
-                                      "        <adminserver hostalias='node1'/>",
-                                      "        <metrics>",
-                                      "            <consumer id='cloudwatch-consumer'>",
-                                      "                <metric id='my-metric'/>",
-                                      "                <cloudwatch region='us-east-1' namespace='namespace-1' >",
-                                      "                    <credentials access-key-name='access-key-1' ",
-                                      "                                 secret-key-name='secret-key-1' />",
-                                      "                </cloudwatch>",
-                                      "                <cloudwatch region='us-east-1' namespace='namespace-2' >",
-                                      "                    <shared-credentials profile='profile-2' />",
-                                      "                </cloudwatch>",
-                                      "            </consumer>",
-                                      "        </metrics>",
-                                      "    </admin>",
-                                      "</services>"
+                "<services>",
+                "    <admin version='2.0'>",
+                "        <adminserver hostalias='node1'/>",
+                "        <metrics>",
+                "            <consumer id='cloudwatch-consumer'>",
+                "                <metric id='my-metric'/>",
+                "                <cloudwatch region='us-east-1' namespace='namespace-1' >",
+                "                    <credentials access-key-name='access-key-1' ",
+                "                                 secret-key-name='secret-key-1' />",
+                "                </cloudwatch>",
+                "                <cloudwatch region='us-east-1' namespace='namespace-2' >",
+                "                    <shared-credentials profile='profile-2' />",
+                "                </cloudwatch>",
+                "            </consumer>",
+                "        </metrics>",
+                "    </admin>",
+                "</services>"
         );
         VespaModel hostedModel = getModel(services, hosted);
         TelegrafConfig config = hostedModel.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
@@ -126,21 +124,21 @@ public class TelegrafTest {
     }
 
     @Test
-    public void profile_named_default_is_used_when_no_profile_is_given_in_shared_credentials() {
+    void profile_named_default_is_used_when_no_profile_is_given_in_shared_credentials() {
         String services = String.join("\n",
-                                      "<services>",
-                                      "    <admin version='2.0'>",
-                                      "        <adminserver hostalias='node1'/>",
-                                      "        <metrics>",
-                                      "            <consumer id='cloudwatch-consumer'>",
-                                      "                <metric id='my-metric'/>",
-                                      "                <cloudwatch region='us-east-1' namespace='foo' >",
-                                      "                    <shared-credentials file='/path/to/file' />",
-                                      "                </cloudwatch>",
-                                      "            </consumer>",
-                                      "        </metrics>",
-                                      "    </admin>",
-                                      "</services>"
+                "<services>",
+                "    <admin version='2.0'>",
+                "        <adminserver hostalias='node1'/>",
+                "        <metrics>",
+                "            <consumer id='cloudwatch-consumer'>",
+                "                <metric id='my-metric'/>",
+                "                <cloudwatch region='us-east-1' namespace='foo' >",
+                "                    <shared-credentials file='/path/to/file' />",
+                "                </cloudwatch>",
+                "            </consumer>",
+                "        </metrics>",
+                "    </admin>",
+                "</services>"
         );
         VespaModel model = getModel(services, self_hosted);
         TelegrafConfig config = model.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);

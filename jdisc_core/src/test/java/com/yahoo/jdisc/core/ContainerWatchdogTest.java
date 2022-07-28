@@ -4,14 +4,14 @@ package com.yahoo.jdisc.core;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.test.ManualClock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 public class ContainerWatchdogTest {
 
     @Test
-    public void watchdog_counts_stale_container() {
+    void watchdog_counts_stale_container() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ManualClock clock = new ManualClock(Instant.EPOCH);
         DummyMetric metric = new DummyMetric();

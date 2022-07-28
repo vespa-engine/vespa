@@ -18,7 +18,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests stateless model evaluation (turned on by the "model-evaluation" tag in "container")
@@ -42,7 +39,7 @@ public class ModelEvaluationTest {
 
     /** Tests that we do not load models (which would waste memory) when not requested */
     @Test
-    public void testMl_serving_not_activated() {
+    void testMl_serving_not_activated() {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
         try {
             ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
@@ -62,7 +59,7 @@ public class ModelEvaluationTest {
     }
 
     @Test
-    public void testMl_serving() throws IOException {
+    void testMl_serving() throws IOException {
         assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
         Path storedAppDir = appDir.append("copy");
@@ -74,7 +71,7 @@ public class ModelEvaluationTest {
             storedAppDir.toFile().mkdirs();
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+                    storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester("ml_serving", storedAppDir);
             assertHasMlModels(storedTester.createVespaModel(), appDir);
         }

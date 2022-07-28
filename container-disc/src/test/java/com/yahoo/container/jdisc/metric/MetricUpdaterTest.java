@@ -3,7 +3,7 @@ package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
@@ -18,9 +18,9 @@ import static org.mockito.Mockito.verify;
  * @author bjorncs 
  */
 public class MetricUpdaterTest {
-    
+
     @Test
-    public void metrics_are_updated_in_scheduler_cycle() {
+    void metrics_are_updated_in_scheduler_cycle() {
         int gcCount = ManagementFactory.getGarbageCollectorMXBeans().size();
 
         Metric metric = mock(Metric.class);

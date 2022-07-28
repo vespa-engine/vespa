@@ -11,12 +11,12 @@ import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.textserialize.parser.ParseException;
 import com.yahoo.search.query.textserialize.serializer.QueryTreeSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.parse;
 import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.getWord;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 public class SerializeItemTestCase {
 
     @Test
-    public void serialize_word_item() {
+    void serialize_word_item() {
         WordItem item = new WordItem("test that \" and \\ works");
         item.setIndexName("index\"Name");
 
@@ -34,7 +34,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_and_item() {
+    void serialize_and_item() {
         AndItem andItem = new AndItem();
         andItem.addItem(new WordItem("first"));
         andItem.addItem(new WordItem("second"));
@@ -46,12 +46,12 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_or_item() {
+    void serialize_or_item() {
         assertTrue(serializeThenParse(new OrItem()) instanceof OrItem);
     }
 
     @Test
-    public void serialize_not_item() {
+    void serialize_not_item() {
         NotItem notItem = new NotItem();
         {
             notItem.addItem(new WordItem("first"));
@@ -62,7 +62,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_near_item() {
+    void serialize_near_item() {
         int distance = 23;
         NearItem nearItem = new NearItem(distance);
         {
@@ -77,8 +77,8 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_phrase_item() throws ParseException {
-        PhraseItem phraseItem = new PhraseItem(new String[] {"first", "second"});
+    void serialize_phrase_item() throws ParseException {
+        PhraseItem phraseItem = new PhraseItem(new String[]{"first", "second"});
         phraseItem.setIndexName("indexName");
 
         PhraseItem deSerialized = serializeThenParse(phraseItem);
@@ -88,7 +88,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_equiv_item() {
+    void serialize_equiv_item() {
         EquivItem equivItem = new EquivItem();
         equivItem.addItem(new WordItem("first"));
 
@@ -97,7 +97,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_connectivity() {
+    void serialize_connectivity() {
         OrItem orItem = new OrItem();
         {
             WordItem first = new WordItem("first");
@@ -117,7 +117,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_significance() {
+    void serialize_significance() {
         EquivItem equivItem = new EquivItem();
         equivItem.setSignificance(24.2);
 
@@ -126,7 +126,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_unique_id() {
+    void serialize_unique_id() {
         EquivItem equivItem = new EquivItem();
         equivItem.setUniqueID(42);
 
@@ -135,7 +135,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_weight() {
+    void serialize_weight() {
         EquivItem equivItem = new EquivItem();
         equivItem.setWeight(42);
 

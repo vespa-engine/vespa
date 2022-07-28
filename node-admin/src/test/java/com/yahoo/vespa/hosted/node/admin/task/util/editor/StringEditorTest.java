@@ -2,22 +2,19 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StringEditorTest {
     private final StringEditor editor = new StringEditor();
     private final Cursor cursor = editor.cursor();
 
     @Test
-    public void testBasics() {
+    void testBasics() {
         assertCursor(0, 0, "");
 
         cursor.write("hello");

@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Arne Bergene Fossaa
@@ -13,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 public class ComponentSpecTestCase {
 
     @Test
-    public void testMatches() {
+    void testMatches() {
         ComponentId a = new ComponentId("test:1");
         ComponentId b = new ComponentId("test:1.1.1");
         ComponentId c = new ComponentId("test:2");
@@ -52,14 +50,14 @@ public class ComponentSpecTestCase {
     }
 
     @Test
-    public void testMatchesWithNamespace() {
+    void testMatchesWithNamespace() {
         ComponentId namespace = new ComponentId("namespace:2");
 
         ComponentId a = new ComponentId("test", new Version(1), namespace);
         ComponentId b = new ComponentId("test:1@namespace:2");
         ComponentId c = new ComponentId("test:1@namespace");
         assertEquals(a, b);
-        assertFalse(a.equals(c));
+        assertNotEquals(a, c);
 
         ComponentSpecification spec = new ComponentSpecification("test", null, namespace);
         assertTrue(spec.matches(a));
@@ -68,7 +66,7 @@ public class ComponentSpecTestCase {
     }
 
     @Test
-    public void testStringValue() {
+    void testStringValue() {
         assertStringValueEqualsInputSpec("a:1.0.0.alpha@namespace");
         assertStringValueEqualsInputSpec("a:1.0.0.alpha");
         assertStringValueEqualsInputSpec("a:1.0");

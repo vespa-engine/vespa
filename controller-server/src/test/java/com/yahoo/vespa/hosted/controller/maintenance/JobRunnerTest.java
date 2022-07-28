@@ -21,7 +21,7 @@ import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -63,12 +63,12 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author jonmv
@@ -82,10 +82,10 @@ public class JobRunnerTest {
                                                           Optional.empty());
 
     @Test
-    public void multiThreadedExecutionFinishes() {
+    void multiThreadedExecutionFinishes() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        StepRunner stepRunner = (step, id) -> id.type().equals(stagingTest) && step.get() == startTests? Optional.of(error) : Optional.of(running);
+        StepRunner stepRunner = (step, id) -> id.type().equals(stagingTest) && step.get() == startTests ? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), phasedExecutor(phaser), stepRunner);
 
@@ -98,7 +98,8 @@ public class JobRunnerTest {
             start(jobs, id, systemTest);
             fail("Job is already running, so this should not be allowed!");
         }
-        catch (IllegalArgumentException ignored) { }
+        catch (IllegalArgumentException ignored) {
+        }
         start(jobs, id, stagingTest);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
@@ -118,7 +119,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void stepLogic() {
+    void stepLogic() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
@@ -225,7 +226,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void locksAndGarbage() throws InterruptedException, BrokenBarrierException {
+    void locksAndGarbage() throws InterruptedException, BrokenBarrierException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
@@ -242,10 +243,12 @@ public class JobRunnerTest {
         runner.maintain();
         barrier.await();
         try {
-            jobs.locked(id, systemTest, deactivateTester, step -> { });
+            jobs.locked(id, systemTest, deactivateTester, step -> {
+            });
             fail("deployTester step should still be locked!");
         }
-        catch (TimeoutException ignored) { }
+        catch (TimeoutException ignored) {
+        }
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
@@ -264,7 +267,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void historyPruning() {
+    void historyPruning() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), (id, step) -> Optional.of(running));
@@ -341,7 +344,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void onlySuccessfulRunExpiresThenAnotherFails() {
+    void onlySuccessfulRunExpiresThenAnotherFails() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         var app = tester.newDeploymentContext().submit();
@@ -360,7 +363,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void timeout() {
+    void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
@@ -378,7 +381,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void jobMetrics() throws TimeoutException {
+    void jobMetrics() throws TimeoutException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
@@ -401,10 +404,10 @@ public class JobRunnerTest {
         }
 
         Map<String, String> context = Map.of("applicationId", "tenant.real.default",
-                                             "tenantName", "tenant",
-                                             "app", "real.default",
-                                             "test", "true",
-                                             "zone", "test.us-east-1");
+                "tenantName", "tenant",
+                "app", "real.default",
+                "test", "true",
+                "zone", "test.us-east-1");
         MetricsMock metric = ((MetricsMock) tester.controller().metric());
         assertEquals(RunStatus.values().length - 2, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.abort).get().intValue());

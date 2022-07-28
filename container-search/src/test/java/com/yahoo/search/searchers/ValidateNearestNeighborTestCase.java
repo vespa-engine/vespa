@@ -16,10 +16,10 @@ import com.yahoo.search.yql.YqlParser;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author arnej
@@ -103,7 +103,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testValidQueryDoubleVectors() {
+    void testValidQueryDoubleVectors() {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -111,7 +111,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testValidQueryFloatVectors() {
+    void testValidQueryFloatVectors() {
         String q = makeQuery("fvector", "qvector");
         Tensor t = makeTensor(tt_dense_fvector_3);
         Result r = doSearch(searcher, q, t);
@@ -119,7 +119,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testValidQueryDoubleVectorAgainstFloatVector() {
+    void testValidQueryDoubleVectorAgainstFloatVector() {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_fvector_3);
         Result r = doSearch(searcher, q, t);
@@ -127,7 +127,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testValidQueryFloatVectorAgainstDoubleVector() {
+    void testValidQueryFloatVectorAgainstDoubleVector() {
         String q = makeQuery("fvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -152,7 +152,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testMissingTargetNumHits() {
+    void testMissingTargetNumHits() {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector)";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -160,7 +160,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testMissingQueryTensor() {
+    void testMissingQueryTensor() {
         String q = makeQuery("dvector", "foo");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -168,7 +168,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testWrongTensorType() {
+    void testWrongTensorType() {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_2, 2);
         Result r = doSearch(searcher, q, t);
@@ -176,7 +176,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testNotAttribute() {
+    void testNotAttribute() {
         String q = makeQuery("foo", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -184,7 +184,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testWrongAttributeType() {
+    void testWrongAttributeType() {
         String q = makeQuery("simple", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
@@ -192,7 +192,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testSeveralAttributesWithSameName() {
+    void testSeveralAttributesWithSameName() {
         String q = makeQuery("threetypes", "qvector");
         Tensor t1 = makeTensor(tt_dense_fvector_3);
         Result r1 = doSearch(searcher, q, t1);
@@ -206,7 +206,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testSparseTensor() {
+    void testSparseTensor() {
         String q = makeQuery("sparse", "qvector");
         Tensor t = makeTensor(tt_sparse_vector_x);
         Result r = doSearch(searcher, q, t);
@@ -214,7 +214,7 @@ public class ValidateNearestNeighborTestCase {
     }
 
     @Test
-    public void testMatrix() {
+    void testMatrix() {
         String q = makeQuery("matrix", "qvector");
         Tensor t = makeMatrix(tt_dense_matrix_xy);
         Result r = doSearch(searcher, q, t);

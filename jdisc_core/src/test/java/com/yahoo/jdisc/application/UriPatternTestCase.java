@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -9,11 +9,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,7 +23,7 @@ public class UriPatternTestCase {
     private static final List<String> NO_GROUPS = Collections.emptyList();
 
     @Test
-    public void requireThatIllegalPatternsAreDetected() {
+    void requireThatIllegalPatternsAreDetected() {
         assertIllegalPattern("scheme");
         assertIllegalPattern("scheme://");
         assertIllegalPattern("scheme://host");
@@ -36,13 +36,13 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatNoPortImpliesWildcard() {
+    void requireThatNoPortImpliesWildcard() {
         assertEquals(new UriPattern("scheme://host/path"),
-                     new UriPattern("scheme://host:*/path"));
+                new UriPattern("scheme://host:*/path"));
     }
 
     @Test
-    public void requireThatPatternMatches() {
+    void requireThatPatternMatches() {
         // scheme matching
         UriPattern pattern = new UriPattern("bar://host:69/path");
         assertNotMatch(pattern, "foobar://host:69/path");
@@ -124,7 +124,7 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatUriWithoutPathDoesNotThrowException() {
+    void requireThatUriWithoutPathDoesNotThrowException() {
         UriPattern pattern = new UriPattern("scheme://host/path");
         assertNotMatch(pattern, "scheme://host");
 
@@ -133,123 +133,123 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatOnlySchemeHostPortAndPathIsMatched() {
+    void requireThatOnlySchemeHostPortAndPathIsMatched() {
         UriPattern pattern = new UriPattern("scheme://host:69/path");
         assertMatch(pattern, "scheme://host:69/path?foo", NO_GROUPS);
         assertMatch(pattern, "scheme://host:69/path?foo#bar", NO_GROUPS);
     }
 
     @Test
-    public void requireThatHostSupportsWildcard() {
+    void requireThatHostSupportsWildcard() {
         UriPattern pattern = new UriPattern("scheme://*.host/path");
         assertMatch(pattern, "scheme://a.host/path", Arrays.asList("a"));
         assertMatch(pattern, "scheme://a.b.host/path", Arrays.asList("a.b"));
     }
 
     @Test
-    public void requireThatSchemesAreOrdered() {
+    void requireThatSchemesAreOrdered() {
         assertCompareLt("b://host:69/path",
-                        "a://host:69/path");
+                "a://host:69/path");
     }
 
     @Test
-    public void requireThatSchemeOrdersBeforeHost() {
+    void requireThatSchemeOrdersBeforeHost() {
         assertCompareLt("b://*:69/path",
-                        "a://host:69/path");
+                "a://host:69/path");
     }
 
     @Test
-    public void requireThatHostsAreOrdered() {
+    void requireThatHostsAreOrdered() {
         assertCompareLt("scheme://b:69/path",
-                        "scheme://a:69/path");
+                "scheme://a:69/path");
     }
 
     @Test
-    public void requireThatHostOrdersBeforePath() {
+    void requireThatHostOrdersBeforePath() {
         assertCompareLt("scheme://b:69/*",
-                        "scheme://a:69/path");
+                "scheme://a:69/path");
     }
 
     @Test
-    public void requireThatPortsAreOrdered() {
+    void requireThatPortsAreOrdered() {
         for (int i = 1; i < 69; ++i) {
             assertCompareEq("scheme://host:" + i + "/path",
-                            "scheme://host:" + i + "/path");
+                    "scheme://host:" + i + "/path");
             assertCompareLt("scheme://host:" + (i + 1) + "/path",
-                            "scheme://host:" + i + "/path");
+                    "scheme://host:" + i + "/path");
             assertCompareLt("scheme://host:" + i + "/path",
-                            "scheme://host:*/path");
+                    "scheme://host:*/path");
         }
     }
 
     @Test
-    public void requireThatPathsAreOrdered() {
+    void requireThatPathsAreOrdered() {
         assertCompareLt("scheme://host:69/b",
-                        "scheme://host:69/a");
+                "scheme://host:69/a");
     }
 
     @Test
-    public void requireThatPathOrdersBeforePort() {
+    void requireThatPathOrdersBeforePort() {
         assertCompareLt("scheme://host:*/b",
-                        "scheme://host:69/a");
+                "scheme://host:69/a");
     }
 
     @Test
-    public void requireThatEqualPatternsOrderEqual() {
+    void requireThatEqualPatternsOrderEqual() {
         assertCompareEq("scheme://host:69/path",
-                        "scheme://host:69/path");
+                "scheme://host:69/path");
         assertCompareEq("*://host:69/path",
-                        "*://host:69/path");
+                "*://host:69/path");
         assertCompareEq("scheme://*:69/path",
-                        "scheme://*:69/path");
+                "scheme://*:69/path");
         assertCompareEq("scheme://host:*/path",
-                        "scheme://host:*/path");
+                "scheme://host:*/path");
         assertCompareEq("scheme://host:69/*",
-                        "scheme://host:69/*");
+                "scheme://host:69/*");
     }
 
     @Test
-    public void requireThatStrictPatternsOrderBeforeWildcards() {
+    void requireThatStrictPatternsOrderBeforeWildcards() {
         assertCompareLt("scheme://host:69/path",
-                        "*://host:69/path");
+                "*://host:69/path");
         assertCompareLt("scheme://a:69/path",
-                        "scheme://*:69/path");
+                "scheme://*:69/path");
         assertCompareLt("scheme://a:69/path",
-                        "scheme://*a:69/path");
+                "scheme://*a:69/path");
         assertCompareLt("scheme://*aa:69/path",
-                        "scheme://*a:69/path");
+                "scheme://*a:69/path");
         assertCompareLt("scheme://host:69/path",
-                        "scheme://host:*/path");
+                "scheme://host:*/path");
         assertCompareLt("scheme://host:69/a",
-                        "scheme://host:69/*");
+                "scheme://host:69/*");
         assertCompareLt("scheme://host:69/a",
-                        "scheme://host:69/a*");
+                "scheme://host:69/a*");
         assertCompareLt("scheme://host:69/aa*",
-                        "scheme://host:69/a*");
+                "scheme://host:69/a*");
         assertCompareLt("scheme://*:69/path",
-                        "*://host:69/path");
+                "*://host:69/path");
         assertCompareLt("scheme://host:*/path",
-                        "scheme://*:69/path");
+                "scheme://*:69/path");
         assertCompareLt("scheme://host:*/path",
-                        "scheme://host:69/*");
+                "scheme://host:69/*");
         assertCompareLt("scheme://host:69/foo",
-                        "scheme://host:69/*");
+                "scheme://host:69/*");
         assertCompareLt("scheme://host:69/foo/bar",
-                        "scheme://host:69/foo/*");
+                "scheme://host:69/foo/*");
         assertCompareLt("scheme://host:69/foo/bar/baz",
-                        "scheme://host:69/foo/bar/*");
+                "scheme://host:69/foo/bar/*");
     }
 
     @Test
-    public void requireThatLongPatternsOrderBeforeShort() {
+    void requireThatLongPatternsOrderBeforeShort() {
         assertCompareLt("scheme://host:69/foo/bar",
-                        "scheme://host:69/foo");
+                "scheme://host:69/foo");
         assertCompareLt("scheme://host:69/foo/bar/baz",
-                        "scheme://host:69/foo/bar");
+                "scheme://host:69/foo/bar");
     }
 
     @Test
-    public void requireThatHttpsSchemeIsHandledAsHttp() {
+    void requireThatHttpsSchemeIsHandledAsHttp() {
         UriPattern httpPattern = new UriPattern("http://host:80/path");
         assertMatch(httpPattern, "https://host:80/path", NO_GROUPS);
 
@@ -258,7 +258,7 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatUrlEncodingIsNotDoneForPath() {
+    void requireThatUrlEncodingIsNotDoneForPath() {
         UriPattern encodedSlashPattern = new UriPattern("http://host:80/one%2Fpath");
         assertMatch(encodedSlashPattern, "http://host:80/one%2Fpath", NO_GROUPS);
         assertNotMatch(encodedSlashPattern, "http://host:80/one/path");
@@ -304,7 +304,7 @@ public class UriPatternTestCase {
             assertTrue(rhsCmp < 0);
             return 1;
         }
-        assertTrue(rhsCmp == 0);
+        assertEquals(rhsCmp, 0);
         return 0;
     }
 

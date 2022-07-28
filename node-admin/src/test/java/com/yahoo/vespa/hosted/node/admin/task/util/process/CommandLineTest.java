@@ -2,31 +2,28 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CommandLineTest {
     private final TestTerminal terminal = new TestTerminal();
     private final TestTaskContext context = new TestTaskContext();
     private final CommandLine commandLine = terminal.newCommandLine(context);
 
-    @After
+    @AfterEach
     public void tearDown() {
         terminal.verifyAllCommandsExecuted();
     }
 
     @Test
-    public void testStrings() {
+    void testStrings() {
         terminal.expectCommand(
                 "/bin/bash \"with space\" \"speci&l\" \"\" \"double\\\"quote\" 2>&1",
                 0,
@@ -36,7 +33,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void testBasicExecute() {
+    void testBasicExecute() {
         terminal.expectCommand("foo bar 2>&1", 0, "line1\nline2\n\n");
         CommandResult result = commandLine.add("foo", "bar").execute();
         assertEquals(0, result.getExitCode());
@@ -48,14 +45,14 @@ public class CommandLineTest {
 
         List<CommandLine> commandLines = terminal.getTestProcessFactory().getMutableCommandLines();
         assertEquals(1, commandLines.size());
-        assertTrue(commandLine == commandLines.get(0));
+        assertEquals(commandLine, commandLines.get(0));
 
         int lines = result.map(r -> r.getOutputLines().size());
         assertEquals(2, lines);
     }
 
     @Test
-    public void verifyDefaults() {
+    void verifyDefaults() {
         assertEquals(CommandLine.DEFAULT_TIMEOUT, commandLine.getTimeout());
         assertEquals(CommandLine.DEFAULT_MAX_OUTPUT_BYTES, commandLine.getMaxOutputBytes());
         assertEquals(CommandLine.DEFAULT_SIGTERM_GRACE_PERIOD, commandLine.getSigTermGracePeriod());
@@ -70,7 +67,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void executeSilently() {
+    void executeSilently() {
         terminal.ignoreCommand("");
         commandLine.add("foo", "bar").executeSilently();
         assertEquals(0, context.getSystemModificationLog().size());
@@ -79,16 +76,20 @@ public class CommandLineTest {
         assertEquals("Executed command: foo bar 2>&1", context.getSystemModificationLog().get(0));
     }
 
-    @Test(expected = NegativeArraySizeException.class)
-    public void processFactorySpawnFails() {
-        terminal.interceptCommand(
-                        commandLine.toString(),
-                        command -> { throw new NegativeArraySizeException(); });
-        commandLine.add("foo").execute();
+    @Test
+    void processFactorySpawnFails() {
+        assertThrows(NegativeArraySizeException.class, () -> {
+            terminal.interceptCommand(
+                    commandLine.toString(),
+                    command -> {
+                        throw new NegativeArraySizeException();
+                    });
+            commandLine.add("foo").execute();
+        });
     }
 
     @Test
-    public void waitingForTerminationExceptionStillClosesChild() {
+    void waitingForTerminationExceptionStillClosesChild() {
         TestChildProcess2 child = new TestChildProcess2(0, "");
         child.throwInWaitForTermination(new NegativeArraySizeException());
         terminal.interceptCommand(commandLine.toString(), command -> child);
@@ -104,7 +105,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void programFails() {
+    void programFails() {
         terminal.expectCommand("foo 2>&1", 1, "");
         try {
             commandLine.add("foo").execute();
@@ -117,22 +118,24 @@ public class CommandLineTest {
     }
 
     @Test
-    public void mapException() {
+    void mapException() {
         terminal.ignoreCommand("output");
         CommandResult result = terminal.newCommandLine(context).add("program").execute();
         IllegalArgumentException exception = new IllegalArgumentException("foo");
         try {
-            result.mapOutput(output -> { throw exception; });
+            result.mapOutput(output -> {
+                throw exception;
+            });
             fail();
         } catch (UnexpectedOutputException e) {
             assertEquals("Command 'program 2>&1' output was not of the expected format: " +
                     "Failed to map output: stdout/stderr: 'output'", e.getMessage());
-            assertTrue(e.getCause() == exception);
+            assertEquals(e.getCause(), exception);
         }
     }
 
     @Test
-    public void testMapEachLine() {
+    void testMapEachLine() {
         assertEquals(
                 1 + 2 + 3,
                 terminal.ignoreCommand("1\n2\n3\n")
@@ -146,7 +149,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void addTokensWithMultipleWhiteSpaces() {
+    void addTokensWithMultipleWhiteSpaces() {
         terminal.expectCommand("iptables -L 2>&1");
         commandLine.addTokens("iptables  -L").execute();
 
@@ -154,7 +157,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void addTokensWithSpecialCharacters() {
+    void addTokensWithSpecialCharacters() {
         terminal.expectCommand("find . ! -name hei 2>&1");
         commandLine.addTokens("find . ! -name hei").execute();
 
@@ -162,7 +165,7 @@ public class CommandLineTest {
     }
 
     @Test
-    public void testEnvironment() {
+    void testEnvironment() {
         terminal.expectCommand("env k1=v1 -u k2 \"key 3=value 3\" programname 2>&1");
         commandLine.add("programname")
                 .setEnvironmentVariable("key 3", "value 3")

@@ -3,24 +3,27 @@ package com.yahoo.search.predicate;
 
 import com.yahoo.document.predicate.BooleanPredicate;
 import com.yahoo.document.predicate.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author bjorncs
  */
 public class PredicateIndexBuilderTest {
 
-    @Test(expected = IllegalArgumentException.class)
-    public void requireThatIndexingMultiDocumentsWithSameIdThrowsException() {
-        PredicateIndexBuilder builder = new PredicateIndexBuilder(2);
-        builder.indexDocument(1, Predicate.fromString("a in ['b']"));
-        builder.indexDocument(1, Predicate.fromString("c in ['d']"));
+    @Test
+    void requireThatIndexingMultiDocumentsWithSameIdThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            PredicateIndexBuilder builder = new PredicateIndexBuilder(2);
+            builder.indexDocument(1, Predicate.fromString("a in ['b']"));
+            builder.indexDocument(1, Predicate.fromString("c in ['d']"));
+        });
     }
 
     @Test
-    public void requireThatEmptyDocumentsCanBeIndexed() {
+    void requireThatEmptyDocumentsCanBeIndexed() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         assertEquals(0, builder.getZeroConstraintDocCount());
         builder.indexDocument(2, new BooleanPredicate(true));
@@ -29,7 +32,7 @@ public class PredicateIndexBuilderTest {
     }
 
     @Test
-    public void requireThatMultipleDocumentsCanBeIndexed() {
+    void requireThatMultipleDocumentsCanBeIndexed() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(1, Predicate.fromString("a in ['b']"));
         builder.indexDocument(2, Predicate.fromString("a in ['b']"));

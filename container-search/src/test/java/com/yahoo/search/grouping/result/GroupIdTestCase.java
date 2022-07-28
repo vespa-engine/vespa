@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public class GroupIdTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         ValueGroupId valueId = new DoubleId(6.9);
         assertEquals(6.9, valueId.getValue());
         BucketGroupId rangeId = new DoubleBucketId(6.0, 9.0);
@@ -24,11 +24,11 @@ public class GroupIdTestCase {
         assertEquals(6L, rangeId.getFrom());
         assertEquals(9L, rangeId.getTo());
 
-        valueId = new RawId(new byte[] { 6, 9 });
-        assertArrayEquals(new byte[] { 6, 9 }, (byte[])valueId.getValue());
-        rangeId = new RawBucketId(new byte[] { 6, 9 }, new byte[] { 9, 6 });
-        assertArrayEquals(new byte[] { 6, 9 }, (byte[])rangeId.getFrom());
-        assertArrayEquals(new byte[] { 9, 6 }, (byte[])rangeId.getTo());
+        valueId = new RawId(new byte[]{6, 9});
+        assertArrayEquals(new byte[]{6, 9}, (byte[]) valueId.getValue());
+        rangeId = new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6});
+        assertArrayEquals(new byte[]{6, 9}, (byte[]) rangeId.getFrom());
+        assertArrayEquals(new byte[]{9, 6}, (byte[]) rangeId.getTo());
 
         valueId = new StringId("69");
         assertEquals("69", valueId.getValue());
@@ -41,14 +41,14 @@ public class GroupIdTestCase {
     }
 
     @Test
-    public void requireThatToStringCorrespondsToType() {
+    void requireThatToStringCorrespondsToType() {
         assertEquals("group:double:6.9", new DoubleId(6.9).toString());
         assertEquals("group:double_bucket:6.0:9.0", new DoubleBucketId(6.0, 9.0).toString());
         assertEquals("group:long:69", new LongId(69L).toString());
         assertEquals("group:long_bucket:6:9", new LongBucketId(6L, 9L).toString());
         assertEquals("group:null", new NullId().toString());
-        assertEquals("group:raw:[6, 9]", new RawId(new byte[] { 6, 9 }).toString());
-        assertEquals("group:raw_bucket:[6, 9]:[9, 6]", new RawBucketId(new byte[] { 6, 9 }, new byte[] { 9, 6 }).toString());
+        assertEquals("group:raw:[6, 9]", new RawId(new byte[]{6, 9}).toString());
+        assertEquals("group:raw_bucket:[6, 9]:[9, 6]", new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6}).toString());
         assertTrue(new RootId(0).toString().startsWith("group:root:"));
         assertEquals("group:string:69", new StringId("69").toString());
         assertEquals("group:string_bucket:6:9", new StringBucketId("6", "9").toString());

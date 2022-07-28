@@ -9,17 +9,17 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void requireThatInvalidSourceIsCaught() throws IOException, ParseException {
+    void requireThatInvalidSourceIsCaught() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalidsummarysource.sd");
             fail("This should throw and never get here");
@@ -29,7 +29,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     }
 
     @Test
-    public void requireThatInvalidImplicitSourceIsCaught() throws IOException, ParseException {
+    void requireThatInvalidImplicitSourceIsCaught() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalidimplicitsummarysource.sd");
             fail("This should throw and never get here");
@@ -39,7 +39,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     }
 
     @Test
-    public void requireThatInvalidSelfReferingSingleSource() throws IOException, ParseException {
+    void requireThatInvalidSelfReferingSingleSource() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalidselfreferringsummary.sd");
             fail("This should throw and never get here");
@@ -49,7 +49,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     }
 
     @Test
-    public void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
+    void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();

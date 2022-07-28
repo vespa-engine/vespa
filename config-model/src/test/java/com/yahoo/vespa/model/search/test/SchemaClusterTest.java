@@ -21,12 +21,9 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -38,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class SchemaClusterTest {
 
     @Test
-    public void testSdConfigLogical() {
+    void testSdConfigLogical() {
         // sd1
         SDDocumentType sdt1 = new SDDocumentType("s1");
         Schema schema1 = new Schema("s1", MockApplicationPackage.createEmpty());
@@ -51,7 +48,7 @@ public class SchemaClusterTest {
         // sd2
         SDDocumentType sdt2 = new SDDocumentType("s2");
         Schema schema2 = new Schema("s2", MockApplicationPackage.createEmpty());
-        SDField f2=new SDField(sdt2, "f2", DataType.STRING);
+        SDField f2 = new SDField(sdt2, "f2", DataType.STRING);
         f2.addAttribute(new Attribute("f2", DataType.STRING));
         f2.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f2"))));
         sdt2.addField(f2);
@@ -64,76 +61,76 @@ public class SchemaClusterTest {
     }
 
     @Test
-    public void search_model_is_connected_to_container_clusters_two_content_clusters() {
+    void search_model_is_connected_to_container_clusters_two_content_clusters() {
         String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
-                            "<hosts>" +
-                            "  <host name='node0host'>" +
-                            "    <alias>node0</alias>" +
-                            "  </host>" +
-                            "  <host name='node1host'>" +
-                            "    <alias>node1</alias>" +
-                            "  </host>" +
-                            "  <host name='node2host'>" +
-                            "    <alias>node2</alias>" +
-                            "  </host>" +
-                            "</hosts>";
+                "<hosts>" +
+                "  <host name='node0host'>" +
+                "    <alias>node0</alias>" +
+                "  </host>" +
+                "  <host name='node1host'>" +
+                "    <alias>node1</alias>" +
+                "  </host>" +
+                "  <host name='node2host'>" +
+                "    <alias>node2</alias>" +
+                "  </host>" +
+                "</hosts>";
 
         String services =
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<services version=\"1.0\">" +
-                "  <admin version='2.0'>" +
-                "    <adminserver hostalias='node0' />" +
-                "  </admin>\n" +
-                "  <container version='1.0' id='j1'>\n" +
-                "    <search>" +
-                "      <chain id='s1Chain'>" +
-                "        <searcher id='S1ClusterSearcher'/>" +
-                "      </chain>" +
-                "      <provider cluster='normal' id='normal' type='local'/>\n" +
-                "    </search>" +
-                "    <nodes>" +
-                "      <node hostalias=\"node0\" />" +
-                "    </nodes>" +
-                "  </container>" +
+                        "<services version=\"1.0\">" +
+                        "  <admin version='2.0'>" +
+                        "    <adminserver hostalias='node0' />" +
+                        "  </admin>\n" +
+                        "  <container version='1.0' id='j1'>\n" +
+                        "    <search>" +
+                        "      <chain id='s1Chain'>" +
+                        "        <searcher id='S1ClusterSearcher'/>" +
+                        "      </chain>" +
+                        "      <provider cluster='normal' id='normal' type='local'/>\n" +
+                        "    </search>" +
+                        "    <nodes>" +
+                        "      <node hostalias=\"node0\" />" +
+                        "    </nodes>" +
+                        "  </container>" +
 
-                "  <container version='1.0' id='j2'>" +
-                "    <search>" +
-                "      <chain id='s2Chain'>" +
-                "        <searcher id='S2ClusterSearcher'/>" +
-                "      </chain>" +
-                "      <provider cluster='xbulk' id='xbulk' type='local'/>" +
-                "    </search>" +
-                "    <nodes>" +
-                "      <node hostalias=\"node2\" />" +
-                "    </nodes>" +
-                "  </container>" +
+                        "  <container version='1.0' id='j2'>" +
+                        "    <search>" +
+                        "      <chain id='s2Chain'>" +
+                        "        <searcher id='S2ClusterSearcher'/>" +
+                        "      </chain>" +
+                        "      <provider cluster='xbulk' id='xbulk' type='local'/>" +
+                        "    </search>" +
+                        "    <nodes>" +
+                        "      <node hostalias=\"node2\" />" +
+                        "    </nodes>" +
+                        "  </container>" +
 
-                "  <content id='xbulk' version=\"1.0\">" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document mode='index' type=\"music\" />" +
-                "     </documents>" +
-                "     <nodes>" +
-                "       <node hostalias=\"node0\" distribution-key=\"0\" />" +
-                "     </nodes>" +
-                "  </content>" +
-                "  <content id=\"normal\" version='1.0'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document mode='index' type=\"music\" />" +
-                "     </documents>" +
-                "     <nodes>" +
-                "       <node hostalias=\"node2\" distribution-key=\"0\" />" +
-                "     </nodes>" +
-                "  </content>" +
-                "</services>";
+                        "  <content id='xbulk' version=\"1.0\">" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document mode='index' type=\"music\" />" +
+                        "     </documents>" +
+                        "     <nodes>" +
+                        "       <node hostalias=\"node0\" distribution-key=\"0\" />" +
+                        "     </nodes>" +
+                        "  </content>" +
+                        "  <content id=\"normal\" version='1.0'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document mode='index' type=\"music\" />" +
+                        "     </documents>" +
+                        "     <nodes>" +
+                        "       <node hostalias=\"node2\" distribution-key=\"0\" />" +
+                        "     </nodes>" +
+                        "  </content>" +
+                        "</services>";
 
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
 
-        ContainerCluster containerCluster1 = (ContainerCluster)model.getConfigProducer("j1").get();
+        ContainerCluster containerCluster1 = (ContainerCluster) model.getConfigProducer("j1").get();
         assertFalse(containerCluster1.getSearch().getChains().localProviders().isEmpty());
 
-        ContainerCluster containerCluster2 = (ContainerCluster)model.getConfigProducer("j2").get();
+        ContainerCluster containerCluster2 = (ContainerCluster) model.getConfigProducer("j2").get();
         assertFalse(containerCluster2.getSearch().getChains().localProviders().isEmpty());
 
         QrSearchersConfig.Builder builder = new QrSearchersConfig.Builder();

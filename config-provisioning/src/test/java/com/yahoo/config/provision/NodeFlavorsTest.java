@@ -2,19 +2,19 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.config.provisioning.FlavorsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NodeFlavorsTest {
 
     private static final double delta = 0.00001;
 
     @Test
-    public void testConfigParsing() {
+    void testConfigParsing() {
         FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
         List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
         {
@@ -35,7 +35,7 @@ public class NodeFlavorsTest {
         Flavor banana = nodeFlavors.getFlavor("banana").get();
         assertEquals(3, banana.cost());
         assertEquals(13, banana.resources().vcpu(), delta);
-        assertEquals("10 * 1.3", 13, banana.resources().vcpu(), delta);
+        assertEquals(13, banana.resources().vcpu(), delta, "10 * 1.3");
     }
 
 }

@@ -2,11 +2,11 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author gjoranv
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class MetricTest {
 
     @Test
-    public void this_metric_takes_precedence_when_combined_with_another_metric() {
+    void this_metric_takes_precedence_when_combined_with_another_metric() {
         String COMMON_DIMENSION_KEY = "commonKey";
 
         Map<String, String> thisDimensions = ImmutableMap.<String, String>builder()

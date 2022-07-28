@@ -8,8 +8,7 @@ import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
 
@@ -18,7 +17,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testBasicSubstitution() {
+    void testBasicSubstitution() {
         Item a = parseQuery("firstsecond");
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
@@ -27,7 +26,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testSubstitutionAndMoreTerms() {
+    void testSubstitutionAndMoreTerms() {
         Item a = parseQuery("bcfirstsecondfg");
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
@@ -36,7 +35,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testSubstitutionAndNot() {
+    void testSubstitutionAndNot() {
         Item a = parseQuery("-firstsecond bc");
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
@@ -45,7 +44,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testSubstitutionSomeNoise() {
+    void testSubstitutionSomeNoise() {
         Item a = parseQuery("9270bcsecond2389");
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);

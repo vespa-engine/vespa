@@ -5,7 +5,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Runs a query thru the configured search chain from a real http channel
@@ -32,8 +32,8 @@ public class IntegrationTestCase {
     }
 
     @Test
-    public void testQuery() throws java.io.IOException {
-    /*
+    void testQuery() throws java.io.IOException {
+        /*
        TODO: (JSB) This blocks forever on Linux (not Windows) because
              the ServerSocketChannel.accept method in Server
          seems to starve the test running thread,

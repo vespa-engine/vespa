@@ -6,7 +6,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing.Status;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -22,13 +22,13 @@ import static java.time.DayOfWeek.MONDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReindexingTriggererTest {
 
     @Test
-    public void testWindowOfOpportunity() {
+    void testWindowOfOpportunity() {
         Duration interval = Duration.ofHours(1);
         Instant now = Instant.now();
         Instant doom = now.plus(ReindexingTriggerer.reindexingPeriod);
@@ -43,42 +43,42 @@ public class ReindexingTriggererTest {
             now = now.plus(interval);
         }
         // Summer/winter time :'(
-        assertTrue("Should be in window of opportunity three to five times each period", 3 <= triggered && triggered <= 5);
+        assertTrue(3 <= triggered && triggered <= 5, "Should be in window of opportunity three to five times each period");
     }
 
     @Test
-    public void testReindexingIsReady() {
+    void testReindexingIsReady() {
         Instant then = Instant.now();
         ApplicationReindexing reindexing = new ApplicationReindexing(true,
-                                                                     Map.of("c", new Cluster(Map.of(), Map.of("d", new Status(then)))));
+                Map.of("c", new Cluster(Map.of(), Map.of("d", new Status(then)))));
 
         Instant now = then;
-        assertFalse("Should not be ready less than one half-period after last triggering",
-                    reindexingIsReady(reindexing, now));
+        assertFalse(reindexingIsReady(reindexing, now),
+                "Should not be ready less than one half-period after last triggering");
 
         now = now.plus(reindexingPeriod.dividedBy(2));
-        assertFalse("Should not be ready one half-period after last triggering",
-                    reindexingIsReady(reindexing, now));
+        assertFalse(reindexingIsReady(reindexing, now),
+                "Should not be ready one half-period after last triggering");
 
         now = now.plusMillis(1);
-        assertTrue("Should be ready more than one half-period after last triggering",
-                   reindexingIsReady(reindexing, now));
+        assertTrue(reindexingIsReady(reindexing, now),
+                "Should be ready more than one half-period after last triggering");
 
         reindexing = new ApplicationReindexing(true,
-                                               Map.of("cluster",
-                                                      new Cluster(Map.of(),
-                                                                  Map.of("type",
-                                                                         new Status(then, then, null, null, null, null, 1.0)))));
-        assertFalse("Should not be ready when reindexing is already running",
-                    reindexingIsReady(reindexing, now));
+                Map.of("cluster",
+                        new Cluster(Map.of(),
+                                Map.of("type",
+                                        new Status(then, then, null, null, null, null, 1.0)))));
+        assertFalse(reindexingIsReady(reindexing, now),
+                "Should not be ready when reindexing is already running");
 
         reindexing = new ApplicationReindexing(true,
-                                               Map.of("cluster",
-                                                      new Cluster(Map.of("type", 123L),
-                                                                  Map.of("type",
-                                                                         new Status(then, then, now, null, null, null, 1.0)))));
-        assertTrue("Should be ready when reindexing is no longer running",
-                   reindexingIsReady(reindexing, now));
+                Map.of("cluster",
+                        new Cluster(Map.of("type", 123L),
+                                Map.of("type",
+                                        new Status(then, then, now, null, null, null, 1.0)))));
+        assertTrue(reindexingIsReady(reindexing, now),
+                "Should be ready when reindexing is no longer running");
     }
 
 }

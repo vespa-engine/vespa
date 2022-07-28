@@ -6,9 +6,9 @@ import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>Tests that the correct query language strings are generated for various
@@ -24,14 +24,14 @@ import static org.junit.Assert.assertEquals;
 public class QueryLanguageTestCase {
 
     @Test
-    public void testWord() {
+    void testWord() {
         WordItem w = new WordItem("test");
 
         assertEquals("test", w.toString());
     }
 
     @Test
-    public void testWordWithIndex() {
+    void testWordWithIndex() {
         WordItem w = new WordItem("test");
 
         w.setIndexName("test.index");
@@ -39,7 +39,7 @@ public class QueryLanguageTestCase {
     }
 
     @Test
-    public void testPhrase() {
+    void testPhrase() {
         PhraseItem p = new PhraseItem();
 
         p.addItem(new WordItem("part"));
@@ -49,7 +49,7 @@ public class QueryLanguageTestCase {
     }
 
     @Test
-    public void testPhraseWithIndex() {
+    void testPhraseWithIndex() {
         PhraseItem p = new PhraseItem();
 
         p.addItem(new WordItem("part"));
@@ -60,7 +60,7 @@ public class QueryLanguageTestCase {
     }
 
     @Test
-    public void testNotItem() {
+    void testNotItem() {
         NotItem n = new NotItem();
 
         n.addNegativeItem(new WordItem("notthis"));
@@ -70,22 +70,22 @@ public class QueryLanguageTestCase {
     }
 
     @Test
-    public void testLanguagesInQueryParameter() {
+    void testLanguagesInQueryParameter() {
         // Right parameter is the parameter given in the query, as language=
         // Left parameter is the language sent to linguistics
 
         // Ancient
-        assertLanguage(Language.CHINESE_SIMPLIFIED,"zh-cn");
-        assertLanguage(Language.CHINESE_SIMPLIFIED,"zh-Hans");
-        assertLanguage(Language.CHINESE_SIMPLIFIED,"zh-hans");
-        assertLanguage(Language.CHINESE_TRADITIONAL,"zh-tw");
-        assertLanguage(Language.CHINESE_TRADITIONAL,"zh-Hant");
-        assertLanguage(Language.CHINESE_TRADITIONAL,"zh-hant");
-        assertLanguage(Language.CHINESE_TRADITIONAL,"zh");
+        assertLanguage(Language.CHINESE_SIMPLIFIED, "zh-cn");
+        assertLanguage(Language.CHINESE_SIMPLIFIED, "zh-Hans");
+        assertLanguage(Language.CHINESE_SIMPLIFIED, "zh-hans");
+        assertLanguage(Language.CHINESE_TRADITIONAL, "zh-tw");
+        assertLanguage(Language.CHINESE_TRADITIONAL, "zh-Hant");
+        assertLanguage(Language.CHINESE_TRADITIONAL, "zh-hant");
+        assertLanguage(Language.CHINESE_TRADITIONAL, "zh");
         assertLanguage(Language.ENGLISH, "en");
         assertLanguage(Language.GERMAN, "de");
         assertLanguage(Language.JAPANESE, "ja");
-        assertLanguage(Language.fromLanguageTag("jp") ,"jp");
+        assertLanguage(Language.fromLanguageTag("jp"), "jp");
         assertLanguage(Language.KOREAN, "ko");
 
         // Since 2.0

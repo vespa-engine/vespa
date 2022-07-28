@@ -13,16 +13,14 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -35,7 +33,7 @@ public class BasicNetworkTestCase {
     TestServer  pxy;
     TestServer  dst;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
         table.addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"));
@@ -47,7 +45,7 @@ public class BasicNetworkTestCase {
         dst = new TestServer("test/dst", table, slobrok, null);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dst.destroy();
         pxy.destroy();
@@ -56,7 +54,7 @@ public class BasicNetworkTestCase {
     }
 
     @Test
-    public void testNetwork() {
+    void testNetwork() {
         // set up receptors
         Receptor src_rr = new Receptor();
         Receptor pxy_mr = new Receptor();
@@ -126,7 +124,7 @@ public class BasicNetworkTestCase {
     }
 
     @Test
-    public void testTimeoutsFollowMessage() {
+    void testTimeoutsFollowMessage() {
         SourceSessionParams params = new SourceSessionParams().setTimeout(600.0);
         SourceSession ss = src.mb.createSourceSession(new Receptor(), params);
         DestinationSession ds = dst.mb.createDestinationSession("session", true, new Receptor());
@@ -138,24 +136,24 @@ public class BasicNetworkTestCase {
         long now = SystemTimer.INSTANCE.milliTime();
         assertTrue(ss.send(msg, Route.parse("dst")).isAccepted());
 
-        assertNotNull(msg = ((Receptor)ds.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) ds.getMessageHandler()).getMessage(60));
         assertTrue(msg.getTimeReceived() >= now);
         assertTrue(params.getTimeout() * 1000 >= msg.getTimeRemaining());
         ds.acknowledge(msg);
 
-        assertNotNull(((Receptor)ss.getReplyHandler()).getReply(60));
+        assertNotNull(((Receptor) ss.getReplyHandler()).getReply(60));
 
         // Test default timeouts being overwritten.
         msg = new SimpleMessage("msg");
         msg.getTrace().setLevel(9);
-        msg.setTimeRemaining(2 * (long)(params.getTimeout() * 1000));
+        msg.setTimeRemaining(2 * (long) (params.getTimeout() * 1000));
         assertTrue(ss.send(msg, Route.parse("dst")).isAccepted());
 
-        assertNotNull(msg = ((Receptor)ds.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) ds.getMessageHandler()).getMessage(60));
         assertTrue(params.getTimeout() * 1000 < msg.getTimeRemaining());
         ds.acknowledge(msg);
 
-        assertNotNull(((Receptor)ss.getReplyHandler()).getReply(60));
+        assertNotNull(((Receptor) ss.getReplyHandler()).getReply(60));
 
         ss.destroy();
         ds.destroy();

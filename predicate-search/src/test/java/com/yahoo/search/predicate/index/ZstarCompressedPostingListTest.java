@@ -1,20 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  */
 public class ZstarCompressedPostingListTest {
     @Test
-    public void requireThatPostingListCanIterate() {
+    void requireThatPostingListCanIterate() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
         int ref1 = builder.insert(Arrays.asList(0x10000));
         int ref2 = builder.insert(Arrays.asList(0x10000, 0x0ffff));

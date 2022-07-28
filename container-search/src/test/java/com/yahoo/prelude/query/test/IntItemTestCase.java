@@ -5,9 +5,9 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class IntItemTestCase {
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         Query q1 = new Query("/?query=123%20456%20789");
         Query q2 = new Query("/?query=123%20456");
 

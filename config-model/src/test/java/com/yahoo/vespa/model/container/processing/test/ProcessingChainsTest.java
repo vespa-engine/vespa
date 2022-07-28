@@ -7,13 +7,13 @@ import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 import com.yahoo.vespa.model.container.processing.ProcessingChain;
 import com.yahoo.vespa.model.container.processing.Processor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -23,7 +23,7 @@ public class ProcessingChainsTest extends DomBuilderTest {
 
     private Chains<ProcessingChain> processingChains;
 
-    @Before
+    @BeforeEach
     public void setupProcessingChains() {
         DomProcessingBuilder processingBuilder = new DomProcessingBuilder(null);
         processingBuilder.build(root.getDeployState(), root, servicesXml());
@@ -43,7 +43,7 @@ public class ProcessingChainsTest extends DomBuilderTest {
     }
 
     @Test
-    public void testProcessingChainConfiguration() {
+    void testProcessingChainConfiguration() {
         ProcessingChain defaultChain = processingChains.allChains().getComponent("default");
         assertEquals("default", defaultChain.getId().stringValue());
         assertEquals(1, defaultChain.getInnerComponents().size());
@@ -57,7 +57,7 @@ public class ProcessingChainsTest extends DomBuilderTest {
     }
 
     @Test
-    public void require_that_processors_have_correct_class() {
+    void require_that_processors_have_correct_class() {
         ChainedComponent<?> processor1 = processingChains.getComponentGroup().getComponents().iterator().next();
         assertEquals("com.yahoo.test.Processor1", processor1.model.bundleInstantiationSpec.classId.stringValue());
 

@@ -19,15 +19,11 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -40,7 +36,7 @@ public class ResenderTestCase {
     DestinationSession dstSession;
     RetryTransientErrorsPolicy retryPolicy;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
@@ -55,7 +51,7 @@ public class ResenderTestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -65,94 +61,94 @@ public class ResenderTestCase {
     }
 
     @Test
-    public void testRetryTag() {
+    void testRetryTag() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         for (int i = 0; i < 5; ++i) {
             assertEquals(i, msg.getRetry());
             assertEquals(true, msg.getRetryEnabled());
             replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
-            assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+            assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         }
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertFalse(reply.hasErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
         System.out.println(reply.getTrace());
     }
 
     @Test
-    public void testRetryEnabledTag() {
+    void testRetryEnabledTag() {
         Message msg = createMessage("msg");
         msg.setRetryEnabled(false);
         assertTrue(srcSession.send(msg, Route.parse("dst/session")).isAccepted());
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         assertEquals(false, msg.getRetryEnabled());
         replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
         System.out.println(reply.getTrace());
     }
 
     @Test
-    public void testTransientError() {
+    void testTransientError() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         replyFromDestination(msg, ErrorCode.APP_FATAL_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasFatalErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
     }
 
     @Test
-    public void testFatalError() {
+    void testFatalError() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         replyFromDestination(msg, ErrorCode.APP_FATAL_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasFatalErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
     }
 
     @Test
-    public void testDisableRetry() {
+    void testDisableRetry() {
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasErrors());
-        assertTrue(!reply.hasFatalErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertFalse(reply.hasFatalErrors());
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
     }
 
     @Test
-    public void testRetryDelay() {
+    void testRetryDelay() {
         retryPolicy.setBaseDelay(0.01);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         for (int i = 0; i < 5; ++i) {
             replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, -1);
-            assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+            assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         }
         replyFromDestination(msg, ErrorCode.APP_FATAL_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasFatalErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
 
         String trace = reply.getTrace().toString();
         assertTrue(trace.contains("retry 1 in 0.0"));
@@ -163,19 +159,19 @@ public class ResenderTestCase {
     }
 
     @Test
-    public void testRequestRetryDelay() {
+    void testRequestRetryDelay() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         for (int i = 0; i < 5; ++i) {
             replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, i / 50.0);
-            assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+            assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         }
         replyFromDestination(msg, ErrorCode.APP_FATAL_ERROR, 0);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasFatalErrors());
-        assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
+        assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
 
         String trace = reply.getTrace().toString();
         System.out.println(trace);

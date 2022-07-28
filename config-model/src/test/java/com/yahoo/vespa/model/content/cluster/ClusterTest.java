@@ -9,13 +9,13 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,7 +25,7 @@ public class ClusterTest {
     private static final double DELTA = 1E-12;
 
     @Test
-    public void requireThatContentSearchIsApplied() {
+    void requireThatContentSearchIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <query-timeout>1.1</query-timeout>",
                 "  <visibility-delay>2.3</visibility-delay>",
@@ -39,7 +39,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
+    void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <visibility-delay>2.3</visibility-delay>",
                 "</search>"), true);
@@ -48,7 +48,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatSearchCoverageIsApplied() {
+    void requireThatSearchCoverageIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <coverage>",
                 "    <minimum>0.11</minimum>",
@@ -67,15 +67,15 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatDispatchTuningIsApplied() {
+    void requireThatDispatchTuningIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
-                                                   "",
-                                                   joinLines(
-                                                           "<max-hits-per-partition>77</max-hits-per-partition>",
-                                                           "<dispatch-policy>round-robin</dispatch-policy>",
-                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>",
-                                                           "<top-k-probability>0.777</top-k-probability>"),
-                                                   false);
+                "",
+                joinLines(
+                        "<max-hits-per-partition>77</max-hits-per-partition>",
+                        "<dispatch-policy>round-robin</dispatch-policy>",
+                        "<min-active-docs-coverage>93</min-active-docs-coverage>",
+                        "<top-k-probability>0.777</top-k-probability>"),
+                false);
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
         DispatchConfig config = new DispatchConfig(builder);
@@ -87,9 +87,9 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatDefaultDispatchConfigIsCorrect()  {
+    void requireThatDefaultDispatchConfigIsCorrect()  {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
-                                                   joinLines("<tuning>", "</tuning>"));
+                joinLines("<tuning>", "</tuning>"));
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
         DispatchConfig config = new DispatchConfig(builder);

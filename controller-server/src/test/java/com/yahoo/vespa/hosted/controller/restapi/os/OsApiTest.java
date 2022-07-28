@@ -21,15 +21,15 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.intellij.lang.annotations.Language;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author mpolden
@@ -52,7 +52,7 @@ public class OsApiTest extends ControllerContainerTest {
         return SystemName.cd;
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responses);
         tester.serviceRegistry().clock().setInstant(Instant.ofEpochMilli(1234));
@@ -69,7 +69,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_api() {
+    void test_api() {
         // No versions available yet
         assertResponse(new Request("http://localhost:8080/os/v1/"), "{\"versions\":[]}", 200);
 
@@ -77,9 +77,9 @@ public class OsApiTest extends ControllerContainerTest {
         upgradeAndUpdateStatus();
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 with upgrade budget PT0S\"}", 200);
+                "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 with upgrade budget PT0S\"}", 200);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\", \"upgradeBudget\": \"PT24H\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
+                "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();
@@ -93,49 +93,49 @@ public class OsApiTest extends ControllerContainerTest {
 
         // Downgrade with force is permitted
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true, \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1 with upgrade budget PT0S\"}", 200);
+                "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1 with upgrade budget PT0S\"}", 200);
 
         // Clear target for a given cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud2\"}", Request.Method.PATCH),
-                       "{\"message\":\"Cleared target OS version for cloud 'cloud2'\"}", 200);
+                "{\"message\":\"Cleared target OS version for cloud 'cloud2'\"}", 200);
 
         // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'cloud' is required\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'cloud' is required\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'version' is required\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'version' is required\"}", 400);
 
         // Error: Invalid versions
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"0.0.0\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
 
         // Error: Invalid cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cloud 'foo' does not exist in this system\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cloud 'foo' does not exist in this system\"}", 400);
 
         // Error: Downgrade OS
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
 
         // Request firmware checks in all zones.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/", "", Request.Method.POST),
-                       "{\"message\":\"Requested firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
+                "{\"message\":\"Requested firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
 
         // Cancel firmware checks in all prod zones.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/prod/", "", Request.Method.DELETE),
-                       "{\"message\":\"Cancelled firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
+                "{\"message\":\"Cancelled firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
 
         // Request firmware checks in prod.us-east-3.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/prod/us-east-3", "", Request.Method.POST),
-                       "{\"message\":\"Requested firmware checks in prod.us-east-3.\"}", 200);
+                "{\"message\":\"Requested firmware checks in prod.us-east-3.\"}", 200);
 
         // Error: Cancel firmware checks in an empty set of zones.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/dev/", "", Request.Method.DELETE),
-                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev/'\"}", 404);
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev/'\"}", 404);
 
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
+        assertFalse(tester.controller().auditLogger().readLog().entries().isEmpty(), "Actions are logged to audit log");
     }
 
     private void upgradeAndUpdateStatus() {

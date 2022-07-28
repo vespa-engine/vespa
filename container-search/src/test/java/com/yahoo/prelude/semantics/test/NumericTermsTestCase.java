@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests numeric terms
@@ -15,13 +15,13 @@ public class NumericTermsTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testNumericProduction() {
-        assertSemantics("+restaurants -ycat2gc:96929265","restaurants");
+    void testNumericProduction() {
+        assertSemantics("+restaurants -ycat2gc:96929265", "restaurants");
     }
 
     @Test
-    public void testNumericConditionAndProduction() {
-        assertSemantics("48","49");
+    void testNumericConditionAndProduction() {
+        assertSemantics("48", "49");
     }
 
 }

@@ -2,24 +2,22 @@
 package com.yahoo.search.predicate.index;
 
 import com.yahoo.search.predicate.SubqueryBitmap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IntervalPostingListTest {
 
     @Test
-    public void requireThatPostingListCanIterate() {
+    void requireThatPostingListCanIterate() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
         int ref1 = builder.insert(Arrays.asList(0x1ffff));
         int ref2 = builder.insert(Arrays.asList(0x1ffff));
         int ref3 = builder.insert(Arrays.asList(0x10001, 0x2ffff));
         IntervalPostingList postingList = new IntervalPostingList(
-                builder.build(), new int[]{2, 4, 6}, new int[] {ref1, ref2, ref3}, SubqueryBitmap.ALL_SUBQUERIES);
+                builder.build(), new int[]{2, 4, 6}, new int[]{ref1, ref2, ref3}, SubqueryBitmap.ALL_SUBQUERIES);
         assertEquals(-1, postingList.getDocId());
         assertEquals(0, postingList.getInterval());
         assertEquals(0xffffffffffffffffL, postingList.getSubquery());

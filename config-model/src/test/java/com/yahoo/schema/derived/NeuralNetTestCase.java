@@ -6,27 +6,28 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import com.yahoo.component.ComponentId;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NeuralNetTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testNeuralNet() throws IOException, ParseException {
+    void testNeuralNet() throws IOException, ParseException {
         ComponentId.resetGlobalCountersForTests();
         DerivedConfiguration c = assertCorrectDeriving("neuralnet");
         // Verify that query profiles end up correct when passed through the same intermediate forms as a full system
-        CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig());
+        CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {
+        }).getConfig());
         assertNeuralNetQuery(c, queryProfiles.getComponent("default"));
     }
 
     @Test
-    public void testNeuralNet_noQueryProfiles() throws IOException, ParseException {
+    void testNeuralNet_noQueryProfiles() throws IOException, ParseException {
         ComponentId.resetGlobalCountersForTests();
         DerivedConfiguration c = assertCorrectDeriving("neuralnet_noqueryprofile");
     }

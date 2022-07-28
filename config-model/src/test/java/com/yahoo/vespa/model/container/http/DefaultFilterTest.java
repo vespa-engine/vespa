@@ -8,7 +8,7 @@ import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Set;
@@ -27,7 +27,7 @@ public class DefaultFilterTest extends DomBuilderTest {
     }
 
     @Test
-    public void default_request_and_response_filters_in_services_xml_are_listen_in_server_config() {
+    void default_request_and_response_filters_in_services_xml_are_listen_in_server_config() {
         BindingPattern binding = UserBindingPattern.fromHttpPath("/my-chain-binding");
         Element xml = parse(
                 "<container version='1.0'>",
@@ -40,7 +40,7 @@ public class DefaultFilterTest extends DomBuilderTest {
                 "        <binding>" + binding.patternString() + "</binding>",
                 "      </response-chain>",
                 "      <request-chain id='my-default-request-chain'/>" +
-                "      <response-chain id='my-default-response-chain'/>",
+                        "      <response-chain id='my-default-response-chain'/>",
                 "    </filtering>",
                 "    <server id='server1' port='8000' default-request-chain=\"my-default-request-chain\" default-response-chain=\"my-default-response-chain\"/>",
                 "    <server id='server2' port='9000' />",

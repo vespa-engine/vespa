@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,13 +29,13 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DeploymentQuotaCalculatorTest {
 
     @Test
-    public void quota_is_divided_among_prod_instances() {
+    void quota_is_divided_among_prod_instances() {
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(10), List.of(), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(
                         "<deployment version='1.0'>\n" +
@@ -59,12 +59,12 @@ public class DeploymentQuotaCalculatorTest {
     }
 
     @Test
-    public void quota_is_divided_among_prod_and_manual_instances() {
+    void quota_is_divided_among_prod_and_manual_instances() {
 
         var existing_dev_deployment = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()), Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
-                                                      Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(), RevisionHistory.empty(),
-                                                      List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
-                                                                                                                        RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
+                Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(), RevisionHistory.empty(),
+                List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
+                        RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
 
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(2), List.of(existing_dev_deployment), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(
@@ -84,19 +84,19 @@ public class DeploymentQuotaCalculatorTest {
     }
 
     @Test
-    public void unlimited_quota_remains_unlimited() {
+    void unlimited_quota_remains_unlimited() {
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited(), List.of(), ApplicationId.defaultId(), ZoneId.defaultId(), DeploymentSpec.empty);
         assertTrue(calculated.isUnlimited());
     }
 
     @Test
-    public void zero_quota_remains_zero() {
+    void zero_quota_remains_zero() {
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.zero(), List.of(), ApplicationId.defaultId(), ZoneId.defaultId(), DeploymentSpec.empty);
         assertEquals(calculated.budget().orElseThrow().doubleValue(), 0, 1e-5);
     }
 
     @Test
-    public void using_highest_resource_use() throws Exception {
+    void using_highest_resource_use() throws Exception {
         var content = new String(Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/application/response/application.json")));
         var mapper = new ObjectMapper();
         var application = mapper.readValue(content, ApplicationData.class).toApplication();
@@ -105,7 +105,7 @@ public class DeploymentQuotaCalculatorTest {
     }
 
     @Test
-    public void tenant_quota_in_pipeline() {
+    void tenant_quota_in_pipeline() {
         var tenantQuota = Quota.unlimited().withBudget(42);
         var calculated = DeploymentQuotaCalculator.calculate(tenantQuota, List.of(), ApplicationId.defaultId(), ZoneId.from("test", "apac1"), DeploymentSpec.empty);
         assertEquals(tenantQuota, calculated);

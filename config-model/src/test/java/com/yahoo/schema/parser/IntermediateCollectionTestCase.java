@@ -10,10 +10,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author arnej
@@ -21,12 +20,12 @@ import static org.junit.Assert.assertThrows;
 public class IntermediateCollectionTestCase {
 
     @Test
-    public void can_add_minimal_schema() throws Exception {
+    void can_add_minimal_schema() throws Exception {
         String input = joinLines
-            ("schema foo {",
-             "  document foo {",
-             "  }",
-             "}");
+                ("schema foo {",
+                        "  document foo {",
+                        "  }",
+                        "}");
         var collection = new IntermediateCollection();
         ParsedSchema schema = collection.addSchemaFromString(input);
         assertEquals("foo", schema.name());
@@ -35,12 +34,12 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void names_may_differ() throws Exception {
+    void names_may_differ() throws Exception {
         String input = joinLines
-            ("schema foo_search {",
-             "  document foo {",
-             "  }",
-             "}");
+                ("schema foo_search {",
+                        "  document foo {",
+                        "  }",
+                        "}");
         var collection = new IntermediateCollection();
         ParsedSchema schema = collection.addSchemaFromString(input);
         assertEquals("foo_search", schema.name());
@@ -49,7 +48,7 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void can_add_schema_files() throws Exception {
+    void can_add_schema_files() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/deriver/child.sd");
         collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
@@ -75,7 +74,7 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void can_add_schemas() throws Exception {
+    void can_add_schemas() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromReader(readerOf("src/test/derived/deriver/child.sd"));
         collection.addSchemaFromReader(readerOf("src/test/derived/deriver/grandparent.sd"));
@@ -101,7 +100,7 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void can_add_extra_rank_profiles() throws Exception {
+    void can_add_extra_rank_profiles() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
@@ -128,32 +127,32 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void name_mismatch_throws() throws Exception {
+    void name_mismatch_throws() throws Exception {
         var collection = new IntermediateCollection();
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.addSchemaFromReader(readerOf("src/test/cfg/application/sdfilenametest/schemas/notmusic.sd")));
+                collection.addSchemaFromReader(readerOf("src/test/cfg/application/sdfilenametest/schemas/notmusic.sd")));
         assertEquals("The file containing schema 'music' must be named 'music.sd', was 'notmusic.sd'",
-                     ex.getMessage());
+                ex.getMessage());
     }
 
     @Test
-    public void bad_parse_throws() throws Exception {
+    void bad_parse_throws() throws Exception {
         var collection = new IntermediateCollection();
         var ex = assertThrows(ParseException.class, () ->
-                              collection.addSchemaFromFile("src/test/examples/badparse.sd"));
+                collection.addSchemaFromFile("src/test/examples/badparse.sd"));
         assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
         ex = assertThrows(ParseException.class, () ->
-                          collection.addSchemaFromReader(readerOf("src/test/examples/badparse.sd")));
+                collection.addSchemaFromReader(readerOf("src/test/examples/badparse.sd")));
         assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
         ex = assertThrows(ParseException.class, () ->
-                          collection.addRankProfileFile("test", "src/test/examples/badparse.sd"));
+                collection.addRankProfileFile("test", "src/test/examples/badparse.sd"));
         assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/badparse.sd: Encountered"));
     }
 
     @Test
-    public void can_resolve_document_inheritance() throws Exception {
+    void can_resolve_document_inheritance() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/deriver/child.sd");
         collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
@@ -172,63 +171,63 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
-    public void can_detect_schema_inheritance_cycles() throws Exception {
+    void can_detect_schema_inheritance_cycles() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromString("schema foo inherits bar { document foo {} }");
         collection.addSchemaFromString("schema bar inherits qux { document bar {} }");
         collection.addSchemaFromString("schema qux inherits foo { document qux {} }");
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.resolveInternalConnections());
+                collection.resolveInternalConnections());
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for schemas: "));
     }
 
     @Test
-    public void can_detect_document_inheritance_cycles() throws Exception {
+    void can_detect_document_inheritance_cycles() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromString("schema foo { document foo inherits bar {} }");
         collection.addSchemaFromString("schema bar { document bar inherits qux {} }");
         collection.addSchemaFromString("schema qux { document qux inherits foo {} }");
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.resolveInternalConnections());
-        System.err.println("ex: "+ex.getMessage());
+                collection.resolveInternalConnections());
+        System.err.println("ex: " + ex.getMessage());
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
     }
 
     @Test
-    public void can_detect_missing_doc() throws Exception {
+    void can_detect_missing_doc() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromString("schema foo { document foo inherits bar {} }");
         collection.addSchemaFromString("schema qux { document qux inherits foo {} }");
         assertEquals(collection.getParsedSchemas().size(), 2);
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.resolveInternalConnections());
+                collection.resolveInternalConnections());
         assertEquals("document foo inherits from unavailable document bar", ex.getMessage());
     }
 
     @Test
-    public void can_detect_document_reference_cycle() throws Exception {
+    void can_detect_document_reference_cycle() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromString("schema foo { document foo { field oneref type reference<bar> {} } }");
         collection.addSchemaFromString("schema bar { document bar { field tworef type reference<foo> {} } }");
         assertEquals(collection.getParsedSchemas().size(), 2);
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.resolveInternalConnections());
-        System.err.println("ex: "+ex.getMessage());
+                collection.resolveInternalConnections());
+        System.err.println("ex: " + ex.getMessage());
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
     }
 
     @Test
-    public void can_detect_cycles_with_reference() throws Exception {
+    void can_detect_cycles_with_reference() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromString("schema foo { document foodoc inherits bardoc {} }");
         collection.addSchemaFromString("schema bar { document bardoc { field myref type reference<qux> { } } }");
         collection.addSchemaFromString("schema qux inherits foo { document qux inherits foodoc {} }");
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
-                              collection.resolveInternalConnections());
-        System.err.println("ex: "+ex.getMessage());
+                collection.resolveInternalConnections());
+        System.err.println("ex: " + ex.getMessage());
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
     }
 

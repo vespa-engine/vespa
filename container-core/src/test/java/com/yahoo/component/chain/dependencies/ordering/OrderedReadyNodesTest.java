@@ -1,17 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain.dependencies.ordering;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 
 import com.yahoo.component.chain.ChainedComponent;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.component.chain.dependencies.Dependencies;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.ComponentId;
-
 
 
 /**
@@ -41,13 +39,13 @@ public class OrderedReadyNodesTest {
 
     private OrderedReadyNodes readyNodes;
 
-    @Before
+    @BeforeEach
     public void setup() {
         readyNodes = new OrderedReadyNodes();
     }
 
     @Test
-    public void require_NameProviders_before_SearcherNodes() {
+    void require_NameProviders_before_SearcherNodes() {
         NameProvider nameProvider = createDummyNameProvider(100);
         ComponentNode componentNode = new ComponentNode<>(createFakeComponentA("a"), 1);
 
@@ -72,7 +70,7 @@ public class OrderedReadyNodesTest {
     }
 
     @Test
-    public void require_SearcherNodes_ordered_by_insertion_order() {
+    void require_SearcherNodes_ordered_by_insertion_order() {
         int priority = 0;
         ComponentNode a = new ComponentNode<>(createFakeComponentB("1"), priority++);
         ComponentNode b = new ComponentNode<>(createFakeComponentA("2"), priority++);

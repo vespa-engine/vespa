@@ -8,12 +8,12 @@ import com.yahoo.search.pagetemplates.engine.Resolution;
 import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
 import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class ChoiceOfSubsectionsTestCase extends ExecutionAbstractTestCase {
 
     @Test
-    public void testExecution() {
+    void testExecution() {
         // Create the page template
         Choice page = Choice.createSingleton(importPage("ChoiceOfSubsections.xml"));
 
@@ -38,8 +38,8 @@ public class ChoiceOfSubsectionsTestCase extends ExecutionAbstractTestCase {
         // Check execution:
         // Two subsections with one source each
         assertEquals(2, result.hits().size());
-        HitGroup section1 = (HitGroup)result.hits().get(0);
-        HitGroup section2 = (HitGroup)result.hits().get(1);
+        HitGroup section1 = (HitGroup) result.hits().get(0);
+        HitGroup section2 = (HitGroup) result.hits().get(1);
         assertEquals("section", section1.types().stream().collect(Collectors.joining(", ")));
         assertEquals("section", section2.types().stream().collect(Collectors.joining(", ")));
         assertEqualHitGroups(createHits("source2", 3), section1);

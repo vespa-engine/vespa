@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 public class RedundancyTest {
 
     @Test
-    public void effectively_globally_distributed_is_correct() {
+    void effectively_globally_distributed_is_correct() {
         assertFalse(createRedundancy(4, 2, 10).isEffectivelyGloballyDistributed());
         assertFalse(createRedundancy(5, 1, 10).isEffectivelyGloballyDistributed());
         assertFalse(createRedundancy(5, 2, 12).isEffectivelyGloballyDistributed());

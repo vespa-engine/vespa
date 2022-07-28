@@ -8,11 +8,11 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FleetControllerClusterTest {
 
@@ -36,7 +36,7 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void testParameters() {
+    void testParameters() {
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
@@ -65,7 +65,7 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void testDurationParameters() {
+    void testDurationParameters() {
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
@@ -82,7 +82,7 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void min_node_ratio_per_group_tuning_config_is_propagated() {
+    void min_node_ratio_per_group_tuning_config_is_propagated() {
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>\n" +
@@ -97,18 +97,18 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void min_node_ratio_per_group_is_implicitly_zero_when_omitted() {
+    void min_node_ratio_per_group_is_implicitly_zero_when_omitted() {
         var config = getConfigForBasicCluster();
         assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
     }
 
     @Test
-    public void default_cluster_feed_block_limits_are_set() {
+    void default_cluster_feed_block_limits_are_set() {
         assertLimits(0.75, 0.8, getConfigForBasicCluster());
     }
 
     @Test
-    public void resource_limits_can_be_set_in_tuning() {
+    void resource_limits_can_be_set_in_tuning() {
         assertLimits(0.6, 0.7, getConfigForResourceLimitsTuning(0.6, 0.7));
         assertLimits(0.6, 0.8, getConfigForResourceLimitsTuning(0.6, null));
         assertLimits(0.75, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
@@ -140,7 +140,7 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void feature_flag_controls_min_node_ratio_per_group() {
+    void feature_flag_controls_min_node_ratio_per_group() {
         verifyFeatureFlagControlsMinNodeRatioPerGroup(0.0, new TestProperties());
         verifyFeatureFlagControlsMinNodeRatioPerGroup(0.3,
                 new TestProperties().setMinNodeRatioPerGroup(0.3));

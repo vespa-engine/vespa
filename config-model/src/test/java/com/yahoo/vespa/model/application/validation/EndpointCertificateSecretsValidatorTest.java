@@ -12,22 +12,18 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author andreer
  */
 public class EndpointCertificateSecretsValidatorTest {
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
@@ -43,18 +39,18 @@ public class EndpointCertificateSecretsValidatorTest {
     }
 
     @Test
-    public void missing_certificate_fails_validation() throws Exception {
-        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.missing(1)));
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+    void missing_certificate_fails_validation() throws Exception {
+        Throwable exception = assertThrows(CertificateNotReadyException.class, () -> {
+            DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.missing(1)));
+            VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        exceptionRule.expect(CertificateNotReadyException.class);
-        exceptionRule.expectMessage("TLS enabled, but could not yet retrieve certificate version 1 for application default:default:default");
-
-        new EndpointCertificateSecretsValidator().validate(model, deployState);
+            new EndpointCertificateSecretsValidator().validate(model, deployState);
+        });
+        assertTrue(exception.getMessage().contains("TLS enabled, but could not yet retrieve certificate version 1 for application default:default:default"));
     }
 
     @Test
-    public void validation_succeeds_with_certificate() throws Exception {
+    void validation_succeeds_with_certificate() throws Exception {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(new EndpointCertificateSecrets("cert", "key")));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -62,7 +58,7 @@ public class EndpointCertificateSecretsValidatorTest {
     }
 
     @Test
-    public void validation_succeeds_without_certificate() throws Exception {
+    void validation_succeeds_without_certificate() throws Exception {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.empty());
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -83,7 +79,7 @@ public class EndpointCertificateSecretsValidatorTest {
                                 .setEndpointCertificateSecrets(endpointCertificateSecretsSecrets));
         final DeployState deployState = builder.build();
 
-        assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
+        assertTrue(deployState.isHosted(), "Test must emulate a hosted deployment.");
         return deployState;
     }
 }

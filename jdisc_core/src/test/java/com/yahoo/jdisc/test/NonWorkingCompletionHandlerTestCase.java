@@ -2,9 +2,9 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class NonWorkingCompletionHandlerTestCase {
 
     @Test
-    public void requireThatCompletedThrowsException() {
+    void requireThatCompletedThrowsException() {
         CompletionHandler completion = new NonWorkingCompletionHandler();
         try {
             completion.completed();
@@ -24,7 +24,7 @@ public class NonWorkingCompletionHandlerTestCase {
     }
 
     @Test
-    public void requireThatFailedThrowsException() {
+    void requireThatFailedThrowsException() {
         CompletionHandler completion = new NonWorkingCompletionHandler();
         try {
             completion.failed(null);

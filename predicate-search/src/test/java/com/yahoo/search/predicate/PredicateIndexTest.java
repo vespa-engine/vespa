@@ -2,13 +2,13 @@
 package com.yahoo.search.predicate;
 
 import com.yahoo.document.predicate.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -19,7 +19,7 @@ public class PredicateIndexTest {
     private static final int DOC_ID = 42;
 
     @Test
-    public void requireThatPredicateIndexCanSearch() {
+    void requireThatPredicateIndexCanSearch() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(1, Predicate.fromString("country in ['no', 'se'] and gender in ['male']"));
         builder.indexDocument(0x3fffffe, Predicate.fromString("country in ['no'] and gender in ['female']"));
@@ -34,7 +34,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void requireThatPredicateIndexCanSearchWithNotExpression() {
+    void requireThatPredicateIndexCanSearchWithNotExpression() {
         {
             PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
             builder.indexDocument(1, Predicate.fromString("country in ['no'] and gender not in ['male']"));
@@ -77,7 +77,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void requireThatSearchesCanUseSubqueries() {
+    void requireThatSearchesCanUseSubqueries() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(DOC_ID, Predicate.fromString("country in [no] and gender in [male]"));
         PredicateIndex index = builder.build();
@@ -91,7 +91,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void requireThatPredicateIndexCanSearchWithRange() {
+    void requireThatPredicateIndexCanSearchWithRange() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(1, Predicate.fromString("gender in ['male'] and age in [20..40]"));
         builder.indexDocument(2, Predicate.fromString("gender in ['female'] and age in [20..40]"));
@@ -106,7 +106,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void requireThatPredicateIndexCanSearchWithEmptyDocuments() {
+    void requireThatPredicateIndexCanSearchWithEmptyDocuments() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(1, Predicate.fromString("true"));
         builder.indexDocument(2, Predicate.fromString("false"));
@@ -117,7 +117,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void requireThatPredicatesHavingMultipleIdenticalConjunctionsAreSupported() {
+    void requireThatPredicatesHavingMultipleIdenticalConjunctionsAreSupported() {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(DOC_ID, Predicate.fromString(
                 "((a in ['b'] and c in ['d']) or x in ['y']) and ((a in ['b'] and c in ['d']) or z in ['w'])"));
@@ -130,7 +130,7 @@ public class PredicateIndexTest {
     }
 
     @Test
-    public void require_that_serialization_and_deserialization_retain_data() throws IOException {
+    void require_that_serialization_and_deserialization_retain_data() throws IOException {
         PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
         builder.indexDocument(1, Predicate.fromString("country in ['no', 'se'] and gender in ['male']"));
         builder.indexDocument(0x3fffffe, Predicate.fromString("country in ['no'] and gender in ['female']"));

@@ -2,12 +2,9 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.vespa.model.PortsMeta;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests proper functioning of the PortsMeta.
@@ -17,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class PortsMetaTestCase {
 
     @Test
-    public void testRegister() {
+    void testRegister() {
         PortsMeta pm = new PortsMeta();
         pm.on(0).tag("foo");
         pm.on(1).tag("bar");
@@ -31,7 +28,7 @@ public class PortsMetaTestCase {
     }
 
     @Test
-    public void testAdminStatusApi() {
+    void testAdminStatusApi() {
         PortsMeta pm = new PortsMeta()
                 .on(0).tag("rpc").tag("nc").tag("admin").tag("status")
                 .on(1).tag("rpc").tag("rtx").tag("admin").tag("status")

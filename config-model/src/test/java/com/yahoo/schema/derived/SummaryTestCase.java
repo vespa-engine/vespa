@@ -7,15 +7,14 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.config.search.SummaryConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests summary extraction
@@ -25,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 public class SummaryTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void deriveRawAsBase64() throws ParseException {
+    void deriveRawAsBase64() throws ParseException {
         String sd = joinLines(
                 "schema s {",
                 "  document s {",
@@ -40,7 +39,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void deriveRawAsLegacy() throws ParseException {
+    void deriveRawAsLegacy() throws ParseException {
         String sd = joinLines(
                 "schema s {",
                 "  raw-as-base64-in-summary: false",
@@ -56,7 +55,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testDeriving() throws IOException, ParseException {
+    void testDeriving() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals("default", summary.getName());
@@ -121,7 +120,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void reference_fields_can_be_part_of_summary_classes() throws ParseException {
+    void reference_fields_can_be_part_of_summary_classes() throws ParseException {
         Schema adSchema = buildCampaignAdModel();
 
         SummaryClass defaultClass = new SummaryClass(adSchema, adSchema.getSummary("default"), new BaseDeployLogger());
@@ -154,7 +153,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void omit_summary_features_specified_for_document_summary() throws ParseException {
+    void omit_summary_features_specified_for_document_summary() throws ParseException {
         String sd = joinLines(
                 "schema test {",
                 "  document test {",

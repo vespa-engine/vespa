@@ -2,15 +2,14 @@
 package com.yahoo.container.handler;
 
 import com.yahoo.compress.ZstdCompressor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -20,12 +19,12 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LogReaderTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    public File folder;
     private Path logDirectory;
 
     private static final String logv11 = "3600.2\tnode1.com\t5480\tcontainer\tstdout\tinfo\tfourth\n";
@@ -35,9 +34,9 @@ public class LogReaderTest {
     private static final String log110 = "3600.1\tnode1.com\t5480\tcontainer\tstderr\twarning\tthird\n";
     private static final String log200 = "86400.1\tnode2.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)\n";
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
-        logDirectory = folder.newFolder("opt/vespa/logs").toPath();
+        logDirectory = newFolder(folder, "opt/vespa/logs").toPath();
         // Log archive paths and file names indicate what hour they contain logs for, with the start of that hour.
         // Multiple entries may exist for each hour.
         Files.createDirectories(logDirectory.resolve("1970/01/01"));
@@ -55,7 +54,7 @@ public class LogReaderTest {
     }
 
     @Test
-    public void testThatLogsOutsideRangeAreExcluded() {
+    void testThatLogsOutsideRangeAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050), Optional.empty());
@@ -64,7 +63,7 @@ public class LogReaderTest {
     }
 
     @Test
-    public void testThatLogsNotMatchingRegexAreExcluded() {
+    void testThatLogsNotMatchingRegexAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*-1.*"));
         logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
@@ -73,7 +72,7 @@ public class LogReaderTest {
     }
 
     @Test
-    public void testZippedStreaming() {
+    void testZippedStreaming() {
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
@@ -82,7 +81,7 @@ public class LogReaderTest {
     }
 
     @Test
-    public void logsForSingeNodeIsRetrieved() {
+    void logsForSingeNodeIsRetrieved() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.of("node2.com"));
@@ -101,6 +100,15 @@ public class LogReaderTest {
     private byte[] compress2(String input) throws IOException {
         byte[] data = input.getBytes();
         return new ZstdCompressor().compress(data, 0, data.length);
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }

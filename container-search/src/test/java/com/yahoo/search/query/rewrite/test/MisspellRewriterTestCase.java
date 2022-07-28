@@ -6,10 +6,10 @@ import com.yahoo.search.searchchain.*;
 import com.yahoo.search.intent.model.*;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test Cases for MisspellRewriter
@@ -25,7 +25,7 @@ public class MisspellRewriterTestCase {
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         MisspellRewriter searcher = new MisspellRewriter();
         Execution execution = QueryRewriteSearcherTestUtils.createExecutionObj(searcher);
@@ -37,18 +37,18 @@ public class MisspellRewriterTestCase {
      * QLAS returns spell correction: qss_rw=0.9 qss_sugg=1.0
      */
     @Test
-    public void testQSSRewriteQSSSuggestWithRewrite() {
+    void testQSSRewriteQSSSuggestWithRewrite() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("will smith rw", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith sugg", 1.0,
-                                                             false, true));
+                utils.createInterpretation("will smith rw", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith sugg", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg)'",
-                                   intentModel);
+                REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
+                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg)'",
+                intentModel);
     }
 
     /**
@@ -56,19 +56,19 @@ public class MisspellRewriterTestCase {
      * QLAS returns spell correction: qss_rw=0.9 qss_rw=0.9 qss_sugg=1.0
      */
     @Test
-    public void testQSSRewriteWithRewrite() {
+    void testQSSRewriteWithRewrite() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("will smith rw1", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith rw2", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith sugg", 1.0,
-                                                             false, true));
+                utils.createInterpretation("will smith rw1", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith rw2", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith sugg", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true",
-                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith rw1)'",
-                                   intentModel);
+                REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true",
+                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith rw1)'",
+                intentModel);
     }
 
     /**
@@ -76,19 +76,19 @@ public class MisspellRewriterTestCase {
      * QLAS returns spell correction: qss_rw=1.0 qss_sugg=0.9 qss_sugg=0.8
      */
     @Test
-    public void testQSSSuggWithRewrite() {
+    void testQSSSuggWithRewrite() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("will smith rw", 1.0,
-                                                             true, false),
-                                  utils.createInterpretation("will smith sugg1", 0.9,
-                                                             false, true),
-                                  utils.createInterpretation("will smith sugg2", 0.8,
-                                                             false, true));
+                utils.createInterpretation("will smith rw", 1.0,
+                        true, false),
+                utils.createInterpretation("will smith sugg1", 0.9,
+                        false, true),
+                utils.createInterpretation("will smith sugg2", 0.8,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg1)'",
-                                   intentModel);
+                REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
+                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg1)'",
+                intentModel);
     }
 
     /**
@@ -96,16 +96,16 @@ public class MisspellRewriterTestCase {
      * QLAS returns spell correction: qss_rw=1.0 qss_sugg=1.0
      */
     @Test
-    public void testFeautureOffWithRewrite() {
+    void testFeautureOffWithRewrite() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("will smith rw", 1.0,
-                                                             true, false),
-                                  utils.createInterpretation("will smith sugg", 1.0,
-                                                             false, true));
+                utils.createInterpretation("will smith rw", 1.0,
+                        true, false),
+                utils.createInterpretation("will smith sugg", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith",
-                                   "query 'WEAKAND(100) willl smith'",
-                                   intentModel);
+                "query 'WEAKAND(100) willl smith'",
+                intentModel);
     }
 
     /**
@@ -113,18 +113,18 @@ public class MisspellRewriterTestCase {
      * QLAS returns no spell correction
      */
     @Test
-    public void testQSSRewriteQSSSuggWithoutRewrite() {
+    void testQSSRewriteQSSSuggWithoutRewrite() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("use diff query for testing", 1.0,
-                                                             false, false),
-                                  utils.createInterpretation("use diff query for testing", 1.0,
-                                                             false, false));
+                utils.createInterpretation("use diff query for testing", 1.0,
+                        false, false),
+                utils.createInterpretation("use diff query for testing", 1.0,
+                        false, false));
 
         utils.assertRewrittenQuery("?query=will+smith&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'WEAKAND(100) will smith'",
-                                   intentModel);
+                REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
+                "query 'WEAKAND(100) will smith'",
+                intentModel);
     }
 
     /**
@@ -132,7 +132,7 @@ public class MisspellRewriterTestCase {
      * It should throw exception
      */
     @Test
-    public void testNullIntentModelException() {
+    void testNullIntentModelException() {
         try {
             RewriterUtils.getSpellCorrected(new Query("willl smith"), true, true);
             fail();

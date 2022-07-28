@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author bratseth
@@ -13,14 +13,14 @@ public class OrPhraseTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testReplacing1() {
-        assertSemantics("OR title:\"software engineer\" (AND new york)","software engineer new york");
-        assertSemantics("title:\"software engineer\"","software engineer"); // Skip or when there is nothing else
+    void testReplacing1() {
+        assertSemantics("OR title:\"software engineer\" (AND new york)", "software engineer new york");
+        assertSemantics("title:\"software engineer\"", "software engineer"); // Skip or when there is nothing else
     }
 
     @Test
-    public void testReplacing2() {
-        assertSemantics("OR lotr \"lord of the rings\"","lotr");
+    void testReplacing2() {
+        assertSemantics("OR lotr \"lord of the rings\"", "lotr");
     }
 
 }

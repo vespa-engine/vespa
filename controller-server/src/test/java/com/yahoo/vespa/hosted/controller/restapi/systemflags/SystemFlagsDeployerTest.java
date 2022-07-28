@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,7 +43,7 @@ public class SystemFlagsDeployerTest {
     private final FlagsTarget prodUsEast3Target = FlagsTarget.forConfigServer(registry, prodUsEast3Zone.getId());
 
     @Test
-    public void deploys_flag_data_to_targets() throws IOException {
+    void deploys_flag_data_to_targets() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
         when(flagsClient.listFlagData(prodUsWest1Target)).thenReturn(List.of(flagData("existing-prod.us-west-1.json")));
@@ -74,7 +74,7 @@ public class SystemFlagsDeployerTest {
     }
 
     @Test
-    public void dryrun_should_not_change_flags() throws IOException {
+    void dryrun_should_not_change_flags() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
         when(flagsClient.listDefinedFlags(controllerTarget)).thenReturn(List.of(new FlagId("my-flag")));
@@ -97,7 +97,7 @@ public class SystemFlagsDeployerTest {
     }
 
     @Test
-    public void creates_error_entries_in_result_if_flag_data_operations_fail() throws IOException {
+    void creates_error_entries_in_result_if_flag_data_operations_fail() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         UncheckedIOException exception = new UncheckedIOException(new IOException("I/O error message"));
         when(flagsClient.listFlagData(prodUsWest1Target)).thenThrow(exception);
@@ -120,7 +120,7 @@ public class SystemFlagsDeployerTest {
     }
 
     @Test
-    public void creates_error_entry_for_invalid_flag_archive() throws IOException {
+    void creates_error_entry_for_invalid_flag_archive() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         FlagData defaultData = flagData("flags/my-flag/main.json");
         SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
@@ -135,7 +135,7 @@ public class SystemFlagsDeployerTest {
     }
 
     @Test
-    public void creates_error_entry_for_flag_data_of_undefined_flag() throws IOException {
+    void creates_error_entry_for_flag_data_of_undefined_flag() throws IOException {
         FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(prodUsEast3Target))
@@ -154,7 +154,7 @@ public class SystemFlagsDeployerTest {
     }
 
     @Test
-    public void creates_warning_entry_for_existing_flag_data_for_undefined_flag() throws IOException {
+    void creates_warning_entry_for_existing_flag_data_for_undefined_flag() throws IOException {
         FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(prodUsEast3Target))

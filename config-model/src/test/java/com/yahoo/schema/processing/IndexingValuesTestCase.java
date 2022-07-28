@@ -2,7 +2,7 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -15,16 +15,16 @@ import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuilds;
 public class IndexingValuesTestCase {
 
     @Test
-    public void requireThatModifyFieldNoOutputDoesNotThrow() throws IOException, ParseException {
+    void requireThatModifyFieldNoOutputDoesNotThrow() throws IOException, ParseException {
         assertBuilds("src/test/examples/indexing_modify_field_no_output.sd");
     }
 
     @Test
-    public void requireThatInputOtherFieldThrows() throws IOException, ParseException {
+    void requireThatInputOtherFieldThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_input_other_field.sd",
-                         "For schema 'indexing_input_other_field', field 'bar': Indexing expression 'input foo' " +
-                         "attempts to modify the value of the document field 'bar'. " +
-                         "Use a field outside the document block instead.");
+                "For schema 'indexing_input_other_field', field 'bar': Indexing expression 'input foo' " +
+                        "attempts to modify the value of the document field 'bar'. " +
+                        "Use a field outside the document block instead.");
     }
 
 }

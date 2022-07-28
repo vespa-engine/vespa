@@ -2,9 +2,9 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.handler.RequestHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class NonWorkingRequestHandlerTestCase {
 
     @Test
-    public void requireThatHandleRequestThrowsException() {
+    void requireThatHandleRequestThrowsException() {
         RequestHandler requestHandler = new NonWorkingRequestHandler();
         try {
             requestHandler.handleRequest(null, null);
@@ -24,7 +24,7 @@ public class NonWorkingRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatHandleTimeoutThrowsException() {
+    void requireThatHandleTimeoutThrowsException() {
         RequestHandler requestHandler = new NonWorkingRequestHandler();
         try {
             requestHandler.handleTimeout(null, null);
@@ -35,7 +35,7 @@ public class NonWorkingRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatDestroyDoesNotThrow() {
+    void requireThatDestroyDoesNotThrow() {
         RequestHandler requestHandler = new NonWorkingRequestHandler();
         requestHandler.release();
     }

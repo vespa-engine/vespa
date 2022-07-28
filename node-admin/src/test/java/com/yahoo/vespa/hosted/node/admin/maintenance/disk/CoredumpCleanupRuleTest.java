@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.disk;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.PrioritizedFileAttributes;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -26,7 +26,7 @@ public class CoredumpCleanupRuleTest {
     private final FileSystem fileSystem = TestFileSystem.create();
 
     @Test
-    public void for_container_test() throws IOException {
+    void for_container_test() throws IOException {
         Path path = fileSystem.getPath("/test/path");
         DiskCleanupRule rule = CoredumpCleanupRule.forContainer(path);
 
@@ -56,7 +56,7 @@ public class CoredumpCleanupRuleTest {
     }
 
     @Test
-    public void for_host_test() throws IOException {
+    void for_host_test() throws IOException {
         Path path = fileSystem.getPath("/test/path");
         DiskCleanupRule rule = CoredumpCleanupRule.forHost(path);
 

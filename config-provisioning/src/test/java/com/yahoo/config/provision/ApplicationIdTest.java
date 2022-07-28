@@ -3,7 +3,7 @@ package com.yahoo.config.provision;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.test.TotalOrderTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
@@ -11,8 +11,9 @@ import java.util.Set;
 
 import static com.yahoo.config.provision.ApplicationId.from;
 import static com.yahoo.config.provision.ApplicationId.global;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Ulf Lilleengen
@@ -22,7 +23,7 @@ import static org.junit.Assert.assertNotEquals;
 public class ApplicationIdTest {
 
     @Test
-    public void require_that_application_id_is_set() {
+    void require_that_application_id_is_set() {
         ApplicationId app = applicationId("application");
         assertEquals("application", app.application().value());
         app = from("tenant", "application", "instance");
@@ -32,23 +33,23 @@ public class ApplicationIdTest {
     }
 
     @Test
-    public void require_that_equals_and_hashcode_behaves_correctly() {
+    void require_that_equals_and_hashcode_behaves_correctly() {
         assertEquals(Set.of(from("tenant1", "name1", "instance1"),
-                            from("tenant2", "name1", "instance1"),
-                            from("tenant1", "name2", "instance1"),
-                            from("tenant1", "name1", "instance2"),
-                            applicationId("name1"),
-                            applicationId("name2")),
-                     new HashSet<>(List.of(from("tenant1", "name1", "instance1"),
-                                           from("tenant2", "name1", "instance1"),
-                                           from("tenant1", "name2", "instance1"),
-                                           from("tenant1", "name1", "instance2"),
-                                           applicationId("name1"),
-                                           applicationId("name2"))));
+                                                      from("tenant2", "name1", "instance1"),
+                                                      from("tenant1", "name2", "instance1"),
+                                                      from("tenant1", "name1", "instance2"),
+                                                      applicationId("name1"),
+                                                      applicationId("name2")),
+                               new HashSet<>(List.of(from("tenant1", "name1", "instance1"),
+                                                      from("tenant2", "name1", "instance1"),
+                                                      from("tenant1", "name2", "instance1"),
+                                                      from("tenant1", "name1", "instance2"),
+                                                      applicationId("name1"),
+                                                      applicationId("name2"))));
     }
 
     @Test
-    public void require_that_value_format_is_correct() {
+    void require_that_value_format_is_correct() {
         ApplicationId id1 = applicationId("foo");
         ApplicationId id2 = applicationId("bar");
         ApplicationId id3 = from("tenant", "baz", "bim");
@@ -58,7 +59,7 @@ public class ApplicationIdTest {
     }
 
     @Test
-    public void require_string_formats_are_correct() {
+    void require_string_formats_are_correct() {
         ApplicationId id1 = applicationId("foo");
         ApplicationId id2 = from("bar", "baz", "default");
         ApplicationId id3 = from("tenant", "baz", "bim");
@@ -71,38 +72,40 @@ public class ApplicationIdTest {
     }
 
     @Test
-    public void require_that_idstring_can_be_parsed() {
+    void require_that_idstring_can_be_parsed() {
         ApplicationId id = ApplicationId.fromSerializedForm("ten:foo:bim");
         assertEquals("ten", id.tenant().value());
         assertEquals("foo", id.application().value());
         assertEquals("bim", id.instance().value());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void require_that_invalid_idstring_throws_exception() {
-        ApplicationId.fromSerializedForm("foo:baz");
+    @Test
+    void require_that_invalid_idstring_throws_exception() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            ApplicationId.fromSerializedForm("foo:baz");
+        });
     }
 
     @Test
-    public void require_that_defaults_are_given() {
+    void require_that_defaults_are_given() {
         ApplicationId id1 = applicationId("foo");
         assertEquals("default", id1.tenant().value());
         assertEquals("default", id1.instance().value());
     }
 
     @Test
-    public void require_that_compare_to_is_correct() {
+    void require_that_compare_to_is_correct() {
         new TotalOrderTester<ApplicationId>()
-                .theseObjects(from("tenant1", "name1", "instance1"),
-                              from("tenant1", "name1", "instance1"))
-                 .areLessThan(from("tenant2", "name1", "instance1"))
-                 .areLessThan(from("tenant2", "name2", "instance1"))
-                 .areLessThan(from("tenant2", "name2", "instance2"))
-                .testOrdering();
+                               .theseObjects(from("tenant1", "name1", "instance1"),
+                                                      from("tenant1", "name1", "instance1"))
+                               .areLessThan(from("tenant2", "name1", "instance1"))
+                               .areLessThan(from("tenant2", "name2", "instance1"))
+                               .areLessThan(from("tenant2", "name2", "instance2"))
+                               .testOrdering();
     }
 
     @Test
-    public void require_that_instance_from_config_is_correct() {
+    void require_that_instance_from_config_is_correct() {
         ApplicationIdConfig.Builder builder = new ApplicationIdConfig.Builder();
         builder.tenant("a");
         builder.application("b");
@@ -114,7 +117,7 @@ public class ApplicationIdTest {
     }
 
     @Test
-    public void require_that_global_is_special() {
+    void require_that_global_is_special() {
         assertEquals(global(), global());
         assertNotEquals(global(), from("hosted-vespa", "routing", "default"));
         assertEquals(global().serializedForm(), from("hosted-vespa", "routing", "default").serializedForm());

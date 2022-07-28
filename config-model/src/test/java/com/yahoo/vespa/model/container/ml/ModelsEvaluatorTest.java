@@ -5,10 +5,10 @@ import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.tensor.Tensor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests the ModelsEvaluatorTester.
@@ -18,7 +18,7 @@ import static org.junit.Assume.assumeTrue;
 public class ModelsEvaluatorTest {
 
     @Test
-    public void testModelsEvaluator() {
+    void testModelsEvaluator() {
         // Assumption fails but test passes on Intel macs
         // Assumption fails and test fails on ARM64
         assumeTrue(OnnxEvaluator.isRuntimeAvailable());

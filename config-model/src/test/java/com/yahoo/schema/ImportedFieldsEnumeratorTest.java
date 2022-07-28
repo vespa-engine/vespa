@@ -6,18 +6,18 @@ import com.yahoo.document.DataType;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporaryImportedField;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ImportedFieldsEnumeratorTest {
 
     @Test
-    public void imported_fields_are_enumerated_and_copied_from_correct_search_instance() {
+    void imported_fields_are_enumerated_and_copied_from_correct_search_instance() {
         String PARENT = "parent";
         Schema parentSchema = new Schema(PARENT, MockApplicationPackage.createEmpty());
         SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSchema);

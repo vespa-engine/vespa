@@ -9,14 +9,14 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
 public class ConnectToHandlerTestCase {
 
     @Test
-    public void requireThatNullResponseHandlerThrowsException() {
+    void requireThatNullResponseHandlerThrowsException() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request request = new Request(driver, URI.create("http://host/path"));
@@ -40,7 +40,7 @@ public class ConnectToHandlerTestCase {
     }
 
     @Test
-    public void requireThatConnectToHandlerWorks() {
+    void requireThatConnectToHandlerWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = new MyRequestHandler(new MyContent());
         ContainerBuilder builder = driver.newContainerBuilder();

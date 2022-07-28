@@ -13,8 +13,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.time.Instant;
@@ -22,7 +22,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
@@ -32,7 +32,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
     private ContainerTester tester;
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responses);
         addUserToHostedOperatorRole(operator);
@@ -42,26 +42,26 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_api() {
+    void test_api() {
         assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"hosts\": [\"host1\"]}", Request.Method.POST), "initial.json");
         assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"switches\": [\"switch1\"]}", Request.Method.POST), "initial.json");
         assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr"), "vcmrs.json");
     }
 
     @Test
-    public void deletes_vcmr() {
+    void deletes_vcmr() {
         assertEquals(1, tester.controller().curator().readChangeRequests().size());
         assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr/" + changeRequestId, "", Request.Method.DELETE), "vcmr.json");
         assertEquals(0, tester.controller().curator().readChangeRequests().size());
     }
 
     @Test
-    public void get_vcmr() {
+    void get_vcmr() {
         assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr/" + changeRequestId, "", Request.Method.GET), "vcmr.json");
     }
 
     @Test
-    public void patch_vcmr() {
+    void patch_vcmr() {
         var payload = "{" +
                 "\"approval\": \"REJECTED\"," +
                 "\"status\": \"COMPLETED\"," +

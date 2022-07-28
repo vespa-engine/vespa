@@ -3,14 +3,14 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 public class MonitoringElementTest {
 
     @Test
-    public void monitoring_element_is_disallowed_for_hosted_vespa() {
+    void monitoring_element_is_disallowed_for_hosted_vespa() {
         String services = servicesWithMonitoringElement();
         try {
             getModel(services, hosted);
@@ -29,20 +29,20 @@ public class MonitoringElementTest {
     }
 
     @Test
-    public void monitoring_element_is_allowed_for_hosted_infrastructure_apps() {
+    void monitoring_element_is_allowed_for_hosted_infrastructure_apps() {
         String services = String.join("\n",
-                                      "<services application-type='hosted-infrastructure'>",
-                                      "    <admin version='4.0'>",
-                                      "        <monitoring interval='300' systemname='my-system' />",
-                                      "    </admin>",
-                                      "</services>"
+                "<services application-type='hosted-infrastructure'>",
+                "    <admin version='4.0'>",
+                "        <monitoring interval='300' systemname='my-system' />",
+                "    </admin>",
+                "</services>"
         );
         VespaModel model = getModel(services, hosted);
         assertMonitoringConfig(model);
     }
 
     @Test
-    public void monitoring_element_is_allowed_for_self_hosted_vespa() {
+    void monitoring_element_is_allowed_for_self_hosted_vespa() {
         String services = servicesWithMonitoringElement();
         VespaModel model = getModel(services, self_hosted);
         assertMonitoringConfig(model);

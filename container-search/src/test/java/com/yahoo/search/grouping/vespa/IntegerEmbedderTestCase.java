@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class IntegerEmbedderTestCase {
 
     @Test
-    public void requireThatIntEncoderWorksAsExpected() {
+    void requireThatIntEncoderWorksAsExpected() {
         assertEncode("A", 0);
         assertEncode("BC", 1);
         assertEncode("CBI", 12);

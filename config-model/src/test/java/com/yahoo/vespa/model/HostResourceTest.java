@@ -7,13 +7,13 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class HostResourceTest {
 
     @Test
-    public void require_exception_when_no_matching_hostalias() {
+    void require_exception_when_no_matching_hostalias() {
         MockRoot root = new MockRoot();
         TestService service = new TestService(root, 1);
 
@@ -34,7 +34,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void host_with_membership() {
+    void host_with_membership() {
         HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "container"), 0));
         assertClusterMembership(host, container, "container");
     }

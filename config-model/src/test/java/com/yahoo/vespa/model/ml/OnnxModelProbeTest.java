@@ -6,17 +6,17 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.TensorType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OnnxModelProbeTest {
 
     @Test
-    public void testProbedOutputTypes() throws IOException {
+    void testProbedOutputTypes() throws IOException {
 
         Path appDir = Path.fromString("src/test/cfg/application/onnx_probe");
         Path storedAppDir = appDir.append("copy");

@@ -4,9 +4,9 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test HostSystem
@@ -19,13 +19,13 @@ public class ModelConfigProviderTest {
      * Get the config via ConfigInstance based API, by getting whole config
      */
     @Test
-    public void testGetModelConfig() {
+    void testGetModelConfig() {
         VespaModel vespaModel = new VespaModelCreatorWithFilePkg("src/test/cfg/admin/adminconfig20").create();
         ModelConfig config = vespaModel.getConfig(ModelConfig.class, "");
         assertEquals(config.hosts().size(), 1);
         ModelConfig.Hosts localhost = config.hosts(0); //Actually set to hostname.
-        int numLogservers=0;
-        int numSlobroks=0;
+        int numLogservers = 0;
+        int numSlobroks = 0;
         for (ModelConfig.Hosts.Services service : localhost.services()) {
             if ("logserver".equals(service.type())) {
                 numLogservers++;

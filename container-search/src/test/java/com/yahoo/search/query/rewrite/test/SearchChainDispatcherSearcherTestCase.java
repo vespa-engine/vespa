@@ -12,8 +12,8 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.query.rewrite.RewritesConfig;
 import com.yahoo.search.intent.model.*;
 import com.yahoo.component.chain.Chain;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Cases for SearchChainDispatcherSearcher
@@ -35,7 +35,7 @@ public class SearchChainDispatcherSearcherTestCase {
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
@@ -70,26 +70,26 @@ public class SearchChainDispatcherSearcherTestCase {
      * Query will be rewritten twice
      */
     @Test
-    public void testMarketChain() {
+    void testMarketChain() {
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("wills smith", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith", 1.0,
-                                                             false, true));
+                utils.createInterpretation("wills smith", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&type=all&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith) " +
-                                   "\"will smith\" \"will smith movies\" " +
-                                   "\"will smith news\" \"will smith imdb\" " +
-                                   "\"will smith lyrics\" \"will smith dead\" " +
-                                   "\"will smith nfl\" \"will smith new movie hancock\" " +
-                                   "\"will smith biography\"'",
-                                   intentModel);
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
+                "query 'OR (AND willl smith) (AND will smith) " +
+                        "\"will smith\" \"will smith movies\" " +
+                        "\"will smith news\" \"will smith imdb\" " +
+                        "\"will smith lyrics\" \"will smith dead\" " +
+                        "\"will smith nfl\" \"will smith new movie hancock\" " +
+                        "\"will smith biography\"'",
+                intentModel);
     }
 
     /**
@@ -97,13 +97,13 @@ public class SearchChainDispatcherSearcherTestCase {
      * Query will be passed to next rewriter
      */
     @Test
-    public void testInvalidMarketChain() {
+    void testInvalidMarketChain() {
         utils.assertRewrittenQuery("?query=will smith&type=all&QRWChain=abc&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true",
-                                   "query 'AND will smith'");
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true",
+                "query 'AND will smith'");
     }
 
     /**
@@ -111,13 +111,13 @@ public class SearchChainDispatcherSearcherTestCase {
      * Query will be passed to next rewriter
      */
     @Test
-    public void testEmptyMarketChain() {
+    void testEmptyMarketChain() {
         utils.assertRewrittenQuery("?query=will smith&type=all&QRWChain=&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true",
-                                   "query 'AND will smith'");
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true",
+                "query 'AND will smith'");
     }
 
     /**
@@ -125,7 +125,7 @@ public class SearchChainDispatcherSearcherTestCase {
      * should be executed
      */
     @Test
-    public void testChainContinuation() {
+    void testChainContinuation() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
@@ -156,24 +156,24 @@ public class SearchChainDispatcherSearcherTestCase {
         new QueryRewriteSearcherTestUtils(execution);
 
         IntentModel intentModel = new IntentModel(
-                                  utils.createInterpretation("wills smith", 0.9,
-                                                             true, false),
-                                  utils.createInterpretation("will smith", 1.0,
-                                                             false, true));
+                utils.createInterpretation("wills smith", 0.9,
+                        true, false),
+                utils.createInterpretation("will smith", 1.0,
+                        false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith&type=all&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
-                                   MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
-                                   "=true&" +
-                                   NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith) " +
-                                   "\"will smith\" \"will smith movies\" " +
-                                   "\"will smith news\" \"will smith imdb\" " +
-                                   "\"will smith lyrics\" \"will smith dead\" " +
-                                   "\"will smith nfl\" \"will smith new movie hancock\" " +
-                                   "\"will smith biography\"'",
-                                   intentModel);
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
+                MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
+                "=true&" +
+                NAME_REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV + "=true",
+                "query 'OR (AND willl smith) (AND will smith) " +
+                        "\"will smith\" \"will smith movies\" " +
+                        "\"will smith news\" \"will smith imdb\" " +
+                        "\"will smith lyrics\" \"will smith dead\" " +
+                        "\"will smith nfl\" \"will smith new movie hancock\" " +
+                        "\"will smith biography\"'",
+                intentModel);
     }
 
 }

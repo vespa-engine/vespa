@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class MessengerTestCase {
 
     @Test
-    public void requireThatSyncWithSelfDoesNotCauseDeadLock() throws InterruptedException {
+    void requireThatSyncWithSelfDoesNotCauseDeadLock() throws InterruptedException {
         final Messenger msn = new Messenger();
         msn.start();
 
@@ -35,14 +35,14 @@ public class MessengerTestCase {
     }
 
     @Test
-    public void requireThatTaskIsExecuted() throws InterruptedException {
+    void requireThatTaskIsExecuted() throws InterruptedException {
         Messenger msn = new Messenger();
         msn.start();
         assertTrue(tryMessenger(msn));
     }
 
     @Test
-    public void requireThatRunExceptionIsCaught() throws InterruptedException {
+    void requireThatRunExceptionIsCaught() throws InterruptedException {
         Messenger msn = new Messenger();
         msn.start();
         msn.enqueue(new Messenger.Task() {
@@ -60,7 +60,7 @@ public class MessengerTestCase {
     }
 
     @Test
-    public void requireThatDestroyExceptionIsCaught() throws InterruptedException {
+    void requireThatDestroyExceptionIsCaught() throws InterruptedException {
         Messenger msn = new Messenger();
         msn.start();
         msn.enqueue(new Messenger.Task() {
@@ -78,7 +78,7 @@ public class MessengerTestCase {
     }
 
     @Test
-    public void requireThatRunAndDestroyExceptionsAreCaught() throws InterruptedException {
+    void requireThatRunAndDestroyExceptionsAreCaught() throws InterruptedException {
         Messenger msn = new Messenger();
         msn.start();
         msn.enqueue(new Messenger.Task() {

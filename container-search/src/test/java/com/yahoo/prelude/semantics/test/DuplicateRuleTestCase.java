@@ -5,10 +5,10 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -18,7 +18,7 @@ public class DuplicateRuleTestCase {
     private final String root = "src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
 
     @Test
-    public void testDuplicateRuleBaseLoading() throws java.io.IOException, ParseException  {
+    void testDuplicateRuleBaseLoading() throws java.io.IOException, ParseException  {
         if (System.currentTimeMillis() > 0) return; // TODO: Include this test...
 
         try {

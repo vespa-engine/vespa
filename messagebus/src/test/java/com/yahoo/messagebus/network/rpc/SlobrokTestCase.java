@@ -7,15 +7,15 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.Identity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -81,7 +81,7 @@ public class SlobrokTestCase {
         assertTrue(false);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         String slobrokCfgId = "raw:slobrok[1]\nslobrok[0].connectionspec \"" + new Spec("localhost", slobrok.port()).toString() + "\"\n";
@@ -93,7 +93,7 @@ public class SlobrokTestCase {
         port3 = net3.getPort();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         net3.shutdown();
         net2.shutdown();
@@ -102,7 +102,7 @@ public class SlobrokTestCase {
     }
 
     @Test
-    public void testSlobrok() {
+    void testSlobrok() {
         net1.registerSession("foo");
         net2.registerSession("foo");
         net2.registerSession("bar");
@@ -111,43 +111,43 @@ public class SlobrokTestCase {
         net3.registerSession("baz");
 
         check(net1, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/b/bar", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec())
-              .add("net/c/bar", net3.getConnectionSpec())
-              .add("net/c/baz", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/b/bar", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec())
+                .add("net/c/bar", net3.getConnectionSpec())
+                .add("net/c/baz", net3.getConnectionSpec()).toArray());
         check(net2, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/b/bar", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec())
-              .add("net/c/bar", net3.getConnectionSpec())
-              .add("net/c/baz", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/b/bar", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec())
+                .add("net/c/bar", net3.getConnectionSpec())
+                .add("net/c/baz", net3.getConnectionSpec()).toArray());
         check(net3, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/b/bar", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec())
-              .add("net/c/bar", net3.getConnectionSpec())
-              .add("net/c/baz", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/b/bar", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec())
+                .add("net/c/bar", net3.getConnectionSpec())
+                .add("net/c/baz", net3.getConnectionSpec()).toArray());
 
         net2.unregisterSession("bar");
         net3.unregisterSession("bar");
         net3.unregisterSession("baz");
 
         check(net1, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec()).toArray());
         check(net2, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec()).toArray());
         check(net3, "*/*/*", new Res()
-              .add("net/a/foo", net1.getConnectionSpec())
-              .add("net/b/foo", net2.getConnectionSpec())
-              .add("net/c/foo", net3.getConnectionSpec()).toArray());
+                .add("net/a/foo", net1.getConnectionSpec())
+                .add("net/b/foo", net2.getConnectionSpec())
+                .add("net/c/foo", net3.getConnectionSpec()).toArray());
     }
 
 }

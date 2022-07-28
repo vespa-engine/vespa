@@ -10,7 +10,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author geirst
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 public class RankFeaturesTestCase {
 
     @Test
-    public void requireThatRankPropertiesTakesBothStringAndObject() {
+    void requireThatRankPropertiesTakesBothStringAndObject() {
         RankProperties p = new RankProperties();
         p.put("string", "b");
         p.put("object", 7);
@@ -37,7 +37,7 @@ public class RankFeaturesTestCase {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
+    void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
         RankFeatures withDouble = new RankFeatures(new Ranking(new Query()));
         withDouble.put("query(myDouble)", 3.8);
         assertEquals(3.8, withDouble.getDouble("query(myDouble)").getAsDouble(), 0.000001);
@@ -56,7 +56,7 @@ public class RankFeaturesTestCase {
     }
 
     @Test
-    public void requireThatSingleTensorIsBinaryEncoded() {
+    void requireThatSingleTensorIsBinaryEncoded() {
         TensorType type = new TensorType.Builder().mapped("x").mapped("y").mapped("z").build();
         Tensor tensor = Tensor.from(type, "{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         assertTensorEncodingAndDecoding(type, "query(my_tensor)", "my_tensor", tensor);
@@ -64,7 +64,7 @@ public class RankFeaturesTestCase {
     }
 
     @Test
-    public void requireThatMultipleTensorsAreBinaryEncoded() {
+    void requireThatMultipleTensorsAreBinaryEncoded() {
         TensorType type = new TensorType.Builder().mapped("x").mapped("y").mapped("z").build();
         Tensor tensor1 = Tensor.from(type, "{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         Tensor tensor2 = Tensor.from(type, "{ {x:a, y:b, z:c}:5.0 }");

@@ -9,17 +9,13 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
 import com.yahoo.search.yql.YqlParser;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +23,7 @@ import static org.junit.Assert.fail;
 public class GroupingParserTestCase {
 
     @Test
-    public void requireThatMathAllowsWhitespace() {
+    void requireThatMathAllowsWhitespace() {
         for (String op : Arrays.asList("+", " +", " + ", "+ ",
                                        "-", " -", " - ", "- ",
                                        "*", " *", " * ", "* ",
@@ -41,7 +37,7 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testRequestList() {
+    void testRequestList() {
         List<GroupingOperation> lst = GroupingOperation.fromStringAsList("all();each();all() where(true);each()");
         assertNotNull(lst);
         assertEquals(4, lst.size());
@@ -52,113 +48,113 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testAttributeFunctions() {
+    void testAttributeFunctions() {
         assertParse("all(group(foo) each(output(sum(attribute(bar)))))",
-                    "all(group(foo) each(output(sum(attribute(bar)))))");
+                "all(group(foo) each(output(sum(attribute(bar)))))");
         assertParse("all(group(foo) each(output(sum(interpolatedlookup(bar, 0.25)))))",
-                    "all(group(foo) each(output(sum(interpolatedlookup(bar, 0.25)))))");
+                "all(group(foo) each(output(sum(interpolatedlookup(bar, 0.25)))))");
         assertParse("all(group(foo) each(output(sum(array.at(bar, 42.0)))))",
-                    "all(group(foo) each(output(sum(array.at(bar, 42.0)))))");
+                "all(group(foo) each(output(sum(array.at(bar, 42.0)))))");
     }
 
     @Test
-    public void requireThatTokenImagesAreNotReservedWords() {
+    void requireThatTokenImagesAreNotReservedWords() {
         List<String> images = Arrays.asList("acos",
-                                            "acosh",
-                                            "accuracy",
-                                            "add",
-                                            "alias",
-                                            "all",
-                                            "and",
-                                            "array",
-                                            "as",
-                                            "at",
-                                            "asin",
-                                            "asinh",
-                                            "atan",
-                                            "atanh",
-                                            "attribute",
-                                            "avg",
-                                            "bucket",
-                                            "cat",
-                                            "cbrt",
-                                            "cos",
-                                            "cosh",
-                                            "count",
-                                            "debugwait",
-                                            "div",
-                                            "docidnsspecific",
-                                            "each",
-                                            "exp",
-                                            "fixedwidth",
-                                            "floor",
-                                            "group",
-                                            "hint",
-                                            "hypot",
-                                            "log",
-                                            "log1p",
-                                            "log10",
-                                            "math",
-                                            "max",
-                                            "md5",
-                                            "min",
-                                            "mod",
-                                            "mul",
-                                            "neg",
-                                            "normalizesubject",
-                                            "now",
-                                            "or",
-                                            "order",
-                                            "output",
-                                            "pow",
-                                            "precision",
-                                            "predefined",
-                                            "relevance",
-                                            "reverse",
-                                            "sin",
-                                            "sinh",
-                                            "size",
-                                            "sort",
-                                            "stddev",
-                                            "interpolatedlookup",
-                                            "sqrt",
-                                            "strcat",
-                                            "strlen",
-                                            "sub",
-                                            "sum",
-                                            "summary",
-                                            "tan",
-                                            "tanh",
-                                            "time",
-                                            "date",
-                                            "dayofmonth",
-                                            "dayofweek",
-                                            "dayofyear",
-                                            "hourofday",
-                                            "minuteofhour",
-                                            "monthofyear",
-                                            "secondofminute",
-                                            "year",
-                                            "todouble",
-                                            "tolong",
-                                            "toraw",
-                                            "tostring",
-                                            "true",
-                                            "false",
-                                            "uca",
-                                            "where",
-                                            "x",
-                                            "xor",
-                                            "xorbit",
-                                            "y",
-                                            "zcurve");
+                "acosh",
+                "accuracy",
+                "add",
+                "alias",
+                "all",
+                "and",
+                "array",
+                "as",
+                "at",
+                "asin",
+                "asinh",
+                "atan",
+                "atanh",
+                "attribute",
+                "avg",
+                "bucket",
+                "cat",
+                "cbrt",
+                "cos",
+                "cosh",
+                "count",
+                "debugwait",
+                "div",
+                "docidnsspecific",
+                "each",
+                "exp",
+                "fixedwidth",
+                "floor",
+                "group",
+                "hint",
+                "hypot",
+                "log",
+                "log1p",
+                "log10",
+                "math",
+                "max",
+                "md5",
+                "min",
+                "mod",
+                "mul",
+                "neg",
+                "normalizesubject",
+                "now",
+                "or",
+                "order",
+                "output",
+                "pow",
+                "precision",
+                "predefined",
+                "relevance",
+                "reverse",
+                "sin",
+                "sinh",
+                "size",
+                "sort",
+                "stddev",
+                "interpolatedlookup",
+                "sqrt",
+                "strcat",
+                "strlen",
+                "sub",
+                "sum",
+                "summary",
+                "tan",
+                "tanh",
+                "time",
+                "date",
+                "dayofmonth",
+                "dayofweek",
+                "dayofyear",
+                "hourofday",
+                "minuteofhour",
+                "monthofyear",
+                "secondofminute",
+                "year",
+                "todouble",
+                "tolong",
+                "toraw",
+                "tostring",
+                "true",
+                "false",
+                "uca",
+                "where",
+                "x",
+                "xor",
+                "xorbit",
+                "y",
+                "zcurve");
         for (String image : images) {
             assertParse("all(group(" + image + "))", "all(group(" + image + "))");
         }
     }
 
     @Test
-    public void testTokenizedWhitespace() {
+    void testTokenizedWhitespace() {
         String expected = "all(group(foo) each(output(max(bar))))";
 
         assertParse(" all(group(foo)each(output(max(bar))))", expected);
@@ -182,7 +178,7 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testOperationTypes() {
+    void testOperationTypes() {
         assertParse("all()");
         assertParse("each()");
         assertParse("all(each())");
@@ -193,21 +189,21 @@ public class GroupingParserTestCase {
         assertParse("all(each() each())");
         assertParse("each(all() all())");
         assertIllegalArgument("each(all() each())",
-                              "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' can not operate on single hit.");
         assertIllegalArgument("each(group(foo) all() each())",
-                              "Operation 'each(group(foo) all() each())' can not group single hit.");
+                "Operation 'each(group(foo) all() each())' can not group single hit.");
         assertIllegalArgument("each(each() all())",
-                              "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' can not operate on single hit.");
         assertIllegalArgument("each(group(foo) each() all())",
-                              "Operation 'each(group(foo) each() all())' can not group single hit.");
+                "Operation 'each(group(foo) each() all())' can not group single hit.");
         assertIllegalArgument("each(each() each())",
-                              "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' can not operate on single hit.");
         assertIllegalArgument("each(group(foo) each() each())",
-                              "Operation 'each(group(foo) each() each())' can not group single hit.");
+                "Operation 'each(group(foo) each() each())' can not group single hit.");
     }
 
     @Test
-    public void testOperationParts() {
+    void testOperationParts() {
         assertParse("all(group(foo))");
         assertParse("all(hint(foo))");
         assertParse("all(hint(foo) hint(bar))");
@@ -232,7 +228,7 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testComplexExpressionTypes() {
+    void testComplexExpressionTypes() {
         // fixedwidth
         assertParse("all(group(fixedwidth(foo, 1)))");
         assertParse("all(group(fixedwidth(foo, 1.2)))");
@@ -315,43 +311,43 @@ public class GroupingParserTestCase {
         assertParse("all(group(predefined(foo, bucket({'b', 'a'}, {'k', 'a'}), bucket({'k', 'a'}, {'u', 'b'}))))");
 
         assertIllegalArgument("all(group(predefined(foo, bucket(1, 2.0))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket(1, '2'))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket(1, 2), bucket(3.0, 4.0))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket(1, 2), bucket('3', '4'))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket(1, 2), bucket(\"3\", \"4\"))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket(1, 2), bucket(three, four))))",
-                              "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
+                "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
         assertIllegalArgument("all(group(predefined(foo, bucket<-inf, inf>)))",
-                              "Bucket type mismatch, cannot both be infinity");
+                "Bucket type mismatch, cannot both be infinity");
         assertIllegalArgument("all(group(predefined(foo, bucket<inf, -inf>)))",
-                              "Encountered \" \"inf\" \"inf\"\" at line 1, column 34.");
+                "Encountered \" \"inf\" \"inf\"\" at line 1, column 34.");
 
         assertIllegalArgument("all(group(predefined(foo, bucket(2, 1))))",
-                              "Bucket to-value can not be less than from-value.");
+                "Bucket to-value can not be less than from-value.");
         assertIllegalArgument("all(group(predefined(foo, bucket(3, 4), bucket(1, 2))))",
-                              "Buckets must be monotonically increasing, got bucket[3, 4> before bucket[1, 2>.");
+                "Buckets must be monotonically increasing, got bucket[3, 4> before bucket[1, 2>.");
         assertIllegalArgument("all(group(predefined(foo, bucket(b, a))))",
-                              "Bucket to-value can not be less than from-value.");
+                "Bucket to-value can not be less than from-value.");
         assertIllegalArgument("all(group(predefined(foo, bucket(b, -inf))))",
-                              "Encountered \" \"-inf\" \"-inf\"\" at line 1, column 37.");
+                "Encountered \" \"-inf\" \"-inf\"\" at line 1, column 37.");
         assertIllegalArgument("all(group(predefined(foo, bucket(c, d), bucket(a, b))))",
-                              "Buckets must be monotonically increasing, got bucket[\"c\", \"d\"> before bucket[\"a\", \"b\">.");
+                "Buckets must be monotonically increasing, got bucket[\"c\", \"d\"> before bucket[\"a\", \"b\">.");
         assertIllegalArgument("all(group(predefined(foo, bucket(c, d), bucket(-inf, e))))",
-                              "Buckets must be monotonically increasing, got bucket[\"c\", \"d\"> before bucket[-inf, \"e\">.");
+                "Buckets must be monotonically increasing, got bucket[\"c\", \"d\"> before bucket[-inf, \"e\">.");
         assertIllegalArgument("all(group(predefined(foo, bucket(u, inf), bucket(e, i))))",
-                              "Buckets must be monotonically increasing, got bucket[\"u\", inf> before bucket[\"e\", \"i\">.");
+                "Buckets must be monotonically increasing, got bucket[\"u\", inf> before bucket[\"e\", \"i\">.");
 
         // xorbit
         assertParse("all(group(xorbit(foo, 1)))");
     }
 
     @Test
-    public void testInfixArithmetic() {
+    void testInfixArithmetic() {
         assertParse("all(group(1))", "all(group(1))");
         assertParse("all(group(1+2))", "all(group(add(1, 2)))");
         assertParse("all(group(1-2))", "all(group(sub(1, 2)))");
@@ -371,16 +367,16 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testOperationLabel() {
+    void testOperationLabel() {
         assertParse("each() as(foo)",
-                    "each() as(foo)");
+                "each() as(foo)");
         assertParse("all(each() as(foo)" +
-                    "    each() as(bar))",
-                    "all(each() as(foo) each() as(bar))");
+                "    each() as(bar))",
+                "all(each() as(foo) each() as(bar))");
         assertParse("all(group(a) each(each() as(foo)" +
-                    "                  each() as(bar))" +
-                    "             each() as(baz))",
-                    "all(group(a) each(each() as(foo) each() as(bar)) each() as(baz))");
+                "                  each() as(bar))" +
+                "             each() as(baz))",
+                "all(group(a) each(each() as(foo) each() as(bar)) each() as(baz))");
 
         assertIllegalArgument("all() as(foo)", "Encountered \" \"as\" \"as\"\" at line 1, column 7.");
         assertIllegalArgument("all(all() as(foo))", "Encountered \" \"as\" \"as\"\" at line 1, column 11.");
@@ -388,58 +384,58 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testAttributeName() {
+    void testAttributeName() {
         assertParse("all(group(foo))");
         assertIllegalArgument("all(group(foo.))",
-                              "Encountered \" \")\" \")\"\" at line 1, column 15.");
+                "Encountered \" \")\" \")\"\" at line 1, column 15.");
         assertParse("all(group(foo.bar))");
         assertIllegalArgument("all(group(foo.bar.))",
-                              "Encountered \" \")\" \")\"\" at line 1, column 19.");
+                "Encountered \" \")\" \")\"\" at line 1, column 19.");
         assertParse("all(group(foo.bar.baz))");
     }
 
     @Test
-    public void testOutputLabel() {
+    void testOutputLabel() {
         assertParse("all(output(min(a) as(foo)))",
-                    "all(output(min(a) as(foo)))");
+                "all(output(min(a) as(foo)))");
         assertParse("all(output(min(a) as(foo), max(b) as(bar)))",
-                    "all(output(min(a) as(foo), max(b) as(bar)))");
+                "all(output(min(a) as(foo), max(b) as(bar)))");
 
         assertIllegalArgument("all(output(min(a)) as(foo))",
-                              "Encountered \" \"as\" \"as\"\" at line 1, column 20.");
+                "Encountered \" \"as\" \"as\"\" at line 1, column 20.");
     }
 
     @Test
-    public void testRootWhere() {
+    void testRootWhere() {
         String expected = "all(where(bar) all(group(foo)))";
         assertParse("all(where(bar) all(group(foo)))", expected);
         assertParse("all(group(foo)) where(bar)", expected);
     }
 
     @Test
-    public void testParseBadRequest() {
+    void testParseBadRequest() {
         assertIllegalArgument("output(count())",
-                              "Encountered \" \"output\" \"output\"\" at line 1, column 1.");
+                "Encountered \" \"output\" \"output\"\" at line 1, column 1.");
         assertIllegalArgument("each(output(count()))",
-                              "Expression 'count()' not applicable for single hit.");
+                "Expression 'count()' not applicable for single hit.");
         assertIllegalArgument("all(output(count())))",
-                              "Encountered \" \")\" \")\"\" at line 1, column 21.");
+                "Encountered \" \")\" \")\"\" at line 1, column 21.");
     }
 
     @Test
-    public void testAttributeFunction() {
+    void testAttributeFunction() {
         assertParse("all(group(attribute(foo)))");
         assertParse("all(group(attribute(foo)) order(sum(attribute(a))))");
     }
 
     @Test
-    public void testAccuracy() {
+    void testAccuracy() {
         assertParse("all(accuracy(0.5))");
         assertParse("all(group(foo) accuracy(1.0))");
     }
 
     @Test
-    public void testMapSyntax() {
+    void testMapSyntax() {
         assertParse("all(group(my.little{key}))", "all(group(my.little{\"key\"}))");
         assertParse("all(group(my.little{key }))", "all(group(my.little{\"key\"}))");
         assertParse("all(group(my.little{\"key\"}))", "all(group(my.little{\"key\"}))");
@@ -458,7 +454,7 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testMapSyntaxWithKeySourceAttribute() {
+    void testMapSyntaxWithKeySourceAttribute() {
         assertAttributeMapLookup("all(group(my_map{attribute(my_attr)}))",
                 "my_map.key", "my_map.value", "", "my_attr");
         assertAttributeMapLookup("all(group(my_map{attribute(my_attr)}.name))",
@@ -487,7 +483,7 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testMisc() {
+    void testMisc() {
         for (String fnc : Arrays.asList("time.date",
                                         "time.dayofmonth",
                                         "time.dayofweek",
@@ -536,39 +532,39 @@ public class GroupingParserTestCase {
         // TODO: assertParseRequest("all(group(a) each(output(xor(xorbit(b)) xor(xorbit(b, 64)))))");
         assertParse("all(group(artist) each(each(output(summary()))))");
         assertParse("all(group(artist) max(13) each(group(fixedwidth(year, 21.34)) max(55) output(count()) " +
-                    "each(each(output(summary())))))");
+                "each(each(output(summary())))))");
         assertParse("all(group(artist) max(13) each(group(predefined(year, bucket(7, 19), bucket(90, 300))) " +
-                    "max(55) output(count()) each(each(output(summary())))))");
+                "max(55) output(count()) each(each(output(summary())))))");
         assertParse("all(group(artist) max(13) each(group(predefined(year, bucket(7.1, 19.0), bucket(90.7, 300.0))) " +
-                    "max(55) output(count()) each(each(output(summary())))))");
+                "max(55) output(count()) each(each(output(summary())))))");
         assertParse("all(group(artist) max(13) each(group(predefined(year, bucket('a', 'b'), bucket('cd'))) " +
-                    "max(55) output(count()) each(each(output(summary())))))");
+                "max(55) output(count()) each(each(output(summary())))))");
 
         assertParse("all(output(count()))");
         assertParse("all(group(album) output(count()))");
         assertParse("all(group(album) each(output(count())))");
         assertParse("all(group(artist) each(group(album) output(count()))" +
-                    "                  each(group(song) output(count())))");
+                "                  each(group(song) output(count())))");
         assertParse("all(group(artist) output(count())" +
-                    "    each(group(album) output(count())" +
-                    "         each(group(song) output(count())" +
-                    "              each(each(output(summary()))))))");
+                "    each(group(album) output(count())" +
+                "         each(group(song) output(count())" +
+                "              each(each(output(summary()))))))");
         assertParse("all(group(album) order(-$total=sum(length)) each(output($total)))");
         assertParse("all(group(album) max(1) each(output(sum(length))))");
         assertParse("all(group(artist) each(max(2) each(output(summary()))))");
         assertParse("all(group(artist) max(3)" +
-                    "    each(group(album as(albumsongs)) each(each(output(summary()))))" +
-                    "    each(group(album as(albumlength)) output(sum(sum(length)))))");
+                "    each(group(album as(albumsongs)) each(each(output(summary()))))" +
+                "    each(group(album as(albumlength)) output(sum(sum(length)))))");
         assertParse("all(group(artist) max(15)" +
-                    "    each(group(album) " +
-                    "         each(group(song)" +
-                    "              each(max(2) each(output(summary()))))))");
+                "    each(group(album) " +
+                "         each(group(song)" +
+                "              each(max(2) each(output(summary()))))))");
         assertParse("all(group(artist) max(15)" +
-                    "    each(group(album)" +
-                    "         each(group(song)" +
-                    "              each(max(2) each(output(summary())))))" +
-                    "    each(group(song) max(5) order(sum(popularity))" +
-                    "         each(output(sum(sold)) each(output(summary())))))");
+                "    each(group(album)" +
+                "         each(group(song)" +
+                "              each(max(2) each(output(summary())))))" +
+                "    each(group(song) max(5) order(sum(popularity))" +
+                "         each(output(sum(sold)) each(output(summary())))))");
 
         assertParse("all(group(artist) order(max(relevance) * count()) each(output(count())))");
         assertParse("all(group(artist) each(output(sum(popularity) / count())))");
@@ -576,9 +572,9 @@ public class GroupingParserTestCase {
         assertParse("all(group(debugwait(artist, 3.3, true)))");
         assertParse("all(group(debugwait(artist, 3.3, false)))");
         assertIllegalArgument("all(group(debugwait(artist, -3.3, true)))",
-                              "Encountered \" \"-\" \"-\"\" at line 1, column 29");
+                "Encountered \" \"-\" \"-\"\" at line 1, column 29");
         assertIllegalArgument("all(group(debugwait(artist, 3.3, lol)))",
-                              "Encountered \" <IDENTIFIER> \"lol\"\" at line 1, column 34");
+                "Encountered \" <IDENTIFIER> \"lol\"\" at line 1, column 34");
         assertParse("all(group(artist) each(output(stddev(simple))))");
 
         // Test max()
@@ -588,35 +584,35 @@ public class GroupingParserTestCase {
     }
 
     @Test
-    public void testBucket() {
+    void testBucket() {
         List<GroupingOperation> operations = assertParse("all(group(predefined(artist, bucket('a'), bucket('c', 'z'))))");
         assertEquals(1, operations.size());
         assertEquals("all(group(predefined(artist, bucket[\"a\", \"a \">, bucket[\"c\", \"z\">)))",
-                     operations.get(0).toString());
+                operations.get(0).toString());
     }
 
     @Test
-    public void requireThatParseExceptionMessagesContainErrorMarker() {
+    void requireThatParseExceptionMessagesContainErrorMarker() {
         assertIllegalArgument("foo",
-                              "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.\n\n" +
-                              "Was expecting one of:\n\n" +
-                              "<SPACE> ...\n" +
-                              "    \"all\" ...\n" +
-                              "    \"each\" ...\n" +
-                              "    \n" +
-                              "At position:\n" +
-                              "foo\n" +
-                              "^");
+                "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.\n\n" +
+                        "Was expecting one of:\n\n" +
+                        "<SPACE> ...\n" +
+                        "    \"all\" ...\n" +
+                        "    \"each\" ...\n" +
+                        "    \n" +
+                        "At position:\n" +
+                        "foo\n" +
+                        "^");
         assertIllegalArgument("\n foo",
-                              "Encountered \" <IDENTIFIER> \"foo\"\" at line 2, column 2.\n\n" +
-                              "Was expecting one of:\n\n" +
-                              "<SPACE> ...\n" +
-                              "    \"all\" ...\n" +
-                              "    \"each\" ...\n" +
-                              "    \n" +
-                              "At position:\n" +
-                              " foo\n" +
-                              " ^");
+                "Encountered \" <IDENTIFIER> \"foo\"\" at line 2, column 2.\n\n" +
+                        "Was expecting one of:\n\n" +
+                        "<SPACE> ...\n" +
+                        "    \"all\" ...\n" +
+                        "    \"each\" ...\n" +
+                        "    \n" +
+                        "At position:\n" +
+                        " foo\n" +
+                        " ^");
     }
 
     // --------------------------------------------------------------------------------

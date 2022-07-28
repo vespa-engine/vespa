@@ -9,10 +9,10 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -20,10 +20,10 @@ import static org.junit.Assert.assertTrue;
 public class RestartChangesDefersConfigChangesTest {
 
     @Test
-    public void changes_requiring_restart_defers_config_changes() {
+    void changes_requiring_restart_defers_config_changes() {
         ValidationTester tester = new ValidationTester(new InMemoryProvisioner(5,
-                                                                               new NodeResources(1, 3, 9, 1),
-                                                                               true));
+                new NodeResources(1, 3, 9, 1),
+                true));
         VespaModel gen1 = tester.deploy(null, getServices(5, 3), Environment.prod, null).getFirst();
 
         // Change node count - no restart

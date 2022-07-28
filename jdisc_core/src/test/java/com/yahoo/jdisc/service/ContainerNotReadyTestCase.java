@@ -2,11 +2,11 @@
 package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -15,7 +15,7 @@ import static org.junit.Assert.fail;
 public class ContainerNotReadyTestCase {
 
     @Test
-    public void requireThatExceptionIsThrown() throws BindingSetNotFoundException {
+    void requireThatExceptionIsThrown() throws BindingSetNotFoundException {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         try {
             driver.newReference(URI.create("http://host"));

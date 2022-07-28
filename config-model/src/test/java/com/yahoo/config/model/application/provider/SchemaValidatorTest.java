@@ -3,13 +3,14 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.VespaVersion;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -41,44 +42,43 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
-    public void testXMLParse() throws IOException {
+    void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
     }
 
     @Test
-    public void testXMLParseError() throws IOException {
-        SchemaValidator validator = createValidator();
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(expectedErrorMessage("input"));
-        validator.validate(new StringReader(invalidServices));
+    void testXMLParseError() throws IOException {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(invalidServices));
+        });
+        assertTrue(exception.getMessage().contains(expectedErrorMessage("input")));
     }
 
     @Test
-    public void testXMLParseWithReader() throws IOException {
+    void testXMLParseWithReader() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
     }
 
     @Test
-    public void testXMLParseErrorWithReader() throws IOException {
-        SchemaValidator validator = createValidator();
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(expectedErrorMessage("input"));
-        validator.validate(new StringReader(invalidServices));
+    void testXMLParseErrorWithReader() throws IOException {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(invalidServices));
+        });
+        assertTrue(exception.getMessage().contains(expectedErrorMessage("input")));
     }
 
     @Test
-    public void testXMLParseErrorFromFile() throws IOException {
-        SchemaValidator validator = createValidator();
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(expectedErrorMessage("services.xml"));
-        validator.validate(new File("src/test/cfg/application/invalid-services-syntax/services.xml"));
+    void testXMLParseErrorFromFile() throws IOException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new File("src/test/cfg/application/invalid-services-syntax/services.xml"));
+        });
+        assertTrue(exception.getMessage().contains(expectedErrorMessage("services.xml")));
     }
 
     private SchemaValidator createValidator() {

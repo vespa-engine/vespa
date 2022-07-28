@@ -6,9 +6,7 @@ import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporarySDField;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,20 +15,15 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bjorncs
  */
 public class DocumentGraphValidatorTest {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void simple_ref_dag_is_allowed() {
+    void simple_ref_dag_is_allowed() {
         Schema advertiserSchema = createSearchWithName("advertiser");
         Schema campaignSchema = createSearchWithName("campaign");
         Schema adSchema = createSearchWithName("ad");
@@ -42,7 +35,7 @@ public class DocumentGraphValidatorTest {
     }
 
     @Test
-    public void simple_inheritance_dag_is_allowed() {
+    void simple_inheritance_dag_is_allowed() {
         Schema grandfather = createSearchWithName("grandfather");
         Schema father = createSearchWithName("father", grandfather);
         Schema son = createSearchWithName("son", father);
@@ -52,7 +45,7 @@ public class DocumentGraphValidatorTest {
     }
 
     @Test
-    public void complex_dag_is_allowed() {
+    void complex_dag_is_allowed() {
         Schema grandfather = createSearchWithName("grandfather");
         Schema father = createSearchWithName("father", grandfather);
         Schema mother = createSearchWithName("mother", grandfather);
@@ -70,55 +63,59 @@ public class DocumentGraphValidatorTest {
     }
 
     @Test
-    public void ref_cycle_is_forbidden() {
-        Schema schema1 = createSearchWithName("doc1");
-        Schema schema2 = createSearchWithName("doc2");
-        Schema schema3 = createSearchWithName("doc3");
-        createDocumentReference(schema1, schema2, "ref_2");
-        createDocumentReference(schema2, schema3, "ref_3");
-        createDocumentReference(schema3, schema1, "ref_1");
+    void ref_cycle_is_forbidden() {
+        Throwable exception = assertThrows(DocumentGraphValidator.DocumentGraphException.class, () -> {
+            Schema schema1 = createSearchWithName("doc1");
+            Schema schema2 = createSearchWithName("doc2");
+            Schema schema3 = createSearchWithName("doc3");
+            createDocumentReference(schema1, schema2, "ref_2");
+            createDocumentReference(schema2, schema3, "ref_3");
+            createDocumentReference(schema3, schema1, "ref_1");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc2->doc3->doc1.");
-        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+            DocumentGraphValidator validator = new DocumentGraphValidator();
+            validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+        });
+        assertTrue(exception.getMessage().contains("Document dependency cycle detected: doc1->doc2->doc3->doc1."));
     }
 
     @Test
-    public void inherit_cycle_is_forbidden() {
-        Schema schema1 = createSearchWithName("doc1");
-        Schema schema2 = createSearchWithName("doc2", schema1);
-        Schema schema3 = createSearchWithName("doc3", schema2);
-        schema1.getDocument().inherit(schema3.getDocument());
+    void inherit_cycle_is_forbidden() {
+        Throwable exception = assertThrows(DocumentGraphValidator.DocumentGraphException.class, () -> {
+            Schema schema1 = createSearchWithName("doc1");
+            Schema schema2 = createSearchWithName("doc2", schema1);
+            Schema schema3 = createSearchWithName("doc3", schema2);
+            schema1.getDocument().inherit(schema3.getDocument());
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+            DocumentGraphValidator validator = new DocumentGraphValidator();
+            validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+        });
+        assertTrue(exception.getMessage().contains("Document dependency cycle detected: doc1->doc3->doc2->doc1."));
     }
 
     @Test
-    public void combined_inherit_and_ref_cycle_is_forbidden() {
-        Schema schema1 = createSearchWithName("doc1");
-        Schema schema2 = createSearchWithName("doc2", schema1);
-        Schema schema3 = createSearchWithName("doc3", schema2);
-        createDocumentReference(schema1, schema3, "ref_1");
+    void combined_inherit_and_ref_cycle_is_forbidden() {
+        Throwable exception = assertThrows(DocumentGraphValidator.DocumentGraphException.class, () -> {
+            Schema schema1 = createSearchWithName("doc1");
+            Schema schema2 = createSearchWithName("doc2", schema1);
+            Schema schema3 = createSearchWithName("doc3", schema2);
+            createDocumentReference(schema1, schema3, "ref_1");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+            DocumentGraphValidator validator = new DocumentGraphValidator();
+            validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
+        });
+        assertTrue(exception.getMessage().contains("Document dependency cycle detected: doc1->doc3->doc2->doc1."));
     }
 
     @Test
-    public void self_reference_is_forbidden() {
-        Schema adSchema = createSearchWithName("ad");
-        createDocumentReference(adSchema, adSchema, "ad_ref");
+    void self_reference_is_forbidden() {
+        Throwable exception = assertThrows(DocumentGraphValidator.DocumentGraphException.class, () -> {
+            Schema adSchema = createSearchWithName("ad");
+            createDocumentReference(adSchema, adSchema, "ad_ref");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
-        validator.validateDocumentGraph(documentListOf(adSchema));
+            DocumentGraphValidator validator = new DocumentGraphValidator();
+            validator.validateDocumentGraph(documentListOf(adSchema));
+        });
+        assertTrue(exception.getMessage().contains("Document dependency cycle detected: ad->ad."));
     }
 
     /**
@@ -126,7 +123,7 @@ public class DocumentGraphValidatorTest {
      * produces a stack overflow before getting to graph validation.
      */
     @Test
-    public void self_inheritance_forbidden() {
+    void self_inheritance_forbidden() {
         try {
             Schema adSchema = createSearchWithName("ad");
             SDDocumentType document = adSchema.getDocument();

@@ -5,18 +5,18 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
 public class ContainerBuilderTestCase {
 
     @Test
-    public void requireThatAccessorsWork() throws URISyntaxException {
+    void requireThatAccessorsWork() throws URISyntaxException {
         final Object obj = new Object();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 
@@ -47,7 +47,7 @@ public class ContainerBuilderTestCase {
     }
 
     @Test
-    public void requireThatContainerThreadFactoryIsBound() {
+    void requireThatContainerThreadFactoryIsBound() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         assertSame(ContainerThread.Factory.class, builder.getInstance(ThreadFactory.class).getClass());
@@ -55,7 +55,7 @@ public class ContainerBuilderTestCase {
     }
 
     @Test
-    public void requireThatThreadFactoryCanBeReconfigured() {
+    void requireThatThreadFactoryCanBeReconfigured() {
         final ThreadFactory factory = Executors.defaultThreadFactory();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -71,7 +71,7 @@ public class ContainerBuilderTestCase {
     }
 
     @Test
-    public void requireThatBindingSetsAreCreatedOnDemand() {
+    void requireThatBindingSetsAreCreatedOnDemand() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         BindingRepository<?> repo = builder.serverBindings("foo");
@@ -87,12 +87,12 @@ public class ContainerBuilderTestCase {
     }
 
     @Test
-    public void requireThatSafeClassCastWorks() {
+    void requireThatSafeClassCastWorks() {
         ContainerBuilder.safeClassCast(Integer.class, Integer.class);
     }
 
     @Test
-    public void requireThatSafeClassCastThrowsIllegalArgument() {
+    void requireThatSafeClassCastThrowsIllegalArgument() {
         try {
             ContainerBuilder.safeClassCast(Integer.class, Double.class);
             fail();
@@ -102,7 +102,7 @@ public class ContainerBuilderTestCase {
     }
 
     @Test
-    public void requireThatSafeStringSplitWorks() {
+    void requireThatSafeStringSplitWorks() {
         assertTrue(ContainerBuilder.safeStringSplit(new Object(), ",").isEmpty());
         assertTrue(ContainerBuilder.safeStringSplit("", ",").isEmpty());
         assertTrue(ContainerBuilder.safeStringSplit(" \f\n\r\t", ",").isEmpty());

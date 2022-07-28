@@ -3,14 +3,14 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PredicateQueryItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Magnar Nedland
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class PredicateQueryItemTestCase {
 
     @Test
-    public void requireThatItemConstantsAreSet() {
+    void requireThatItemConstantsAreSet() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals(Item.ItemType.PREDICATE_QUERY, item.getItemType());
         assertEquals("PREDICATE_QUERY_ITEM", item.getName());
@@ -29,7 +29,7 @@ public class PredicateQueryItemTestCase {
     }
 
     @Test
-    public void requireThatFeaturesCanBeAdded() {
+    void requireThatFeaturesCanBeAdded() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals(0, item.getFeatures().size());
         item.addFeature("foo", "bar");
@@ -45,7 +45,7 @@ public class PredicateQueryItemTestCase {
     }
 
     @Test
-    public void requireThatRangeFeaturesCanBeAdded() {
+    void requireThatRangeFeaturesCanBeAdded() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals(0, item.getRangeFeatures().size());
         item.addRangeFeature("foo", 23);
@@ -61,7 +61,7 @@ public class PredicateQueryItemTestCase {
     }
 
     @Test
-    public void requireThatToStringWorks() {
+    void requireThatToStringWorks() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals("PREDICATE_QUERY_ITEM ", item.toString());
         item.addFeature("foo", "bar");
@@ -73,7 +73,7 @@ public class PredicateQueryItemTestCase {
     }
 
     @Test
-    public void requireThatPredicateQueryItemCanBeEncoded() {
+    void requireThatPredicateQueryItemCanBeEncoded() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals("PREDICATE_QUERY_ITEM ", item.toString());
         item.addFeature("foo", "bar");
@@ -84,12 +84,12 @@ public class PredicateQueryItemTestCase {
         byte[] actual = new byte[buffer.remaining()];
         buffer.get(actual);
         assertArrayEquals(new byte[]{
-                23,  // PREDICATE_QUERY code 23
-                9, 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e',
-                2,  // 2 features
-                3, 'f', 'o', 'o', 3, 'b', 'a', 'r', -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
-                3, 'f', 'o', 'o', 3, 'b', 'a', 'z', 0, 0, 0, 0, 0, 0, -1, -1,  // key, value, subquery
-                0},  // no range features
+                        23,  // PREDICATE_QUERY code 23
+                        9, 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e',
+                        2,  // 2 features
+                        3, 'f', 'o', 'o', 3, 'b', 'a', 'r', -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
+                        3, 'f', 'o', 'o', 3, 'b', 'a', 'z', 0, 0, 0, 0, 0, 0, -1, -1,  // key, value, subquery
+                        0},  // no range features
                 actual);
 
         item.addRangeFeature("foo", 23);
@@ -100,19 +100,19 @@ public class PredicateQueryItemTestCase {
         actual = new byte[buffer.remaining()];
         buffer.get(actual);
         assertArrayEquals(new byte[]{
-                23,  // PREDICATE_QUERY code 23
-                9, 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e',
-                2,  // 2 features
-                3, 'f', 'o', 'o',  3, 'b', 'a', 'r',  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
-                3, 'f', 'o', 'o',  3, 'b', 'a', 'z',  0, 0, 0, 0, 0, 0, -1, -1,  // key, value, subquery
-                2,  // 2 range features
-                3, 'f', 'o', 'o',  0, 0, 0, 0, 0, 0, 0, 23,  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
-                3, 'f', 'o', 'o',  0, 0, 0, 0, 0, 0, 0, 34,  -1, -1, -1, -1, -1, -1, -1, -2},  // key, value, subquery
+                        23,  // PREDICATE_QUERY code 23
+                        9, 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e',
+                        2,  // 2 features
+                        3, 'f', 'o', 'o',  3, 'b', 'a', 'r',  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
+                        3, 'f', 'o', 'o',  3, 'b', 'a', 'z',  0, 0, 0, 0, 0, 0, -1, -1,  // key, value, subquery
+                        2,  // 2 range features
+                        3, 'f', 'o', 'o',  0, 0, 0, 0, 0, 0, 0, 23,  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
+                        3, 'f', 'o', 'o',  0, 0, 0, 0, 0, 0, 0, 34,  -1, -1, -1, -1, -1, -1, -1, -2},  // key, value, subquery
                 actual);
     }
 
     @Test
-    public void requireThatPredicateQueryItemWithManyAttributesCanBeEncoded() {
+    void requireThatPredicateQueryItemWithManyAttributesCanBeEncoded() {
         PredicateQueryItem item = new PredicateQueryItem();
         assertEquals("PREDICATE_QUERY_ITEM ", item.toString());
         for (int i = 0; i < 200; ++i) {
@@ -126,11 +126,11 @@ public class PredicateQueryItemTestCase {
         byte [] expectedPrefix = new byte[]{
                 23,  // PREDICATE_QUERY code 23
                 9, 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e',
-                (byte)0x80, (byte)0xc8,  // 200 features (0x80c8 => 0xc8 == 200)
+                (byte) 0x80, (byte) 0xc8,  // 200 features (0x80c8 => 0xc8 == 200)
                 3, 'f', 'o', 'o',  3, 'b', 'a', 'r',  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
                 3, 'f', 'o', 'o',  3, 'b', 'a', 'r',  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
                 3, 'f', 'o', 'o',  3, 'b', 'a', 'r',  -1, -1, -1, -1, -1, -1, -1, -1,  // key, value, subquery
-                };  // ...
+        };  // ...
         assertArrayEquals(expectedPrefix, Arrays.copyOfRange(actual, 0, expectedPrefix.length));
 
     }

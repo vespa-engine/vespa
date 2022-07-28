@@ -10,12 +10,12 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Thomas Gundersen
@@ -25,7 +25,7 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
 
     // Verify that we can register and retrieve fields.
     @Test
-    public void testSetGet() {
+    void testSetGet() {
         SDDocumentType docType = new SDDocumentType("testdoc");
         docType.addField("Bongle", DataType.STRING);
         docType.addField("nalle", DataType.INT);
@@ -36,7 +36,7 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testInheritance() {
+    void testInheritance() {
         SDDocumentType child = new SDDocumentType("child");
         Iterator<SDDocumentType> inherited = child.getInheritedTypes().iterator();
         assertTrue(inherited.hasNext());
@@ -102,23 +102,23 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testStructInheritance() throws ParseException {
+    void testStructInheritance() throws ParseException {
         String schemaLines = joinLines(
                 "schema test {" +
-                "  document test {" +
-                "    struct parent_struct {" +
-                "      field parent_struct_field_1 type string {}" +
-                "    }" +
-                "    struct child_struct inherits parent_struct {" +
-                "      field child_struct_field_1 type string {}" +
-                "    }" +
-                "    field child_array type array<child_struct> {" +
-                "      indexing: summary\n" +
-                "      struct-field child_struct_field_1 { indexing: attribute }" +
-                "      struct-field parent_struct_field_1  { indexing: attribute }" +
-                "    }" +
-                "  }" +
-                "}");
+                        "  document test {" +
+                        "    struct parent_struct {" +
+                        "      field parent_struct_field_1 type string {}" +
+                        "    }" +
+                        "    struct child_struct inherits parent_struct {" +
+                        "      field child_struct_field_1 type string {}" +
+                        "    }" +
+                        "    field child_array type array<child_struct> {" +
+                        "      indexing: summary\n" +
+                        "      struct-field child_struct_field_1 { indexing: attribute }" +
+                        "      struct-field parent_struct_field_1  { indexing: attribute }" +
+                        "    }" +
+                        "  }" +
+                        "}");
 
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.addSchema(schemaLines);

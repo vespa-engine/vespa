@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.language.Linguistics;
@@ -19,7 +19,7 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.querytransform.NormalizingSearcher;
 import com.yahoo.search.searchchain.Execution;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -38,35 +38,35 @@ public class NormalizingSearcherTestCase {
     private static final Linguistics linguistics = new SimpleLinguistics();
 
     @Test
-    public void testNoNormalizingNecssary() {
+    void testNoNormalizingNecssary() {
         Query query = new Query("/search?query=bilen&search=cluster1&restrict=type1");
         createExecution().search(query);
         assertEquals("WEAKAND(100) bilen", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testAttributeQuery() {
+    void testAttributeQuery() {
         Query query = new Query("/search?query=attribute:" + enc("b\u00e9yonc\u00e8 b\u00e9yonc\u00e8") + "&search=cluster1&restrict=type1");
         createExecution().search(query);
         assertEquals("WEAKAND(100) attribute:b\u00e9yonc\u00e8 beyonce", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testOneTermNormalizing() {
+    void testOneTermNormalizing() {
         Query query = new Query("/search?query=b\u00e9yonc\u00e8&search=cluster1&restrict=type1");
         createExecution().search(query);
         assertEquals("WEAKAND(100) beyonce", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testOneTermNoNormalizingDifferentSearchDef() {
+    void testOneTermNoNormalizingDifferentSearchDef() {
         Query query = new Query("/search?query=b\u00e9yonc\u00e8&search=cluster1&restrict=type2");
         createExecution().search(query);
         assertEquals("WEAKAND(100) béyoncè", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
-    public void testTwoTermQuery() throws UnsupportedEncodingException {
+    void testTwoTermQuery() throws UnsupportedEncodingException {
         Query query = new Query("/search?query=" + enc("b\u00e9yonc\u00e8 beyonc\u00e9") + "&search=cluster1&restrict=type1");
         createExecution().search(query);
         assertEquals("WEAKAND(100) beyonce beyonce", query.getModel().getQueryTree().getRoot().toString());
@@ -82,7 +82,7 @@ public class NormalizingSearcherTestCase {
     }
 
     @Test
-    public void testPhraseQuery() {
+    void testPhraseQuery() {
         Query query = new Query("/search?query=" + enc("\"b\u00e9yonc\u00e8 beyonc\u00e9\"") + "&search=cluster1&restrict=type1");
         query.getTrace().setLevel(2);
         createExecution().search(query);
@@ -90,7 +90,7 @@ public class NormalizingSearcherTestCase {
     }
 
     @Test
-    public void testLiteralBoost() {
+    void testLiteralBoost() {
         Query query = new Query("/search?query=nop&search=cluster1&restrict=type1");
         List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
         Substring origin = new Substring(0, 5, "h\u00F4tels");
@@ -107,12 +107,12 @@ public class NormalizingSearcherTestCase {
                 assertEquals(.7d * .7d, a.exactness, 1e-15);
             }
         }
-        assertTrue("Did not find the expected normalized form \"hotel\".", foundHotel);
+        assertTrue(foundHotel, "Did not find the expected normalized form \"hotel\".");
     }
 
 
     @Test
-    public void testPhraseSegmentNormalization() {
+    void testPhraseSegmentNormalization() {
         Query query = new Query("/search?query=&search=cluster1&restrict=type1");
         PhraseSegmentItem phraseSegment = new PhraseSegmentItem("default", false, false);
         phraseSegment.addItem(new WordItem("net"));

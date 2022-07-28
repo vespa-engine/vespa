@@ -3,9 +3,9 @@ package com.yahoo.jdisc.core;
 
 import com.google.inject.Guice;
 import com.yahoo.jdisc.Timer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -14,13 +14,13 @@ import static org.junit.Assert.assertTrue;
 public class SystemTimerTestCase {
 
     @Test
-    public void requireThatClassIsInjectedByDefault() {
+    void requireThatClassIsInjectedByDefault() {
         Timer timer = Guice.createInjector().getInstance(Timer.class);
         assertTrue(timer instanceof SystemTimer);
     }
 
     @Test
-    public void requireThatSystemTimerIsSane() {
+    void requireThatSystemTimerIsSane() {
         long before = System.currentTimeMillis();
         long millis = new SystemTimer().currentTimeMillis();
         long after = System.currentTimeMillis();

@@ -14,7 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -25,7 +25,7 @@ public class ExecutionAbstractTestCase {
 
     protected PageTemplate importPage(String name) {
         PageTemplate template=new PageTemplateXMLReader().readFile(root + name);
-        assertNotNull("Could look up page template '" + name + "'",template);
+        assertNotNull(template,"Could look up page template '" + name + "'");
         return template;
     }
 

@@ -16,8 +16,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.Callback;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +42,7 @@ public class HttpResponseStatisticsCollectorTest {
     private int httpResponseCode = 500;
 
     @Test
-    public void statistics_are_aggregated_by_category() {
+    void statistics_are_aggregated_by_category() {
         testRequest("http", 300, "GET");
         testRequest("http", 301, "GET");
         testRequest("http", 200, "GET");
@@ -54,7 +54,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void statistics_are_grouped_by_http_method_and_scheme() {
+    void statistics_are_grouped_by_http_method_and_scheme() {
         testRequest("http", 200, "GET");
         testRequest("http", 200, "PUT");
         testRequest("http", 200, "POST");
@@ -77,7 +77,7 @@ public class HttpResponseStatisticsCollectorTest {
 
     @Test
     @SuppressWarnings("removal")
-    public void statistics_include_grouped_and_single_statuscodes() {
+    void statistics_include_grouped_and_single_statuscodes() {
         testRequest("http", 401, "GET");
         testRequest("http", 404, "GET");
         testRequest("http", 403, "GET");
@@ -90,7 +90,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void retrieving_statistics_resets_the_counters() {
+    void retrieving_statistics_resets_the_counters() {
         testRequest("http", 200, "GET");
         testRequest("http", 200, "GET");
 
@@ -104,7 +104,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void statistics_include_request_type_dimension() {
+    void statistics_include_request_type_dimension() {
         testRequest("http", 200, "GET", "/search");
         testRequest("http", 200, "POST", "/search");
         testRequest("http", 200, "POST", "/feed");
@@ -123,14 +123,14 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void request_type_can_be_set_explicitly() {
+    void request_type_can_be_set_explicitly() {
         testRequest("http", 200, "GET", "/search", com.yahoo.jdisc.Request.RequestType.WRITE);
 
         var stats = collector.takeStatistics();
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 200, 1L);
     }
 
-    @Before
+    @BeforeEach
     public void initializeCollector() throws Exception {
         Server server = new Server();
         connector = new AbstractConnector(server, null, null, null, 0) {

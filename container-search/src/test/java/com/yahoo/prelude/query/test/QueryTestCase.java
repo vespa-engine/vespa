@@ -8,12 +8,12 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests query trees
@@ -24,7 +24,7 @@ public class QueryTestCase {
 
     /** Tests that query hash and equality is value dependent only */
     @Test
-    public void testQueryEquality() {
+    void testQueryEquality() {
         String query = "RANK (+(AND \"baz gaz faz\" bazar) -\"foo bar foobar\") foofoo xyzzy";
         String filter = "foofoo -\"foo bar foobar\" xyzzy +\"baz gaz faz\" +bazar";
 
@@ -37,11 +37,11 @@ public class QueryTestCase {
 
     /** Check copy of query trees is a deep copy */
     @Test
-    public void testDeepCopy() {
+    void testDeepCopy() {
         Item root1 = parseQuery("a and b and (c or d) and e rank f andnot g", null, Query.Type.ADVANCED);
         Item root2 = root1.clone();
 
-        assertTrue("Item.clone() should be a deep copy.",nonIdenticalTrees(root1, root2));
+        assertTrue(nonIdenticalTrees(root1, root2), "Item.clone() should be a deep copy.");
     }
 
     private static Item parseQuery(String query, String filter, Query.Type type) {

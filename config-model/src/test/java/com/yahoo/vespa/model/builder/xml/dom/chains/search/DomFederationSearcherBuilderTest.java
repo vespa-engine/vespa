@@ -6,14 +6,12 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
 import com.yahoo.vespa.model.container.search.searchchain.FederationSearcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test of DomFederationSearcherBuilder.
@@ -23,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 
     @Test
-    public void ensureCorrectModel() {
+    void ensureCorrectModel() {
         FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root.getDeployState(), root, parse(
                 "<federation id='theId'>",
                 "    <provides>p2</provides>",
@@ -41,7 +39,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
                 model.bundleInstantiationSpec.classId.stringValue());
 
         assertEquals(2, model.targets.size());
-        assertTrue("source-set option was ignored", model.inheritDefaultSources);
+        assertTrue(model.inheritDefaultSources, "source-set option was ignored");
 
         assertTrue(targetNames(model.targets).containsAll(List.of("source1", "source2")));
     }
@@ -55,7 +53,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void require_that_target_selector_can_be_configured() {
+    void require_that_target_selector_can_be_configured() {
         FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root.getDeployState(), root, parse(
                 "<federation id='federation-id'>",
                 "    <target-selector id='my-id' class='my-class' />",
@@ -64,7 +62,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
         String targetSelectorId = "my-id@federation-id";
 
         AbstractConfigProducer<?> targetSelector = searcher.getChildren().get(targetSelectorId);
-        assertNotNull("No target selector child found", targetSelector);
+        assertNotNull(targetSelector, "No target selector child found");
 
         FederationConfig.Builder builder = new FederationConfig.Builder();
         searcher.getConfig(builder);

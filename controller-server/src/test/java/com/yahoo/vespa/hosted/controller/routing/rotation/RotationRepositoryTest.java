@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.List;
@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Oyvind Gronnesby
@@ -53,21 +53,21 @@ public class RotationRepositoryTest {
     private final DeploymentContext application = tester.newDeploymentContext("tenant1", "app1", "default");
 
     @Test
-    public void assigns_and_reuses_rotation() {
+    void assigns_and_reuses_rotation() {
         // Deploying assigns a rotation
         application.submit(applicationPackage).deploy();
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         assertEquals(List.of(expected.id()), rotationIds(application.instance().rotations()));
         assertEquals(URI.create("https://app1.tenant1.global.vespa.oath.cloud/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(application.instanceId()).direct().first().get().url());
+                tester.controller().routing().readDeclaredEndpointsOf(application.instanceId()).direct().first().get().url());
         try (RotationLock lock = repository.lock()) {
             List<AssignedRotation> rotations = repository.getOrAssignRotations(application.application().deploymentSpec(),
-                                                                               application.instance(),
-                                                                              lock);
+                    application.instance(),
+                    lock);
             assertSingleRotation(expected, rotations, repository);
             assertEquals(Set.of(RegionName.from("us-west-1"), RegionName.from("us-east-3")),
-                         application.instance().rotations().get(0).regions());
+                    application.instance().rotations().get(0).regions());
         }
 
         // Submitting once more assigns same rotation
@@ -83,12 +83,12 @@ public class RotationRepositoryTest {
                 .build();
         application.submit(applicationPackage).deploy();
         assertEquals(Set.of(RegionName.from("us-west-1"), RegionName.from("us-east-3"),
-                     RegionName.from("us-central-1")),
-                     application.instance().rotations().get(0).regions());
+                        RegionName.from("us-central-1")),
+                application.instance().rotations().get(0).regions());
     }
-    
+
     @Test
-    public void strips_whitespace_in_rotation_fqdn() {
+    void strips_whitespace_in_rotation_fqdn() {
         var tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces, SystemName.main));
         RotationRepository repository = tester.controller().routing().rotations();
         var application2 = tester.newDeploymentContext("tenant1", "app2", "default");
@@ -103,7 +103,7 @@ public class RotationRepositoryTest {
     }
 
     @Test
-    public void out_of_rotations() {
+    void out_of_rotations() {
         // Assigns 1 rotation
         application.submit(applicationPackage).deploy();
 
@@ -114,11 +114,11 @@ public class RotationRepositoryTest {
         // We're now out of rotations and next deployment fails
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
         application3.submit(applicationPackage)
-                    .runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("out of rotations"));
+                .runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("out of rotations"));
     }
 
     @Test
-    public void too_few_zones() {
+    void too_few_zones() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
                 .region("us-east-3")
@@ -127,7 +127,7 @@ public class RotationRepositoryTest {
     }
 
     @Test
-    public void no_rotation_assigned_for_application_without_service_id() {
+    void no_rotation_assigned_for_application_without_service_id() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-east-3")
                 .region("us-west-1")
@@ -137,7 +137,7 @@ public class RotationRepositoryTest {
     }
 
     @Test
-    public void prefixes_system_when_not_main() {
+    void prefixes_system_when_not_main() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
                 .region("cd-us-east-1")
@@ -150,18 +150,18 @@ public class RotationRepositoryTest {
                 ZoneApiMock.fromId("prod.cd-us-west-1"));
         DeploymentTester tester = new DeploymentTester(new ControllerTester(rotationsConfig, SystemName.cd));
         tester.controllerTester().zoneRegistry()
-              .setZones(zones)
-              .setRoutingMethod(zones, RoutingMethod.sharedLayer4);
+                .setZones(zones)
+                .setRoutingMethod(zones, RoutingMethod.sharedLayer4);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
         application2.submit(applicationPackage).deploy();
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
         assertEquals("https://cd.app2.tenant2.global.vespa.oath.cloud/",
-                     tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
+                tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
     }
 
     @Test
-    public void multiple_instances_with_similar_global_service_id() {
+    void multiple_instances_with_similar_global_service_id() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
                 .region("us-central-1")
@@ -169,19 +169,19 @@ public class RotationRepositoryTest {
                 .globalServiceId("global")
                 .build();
         var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1")
-                              .submit(applicationPackage)
-                              .deploy();
+                .submit(applicationPackage)
+                .deploy();
         var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
         assertEquals(URI.create("https://instance1.application1.tenant1.global.vespa.oath.cloud/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
+                tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
         assertEquals(URI.create("https://instance2.application1.tenant1.global.vespa.oath.cloud/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
+                tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
     }
 
     @Test
-    public void multiple_instances_with_similar_endpoints() {
+    void multiple_instances_with_similar_endpoints() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
                 .region("us-central-1")
@@ -189,17 +189,17 @@ public class RotationRepositoryTest {
                 .endpoint("default", "foo", "us-central-1", "us-west-1")
                 .build();
         var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1")
-                              .submit(applicationPackage)
-                              .deploy();
+                .submit(applicationPackage)
+                .deploy();
         var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
 
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
 
         assertEquals(URI.create("https://instance1.application1.tenant1.global.vespa.oath.cloud/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
+                tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
         assertEquals(URI.create("https://instance2.application1.tenant1.global.vespa.oath.cloud/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
+                tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
     }
 
     private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {

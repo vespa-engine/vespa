@@ -14,13 +14,14 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig.Attribute;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author alexeyche
@@ -64,10 +65,10 @@ public class ValidateFuzzySearcherTestCase {
 
 
     @Test
-    public void testQueriesToAllAttributes() {
+    void testQueriesToAllAttributes() {
         final Set<String> validAttributes = Set.of("string_single", "string_array", "string_weightedset");
 
-        for (String attribute: attributes) {
+        for (String attribute : attributes) {
             String q = makeQuery(attribute, "fuzzy");
             Result r = doSearch(searcher, q);
             if (validAttributes.contains(attribute)) {
@@ -79,28 +80,28 @@ public class ValidateFuzzySearcherTestCase {
     }
 
     @Test
-    public void testInvalidEmptyStringQuery() {
+    void testInvalidEmptyStringQuery() {
         String q = makeQuery("string_single", "");
         Result r = doSearch(searcher, q);
         assertErrMsg("FUZZY(,2,0) string_single: fuzzy query must be non-empty", r);
     }
 
     @Test
-    public void testInvalidQueryWrongMaxEditDistance() {
+    void testInvalidQueryWrongMaxEditDistance() {
         String q = makeQuery("string_single", "fuzzy", -1, 0);
         Result r = doSearch(searcher, q);
         assertErrMsg("FUZZY(fuzzy,-1,0) string_single:fuzzy has invalid maxEditDistance -1: Must be >= 0", r);
     }
 
     @Test
-    public void testInvalidQueryWrongPrefixLength() {
+    void testInvalidQueryWrongPrefixLength() {
         String q = makeQuery("string_single", "fuzzy", 2, -1);
         Result r = doSearch(searcher, q);
         assertErrMsg("FUZZY(fuzzy,2,-1) string_single:fuzzy has invalid prefixLength -1: Must be >= 0", r);
     }
 
     @Test
-    public void testInvalidQueryWrongAttributeName() {
+    void testInvalidQueryWrongAttributeName() {
         String q = makeQuery("wrong_name", "fuzzy");
         Result r = doSearch(searcher, q);
         assertErrMsg("FUZZY(fuzzy,2,0) wrong_name:fuzzy field is not a string attribute", r);

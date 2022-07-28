@@ -7,10 +7,9 @@ import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.prelude.semantics.parser.ParseException;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class SemanticRulesTest {
     private final static String root = "src/test/java/com/yahoo/vespa/model/container/search/semanticrules";
 
     @Test
-    public void semanticRulesTest()  throws ParseException, IOException {
+    void semanticRulesTest()  throws ParseException, IOException {
         SemanticRuleBuilder ruleBuilder = new SemanticRuleBuilder();
         SemanticRules rules = ruleBuilder.build(FilesApplicationPackage.fromFile(new File(root)));
         SemanticRulesConfig.Builder configBuilder = new SemanticRulesConfig.Builder();

@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 public class NullContentTestCase {
 
     @Test
-    public void requireThatWriteThrowsException() {
+    void requireThatWriteThrowsException() {
         CompletionHandler completion = Mockito.mock(CompletionHandler.class);
         try {
             NullContent.INSTANCE.write(ByteBuffer.allocate(69), completion);
@@ -26,7 +26,7 @@ public class NullContentTestCase {
     }
 
     @Test
-    public void requireThatWriteEmptyDoesNotThrowException() {
+    void requireThatWriteEmptyDoesNotThrowException() {
         CompletionHandler completion = Mockito.mock(CompletionHandler.class);
         NullContent.INSTANCE.write(ByteBuffer.allocate(0), completion);
         Mockito.verify(completion).completed();
@@ -34,7 +34,7 @@ public class NullContentTestCase {
     }
 
     @Test
-    public void requireThatCloseCallsCompletion() {
+    void requireThatCloseCallsCompletion() {
         CompletionHandler completion = Mockito.mock(CompletionHandler.class);
         NullContent.INSTANCE.close(completion);
         Mockito.verify(completion).completed();
@@ -42,7 +42,7 @@ public class NullContentTestCase {
     }
 
     @Test
-    public void requireThatCloseWithoutCompletionDoesNotThrow() {
+    void requireThatCloseWithoutCompletionDoesNotThrow() {
         NullContent.INSTANCE.close(null);
     }
 }

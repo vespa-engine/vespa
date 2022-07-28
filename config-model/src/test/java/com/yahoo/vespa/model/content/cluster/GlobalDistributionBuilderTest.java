@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -25,15 +25,15 @@ public class GlobalDistributionBuilderTest {
     private static final NewDocumentType GLOBAL_2 = new NewDocumentType(new NewDocumentType.Name("global-2"));
 
     @Test
-    public void global_documents_are_identified() {
+    void global_documents_are_identified() {
         GlobalDistributionBuilder builder = new GlobalDistributionBuilder(createDocumentDefinitions());
         String documentsElement =
                 "<documents>" +
-                "  <document type=\"" + NON_GLOBAL_EXPLICIT.getName() + "\" global=\"false\"/>" +
-                "  <document type=\"" + GLOBAL_1.getName() + "\" global=\"true\"/>" +
-                "  <document type=\"" + NON_GLOBAL_IMPLICIT.getName() + "\"/>" +
-                "  <document type=\"" + GLOBAL_2.getName() + "\" global=\"true\"/>" +
-                "</documents>";
+                        "  <document type=\"" + NON_GLOBAL_EXPLICIT.getName() + "\" global=\"false\"/>" +
+                        "  <document type=\"" + GLOBAL_1.getName() + "\" global=\"true\"/>" +
+                        "  <document type=\"" + NON_GLOBAL_IMPLICIT.getName() + "\"/>" +
+                        "  <document type=\"" + GLOBAL_2.getName() + "\" global=\"true\"/>" +
+                        "</documents>";
 
         Set<NewDocumentType> expectedResult = new HashSet<>(Arrays.asList(GLOBAL_1, GLOBAL_2));
         Set<NewDocumentType> actualResult = builder.build(new ModelElement(XML.getDocument(documentsElement).getDocumentElement()));

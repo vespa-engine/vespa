@@ -2,15 +2,15 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.tensor.TensorType;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.io.Reader;
 import java.io.StringReader;
 
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensorException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConstantTensorJsonValidatorTest {
 
@@ -22,12 +22,8 @@ public class ConstantTensorJsonValidatorTest {
         new ConstantTensorJsonValidator().validate("dummy.json", tensorType, jsonTensorReader);
     }
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
-    public void ensure_that_unbounded_tensor_works() {
+    void ensure_that_unbounded_tensor_works() {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[], y[])"),
                 inputJsonToReader(
@@ -42,7 +38,7 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
-    public void ensure_that_bounded_tensor_within_limits_works() {
+    void ensure_that_bounded_tensor_within_limits_works() {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[5], y[10])"),
                 inputJsonToReader(
@@ -57,7 +53,7 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
-    public void ensure_that_multiple_cells_work() {
+    void ensure_that_multiple_cells_work() {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[], y[])"),
                 inputJsonToReader(
@@ -77,7 +73,7 @@ public class ConstantTensorJsonValidatorTest {
 
 
     @Test
-    public void ensure_that_no_cells_work() {
+    void ensure_that_no_cells_work() {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[], y[])"),
                 inputJsonToReader(
@@ -87,25 +83,26 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
-    public void ensure_that_bound_tensor_outside_limits_is_disallowed() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Index 5 not within limits of bound dimension 'x'");
+    void ensure_that_bound_tensor_outside_limits_is_disallowed() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[5], y[10])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': '5', 'y': '2' },",
-                        "            'value': 1e47",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[5], y[10])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': '5', 'y': '2' },",
+                            "            'value': 1e47",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Index 5 not within limits of bound dimension 'x'"));
     }
 
     @Test
-    public void ensure_that_mapped_tensor_works() {
+    void ensure_that_mapped_tensor_works() {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x{}, y{})"),
                 inputJsonToReader(
@@ -120,162 +117,171 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
-    public void ensure_that_non_integer_strings_in_address_points_are_disallowed_unbound() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Index 'a' for dimension 'x' is not an integer");
+    void ensure_that_non_integer_strings_in_address_points_are_disallowed_unbound() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': 'a' },",
-                        "            'value': 47.0",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': 'a' },",
+                            "            'value': 47.0",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Index 'a' for dimension 'x' is not an integer"));
     }
 
     @Test
-    public void ensure_that_tensor_coordinates_are_strings() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Tensor label is not a string (VALUE_NUMBER_INT)");
+    void ensure_that_tensor_coordinates_are_strings() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': 47 },",
-                        "            'value': 33.0",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': 47 },",
+                            "            'value': 33.0",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Tensor label is not a string (VALUE_NUMBER_INT)"));
     }
 
     @Test
-    public void ensure_that_non_integer_strings_in_address_points_are_disallowed_bounded() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Index 'a' for dimension 'x' is not an integer");
+    void ensure_that_non_integer_strings_in_address_points_are_disallowed_bounded() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[5])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': 'a' },",
-                        "            'value': 41.0",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[5])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': 'a' },",
+                            "            'value': 41.0",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Index 'a' for dimension 'x' is not an integer"));
     }
 
     @Test
-    public void ensure_that_missing_coordinates_fail() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Tensor address missing dimension(s) y, z");
+    void ensure_that_missing_coordinates_fail() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[], y[], z[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': '3' },",
-                        "            'value': 99.3",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[], y[], z[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': '3' },",
+                            "            'value': 99.3",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Tensor address missing dimension(s) y, z"));
     }
 
     @Test
-    public void ensure_that_non_number_values_are_disallowed() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Tensor value is not a number (VALUE_STRING)");
+    void ensure_that_non_number_values_are_disallowed() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': '3' },",
-                        "            'value': 'fruit'",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': '3' },",
+                            "            'value': 'fruit'",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Tensor value is not a number (VALUE_STRING)"));
     }
 
     @Test
-    public void ensure_that_extra_dimensions_are_disallowed() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Tensor dimension 'z' does not exist");
+    void ensure_that_extra_dimensions_are_disallowed() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[], y[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': '3', 'y': '2', 'z': '4' },",
-                        "            'value': 99.3",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[], y[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': '3', 'y': '2', 'z': '4' },",
+                            "            'value': 99.3",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Tensor dimension 'z' does not exist"));
     }
 
     @Test
-    public void ensure_that_duplicate_dimensions_are_disallowed() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Duplicate tensor dimension 'y'");
+    void ensure_that_duplicate_dimensions_are_disallowed() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[], y[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'cells': [",
-                        "        {",
-                        "            'address': { 'x': '1', 'y': '2', 'y': '4' },",
-                        "            'value': 88.1",
-                        "        }",
-                        "   ]",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[], y[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'cells': [",
+                            "        {",
+                            "            'address': { 'x': '1', 'y': '2', 'y': '4' },",
+                            "            'value': 88.1",
+                            "        }",
+                            "   ]",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Duplicate tensor dimension 'y'"));
     }
 
     @Test
-    public void ensure_that_invalid_json_fails() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Failed to parse JSON stream");
+    void ensure_that_invalid_json_fails() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(
-                TensorType.fromSpec("tensor(x[], y[])"),
-                inputJsonToReader(
-                        "{",
-                        "    cells': [",
-                        "        {",
-                        "            'address': { 'x': '3' 'y': '2' }",
-                        "            'value': 2.0",
-                        "        }",
-                        "   ",
-                        "}"));
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x[], y[])"),
+                    inputJsonToReader(
+                            "{",
+                            "    cells': [",
+                            "        {",
+                            "            'address': { 'x': '3' 'y': '2' }",
+                            "            'value': 2.0",
+                            "        }",
+                            "   ",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Failed to parse JSON stream"));
     }
 
     @Test
-    public void ensure_that_invalid_json_not_in_tensor_format_fails() {
-        expectedException.expect(InvalidConstantTensorException.class);
-        expectedException.expectMessage("Expected field name 'cells', got 'stats'");
+    void ensure_that_invalid_json_not_in_tensor_format_fails() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
 
-        validateTensorJson(TensorType.fromSpec("tensor(x[], y[])"),
-                inputJsonToReader(
-                        "{",
-                        "   'stats': {",
-                        "       '\u30d1\u30fc\u30d7\u30eb\u30b4\u30e0\u88fd\u306e\u30a2\u30d2\u30eb\u306f\u79c1\u3092\u6bba\u3059\u305f\u3081\u306b\u671b\u3093\u3067\u3044\u307e\u3059': true,",
-                        "       'points': 47",
-                        "   }",
-                        "}"));
+            validateTensorJson(TensorType.fromSpec("tensor(x[], y[])"),
+                    inputJsonToReader(
+                            "{",
+                            "   'stats': {",
+                            "       '\u30d1\u30fc\u30d7\u30eb\u30b4\u30e0\u88fd\u306e\u30a2\u30d2\u30eb\u306f\u79c1\u3092\u6bba\u3059\u305f\u3081\u306b\u671b\u3093\u3067\u3044\u307e\u3059': true,",
+                            "       'points': 47",
+                            "   }",
+                            "}"));
+        });
+        assertTrue(exception.getMessage().contains("Expected field name 'cells', got 'stats'"));
     }
 
 }

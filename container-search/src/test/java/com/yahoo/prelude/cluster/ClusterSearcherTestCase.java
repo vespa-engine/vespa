@@ -26,7 +26,7 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,10 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests cluster monitoring
@@ -53,7 +50,7 @@ public class ClusterSearcherTestCase {
     private static final double DELTA = 0.0000000000000001;
 
     @Test
-    public void testNoBackends() {
+    void testNoBackends() {
         ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
         try {
             Execution execution = new Execution(cluster, Execution.Context.createContextStub());
@@ -87,7 +84,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatDocumentTypesAreResolved() {
+    void testThatDocumentTypesAreResolved() {
         ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type1", "type2", "type3")));
         try {
             ClusterSearcher type1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type6")));
@@ -126,7 +123,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatDocumentTypesAreResolvedTODO_REMOVE() {
+    void testThatDocumentTypesAreResolvedTODO_REMOVE() {
         ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(List.of("type1", "type2", "type3")));
         try {
             ClusterSearcher type1 = new ClusterSearcher(new LinkedHashSet<>(List.of("type6")));
@@ -284,7 +281,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatSingleDocumentTypeCanBeSearched() {
+    void testThatSingleDocumentTypeCanBeSearched() {
         { // Explicit 1 type in restrict set
             Execution execution = createExecution();
             Query query = new Query("?query=hello&restrict=type1");
@@ -311,7 +308,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatSubsetOfDocumentTypesCanBeSearched() {
+    void testThatSubsetOfDocumentTypesCanBeSearched() {
         Execution execution = createExecution();
         Query query = new Query("?query=hello&restrict=type1,type3");
 
@@ -328,7 +325,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatMultipleDocumentTypesCanBeSearchedAndFilled() {
+    void testThatMultipleDocumentTypesCanBeSearchedAndFilled() {
         Execution execution = createExecution();
         Query query = new Query("?query=hello");
 
@@ -386,7 +383,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatWeCanSpecifyNumHitsAndHitOffset() {
+    void testThatWeCanSpecifyNumHitsAndHitOffset() {
         Execution ex = createExecution();
 
         // all types
@@ -411,7 +408,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatWeCanSpecifyNumHitsAndHitOffsetWhenSorting() {
+    void testThatWeCanSpecifyNumHitsAndHitOffsetWhenSorting() {
         Execution ex = createExecution(true);
 
         String extra = "&restrict=type1,type2&sorting=%2Basc-score";
@@ -485,7 +482,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatVipStatusIsSetUpForStreamingSearch() {
+    void testThatVipStatusIsSetUpForStreamingSearch() {
         String clusterName = "test-cluster";
         VipStatus vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterName)).build(), new ClustersStatus());
         assertFalse(vipStatus.isInRotation());
@@ -494,7 +491,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryTimeoutIsCappedWithDefaultMax() {
+    void testThatQueryTimeoutIsCappedWithDefaultMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(600001);
         f.search();
@@ -502,7 +499,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryTimeoutIsNotCapped() {
+    void testThatQueryTimeoutIsNotCapped() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(599999);
         f.search();
@@ -510,7 +507,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryTimeoutIsCappedWithSpecifiedMax() {
+    void testThatQueryTimeoutIsCappedWithSpecifiedMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(70.0, null);
         f.query.setTimeout(70001);
         f.search();
@@ -518,7 +515,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanMax() {
+    void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(10001);
         f.query.getRanking().setQueryCache(true);
@@ -527,7 +524,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryCacheIsNotDisabledIfTimeoutIsOk() {
+    void testThatQueryCacheIsNotDisabledIfTimeoutIsOk() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(10000);
         f.query.getRanking().setQueryCache(true);
@@ -536,7 +533,7 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanConfiguredMax() {
+    void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanConfiguredMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, 5.0);
         f.query.setTimeout(5001);
         f.query.getRanking().setQueryCache(true);

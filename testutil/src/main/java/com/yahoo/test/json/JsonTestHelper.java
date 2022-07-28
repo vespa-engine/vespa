@@ -5,10 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.yahoo.test.JunitCompat;
 
 import java.io.UncheckedIOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Vegard Sjonfjell
@@ -31,7 +30,7 @@ public class JsonTestHelper {
         try {
             JsonNode expected = mapper.readTree(expectedJson);
             JsonNode actual = mapper.readTree(inputJson);
-            assertEquals(expected, actual);
+            JunitCompat.assertEquals(expected, actual);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Exception when comparing json strings." , e);
         }
@@ -57,4 +56,5 @@ public class JsonTestHelper {
             throw new UncheckedIOException(e);
         }
     }
+
 }

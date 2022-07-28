@@ -1,13 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespavisit;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VdsVisitTargetTestCase {
 
     @Test
-    public void testParametersSlobrok() throws Exception {
+    void testParametersSlobrok() throws Exception {
         VdsVisitTarget target = new VdsVisitTarget();
         target.parseArguments(new String[]{
                 "--bindtoslobrok", "myname",
@@ -30,11 +31,11 @@ public class VdsVisitTargetTestCase {
     }
 
     @Test
-    public void testParametersPort() throws Exception {
+    void testParametersPort() throws Exception {
         VdsVisitTarget target = new VdsVisitTarget();
         target.parseArguments("--bindtosocket 1234".split(" "));
         assertEquals(1234, target.getPort());
-        assertEquals(null, target.getSlobrokAddress());
+        assertNull(target.getSlobrokAddress());
     }
 
     public void assertException(String params) {
@@ -48,7 +49,7 @@ public class VdsVisitTargetTestCase {
     }
 
     @Test
-    public void testPortAndSlobrok() {
+    void testPortAndSlobrok() {
         assertException("--bindtoslobrok foo --bindtosocket 1234");
         assertException("--bindtoport foo");
     }

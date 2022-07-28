@@ -7,19 +7,19 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.NonWorkingRequestHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 public class BindingRepositoryTestCase {
 
     @Test
-    public void requireThatRepositoryCanBeActivated() {
+    void requireThatRepositoryCanBeActivated() {
         BindingRepository<Object> bindings = new BindingRepository<>();
         bindings.bind("http://host/path", new Object());
 
@@ -41,7 +41,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatActivationIsSnapshotOfRepository() {
+    void requireThatActivationIsSnapshotOfRepository() {
         BindingRepository<Object> bindings = new BindingRepository<>();
         bindings.bind("http://host/path", new Object());
 
@@ -57,7 +57,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatObjectsCanBeBound() {
+    void requireThatObjectsCanBeBound() {
         BindingRepository<Object> bindings = new BindingRepository<>();
         Object foo = new Object();
         Object bar = new Object();
@@ -79,7 +79,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPatternCannotBeStolen() {
+    void requireThatPatternCannotBeStolen() {
         final String pattern = "http://host/path";
         final RequestHandler originallyBoundHandler = new NonWorkingRequestHandler();
 
@@ -92,7 +92,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatBindAllMethodWorks() {
+    void requireThatBindAllMethodWorks() {
         Object foo = new Object();
         Object bar = new Object();
         Object baz = new Object();
@@ -122,7 +122,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPutAllMethodWorks() {
+    void requireThatPutAllMethodWorks() {
         Object foo = new Object();
         Object bar = new Object();
         Object baz = new Object();
@@ -153,7 +153,7 @@ public class BindingRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPutNullThrowsException() {
+    void requireThatPutNullThrowsException() {
         try {
             new BindingRepository<>().put(null, new Object());
             fail();

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,12 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,12 +17,12 @@ import static org.junit.Assert.fail;
 public class FeatureSetTest {
 
     @Test
-    public void requireThatFeatureSetIsAValue() {
+    void requireThatFeatureSetIsAValue() {
         assertTrue(PredicateValue.class.isAssignableFrom(FeatureSet.class));
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         FeatureSet node = new FeatureSet("key", "valueA", "valueB");
         assertEquals("key", node.getKey());
         assertValues(Arrays.asList("valueA", "valueB"), node);
@@ -40,7 +35,7 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatValueSetIsMutable() {
+    void requireThatValueSetIsMutable() {
         FeatureSet node = new FeatureSet("key");
         node.getValues().add("valueA");
         assertValues(Arrays.asList("valueA"), node);
@@ -51,7 +46,7 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatConstructorsWork() {
+    void requireThatConstructorsWork() {
         FeatureSet node = new FeatureSet("key", "valueA", "valueB");
         assertEquals("key", node.getKey());
         assertValues(Arrays.asList("valueA", "valueB"), node);
@@ -62,7 +57,7 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
+    void requireThatCloneIsImplemented() throws CloneNotSupportedException {
         FeatureSet node1 = new FeatureSet("key", "valueA", "valueB");
         FeatureSet node2 = node1.clone();
         assertEquals(node1, node2);
@@ -71,28 +66,28 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(new FeatureSet("key").hashCode(), new FeatureSet("key").hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         FeatureSet lhs = new FeatureSet("keyA", "valueA", "valueB");
-        assertTrue(lhs.equals(lhs));
-        assertFalse(lhs.equals(new Object()));
+        assertEquals(lhs, lhs);
+        assertNotEquals(lhs, new Object());
 
         FeatureSet rhs = new FeatureSet("keyB");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.setKey("keyA");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.addValue("valueA");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.addValue("valueB");
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatkeyIsMandatoryInConstructor() {
+    void requireThatkeyIsMandatoryInConstructor() {
         try {
             new FeatureSet(null);
             fail();
@@ -108,7 +103,7 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatkeyIsMandatoryInSetter() {
+    void requireThatkeyIsMandatoryInSetter() {
         FeatureSet node = new FeatureSet("foo");
         try {
             node.setKey(null);
@@ -120,7 +115,7 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatValueIsMandatoryInSetter() {
+    void requireThatValueIsMandatoryInSetter() {
         FeatureSet node = new FeatureSet("foo", "bar");
         try {
             node.addValue(null);
@@ -132,49 +127,49 @@ public class FeatureSetTest {
     }
 
     @Test
-    public void requireThatKeyIsEscapedInToString() {
+    void requireThatKeyIsEscapedInToString() {
         assertEquals("foo in [val]",
-                     new FeatureSet("foo", "val").toString());
+                new FeatureSet("foo", "val").toString());
         assertEquals("'\\foo' in [val]",
-                     new FeatureSet("\foo", "val").toString());
+                new FeatureSet("\foo", "val").toString());
         assertEquals("'\\x27foo\\x27' in [val]",
-                     new FeatureSet("'foo'", "val").toString());
+                new FeatureSet("'foo'", "val").toString());
     }
 
     @Test
-    public void requireThatValuesAreEscapedInToString() {
+    void requireThatValuesAreEscapedInToString() {
         assertEquals("key in [bar, foo]",
-                     new FeatureSet("key", "foo", "bar").toString());
+                new FeatureSet("key", "foo", "bar").toString());
         assertEquals("key in ['\\foo', 'ba\\r']",
-                     new FeatureSet("key", "\foo", "ba\r").toString());
+                new FeatureSet("key", "\foo", "ba\r").toString());
         assertEquals("key in ['\\x27bar\\x27', '\\x27foo\\x27']",
-                     new FeatureSet("key", "'foo'", "'bar'").toString());
+                new FeatureSet("key", "'foo'", "'bar'").toString());
     }
 
     @Test
-    public void requireThatSimpleStringsArePrettyPrinted() {
+    void requireThatSimpleStringsArePrettyPrinted() {
         assertEquals("foo in [bar]",
-                     new FeatureSet("foo", "bar").toString());
+                new FeatureSet("foo", "bar").toString());
     }
 
     @Test
-    public void requireThatComplexStringsAreEscaped() {
+    void requireThatComplexStringsAreEscaped() {
         assertEquals("'\\foo' in ['ba\\r']",
-                     new FeatureSet("\foo", "ba\r").toString());
+                new FeatureSet("\foo", "ba\r").toString());
     }
 
     @Test
-    public void requireThatNegatedFeatureSetsArePrettyPrinted() {
+    void requireThatNegatedFeatureSetsArePrettyPrinted() {
         assertEquals("country not in [no, se]",
-                     new Negation(new FeatureSet("country", "no", "se")).toString());
+                new Negation(new FeatureSet("country", "no", "se")).toString());
     }
 
     private static void assertValues(Collection<String> expected, FeatureSet actual) {
         List<String> tmp = new ArrayList<>(expected);
         for (String value : actual.getValues()) {
-            assertNotNull(value, tmp.remove(value));
+            assertNotNull(tmp.remove(value), value);
         }
-        assertTrue(tmp.toString(), tmp.isEmpty());
+        assertTrue(tmp.isEmpty(), tmp.toString());
     }
 
 }

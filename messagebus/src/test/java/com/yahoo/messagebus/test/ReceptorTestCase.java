@@ -4,12 +4,12 @@ package com.yahoo.messagebus.test;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.text.Utf8String;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 public class ReceptorTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Receptor receptor = new Receptor();
         assertNull(receptor.getMessage(0));
         Message msg = new MyMessage();
@@ -30,7 +30,7 @@ public class ReceptorTestCase {
     }
 
     @Test
-    public void requireThatMessagesAndRepliesAreTrackedIndividually() {
+    void requireThatMessagesAndRepliesAreTrackedIndividually() {
         Receptor receptor = new Receptor();
         receptor.handleMessage(new MyMessage());
         receptor.handleReply(new MyReply());
@@ -44,7 +44,7 @@ public class ReceptorTestCase {
     }
 
     @Test
-    public void requireThatMessagesCanBeWaitedFor() {
+    void requireThatMessagesCanBeWaitedFor() {
         final Receptor receptor = new Receptor();
         Thread thread = new Thread() {
 
@@ -63,7 +63,7 @@ public class ReceptorTestCase {
     }
 
     @Test
-    public void requireThatMessageWaitCanBeInterrupted() throws InterruptedException {
+    void requireThatMessageWaitCanBeInterrupted() throws InterruptedException {
         final Receptor receptor = new Receptor();
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread() {
@@ -80,7 +80,7 @@ public class ReceptorTestCase {
     }
 
     @Test
-    public void requireThatRepliesCanBeWaitedFor() {
+    void requireThatRepliesCanBeWaitedFor() {
         final Receptor receptor = new Receptor();
         Thread thread = new Thread() {
 
@@ -99,7 +99,7 @@ public class ReceptorTestCase {
     }
 
     @Test
-    public void requireThatReplyWaitCanBeInterrupted() throws InterruptedException {
+    void requireThatReplyWaitCanBeInterrupted() throws InterruptedException {
         final Receptor receptor = new Receptor();
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread() {

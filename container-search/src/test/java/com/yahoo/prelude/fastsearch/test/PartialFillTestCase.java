@@ -12,16 +12,13 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author havardpe
@@ -50,7 +47,7 @@ public class PartialFillTestCase {
     }
 
     @Test
-    public void testPartitioning() {
+    void testPartitioning() {
         FS4 fs4 = new FS4();
         Query a = new Query("/?query=foo");
         Query b = new Query("/?query=bar");
@@ -107,7 +104,7 @@ public class PartialFillTestCase {
     }
 
     @Test
-    public void testMergeErrors() {
+    void testMergeErrors() {
         BadFS4 fs4 = new BadFS4();
         Query a = new Query("/?query=foo");
         Query b = new Query("/?query=bar");
@@ -129,17 +126,17 @@ public class PartialFillTestCase {
         assertNotNull(eh);
         ErrorMessage exp_sub = ErrorMessage.createUnspecifiedError("error");
         int n = 0;
-        for (Iterator<? extends com.yahoo.search.result.ErrorMessage> i = eh.errorIterator(); i.hasNext();) {
+        for (Iterator<? extends com.yahoo.search.result.ErrorMessage> i = eh.errorIterator(); i.hasNext(); ) {
             com.yahoo.search.result.ErrorMessage error = i.next();
             switch (n) {
-            case 0:
-                assertEquals(exp_sub, error);
-                break;
-            case 1:
-                assertEquals(exp_sub, error);
-                break;
-            default:
-                assertTrue(false);
+                case 0:
+                    assertEquals(exp_sub, error);
+                    break;
+                case 1:
+                    assertEquals(exp_sub, error);
+                    break;
+                default:
+                    assertTrue(false);
             }
             n++;
         }

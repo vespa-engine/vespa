@@ -11,10 +11,10 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of MultipleResultsSearcher
@@ -30,7 +30,7 @@ public class MultipleResultsTestCase {
 
     private Chain<Searcher> chain;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         docSource=new DocumentSourceSearcher();
         searcher=new MultipleResultsSearcher();
@@ -38,11 +38,11 @@ public class MultipleResultsTestCase {
     }
 
     @Test
-    public void testRetrieveHeterogenousHits() {
+    void testRetrieveHeterogenousHits() {
         Query query = createQuery();
 
         Result originalResult = new Result(query);
-        int n1 = 15, n2 = 25, n3 = 25, n4=25;
+        int n1 = 15, n2 = 25, n3 = 25, n4 = 25;
         addHits(originalResult, "others", n1);
         addHits(originalResult, "music", n2);
         addHits(originalResult, "movies", n3);
@@ -51,23 +51,23 @@ public class MultipleResultsTestCase {
 
         docSource.addResult(query, originalResult);
 
-        query.setWindow(0,30);
+        query.setWindow(0, 30);
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
 
-        HitGroup musicGroup = (HitGroup)result.hits().get("music");
-        HitGroup moviesGroup = (HitGroup)result.hits().get("movies");
+        HitGroup musicGroup = (HitGroup) result.hits().get("music");
+        HitGroup moviesGroup = (HitGroup) result.hits().get("movies");
 
-        assertEquals( 15, musicGroup.size() );
-        assertEquals( 15, moviesGroup.size() );
-        assertEquals( 3, docSource.getQueryCount() );
+        assertEquals(15, musicGroup.size());
+        assertEquals(15, moviesGroup.size());
+        assertEquals(3, docSource.getQueryCount());
     }
 
     @Test
-    public void testRetrieveHitsForGroup() {
+    void testRetrieveHitsForGroup() {
         Query query = createQuery();
 
         Result originalResult = new Result(query);
-        int n1 = 200, n2=30;
+        int n1 = 200, n2 = 30;
         addHits(originalResult, "music", n1, 1000);
         addHits(originalResult, "movies", n2, 100);
         originalResult.setTotalHitCount(n1 + n2);
@@ -81,18 +81,18 @@ public class MultipleResultsTestCase {
 
         docSource.addResult(restrictedQuery, restrictedResult);
 
-        query.setWindow(0,30);
+        query.setWindow(0, 30);
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
 
-        HitGroup musicGroup = (HitGroup)result.hits().get("music");
-        HitGroup moviesGroup = (HitGroup)result.hits().get("movies");
+        HitGroup musicGroup = (HitGroup) result.hits().get("music");
+        HitGroup moviesGroup = (HitGroup) result.hits().get("movies");
 
-        assertEquals( 15, musicGroup.size());
-        assertEquals( 15, moviesGroup.size());
+        assertEquals(15, musicGroup.size());
+        assertEquals(15, moviesGroup.size());
     }
 
     @Test
-    public void testNoHitsForResultSet() {
+    void testNoHitsForResultSet() {
         Query query = createQuery();
 
         Result originalResult = new Result(query);
@@ -104,14 +104,14 @@ public class MultipleResultsTestCase {
 
         docSource.addResult(query, originalResult);
 
-        query.setWindow(0,30);
+        query.setWindow(0, 30);
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
 
-        HitGroup musicGroup = (HitGroup)result.hits().get("music");
-        HitGroup moviesGroup = (HitGroup)result.hits().get("movies");
+        HitGroup musicGroup = (HitGroup) result.hits().get("music");
+        HitGroup moviesGroup = (HitGroup) result.hits().get("movies");
 
-        assertEquals( 15, musicGroup.size());
-        assertEquals( 0, moviesGroup.size());
+        assertEquals(15, musicGroup.size());
+        assertEquals(0, moviesGroup.size());
     }
 
     private void addHits(Result result, String docName, int numHits,

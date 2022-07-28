@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests anchoring
@@ -15,7 +15,7 @@ public class AnchorTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testSingleWordAnchoredBothSides() {
+    void testSingleWordAnchoredBothSides() {
         assertSemantics("anchor", "word");
         assertSemantics("anchor", "anotherword");
         assertSemantics("notthisword", "notthisword");
@@ -23,7 +23,7 @@ public class AnchorTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testMultiwordAnchored() {
+    void testMultiwordAnchored() {
         assertSemantics("anchor", "this is complete");
         assertSemantics("AND this is complete toomuch", "this is complete toomuch");
         assertSemantics("anchor", "a phrase");
@@ -31,28 +31,28 @@ public class AnchorTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testFirstAnchored() {
-        assertSemantics("anchor","first");
-        assertSemantics("AND anchor andmore","first andmore");
-        assertSemantics("AND before first","before first");
-        assertSemantics("AND before first andmore","before first andmore");
+    void testFirstAnchored() {
+        assertSemantics("anchor", "first");
+        assertSemantics("AND anchor andmore", "first andmore");
+        assertSemantics("AND before first", "before first");
+        assertSemantics("AND before first andmore", "before first andmore");
     }
 
     @Test
-    public void testLastAnchored() {
-        assertSemantics("anchor","last");
-        assertSemantics("AND andmore anchor","andmore last");
-        assertSemantics("AND last after","last after");
-        assertSemantics("AND andmore last after","andmore last after");
+    void testLastAnchored() {
+        assertSemantics("anchor", "last");
+        assertSemantics("AND andmore anchor", "andmore last");
+        assertSemantics("AND last after", "last after");
+        assertSemantics("AND andmore last after", "andmore last after");
     }
 
     @Test
-    public void testFirstAndLastAnchored() {
-        assertSemantics("AND anchor anchor","first last");
-        assertSemantics("AND last first","last first");
-        assertSemantics("AND anchor between anchor","first between last");
-        assertSemantics("AND anchor last after","first last after");
-        assertSemantics("AND before first anchor","before first last");
+    void testFirstAndLastAnchored() {
+        assertSemantics("AND anchor anchor", "first last");
+        assertSemantics("AND last first", "last first");
+        assertSemantics("AND anchor between anchor", "first between last");
+        assertSemantics("AND anchor last after", "first last after");
+        assertSemantics("AND before first anchor", "before first last");
     }
 
 }

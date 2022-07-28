@@ -3,7 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -12,17 +12,17 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 public class DocumentModelBuilderImportedFieldsTestCase extends AbstractReferenceFieldTestCase {
 
     @Test
-    public void imported_fields_are_included_in_generated_document_configs() throws ParseException, IOException {
+    void imported_fields_are_included_in_generated_document_configs() throws ParseException, IOException {
         assertDocumentConfigs(new TestDocumentModelBuilder().addCampaign().addPerson().build(joinLines(
-                "search ad {",
-                "  document ad {",
-                "    field campaign_ref type reference<campaign> { indexing: attribute }",
-                "    field person_ref type reference<person> { indexing: attribute }",
-                "  }",
-                "  import field campaign_ref.cool_field as my_cool_field {}",
-                "  import field campaign_ref.swag_field as my_swag_field {}",
-                "  import field person_ref.name as my_name {}",
-                "}")),
+                        "search ad {",
+                        "  document ad {",
+                        "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                        "    field person_ref type reference<person> { indexing: attribute }",
+                        "  }",
+                        "  import field campaign_ref.cool_field as my_cool_field {}",
+                        "  import field campaign_ref.swag_field as my_swag_field {}",
+                        "  import field person_ref.name as my_name {}",
+                        "}")),
                 "multiple_imported_fields");
     }
 

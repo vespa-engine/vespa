@@ -7,24 +7,18 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author geirst
  */
 public class MatchedElementsOnlyResolverTestCase {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void complex_field_with_some_struct_field_attributes_gets_default_transform() throws ParseException {
+    void complex_field_with_some_struct_field_attributes_gets_default_transform() throws ParseException {
         assertSummaryField(joinLines("field my_field type map<string, string> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
@@ -48,7 +42,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void complex_field_with_only_struct_field_attributes_gets_attribute_transform() throws ParseException {
+    void complex_field_with_only_struct_field_attributes_gets_attribute_transform() throws ParseException {
         assertSummaryField(joinLines("field my_field type map<string, string> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
@@ -76,7 +70,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void explicit_complex_summary_field_can_use_filter_transform_with_reference_to_source_field() throws ParseException {
+    void explicit_complex_summary_field_can_use_filter_transform_with_reference_to_source_field() throws ParseException {
         String documentSummary = joinLines("document-summary my_summary {",
                 "  summary my_filter_field type map<string, string> {",
                 "    source: my_field",
@@ -109,7 +103,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void primitive_array_attribute_field_gets_attribute_transform() throws ParseException {
+    void primitive_array_attribute_field_gets_attribute_transform() throws ParseException {
         assertSummaryField(joinLines("field my_field type array<string> {",
                 "  indexing: attribute | summary",
                 "  summary: matched-elements-only",
@@ -118,7 +112,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void primitive_weighted_set_attribute_field_gets_attribute_transform() throws ParseException {
+    void primitive_weighted_set_attribute_field_gets_attribute_transform() throws ParseException {
         assertSummaryField(joinLines("field my_field type weightedset<string> {",
                 "  indexing: attribute | summary",
                 "  summary: matched-elements-only",
@@ -127,7 +121,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void explicit_summary_field_can_use_filter_transform_with_reference_to_attribute_source_field() throws ParseException {
+    void explicit_summary_field_can_use_filter_transform_with_reference_to_attribute_source_field() throws ParseException {
         String documentSummary = joinLines("document-summary my_summary {",
                 "  summary my_filter_field type array<string> {",
                 "    source: my_field",
@@ -147,17 +141,18 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void unsupported_field_type_throws() throws ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'test', document summary 'default', summary field 'my_field': " +
+    void unsupported_field_type_throws() throws ParseException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            buildSearch(joinLines("field my_field type string {",
+                    "  indexing: summary",
+                    "  summary: matched-elements-only",
+                    "}"));
+        });
+        assertTrue(exception.getMessage().contains("For schema 'test', document summary 'default', summary field 'my_field': " +
                 "'matched-elements-only' is not supported for this field type. " +
                 "Supported field types are: array of primitive, weighted set of primitive, " +
                 "array of simple struct, map of primitive type to simple struct, " +
-                "and map of primitive type to primitive type");
-        buildSearch(joinLines("field my_field type string {",
-                "  indexing: summary",
-                "  summary: matched-elements-only",
-                "}"));
+                "and map of primitive type to primitive type"));
     }
 
     private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform) throws ParseException {

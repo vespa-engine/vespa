@@ -9,7 +9,7 @@ import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,10 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author jonmv
@@ -30,7 +27,7 @@ import static org.junit.Assert.fail;
 public class NetworkMultiplexerTest {
 
     @Test
-    public void testShared() {
+    void testShared() {
         MockNetwork net = new MockNetwork();
         MockOwner owner1 = new MockOwner();
         MockOwner owner2 = new MockOwner();
@@ -95,7 +92,7 @@ public class NetworkMultiplexerTest {
     }
 
     @Test
-    public void testDedicated() {
+    void testDedicated() {
         MockNetwork net = new MockNetwork();
         MockOwner owner = new MockOwner();
         NetworkMultiplexer dedicated = NetworkMultiplexer.dedicated(net);

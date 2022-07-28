@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 public class AbstractResourceTestCase {
 
     @Test
-    public void requireThatDestroyIsCalledWhenReleased() {
+    void requireThatDestroyIsCalledWhenReleased() {
         MyResource res = new MyResource();
         assertFalse(res.destroyed);
         res.release();
@@ -22,7 +22,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatDestroyIsCalledWhenRetainCountReachesZero() {
+    void requireThatDestroyIsCalledWhenRetainCountReachesZero() {
         MyResource res = new MyResource();
         assertEquals(1, res.retainCount());
         assertFalse(res.destroyed);
@@ -37,7 +37,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatDestroyIsCalledWhenRetainCountReachesZeroOppositeOrder() {
+    void requireThatDestroyIsCalledWhenRetainCountReachesZeroOppositeOrder() {
         MyResource res = new MyResource();
         assertEquals(1, res.retainCount());
         assertFalse(res.destroyed);
@@ -52,7 +52,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatReleaseCanOnlyBeCalledOnceEvenWhenReferenceCountIsPositive() {
+    void requireThatReleaseCanOnlyBeCalledOnceEvenWhenReferenceCountIsPositive() {
         MyResource res = new MyResource();
         final ResourceReference secondReference = res.refer();
         res.release();
@@ -66,7 +66,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatSecondaryReferenceCanOnlyBeClosedOnceEvenWhenReferenceCountIsPositive() {
+    void requireThatSecondaryReferenceCanOnlyBeClosedOnceEvenWhenReferenceCountIsPositive() {
         MyResource res = new MyResource();
         final ResourceReference secondReference = res.refer();
         secondReference.close();
@@ -80,7 +80,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatReleaseAfterDestroyThrows() {
+    void requireThatReleaseAfterDestroyThrows() {
         MyResource res = new MyResource();
         res.release();
         assertTrue(res.destroyed);
@@ -101,7 +101,7 @@ public class AbstractResourceTestCase {
     }
 
     @Test
-    public void requireThatReferAfterDestroyThrows() {
+    void requireThatReferAfterDestroyThrows() {
         MyResource res = new MyResource();
         res.release();
         assertTrue(res.destroyed);

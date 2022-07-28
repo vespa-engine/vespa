@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Set;
@@ -22,7 +22,7 @@ import java.util.Set;
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
@@ -42,7 +42,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
 
     @Test
-    public void testUserManagement() {
+    void testUserManagement() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
         Set<Role> operator = Set.of(Role.hostedOperator());
@@ -51,25 +51,25 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET at application/v4 root fails as it's not public read.
         tester.assertResponse(request("/application/v4/"),
-                              accessDenied, 403);
+                accessDenied, 403);
 
         // GET at application/v4/tenant succeeds for operators.
         tester.assertResponse(request("/application/v4/tenant")
-                                      .roles(operator),
-                              "[]");
+                        .roles(operator),
+                "[]");
 
         // POST a tenant is not available to everyone.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
-                                      .data("{\"token\":\"hello\"}"),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"You are not currently permitted to create tenants. Please contact the Vespa team to request access.\"}", 403);
+                        .data("{\"token\":\"hello\"}"),
+                "{\"error-code\":\"FORBIDDEN\",\"message\":\"You are not currently permitted to create tenants. Please contact the Vespa team to request access.\"}", 403);
 
         // POST a tenant is available to operators.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
-                                      .roles(operator)
-                                      .principal("administrator@tenant")
-                                      .user(new User("administrator@tenant", "administrator", "admin", "picture"))
-                                      .data("{\"token\":\"hello\"}"),
-                              new File("tenant-without-applications.json"));
+                        .roles(operator)
+                        .principal("administrator@tenant")
+                        .user(new User("administrator@tenant", "administrator", "admin", "picture"))
+                        .data("{\"token\":\"hello\"}"),
+                new File("tenant-without-applications.json"));
 
         // GET at tenant/info with contact information.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/info")
@@ -79,97 +79,97 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET at user/v1 root fails as no access control is defined there.
         tester.assertResponse(request("/user/v1/"),
-                              accessDenied, 403);
+                accessDenied, 403);
 
         // POST a hosted operator role is not allowed.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", POST)
-                                      .roles(Set.of(Role.administrator(id.tenant())))
-                                      .data("{\"user\":\"evil@evil\",\"roleName\":\"hostedOperator\"}"),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'hostedOperator'.\"}", 400);
+                        .roles(Set.of(Role.administrator(id.tenant())))
+                        .data("{\"user\":\"evil@evil\",\"roleName\":\"hostedOperator\"}"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'hostedOperator'.\"}", 400);
 
         // POST a tenant developer is available to the tenant owner.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", POST)
-                                      .roles(Set.of(Role.administrator(id.tenant())))
-                                      .data("{\"user\":\"developer@tenant\",\"roles\":[\"developer\",\"reader\"]}"),
-                              "{\"message\":\"user 'developer@tenant' is now a member of role 'developer' of 'my-tenant', role 'reader' of 'my-tenant'\"}");
+                        .roles(Set.of(Role.administrator(id.tenant())))
+                        .data("{\"user\":\"developer@tenant\",\"roles\":[\"developer\",\"reader\"]}"),
+                "{\"message\":\"user 'developer@tenant' is now a member of role 'developer' of 'my-tenant', role 'reader' of 'my-tenant'\"}");
 
         // POST a tenant admin is not available to a tenant developer.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", POST)
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"user\":\"developer@tenant\",\"roleName\":\"administrator\"}"),
-                              accessDenied, 403);
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"user\":\"developer@tenant\",\"roleName\":\"administrator\"}"),
+                accessDenied, 403);
 
         // POST a headless for a non-existent application fails.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                                      .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
-                                      .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
+                        .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
+                        .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
 
         // POST an application is allowed for a tenant developer.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", POST)
-                                      .principal("developer@tenant")
-                                      .roles(Set.of(Role.developer(id.tenant()))),
-                              new File("application-created.json"));
+                        .principal("developer@tenant")
+                        .roles(Set.of(Role.developer(id.tenant()))),
+                new File("application-created.json"));
 
         // POST an application is not allowed under a different tenant.
         tester.assertResponse(request("/application/v4/tenant/other-tenant/application/my-app", POST)
-                                      .roles(Set.of(Role.administrator(id.tenant()))),
-                              accessDenied, 403);
+                        .roles(Set.of(Role.administrator(id.tenant()))),
+                accessDenied, 403);
 
         // POST a tenant role is not allowed to an application.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                                      .roles(Set.of(Role.hostedOperator()))
-                                      .data("{\"user\":\"developer@app\",\"roleName\":\"developer\"}"),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'developer'.\"}", 400);
+                        .roles(Set.of(Role.hostedOperator()))
+                        .data("{\"user\":\"developer@app\",\"roleName\":\"developer\"}"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'developer'.\"}", 400);
 
         // GET tenant role information is available to readers.
         tester.assertResponse(request("/user/v1/tenant/my-tenant")
-                             .roles(Set.of(Role.reader(id.tenant()))),
-                              new File("tenant-roles.json"));
+                        .roles(Set.of(Role.reader(id.tenant()))),
+                new File("tenant-roles.json"));
 
         // GET application role information is available to tenant administrators.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app")
-                                      .roles(Set.of(Role.administrator(id.tenant()))),
-                              new File("application-roles.json"));
+                        .roles(Set.of(Role.administrator(id.tenant()))),
+                new File("application-roles.json"));
 
         // POST a pem deploy key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app/key", POST)
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              new File("first-deploy-key.json"));
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                new File("first-deploy-key.json"));
 
         // POST a pem developer key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
-                                      .principal("joe@dev")
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              new File("first-developer-key.json"));
+                        .principal("joe@dev")
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                new File("first-developer-key.json"));
 
         // POST the same pem developer key for a different user is forbidden
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
-                                      .principal("operator@tenant")
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key "+  quotedPemPublicKey + " is already owned by joe@dev\"}",
-                              400);
+                        .principal("operator@tenant")
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key " +  quotedPemPublicKey + " is already owned by joe@dev\"}",
+                400);
 
         // POST in a different pem developer key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
-                                      .principal("developer@tenant")
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"key\":\"" + otherPemPublicKey + "\"}"),
-                              new File("both-developer-keys.json"));
+                        .principal("developer@tenant")
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"key\":\"" + otherPemPublicKey + "\"}"),
+                new File("both-developer-keys.json"));
 
         // GET tenant information with keys
         tester.assertResponse(request("/application/v4/tenant/my-tenant/")
-                                      .roles(Set.of(Role.reader(id.tenant()))),
-                              new File("tenant-with-keys.json"));
+                        .roles(Set.of(Role.reader(id.tenant()))),
+                new File("tenant-with-keys.json"));
 
         // DELETE a pem developer key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", DELETE)
-                                      .roles(Set.of(Role.developer(id.tenant())))
-                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              new File("second-developer-key.json"));
+                        .roles(Set.of(Role.developer(id.tenant())))
+                        .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                new File("second-developer-key.json"));
 
         // PUT in a new secret store for the tenant
         tester.assertResponse(request("/application/v4/tenant/my-tenant/secret-store/secret-foo", PUT)
@@ -187,33 +187,33 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // DELETE an application is available to developers.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", DELETE)
-                             .roles(Set.of(Role.developer(id.tenant()))),
-                              "{\"message\":\"Deleted application my-tenant.my-app\"}");
+                        .roles(Set.of(Role.developer(id.tenant()))),
+                "{\"message\":\"Deleted application my-tenant.my-app\"}");
 
         // DELETE a tenant role is available to tenant admins.
         // DELETE the developer role clears any developer key.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
-                                      .roles(Set.of(Role.administrator(id.tenant())))
-                                      .data("{\"user\":\"developer@tenant\",\"roles\":[\"developer\",\"reader\"]}"),
-                              "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant', role 'reader' of 'my-tenant'\"}");
+                        .roles(Set.of(Role.administrator(id.tenant())))
+                        .data("{\"user\":\"developer@tenant\",\"roles\":[\"developer\",\"reader\"]}"),
+                "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant', role 'reader' of 'my-tenant'\"}");
 
         // DELETE the last tenant owner is not allowed.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
-                             .roles(operator)
-                             .data("{\"user\":\"administrator@tenant\",\"roleName\":\"administrator\"}"),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can't remove the last administrator of a tenant.\"}", 400);
+                        .roles(operator)
+                        .data("{\"user\":\"administrator@tenant\",\"roleName\":\"administrator\"}"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can't remove the last administrator of a tenant.\"}", 400);
 
         // DELETE the tenant is not allowed
         tester.assertResponse(request("/application/v4/tenant/my-tenant", DELETE)
-                                      .roles(Set.of(Role.developer(id.tenant()))),
-                              "{\n" +
-                              "  \"code\" : 403,\n" +
-                              "  \"message\" : \"Access denied\"\n" +
-                              "}", 403);
+                        .roles(Set.of(Role.developer(id.tenant()))),
+                "{\n" +
+                        "  \"code\" : 403,\n" +
+                        "  \"message\" : \"Access denied\"\n" +
+                        "}", 403);
     }
 
     @Test
-    public void userMetadataTest() {
+    void userMetadataTest() {
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
             ContainerTester tester = new ContainerTester(container, responseFiles);
             ((InMemoryFlagSource) tester.controller().flagSource())
@@ -262,7 +262,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void maxTrialTenants() {
+    void maxTrialTenants() {
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
             ContainerTester tester = new ContainerTester(container, responseFiles);
             ((InMemoryFlagSource) tester.controller().flagSource())
@@ -280,7 +280,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void supportTenant() {
+    void supportTenant() {
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
             ContainerTester tester = new ContainerTester(container, responseFiles);
             ((InMemoryFlagSource) tester.controller().flagSource())

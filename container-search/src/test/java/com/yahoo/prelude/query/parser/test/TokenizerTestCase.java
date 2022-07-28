@@ -10,7 +10,7 @@ import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.parser.Tokenizer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,9 +29,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 import static com.yahoo.prelude.query.parser.Token.Kind.STAR;
 import static com.yahoo.prelude.query.parser.Token.Kind.UNDERSCORE;
 import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the tokenizer
@@ -41,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 public class TokenizerTestCase {
 
     @Test
-    public void testPlainTokenization() {
+    void testPlainTokenization() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -76,14 +74,14 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testOutsideBMPCodepoints() {
+    void testOutsideBMPCodepoints() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         List<?> tokens = tokenizer.tokenize("\ud841\udd47");
         assertEquals(new Token(WORD, "\ud841\udd47"), tokens.get(0));
     }
 
     @Test
-    public void testOneSpecialToken() {
+    void testOneSpecialToken() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -93,7 +91,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenCombination() {
+    void testSpecialTokenCombination() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -121,7 +119,7 @@ public class TokenizerTestCase {
      * separated by space, as special token recognition happens before tokenization
      */
     @Test
-    public void testSpecialTokenCJK() {
+    void testSpecialTokenCJK() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         tokenizer.setSubstringSpecialTokens(true);
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("replacing"));
@@ -146,7 +144,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenCaseInsensitive() {
+    void testSpecialTokenCaseInsensitive() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -162,7 +160,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenNonMatch() {
+    void testSpecialTokenNonMatch() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -187,7 +185,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenConfigurationDefault() {
+    void testSpecialTokenConfigurationDefault() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
@@ -212,7 +210,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenConfigurationOther() {
+    void testSpecialTokenConfigurationOther() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("other"));
@@ -247,7 +245,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testTokenReplacing() {
+    void testTokenReplacing() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("replacing"));
 
@@ -273,7 +271,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testExactMatchTokenization() {
+    void testExactMatchTokenization() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -286,8 +284,8 @@ public class TokenizerTestCase {
 
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
-        Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
-        List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*& b:c", "default", session);
+        Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
+        List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*& b:c", "default", session);
         // tokenizer.print();
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
@@ -317,7 +315,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testExactMatchTokenizationTerminatorTerminatesQuery() {
+    void testExactMatchTokenizationTerminatorTerminatesQuery() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -354,7 +352,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testExactMatchTokenizationWithTerminatorTerminatedByEndOfString() {
+    void testExactMatchTokenizationWithTerminatorTerminatedByEndOfString() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -391,7 +389,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testExactMatchTokenizationEndsByColon() {
+    void testExactMatchTokenizationEndsByColon() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -429,7 +427,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testExactMatchHeuristics() {
+    void testExactMatchHeuristics() {
         SearchDefinition sd = new SearchDefinition("testsd");
 
         Index index1 = new Index("testexact1");
@@ -542,7 +540,7 @@ public class TokenizerTestCase {
         assertEquals(new Token(WORD, "testexact1"), tokens.get(0));
         assertEquals(new Token(COLON, ":"),         tokens.get(1));
         assertEquals(new Token(STAR, "*"),          tokens.get(2));
-        assertEquals(new Token(WORD, "foobar*!100"),tokens.get(3));
+        assertEquals(new Token(WORD, "foobar*!100"), tokens.get(3));
         assertEquals(new Token(EXCLAMATION, "!"),   tokens.get(4));
 
         tokens = tokenizer.tokenize("testexact1:foo(bar)", facts);
@@ -582,7 +580,7 @@ public class TokenizerTestCase {
         tokens = tokenizer.tokenize("testexact1:\"news search\" testexact2:resolved", facts);
         assertEquals(new Token(WORD, "testexact1"), tokens.get(0));
         assertEquals(new Token(COLON, ":"),         tokens.get(1));
-        assertEquals(new Token(WORD, "news search"),tokens.get(2));
+        assertEquals(new Token(WORD, "news search"), tokens.get(2));
         assertEquals(new Token(SPACE, " "),         tokens.get(3));
         assertEquals(new Token(WORD, "testexact2"), tokens.get(4));
         assertEquals(new Token(COLON, ":"),         tokens.get(5));
@@ -592,7 +590,7 @@ public class TokenizerTestCase {
         assertEquals(new Token(LBRACE, "("),        tokens.get(0));
         assertEquals(new Token(WORD, "testexact1"), tokens.get(1));
         assertEquals(new Token(COLON, ":"),         tokens.get(2));
-        assertEquals(new Token(WORD, "news search"),tokens.get(3));
+        assertEquals(new Token(WORD, "news search"), tokens.get(3));
         assertEquals(new Token(SPACE, " "),         tokens.get(4));
         assertEquals(new Token(WORD, "testexact1"), tokens.get(5));
         assertEquals(new Token(COLON, ":"),         tokens.get(6));
@@ -614,7 +612,7 @@ public class TokenizerTestCase {
         tokens = tokenizer.tokenize("testexact1:\"news search\"!200", facts);
         assertEquals(new Token(WORD, "testexact1"), tokens.get(0));
         assertEquals(new Token(COLON, ":"),         tokens.get(1));
-        assertEquals(new Token(WORD, "news search"),tokens.get(2));
+        assertEquals(new Token(WORD, "news search"), tokens.get(2));
         assertEquals(new Token(EXCLAMATION, "!"),   tokens.get(3));
         assertEquals(new Token(NUMBER, "200"),      tokens.get(4));
 
@@ -705,7 +703,7 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSingleQuoteAsWordCharacter() {
+    void testSingleQuoteAsWordCharacter() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));

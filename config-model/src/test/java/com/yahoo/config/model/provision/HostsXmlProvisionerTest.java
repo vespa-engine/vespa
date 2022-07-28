@@ -3,7 +3,7 @@ package com.yahoo.config.model.provision;
 
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.vespa.model.container.Container;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hmusum
@@ -46,7 +45,7 @@ public class HostsXmlProvisionerTest {
             "</hosts>";
 
     @Test
-    public void require_basic_works() {
+    void require_basic_works() {
         HostsXmlProvisioner hostProvisioner = createProvisioner(threeHosts);
 
         // 4 services, 2 host aliases, mapping to 2 host.
@@ -71,14 +70,16 @@ public class HostsXmlProvisionerTest {
         assertEquals(3, map.size());
         assertCorrectNumberOfHosts(map, 3);
         assertTrue(map.keySet().containsAll(aliases));
-        
+
         assertEquals("", System.getProperty("zookeeper.vespa.clients"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void require_exception_when_unknown_hosts_alias() {
-        HostsXmlProvisioner hostProvisioner = createProvisioner(oneHost);
-        hostProvisioner.allocateHost("unknown");
+    @Test
+    void require_exception_when_unknown_hosts_alias() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            HostsXmlProvisioner hostProvisioner = createProvisioner(oneHost);
+            hostProvisioner.allocateHost("unknown");
+        });
     }
 
     private void assertCorrectNumberOfHosts(Map<String, HostSpec> hostToServiceMap, int expectedHostCount) {
@@ -117,7 +118,7 @@ public class HostsXmlProvisionerTest {
     }
 
     @Test
-    public void require_singlenode_HostAlias_is_used_if_hosts_xml() {
+    void require_singlenode_HostAlias_is_used_if_hosts_xml() {
         HostsXmlProvisioner hostProvisioner = createProvisioner(oneHost);
         HostSpec hostSpec = hostProvisioner.allocateHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
         assertEquals("test1.yahoo.com", hostSpec.hostname());

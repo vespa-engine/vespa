@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -15,7 +15,7 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.NONE;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.ZSTD;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -37,7 +37,7 @@ public class SyncFileInfoTest {
     private static final Path zkLogPath1 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.1.log");
 
     @Test
-    public void access_logs() {
+    void access_logs() {
         assertForLogFile(accessLogPath1, null, null, true);
         assertForLogFile(accessLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access.log.20210211.zst", ZSTD, false);
 
@@ -52,7 +52,7 @@ public class SyncFileInfoTest {
     }
 
     @Test
-    public void connection_logs() {
+    void connection_logs() {
         assertForLogFile(connectionLogPath1, null, null, true);
         assertForLogFile(connectionLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.20210210.zst", ZSTD, false);
 
@@ -61,7 +61,7 @@ public class SyncFileInfoTest {
     }
 
     @Test
-    public void vespa_logs() {
+    void vespa_logs() {
         assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ofHours(1), true);
         assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ZERO, false);
 
@@ -70,7 +70,7 @@ public class SyncFileInfoTest {
     }
 
     @Test
-    public void zookeeper_logs() {
+    void zookeeper_logs() {
         assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ofHours(1), true);
         assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ZERO, false);
 

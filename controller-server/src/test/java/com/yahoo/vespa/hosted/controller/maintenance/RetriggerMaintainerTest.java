@@ -9,13 +9,13 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mortent
@@ -25,7 +25,7 @@ public class RetriggerMaintainerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void processes_queue() throws IOException {
+    void processes_queue() throws IOException {
         RetriggerMaintainer maintainer = new RetriggerMaintainer(tester.controller(), Duration.ofDays(1));
         ApplicationId applicationId = ApplicationId.from("tenant", "app", "default");
         var devApp = tester.newDeploymentContext(applicationId);

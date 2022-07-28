@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class SystemFlagsDeployResultTest {
     @Test
-    public void changes_and_errors_are_present_in_wire_format() {
+    void changes_and_errors_are_present_in_wire_format() {
         FlagsTarget controllerTarget = FlagsTarget.forController(SystemName.cd);
         FlagId flagOne = new FlagId("flagone");
         FlagId flagTwo = new FlagId("flagtwo");
@@ -40,7 +40,7 @@ public class SystemFlagsDeployResultTest {
     }
 
     @Test
-    public void identical_errors_and_changes_from_multiple_targets_are_merged() {
+    void identical_errors_and_changes_from_multiple_targets_are_merged() {
         ZoneApiMock prodUsWest1Zone = ZoneApiMock.fromId("prod.us-west-1");
         ZoneRegistryMock registry = new ZoneRegistryMock(SystemName.cd).setZones(prodUsWest1Zone);
         FlagsTarget prodUsWest1Target = FlagsTarget.forConfigServer(registry, prodUsWest1Zone.getId());

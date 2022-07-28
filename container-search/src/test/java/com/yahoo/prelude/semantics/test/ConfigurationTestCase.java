@@ -13,13 +13,12 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests creating a set of rule bases (the same set as in inheritingrules) from config
@@ -52,7 +51,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testReadingConfigurationRuleBase() {
+    void testReadingConfigurationRuleBase() {
         RuleBase parent = searcher.getRuleBase("parent");
         assertNotNull(parent);
         assertEquals("parent", parent.getName());
@@ -60,7 +59,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testParent() {
+    void testParent() {
         assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", "parent");
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "parent");
         assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", "parent.sr");
@@ -69,7 +68,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testChild1() {
+    void testChild1() {
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "child1.sr");
         assertSemantics("WEAKAND(100) vehiclebrand:alfa",  "alfa bus", "child1");
         assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", "child1");
@@ -78,7 +77,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testChild2() {
+    void testChild2() {
         assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", "child2");
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "child2.sr");
         assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", "child2.sr");
@@ -87,7 +86,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testGrandchild() {
+    void testGrandchild() {
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "grandchild.sr");
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "grandchild");
         assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", "grandchild");
@@ -96,7 +95,7 @@ public class ConfigurationTestCase {
     }
 
     @Test
-    public void testSearcher() {
+    void testSearcher() {
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "grandchild");
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "grandchild.sd");
         try {
@@ -110,14 +109,14 @@ public class ConfigurationTestCase {
         assertSemanticsRulesOff("WEAKAND(100) vw cars",       "vw cars");
 
         assertSemantics("WEAKAND(100) vw car",        "vw cars",   "child2");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda","skoda cars","child2");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", "child2");
 
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda","audi cars", "child1");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars",   "child1");
-        assertSemantics("WEAKAND(100) skoda car",     "skoda cars","child1");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "child1");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "child1");
+        assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "child1");
 
         assertSemantics("WEAKAND(100) vw car",        "vw cars",   "parent");
-        assertSemantics("WEAKAND(100) skoda car",     "skoda cars","parent");
+        assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "parent");
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {

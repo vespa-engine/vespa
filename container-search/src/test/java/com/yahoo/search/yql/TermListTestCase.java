@@ -6,12 +6,12 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
 import org.apache.http.client.utils.URIBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests YQL expressions where a list of terms are supplied by indirection
@@ -21,33 +21,33 @@ import static org.junit.Assert.assertNull;
 public class TermListTestCase {
 
     @Test
-    public void testTermListInWeightedSet() {
+    void testTermListInWeightedSet() {
         URIBuilder builder = searchUri();
         builder.setParameter("myTerms", "{'1':1, '2':1, 3:1}");
         builder.setParameter("yql", "select * from sources * where weightedSet(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where weightedSet(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
-                     query.yqlRepresentation());
+                query.yqlRepresentation());
     }
 
     @Test
-    public void testTermListInWand() {
+    void testTermListInWand() {
         URIBuilder builder = searchUri();
         builder.setParameter("myTerms", "{'1':1, 2:1, '3':1}");
         builder.setParameter("yql", "select * from sources * where wand(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where wand(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
-                     query.yqlRepresentation());
+                query.yqlRepresentation());
     }
 
     @Test
-    public void testTermListInDotProduct() {
+    void testTermListInDotProduct() {
         URIBuilder builder = searchUri();
         builder.setParameter("myTerms", "{'1':1, '2':1, '3':1}");
         builder.setParameter("yql", "select * from sources * where dotProduct(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where dotProduct(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
-                     query.yqlRepresentation());
+                query.yqlRepresentation());
     }
 
     private Query searchAndAssertNoErrors(URIBuilder builder) {
@@ -57,9 +57,9 @@ public class TermListTestCase {
         var execution = new Execution(searchChain, context);
         Result r = execution.search(query);
         var exception = exceptionOf(r);
-        assertNull(exception == null ? "No error":
-                   exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()),
-                   r.hits().getError());
+        assertNull(r.hits().getError(),
+                   exception == null ? "No error":
+                   exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         return query;
     }
 

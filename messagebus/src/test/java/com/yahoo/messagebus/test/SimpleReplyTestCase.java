@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.test;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class SimpleReplyTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         SimpleReply reply = new SimpleReply("foo");
         assertEquals(SimpleProtocol.REPLY, reply.getType());
         assertEquals(SimpleProtocol.NAME, reply.getProtocol());

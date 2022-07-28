@@ -19,12 +19,12 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.querytransform.RangeQueryOptimizer;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -35,9 +35,9 @@ public class RangeQueryOptimizerTestCase {
     private static IndexFacts indexFacts = createIndexFacts();
 
     @Test
-    public void testRangeOptimizing() {
+    void testRangeOptimizing() {
         assertOptimized("s:<15", "s:<15");
-        assertOptimized("AND a s:[1999;2002]","a AND s:[1999;2002]");
+        assertOptimized("AND a s:[1999;2002]", "a AND s:[1999;2002]");
         assertOptimized("AND s:<10;15>", "s:<15 AND s:>10");
         assertOptimized("AND s:give s:5 s:me", "s:give s:5 s:me");
         assertOptimized("AND s:[;15> b:<10;]", "s:<15 AND b:>10");
@@ -59,7 +59,7 @@ public class RangeQueryOptimizerTestCase {
     }
 
     @Test
-    public void testRangeOptimizingCarriesOverItemAttributesWhenNotOptimized() {
+    void testRangeOptimizingCarriesOverItemAttributesWhenNotOptimized() {
         Query query = new Query();
         AndItem root = new AndItem();
         query.getModel().getQueryTree().setRoot(root);
@@ -69,14 +69,14 @@ public class RangeQueryOptimizerTestCase {
         intItem.setRanked(false);
         root.addItem(intItem);
         assertOptimized("Not optimized", "AND |s:<15;]!500", query);
-        IntItem transformedIntItem = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(0);
-        assertTrue("Filter was carried over", transformedIntItem.isFilter());
-        assertFalse("Ranked was carried over", transformedIntItem.isRanked());
-        assertEquals("Weight was carried over", 500, transformedIntItem.getWeight());
+        IntItem transformedIntItem = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        assertTrue(transformedIntItem.isFilter(), "Filter was carried over");
+        assertFalse(transformedIntItem.isRanked(), "Ranked was carried over");
+        assertEquals(500, transformedIntItem.getWeight(), "Weight was carried over");
     }
 
     @Test
-    public void testRangeOptimizingCarriesOverItemAttributesWhenOptimized() {
+    void testRangeOptimizingCarriesOverItemAttributesWhenOptimized() {
         Query query = new Query();
         AndItem root = new AndItem();
         query.getModel().getQueryTree().setRoot(root);
@@ -94,14 +94,14 @@ public class RangeQueryOptimizerTestCase {
         root.addItem(intItem2);
 
         assertOptimized("Optimized", "AND |s:<15;30>!500", query);
-        IntItem transformedIntItem = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(0);
-        assertTrue("Filter was carried over", transformedIntItem.isFilter());
-        assertFalse("Ranked was carried over", transformedIntItem.isRanked());
-        assertEquals("Weight was carried over", 500, transformedIntItem.getWeight());
+        IntItem transformedIntItem = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        assertTrue(transformedIntItem.isFilter(), "Filter was carried over");
+        assertFalse(transformedIntItem.isRanked(), "Ranked was carried over");
+        assertEquals(500, transformedIntItem.getWeight(), "Weight was carried over");
     }
 
     @Test
-    public void testNoRangeOptimizingWhenAttributesAreIncompatible() {
+    void testNoRangeOptimizingWhenAttributesAreIncompatible() {
         Query query = new Query();
         AndItem root = new AndItem();
         query.getModel().getQueryTree().setRoot(root);
@@ -120,19 +120,19 @@ public class RangeQueryOptimizerTestCase {
 
         assertOptimized("Not optimized", "AND |s:<15;]!500 s:[;30>!500", query);
 
-        IntItem transformedIntItem1 = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(0);
-        assertTrue("Filter was carried over", transformedIntItem1.isFilter());
-        assertFalse("Ranked was carried over", transformedIntItem1.isRanked());
-        assertEquals("Weight was carried over", 500, transformedIntItem1.getWeight());
+        IntItem transformedIntItem1 = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        assertTrue(transformedIntItem1.isFilter(), "Filter was carried over");
+        assertFalse(transformedIntItem1.isRanked(), "Ranked was carried over");
+        assertEquals(500, transformedIntItem1.getWeight(), "Weight was carried over");
 
-        IntItem transformedIntItem2 = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(1);
-        assertFalse("Filter was carried over", transformedIntItem2.isFilter());
-        assertFalse("Ranked was carried over", transformedIntItem2.isRanked());
-        assertEquals("Weight was carried over", 500, transformedIntItem2.getWeight());
+        IntItem transformedIntItem2 = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(1);
+        assertFalse(transformedIntItem2.isFilter(), "Filter was carried over");
+        assertFalse(transformedIntItem2.isRanked(), "Ranked was carried over");
+        assertEquals(500, transformedIntItem2.getWeight(), "Weight was carried over");
     }
 
     @Test
-    public void testDifferentCompatibleRangesPerFieldAreOptimizedSeparately() {
+    void testDifferentCompatibleRangesPerFieldAreOptimizedSeparately() {
         Query query = new Query();
         AndItem root = new AndItem();
         query.getModel().getQueryTree().setRoot(root);
@@ -155,21 +155,21 @@ public class RangeQueryOptimizerTestCase {
 
         assertOptimized("Optimized", "AND s:<15;30> s:<100;150>", query);
 
-        IntItem transformedIntItem1 = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(0);
-        assertFalse("Ranked was carried over", transformedIntItem1.isRanked());
+        IntItem transformedIntItem1 = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        assertFalse(transformedIntItem1.isRanked(), "Ranked was carried over");
 
-        IntItem transformedIntItem2 = (IntItem)((AndItem)query.getModel().getQueryTree().getRoot()).getItem(1);
-        assertTrue("Ranked was carried over", transformedIntItem2.isRanked());
+        IntItem transformedIntItem2 = (IntItem) ((AndItem) query.getModel().getQueryTree().getRoot()).getItem(1);
+        assertTrue(transformedIntItem2.isRanked(), "Ranked was carried over");
     }
 
     @Test
-    public void assertOptmimizedYQLQuery() {
+    void assertOptmimizedYQLQuery() {
         Query query = new Query("/?query=select%20%2A%20from%20sources%20%2A%20where%20%28range%28s%2C%20100000%2C%20100000%29%20OR%20range%28t%2C%20-20000000000L%2C%20-20000000000L%29%20OR%20range%28t%2C%2030%2C%2030%29%29%3B&type=yql");
         assertOptimized("YQL usage of the IntItem API works", "OR s:100000 t:-20000000000 t:30", query);
     }
 
     @Test
-    public void testTracing() {
+    void testTracing() {
         Query notOptimized = new Query("/?tracelevel=2");
         notOptimized.getModel().getQueryTree().setRoot(parseQuery("s:<15"));
         assertOptimized("", "s:<15", notOptimized);
@@ -200,7 +200,7 @@ public class RangeQueryOptimizerTestCase {
     private Query assertOptimized(String explanation, String expected, Query query) {
         Chain<Searcher> chain = new Chain<>("test", new RangeQueryOptimizer());
         new Execution(chain, Execution.Context.createContextStub(indexFacts)).search(query);
-        assertEquals(explanation, expected, query.getModel().getQueryTree().getRoot().toString());
+        assertEquals(expected, query.getModel().getQueryTree().getRoot().toString(), explanation);
         return query;
     }
 

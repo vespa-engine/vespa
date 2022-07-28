@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -40,34 +40,34 @@ public class DocumentDatabaseChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAttributeIndexAndDocumentTypeChangesAreDiscovered() throws Exception {
+    void requireThatAttributeIndexAndDocumentTypeChangesAreDiscovered() throws Exception {
         Fixture f = new Fixture("struct s { field s1 type string {} } " +
                 "field f1 type string { indexing: summary } " +
                 "field f2 type string { indexing: summary } " +
                 "field f3 type int { indexing: summary } " +
                 "field f4 type array<s> { } ",
                 "struct s { field s1 type string {} } " +
-                "field f1 type string { indexing: attribute | summary } " +
-                "field f2 type string { indexing: index | summary } " +
-                "field f3 type string { indexing: summary } " +
-                "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
+                        "field f1 type string { indexing: attribute | summary } " +
+                        "field f2 type string { indexing: index | summary } " +
+                        "field f3 type string { indexing: summary } " +
+                        "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
         Instant.now();
         f.assertValidation(Arrays.asList(
                 newRestartAction(ClusterSpec.Id.from("test"),
-                                 "Field 'f1' changed: add attribute aspect"),
+                        "Field 'f1' changed: add attribute aspect"),
                 newRestartAction(ClusterSpec.Id.from("test"),
-                                 "Field 'f4.s1' changed: add attribute aspect"),
+                        "Field 'f4.s1' changed: add attribute aspect"),
                 newReindexAction(ClusterSpec.Id.from("test"),
-                                 ValidationId.indexingChange,
-                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
+                        ValidationId.indexingChange,
+                        "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
                                 "'{ input f2 | tokenize normalize stem:\"BEST\" | index f2 | summary f2; }'"),
                 newRefeedAction(ClusterSpec.Id.from("test"), ValidationId.fieldTypeChange, "Field 'f3' changed: data type: 'int' -> 'string'")));
     }
 
     @Test
-    public void requireThatRemovingAttributeAspectFromIndexFieldIsOk() throws Exception {
+    void requireThatRemovingAttributeAspectFromIndexFieldIsOk() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: index | attribute }",
-                                "field f1 type string { indexing: index }");
+                "field f1 type string { indexing: index }");
         f.assertValidation();
     }
 

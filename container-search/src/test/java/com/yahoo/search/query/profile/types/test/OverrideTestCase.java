@@ -13,10 +13,10 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests overriding of field values
@@ -29,7 +29,7 @@ public class OverrideTestCase {
 
     private QueryProfileType type, user;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         type=new QueryProfileType(new ComponentId("testtype"));
         user=new QueryProfileType(new ComponentId("user"));
@@ -60,38 +60,38 @@ public class OverrideTestCase {
 
     /** Check that a simple non-overridable string cannot be overridden */
     @Test
-    public void testSimpleUnoverridable() {
+    void testSimpleUnoverridable() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
-        test.set("myString","finalString", (QueryProfileRegistry)null);
+        test.set("myString", "finalString", (QueryProfileRegistry) null);
         registry.register(test);
         registry.freeze();
 
         // Assert request assignment does not work
         Query query = new Query(HttpRequest.createTestRequest("?myString=newValue", Method.GET), registry.compile().getComponent("test"));
-        assertEquals(0,query.errors().size());
-        assertEquals("finalString",query.properties().get("myString"));
+        assertEquals(0, query.errors().size());
+        assertEquals("finalString", query.properties().get("myString"));
 
         // Assert direct assignment does not work
-        query.properties().set("myString","newValue");
-        assertEquals("finalString",query.properties().get("myString"));
+        query.properties().set("myString", "newValue");
+        assertEquals("finalString", query.properties().get("myString"));
     }
 
     /** Check that a query profile cannot be overridden */
     @Test
-    public void testUnoverridableQueryProfile() {
+    void testUnoverridableQueryProfile() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
         QueryProfile test = new QueryProfile("test");
         test.setType(type);
         registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
+        QueryProfile myUser = new QueryProfile("user");
         myUser.setType(user);
-        myUser.set("myUserInteger",1, registry);
-        myUser.set("myUserString","userValue", registry);
-        test.set("myUserQueryProfile",myUser, registry);
+        myUser.set("myUserInteger", 1, registry);
+        myUser.set("myUserString", "userValue", registry);
+        test.set("myUserQueryProfile", myUser, registry);
         registry.register(myUser);
 
         QueryProfile otherUser = new QueryProfile("otherUser");
@@ -102,52 +102,52 @@ public class OverrideTestCase {
         CompiledQueryProfileRegistry cRegistry = registry.compile();
 
         Query query = new Query(HttpRequest.createTestRequest("?myUserQueryprofile=otherUser", Method.GET), cRegistry.getComponent("test"));
-        assertEquals(0,query.errors().size());
-        assertEquals(1,query.properties().get("myUserQueryProfile.myUserInteger"));
+        assertEquals(0, query.errors().size());
+        assertEquals(1, query.properties().get("myUserQueryProfile.myUserInteger"));
     }
 
     /** Check that non-overridables are protected also in nested untyped references */
     @Test
-    public void testUntypedNestedUnoverridable() {
+    void testUntypedNestedUnoverridable() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile topMap = new QueryProfile("topMap");
         registry.register(topMap);
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, registry);
         registry.register(subMap);
 
         QueryProfile test = new QueryProfile("test");
         test.setType(type);
-        subMap.set("test",test, registry);
+        subMap.set("test", test, registry);
         registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
+        QueryProfile myUser = new QueryProfile("user");
         myUser.setType(user);
-        myUser.set("myUserString","finalValue", registry);
-        test.set("myUserQueryProfile",myUser, registry);
+        myUser.set("myUserString", "finalValue", registry);
+        test.set("myUserQueryProfile", myUser, registry);
         registry.register(myUser);
 
         registry.freeze();
         Query query = new Query(HttpRequest.createTestRequest("?subMap.test.myUserQueryProfile.myUserString=newValue", Method.GET), registry.compile().getComponent("topMap"));
-        assertEquals(0,query.errors().size());
-        assertEquals("finalValue",query.properties().get("subMap.test.myUserQueryProfile.myUserString"));
+        assertEquals(0, query.errors().size());
+        assertEquals("finalValue", query.properties().get("subMap.test.myUserQueryProfile.myUserString"));
 
-        query.properties().set("subMap.test.myUserQueryProfile.myUserString","newValue");
-        assertEquals("finalValue",query.properties().get("subMap.test.myUserQueryProfile.myUserString"));
+        query.properties().set("subMap.test.myUserQueryProfile.myUserString", "newValue");
+        assertEquals("finalValue", query.properties().get("subMap.test.myUserQueryProfile.myUserString"));
     }
 
     /** Tests overridability in an inherited field */
     @Test
-    public void testInheritedNonOverridableInType() {
+    void testInheritedNonOverridableInType() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
-        test.set("myString","finalString", (QueryProfileRegistry)null);
+        test.set("myString", "finalString", (QueryProfileRegistry) null);
         registry.register(test);
 
-        QueryProfile profile=new QueryProfile("profile");
+        QueryProfile profile = new QueryProfile("profile");
         profile.addInherited(test);
         registry.register(profile);
 
@@ -155,16 +155,16 @@ public class OverrideTestCase {
 
         Query query = new Query(HttpRequest.createTestRequest("?myString=newString", Method.GET), registry.compile().getComponent("test"));
 
-        assertEquals(0,query.errors().size());
-        assertEquals("finalString",query.properties().get("myString"));
+        assertEquals(0, query.errors().size());
+        assertEquals("finalString", query.properties().get("myString"));
 
-        query.properties().set("myString","newString");
-        assertEquals("finalString",query.properties().get("myString"));
+        query.properties().set("myString", "newString");
+        assertEquals("finalString", query.properties().get("myString"));
     }
 
     /** Tests overridability in an inherited field */
     @Test
-    public void testInheritedNonOverridableInProfile() {
+    void testInheritedNonOverridableInProfile() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile test = new QueryProfile("test");
         test.setType(type);
@@ -172,7 +172,7 @@ public class OverrideTestCase {
         test.setOverridable("myInteger", false, DimensionValues.empty);
         registry.register(test);
 
-        QueryProfile profile=new QueryProfile("profile");
+        QueryProfile profile = new QueryProfile("profile");
         profile.addInherited(test);
         registry.register(profile);
 
@@ -180,11 +180,11 @@ public class OverrideTestCase {
 
         Query query = new Query(HttpRequest.createTestRequest("?myInteger=32", Method.GET), registry.compile().getComponent("test"));
 
-        assertEquals(0,query.errors().size());
-        assertEquals(1,query.properties().get("myInteger"));
+        assertEquals(0, query.errors().size());
+        assertEquals(1, query.properties().get("myInteger"));
 
-        query.properties().set("myInteger",32);
-        assertEquals(1,query.properties().get("myInteger"));
+        query.properties().set("myInteger", 32);
+        assertEquals(1, query.properties().get("myInteger"));
     }
 
 }

@@ -10,16 +10,12 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Attribute settings
@@ -29,10 +25,10 @@ import static org.junit.Assert.fail;
 public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testAttributeSettings() throws IOException, ParseException {
+    void testAttributeSettings() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/attributesettings.sd");
 
-        SDField f1=(SDField) schema.getDocument().getField("f1");
+        SDField f1 = (SDField) schema.getDocument().getField("f1");
         assertEquals(1, f1.getAttributes().size());
         Attribute a1 = f1.getAttributes().get(f1.getName());
         assertEquals(Attribute.Type.LONG, a1.getType());
@@ -42,7 +38,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertFalse(a1.isRemoveIfZero());
         assertFalse(a1.isCreateIfNonExistent());
 
-        SDField f2=(SDField) schema.getDocument().getField("f2");
+        SDField f2 = (SDField) schema.getDocument().getField("f2");
         assertEquals(1, f2.getAttributes().size());
         Attribute a2 = f2.getAttributes().get(f2.getName());
         assertEquals(Attribute.Type.LONG, a2.getType());
@@ -52,7 +48,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertFalse(a2.isRemoveIfZero());
         assertFalse(a2.isCreateIfNonExistent());
         assertEquals("f2", f2.getAliasToName().get("f2alias"));
-        SDField f3=(SDField) schema.getDocument().getField("f3");
+        SDField f3 = (SDField) schema.getDocument().getField("f3");
         assertEquals(1, f3.getAttributes().size());
         assertEquals("f3", f3.getAliasToName().get("f3alias"));
 
@@ -103,7 +99,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatFastAccessCanBeSet() throws IOException, ParseException {
+    void requireThatFastAccessCanBeSet() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/attributesettings.sd");
         SDField field = (SDField) schema.getDocument().getField("fast_access");
         assertEquals(1, field.getAttributes().size());
@@ -125,7 +121,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatPagedIsDefaultOff() throws ParseException {
+    void requireThatPagedIsDefaultOff() throws ParseException {
         Attribute attr = getAttributeF(
                 "search test {\n" +
                         "  document test { \n" +
@@ -136,8 +132,9 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                         "}\n");
         assertFalse(attr.isPaged());
     }
+
     @Test
-    public void requireThatPagedCanBeSet() throws ParseException {
+    void requireThatPagedCanBeSet() throws ParseException {
         Attribute attr = getAttributeF(
                 "search test {\n" +
                         "  document test { \n" +
@@ -151,29 +148,29 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatMutableIsDefaultOff() throws ParseException {
+    void requireThatMutableIsDefaultOff() throws ParseException {
         Attribute attr = getAttributeF(
                 "search test {\n" +
-                "  document test { \n" +
-                "    field f type int { \n" +
-                "      indexing: attribute \n" +
-                "    }\n" +
-                "  }\n" +
-                "}\n");
+                        "  document test { \n" +
+                        "    field f type int { \n" +
+                        "      indexing: attribute \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n");
         assertFalse(attr.isMutable());
     }
 
     @Test
-    public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
+    void requireThatMutableCanNotbeSetInDocument() throws ParseException {
         try {
             getSchema("search test {\n" +
-                      "  document test {\n" +
-                      "    field f type int {\n" +
-                      "      indexing: attribute\n" +
-                      "      attribute: mutable\n" +
-                      "    }\n" +
-                      "  }\n" +
-                      "}\n");
+                    "  document test {\n" +
+                    "    field f type int {\n" +
+                    "      indexing: attribute\n" +
+                    "      attribute: mutable\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n");
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.", e.getMessage());
@@ -181,7 +178,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatMutableExtraFieldCanBeSet() throws ParseException {
+    void requireThatMutableExtraFieldCanBeSet() throws ParseException {
         Attribute attr = getAttributeF(
                 "search test {\n" +
                         "  document test { \n" +
@@ -216,7 +213,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatMutableConfigIsProperlyPropagated() throws ParseException {
+    void requireThatMutableConfigIsProperlyPropagated() throws ParseException {
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333, true);
@@ -232,7 +229,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireMaxUnCommittedMemoryIsProperlyPropagated() throws ParseException {
+    void requireMaxUnCommittedMemoryIsProperlyPropagated() throws ParseException {
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333, true);
@@ -260,7 +257,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireEnableBitVectorsIsProperlyPropagated() throws ParseException {
+    void requireEnableBitVectorsIsProperlyPropagated() throws ParseException {
         Schema schema = getSchema(
                 "search test {\n" +
                         "  document test { \n" +
@@ -278,7 +275,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatMutableIsAllowedThroughIndexing() throws ParseException {
+    void requireThatMutableIsAllowedThroughIndexing() throws ParseException {
         IndexingScript script = new IndexingScript(getSearchWithMutables());
         IlscriptsConfig.Builder builder = new IlscriptsConfig.Builder();
         script.getConfig(builder);
@@ -293,7 +290,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void attribute_convert_to_array_copies_internal_state() {
+    void attribute_convert_to_array_copies_internal_state() {
         StructDataType refType = new StructDataType("my_struct");
         Attribute single = new Attribute("foo", Attribute.Type.STRING, Attribute.CollectionType.SINGLE,
                 Optional.of(TensorType.fromSpec("tensor(x{})")), Optional.of(refType));

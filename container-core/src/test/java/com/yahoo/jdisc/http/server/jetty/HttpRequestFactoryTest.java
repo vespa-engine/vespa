@@ -8,7 +8,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -16,9 +16,7 @@ import java.net.URI;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Steinar Knutsen
@@ -29,7 +27,7 @@ public class HttpRequestFactoryTest {
     private static final int LOCAL_PORT = 80;
 
     @Test
-    public void testLegalURIs() {
+    void testLegalURIs() {
         {
             URI uri = HttpRequestFactory.getUri(createMockRequest("https", "host", null, null));
             assertEquals("https", uri.getScheme());
@@ -68,7 +66,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public void testIllegalQuery() {
+    void testIllegalQuery() {
         try {
             HttpRequestFactory.newJDiscRequest(
                     new MockContainer(),
@@ -80,7 +78,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public final void illegal_host_throws_requestexception1() {
+    final void illegal_host_throws_requestexception1() {
         try {
             HttpRequestFactory.newJDiscRequest(
                     new MockContainer(),
@@ -92,7 +90,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public final void illegal_host_throws_requestexception2() {
+    final void illegal_host_throws_requestexception2() {
         try {
             HttpRequestFactory.newJDiscRequest(
                     new MockContainer(),
@@ -104,7 +102,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public final void illegal_host_throws_requestexception3() {
+    final void illegal_host_throws_requestexception3() {
         try {
             HttpRequestFactory.newJDiscRequest(
                     new MockContainer(),
@@ -116,7 +114,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public final void illegal_unicode_in_query_throws_requestexception() {
+    final void illegal_unicode_in_query_throws_requestexception() {
         try {
             HttpRequestFactory.newJDiscRequest(
                     new MockContainer(),
@@ -129,7 +127,7 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public void request_uri_uses_local_port() {
+    void request_uri_uses_local_port() {
         HttpRequest request = HttpRequestFactory.newJDiscRequest(
                 new MockContainer(),
                 createMockRequest("https", "example.com", "/search", "query=value"));

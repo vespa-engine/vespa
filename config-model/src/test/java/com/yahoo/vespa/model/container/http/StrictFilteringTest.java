@@ -5,10 +5,10 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class StrictFilteringTest extends DomBuilderTest {
 
     @Test
-    public void strict_filtering_enabled_if_specified_in_services() {
+    void strict_filtering_enabled_if_specified_in_services() {
         Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",
@@ -33,7 +33,7 @@ public class StrictFilteringTest extends DomBuilderTest {
     }
 
     @Test
-    public void strict_filtering_enabled_by_default_if_filter_present() {
+    void strict_filtering_enabled_by_default_if_filter_present() {
         Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",
@@ -49,7 +49,7 @@ public class StrictFilteringTest extends DomBuilderTest {
     }
 
     @Test
-    public void strict_filtering_disabled_if_no_filter() {
+    void strict_filtering_disabled_if_no_filter() {
         Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",

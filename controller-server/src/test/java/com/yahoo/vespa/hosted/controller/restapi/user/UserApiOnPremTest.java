@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ public class UserApiOnPremTest extends ControllerContainerTest {
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/user/responses/";
 
     @Test
-    public void userMetadataOnPremTest() {
+    void userMetadataOnPremTest() {
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
             ContainerTester tester = new ContainerTester(container, responseFiles);
             ControllerTester controller = new ControllerTester(tester);

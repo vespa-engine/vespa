@@ -4,15 +4,15 @@ package com.yahoo.jdisc.application;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -21,27 +21,27 @@ import static org.junit.Assert.assertTrue;
 public class AbstractApplicationTestCase {
 
     @Test
-    public void requireThatContainerApiIsAvailable() {
+    void requireThatContainerApiIsAvailable() {
         TestDriver driver = TestDriver.newInjectedApplicationInstance(MyApplication.class);
-        MyApplication app = (MyApplication)driver.application();
+        MyApplication app = (MyApplication) driver.application();
         app.activateContainer(app.newContainerBuilder());
         assertNotNull(app.container());
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatDestroySignalsTermination() {
+    void requireThatDestroySignalsTermination() {
         TestDriver driver = TestDriver.newInjectedApplicationInstance(MyApplication.class);
-        MyApplication app = (MyApplication)driver.application();
+        MyApplication app = (MyApplication) driver.application();
         assertFalse(app.isTerminated());
         assertTrue(driver.close());
         assertTrue(app.isTerminated());
     }
 
     @Test
-    public void requireThatTerminationCanBeWaitedForWithTimeout() throws InterruptedException {
+    void requireThatTerminationCanBeWaitedForWithTimeout() throws InterruptedException {
         TestDriver driver = TestDriver.newInjectedApplicationInstance(MyApplication.class);
-        final MyApplication app = (MyApplication)driver.application();
+        final MyApplication app = (MyApplication) driver.application();
         final CountDownLatch latch = new CountDownLatch(1);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
 
@@ -61,9 +61,9 @@ public class AbstractApplicationTestCase {
     }
 
     @Test
-    public void requireThatTerminationCanBeWaitedForWithoutTimeout() throws InterruptedException {
+    void requireThatTerminationCanBeWaitedForWithoutTimeout() throws InterruptedException {
         TestDriver driver = TestDriver.newInjectedApplicationInstance(MyApplication.class);
-        final MyApplication app = (MyApplication)driver.application();
+        final MyApplication app = (MyApplication) driver.application();
         final CountDownLatch latch = new CountDownLatch(1);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
 
