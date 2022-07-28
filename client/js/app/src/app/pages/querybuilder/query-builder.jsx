@@ -42,7 +42,7 @@ export function QueryBuilder() {
             <TextBox className="response">Response</TextBox>
             <ResponseBox />
             <CopyResponseButton />
-            <DownloadJSONButton />
+            <DownloadJSONButton>Download response as JSON</DownloadJSONButton>
           </ResponseProvider>
           <br />
           <br />

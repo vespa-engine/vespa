@@ -3,7 +3,7 @@ import { ResponseContext } from '../Contexts/ResponseContext';
 import transform from '../../TransformVespaTrace';
 import SimpleButton from './SimpleButton';
 
-export default function DownloadJSONButton() {
+export default function DownloadJSONButton({ children }) {
   const { response } = useContext(ResponseContext);
 
   const transformResponse = (response) => {
@@ -40,7 +40,5 @@ export default function DownloadJSONButton() {
     }
   };
 
-  return (
-    <SimpleButton onClick={handleClick}>Download response as JSON</SimpleButton>
-  );
+  return <SimpleButton onClick={handleClick}>{children}</SimpleButton>;
 }
