@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -26,7 +26,7 @@ public class YumTesterTest {
     private final TestTaskContext context = new TestTaskContext();
 
     @Test
-    public void generic_yum_methods() {
+    void generic_yum_methods() {
         assertYumMethod(yum -> yum.expectInstall(packages).withEnableRepo(repos),
                 yum -> yum.install(List.of(packages)).enableRepo(repos).converge(context));
 
@@ -41,12 +41,12 @@ public class YumTesterTest {
 
         // versionlock always returns success
         assertYumMethodAlwaysSuccess(yum -> yum.expectDeleteVersionLock(minimalPackage.toName()),
-                                     yum -> yum.deleteVersionLock(minimalPackage).converge(context));
+                yum -> yum.deleteVersionLock(minimalPackage).converge(context));
 
     }
 
     @Test
-    public void expect_query_installed() {
+    void expect_query_installed() {
         yum.expectQueryInstalled(packages[0]).andReturn(fullPackage);
         assertEquals(Optional.of(fullPackage), yum.queryInstalled(context, packages[0]));
         terminal.verifyAllCommandsExecuted();

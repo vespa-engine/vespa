@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
@@ -11,10 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -29,7 +26,7 @@ public class MakeDirectoryTest {
     private int groupId = 456;
 
     @Test
-    public void newDirectory() {
+    void newDirectory() {
         verifySystemModifications(
                 "Creating directory " + path,
                 "Changing user ID of /parent/dir from 1 to 123",
@@ -62,7 +59,7 @@ public class MakeDirectoryTest {
     }
 
     @Test
-    public void exceptionIfMissingParent() {
+    void exceptionIfMissingParent() {
         String path = "/parent/dir";
         MakeDirectory makeDirectory = new MakeDirectory(fileSystem.getPath(path));
 
@@ -78,7 +75,7 @@ public class MakeDirectoryTest {
     }
 
     @Test
-    public void okIfParentExists() {
+    void okIfParentExists() {
         String path = "/dir";
         MakeDirectory makeDirectory = new MakeDirectory(fileSystem.getPath(path));
         assertTrue(makeDirectory.converge(context));

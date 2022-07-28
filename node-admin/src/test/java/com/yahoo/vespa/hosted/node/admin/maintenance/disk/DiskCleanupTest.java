@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.disk;
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -21,10 +21,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.FileAttributes;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author freva
@@ -36,7 +36,7 @@ public class DiskCleanupTest {
     private final DiskCleanup diskCleanup = new DiskCleanup();
 
     @Test
-    public void nothing_deleted() throws IOException {
+    void nothing_deleted() throws IOException {
         assertFalse(diskCleanup.cleanup(context, List.of(), 0));
         assertFalse(diskCleanup.cleanup(context, List.of(), 10));
 
@@ -56,7 +56,7 @@ public class DiskCleanupTest {
     }
 
     @Test
-    public void delete_test() throws IOException {
+    void delete_test() throws IOException {
         tester.createFile("/opt/vespa/var/db/do-not-delete-1.db", 1);
         tester.createFile("/opt/vespa/var/db/do-not-delete-2.db", 1);
         tester.createFile("/opt/vespa/var/zookeeper/do-not-delete-3", 1);

@@ -1,45 +1,52 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author freva
  */
 public class ContainerNameTest {
     @Test
-    public void testAlphanumericalContainerName() {
+    void testAlphanumericalContainerName() {
         String name = "container123";
         ContainerName containerName = new ContainerName(name);
         assertEquals(containerName.asString(), name);
     }
 
     @Test
-    public void testAlphanumericalWithDashContainerName() {
+    void testAlphanumericalWithDashContainerName() {
         String name = "container-123";
         ContainerName containerName = new ContainerName(name);
         assertEquals(containerName.asString(), name);
     }
 
     @Test
-    public void testContainerNameFromHostname() {
+    void testContainerNameFromHostname() {
         assertEquals(new ContainerName("container-123"), ContainerName.fromHostname("container-123.sub.domain.tld"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testAlphanumericalWithSlashContainerName() {
-        new ContainerName("container/123");
+    @Test
+    void testAlphanumericalWithSlashContainerName() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ContainerName("container/123");
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testEmptyContainerName() {
-        new ContainerName("");
+    @Test
+    void testEmptyContainerName() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ContainerName("");
+        });
     }
 
-    @Test(expected=NullPointerException.class)
-    public void testNullContainerName() {
-        new ContainerName(null);
+    @Test
+    void testNullContainerName() {
+        assertThrows(NullPointerException.class, () -> {
+            new ContainerName(null);
+        });
     }
 }

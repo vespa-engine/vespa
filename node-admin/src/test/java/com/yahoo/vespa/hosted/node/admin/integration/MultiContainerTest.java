@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 public class MultiContainerTest {
 
     @Test
-    public void test() {
+    void test() {
         DockerImage image1 = DockerImage.fromString("registry.example.com/repo/image1");
         DockerImage image2 = DockerImage.fromString("registry.example.com/repo/image2");
         try (ContainerTester tester = new ContainerTester(List.of(image1, image2))) {

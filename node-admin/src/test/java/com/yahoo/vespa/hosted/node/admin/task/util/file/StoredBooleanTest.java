@@ -3,15 +3,15 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -24,7 +24,7 @@ public class StoredBooleanTest {
     private final StoredBoolean storedBoolean = new StoredBoolean(path);
 
     @Test
-    public void storedBoolean() {
+    void storedBoolean() {
         assertFalse(storedBoolean.value());
         storedBoolean.set(context);
         assertTrue(storedBoolean.value());
@@ -33,7 +33,7 @@ public class StoredBooleanTest {
     }
 
     @Test
-    public void testCompatibility() throws IOException {
+    void testCompatibility() throws IOException {
         StoredInteger storedInteger = new StoredInteger(path);
         assertFalse(storedBoolean.value());
 

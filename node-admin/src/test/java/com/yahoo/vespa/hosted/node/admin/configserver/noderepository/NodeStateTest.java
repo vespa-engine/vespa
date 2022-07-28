@@ -2,13 +2,13 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.vespa.hosted.provision.Node;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeStateTest {
 
     @Test
-    public void is_equal_to_node_repository_states() {
+    void is_equal_to_node_repository_states() {
         Set<String> nodeRepositoryStates = Stream.of(Node.State.values()).map(Enum::name).collect(Collectors.toSet());
         Set<String> nodeAdminStates = Stream.of(NodeState.values()).map(Enum::name).collect(Collectors.toSet());
 

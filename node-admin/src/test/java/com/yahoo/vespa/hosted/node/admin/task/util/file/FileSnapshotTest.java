@@ -2,14 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.FileSystem;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -21,7 +18,7 @@ public class FileSnapshotTest {
     private FileSnapshot fileSnapshot = FileSnapshot.forPath(path.toPath());
 
     @Test
-    public void fileDoesNotExist() {
+    void fileDoesNotExist() {
         assertFalse(fileSnapshot.exists());
         assertFalse(fileSnapshot.attributes().isPresent());
         assertFalse(fileSnapshot.content().isPresent());
@@ -29,7 +26,7 @@ public class FileSnapshotTest {
     }
 
     @Test
-    public void directory() {
+    void directory() {
         path.createParents().createDirectory();
         fileSnapshot = fileSnapshot.snapshot();
         assertTrue(fileSnapshot.exists());
@@ -38,7 +35,7 @@ public class FileSnapshotTest {
     }
 
     @Test
-    public void regularFile() {
+    void regularFile() {
         path.createParents().writeUtf8File("file content");
         fileSnapshot = fileSnapshot.snapshot();
         assertTrue(fileSnapshot.exists());
@@ -52,7 +49,7 @@ public class FileSnapshotTest {
     }
 
     @Test
-    public void fileRemoval() {
+    void fileRemoval() {
         path.createParents().writeUtf8File("file content");
         fileSnapshot = fileSnapshot.snapshot();
         assertTrue(fileSnapshot.exists());

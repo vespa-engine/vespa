@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.task.util;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,9 +13,7 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -26,8 +24,8 @@ import static org.mockito.Mockito.verify;
  */
 public class DefaultEnvWriterTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private static final Path EXAMPLE_FILE = Paths.get("src/test/resources/default-env-example.txt");
     private static final Path EXPECTED_RESULT_FILE = Paths.get("src/test/resources/default-env-rewritten.txt");
@@ -35,8 +33,8 @@ public class DefaultEnvWriterTest {
     private final TaskContext context = mock(TaskContext.class);
 
     @Test
-    public void default_env_is_correctly_rewritten() throws IOException {
-        Path tempFile = temporaryFolder.newFile().toPath();
+    void default_env_is_correctly_rewritten() throws IOException {
+        Path tempFile = File.createTempFile("junit", null, temporaryFolder).toPath();
         Files.copy(EXAMPLE_FILE, tempFile, REPLACE_EXISTING);
 
         DefaultEnvWriter writer = new DefaultEnvWriter();
@@ -57,7 +55,7 @@ public class DefaultEnvWriterTest {
     }
 
     @Test
-    public void generates_default_env_content() throws IOException {
+    void generates_default_env_content() throws IOException {
         DefaultEnvWriter writer = new DefaultEnvWriter();
         writer.addOverride("VESPA_HOSTNAME", "my-new-hostname");
         writer.addFallback("VESPA_CONFIGSERVER", "new-fallback-configserver");

@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -17,44 +17,44 @@ import static org.junit.Assert.assertEquals;
 public class FilterTableLineEditorTest {
 
     @Test
-    public void filter_set_wanted_rules() {
+    void filter_set_wanted_rules() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1").build();
 
         assertFilterTableLineEditorResult(
                 acl, IPVersion.IPv6,
 
                 "-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n",
+                        "-P FORWARD ACCEPT\n" +
+                        "-P OUTPUT ACCEPT\n",
 
                 "-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A INPUT -i lo -j ACCEPT\n" +
-                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22 -j ACCEPT\n" +
-                "-A INPUT -s 3001::1/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable");
+                        "-P FORWARD ACCEPT\n" +
+                        "-P OUTPUT ACCEPT\n" +
+                        "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                        "-A INPUT -i lo -j ACCEPT\n" +
+                        "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                        "-A INPUT -p tcp -m multiport --dports 22 -j ACCEPT\n" +
+                        "-A INPUT -s 3001::1/128 -j ACCEPT\n" +
+                        "-A INPUT -j REJECT --reject-with icmp6-port-unreachable");
     }
 
     @Test
-    public void produces_minimal_diff_simple() {
+    void produces_minimal_diff_simple() {
         assertFilterTableDiff(List.of(2, 5, 3, 6, 1, 4), List.of(2, 5, 6, 1, 4),
                 "Patching file table:\n" +
-                "--A INPUT -s 2001::3/128 -j ACCEPT\n");
+                        "--A INPUT -s 2001::3/128 -j ACCEPT\n");
     }
 
     @Test
-    public void produces_minimal_diff_complex() {
+    void produces_minimal_diff_complex() {
         assertFilterTableDiff(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), List.of(5, 11, 6, 3, 10, 4, 8, 12),
                 "Patching file table:\n" +
-                "--A INPUT -s 2001::1/128 -j ACCEPT\n" +
-                "--A INPUT -s 2001::2/128 -j ACCEPT\n" +
-                "+-A INPUT -s 2001::11/128 -j ACCEPT\n" +
-                "+-A INPUT -s 2001::12/128 -j ACCEPT\n" +
-                "--A INPUT -s 2001::7/128 -j ACCEPT\n" +
-                "--A INPUT -s 2001::9/128 -j ACCEPT\n");
+                        "--A INPUT -s 2001::1/128 -j ACCEPT\n" +
+                        "--A INPUT -s 2001::2/128 -j ACCEPT\n" +
+                        "+-A INPUT -s 2001::11/128 -j ACCEPT\n" +
+                        "+-A INPUT -s 2001::12/128 -j ACCEPT\n" +
+                        "--A INPUT -s 2001::7/128 -j ACCEPT\n" +
+                        "--A INPUT -s 2001::9/128 -j ACCEPT\n");
     }
 
     private static void assertFilterTableLineEditorResult(

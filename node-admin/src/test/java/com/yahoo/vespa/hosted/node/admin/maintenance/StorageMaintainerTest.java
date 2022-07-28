@@ -14,8 +14,8 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -51,7 +51,7 @@ public class StorageMaintainerTest {
             fileSystem.getPath("/data/vespa/storage/container-archive"));
 
     @Test
-    public void testDiskUsed() {
+    void testDiskUsed() {
         NodeAgentContext context = NodeAgentContextImpl.builder("host-1.domain.tld").fileSystem(fileSystem).build();
 
         terminal.expectCommand("du -xsk /data/vespa/storage/host-1 2>&1", 0, "321\t/data/vespa/storage/host-1/");
@@ -62,13 +62,13 @@ public class StorageMaintainerTest {
     }
 
     @Test
-    public void testNonExistingDiskUsed() {
+    void testNonExistingDiskUsed() {
         DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
         assertEquals(DiskSize.ZERO, size);
     }
 
     @Test
-    public void archive_container_data_test() throws IOException {
+    void archive_container_data_test() throws IOException {
         // Create some files in containers
         NodeAgentContext context1 = createNodeAgentContextAndContainerStorage(fileSystem, "container-1");
         createNodeAgentContextAndContainerStorage(fileSystem, "container-2");
@@ -141,7 +141,7 @@ public class StorageMaintainerTest {
     }
 
     @Test
-    public void not_run_if_not_enough_used() throws IOException {
+    void not_run_if_not_enough_used() throws IOException {
         NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
@@ -152,7 +152,7 @@ public class StorageMaintainerTest {
     }
 
     @Test
-    public void deletes_correct_amount() throws IOException {
+    void deletes_correct_amount() throws IOException {
         NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
@@ -164,7 +164,7 @@ public class StorageMaintainerTest {
         verify(diskCleanup).cleanup(eq(context), any(), eq(272_800_000L));
     }
 
-    @After
+    @AfterEach
     public void after() {
         terminal.verifyAllCommandsExecuted();
     }

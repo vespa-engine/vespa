@@ -5,13 +5,13 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.HOST_HOSTNAME;
 import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.containerMatcher;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -26,7 +26,7 @@ public class RebootTest {
     private final DockerImage dockerImage = DockerImage.fromString("registry.example.com/repo/image");
 
     @Test
-    public void test() {
+    void test() {
         try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 

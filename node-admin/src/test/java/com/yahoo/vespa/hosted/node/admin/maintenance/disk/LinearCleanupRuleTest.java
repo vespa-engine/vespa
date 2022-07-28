@@ -1,16 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.disk;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.FileAttributes;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.PrioritizedFileAttributes;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -19,27 +20,29 @@ import static org.mockito.Mockito.mock;
 public class LinearCleanupRuleTest {
 
     @Test
-    public void basic() {
+    void basic() {
         assertRule(Map.of(), Priority.LOWEST, Priority.HIGHEST);
 
         assertRule(Map.of(0.0, Priority.LOW, 0.5, Priority.LOW, 1.0, Priority.LOW), Priority.LOW, Priority.LOW);
         assertRule(Map.of(0.0, Priority.LOW, 0.5, Priority.MEDIUM, 1.0, Priority.MEDIUM), Priority.LOW, Priority.MEDIUM);
 
         assertRule(Map.of(
-                -5.0, Priority.LOW,
-                0.0, Priority.LOW,
-                0.2, Priority.LOW,
-                0.35, Priority.MEDIUM,
-                0.65, Priority.MEDIUM,
-                0.8, Priority.HIGH,
-                1.0, Priority.HIGH,
-                5.0, Priority.HIGH),
+                        -5.0, Priority.LOW,
+                        0.0, Priority.LOW,
+                        0.2, Priority.LOW,
+                        0.35, Priority.MEDIUM,
+                        0.65, Priority.MEDIUM,
+                        0.8, Priority.HIGH,
+                        1.0, Priority.HIGH,
+                        5.0, Priority.HIGH),
                 Priority.LOW, Priority.HIGH);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void fail_if_high_priority_lower_than_low() {
-        assertRule(Map.of(), Priority.HIGHEST, Priority.LOWEST);
+    @Test
+    void fail_if_high_priority_lower_than_low() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            assertRule(Map.of(), Priority.HIGHEST, Priority.LOWEST);
+        });
     }
 
     private static void assertRule(Map<Double, Priority> expectedPriorities, Priority low, Priority high) {

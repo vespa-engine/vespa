@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author freva
@@ -12,14 +12,14 @@ import static org.junit.Assert.fail;
 public class ContainerResourcesTest {
 
     @Test
-    public void verify_unlimited() {
+    void verify_unlimited() {
         assertEquals(-1, ContainerResources.UNLIMITED.cpuQuota());
         assertEquals(100_000, ContainerResources.UNLIMITED.cpuPeriod());
         assertEquals(0, ContainerResources.UNLIMITED.cpuShares());
     }
 
     @Test
-    public void validate_shares() {
+    void validate_shares() {
         new ContainerResources(0, 0, 0);
         new ContainerResources(0, 2, 0);
         new ContainerResources(0, 2048, 0);
@@ -31,7 +31,7 @@ public class ContainerResourcesTest {
     }
 
     @Test
-    public void cpu_shares_scaling() {
+    void cpu_shares_scaling() {
         ContainerResources resources = ContainerResources.from(5.3, 2.5, 0);
         assertEquals(530_000, resources.cpuQuota());
         assertEquals(100_000, resources.cpuPeriod());

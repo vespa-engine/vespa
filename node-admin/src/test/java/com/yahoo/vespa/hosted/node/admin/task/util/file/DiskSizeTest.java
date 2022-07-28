@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class DiskSizeTest {
 
     @Test
-    public void bytes_to_display_count_test() {
+    void bytes_to_display_count_test() {
         assertEquals("-1 bytes", DiskSize.of(-1).asString());
         assertEquals("123 bytes", DiskSize.of(123).asString());
         assertEquals("1 kB", DiskSize.of(1_000).asString());

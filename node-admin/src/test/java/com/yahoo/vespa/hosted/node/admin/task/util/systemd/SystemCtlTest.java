@@ -4,11 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureException;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -20,18 +18,18 @@ public class SystemCtlTest {
     private final TestTerminal terminal = new TestTerminal();
 
     @Test
-    public void enable() {
+    void enable() {
         terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "")
                 .expectCommand("systemctl enable docker 2>&1")
                 .expectCommand("systemctl --quiet is-enabled docker 2>&1");
 
         SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
         assertTrue(enableDockerService.converge(taskContext));
-        assertFalse("Already converged", enableDockerService.converge(taskContext));
+        assertFalse(enableDockerService.converge(taskContext), "Already converged");
     }
 
     @Test
-    public void enableCommandFailure() {
+    void enableCommandFailure() {
         terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "")
                 .expectCommand("systemctl enable docker 2>&1", 1, "error enabling service");
         SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
@@ -45,13 +43,13 @@ public class SystemCtlTest {
 
 
     @Test
-    public void start() {
+    void start() {
         terminal.expectCommand(
-                        "systemctl show docker 2>&1",
-                        0,
-                        "a=b\n" +
-                                "ActiveState=failed\n" +
-                                "bar=zoo\n")
+                "systemctl show docker 2>&1",
+                0,
+                "a=b\n" +
+                        "ActiveState=failed\n" +
+                        "bar=zoo\n")
                 .expectCommand("systemctl start docker 2>&1", 0, "");
 
         SystemCtl.SystemCtlStart startDockerService = new SystemCtl(terminal).start("docker");
@@ -59,13 +57,13 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void startIsNoop() {
+    void startIsNoop() {
         terminal.expectCommand(
-                        "systemctl show docker 2>&1",
-                        0,
-                        "a=b\n" +
-                                "ActiveState=active\n" +
-                                "bar=zoo\n")
+                "systemctl show docker 2>&1",
+                0,
+                "a=b\n" +
+                        "ActiveState=active\n" +
+                        "bar=zoo\n")
                 .expectCommand("systemctl start docker 2>&1", 0, "");
 
         SystemCtl.SystemCtlStart startDockerService = new SystemCtl(terminal).start("docker");
@@ -74,7 +72,7 @@ public class SystemCtlTest {
 
 
     @Test
-    public void startCommandFailre() {
+    void startCommandFailre() {
         terminal.expectCommand("systemctl show docker 2>&1", 1, "error");
         SystemCtl.SystemCtlStart startDockerService = new SystemCtl(terminal).start("docker");
         try {
@@ -87,36 +85,36 @@ public class SystemCtlTest {
 
 
     @Test
-    public void disable() {
+    void disable() {
         terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1")
                 .expectCommand("systemctl disable docker 2>&1")
                 .expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "");
 
         assertTrue(new SystemCtl(terminal).disable("docker").converge(taskContext));
-        assertFalse("Already converged", new SystemCtl(terminal).disable("docker").converge(taskContext));
+        assertFalse(new SystemCtl(terminal).disable("docker").converge(taskContext), "Already converged");
     }
 
     @Test
-    public void stop() {
+    void stop() {
         terminal.expectCommand(
-                        "systemctl show docker 2>&1",
-                        0,
-                        "a=b\n" +
-                                "ActiveState=active\n" +
-                                "bar=zoo\n")
+                "systemctl show docker 2>&1",
+                0,
+                "a=b\n" +
+                        "ActiveState=active\n" +
+                        "bar=zoo\n")
                 .expectCommand("systemctl stop docker 2>&1", 0, "");
 
         assertTrue(new SystemCtl(terminal).stop("docker").converge(taskContext));
     }
 
     @Test
-    public void restart() {
+    void restart() {
         terminal.expectCommand("systemctl restart docker 2>&1", 0, "");
         assertTrue(new SystemCtl(terminal).restart("docker").converge(taskContext));
     }
 
     @Test
-    public void testUnitExists() {
+    void testUnitExists() {
         SystemCtl systemCtl = new SystemCtl(terminal);
 
         terminal.expectCommand("systemctl list-unit-files foo.service 2>&1", 0,
@@ -142,7 +140,7 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void withSudo() {
+    void withSudo() {
         SystemCtl systemCtl = new SystemCtl(terminal).withSudo();
         terminal.expectCommand("sudo systemctl restart docker 2>&1", 0, "");
         assertTrue(systemCtl.restart("docker").converge(taskContext));

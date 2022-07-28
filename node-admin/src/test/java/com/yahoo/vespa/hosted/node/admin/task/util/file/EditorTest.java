@@ -3,15 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.file.FileSystem;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -23,7 +21,7 @@ public class EditorTest {
     private final UnixPath path = new UnixPath(fileSystem.getPath("/file"));
 
     @Test
-    public void testEdit() {
+    void testEdit() {
         path.writeUtf8File(joinLines("first", "second", "third"));
 
         LineEditor lineEditor = mock(LineEditor.class);
@@ -51,7 +49,7 @@ public class EditorTest {
     }
 
     @Test
-    public void testInsert() {
+    void testInsert() {
         path.writeUtf8File(joinLines("second", "eight", "fifth", "seventh"));
 
         LineEditor lineEditor = mock(LineEditor.class);
@@ -86,7 +84,7 @@ public class EditorTest {
     }
 
     @Test
-    public void noop() {
+    void noop() {
         path.writeUtf8File("line\n");
 
         LineEditor lineEditor = mock(LineEditor.class);
@@ -107,7 +105,7 @@ public class EditorTest {
     }
 
     @Test
-    public void testMissingFile() {
+    void testMissingFile() {
         LineEditor lineEditor = mock(LineEditor.class);
         when(lineEditor.onComplete()).thenReturn(List.of("line"));
 

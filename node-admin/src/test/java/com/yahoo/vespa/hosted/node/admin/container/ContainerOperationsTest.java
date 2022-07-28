@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.FileSystem;
 import java.time.Instant;
@@ -13,9 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author mpolden
@@ -28,7 +26,7 @@ public class ContainerOperationsTest {
     private final ContainerOperations containerOperations = new ContainerOperations(containerEngine, new CGroupV2(fileSystem), fileSystem);
 
     @Test
-    public void no_managed_containers_running() {
+    void no_managed_containers_running() {
         Container c1 = createContainer("c1", true);
         Container c2 = createContainer("c2", false);
 
@@ -43,7 +41,7 @@ public class ContainerOperationsTest {
     }
 
     @Test
-    public void retain_managed_containers() {
+    void retain_managed_containers() {
         Container c1 = createContainer("c1", true);
         Container c2 = createContainer("c2", true);
         Container c3 = createContainer("c3", false);
@@ -53,9 +51,9 @@ public class ContainerOperationsTest {
         containerOperations.retainManagedContainers(context, Set.of(c1.name()));
 
         assertEquals(List.of(c1.name(), c3.name()), containerEngine.listContainers(context).stream()
-                                                                   .map(PartialContainer::name)
-                                                                   .sorted()
-                                                                   .collect(Collectors.toList()));
+                .map(PartialContainer::name)
+                .sorted()
+                .collect(Collectors.toList()));
     }
 
     private Container createContainer(String name, boolean managed) {

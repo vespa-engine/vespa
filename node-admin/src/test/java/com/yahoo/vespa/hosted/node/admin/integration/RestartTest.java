@@ -5,7 +5,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 public class RestartTest {
 
     @Test
-    public void test() {
+    void test() {
         DockerImage dockerImage = DockerImage.fromString("registry.example.com/repo/image:1.2.3");
         try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             String hostname = "host1.test.yahoo.com";
