@@ -5,6 +5,8 @@
 package logfmt
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 )
@@ -12,30 +14,17 @@ import (
 func TestShowFlags(t *testing.T) {
 	none := " -time -fmttime -msecs -usecs -host -level -pid -service -component -message"
 	var flag flagValueForShow
-	if flag.String() != none {
-		t.Logf("unset flag displays as '%s', expected '%s'", flag.String(), none)
-		t.Fail()
-	}
-	if flag.Type() != "show flags" {
-		t.Logf("flag type was '%s'", flag.Type())
-		t.Fail()
-	}
+	assert.Equal(t, none, flag.String(), "unset flag displays as '%s', expected '%s'", flag.String(), none)
+	assert.Equal(t, "show flags", flag.Type())
 	check := func(expected string, texts ...string) {
 		var target flagValueForShow
 		// target.levels = defaultLevelFlags()
 		target.shown = defaultShowFlags()
 		for _, text := range texts {
 			err := target.Set(text)
-			if err != nil {
-				t.Logf("unexpected error with show flags Set('%s'): %v", text, err)
-				t.FailNow()
-			}
+			require.Nil(t, err, "unexpected error with show flags Set('%s'): %v", text, err)
 		}
-		got := target.String()
-		if got != expected {
-			t.Logf("expected flags [%s] but got: [%s]", expected, got)
-			t.Fail()
-		}
+		assert.Equal(t, expected, target.String())
 	}
 	check(" +time +fmttime +msecs -usecs -host +level -pid +service +component +message")
 	check(" -time -fmttime -msecs -usecs -host -level -pid -service -component -message", "-all")
@@ -55,14 +44,11 @@ func TestShowFlags(t *testing.T) {
 		for _, text := range texts {
 			err := target.Set(text)
 			if err != nil {
-				if err.Error() == expectErr {
-					return
-				}
-				t.Logf("expected error [%s] with show flags Set('%s'), but got [%v]", expectErr, text, err)
-				t.FailNow()
+				require.Equal(t, expectErr, err.Error())
+				return
 			}
 		}
-		t.Logf("Did not get expected error '%s' from %s", expectErr, strings.Join(texts, ","))
+		t.Logf("Did not get expected error [%s] from %s", expectErr, strings.Join(texts, " "))
 		t.Fail()
 	}
 	check("not a valid show flag: 'foo'", "foo")

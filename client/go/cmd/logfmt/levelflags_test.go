@@ -12,7 +12,6 @@ import (
 func TestLevelFlags(t *testing.T) {
 	none := " -fatal -error -warning -info -config -event -debug -spam"
 
-
 	var flag flagValueForLevel
 	if flag.String() != none {
 		t.Logf("unset flag displays as '%s', expected '%s'", flag.String(), none)

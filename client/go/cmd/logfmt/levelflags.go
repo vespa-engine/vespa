@@ -33,14 +33,14 @@ func (v *flagValueForLevel) Type() string {
 func (v *flagValueForLevel) String() string {
 	var buf strings.Builder
 	flagNames := []string{
-		"fatal"   ,
-		"error"   ,
-		"warning" ,
-		"info"    ,
-		"config"  ,
-		"event"   ,
-		"debug"   ,
-		"spam"    ,
+		"fatal",
+		"error",
+		"warning",
+		"info",
+		"config",
+		"event",
+		"debug",
+		"spam",
 	}
 	for _, flag := range flagNames {
 		if v.levels[flag] {

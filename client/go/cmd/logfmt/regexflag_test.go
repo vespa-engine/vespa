@@ -5,59 +5,37 @@
 package logfmt
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func checkMatch(t *testing.T, re string, flag *regexFlag, texts ...string) {
+func assertMatch(t *testing.T, re string, flag *regexFlag, texts ...string) {
+	t.Helper()
 	err := flag.Set(re)
-	if err != nil {
-		t.Logf("unexpected error with flag.Set('%s'): %v", re, err)
-		t.FailNow()
-	}
-	if flag.String() != re {
-		t.Logf("set flag displays as '%s', expected '%s'", flag.String(), re)
-		t.Fail()
-	}
+	require.Nil(t, err, "unexpected error with flag.Set('%s'): %v", re, err)
+	assert.Equal(t, re, flag.String(), "set flag displays as '%s', expected '%s'", flag.String(), re)
 	for _, text := range texts {
-		if flag.unmatched(text) {
-			t.Logf("flag '%s' claims a non-match for '%s'", flag.String(), text)
-			t.Fail()
-		}
+		assert.False(t, flag.unmatched(text), "flag '%s' claims a non-match for '%s'", flag.String(), text)
 	}
 }
 
-func checkUnmatch(t *testing.T, re string, flag *regexFlag, texts ...string) {
+func assertUnmatch(t *testing.T, re string, flag *regexFlag, texts ...string) {
+	t.Helper()
 	err := flag.Set(re)
-	if err != nil {
-		t.Logf("unexpected error with flag.Set('%s'): %v", re, err)
-		t.FailNow()
-	}
-	if flag.String() != re {
-		t.Logf("set flag displays as '%s', expected '%s'", flag.String(), re)
-		t.Fail()
-	}
+	require.Nil(t, err, "unexpected error with flag.Set('%s'): %v", re, err)
+	assert.Equal(t, re, flag.String())
 	for _, text := range texts {
-		if !flag.unmatched(text) {
-			t.Logf("flag '%s' should claim a non-match for '%s'", flag.String(), text)
-			t.Fail()
-		}
+		assert.True(t, flag.unmatched(text), "flag '%s' should claim a non-match for '%s'", flag.String(), text)
 	}
 }
 
 func TestRegexFlag(t *testing.T) {
 	var flag regexFlag
-	if flag.String() != "<none>" {
-		t.Logf("unset flag displays as '%s', expected <none>", flag.String())
-		t.Fail()
-	}
-	if flag.Type() != "regular expression" {
-		t.Logf("flag type was '%s'", flag.Type())
-		t.Fail()
-	}
-	if flag.unmatched("foobar") {
-		t.Log("unset flag claims a non-match")
-		t.Fail()
-	}
-	checkMatch(t, "foo.*bar", &flag, "foobar", "foo bar", "x foobar y", "xfoobary", "xfooybarz")
-	checkUnmatch(t, "foo.*bar", &flag, "Foobar", "foo Bar", "fxoobar", "whatever")
+	assert.Equal(t, "<none>", flag.String())
+	assert.Equal(t, "regular expression", flag.Type())
+	assert.False(t, flag.unmatched("foobar"), "unset flag claims a non-match")
+	assert.EqualError(t, flag.Set("*"), "error parsing regexp: missing argument to repetition operator: `*`")
+	assertMatch(t, "foo.*bar", new(regexFlag), "foobar", "foo bar", "x foobar y", "xfoobary", "xfooybarz")
+	assertUnmatch(t, "foo.*bar", new(regexFlag), "Foobar", "foo Bar", "fxoobar", "whatever")
 }
