@@ -3,17 +3,17 @@ package com.yahoo.container.plugin.bundle;
 
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Tony Vaagenes
@@ -37,29 +37,29 @@ public class AnalyzeBundleTest {
     }
 
     @Test
-    public void require_that_non_osgi_bundles_are_ignored() {
+    void require_that_non_osgi_bundles_are_ignored() {
         assertFalse(exportsByPackageName.containsKey("com.yahoo.sample.exported.package.ignored"));
     }
 
     @Test
-    public void require_that_exports_are_retrieved_from_manifest_in_jars() {
+    void require_that_exports_are_retrieved_from_manifest_in_jars() {
         assertEquals(1, exportsByPackageName.keySet().size());
         assertTrue(exportsByPackageName.containsKey("com.yahoo.sample.exported.package"));
     }
 
     @Test
-    public void exported_class_names_can_be_retrieved() {
+    void exported_class_names_can_be_retrieved() {
         assertEquals(ExportPackages.packageNames(exports), exports.get(0).getPackageNames().stream().collect(Collectors.toSet()));
     }
 
     @Test
-    public void require_that_invalid_exports_throws_exception() {
+    void require_that_invalid_exports_throws_exception() {
         try {
             AnalyzeBundle.exportedPackages(jarFile("errorExport.jar"));
             fail();
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("Invalid manifest in bundle 'src/test/resources/jar/errorExport.jar'"));
-            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().startsWith("Failed parsing Export-Package"));
+            assertTrue(e.getCause().getMessage().startsWith("Failed parsing Export-Package"), e.getCause().getMessage());
         }
     }
 }

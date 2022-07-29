@@ -3,13 +3,13 @@ package com.yahoo.container.plugin.osgi;
 
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ExportPackages.Parameter;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -19,7 +19,7 @@ public class ExportPackageParserTest {
     private final Parameter versionParameter = new Parameter("version", "1.2.3.sample");
 
     @Test
-    public void require_that_package_is_parsed_correctly() {
+    void require_that_package_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("sample.exported.package");
 
         assertEquals(1, exports.size());
@@ -28,7 +28,7 @@ public class ExportPackageParserTest {
     }
 
     @Test
-    public void require_that_version_is_parsed_correctly() {
+    void require_that_version_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("com.yahoo.sample.exported.package;version=\"1.2.3.sample\"");
 
         assertEquals(1, exports.size());
@@ -38,7 +38,7 @@ public class ExportPackageParserTest {
     }
 
     @Test
-    public void require_that_multiple_packages_with_same_parameters_is_parsed_correctly() {
+    void require_that_multiple_packages_with_same_parameters_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1;exported.package2;version=\"1.2.3.sample\"");
 
         assertEquals(1, exports.size());
@@ -48,7 +48,7 @@ public class ExportPackageParserTest {
     }
 
     @Test
-    public void require_that_spaces_between_separators_are_allowed() {
+    void require_that_spaces_between_separators_are_allowed() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1  ,  exported.package2 ; version   = \"1.2.3.sample\"  ");
 
         assertEquals(2, exports.size());
@@ -61,7 +61,7 @@ public class ExportPackageParserTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void require_that_multiple_parameters_for_a_package_is_parsed_correctly() {
+    void require_that_multiple_parameters_for_a_package_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package;version=\"1.2.3.sample\";param2=true");
 
         assertEquals(1, exports.size());
@@ -70,7 +70,7 @@ public class ExportPackageParserTest {
     }
 
     @Test
-    public void require_that_multiple_exports_are_parsed_correctly() {
+    void require_that_multiple_exports_are_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1,exported.package2");
         assertEquals(2, exports.size());
         Export export = exports.get(0);
@@ -100,9 +100,9 @@ public class ExportPackageParserTest {
     }
 
     // TODO: MAVEN_OPTS are not propagated by the maven-surefire-plugin. Either try to fix the underlying problem or set -Xss in plugin config.
-    @Ignore  // Frequently causes StackOverflowError
+    @Disabled  // Frequently causes StackOverflowError
     @Test
-    public void require_that_long_string_literals_do_not_cause_stack_overflow_error() {
+    void require_that_long_string_literals_do_not_cause_stack_overflow_error() {
         //From jersey-server-1.13.jar
         String exportHeader = "com.sun.jersey.server.impl.wadl;uses:=\"com.sun.jersey.api.model,com.sun.resea"
                 + "rch.ws.wadl,com.sun.jersey.api.wadl.config,com.sun.jersey.server.wadl,com.sun."

@@ -2,10 +2,10 @@
 package com.yahoo.container.plugin.mojo;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,10 +13,10 @@ import static org.junit.Assume.assumeNotNull;
 public class GenerateSourcesMojoTest {
 
     @Test
-    public void requireThatDefaultConfigGenVersionIsLoadedFromBuildProperties() throws MojoExecutionException {
+    void requireThatDefaultConfigGenVersionIsLoadedFromBuildProperties() throws MojoExecutionException {
         String expected = System.getProperty("expectedDefaultConfigGenVersion");
         System.out.println("expectedDefaultConfigGenVersion = " + expected);
-        assumeNotNull(expected);
+        assumeTrue(expected != null);
 
         String actual = GenerateSourcesMojo.loadDefaultConfigGenVersion();
         System.out.println("defaultConfigGenVersion = " + actual);
