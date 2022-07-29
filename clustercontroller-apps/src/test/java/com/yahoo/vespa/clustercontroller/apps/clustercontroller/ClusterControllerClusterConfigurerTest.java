@@ -6,19 +6,19 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ClusterControllerClusterConfigurerTest {
 
     @Test
-    public void testSimple() throws Exception {
+    void testSimple() throws Exception {
         ClusterController controller = new ClusterController();
         StorDistributionConfig.Builder distributionConfig = new StorDistributionConfig.Builder();
         StorDistributionConfig.Group.Builder group = new StorDistributionConfig.Group.Builder();
@@ -45,13 +45,17 @@ public class ClusterControllerClusterConfigurerTest {
         zookeepersConfig.zookeeperserverlist("foo");
         Metric metric = new Metric() {
             @Override
-            public void set(String s, Number number, Context context) {}
+            public void set(String s, Number number, Context context) {
+            }
             @Override
-            public void add(String s, Number number, Context context) {}
+            public void add(String s, Number number, Context context) {
+            }
             @Override
-            public Context createContext(Map<String, ?> stringMap) { return null; }
+            public Context createContext(Map<String, ?> stringMap) {
+                return null;
+            }
         };
-            // Used in standalone mode to get config without a cluster controller instance
+        // Used in standalone mode to get config without a cluster controller instance
         ClusterControllerClusterConfigurer configurer = new ClusterControllerClusterConfigurer(
                 null,
                 new StorDistributionConfig(distributionConfig),
@@ -68,7 +72,7 @@ public class ClusterControllerClusterConfigurerTest {
         assertEquals(0.7, configurer.getOptions().clusterFeedBlockLimit.get("bar"), 0.01);
         assertEquals(0.05, configurer.getOptions().clusterFeedBlockNoiseLevel, 0.001);
 
-        try{
+        try {
             zookeepersConfig.zookeeperserverlist("");
             new ClusterControllerClusterConfigurer(
                     controller,

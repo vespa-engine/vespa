@@ -2,12 +2,12 @@
 package com.yahoo.vespa.clustercontroller.apputil.communication.http;
 
 import com.yahoo.jdisc.Metric;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JDiscMetricWrapperTest {
 
@@ -22,10 +22,10 @@ public class JDiscMetricWrapperTest {
             ++calls;
             return new Context() {};
         }
-    };
+    }
 
     @Test
-    public void testSimple() {
+    void testSimple() {
         MetricImpl impl1 = new MetricImpl();
         MetricImpl impl2 = new MetricImpl();
         JDiscMetricWrapper wrapper = new JDiscMetricWrapper(impl1);
