@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Einar M R Rosenvinge
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 public class ResponseTestCase {
 
     @Test
-    public void requireThatCharsetParsingWorks() {
+    void requireThatCharsetParsingWorks() {
         assertEquals("utf-8", Response.charset("text/foobar").toString().toLowerCase());
         assertEquals("utf-8", Response.charset("adsf").toString().toLowerCase());
         assertEquals("utf-8", Response.charset("").toString().toLowerCase());
@@ -26,7 +26,7 @@ public class ResponseTestCase {
     }
 
     @Test
-    public void testDefaultResponseBody() {
+    void testDefaultResponseBody() {
         Response res1 = new Response();
         Response res2 = new Response(new byte[0]);
 
