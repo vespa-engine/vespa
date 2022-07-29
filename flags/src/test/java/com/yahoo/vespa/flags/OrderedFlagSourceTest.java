@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
  */
 public class OrderedFlagSourceTest {
     @Test
-    public void test() {
+    void test() {
         FlagSource source1 = mock(FlagSource.class);
         FlagSource source2 = mock(FlagSource.class);
         OrderedFlagSource orderedSource = new OrderedFlagSource(source1, source2);

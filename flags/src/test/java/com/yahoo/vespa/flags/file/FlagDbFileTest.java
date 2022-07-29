@@ -6,8 +6,7 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.hamcrest.collection.IsMapContaining;
-import org.hamcrest.collection.IsMapWithSize;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
@@ -19,6 +18,8 @@ import java.util.Map;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
@@ -28,7 +29,7 @@ public class FlagDbFileTest {
     private final FlagDbFile flagDb = new FlagDbFile(fileSystem);
 
     @Test
-    public void test() {
+    void test() {
         Map<FlagId, FlagData> dataMap = new HashMap<>();
         FlagId id1 = new FlagId("id1");
         FlagData data1 = new FlagData(id1, new FetchVector());
@@ -38,12 +39,12 @@ public class FlagDbFileTest {
         dataMap.put(id2, data2);
 
         // Non-existing directory => empty map
-        assertThat(flagDb.read(), IsMapWithSize.anEmptyMap());
+        assertTrue(flagDb.read().isEmpty());
 
         // sync() will create directory with map content
         assertThat(flagDb.sync(dataMap), equalTo(true));
         Map<FlagId, FlagData> readDataMap = flagDb.read();
-        assertThat(readDataMap, IsMapWithSize.aMapWithSize(2));
+        assertEquals(2, readDataMap.size());
         assertThat(readDataMap, IsMapContaining.hasKey(id1));
         assertThat(readDataMap, IsMapContaining.hasKey(id2));
 
@@ -61,7 +62,7 @@ public class FlagDbFileTest {
         dataMap.put(id3, data3);
         assertThat(flagDb.sync(dataMap), equalTo(true));
         Map<FlagId, FlagData> anotherReadDataMap = flagDb.read();
-        assertThat(anotherReadDataMap, IsMapWithSize.aMapWithSize(2));
+        assertEquals(2, anotherReadDataMap.size());
         assertThat(anotherReadDataMap, IsMapContaining.hasKey(id1));
         assertThat(anotherReadDataMap, IsMapContaining.hasKey(id3));
         assertThat(anotherReadDataMap.get(id1).serializeToJson(), equalTo("{\"id\":\"id1\",\"attributes\":{\"hostname\":\"h1\"}}"));

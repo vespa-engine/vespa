@@ -3,13 +3,13 @@ package com.yahoo.vespa.flags.json;
 
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.RawFlag;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
@@ -52,7 +52,7 @@ public class FlagDataTest {
     private final FetchVector vector = new FetchVector();
 
     @Test
-    public void test() {
+    void test() {
         // Second rule matches with the default zone matching
         verify(Optional.of("false"), vector);
 
