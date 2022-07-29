@@ -10,9 +10,9 @@ import com.yahoo.vespa.clustercontroller.core.database.DatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -20,8 +20,8 @@ import org.mockito.MockitoAnnotations;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -89,18 +89,18 @@ public class DatabaseHandlerTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         openMock = MockitoAnnotations.openMocks(this);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         openMock.close();
     }
 
     @Test
-    public void can_store_latest_cluster_state_bundle() throws Exception {
+    void can_store_latest_cluster_state_bundle() throws Exception {
         Fixture f = new Fixture();
         DatabaseHandler handler = f.createHandler();
         handler.doNextZooKeeperTask(f.createMockContext()); // Database setup step
@@ -110,7 +110,7 @@ public class DatabaseHandlerTest {
     }
 
     @Test
-    public void can_load_latest_cluster_state_bundle() throws Exception {
+    void can_load_latest_cluster_state_bundle() throws Exception {
         Fixture f = new Fixture();
         DatabaseHandler handler = f.createHandler();
         handler.doNextZooKeeperTask(f.createMockContext()); // Database setup step
@@ -124,7 +124,7 @@ public class DatabaseHandlerTest {
     // FIXME I don't like the semantics of this, but it mirrors the legacy behavior for the
     // rest of the DB load operations exposed by the DatabaseHandler.
     @Test
-    public void empty_bundle_is_returned_if_no_db_connection() throws Exception {
+    void empty_bundle_is_returned_if_no_db_connection() throws Exception {
         Fixture f = new Fixture();
         DatabaseHandler handler = f.createHandler();
         // Note: no DB setup step
@@ -134,7 +134,7 @@ public class DatabaseHandlerTest {
     }
 
     @Test
-    public void save_wanted_state_of_configured_nodes() throws Exception {
+    void save_wanted_state_of_configured_nodes() throws Exception {
         var fixture = new Fixture();
         DatabaseHandler handler = fixture.createHandler();
         DatabaseHandler.DatabaseContext databaseContext = fixture.createMockContext();

@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author gjoranv
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertThrows;
 public class PathNodeTest {
 
     @Test
-    public void testSetValue() {
+    void testSetValue() {
         PathNode n = new PathNode();
         assertEquals("(null)", n.toString());
 
@@ -23,7 +23,7 @@ public class PathNodeTest {
         assertEquals(new File("foo.txt").toPath(), n.value());
 
         assertEquals("path may not start with '..', but got: foo/../../boo",
-                     assertThrows(IllegalArgumentException.class, () -> new PathNode(new FileReference("foo/../../boo"))).getMessage());
+                assertThrows(IllegalArgumentException.class, () -> new PathNode(new FileReference("foo/../../boo"))).getMessage());
     }
 
 }

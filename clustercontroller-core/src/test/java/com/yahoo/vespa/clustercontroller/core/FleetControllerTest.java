@@ -27,11 +27,10 @@ import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,11 +48,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Håkon Humberset
  */
+@ExtendWith(FleetControllerTest.CleanupZookeeperLogsOnSuccess.class)
 public abstract class FleetControllerTest implements Waiter {
 
     private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
@@ -96,29 +96,30 @@ public abstract class FleetControllerTest implements Waiter {
         public boolean shouldInform(double v) { return false; }
     }
 
-    protected class CleanupZookeeperLogsOnSuccess extends TestWatcher {
+    public static class CleanupZookeeperLogsOnSuccess implements TestWatcher {
+
+        public CleanupZookeeperLogsOnSuccess() {}
+
         @Override
-        protected void failed(Throwable e, Description description) {
+        public void testFailed(ExtensionContext context, Throwable cause) {
             System.err.println("TEST FAILED - NOT cleaning up zookeeper directory");
-            shutdownZooKeeper(false);
+            shutdownZooKeeper(context, false);
         }
 
         @Override
-        protected void succeeded(Description description) {
+        public void testSuccessful(ExtensionContext context) {
             System.err.println("TEST SUCCEEDED - cleaning up zookeeper directory");
-            shutdownZooKeeper(true);
+            shutdownZooKeeper(context, true);
         }
 
-        private void shutdownZooKeeper(boolean cleanupZooKeeperDir) {
-            if (zooKeeperServer != null) {
-                zooKeeperServer.shutdown(cleanupZooKeeperDir);
-                zooKeeperServer = null;
+        private void shutdownZooKeeper(ExtensionContext ctx, boolean cleanupZooKeeperDir) {
+            FleetControllerTest test = (FleetControllerTest) ctx.getTestInstance().orElseThrow();
+            if (test.zooKeeperServer != null) {
+                test.zooKeeperServer.shutdown(cleanupZooKeeperDir);
+                test.zooKeeperServer = null;
             }
         }
     }
-
-    @Rule
-    public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
 
     protected void startingTest(String name) {
         System.err.println("STARTING TEST: " + name);
@@ -330,7 +331,7 @@ public abstract class FleetControllerTest implements Waiter {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         tearDownSystem();
     }

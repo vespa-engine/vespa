@@ -2,12 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.logging.Level;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StateGatherTest extends FleetControllerTest {
 
@@ -24,7 +24,7 @@ public class StateGatherTest extends FleetControllerTest {
     }
 
     @Test
-    public void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
+    void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
         Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
         startingTest("StateGatherTest::testOverlappingGetNodeStateRequests");
         FleetControllerOptions options = defaultOptions("mycluster");

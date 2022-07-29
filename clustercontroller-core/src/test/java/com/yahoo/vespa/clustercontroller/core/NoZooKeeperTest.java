@@ -1,13 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.junit.Test;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NoZooKeeperTest extends FleetControllerTest {
 
     @Test
-    public void testWantedStatesInZooKeeper() throws Exception {
+    void testWantedStatesInZooKeeper() throws Exception {
         startingTest("NoZooKeeperTest::testWantedStatesInZooKeeper");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.zooKeeperServerAddress = null;

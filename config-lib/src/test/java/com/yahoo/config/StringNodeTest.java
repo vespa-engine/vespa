@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author hmusum
@@ -12,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 public class StringNodeTest {
 
     @Test
-    public void testUnescapeQuotedString() {
+    void testUnescapeQuotedString() {
         String a = "\"Hei\"";
         assertEquals("Hei", StringNode.unescapeQuotedString(a));
         assertEquals("foo\"bar\"", StringNode.unescapeQuotedString("foo\"bar\""));
@@ -21,13 +22,15 @@ public class StringNodeTest {
         assertEquals("U", StringNode.unescapeQuotedString("\\x55"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testUnescapedQuotedStringExceptions() {
-        StringNode.unescapeQuotedString("foo\\");
+    @Test
+    void testUnescapedQuotedStringExceptions() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            StringNode.unescapeQuotedString("foo\\");
+        });
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         StringNode n = new StringNode();
         assertEquals("(null)", n.toString());
         n.setValue("foo");
@@ -35,7 +38,7 @@ public class StringNodeTest {
     }
 
     @Test
-    public void testSetValue() {
+    void testSetValue() {
         StringNode n = new StringNode();
         n.setValue("\"foo\"");
         assertEquals("foo", n.getValue());

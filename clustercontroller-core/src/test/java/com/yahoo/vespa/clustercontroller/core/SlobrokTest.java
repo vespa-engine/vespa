@@ -3,9 +3,10 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import java.util.logging.Level;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.logging.Logger;
 
@@ -14,7 +15,7 @@ public class SlobrokTest extends FleetControllerTest {
     private static final Logger log = Logger.getLogger(SlobrokTest.class.getName());
 
     @Test
-    public void testSingleSlobrokRestart() throws Exception {
+    void testSingleSlobrokRestart() throws Exception {
         startingTest("SlobrokTest::testSingleSlobrokRestart");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.nodeStateRequestTimeoutMS = 60 * 60 * 1000;
@@ -26,13 +27,13 @@ public class SlobrokTest extends FleetControllerTest {
         int version = fleetController.getSystemState().getVersion();
         int slobrokPort = slobrok.port();
 
-            // Test that we survive some slobrok instability without changing system state.
-        for (int j=0; j<4; ++j) {
+        // Test that we survive some slobrok instability without changing system state.
+        for (int j = 0; j < 4; ++j) {
             log.log(Level.INFO, "Mirror updateForDistributor count is " + fleetController.getSlobrokMirrorUpdates());
-            log.log(Level.INFO, "STOPPING SLOBROK SERVER (" + (j+1) + "/4)");
+            log.log(Level.INFO, "STOPPING SLOBROK SERVER (" + (j + 1) + "/4)");
             slobrok.stop();
-            for (int i=0; i<10; ++i) {
-                    // Force one node to at least notice that the slobrok server is gone
+            for (int i = 0; i < 10; ++i) {
+                // Force one node to at least notice that the slobrok server is gone
                 if (i == 5) {
                     log.log(Level.INFO, "Forcing one node to initate a resend: " + nodes.get(3));
                     nodes.get(3).replyToPendingNodeStateRequests();
@@ -40,9 +41,9 @@ public class SlobrokTest extends FleetControllerTest {
                 waitForCompleteCycle();
                 timer.advanceTime(100);
             }
-            log.log(Level.INFO, "STARTING SLOBROK SERVER AGAIN (" + (j+1) + "/4)");
+            log.log(Level.INFO, "STARTING SLOBROK SERVER AGAIN (" + (j + 1) + "/4)");
             slobrok = new Slobrok(slobrokPort);
-                // May take up to 30 seconds for slobrok clients to re-register. Trigger retry.
+            // May take up to 30 seconds for slobrok clients to re-register. Trigger retry.
             for (DummyVdsNode node : nodes) {
                 node.disconnectSlobrok();
                 node.registerSlobrok();
@@ -56,19 +57,19 @@ public class SlobrokTest extends FleetControllerTest {
                 if (clusterAvailable()) break;
                 timer.advanceTime(1000);
                 waitForCompleteCycle();
-                try{
+                try {
                     Thread.sleep(10);
-                } catch (InterruptedException e) { /* ignore */ }
+                } catch (InterruptedException e) { /* ignore */
+                }
             }
             assertClusterAvailable();
         }
 
-        assertEquals("Cluster state was affected, although it should not have been.",
-                     version, fleetController.getSystemState().getVersion());
+        assertEquals(version, fleetController.getSystemState().getVersion(), "Cluster state was affected, although it should not have been.");
     }
 
     @Test
-    public void testNodeTooLongOutOfSlobrok() throws Exception {
+    void testNodeTooLongOutOfSlobrok() throws Exception {
         startingTest("SlobrokTest::testNodeTooLongOutOfSlobrok");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
@@ -81,13 +82,16 @@ public class SlobrokTest extends FleetControllerTest {
         nodes.get(0).disconnectSlobrok();
         log.log(Level.INFO, "DISCONNECTED NODE FROM SLOBROK. SHOULD BE IN COOLDOWN PERIOD");
         fleetController.waitForNodesInSlobrok(9, 10, timeoutMS);
-        synchronized (timer) {
+        synchronized(timer) {
             nodes.get(0).sendGetNodeStateReply(0);
         }
 
         // Give system a little time to possible faultily removing node not in slobrok
         timer.advanceTime(1000);
-        try{ Thread.sleep(10); } catch (InterruptedException e) { /* ignore */ }
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) { /* ignore */
+        }
         assertEquals(version, fleetController.getSystemState().getVersion());
         log.log(Level.INFO, "JUMPING TIME. NODE SHOULD BE MARKED DOWN");
         // At this point the fleetcontroller might not have noticed that the node is out of slobrok yet.
@@ -108,8 +112,8 @@ public class SlobrokTest extends FleetControllerTest {
     private void assertClusterAvailable() {
         ContentCluster cluster = fleetController.getCluster();
         for (NodeInfo info : cluster.getNodeInfos()) {
-            assertEquals("Node " + info + " connection attempts.", 0, info.getConnectionAttemptCount());
-            assertTrue("Node " + info + " has no last request time.", info.getLatestNodeStateRequestTime() != 0);
+            assertEquals(0, info.getConnectionAttemptCount(), "Node " + info + " connection attempts.");
+            assertTrue(info.getLatestNodeStateRequestTime() != 0, "Node " + info + " has no last request time.");
         }
     }
 }

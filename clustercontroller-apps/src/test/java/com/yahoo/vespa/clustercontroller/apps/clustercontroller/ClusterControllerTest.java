@@ -5,17 +5,17 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Doesn't really test cluster controller, but runs some lines of code.
@@ -34,7 +34,7 @@ public class ClusterControllerTest {
         public Context createContext(Map<String, ?> stringMap) { return null; }
     };
 
-    @Before
+    @BeforeEach
     public void setUp() {
         options = new FleetControllerOptions("storage", Set.of(new ConfiguredNode(0, false)));
         options.zooKeeperServerAddress = null;
@@ -43,7 +43,7 @@ public class ClusterControllerTest {
     }
 
     @Test
-    public void testSimple() throws Exception {
+    void testSimple() throws Exception {
         ClusterController cc = new ClusterController();
         cc.setOptions(options, metric);
         cc.setOptions(options, metric);
@@ -57,7 +57,7 @@ public class ClusterControllerTest {
     }
 
     @Test
-    public void testShutdownException() throws Exception {
+    void testShutdownException() throws Exception {
         ClusterController cc = new ClusterController() {
             void shutdownController(FleetController controller) throws Exception {
                 throw new Exception("Foo");

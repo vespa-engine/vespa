@@ -2,12 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest {
 
@@ -32,13 +32,13 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     }
 
     @Test
-    public void testSlobrokNodeOutsideConfiguredIndexSetIsNotIncludedInCluster() throws Exception {
+    void testSlobrokNodeOutsideConfiguredIndexSetIsNotIncludedInCluster() throws Exception {
         setUpClusterWithForeignNode(nodeIndices, foreignNode);
         waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNode));
     }
 
     @Test
-    public void testNodeSetReconfigurationForcesFreshSlobrokFetch() throws Exception {
+    void testNodeSetReconfigurationForcesFreshSlobrokFetch() throws Exception {
         setUpClusterWithForeignNode(nodeIndices, foreignNode);
         waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNode));
 
@@ -53,7 +53,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     }
 
     @Test
-    public void test_removed_retired_node_is_not_included_in_state() throws Exception {
+    void test_removed_retired_node_is_not_included_in_state() throws Exception {
         final Set<ConfiguredNode> configuredNodes = asConfiguredNodes(nodeIndices);
         FleetControllerOptions options = optionsForConfiguredNodes(configuredNodes);
         setUpFleetController(true, options);

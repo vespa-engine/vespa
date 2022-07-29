@@ -11,12 +11,13 @@ import com.yahoo.application.container.handlers.HeaderEchoRequestHandler;
 import com.yahoo.application.container.handlers.ThrowingInWriteRequestHandler;
 import com.yahoo.application.container.handlers.WriteException;
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.CharacterCodingException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -37,7 +38,7 @@ public class ContainerRequestTest {
     }
 
     @Test
-    public void requireThatRequestBodyWorks() throws CharacterCodingException {
+    void requireThatRequestBodyWorks() throws CharacterCodingException {
         String DATA = "we have no bananas today";
         Request req = new Request("http://banana/echo", DATA.getBytes(Utf8.getCharset()));
 
@@ -50,7 +51,7 @@ public class ContainerRequestTest {
     }
 
     @Test
-    public void requireThatCustomRequestHeadersWork() {
+    void requireThatCustomRequestHeadersWork() {
         Request req = new Request("http://banana/echo");
         req.getHeaders().add("X-Foo", "Bar");
 
@@ -62,26 +63,31 @@ public class ContainerRequestTest {
         }
     }
 
-    @Test(expected = WriteException.class)
-    public void requireThatRequestHandlerThatThrowsInWriteWorks() {
-        String DATA = "we have no bananas today";
-        Request req = new Request("http://banana/throwwrite", DATA.getBytes(Utf8.getCharset()));
+    @Test
+    void requireThatRequestHandlerThatThrowsInWriteWorks() {
+        assertThrows(WriteException.class, () -> {
+            String DATA = "we have no bananas today";
+            Request req = new Request("http://banana/throwwrite", DATA.getBytes(Utf8.getCharset()));
 
-        try (JDisc container = JDisc.fromServicesXml(getXML(ThrowingInWriteRequestHandler.class.getCanonicalName(), "http://*/throwwrite"), Networking.disable)) {
-            Response response = container.handleRequest(req);
-            req.toString();
-        }
+            try (JDisc container = JDisc.fromServicesXml(getXML(ThrowingInWriteRequestHandler.class.getCanonicalName(), "http://*/throwwrite"), Networking.disable)) {
+                Response response = container.handleRequest(req);
+                req.toString();
+            }
+        });
     }
 
-    @Test(expected = DelayedWriteException.class)
-    public void requireThatRequestHandlerThatThrowsDelayedInWriteWorks() {
-        String DATA = "we have no bananas today";
-        Request req = new Request("http://banana/delayedthrowwrite", DATA.getBytes(Utf8.getCharset()));
+    @Test
+    void requireThatRequestHandlerThatThrowsDelayedInWriteWorks() {
+        assertThrows(DelayedWriteException.class, () -> {
+            String DATA = "we have no bananas today";
+            Request req = new Request("http://banana/delayedthrowwrite", DATA.getBytes(Utf8.getCharset()));
 
-        try (JDisc container = JDisc.fromServicesXml(getXML(DelayedThrowingInWriteRequestHandler.class.getCanonicalName(), "http://*/delayedthrowwrite"), Networking.disable)) {
-            Response response = container.handleRequest(req);
-            req.toString();
-        }
+            try (JDisc container = JDisc.fromServicesXml(getXML(DelayedThrowingInWriteRequestHandler.class.getCanonicalName(), "http://*/delayedthrowwrite"), Networking.disable)) {
+                Response response = container.handleRequest(req);
+                req.toString();
+            }
+
+        });
 
     }
 

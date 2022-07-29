@@ -4,11 +4,11 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -25,7 +25,7 @@ public class ClusterStateViewTest {
     }
 
     @Test
-    public void testWrongNodeType() {
+    void testWrongNodeType() {
         when(nodeInfo.isDistributor()).thenReturn(false);
 
         clusterStateView.handleUpdatedHostInfo(nodeInfo, createHostInfo("101"));
@@ -34,7 +34,7 @@ public class ClusterStateViewTest {
     }
 
     @Test
-    public void testStateVersionMismatch() {
+    void testStateVersionMismatch() {
         when(nodeInfo.isDistributor()).thenReturn(true);
         when(clusterState.getVersion()).thenReturn(101);
 
@@ -44,7 +44,7 @@ public class ClusterStateViewTest {
     }
 
     @Test
-    public void testFailToGetStats() {
+    void testFailToGetStats() {
         when(nodeInfo.isDistributor()).thenReturn(true);
         when(clusterState.getVersion()).thenReturn(101);
 
@@ -54,17 +54,17 @@ public class ClusterStateViewTest {
     }
 
     @Test
-    public void testSuccessCase() {
+    void testSuccessCase() {
         when(nodeInfo.isDistributor()).thenReturn(true);
         HostInfo hostInfo = HostInfo.createHostInfo(
                 "{" +
-                " \"cluster-state-version\": 101," +
-                " \"distributor\": {\n" +
-                "        \"storage-nodes\": [\n" +
-                "            {\n" +
-                "                \"node-index\": 3\n" +
-                "            }\n" +
-                "           ]}}");
+                        " \"cluster-state-version\": 101," +
+                        " \"distributor\": {\n" +
+                        "        \"storage-nodes\": [\n" +
+                        "            {\n" +
+                        "                \"node-index\": 3\n" +
+                        "            }\n" +
+                        "           ]}}");
 
 
         when(nodeInfo.getNodeIndex()).thenReturn(3);
@@ -76,7 +76,7 @@ public class ClusterStateViewTest {
     }
 
     @Test
-    public void testIndicesOfUpNodes() {
+    void testIndicesOfUpNodes() {
         when(clusterState.getNodeCount(NodeType.DISTRIBUTOR)).thenReturn(7);
 
         NodeState nodeState = mock(NodeState.class);

@@ -8,7 +8,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +19,7 @@ import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescr
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,17 +71,17 @@ public class GroupAutoTakedownTest {
      * not apply to a flat structure.
      */
     @Test
-    public void config_does_not_apply_to_flat_hierarchy_clusters() {
+    void config_does_not_apply_to_flat_hierarchy_clusters() {
         ClusterFixture fixture = createFixtureForAllUpFlatCluster(5, 0.99);
 
         assertEquals("distributor:5 storage:5", fixture.generatedClusterState());
 
         assertEquals("distributor:5 storage:5 .1.s:d",
-                     stateAfterStorageTransition(fixture, 1, State.DOWN));
+                stateAfterStorageTransition(fixture, 1, State.DOWN));
     }
 
     @Test
-    public void group_node_down_edge_implicitly_marks_down_rest_of_nodes_in_group() {
+    void group_node_down_edge_implicitly_marks_down_rest_of_nodes_in_group() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
@@ -89,28 +89,28 @@ public class GroupAutoTakedownTest {
 
         // Same group as node 4
         assertEquals("distributor:6 storage:4",
-                     stateAfterStorageTransition(fixture, 5, State.DOWN));
+                stateAfterStorageTransition(fixture, 5, State.DOWN));
         // Same group as node 1
         assertEquals("distributor:6 storage:4 .0.s:d .1.s:d",
-                     stateAfterStorageTransition(fixture, 0, State.DOWN));
+                stateAfterStorageTransition(fixture, 0, State.DOWN));
     }
 
     @Test
-    public void restored_group_node_availability_takes_group_back_up_automatically() {
+    void restored_group_node_availability_takes_group_back_up_automatically() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
         // Group #2 -> down
         assertEquals("distributor:6 storage:4",
-                     stateAfterStorageTransition(fixture, 5, State.DOWN));
+                stateAfterStorageTransition(fixture, 5, State.DOWN));
 
         // Group #2 -> back up again
         assertEquals("distributor:6 storage:6",
-                     stateAfterStorageTransition(fixture, 5, State.UP));
+                stateAfterStorageTransition(fixture, 5, State.UP));
     }
 
     @Test
-    public void no_op_for_downed_nodes_in_already_downed_group() {
+    void no_op_for_downed_nodes_in_already_downed_group() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
@@ -123,7 +123,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void verbose_node_state_description_updated_for_implicitly_downed_nodes() {
+    void verbose_node_state_description_updated_for_implicitly_downed_nodes() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.75);
 
@@ -131,15 +131,15 @@ public class GroupAutoTakedownTest {
         // Node 8 is taken down by the fixture and gets a fixture-assigned message that
         // we should _not_ lose/overwrite.
         assertEquals("distributor:9 storage:9 .6.s:d " +
-                        ".6.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
-                        ".7.s:d " +
-                        ".7.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
-                        ".8.s:d .8.m:mockdesc",
-                     verboseStateAfterStorageTransition(fixture, 8, State.DOWN));
+                ".6.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
+                ".7.s:d " +
+                ".7.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
+                ".8.s:d .8.m:mockdesc",
+                verboseStateAfterStorageTransition(fixture, 8, State.DOWN));
     }
 
     @Test
-    public void legacy_cluster_wide_availabilty_ratio_is_computed_after_group_takedowns() {
+    void legacy_cluster_wide_availabilty_ratio_is_computed_after_group_takedowns() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
         fixture.setMinNodesUp(5, 5, 0.51, 0.51);
@@ -152,7 +152,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void maintenance_wanted_state_not_overwritten() {
+    void maintenance_wanted_state_not_overwritten() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
 
@@ -166,7 +166,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void transient_maintenance_mode_on_down_edge_does_not_take_down_group() {
+    void transient_maintenance_mode_on_down_edge_does_not_take_down_group() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
         fixture.enableTransientMaintenanceModeOnDown(1000);
@@ -190,7 +190,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void taking_down_node_adds_node_specific_event() {
+    void taking_down_node_adds_node_specific_event() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
@@ -205,7 +205,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void bringing_node_back_up_adds_node_specific_event() {
+    void bringing_node_back_up_adds_node_specific_event() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
@@ -223,7 +223,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void wanted_state_retired_implicitly_down_node_is_transitioned_to_retired_mode_immediately() {
+    void wanted_state_retired_implicitly_down_node_is_transitioned_to_retired_mode_immediately() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
 
@@ -237,7 +237,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void downed_config_retired_node_transitions_back_to_retired_on_up_edge() {
+    void downed_config_retired_node_transitions_back_to_retired_on_up_edge() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.49);
 
@@ -252,14 +252,15 @@ public class GroupAutoTakedownTest {
         nodes.add(new ConfiguredNode(5, true));
         // TODO this should ideally also set the retired flag in the distribution
         // config, but only the ConfiguredNodes are actually looked at currently.
-        fixture.cluster.setNodes(nodes, new NodeListener() {});
+        fixture.cluster.setNodes(nodes, new NodeListener() {
+        });
 
         assertEquals("distributor:6 storage:6 .4.s:d .5.s:r",
                 stateAfterStorageTransition(fixture, 5, State.UP));
     }
 
     @Test
-    public void init_progress_is_preserved_across_group_down_up_edge() {
+    void init_progress_is_preserved_across_group_down_up_edge() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
@@ -277,7 +278,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void down_wanted_state_is_preserved_across_group_down_up_edge() {
+    void down_wanted_state_is_preserved_across_group_down_up_edge() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.60);
 
@@ -294,7 +295,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void previously_cleared_start_timestamps_are_not_reintroduced_on_up_edge() throws Exception {
+    void previously_cleared_start_timestamps_are_not_reintroduced_on_up_edge() throws Exception {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 

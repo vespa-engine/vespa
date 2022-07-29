@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.util.Collections;
@@ -49,7 +49,7 @@ public class GroupAvailabilityCalculatorTest {
     private static Set<Integer> emptySet() { return indices(); }
 
     @Test
-    public void flat_cluster_does_not_implicitly_take_down_nodes() {
+    void flat_cluster_does_not_implicitly_take_down_nodes() {
         GroupAvailabilityCalculator calc = calcForFlatCluster(5, 0.99);
 
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -58,7 +58,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void group_node_down_edge_implicitly_marks_down_rest_of_nodes_in_group() {
+    void group_node_down_edge_implicitly_marks_down_rest_of_nodes_in_group() {
         // 3 groups of 2 nodes, take down node #4 (1st node in last group). Since we require
         // at least 51% of group capacity to be available, implicitly take down the last group
         // entirely.
@@ -72,7 +72,7 @@ public class GroupAvailabilityCalculatorTest {
     // Setting 50% as min ratio in a group with 2 nodes should let group be up if
     // one node goes down.
     @Test
-    public void min_ratio_per_group_is_closed_interval() {
+    void min_ratio_per_group_is_closed_interval() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.50);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -80,7 +80,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void retired_node_is_counted_as_down() {
+    void retired_node_is_counted_as_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -88,7 +88,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void initializing_node_not_counted_as_down() {
+    void initializing_node_not_counted_as_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -96,7 +96,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void maintenance_node_not_counted_as_down() {
+    void maintenance_node_not_counted_as_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -104,7 +104,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void existing_maintenance_node_not_implicitly_downed_when_group_taken_down() {
+    void existing_maintenance_node_not_implicitly_downed_when_group_taken_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -112,7 +112,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void existing_retired_node_not_implicitly_downed_when_group_taken_down() {
+    void existing_retired_node_not_implicitly_downed_when_group_taken_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -120,7 +120,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void down_to_down_edge_keeps_group_down() {
+    void down_to_down_edge_keeps_group_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(2).eachWithNodeCount(4), 0.76);
 
@@ -135,7 +135,7 @@ public class GroupAvailabilityCalculatorTest {
     // causing "storage:6 .5.s:d" to be reduced to "storage:5". This still implies a
     // node is down according to the distribution config and must be handled as such.
     @Test
-    public void implicitly_downed_node_at_state_end_is_counted_as_explicitly_down() {
+    void implicitly_downed_node_at_state_end_is_counted_as_explicitly_down() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.99);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -143,7 +143,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void non_uniform_group_sizes_are_supported() {
+    void non_uniform_group_sizes_are_supported() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroupNodes(1, 2, 3, 4), 0.67);
 
@@ -167,7 +167,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void min_ratio_of_zero_never_takes_down_groups_implicitly() {
+    void min_ratio_of_zero_never_takes_down_groups_implicitly() {
         GroupAvailabilityCalculator calc = calcForHierarchicCluster(
                 DistributionBuilder.withGroups(2).eachWithNodeCount(4), 0.0);
         assertThat(calc.nodesThatShouldBeDown(clusterState(
@@ -184,7 +184,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void one_safe_maintenance_node_does_not_take_down_group() {
+    void one_safe_maintenance_node_does_not_take_down_group() {
         // 2 groups of 5 nodes each.  Set node #5 safely in maintenance (1st node in last group).
         // Since the minimum number of nodes that can safely be set to maintenance before taking
         // the whole group down is 2, the whole group should NOT be taken down.
@@ -204,7 +204,7 @@ public class GroupAvailabilityCalculatorTest {
     }
 
     @Test
-    public void two_safe_maintenance_nodes_takes_down_group() {
+    void two_safe_maintenance_nodes_takes_down_group() {
         // 2 groups of 5 nodes each.  Set nodes #5 and #6 safely in maintenance (1st and 2nd nodes
         // in last group, respectively).  Since the minimum number of nodes that can safely be set to
         // maintenance before taking the whole group down is 2, the whole group should be taken down.

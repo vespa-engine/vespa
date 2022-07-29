@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.distributorNode;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
@@ -124,7 +124,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void single_storage_node_state_transition_emits_altered_node_state_event() {
+    void single_storage_node_state_transition_emits_altered_node_state_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 storage:3 .0.s:d");
@@ -138,7 +138,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void single_distributor_node_state_transition_emits_altered_node_state_event() {
+    void single_distributor_node_state_transition_emits_altered_node_state_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 .1.s:d storage:3");
@@ -152,7 +152,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void node_state_change_event_is_tagged_with_given_time() {
+    void node_state_change_event_is_tagged_with_given_time() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 storage:3 .0.s:d")
@@ -164,7 +164,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void multiple_node_state_transitions_emit_multiple_node_state_events() {
+    void multiple_node_state_transitions_emit_multiple_node_state_events() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3 .1.s:d")
                 .clusterStateAfter("distributor:3 .2.s:d storage:3 .0.s:r");
@@ -183,7 +183,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void no_emitted_node_state_event_when_node_state_not_changed() {
+    void no_emitted_node_state_event_when_node_state_not_changed() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 storage:3");
@@ -193,7 +193,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void node_down_edge_with_group_down_reason_has_separate_event_emitted() {
+    void node_down_edge_with_group_down_reason_has_separate_event_emitted() {
         // We sneakily use a flat cluster here but still use a 'group down' reason. Differ doesn't currently care.
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
@@ -213,7 +213,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void group_down_to_group_down_does_not_emit_new_event() {
+    void group_down_to_group_down_does_not_emit_new_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3 .1.s:d")
                 .clusterStateAfter("distributor:3 storage:3 .1.s:m")
@@ -229,7 +229,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void group_down_to_clear_reason_emits_group_up_event() {
+    void group_down_to_clear_reason_emits_group_up_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3 .2.s:d")
                 .clusterStateAfter("distributor:3 storage:3")
@@ -247,7 +247,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void cluster_up_edge_emits_sufficient_node_availability_event() {
+    void cluster_up_edge_emits_sufficient_node_availability_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("cluster:d distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 storage:3");
@@ -259,7 +259,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void cluster_down_event_without_reason_annotation_emits_generic_down_event() {
+    void cluster_down_event_without_reason_annotation_emits_generic_down_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3");
@@ -271,7 +271,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void cluster_event_is_tagged_with_given_time() {
+    void cluster_event_is_tagged_with_given_time() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3")
@@ -283,7 +283,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void no_event_emitted_for_cluster_down_to_down_edge() {
+    void no_event_emitted_for_cluster_down_to_down_edge() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("cluster:d distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3");
@@ -293,7 +293,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void too_few_storage_nodes_cluster_down_reason_emits_corresponding_event() {
+    void too_few_storage_nodes_cluster_down_reason_emits_corresponding_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3")
@@ -307,7 +307,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void too_few_distributor_nodes_cluster_down_reason_emits_corresponding_event() {
+    void too_few_distributor_nodes_cluster_down_reason_emits_corresponding_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3")
@@ -320,7 +320,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void too_low_storage_node_ratio_cluster_down_reason_emits_corresponding_event() {
+    void too_low_storage_node_ratio_cluster_down_reason_emits_corresponding_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3")
@@ -333,7 +333,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void too_low_distributor_node_ratio_cluster_down_reason_emits_corresponding_event() {
+    void too_low_distributor_node_ratio_cluster_down_reason_emits_corresponding_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .clusterStateAfter("cluster:d distributor:3 storage:3")
@@ -346,7 +346,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void may_have_merges_pending_up_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
+    void may_have_merges_pending_up_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
         EventFixture f = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .derivedClusterStateBefore("default", "distributor:3 storage:3")
@@ -367,7 +367,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void may_have_merges_pending_down_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
+    void may_have_merges_pending_down_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
         EventFixture f = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .derivedClusterStateBefore("default", "distributor:3 storage:3 .1.s:m")
@@ -388,7 +388,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void both_baseline_and_derived_bucket_space_state_events_are_emitted() {
+    void both_baseline_and_derived_bucket_space_state_events_are_emitted() {
         EventFixture f = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .derivedClusterStateBefore("default", "distributor:3 storage:3")
@@ -408,7 +408,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void derived_bucket_space_state_events_are_not_emitted_if_similar_to_baseline() {
+    void derived_bucket_space_state_events_are_not_emitted_if_similar_to_baseline() {
         EventFixture f = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .derivedClusterStateBefore("default", "distributor:3 storage:3")
@@ -426,7 +426,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void storage_node_passed_maintenance_grace_period_emits_event() {
+    void storage_node_passed_maintenance_grace_period_emits_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3 .0.s:m")
                 .clusterStateAfter("distributor:3 storage:3 .0.s:d")
@@ -443,7 +443,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void storage_node_maintenance_grace_period_event_only_emitted_on_maintenance_to_down_edge() {
+    void storage_node_maintenance_grace_period_event_only_emitted_on_maintenance_to_down_edge() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3 .0.s:u")
                 .clusterStateAfter("distributor:3 storage:3 .0.s:d")
@@ -457,7 +457,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void feed_block_engage_edge_emits_cluster_event() {
+    void feed_block_engage_edge_emits_cluster_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(null)
@@ -471,7 +471,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void feed_block_disengage_edge_emits_cluster_event() {
+    void feed_block_disengage_edge_emits_cluster_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
@@ -484,7 +484,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void feed_block_engaged_to_engaged_edge_does_not_emit_new_cluster_event() {
+    void feed_block_engaged_to_engaged_edge_does_not_emit_new_cluster_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
@@ -496,7 +496,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void feed_block_engage_edge_with_node_exhaustion_info_emits_cluster_and_node_events() {
+    void feed_block_engage_edge_with_node_exhaustion_info_emits_cluster_and_node_events() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(null)
@@ -515,7 +515,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void added_exhaustion_in_feed_block_resource_set_emits_node_event() {
+    void added_exhaustion_in_feed_block_resource_set_emits_node_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(
@@ -533,7 +533,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void removed_exhaustion_in_feed_block_resource_set_emits_node_event() {
+    void removed_exhaustion_in_feed_block_resource_set_emits_node_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("distributor:3 storage:3")
                 .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(

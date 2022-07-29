@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,43 +52,43 @@ public class AggregatedStatsMergePendingCheckerTest {
     }
 
     @Test
-    public void unknown_content_node_may_have_merges_pending() {
+    void unknown_content_node_may_have_merges_pending() {
         Fixture f = Fixture.fromBucketsPending(1);
         assertTrue(f.mayHaveMergesPending("default", 2));
     }
 
     @Test
-    public void unknown_bucket_space_has_no_merges_pending() {
+    void unknown_bucket_space_has_no_merges_pending() {
         Fixture f = Fixture.fromBucketsPending(1);
         assertFalse(f.mayHaveMergesPending("global", 1));
     }
 
     @Test
-    public void valid_bucket_space_stats_can_have_no_merges_pending() {
+    void valid_bucket_space_stats_can_have_no_merges_pending() {
         Fixture f = Fixture.fromBucketsPending(0);
         assertFalse(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void valid_bucket_space_stats_may_have_merges_pending() {
+    void valid_bucket_space_stats_may_have_merges_pending() {
         Fixture f = Fixture.fromBucketsPending(1);
         assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void invalid_bucket_space_stats_may_have_merges_pending() {
+    void invalid_bucket_space_stats_may_have_merges_pending() {
         Fixture f = Fixture.fromInvalidBucketStats();
         assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void cluster_without_updates_from_all_distributors_may_have_merges_pending() {
+    void cluster_without_updates_from_all_distributors_may_have_merges_pending() {
         Fixture f = Fixture.fromIncompleteStats();
         assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void min_merge_completion_ratio_is_used_when_calculating_may_have_merges_pending() {
+    void min_merge_completion_ratio_is_used_when_calculating_may_have_merges_pending() {
         // Completion ratio is (5-3)/5 = 0.4
         assertTrue(Fixture.fromBucketsPending(3, 0.6).mayHaveMergesPending("default", 1));
         // Completion ratio is (5-2)/5 = 0.6

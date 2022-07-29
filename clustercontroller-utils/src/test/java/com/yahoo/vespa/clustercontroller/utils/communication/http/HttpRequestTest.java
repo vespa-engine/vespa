@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpRequestTest {
 
@@ -21,7 +19,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void testEquality() {
+    void testEquality() {
         assertEquals(createRequest(), createRequest());
         assertNotSame(createRequest(), createRequest().setHost("localhost"));
         assertNotSame(createRequest(), createRequest().setPort(40));
@@ -31,16 +29,16 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void testVerifyComplete() {
+    void testVerifyComplete() {
         // To be a complete request, an HTTP request must include:
         //  - A path
         //  - The HTTP operation type
-        try{
+        try {
             new HttpRequest().setPath("/foo").verifyComplete();
             assertTrue(false);
         } catch (IllegalStateException e) {
         }
-        try{
+        try {
             new HttpRequest().setHttpOperation(HttpRequest.HttpOp.GET).verifyComplete();
             assertTrue(false);
         } catch (IllegalStateException e) {
@@ -49,7 +47,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void testMerge() {
+    void testMerge() {
         {
             HttpRequest base = new HttpRequest()
                     .setHttpOperation(HttpRequest.HttpOp.POST)
@@ -92,25 +90,25 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void testNonExistingHeader() {
+    void testNonExistingHeader() {
         assertEquals("foo", new HttpRequest().getHeader("asd", "foo"));
         assertEquals("foo", new HttpRequest().addHttpHeader("bar", "foo").getHeader("asd", "foo"));
     }
 
     @Test
-    public void testOption() {
+    void testOption() {
         assertEquals("bar", new HttpRequest().addUrlOption("foo", "bar").getOption("foo", "foo"));
         assertEquals("foo", new HttpRequest().getOption("asd", "foo"));
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertEquals("GET? http://localhost:8080/",
-                     new HttpRequest()
-                             .setScheme("http")
-                             .setHost("localhost")
-                             .setPort(8080)
-                             .toString(true));
+                new HttpRequest()
+                        .setScheme("http")
+                        .setHost("localhost")
+                        .setPort(8080)
+                        .toString(true));
         assertEquals("POST http://localhost/",
                 new HttpRequest()
                         .setScheme("http")
@@ -127,7 +125,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void testNothingButGetCoverage() {
+    void testNothingButGetCoverage() {
         assertEquals(false, new HttpRequest().equals(new Object()));
         new HttpRequest().getHeaders();
         new HttpRequest().setUrlOptions(new HttpRequest().getUrlOptions());

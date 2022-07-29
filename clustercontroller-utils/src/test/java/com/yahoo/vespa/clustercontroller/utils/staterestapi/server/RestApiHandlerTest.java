@@ -2,16 +2,16 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RestApiHandlerTest {
     @Test
-    public void testParsingOfTimeout() throws InvalidContentException {
+    void testParsingOfTimeout() throws InvalidContentException {
         assertEquals(Optional.empty(), RestApiHandler.parseTimeout(null));
         assertEquals(Optional.of(Duration.ofMillis(12500)), RestApiHandler.parseTimeout("12.5"));
         assertEquals(Optional.of(Duration.ofMillis(0)), RestApiHandler.parseTimeout("-1"));
