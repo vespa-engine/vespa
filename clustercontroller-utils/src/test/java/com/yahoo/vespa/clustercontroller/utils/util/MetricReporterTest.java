@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MetricReporterTest {
 
@@ -31,10 +31,10 @@ public class MetricReporterTest {
             sb.append(" )\n");
             return new Context() {};
         }
-    };
+    }
 
     @Test
-    public void testNoMetricReporter() {
+    void testNoMetricReporter() {
         NoMetricReporter reporter = new NoMetricReporter();
         reporter.add("foo", 3, null);
         reporter.set("foo", 3, null);
@@ -42,7 +42,7 @@ public class MetricReporterTest {
     }
 
     @Test
-    public void testPrefix() {
+    void testPrefix() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
         c.addDimension("urk", "fy");
@@ -50,14 +50,14 @@ public class MetricReporterTest {
         c.set("bar", 1);
         assertEquals(
                 "createContext( )\n" +
-                "createContext( urk=fy )\n" +
-                "add(prefixfoo, 2)\n" +
-                "set(prefixbar, 1)\n", mock.sb.toString());
+                        "createContext( urk=fy )\n" +
+                        "add(prefixfoo, 2)\n" +
+                        "set(prefixbar, 1)\n", mock.sb.toString());
 
     }
 
     @Test
-    public void testWithContext() {
+    void testWithContext() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
         c.addDimension("urk", "fy");
@@ -67,27 +67,27 @@ public class MetricReporterTest {
         c.set("bar", 1, c.createContext(myContext));
         assertEquals(
                 "createContext( )\n" +
-                "createContext( urk=fy )\n" +
-                "createContext( myvar=3 urk=fy )\n" +
-                "add(prefixfoo, 2)\n" +
-                "createContext( myvar=3 urk=fy )\n" +
-                "set(prefixbar, 1)\n", mock.sb.toString());
+                        "createContext( urk=fy )\n" +
+                        "createContext( myvar=3 urk=fy )\n" +
+                        "add(prefixfoo, 2)\n" +
+                        "createContext( myvar=3 urk=fy )\n" +
+                        "set(prefixbar, 1)\n", mock.sb.toString());
     }
 
     @Test
-    public void testDefaultContext() {
+    void testDefaultContext() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
         c.addDimension("urk", "fy");
         c.add("foo", 2, c.createContext(null));
         assertEquals(
                 "createContext( )\n" +
-                "createContext( urk=fy )\n" +
-                "add(prefixfoo, 2)\n", mock.sb.toString());
+                        "createContext( urk=fy )\n" +
+                        "add(prefixfoo, 2)\n", mock.sb.toString());
     }
 
     @Test
-    public void testContextOverlap() {
+    void testContextOverlap() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
         c.addDimension("urk", "fy");
@@ -96,9 +96,9 @@ public class MetricReporterTest {
         c.add("foo", 2, c.createContext(myContext));
         assertEquals(
                 "createContext( )\n" +
-                "createContext( urk=fy )\n" +
-                "createContext( urk=yes )\n" +
-                "add(prefixfoo, 2)\n", mock.sb.toString());
+                        "createContext( urk=fy )\n" +
+                        "createContext( urk=yes )\n" +
+                        "add(prefixfoo, 2)\n", mock.sb.toString());
     }
 
 }

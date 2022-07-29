@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HttpResultTest {
 
     @Test
-    public void testSuccess() {
+    void testSuccess() {
         assertEquals(false, new HttpResult().setHttpCode(199, "foo").isSuccess());
         assertEquals(true, new HttpResult().setHttpCode(200, "foo").isSuccess());
         assertEquals(true, new HttpResult().setHttpCode(299, "foo").isSuccess());
@@ -16,7 +16,7 @@ public class HttpResultTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertEquals("HTTP 200/OK", new HttpResult().setContent("Foo").toString());
         assertEquals("HTTP 200/OK\n\nFoo", new HttpResult().setContent("Foo").toString(true));
         assertEquals("HTTP 200/OK", new HttpResult().toString(true));
@@ -24,7 +24,7 @@ public class HttpResultTest {
     }
 
     @Test
-    public void testNothingButGetCoverage() {
+    void testNothingButGetCoverage() {
         new HttpResult().getHeaders();
     }
 

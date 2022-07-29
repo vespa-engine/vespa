@@ -1,19 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AsyncTest {
 
     @Test
-    public void testListeners() {
+    void testListeners() {
         AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
         class Listener implements AsyncCallback<String> {
             boolean called = false;
+
             @Override
             public void done(AsyncOperation<String> op) {
                 called = true;
@@ -40,7 +41,7 @@ public class AsyncTest {
     }
 
     @Test
-    public void testMultipleResultSetters() {
+    void testMultipleResultSetters() {
         {
             AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
             op.setResult("foo");
@@ -65,7 +66,7 @@ public class AsyncTest {
     }
 
     @Test
-    public void testPartialResultOnFailure() {
+    void testPartialResultOnFailure() {
         AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
         op.setFailure(new Exception("bar"), "foo");
         assertEquals("foo", op.getResult());
@@ -74,14 +75,16 @@ public class AsyncTest {
     }
 
     @Test
-    public void testListenImpl() {
+    void testListenImpl() {
         class ListenImpl extends AsyncOperationListenImpl<String> {
             public ListenImpl(AsyncOperation<String> op) {
                 super(op);
             }
-        };
+        }
+        ;
         class Listener implements AsyncCallback<String> {
             int calls = 0;
+
             @Override
             public void done(AsyncOperation<String> op) {
                 ++calls;
@@ -98,7 +101,7 @@ public class AsyncTest {
     }
 
     @Test
-    public void testRedirectedOperation() {
+    void testRedirectedOperation() {
         {
             final AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test", "desc");
             AsyncOperation<Integer> deleteRequest = new RedirectedAsyncOperation<String, Integer>(op) {
@@ -147,7 +150,7 @@ public class AsyncTest {
     }
 
     @Test
-    public void testRedirectOnSuccessOperation() {
+    void testRedirectOnSuccessOperation() {
         {
             final AsyncOperationImpl<Integer> target = new AsyncOperationImpl<>("foo");
             SuccessfulAsyncCallback<String, Integer> callback = new SuccessfulAsyncCallback<String, Integer>(target) {
@@ -243,17 +246,17 @@ public class AsyncTest {
     }
 
     @Test
-    public void testStressCompletionAndRegisterToDetectRace() throws Exception {
+    void testStressCompletionAndRegisterToDetectRace() throws Exception {
         int iterations = 1000;
         Object monitor = new Object();
         Completer completer = new Completer(monitor);
         Listener listener = new Listener(monitor);
         Thread t1 = new Thread(completer);
         Thread t2 = new Thread(listener);
-        try{
+        try {
             t1.start();
             t2.start();
-            for (int i=0; i<iterations; ++i) {
+            for (int i = 0; i < iterations; ++i) {
                 AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
                 synchronized (monitor) {
                     completer.op = op;
@@ -261,7 +264,10 @@ public class AsyncTest {
                     monitor.notifyAll();
                 }
                 while (completer.op != null || listener.op != null) {
-                    try{ Thread.sleep(0); } catch (InterruptedException e) {}
+                    try {
+                        Thread.sleep(0);
+                    } catch (InterruptedException e) {
+                    }
                 }
             }
         } finally {

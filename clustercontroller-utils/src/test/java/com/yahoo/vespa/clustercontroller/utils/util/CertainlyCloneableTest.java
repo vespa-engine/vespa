@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CertainlyCloneableTest {
 
@@ -15,8 +15,8 @@ public class CertainlyCloneableTest {
     }
 
     @Test
-    public void testSimple() {
-        try{
+    void testSimple() {
+        try {
             Foo f = new Foo();
             f.clone();
             fail("Control should not get here");
