@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.ClusterState;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -53,7 +53,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void no_nodes_set_to_maintenance_in_global_bucket_space_state() {
+    void no_nodes_set_to_maintenance_in_global_bucket_space_state() {
         Fixture f = new Fixture();
         when(f.mockPendingChecker.mayHaveMergesPending(eq(globalSpace()), anyInt())).thenReturn(true); // False returned by default otherwise
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:2 storage:2"), globalSpace());
@@ -61,7 +61,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void content_nodes_with_global_merge_pending_set_to_maintenance_in_default_space_state() {
+    void content_nodes_with_global_merge_pending_set_to_maintenance_in_default_space_state() {
         Fixture f = new Fixture();
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 1)).thenReturn(true);
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 3)).thenReturn(true);
@@ -71,14 +71,14 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void no_nodes_set_to_maintenance_when_no_merges_pending() {
+    void no_nodes_set_to_maintenance_when_no_merges_pending() {
         Fixture f = new Fixture();
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5"), defaultSpace());
         assertThat(derived, equalTo(stateFromString("distributor:5 storage:5")));
     }
 
     @Test
-    public void default_space_merges_do_not_count_towards_maintenance() {
+    void default_space_merges_do_not_count_towards_maintenance() {
         Fixture f = new Fixture();
         when(f.mockPendingChecker.mayHaveMergesPending(eq(defaultSpace()), anyInt())).thenReturn(true);
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:2 storage:2"), defaultSpace());
@@ -86,7 +86,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void nodes_only_set_to_maintenance_when_marked_up_init_or_retiring() {
+    void nodes_only_set_to_maintenance_when_marked_up_init_or_retiring() {
         Fixture f = new Fixture();
         when(f.mockPendingChecker.mayHaveMergesPending(eq(globalSpace()), anyInt())).thenReturn(true);
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5 .1.s:m .2.s:r .3.s:i .4.s:d"), defaultSpace());
@@ -96,7 +96,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void node_state_reasons_are_used_as_baseline_in_default_bucket_space_state() {
+    void node_state_reasons_are_used_as_baseline_in_default_bucket_space_state() {
         Fixture f = new Fixture();
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 1)).thenReturn(true);
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 3)).thenReturn(true);
@@ -108,7 +108,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     }
 
     @Test
-    public void node_with_pending_merges_only_set_to_maintenance_if_eligible() {
+    void node_with_pending_merges_only_set_to_maintenance_if_eligible() {
         Fixture f = new Fixture();
         Arrays.asList(1, 2, 3).forEach(idx -> when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), idx)).thenReturn(true));
         Arrays.asList(1, 2, 4).forEach(idx -> when(f.mockTransitionConstraint.maintenanceTransitionAllowed(idx)).thenReturn(false));

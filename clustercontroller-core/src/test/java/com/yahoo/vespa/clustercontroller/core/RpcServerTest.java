@@ -20,7 +20,7 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,10 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author humbe
@@ -52,7 +49,7 @@ public class RpcServerTest extends FleetControllerTest {
     }
 
     @Test
-    public void testRebinding() throws Exception {
+    void testRebinding() throws Exception {
         startingTest("RpcServerTest::testRebinding");
         Slobrok slobrok = new Slobrok();
         String[] slobrokConnectionSpecs = new String[1];
@@ -81,17 +78,18 @@ public class RpcServerTest extends FleetControllerTest {
      * similar things, so strange if it should be from them too though. Maybe last test there.
      */
     @Test
-    public void testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork() {
-        try{
+    void testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork() {
+        try {
             startingTest("RpcServerTest::testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork");
             setUpFleetController(true, defaultOptions("mycluster"));
             setUpVdsNodes(true, new DummyVdsNodeOptions());
             waitForStableSystem();
-        } catch (Throwable t) {}
+        } catch (Throwable t) {
+        }
     }
 
     @Test
-    public void testGetSystemState() throws Exception {
+    void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
         startingTest("RpcServerTest::testGetSystemState");
         FleetControllerOptions options = defaultOptions("mycluster");
@@ -131,12 +129,12 @@ public class RpcServerTest extends FleetControllerTest {
 
         Request req = new Request("getSystemState");
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ss"), req.toString());
         String systemState = req.returnValues().get(1).asString();
         ClusterState retrievedClusterState = new ClusterState(systemState);
-        assertEquals(systemState, State.DOWN, retrievedClusterState.getNodeState(new Node(NodeType.DISTRIBUTOR, 0)).getState());
-        assertTrue(systemState, retrievedClusterState.getNodeState(new Node(NodeType.STORAGE, 9)).getState().oneOf("md"));
+        assertEquals(State.DOWN, retrievedClusterState.getNodeState(new Node(NodeType.DISTRIBUTOR, 0)).getState(), systemState);
+        assertTrue(retrievedClusterState.getNodeState(new Node(NodeType.STORAGE, 9)).getState().oneOf("md"), systemState);
     }
 
     private void setWantedNodeState(State newState, NodeType nodeType, int nodeIndex) {
@@ -154,12 +152,12 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage/cluster.mycluster/" + node.getType().toString() + "/" + node.getIndex()));
         req.parameters().add(new StringValue(newNodeState.serialize(true)));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("s"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("s"), req.toString());
     }
 
     @Test
-    public void testGetNodeState() throws Exception {
+    void testGetNodeState() throws Exception {
         startingTest("RpcServerTest::testGetNodeState");
         Set<ConfiguredNode> configuredNodes = new TreeSet<>();
         for (int i = 0; i < 10; i++)
@@ -199,19 +197,19 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("distributor"));
         req.parameters().add(new Int32Value(0));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(0).asString()).getState());
         NodeState reported = NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(1).asString());
-        assertTrue(req.returnValues().get(1).asString(), reported.getState().oneOf("d-"));
+        assertTrue(reported.getState().oneOf("d-"), req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
 
         req = new Request("getNodeState");
         req.parameters().add(new StringValue("distributor"));
         req.parameters().add(new Int32Value(2));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(0).asString()).getState());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(2).asString()).getState());
@@ -220,8 +218,8 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("distributor"));
         req.parameters().add(new Int32Value(4));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("", req.returnValues().get(0).asString());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
@@ -230,16 +228,16 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("distributor"));
         req.parameters().add(new Int32Value(15));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.METHOD_FAILED, req.errorCode());
+        assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
         assertEquals("No node distributor.15 exists in cluster mycluster", req.errorMessage());
-        assertFalse(req.toString(), req.checkReturnTypes("ssss"));
+        assertFalse(req.checkReturnTypes("ssss"), req.toString());
 
         req = new Request("getNodeState");
         req.parameters().add(new StringValue("storage"));
         req.parameters().add(new Int32Value(1));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("s:i i:0.2", req.returnValues().get(0).asString());
         assertEquals("s:i i:0.2", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
@@ -248,19 +246,19 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage"));
         req.parameters().add(new Int32Value(2));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(0).asString()).getState());
         reported = NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(1).asString());
-        assertTrue(req.returnValues().get(1).asString(), reported.getState().oneOf("d-"));
+        assertTrue(reported.getState().oneOf("d-"), req.returnValues().get(1).asString());
         assertEquals(State.RETIRED, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(2).asString()).getState());
 
         req = new Request("getNodeState");
         req.parameters().add(new StringValue("storage"));
         req.parameters().add(new Int32Value(5));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("", req.returnValues().get(0).asString());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
@@ -269,15 +267,15 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage"));
         req.parameters().add(new Int32Value(7));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("ssss"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.MAINTENANCE, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(0).asString()).getState());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals(State.MAINTENANCE, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(2).asString()).getState());
     }
 
     @Test
-    public void testGetNodeStateWithConfiguredRetired() throws Exception {
+    void testGetNodeStateWithConfiguredRetired() throws Exception {
         startingTest("RpcServerTest::testGetNodeStateWithConfiguredRetired");
         List<ConfiguredNode> configuredNodes = new ArrayList<>();
         for (int i = 0; i < 4; i++)
@@ -311,7 +309,7 @@ public class RpcServerTest extends FleetControllerTest {
     }
 
     @Test
-    public void testGetNodeStateWithConfigurationChangeToRetiredWhileNodeDown() throws Exception {
+    void testGetNodeStateWithConfigurationChangeToRetiredWhileNodeDown() throws Exception {
         startingTest("RpcServerTest::testGetNodeStateWithConfigurationChangeToRetiredWhileNodeDown");
 
         { // Configuration: 5 nodes, all normal
@@ -392,7 +390,7 @@ public class RpcServerTest extends FleetControllerTest {
     }
 
     @Test
-    public void testGetNodeStateWithConfigurationChangeToRetired() throws Exception {
+    void testGetNodeStateWithConfigurationChangeToRetired() throws Exception {
         startingTest("RpcServerTest::testGetNodeStateWithConfigurationChangeToRetired");
 
         { // Configuration: 5 nodes, all normal
@@ -450,27 +448,27 @@ public class RpcServerTest extends FleetControllerTest {
 
         { // Configuration change: Remove the previously retired nodes
             /*
-            TODO: Verify current result: version:23 distributor:7 .0.s:d .1.s:d .2.s:d .3.s:d .4.s:d storage:7 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:m
-            TODO: Make this work without stopping/disconnecting (see StateChangeHandler.setNodes
-            Set<ConfiguredNode> configuredNodes = new TreeSet<>();
-            configuredNodes.add(new ConfiguredNode(5, false));
-            configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
-            options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
-            this.options.maxInitProgressTimeMs = 30000;
-            this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
-            for (int i = 0; i < 5*2; i++) {
-                nodes.get(i).disconnectSlobrok();
-                nodes.get(i).disconnect();
-            }
-            waitForState("version:\\d+ distributor:7 storage:7 .0.s:d .1.s:d .2.s:d .3.s:d .4.s:d");
-            */
+        TODO: Verify current result: version:23 distributor:7 .0.s:d .1.s:d .2.s:d .3.s:d .4.s:d storage:7 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:m
+        TODO: Make this work without stopping/disconnecting (see StateChangeHandler.setNodes
+        Set<ConfiguredNode> configuredNodes = new TreeSet<>();
+        configuredNodes.add(new ConfiguredNode(5, false));
+        configuredNodes.add(new ConfiguredNode(6, false));
+        FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+        options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
+        this.options.maxInitProgressTimeMs = 30000;
+        this.options.stableStateTimePeriod = 60000;
+        fleetController.updateOptions(options, 0);
+        for (int i = 0; i < 5*2; i++) {
+            nodes.get(i).disconnectSlobrok();
+            nodes.get(i).disconnect();
+        }
+        waitForState("version:\\d+ distributor:7 storage:7 .0.s:d .1.s:d .2.s:d .3.s:d .4.s:d");
+        */
         }
     }
 
     @Test
-    public void testSetNodeState() throws Exception {
+    void testSetNodeState() throws Exception {
         startingTest("RpcServerTest::testSetNodeState");
         Set<Integer> nodeIndexes = new TreeSet<>(List.of(4, 6, 9, 10, 14, 16, 21, 22, 23, 25));
         Set<ConfiguredNode> configuredNodes = nodeIndexes.stream().map(i -> new ConfiguredNode(i, false)).collect(Collectors.toSet());
@@ -489,8 +487,8 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage/cluster.mycluster/storage/14"));
         req.parameters().add(new StringValue("s:r"));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("s"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("s"), req.toString());
 
         waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:r .*");
 
@@ -498,8 +496,8 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage/cluster.mycluster/storage/16"));
         req.parameters().add(new StringValue("s:m"));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("s"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("s"), req.toString());
 
         waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:r.* .16.s:m .*");
         nodes.get(5 * 2 + 1).disconnect();
@@ -517,7 +515,7 @@ public class RpcServerTest extends FleetControllerTest {
     }
 
     @Test
-    public void testSetNodeStateOutOfRange() throws Exception {
+    void testSetNodeStateOutOfRange() throws Exception {
         startingTest("RpcServerTest::testSetNodeStateOutOfRange");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
@@ -534,27 +532,27 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage/cluster.mycluster/storage/10"));
         req.parameters().add(new StringValue("s:m"));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.METHOD_FAILED, req.errorCode());
-        assertEquals(req.toString(), "Cannot set wanted state of node storage.10. Index does not correspond to a configured node.", req.errorMessage());
+        assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
+        assertEquals("Cannot set wanted state of node storage.10. Index does not correspond to a configured node.", req.errorMessage(), req.toString());
 
         req = new Request("setNodeState");
         req.parameters().add(new StringValue("storage/cluster.mycluster/distributor/10"));
         req.parameters().add(new StringValue("s:m"));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.METHOD_FAILED, req.errorCode());
-        assertEquals(req.toString(), "Cannot set wanted state of node distributor.10. Index does not correspond to a configured node.", req.errorMessage());
+        assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
+        assertEquals("Cannot set wanted state of node distributor.10. Index does not correspond to a configured node.", req.errorMessage(), req.toString());
 
         req = new Request("setNodeState");
         req.parameters().add(new StringValue("storage/cluster.mycluster/storage/9"));
         req.parameters().add(new StringValue("s:m"));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
 
         waitForState("version:\\d+ distributor:10 storage:10 .9.s:m");
     }
 
     @Test
-    public void testGetMaster() throws Exception {
+    void testGetMaster() throws Exception {
         startingTest("RpcServerTest::testGetMaster");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
@@ -569,14 +567,14 @@ public class RpcServerTest extends FleetControllerTest {
 
         Request req = new Request("getMaster");
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), 0, req.returnValues().get(0).asInt32());
-        assertEquals(req.toString(), "All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString());
+        assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
+        assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
 
         // Note that this feature is tested better in MasterElectionTest.testGetMaster as it has multiple fleetcontrollers
     }
 
     @Test
-    public void testGetNodeList() throws Exception {
+    void testGetNodeList() throws Exception {
         startingTest("RpcServerTest::testGetNodeList");
         setUpFleetController(true, defaultOptions("mycluster", 5));
         final int nodeCount = 5;
@@ -596,8 +594,8 @@ public class RpcServerTest extends FleetControllerTest {
         for (int j = 0; j <= nodeCount; ++j) {
             Request req = new Request("getNodeList");
             connection.invokeSync(req, timeoutS);
-            assertEquals(req.errorMessage(), ErrorCode.NONE, req.errorCode());
-            assertTrue(req.toString(), req.checkReturnTypes("SS"));
+            assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
+            assertTrue(req.checkReturnTypes("SS"), req.toString());
             String[] slobrok = req.returnValues().get(0).asStringArray().clone();
             String[] rpc = req.returnValues().get(1).asStringArray().clone();
 
@@ -610,7 +608,7 @@ public class RpcServerTest extends FleetControllerTest {
                     if (i < nodeCount && !"".equals(rpc[i])) {
                         continue;
                     }
-                    assertEquals(slobrok[i], "", rpc[i]);
+                    assertEquals("", rpc[i], slobrok[i]);
                     continue;
                 }
                 assertNotEquals("", rpc[i]);
@@ -618,7 +616,7 @@ public class RpcServerTest extends FleetControllerTest {
                 req2.parameters().add(new StringValue("unknown"));
                 Target connection2 = supervisor.connect(new Spec(rpc[i]));
                 connection2.invokeSync(req2, timeoutS);
-                assertEquals(req2.toString(), ErrorCode.NONE, req.errorCode());
+                assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
             }
             break;
         }

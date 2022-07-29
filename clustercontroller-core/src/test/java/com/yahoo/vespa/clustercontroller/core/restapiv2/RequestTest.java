@@ -2,22 +2,21 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RequestTest {
 
     @Test
-    public void testGetResultBeforeCompletion() {
+    void testGetResultBeforeCompletion() {
         Request<String> r = new Request<>(Request.MasterState.MUST_BE_MASTER) {
             @Override
             public String calculateResult(Context context) {
                 return "foo";
             }
         };
-        try{
+        try {
             r.getResult();
             fail();
         } catch (InternalFailure e) {
@@ -25,7 +24,7 @@ public class RequestTest {
             fail();
         }
         r.notifyCompleted();
-        try{
+        try {
             r.getResult();
             fail();
         } catch (InternalFailure e) {

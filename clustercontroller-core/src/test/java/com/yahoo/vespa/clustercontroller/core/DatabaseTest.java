@@ -12,22 +12,21 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DatabaseTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(DatabaseTest.class.getName());
 
     @Test
-    public void testWantedStatesInZooKeeper() throws Exception {
+    void testWantedStatesInZooKeeper() throws Exception {
         startingTest("DatabaseTest::testWantedStatesInZooKeeper");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.zooKeeperServerAddress = "127.0.0.1";
@@ -81,7 +80,7 @@ public class DatabaseTest extends FleetControllerTest {
     }
 
     @Test
-    public void testWantedStateOfUnknownNode() throws Exception {
+    void testWantedStateOfUnknownNode() throws Exception {
         startingTest("DatabaseTest::testWantedStatesOfUnknownNode");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.minRatioOfDistributorNodesUp = 0;
@@ -124,7 +123,7 @@ public class DatabaseTest extends FleetControllerTest {
         assertWantedStates(wantedStates);
 
         stopFleetController();
-        for (int i=6; i<nodes.size(); ++i) nodes.get(i).disconnect();
+        for (int i = 6; i < nodes.size(); ++i) nodes.get(i).disconnect();
         startFleetController();
 
         waitForState("version:\\d+ distributor:3 storage:7 .1.s:m .3.s:d .4.s:d .5.s:d .6.s:m");
@@ -132,14 +131,14 @@ public class DatabaseTest extends FleetControllerTest {
         setWantedState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.UP), wantedStates);
         waitForState("version:\\d+ distributor:3 storage:3 .1.s:m");
 
-        for (int i=6; i<nodes.size(); ++i) nodes.get(i).connect();
+        for (int i = 6; i < nodes.size(); ++i) nodes.get(i).connect();
         waitForState("version:\\d+ distributor:10 .8.s:d storage:10 .1.s:m .7.s:r .8.s:d");
         assertWantedStates(wantedStates);
     }
 
     private void assertWantedStates(Map<Node, NodeState> wantedStates) {
         for (DummyVdsNode node : nodes) {
-            assertEquals(node.getNode().toString(), wantedStates.get(node.getNode()), fleetController.getWantedNodeState(node.getNode()));
+            assertEquals(wantedStates.get(node.getNode()), fleetController.getWantedNodeState(node.getNode()), node.getNode().toString());
         }
     }
 
@@ -156,8 +155,8 @@ public class DatabaseTest extends FleetControllerTest {
         req.parameters().add(new StringValue("storage/cluster.mycluster/" + n.getType().toString() + "/" + n.getIndex()));
         req.parameters().add(new StringValue(ns.serialize(true)));
         connection.invokeSync(req, timeoutS);
-        assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
-        assertTrue(req.toString(), req.checkReturnTypes("s"));
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
+        assertTrue(req.checkReturnTypes("s"), req.toString());
         wantedStates.put(n, ns);
     }
 

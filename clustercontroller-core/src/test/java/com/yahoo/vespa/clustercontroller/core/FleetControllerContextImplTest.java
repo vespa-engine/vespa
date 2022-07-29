@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author hakonhall
@@ -20,7 +20,7 @@ public class FleetControllerContextImplTest {
     private final FleetControllerContextImpl context = new FleetControllerContextImpl(id);
 
     @Test
-    public void verify() {
+    void verify() {
         context.log(logger, Level.INFO, "A %s message", "log");
 
         assertEquals(1, logger.records.size());

@@ -12,10 +12,9 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,22 +23,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(FleetControllerTest.CleanupZookeeperLogsOnSuccess.class)
+@Timeout(120)
 public class MasterElectionTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
 
     private Supervisor supervisor;
     private final List<FleetController> fleetControllers = new ArrayList<>();
-
-    @Rule
-    public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
-
-    @Rule
-    public Timeout globalTimeout = Timeout.seconds(120);
 
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
@@ -116,7 +111,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testMasterElection() throws Exception {
+    void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
         log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
         FleetControllerOptions options = defaultOptions("mycluster");
@@ -135,7 +130,7 @@ public class MasterElectionTest extends FleetControllerTest {
         // Too few for there to be a master at this point
         for (int i = 0; i < fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
-            assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());
+            assertFalse(fleetControllers.get(i).isMaster(), "Fleet controller " + i);
         }
 
         StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
@@ -222,7 +217,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testClusterStateVersionIncreasesAcrossMasterElections() throws Exception {
+    void testClusterStateVersionIncreasesAcrossMasterElections() throws Exception {
         startingTest("MasterElectionTest::testClusterStateVersionIncreasesAcrossMasterElections");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
@@ -243,7 +238,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testVotingCorrectnessInFaceOfZKDisconnect() throws Exception {
+    void testVotingCorrectnessInFaceOfZKDisconnect() throws Exception {
         startingTest("MasterElectionTest::testVotingCorrectnessInFaceOfZKDisconnect");
         FleetControllerOptions options = defaultOptions("mycluster");
         // "Magic" port value is in range allocated to module for testing.
@@ -264,7 +259,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testZooKeeperUnavailable() throws Exception {
+    void testZooKeeperUnavailable() throws Exception {
         startingTest("MasterElectionTest::testZooKeeperUnavailable");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 100;
@@ -279,7 +274,7 @@ public class MasterElectionTest extends FleetControllerTest {
         // No one can be master if server is unavailable
         log.log(Level.INFO, "Checking master status");
         for (int i = 0; i < fleetControllers.size(); ++i) {
-            assertFalse("Index " + i, fleetControllers.get(i).isMaster());
+            assertFalse(fleetControllers.get(i).isMaster(), "Index " + i);
         }
 
         zooKeeperServer = new ZooKeeperTestServer();
@@ -295,7 +290,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testMasterZooKeeperCooldown() throws Exception {
+    void testMasterZooKeeperCooldown() throws Exception {
         startingTest("MasterElectionTest::testMasterZooKeeperCooldown");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
@@ -343,7 +338,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void testGetMaster() throws Exception {
+    void testGetMaster() throws Exception {
         startingTest("MasterElectionTest::testGetMaster");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
@@ -364,33 +359,33 @@ public class MasterElectionTest extends FleetControllerTest {
 
         Request req = new Request("getMaster");
 
-        for (int nodeIndex = 0; nodeIndex<3; ++nodeIndex) {
+        for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
             for (int retry = 0; retry < FleetControllerTest.timeoutS * 10; ++retry) {
                 req = new Request("getMaster");
                 connections.get(nodeIndex).invokeSync(req, FleetControllerTest.timeoutS);
-                assertFalse(req.errorMessage(), req.isError());
+                assertFalse(req.isError(), req.errorMessage());
                 if (req.returnValues().get(0).asInt32() == 0 &&
-                    req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
+                        req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
                     break;
                 }
             }
-            assertEquals(req.toString(), 0, req.returnValues().get(0).asInt32());
-            assertEquals(req.toString(), "All 3 nodes agree that 0 is current master.", req.returnValues().get(1).asString());
+            assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
+            assertEquals("All 3 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
         }
 
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
-            // Wait until fc 1 & 2 votes for node 1
+        // Wait until fc 1 & 2 votes for node 1
         waitForCompleteCycle(1);
         waitForCompleteCycle(2);
-            // 5 minutes is not long enough period to wait before letting this node be master.
+        // 5 minutes is not long enough period to wait before letting this node be master.
         timer.advanceTime(300 * 1000); // 5 minutes
 
-        int[] remainingNodes = { 1, 2 };
+        int[] remainingNodes = {1, 2};
         waitForMasterReason(
                 "2 of 3 nodes agree 1 should be master, but old master cooldown period of 3600000 ms has not passed yet. To ensure it has got time to realize it is no longer master before we elect a new one, currently there is no master.",
                 -1, connections, remainingNodes);
-            // Verify that fc 1 is not master, and the correct reasons for why not
+        // Verify that fc 1 is not master, and the correct reasons for why not
         assertFalse(fleetControllers.get(1).isMaster());
 
         // But after an hour it should become one.
@@ -399,31 +394,31 @@ public class MasterElectionTest extends FleetControllerTest {
 
         req = new Request("getMaster");
         connections.get(0).invokeSync(req, FleetControllerTest.timeoutS);
-        assertEquals(req.toString(), 104, req.errorCode());
-        assertEquals(req.toString(), "Connection error", req.errorMessage());
+        assertEquals(104, req.errorCode(), req.toString());
+        assertEquals("Connection error", req.errorMessage(), req.toString());
 
-        for (int i=0; i<FleetControllerTest.timeoutS * 10; ++i) {
+        for (int i = 0; i < FleetControllerTest.timeoutS * 10; ++i) {
             req = new Request("getMaster");
             connections.get(1).invokeSync(req, FleetControllerTest.timeoutS);
-            assertFalse(req.errorMessage(), req.isError());
+            assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
-                // We may have bad timing causing node not to have realized it is master yet
+            // We may have bad timing causing node not to have realized it is master yet
         }
-        assertEquals(req.toString(), 1, req.returnValues().get(0).asInt32());
-        assertEquals(req.toString(), "2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString());
+        assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
+        assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
 
-        for (int i=0; i<FleetControllerTest.timeoutS * 10; ++i) {
+        for (int i = 0; i < FleetControllerTest.timeoutS * 10; ++i) {
             req = new Request("getMaster");
             connections.get(2).invokeSync(req, FleetControllerTest.timeoutS);
-            assertFalse(req.errorMessage(), req.isError());
+            assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
         }
-        assertEquals(req.toString(), 1, req.returnValues().get(0).asInt32());
-        assertEquals(req.toString(), "2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString());
+        assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
+        assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
     }
 
     @Test
-    public void testReconfigure() throws Exception {
+    void testReconfigure() throws Exception {
         startingTest("MasterElectionTest::testReconfigure");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
@@ -431,7 +426,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
 
         FleetControllerOptions newOptions = options.clone();
-        for (int i=0; i<fleetControllers.size(); ++i) {
+        for (int i = 0; i < fleetControllers.size(); ++i) {
             FleetControllerOptions nodeOptions = adjustConfig(newOptions, i, fleetControllers.size());
             fleetControllers.get(i).updateOptions(nodeOptions);
         }
@@ -448,7 +443,7 @@ public class MasterElectionTest extends FleetControllerTest {
      * risk rolling back the version number in the face of a reelection.
      */
     @Test
-    public void cluster_state_version_written_to_zookeeper_even_with_empty_send_set() throws Exception {
+    void cluster_state_version_written_to_zookeeper_even_with_empty_send_set() throws Exception {
         startingTest("MasterElectionTest::cluster_state_version_written_to_zookeeper_even_with_empty_send_set");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
@@ -474,7 +469,7 @@ public class MasterElectionTest extends FleetControllerTest {
             n.disconnectImmediately();
             waitForCompleteCycle(0);
         });
-        setWantedState(this.nodes.get(2*10 - 1), State.MAINTENANCE, "bar");
+        setWantedState(this.nodes.get(2 * 10 - 1), State.MAINTENANCE, "bar");
         waitForCompleteCycle(0);
 
         // This receives the version number of the highest _working_ cluster state, with
@@ -494,7 +489,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps() throws Exception {
+    void previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps() throws Exception {
         startingTest("MasterElectionTest::previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.clusterHasGlobalDocumentTypes = true;
@@ -537,7 +532,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
-    public void default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types() throws Exception {
+    void default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types() throws Exception {
         startingTest("MasterElectionTest::default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.clusterHasGlobalDocumentTypes = false;

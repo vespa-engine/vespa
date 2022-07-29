@@ -12,8 +12,8 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.mocks.TestEventLog;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 import java.util.LinkedList;
@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StateChangeHandlerTest {
 
@@ -76,7 +76,7 @@ public class StateChangeHandlerTest {
     private TestNodeListener nodeStateUpdateListener;
     private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         LogFormatter.initializeLogging();
     }
@@ -125,7 +125,7 @@ public class StateChangeHandlerTest {
         log.info("Marking " + node + " out of slobrok");
         cluster.getNodeInfo(node).markRpcAddressOutdated(clock);
         nodeStateChangeHandler.handleMissingNode(stateBefore, cluster.getNodeInfo(node), nodeStateUpdateListener);
-        assertTrue(eventLog.toString(), eventLog.toString().contains("Node is no longer in slobrok"));
+        assertTrue(eventLog.toString().contains("Node is no longer in slobrok"), eventLog.toString());
         eventLog.clear();
     }
 
@@ -159,16 +159,16 @@ public class StateChangeHandlerTest {
     }
 
     @Test
-    public void testUnstableNodeInSlobrok() {
+    void testUnstableNodeInSlobrok() {
         initialize(new Config());
         startWithStableStateClusterWithNodesUp();
         Node node = new Node(NodeType.STORAGE, 0);
-        for (int j=0; j<3; ++j) {
+        for (int j = 0; j < 3; ++j) {
             log.info("Iteration " + j);
             assertEquals(0, cluster.getNodeInfo(node).getPrematureCrashCount());
             assertEquals(State.UP, cluster.getNodeInfo(node).getWantedState().getState());
             assertEquals(State.UP, currentClusterState().getNodeState(node).getState());
-            for (int k=0; k<config.maxPrematureCrashes; ++k) {
+            for (int k = 0; k < config.maxPrematureCrashes; ++k) {
                 log.info("Premature iteration " + k);
                 markNodeOutOfSlobrok(node);
 

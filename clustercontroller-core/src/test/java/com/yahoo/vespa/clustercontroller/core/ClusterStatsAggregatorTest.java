@@ -2,13 +2,11 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -67,7 +65,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_handles_updates_to_single_distributor_and_content_node() {
+    void aggregator_handles_updates_to_single_distributor_and_content_node() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3));
         ContentClusterStatsBuilder stats = new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
@@ -77,7 +75,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_handles_updates_to_multiple_distributors_and_content_nodes() {
+    void aggregator_handles_updates_to_multiple_distributors_and_content_nodes() {
         Fixture f = new FourNodesFixture();
 
         f.verify(new ContentClusterStatsBuilder()
@@ -88,7 +86,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_handles_multiple_updates_from_same_distributor() {
+    void aggregator_handles_multiple_updates_from_same_distributor() {
         Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3));
 
         f.update(1, new ContentClusterStatsBuilder().add(3, "default"));
@@ -111,7 +109,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_handles_more_content_nodes_that_distributors() {
+    void aggregator_handles_more_content_nodes_that_distributors() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
         ContentClusterStatsBuilder stats = new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
@@ -121,7 +119,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_ignores_updates_to_unknown_distributor() {
+    void aggregator_ignores_updates_to_unknown_distributor() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3));
         final int downDistributorIndex = 2;
         f.update(downDistributorIndex, new ContentClusterStatsBuilder()
@@ -130,7 +128,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_tracks_when_it_has_updates_from_all_distributors() {
+    void aggregator_tracks_when_it_has_updates_from_all_distributors() {
         Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3));
         assertFalse(f.hasUpdatesFromAllDistributors());
         f.update(1, new ContentClusterStatsBuilder().add(3, "default"));
@@ -142,7 +140,7 @@ public class ClusterStatsAggregatorTest {
     }
 
     @Test
-    public void aggregator_can_provide_aggregated_stats_per_distributor() {
+    void aggregator_can_provide_aggregated_stats_per_distributor() {
         Fixture f = new FourNodesFixture();
 
         f.verify(1, ContentNodeStatsBuilder.forNode(1)

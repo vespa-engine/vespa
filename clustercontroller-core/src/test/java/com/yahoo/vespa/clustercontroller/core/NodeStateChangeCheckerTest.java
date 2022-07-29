@@ -13,17 +13,14 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -107,7 +104,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeForce() {
+    void testCanUpgradeForce() {
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(createCluster(createNodes(1)));
         NodeState newState = new NodeState(NodeType.STORAGE, State.INITIALIZING);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
@@ -118,7 +115,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDeniedInMoratorium() {
+    void testDeniedInMoratorium() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
                 requiredRedundancy, noopVisiting, cluster.clusterInfo(), true);
@@ -131,7 +128,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testUnknownStorageNode() {
+    void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
                 requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
@@ -144,7 +141,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testSafeMaintenanceDisallowedWhenOtherStorageNodeInFlatClusterIsSuspended() {
+    void testSafeMaintenanceDisallowedWhenOtherStorageNodeInFlatClusterIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(createNodes(4));
         cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
@@ -164,7 +161,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
+    void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(createNodes(4));
         cluster.clusterInfo().getDistributorNodeInfo(0)
@@ -185,7 +182,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testSafeMaintenanceDisallowedWhenDistributorInGroupIsDown() {
+    void testSafeMaintenanceDisallowedWhenDistributorInGroupIsDown() {
         // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(createNodes(4));
@@ -214,13 +211,13 @@ public class NodeStateChangeCheckerTest {
             NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                     new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
                     SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
-            assertFalse(result.getReason(), result.settingWantedStateIsAllowed());
+            assertFalse(result.settingWantedStateIsAllowed(), result.getReason());
             assertEquals("Another distributor wants state DOWN: 0", result.getReason());
         }
     }
 
     @Test
-    public void testSafeMaintenanceWhenOtherStorageNodeInGroupIsSuspended() {
+    void testSafeMaintenanceWhenOtherStorageNodeInGroupIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(createNodes(4));
@@ -249,7 +246,7 @@ public class NodeStateChangeCheckerTest {
             NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                     new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
                     SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
-            assertTrue(result.getReason(), result.settingWantedStateIsAllowed());
+            assertTrue(result.settingWantedStateIsAllowed(), result.getReason());
             assertFalse(result.wantedStateAlreadySet());
         }
     }
@@ -295,7 +292,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testSafeSetStateDistributors() {
+    void testSafeSetStateDistributors() {
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(createCluster(createNodes(1)));
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeDistributor, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
@@ -306,7 +303,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeSafeMissingStorage() {
+    void testCanUpgradeSafeMissingStorage() {
         // Create a content cluster with 4 nodes, and storage node with index 3 down.
         ContentCluster cluster = createCluster(createNodes(4));
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
@@ -327,14 +324,14 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeStorageSafeYes() {
+    void testCanUpgradeStorageSafeYes() {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithNoStorageNodesDown();
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testSetUpFailsIfReportedIsDown() {
+    void testSetUpFailsIfReportedIsDown() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         // Not setting nodes up -> all are down
@@ -349,7 +346,7 @@ public class NodeStateChangeCheckerTest {
     // A node may be reported as Up but have a generated state of Down if it's part of
     // nodes taken down implicitly due to a group having too low node availability.
     @Test
-    public void testSetUpSucceedsIfReportedIsUpButGeneratedIsDown() {
+    void testSetUpSucceedsIfReportedIsUpButGeneratedIsDown() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
@@ -367,7 +364,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanSetUpEvenIfOldWantedStateIsDown() {
+    void testCanSetUpEvenIfOldWantedStateIsDown() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 3, 6)));
@@ -380,7 +377,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeStorageSafeNo() {
+    void testCanUpgradeStorageSafeNo() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 3, 6)));
@@ -395,7 +392,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeIfMissingMinReplicationFactor() {
+    void testCanUpgradeIfMissingMinReplicationFactor() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 3, 6)));
@@ -408,7 +405,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeIfStorageNodeMissingFromNodeInfo() {
+    void testCanUpgradeIfStorageNodeMissingFromNodeInfo() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         String hostInfo = "{\n" +
@@ -432,7 +429,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testMissingDistributorState() {
+    void testMissingDistributorState() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
         cluster.clusterInfo().getStorageNodeInfo(1).setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
@@ -460,20 +457,20 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testSettingUpWhenUpCausesAlreadySet() {
+    void testSettingUpWhenUpCausesAlreadySet() {
         NodeStateChangeChecker.Result result = transitionToSameState(State.UP, "foo", "bar");
         assertTrue(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testSettingAlreadySetState() {
+    void testSettingAlreadySetState() {
         NodeStateChangeChecker.Result result = transitionToSameState("foo", "foo");
         assertFalse(result.settingWantedStateIsAllowed());
         assertTrue(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testDifferentDescriptionImpliesDenied() {
+    void testDifferentDescriptionImpliesDenied() {
         NodeStateChangeChecker.Result result = transitionToSameState("foo", "bar");
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
@@ -526,28 +523,28 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCanUpgradeWhenAllUp() {
+    void testCanUpgradeWhenAllUp() {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithNoStorageNodesDown();
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testCanUpgradeWhenAllUpOrRetired() {
+    void testCanUpgradeWhenAllUpOrRetired() {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithNoStorageNodesDown();
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testCanUpgradeWhenStorageIsDown() {
+    void testCanUpgradeWhenStorageIsDown() {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithOneStorageNodeDown(nodeStorage.getIndex());
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
-    public void testCannotUpgradeWhenOtherStorageIsDown() {
+    void testCannotUpgradeWhenOtherStorageIsDown() {
         int otherIndex = 2;
         // If this fails, just set otherIndex to some other valid index.
         assertNotEquals(nodeStorage.getIndex(), otherIndex);
@@ -559,7 +556,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testNodeRatioRequirementConsidersGeneratedNodeStates() {
+    void testNodeRatioRequirementConsidersGeneratedNodeStates() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
@@ -581,7 +578,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDownDisallowedByNonRetiredState() {
+    void testDownDisallowedByNonRetiredState() {
         NodeStateChangeChecker.Result result = evaluateDownTransition(
                 defaultAllUpClusterState(),
                 State.UP,
@@ -593,7 +590,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDownDisallowedByBuckets() {
+    void testDownDisallowedByBuckets() {
         NodeStateChangeChecker.Result result = evaluateDownTransition(
                 retiredClusterStateSuffix(),
                 State.UP,
@@ -605,7 +602,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDownDisallowedByReportedState() {
+    void testDownDisallowedByReportedState() {
         NodeStateChangeChecker.Result result = evaluateDownTransition(
                 retiredClusterStateSuffix(),
                 State.INITIALIZING,
@@ -617,7 +614,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDownDisallowedByVersionMismatch() {
+    void testDownDisallowedByVersionMismatch() {
         NodeStateChangeChecker.Result result = evaluateDownTransition(
                 retiredClusterStateSuffix(),
                 State.UP,
@@ -630,7 +627,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testAllowedToSetDown() {
+    void testAllowedToSetDown() {
         NodeStateChangeChecker.Result result = evaluateDownTransition(
                 retiredClusterStateSuffix(),
                 State.UP,

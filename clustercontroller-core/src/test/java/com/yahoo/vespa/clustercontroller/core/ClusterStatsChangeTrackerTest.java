@@ -2,12 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClusterStatsChangeTrackerTest {
 
@@ -74,39 +74,39 @@ public class ClusterStatsChangeTrackerTest {
     }
 
     @Test
-    public void stats_have_not_changed_if_not_all_distributors_are_updated() {
+    void stats_have_not_changed_if_not_all_distributors_are_updated() {
         Fixture f = Fixture.empty();
         assertFalse(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_in_sync_node_not_found_in_previous_stats() {
+    void stats_have_changed_if_in_sync_node_not_found_in_previous_stats() {
         Fixture f = Fixture.fromStats(stats().inSync(0));
         assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_buckets_pending_node_not_found_in_previous_stats() {
+    void stats_have_changed_if_buckets_pending_node_not_found_in_previous_stats() {
         Fixture f = Fixture.fromStats(stats().bucketsPending(0));
         assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_one_node_has_in_sync_to_buckets_pending_transition() {
+    void stats_have_changed_if_one_node_has_in_sync_to_buckets_pending_transition() {
         Fixture f = Fixture.fromStats(stats().bucketsPending(0).inSync(1));
         f.newAggregatedStats(stats().bucketsPending(0).bucketsPending(1));
         assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_one_node_has_buckets_pending_to_in_sync_transition() {
+    void stats_have_changed_if_one_node_has_buckets_pending_to_in_sync_transition() {
         Fixture f = Fixture.fromStats(stats().bucketsPending(0).bucketsPending(1));
         f.newAggregatedStats(stats().bucketsPending(0).inSync(1));
         assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_not_changed_if_no_nodes_have_changed_state() {
+    void stats_have_not_changed_if_no_nodes_have_changed_state() {
         Fixture f = Fixture.fromStats(stats().bucketsPending(0).bucketsPending(1));
         f.newAggregatedStats(stats().bucketsPending(0).bucketsPending(1));
         assertFalse(f.statsHaveChanged());
