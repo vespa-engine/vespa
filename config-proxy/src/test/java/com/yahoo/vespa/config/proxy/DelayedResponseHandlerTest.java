@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.assertEquals;
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author hmusum
@@ -15,17 +16,17 @@ public class DelayedResponseHandlerTest {
 
     private final MockConfigSource source = new MockConfigSource();
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         source.clear();
         source.put(ProxyServerTest.fooConfig.getKey(), ProxyServerTest.createConfigWithNextConfigGeneration(ProxyServerTest.fooConfig, 0));
     }
 
     @Test
-    public void basic() {
+    void basic() {
         ConfigTester tester = new ConfigTester();
         DelayedResponses delayedResponses = new DelayedResponses();
         MemoryCache memoryCache = new MemoryCache();

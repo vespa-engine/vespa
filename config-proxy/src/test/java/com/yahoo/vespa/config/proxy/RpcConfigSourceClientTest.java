@@ -5,12 +5,13 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.assertEquals;
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author hmusum
@@ -20,18 +21,18 @@ public class RpcConfigSourceClientTest {
     private ResponseHandler responseHandler;
     private RpcConfigSourceClient rpcConfigSourceClient;
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    public File tempFolder;
 
 
-    @Before
+    @BeforeEach
     public void setup() {
         responseHandler = new ResponseHandler(true);
         rpcConfigSourceClient = new RpcConfigSourceClient(responseHandler, new MockConfigSource());
     }
 
     @Test
-    public void basic() {
+    void basic() {
         final RawConfig fooConfig = ProxyServerTest.fooConfig;
         configUpdatedSendResponse(fooConfig);
         // Nobody asked for the config, so no response sent
@@ -48,13 +49,13 @@ public class RpcConfigSourceClientTest {
     }
 
     @Test
-    public void errorResponse() {
+    void errorResponse() {
         configUpdatedSendResponse(ProxyServerTest.errorConfig);
         assertSentResponses(0);
     }
 
     @Test
-    public void it_does_not_send_old_config_in_response() {
+    void it_does_not_send_old_config_in_response() {
         RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
 
         RawConfig fooConfig = createConfigWithNextConfigGeneration(fooConfigOldGeneration);
@@ -74,7 +75,7 @@ public class RpcConfigSourceClientTest {
     }
 
     @Test
-    public void it_does_send_config_with_generation_0_in_response() {
+    void it_does_send_config_with_generation_0_in_response() {
         RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
 
         RawConfig fooConfig = createConfigWithNextConfigGeneration(fooConfigOldGeneration, 1);

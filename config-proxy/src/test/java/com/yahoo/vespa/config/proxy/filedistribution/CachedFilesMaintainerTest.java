@@ -2,18 +2,17 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author hmusum
@@ -24,18 +23,18 @@ public class CachedFilesMaintainerTest {
     private File cachedDownloads;
     private CachedFilesMaintainer cachedFilesMaintainer;
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    public File tempFolder;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
-        cachedFileReferences = tempFolder.newFolder();
-        cachedDownloads = tempFolder.newFolder();
+        cachedFileReferences = newFolder(tempFolder, "cachedFileReferences");
+        cachedDownloads = newFolder(tempFolder, "cachedDownloads");
         cachedFilesMaintainer = new CachedFilesMaintainer(cachedFileReferences, cachedDownloads, Duration.ofMinutes(1));
     }
 
     @Test
-    public void require_old_files_to_be_deleted() throws IOException {
+    void require_old_files_to_be_deleted() throws IOException {
         runMaintainerAndAssertFiles(0, 0);
 
         File fileReference = writeFile(cachedFileReferences, "fileReference");
@@ -70,6 +69,15 @@ public class CachedFilesMaintainerTest {
         File file = new File(directory, filename);
         IOUtils.writeFile(file, filename, false);
         return file;
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }

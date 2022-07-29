@@ -8,18 +8,18 @@ import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -38,10 +38,10 @@ public class ProxyServerTest {
                                                        fooConfig.getPayloadChecksums(), fooConfig.getGeneration(), false,
                                                        ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
@@ -49,13 +49,13 @@ public class ProxyServerTest {
         proxy = createTestServer(source, client);
     }
 
-    @After
+    @AfterEach
     public void shutdown() {
         proxy.stop();
     }
 
     @Test
-    public void basic() {
+    void basic() {
         assertTrue(proxy.getMode().isDefault());
         assertEquals(0, proxy.memoryCache().size());
 
@@ -72,7 +72,7 @@ public class ProxyServerTest {
      * Tests that the proxy server RPC commands for setting and getting mode works..
      */
     @Test
-    public void testModeSwitch() {
+    void testModeSwitch() {
         ProxyServer proxy = createTestServer(source, client);
         assertTrue(proxy.getMode().isDefault());
 
@@ -106,7 +106,7 @@ public class ProxyServerTest {
      * when it is found there.
      */
     @Test
-    public void testGetConfigAndCaching() {
+    void testGetConfigAndCaching() {
         ConfigTester tester = new ConfigTester();
         MemoryCache memoryCache = proxy.memoryCache();
         assertEquals(0, memoryCache.size());
@@ -127,7 +127,7 @@ public class ProxyServerTest {
      * it must be updated in cache.
      */
     @Test
-    public void testNoCachingOfErrorRequests() {
+    void testNoCachingOfErrorRequests() {
         ConfigTester tester = new ConfigTester();
         // Simulate an error response
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, ErrorCode.INTERNAL_ERROR));
@@ -163,7 +163,7 @@ public class ProxyServerTest {
      * When the config has been successfully retrieved it must be updated in cache.
      */
     @Test
-    public void testNoCachingOfEmptyConfig() {
+    void testNoCachingOfEmptyConfig() {
         ConfigTester tester = new ConfigTester();
         MemoryCache cache = proxy.memoryCache();
 
@@ -175,8 +175,8 @@ public class ProxyServerTest {
 
         // Simulate an empty response
         RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), Payload.from("{}"),
-                                              fooConfig.getPayloadChecksums(), 0, false,
-                                              0, fooConfig.getDefContent(), Optional.empty());
+                                 fooConfig.getPayloadChecksums(), 0, false,
+                                 0, fooConfig.getDefContent(), Optional.empty());
         source.put(fooConfig.getKey(), emptyConfig);
 
         res = proxy.resolveConfig(tester.createRequest(fooConfig)).orElseThrow();
@@ -195,7 +195,7 @@ public class ProxyServerTest {
     }
 
     @Test
-    public void testReconfiguration() {
+    void testReconfiguration() {
         ConfigTester tester = new ConfigTester();
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig)).orElseThrow();
         assertEquals(ConfigTester.fooPayload.toString(), res.getPayload().toString());
@@ -210,7 +210,7 @@ public class ProxyServerTest {
     }
 
     @Test
-    public void testReadingSystemProperties() {
+    void testReadingSystemProperties() {
         ProxyServer.Properties properties = ProxyServer.getSystemProperties();
         assertEquals(1, properties.configSources.length);
         assertEquals(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES, properties.configSources[0]);

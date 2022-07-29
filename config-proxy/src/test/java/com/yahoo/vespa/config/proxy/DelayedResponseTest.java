@@ -2,13 +2,13 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -20,7 +20,7 @@ public class DelayedResponseTest {
     private static final String namespace = "bar";
 
     @Test
-    public void basic() {
+    void basic() {
         ConfigTester tester = new ConfigTester();
         final long returnTime = System.currentTimeMillis();
         final long timeout = 1;
@@ -51,7 +51,7 @@ public class DelayedResponseTest {
     }
 
     @Test
-    public void testDelayedResponse() {
+    void testDelayedResponse() {
         ConfigTester tester = new ConfigTester();
         final long timeout = 20000;
         JRTServerConfigRequest request1 = tester.createRequest("baz", configId, namespace, timeout);
@@ -69,9 +69,9 @@ public class DelayedResponseTest {
         // New request, should have larger delay than the first
         JRTServerConfigRequest request2 = tester.createRequest("baz", configId, namespace, timeout);
         DelayedResponse delayed2 = new DelayedResponse(request2);
-        assertTrue("delayed1=" + delayed1.getReturnTime() + ", delayed2=" +
-                delayed2.getReturnTime() + ": delayed2 should be greater than delayed1",
-                delayed2.getReturnTime() > delayed1.getReturnTime());
+        assertTrue(delayed2.getReturnTime() > delayed1.getReturnTime(),
+                                 "delayed1=" + delayed1.getReturnTime() + ", delayed2=" +
+                                                          delayed2.getReturnTime() + ": delayed2 should be greater than delayed1");
 
         // Test compareTo() method
         assertEquals(0, delayed1.compareTo(delayed1));
