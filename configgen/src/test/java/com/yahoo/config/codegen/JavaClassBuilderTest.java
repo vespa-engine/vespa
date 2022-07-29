@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -12,9 +12,7 @@ import java.util.List;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.config.codegen.JavaClassBuilder.createUniqueSymbol;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -26,44 +24,44 @@ public class JavaClassBuilderTest {
     private static final String DEF_NAME = TEST_DIR + "configgen.allfeatures.def";
     private static final String REFERENCE_NAME = TEST_DIR + "allfeatures.reference";
 
-    @Ignore
+    @Disabled
     @Test
-    public void visual_inspection_of_generated_class() {
+    void visual_inspection_of_generated_class() {
         final String testDefinition =
                 "namespace=test\n" + //
-                "p path\n" + //
-                "pathArr[] path\n" + //
-                "u url\n" + //
-                "urlArr[] url\n" + //
-                "f file\n" + //
-                "fileArr[] file\n" + //
-                "i int default=0\n" + //
-                "# A long value\n" + //
-                "l long default=0\n" + //
-                "s string default=\"\"\n" + //
-                "b bool\n" + //
-                "# An enum value\n" + //
-                "e enum {A, B, C}\n" + //
-                "intArr[] int\n" + //
-                "boolArr[] bool\n" + //
-                "enumArr[] enum {FOO, BAR}\n" + //
-                "intMap{} int\n" + //
-                "# A struct\n" + //
-                "# with multi-line\n" + //
-                "# comment and \"quotes\".\n" + //
-                "myStruct.i int\n" + //
-                "myStruct.s string\n" + //
-                "# An inner array\n" + //
-                "myArr[].i int\n" + //
-                "myArr[].newStruct.s string\n" + //
-                "myArr[].newStruct.b bool\n" + //
-                "myArr[].intArr[] int\n" + //
-                "# An inner map\n" + //
-                "myMap{}.i int\n" + //
-                "myMap{}.newStruct.s string\n" + //
-                "myMap{}.newStruct.b bool\n" + //
-                "myMap{}.intArr[] int\n" + //
-                "intMap{} int\n";
+                        "p path\n" + //
+                        "pathArr[] path\n" + //
+                        "u url\n" + //
+                        "urlArr[] url\n" + //
+                        "f file\n" + //
+                        "fileArr[] file\n" + //
+                        "i int default=0\n" + //
+                        "# A long value\n" + //
+                        "l long default=0\n" + //
+                        "s string default=\"\"\n" + //
+                        "b bool\n" + //
+                        "# An enum value\n" + //
+                        "e enum {A, B, C}\n" + //
+                        "intArr[] int\n" + //
+                        "boolArr[] bool\n" + //
+                        "enumArr[] enum {FOO, BAR}\n" + //
+                        "intMap{} int\n" + //
+                        "# A struct\n" + //
+                        "# with multi-line\n" + //
+                        "# comment and \"quotes\".\n" + //
+                        "myStruct.i int\n" + //
+                        "myStruct.s string\n" + //
+                        "# An inner array\n" + //
+                        "myArr[].i int\n" + //
+                        "myArr[].newStruct.s string\n" + //
+                        "myArr[].newStruct.b bool\n" + //
+                        "myArr[].intArr[] int\n" + //
+                        "# An inner map\n" + //
+                        "myMap{}.i int\n" + //
+                        "myMap{}.newStruct.s string\n" + //
+                        "myMap{}.newStruct.b bool\n" + //
+                        "myMap{}.intArr[] int\n" + //
+                        "intMap{} int\n";
 
         DefParser parser = new DefParser("test", new StringReader(testDefinition));
         InnerCNode root = parser.getTree();
@@ -73,11 +71,11 @@ public class JavaClassBuilderTest {
     }
 
     @Test
-    public void testCreateUniqueSymbol() {
+    void testCreateUniqueSymbol() {
         final String testDefinition =
                 "namespace=test\n" + //
-                "m int\n" + //
-                "n int\n";
+                        "m int\n" + //
+                        "n int\n";
         InnerCNode root = new DefParser("test", new StringReader(testDefinition)).getTree();
 
         assertEquals("f", createUniqueSymbol(root, "foo"));
@@ -90,7 +88,7 @@ public class JavaClassBuilderTest {
     }
 
     @Test
-    public void testCreateClassName() {
+    void testCreateClassName() {
         assertEquals("SimpleConfig", createClassName("simple"));
         assertEquals("AConfig", createClassName("a"));
         assertEquals("ABCConfig", createClassName("a-b-c"));
@@ -99,13 +97,15 @@ public class JavaClassBuilderTest {
         assertEquals("MyAppConfig", createClassName("MyApp"));
     }
 
-    @Test(expected = CodegenRuntimeException.class)
-    public void testIllegalClassName() {
-        createClassName("+illegal");
+    @Test
+    void testIllegalClassName() {
+        assertThrows(CodegenRuntimeException.class, () -> {
+            createClassName("+illegal");
+        });
     }
 
     @Test
-    public void verify_generated_class_against_reference() throws IOException {
+    void verify_generated_class_against_reference() throws IOException {
         String testDefinition = String.join("\n", Files.readAllLines(FileSystems.getDefault().getPath(DEF_NAME)));
         List<String> referenceClassLines = Files.readAllLines(FileSystems.getDefault().getPath(REFERENCE_NAME));
 
@@ -114,11 +114,13 @@ public class JavaClassBuilderTest {
         JavaClassBuilder builder = new JavaClassBuilder(root, parser.getNormalizedDefinition(), null, null);
         String[] configClassLines = builder.getConfigClass("AllfeaturesConfig").split("\n");
 
-        for (var line : configClassLines) { System.out.println(line); }
+        for (var line : configClassLines) {
+            System.out.println(line);
+        }
         for (int i = 0; i < referenceClassLines.size(); i++) {
             if (configClassLines.length <= i)
                 fail("Missing lines i generated config class. First missing line:\n" + referenceClassLines.get(i));
-            assertEquals("Line " + i, referenceClassLines.get(i), configClassLines[i]);
+            assertEquals(referenceClassLines.get(i), configClassLines[i], "Line " + i);
         }
     }
 

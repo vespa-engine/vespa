@@ -1,17 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for DefParser.
@@ -25,7 +23,7 @@ public class DefParserTest {
     private static final String DEF_NAME = TEST_DIR + "configgen.allfeatures.def";
 
     @Test
-    public void testTraverseTree() throws IOException {
+    void testTraverseTree() throws IOException {
         File defFile = new File(DEF_NAME);
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertNotNull(root);
@@ -62,21 +60,21 @@ public class DefParserTest {
     }
 
     @Test
-    public void testFileWithNamespaceInFilename() throws IOException {
+    void testFileWithNamespaceInFilename() throws IOException {
         File defFile = new File(TEST_DIR + "baz.bar.foo.def");
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertEquals("31a0f9bda0e5ff929762a29569575a7e", root.defMd5);
     }
 
     @Test
-    public void testMd5Sum() throws IOException {
+    void testMd5Sum() throws IOException {
         File defFile = new File(DEF_NAME);
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertEquals("f901bdc5c96e7005130399c63f247823", root.defMd5);
     }
 
     @Test
-    public void testMd5Sum2() {
+    void testMd5Sum2() {
         String def = "a string\n";
         CNode root = new DefParser("testMd5Sum2", new StringReader(def)).getTree();
         assertEquals("a5e5fdbb2b27e56ba7d5e60e335c598b", root.defMd5);
@@ -84,7 +82,7 @@ public class DefParserTest {
 
     // TODO: Version is not used anymore, remove test in Vespa 9
     @Test
-    public void testValidVersions() {
+    void testValidVersions() {
         try {
             parse("version=8");
             parse("version=8-1");
@@ -103,7 +101,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void testInvalidType() {
+    void testInvalidType() {
         String line = "a sting";
         assertLineFails(line, "Could not create sting a");
     }
@@ -113,20 +111,23 @@ public class DefParserTest {
     }
 
     @Test
-    public void verify_fail_on_default_for_file() {
+    void verify_fail_on_default_for_file() {
         assertLineFails("f file default=\"file1.txt\"",
-                        "Invalid default value");
+                "Invalid default value");
     }
 
-    @Test(expected = CodegenRuntimeException.class)
-    @Ignore("Not implemented yet")
-    public void testInvalidEnum() {
-        DefParser parser = createParser("anEnum enum {A, B, A}\n");
+    @Test
+    @Disabled("Not implemented yet")
+    void testInvalidEnum() {
+        assertThrows(CodegenRuntimeException.class, () -> {
+            DefParser parser = createParser("anEnum enum {A, B, A}\n");
+            //parser.validateDef(def);
+        });
         //parser.validateDef(def);
     }
 
     @Test
-    public void testEnum() {
+    void testEnum() {
         StringBuilder sb = createDefTemplate();
         sb.append("enum1 enum {A,B} default=A\n");
         sb.append("enum2 enum {A, B} default=A\n");
@@ -148,20 +149,22 @@ public class DefParserTest {
         assertEquals("A", node.getDefaultValue().getStringRepresentation());
     }
 
-    @Test(expected = DefParser.DefParserException.class)
-    public void testInvalidCommaInEnum() throws DefParser.DefParserException, IOException {
-        String invalidEnum = "anEnum enum {A, B, } default=A\n";
-        String validEnum = "anotherEnum enum {A, B} default=A\n";
-        StringBuilder sb = createDefTemplate();
-        sb.append(invalidEnum);
-        sb.append(validEnum);
-        DefParser parser = createParser(sb.toString());
-        parser.parse();
+    @Test
+    void testInvalidCommaInEnum() throws DefParser.DefParserException, IOException {
+        assertThrows(DefParser.DefParserException.class, () -> {
+            String invalidEnum = "anEnum enum {A, B, } default=A\n";
+            String validEnum = "anotherEnum enum {A, B} default=A\n";
+            StringBuilder sb = createDefTemplate();
+            sb.append(invalidEnum);
+            sb.append(validEnum);
+            DefParser parser = createParser(sb.toString());
+            parser.parse();
+        });
     }
 
-    @Ignore //TODO: finish this! The numeric leaf nodes must contain their range.
+    @Disabled //TODO: finish this! The numeric leaf nodes must contain their range.
     @Test
-    public void testRanges() {
+    void testRanges() {
         StringBuilder sb = new StringBuilder();
         sb.append("i int range=[0,10]");
         sb.append("l long range=[-1e20,0]");
@@ -173,7 +176,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void duplicate_parameter_is_illegal() {
+    void duplicate_parameter_is_illegal() {
         Class<?> exceptionClass = DefParser.DefParserException.class;
         StringBuilder sb = createDefTemplate();
         String duplicateLine = "b int\n";
@@ -189,76 +192,76 @@ public class DefParserTest {
     }
 
     @Test
-    public void testIllegalCharacterInName() {
-       assertLineFails("a-b int",
-                       "a-b contains unexpected character");
+    void testIllegalCharacterInName() {
+        assertLineFails("a-b int",
+                "a-b contains unexpected character");
     }
 
     @Test
-    public void parameter_name_starting_with_digit_is_illegal() {
+    void parameter_name_starting_with_digit_is_illegal() {
         assertLineFails("1a int",
-                        "1a must start with a non-digit character");
+                "1a must start with a non-digit character");
     }
 
     @Test
-    public void parameter_name_starting_with_uppercase_is_illegal() {
+    void parameter_name_starting_with_uppercase_is_illegal() {
         assertLineFails("SomeInt int",
-                        "'SomeInt' cannot start with an uppercase letter");
+                "'SomeInt' cannot start with an uppercase letter");
     }
 
     @Test
-    public void parameter_name_starting_with_the_internal_prefix_is_illegal() {
+    void parameter_name_starting_with_the_internal_prefix_is_illegal() {
         String internalPrefix = ReservedWords.INTERNAL_PREFIX;
         assertLineFails(internalPrefix + "i int",
-                        "'" + internalPrefix + "i' cannot start with '" + internalPrefix + "'");
+                "'" + internalPrefix + "i' cannot start with '" + internalPrefix + "'");
     }
 
     @Test
-    public void testIllegalArray() {
+    void testIllegalArray() {
         assertLineFails("intArr[ int",
-                        "intArr[ Expected ] to terminate array definition");
+                "intArr[ Expected ] to terminate array definition");
     }
 
     @Test
-    public void testIllegalDefault() {
+    void testIllegalDefault() {
         assertLineFails("a int deflt 10",
-                        " deflt 10");
+                " deflt 10");
     }
 
     @Test
-    public void testReservedWordInC() {
+    void testReservedWordInC() {
         assertLineFails("auto int",
-                        "auto is a reserved word in C");
+                "auto is a reserved word in C");
     }
 
     @Test
-    public void testReservedWordInCForArray() {
+    void testReservedWordInCForArray() {
         assertLineFails("auto[] int",
-                        "auto is a reserved word in C");
+                "auto is a reserved word in C");
     }
 
     @Test
-    public void testReservedWordInJava() {
+    void testReservedWordInJava() {
         assertLineFails("abstract int",
-                        "abstract is a reserved word in Java");
+                "abstract is a reserved word in Java");
     }
 
     @Test
-    public void testReservedWordInJavaForMap() {
+    void testReservedWordInJavaForMap() {
         assertLineFails("abstract{} int",
-                        "abstract is a reserved word in Java");
+                "abstract is a reserved word in Java");
     }
 
     @Test
-    public void testReservedWordInCAndJava() {
+    void testReservedWordInCAndJava() {
         assertLineFails("continue int",
-                        "continue is a reserved word in C and Java");
+                "continue is a reserved word in C and Java");
     }
 
     @Test
-    public void testReservedWordInCAndJavaForArray() {
+    void testReservedWordInCAndJavaForArray() {
         assertLineFails("continue[] int",
-                        "continue is a reserved word in C and Java");
+                "continue is a reserved word in C and Java");
     }
 
     static StringBuilder createDefTemplate() {

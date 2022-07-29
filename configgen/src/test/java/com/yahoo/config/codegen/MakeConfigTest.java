@@ -1,26 +1,26 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MakeConfigTest {
 
     private File dest;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         dest = new File("/tmp/"+System.currentTimeMillis()+File.separator);
         dest.mkdir();
     }
     
-    @After
+    @AfterEach
     public void tearDown() {
         recursiveDeleteDir(dest);
     }
@@ -40,9 +40,9 @@ public class MakeConfigTest {
         // The directory is now empty so delete it
         return dir.delete();
     }
-    
+
     @Test
-    public void testProps() throws PropertyException {
+    void testProps() throws PropertyException {
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
@@ -53,7 +53,7 @@ public class MakeConfigTest {
         assertTrue(p.generateFrameworkCode);
         assertEquals(p.specFiles.size(), 1);
         assertEquals(p.specFiles.get(0).getAbsolutePath(), new File("src/test/resources/configgen.allfeatures.def").getAbsolutePath());
-        
+
         System.setProperty("config.dumpTree", "false");
         System.setProperty("config.useFramework", "false");
         System.setProperty("config.dest", dest.getAbsolutePath());
@@ -66,7 +66,7 @@ public class MakeConfigTest {
     }
 
     @Test
-    public void testMake() throws IOException {
+    void testMake() throws IOException {
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
