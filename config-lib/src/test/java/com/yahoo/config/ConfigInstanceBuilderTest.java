@@ -6,7 +6,7 @@ import com.yahoo.foo.StructtypesConfig;
 import com.yahoo.test.FunctionTestConfig;
 import com.yahoo.test.IntConfig;
 import com.yahoo.test.RestartConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -26,11 +26,11 @@ import static com.yahoo.test.FunctionTestConfig.RootStruct;
 import static com.yahoo.test.FunctionTestConfig.MyStructMap;
 import static com.yahoo.foo.MaptypesConfig.Innermap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -40,7 +40,7 @@ public class ConfigInstanceBuilderTest
 {
 
     @Test
-    public void struct_values_can_be_set_without_declaring_a_new_struct_builder() {
+    void struct_values_can_be_set_without_declaring_a_new_struct_builder() {
         var builder = new StructtypesConfig.Builder();
         builder.simple
                 .name("myname")
@@ -52,7 +52,7 @@ public class ConfigInstanceBuilderTest
     }
 
     @Test
-    public void leaf_map_setter_merges_maps() {
+    void leaf_map_setter_merges_maps() {
         MaptypesConfig.Builder builder = new MaptypesConfig.Builder()
                 .intmap("one", 1);
 
@@ -66,10 +66,10 @@ public class ConfigInstanceBuilderTest
     }
 
     @Test
-    public void inner_map_setter_merges_maps() {
+    void inner_map_setter_merges_maps() {
         MaptypesConfig.Builder builder = new MaptypesConfig.Builder()
                 .innermap("one", new Innermap.Builder()
-                .foo(1));
+                        .foo(1));
 
         Map<String, Innermap.Builder> newMap = new HashMap<>();
         newMap.put("two", new Innermap.Builder().foo(2));
@@ -81,13 +81,13 @@ public class ConfigInstanceBuilderTest
     }
 
     @Test
-    public void testVariableAccessWithBuilder() {
+    void testVariableAccessWithBuilder() {
         FunctionTestConfig config = createVariableAccessConfigWithBuilder();
         assertVariableAccessValues(config, ":parent:");
     }
 
     @Test
-    public void require_that_unset_builder_fields_are_null() throws Exception {
+    void require_that_unset_builder_fields_are_null() throws Exception {
         FunctionTestConfig.Builder builder = new FunctionTestConfig.Builder();
         assertNull(getMember(builder, "bool_val"));
         assertNull(getMember(builder, "bool_with_def"));
@@ -111,7 +111,7 @@ public class ConfigInstanceBuilderTest
     }
 
     @Test
-    public void require_that_set_builder_fields_are_nonNull() throws Exception {
+    void require_that_set_builder_fields_are_nonNull() throws Exception {
         FunctionTestConfig.Builder builder = createVariableAccessBuilder();
         assertNotNull(getMember(builder, "bool_val"));
         assertNotNull(getMember(builder, "bool_with_def"));
@@ -129,13 +129,13 @@ public class ConfigInstanceBuilderTest
         assertNotNull(getMember(builder, "refwithdef"));
         assertNotNull(getMember(builder, "fileVal"));
 
-        BasicStruct.Builder basicStructBuilder = (BasicStruct.Builder)getMember(builder, "basicStruct");
+        BasicStruct.Builder basicStructBuilder = (BasicStruct.Builder) getMember(builder, "basicStruct");
         assertNotNull(getMember(basicStructBuilder, "foo"));
         assertNotNull(getMember(basicStructBuilder, "bar"));
     }
 
     @Test
-    public void require_that_config_can_be_recreated_from_another_configs_builder() {
+    void require_that_config_can_be_recreated_from_another_configs_builder() {
         FunctionTestConfig original = createVariableAccessConfigWithBuilder();
         FunctionTestConfig copy = new FunctionTestConfig(new FunctionTestConfig.Builder(original));
         assertVariableAccessValues(copy, ":parent:");
@@ -330,13 +330,13 @@ public class ConfigInstanceBuilderTest
     }
 
     @Test
-    public void require_that_config_class_reports_any_restart_values() throws Exception {
+    void require_that_config_class_reports_any_restart_values() throws Exception {
         assertTrue(callContainsFieldsFlaggedWithRestart(RestartConfig.class));
         assertFalse(callContainsFieldsFlaggedWithRestart(IntConfig.class));
     }
 
     @Test
-    public void require_that_config_class_can_make_change_report() throws Exception {
+    void require_that_config_class_can_make_change_report() throws Exception {
         IntConfig noRestart1 = new IntConfig(new IntConfig.Builder().intVal(42));
         IntConfig noRestart2 = new IntConfig(new IntConfig.Builder().intVal(21));
         ChangesRequiringRestart report = callGetChangesRequiringRestart(noRestart1, noRestart2);
@@ -370,33 +370,33 @@ public class ConfigInstanceBuilderTest
         assertEquals("function-test", report.getName());
         assertTrue(
                 report.toString().startsWith(
-                    "# An int value\n" +
-                    "# Also test that multiline comments\n" +
-                    "# work.\n" +
-                    "function-test.int_val has changed from 5 to 100\n" +
-                    "function-test.stringarr[0] has changed from \"bar\" to \"foo\"\n" +
-                    "# This is a map of ints.\n" +
-                    "function-test.intMap{one} has changed from 1 to 42\n" +
-                    "# This is a map of ints.\n" +
-                    "function-test.intMap{two} with value 2 was removed\n" +
-                    "# This is a map of ints.\n" +
-                    "function-test.intMap{three} was added with value 3\n" +
-                    "# A basic struct\n" +
-                    "function-test.basicStruct.foo has changed from \"basicFoo\" to \"basic\"\n" +
-                    "function-test.basicStruct.bar has changed from 3 to 1234\n" +
-                    "function-test.basicStruct.intArr[0] with value 310 was removed\n" +
-                    "function-test.basicStruct.intArr[1] with value 311 was removed\n" +
-                    "function-test.myarray[0].anotherarray[0].foo has changed from 7 to 32\n" +
-                    "# This is my array\n" +
-                    "function-test.myarray[1].intval has changed from 5 to 17\n" +
-                    "function-test.myarray[2] was added with value \n"
+                        "# An int value\n" +
+                                "# Also test that multiline comments\n" +
+                                "# work.\n" +
+                                "function-test.int_val has changed from 5 to 100\n" +
+                                "function-test.stringarr[0] has changed from \"bar\" to \"foo\"\n" +
+                                "# This is a map of ints.\n" +
+                                "function-test.intMap{one} has changed from 1 to 42\n" +
+                                "# This is a map of ints.\n" +
+                                "function-test.intMap{two} with value 2 was removed\n" +
+                                "# This is a map of ints.\n" +
+                                "function-test.intMap{three} was added with value 3\n" +
+                                "# A basic struct\n" +
+                                "function-test.basicStruct.foo has changed from \"basicFoo\" to \"basic\"\n" +
+                                "function-test.basicStruct.bar has changed from 3 to 1234\n" +
+                                "function-test.basicStruct.intArr[0] with value 310 was removed\n" +
+                                "function-test.basicStruct.intArr[1] with value 311 was removed\n" +
+                                "function-test.myarray[0].anotherarray[0].foo has changed from 7 to 32\n" +
+                                "# This is my array\n" +
+                                "function-test.myarray[1].intval has changed from 5 to 17\n" +
+                                "function-test.myarray[2] was added with value \n"
                 )
         );
 
         assertTrue(
                 report.toString().contains(
-                     "function-test.myStructMap{one}.myInt has changed from 1 to 42\n" +
-                     "function-test.myStructMap{new} was added with value \n"
+                        "function-test.myStructMap{one}.myInt has changed from 1 to 42\n" +
+                                "function-test.myStructMap{new} was added with value \n"
                 )
         );
 

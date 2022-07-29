@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author lesters
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class UrlNodeTest {
 
     @Test
-    public void testSetValue() {
+    void testSetValue() {
         UrlNode url = new UrlNode();
         assertEquals("(null)", url.toString());
 
