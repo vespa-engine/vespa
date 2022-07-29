@@ -19,25 +19,14 @@ export default function transform(trace) {
   processes.p0 = { serviceName: 'Query', tags: [] };
   let temp = trace['trace']['children'];
   let spans = findChildren(temp);
-  let query = findChildren(spans); // only used for getting the start time
-  traceStartTimestamp = getTraceStartTime(query);
-  let totalTraceDuration = spans[spans.length - 1]['timestamp'] * 1000;
+  traceStartTimestamp = findTraceStartTime(spans);
   topSpanId = genRanHex(16);
-  let topSpan = {
-    traceID: traceID,
-    spanID: topSpanId,
-    operationName: 'Complete',
-    startTime: traceStartTimestamp,
-    duration: totalTraceDuration,
-    references: [],
-    tags: [],
-    logs: [],
-    processID: 'p0',
-  };
-  data.push(topSpan);
+  let topSpanFirstHalf = createNewSpan(traceStartTimestamp);
+  data.push(topSpanFirstHalf);
 
-  const retrieved = findLogsAndChildren(spans, topSpan);
+  const retrieved = findLogsAndChildren(spans, topSpanFirstHalf);
   const logs = retrieved['logs'];
+  console.log(logs);
   const children = retrieved['children'];
   traverseLogs(logs);
   createChildren(children);
@@ -45,25 +34,62 @@ export default function transform(trace) {
   return output;
 }
 
-function findLogsAndChildren(spans, topSpan) {
+function findLogsAndChildren(spans, topSpanFirstHalf) {
   let logs = [];
   let children = [];
+  let hitQuery = false;
+  let topSpanSecondHalf = createNewSpan();
+  let secondHalfDuration = 0;
+  output['data'][0]['spans'].push(topSpanSecondHalf);
+  let firstHitSecondHalf = true;
   for (let span of spans) {
     if (span.hasOwnProperty('children')) {
+      firstHitSecondHalf = true;
+      topSpanSecondHalf = createNewSpan();
+      output['data'][0]['spans'].push(topSpanSecondHalf);
       let log = [];
       for (let x of span['children']) {
         if (Array.isArray(x['message'])) {
+          if (log.length > 0) {
+            // finished moving down the search chain
+            // create a new array for holding the logs that represent moving up the search chain
+            logs.push(log);
+            log = [];
+          }
+          hitQuery = true;
           children.push(x['message']);
         } else {
-          log.push(x);
+          // only add logs with a timestamp
+          if (x.hasOwnProperty('timestamp')) {
+            log.push(x);
+          }
         }
       }
       logs.push(log);
-    } else if (span.hasOwnProperty('message')) {
-      topSpan['logs'].push({
-        timestamp: traceStartTimestamp + span['timestamp'] * 1000,
-        fields: [{ key: 'message', type: 'string', value: span['message'] }],
-      });
+    } else if (
+      span.hasOwnProperty('message') &&
+      span.hasOwnProperty('timestamp')
+    ) {
+      if (hitQuery) {
+        if (firstHitSecondHalf) {
+          secondHalfDuration = span['timestamp'] * 1000;
+          topSpanSecondHalf['startTime'] =
+            traceStartTimestamp + secondHalfDuration;
+          firstHitSecondHalf = false;
+        }
+        topSpanSecondHalf['duration'] =
+          span['timestamp'] * 1000 - secondHalfDuration;
+        topSpanSecondHalf['logs'].push({
+          timestamp: traceStartTimestamp + span['timestamp'] * 1000,
+          fields: [{ key: 'message', type: 'string', value: span['message'] }],
+        });
+      } else {
+        topSpanFirstHalf['duration'] = span['timestamp'] * 1000;
+        topSpanFirstHalf['logs'].push({
+          timestamp: traceStartTimestamp + span['timestamp'] * 1000,
+          fields: [{ key: 'message', type: 'string', value: span['message'] }],
+        });
+      }
     }
   }
   return { logs: logs, children: children };
@@ -76,6 +102,9 @@ function traverseLogs(logs) {
     let logStartTimestamp = traceStartTimestamp + log[0]['timestamp'] * 1000;
     let logDuration =
       (log[log.length - 1]['timestamp'] - log[0]['timestamp']) * 1000;
+    // if (logDuration === 0) {
+    //   logDuration = 10;
+    // }
     let spanID = genRanHex(16);
     if (first) {
       parentID = spanID;
@@ -220,11 +249,57 @@ function findChildren(traces) {
 
 // Get an estimated start time by using the start time of the query and subtracting the current run time
 function getTraceStartTime(trace) {
-  for (let x of trace) {
-    if (Array.isArray(x['message'])) {
-      let timestamp = Date.parse(x['message'][0]['start_time']) * 1000;
-      let currentTimestamp = x['timestamp'] * 1000;
-      return timestamp - currentTimestamp;
+  if (Array.isArray(trace['message'])) {
+    let timestamp = Date.parse(trace['message'][0]['start_time']) * 1000;
+    let currentTimestamp = trace['timestamp'] * 1000;
+    return timestamp - currentTimestamp;
+  }
+}
+
+function findTraceStartTime(spans) {
+  let startTime = 0;
+  for (let span of spans) {
+    if (span.hasOwnProperty('children')) {
+      startTime = findTraceStartTime(span['children']);
+    } else if (span.hasOwnProperty('message')) {
+      if (Array.isArray(span['message'])) {
+        return getTraceStartTime(span);
+      }
+    }
+    if (startTime !== 0) {
+      return startTime;
     }
   }
+  return startTime;
+}
+
+//TODO: remove if not needed later
+function findDuration(spans) {
+  let notFound = true;
+  let duration = 0;
+  let i = spans.length - 1;
+  while (notFound && i >= 0) {
+    if (spans[i].hasOwnProperty('timestamp')) {
+      duration = spans[i]['timestamp'];
+      notFound = false;
+    } else {
+      i--;
+    }
+  }
+  return duration;
+}
+
+function createNewSpan(startTime = 0) {
+  let newSpan = {
+    traceID: traceID,
+    spanID: genRanHex(16),
+    operationName: 'Complete',
+    startTime: startTime,
+    duration: 0,
+    references: [],
+    tags: [],
+    logs: [],
+    processID: 'p0',
+  };
+  return newSpan;
 }
