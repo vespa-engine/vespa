@@ -2,13 +2,13 @@
 package com.yahoo.search.query.profile.compiled;
 
 import com.yahoo.search.query.profile.DimensionBinding;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 public class BindingTestCase {
 
     @Test
-    public void testGeneralizes() {
+    void testGeneralizes() {
         Map<String, String> m1 = new HashMap<>();
         m1.put("a", "a1");
         m1.put("b", "b1");

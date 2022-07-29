@@ -7,14 +7,14 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author smorgrav
@@ -24,7 +24,7 @@ public class ChangeManagementAssessorTest {
     private final ChangeManagementAssessor changeManagementAssessor = new ChangeManagementAssessor(new NodeRepositoryMock());
 
     @Test
-    public void empty_input_variations() {
+    void empty_input_variations() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = new ArrayList<>();
         List<Node> allNodesInZone = new ArrayList<>();
@@ -36,16 +36,16 @@ public class ChangeManagementAssessorTest {
     }
 
     @Test
-    public void one_host_one_cluster_no_groups() {
+    void one_host_one_cluster_no_groups() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = Collections.singletonList("host1");
         List<Node> allNodesInZone = new ArrayList<>();
-        allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
-        allNodesInZone.add(createNode("node2", "host1", "default", 0 ));
-        allNodesInZone.add(createNode("node3", "host1", "default", 0 ));
+        allNodesInZone.add(createNode("node1", "host1", "default", 0));
+        allNodesInZone.add(createNode("node2", "host1", "default", 0));
+        allNodesInZone.add(createNode("node3", "host1", "default", 0));
 
         // Add an not impacted hosts
-        allNodesInZone.add(createNode("node4", "host2", "default", 0 ));
+        allNodesInZone.add(createNode("node4", "host2", "default", 0));
 
         // Add tenant hosts
         allNodesInZone.add(createHost("host1", NodeType.host));
@@ -67,27 +67,27 @@ public class ChangeManagementAssessorTest {
     }
 
     @Test
-    public void one_of_two_groups_in_one_of_two_clusters() {
+    void one_of_two_groups_in_one_of_two_clusters() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = List.of("host1", "host2", "host5");
         List<Node> allNodesInZone = new ArrayList<>();
 
         // Two impacted nodes on host1
-        allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
-        allNodesInZone.add(createNode("node2", "host1", "default", 0 ));
+        allNodesInZone.add(createNode("node1", "host1", "default", 0));
+        allNodesInZone.add(createNode("node2", "host1", "default", 0));
 
         // One impacted nodes on host2
-        allNodesInZone.add(createNode("node3", "host2", "default", 0 ));
+        allNodesInZone.add(createNode("node3", "host2", "default", 0));
 
         // Another group on hosts not impacted
-        allNodesInZone.add(createNode("node4", "host3", "default", 1 ));
-        allNodesInZone.add(createNode("node5", "host3", "default", 1 ));
-        allNodesInZone.add(createNode("node6", "host3", "default", 1 ));
+        allNodesInZone.add(createNode("node4", "host3", "default", 1));
+        allNodesInZone.add(createNode("node5", "host3", "default", 1));
+        allNodesInZone.add(createNode("node6", "host3", "default", 1));
 
         // Another cluster on hosts not impacted - this one also with three different groups (should all be ignored here)
-        allNodesInZone.add(createNode("node4", "host4", "myman", 4 ));
-        allNodesInZone.add(createNode("node5", "host4", "myman", 5 ));
-        allNodesInZone.add(createNode("node6", "host4", "myman", 6 ));
+        allNodesInZone.add(createNode("node4", "host4", "myman", 4));
+        allNodesInZone.add(createNode("node5", "host4", "myman", 5));
+        allNodesInZone.add(createNode("node6", "host4", "myman", 6));
 
         // Add tenant hosts
         allNodesInZone.add(createHost("host1", NodeType.host));
@@ -114,14 +114,14 @@ public class ChangeManagementAssessorTest {
         assertEquals(2, hostAssessments.size());
         assertTrue(hostAssessments.stream().anyMatch(hostAssessment ->
                 hostAssessment.hostName.equals("host1") &&
-                hostAssessment.switchName.equals("switch1") &&
-                hostAssessment.numberOfChildren == 2 &&
-                hostAssessment.numberOfProblematicChildren == 2
+                        hostAssessment.switchName.equals("switch1") &&
+                        hostAssessment.numberOfChildren == 2 &&
+                        hostAssessment.numberOfProblematicChildren == 2
         ));
     }
 
     @Test
-    public void two_config_nodes() {
+    void two_config_nodes() {
         var zone = ZoneId.from("prod", "eu-trd");
         var hostNames = List.of("config1", "config2");
         var allNodesInZone = new ArrayList<Node>();
@@ -139,7 +139,7 @@ public class ChangeManagementAssessorTest {
     }
 
     @Test
-    public void one_of_three_proxy_nodes() {
+    void one_of_three_proxy_nodes() {
         var zone = ZoneId.from("prod", "eu-trd");
         var hostNames = List.of("routing1");
         var allNodesInZone = new ArrayList<Node>();

@@ -3,11 +3,11 @@ package com.yahoo.search.grouping.request;
 
 import com.yahoo.search.grouping.request.parser.ParseException;
 import com.yahoo.search.grouping.request.parser.TokenMgrException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 public class GroupingOperationTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         GroupingOperation op = new AllOperation();
         GroupingExpression exp = new AttributeValue("alias");
         op.putAlias("alias", exp);
@@ -88,7 +88,7 @@ public class GroupingOperationTestCase {
     }
 
     @Test
-    public void requireThatFromStringAsListParsesAllOperations() {
+    void requireThatFromStringAsListParsesAllOperations() {
         List<GroupingOperation> lst = GroupingOperation.fromStringAsList("");
         assertTrue(lst.isEmpty());
 
@@ -107,7 +107,7 @@ public class GroupingOperationTestCase {
     }
 
     @Test
-    public void requireThatFromStringAcceptsOnlyOneOperation() {
+    void requireThatFromStringAcceptsOnlyOneOperation() {
         try {
             GroupingOperation.fromString("");
             fail();
@@ -125,7 +125,7 @@ public class GroupingOperationTestCase {
     }
 
     @Test
-    public void requireThatParseExceptionsAreRethrown() {
+    void requireThatParseExceptionsAreRethrown() {
         try {
             GroupingOperation.fromString("all(foo)");
             fail();
@@ -136,7 +136,7 @@ public class GroupingOperationTestCase {
     }
 
     @Test
-    public void requireThatTokenErrorsAreRethrown() {
+    void requireThatTokenErrorsAreRethrown() {
         try {
             GroupingOperation.fromString("all(\\foo)");
             fail();

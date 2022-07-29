@@ -8,9 +8,9 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -41,12 +41,12 @@ public class ConfigServerFlagSourceTest {
     private ConfigServerFlagSource flagSource;
     private BooleanFlag flag;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         flagsReplacer = Flags.clearFlagsForTesting();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         flagsReplacer.close();
     }
@@ -57,7 +57,7 @@ public class ConfigServerFlagSourceTest {
     }
 
     @Test
-    public void testAbsentInFileSystemForwardsToFlagsDb() {
+    void testAbsentInFileSystemForwardsToFlagsDb() {
         initialize();
 
         when(flagsDb.getValue(flagId)).thenReturn(Optional.empty());
@@ -67,7 +67,7 @@ public class ConfigServerFlagSourceTest {
     }
 
     @Test
-    public void testAvoidingZooKeeperWhenOverridingInFile() throws IOException {
+    void testAvoidingZooKeeperWhenOverridingInFile() throws IOException {
         // Here is how to set the value of a flag, such that ZooKeeper will NOT be queried when getting that value:
         //  - Make a flag.db file with the override
         Path flagPath = fileSystem.getPath(vespaHome + "/var/vespa/flag.db");

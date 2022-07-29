@@ -27,7 +27,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv

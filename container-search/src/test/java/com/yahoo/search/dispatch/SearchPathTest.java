@@ -3,16 +3,13 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author ollivir
@@ -20,7 +17,7 @@ import static org.junit.Assert.fail;
 public class SearchPathTest {
 
     @Test
-    public void requreThatSearchPathsAreParsedCorrectly() {
+    void requreThatSearchPathsAreParsedCorrectly() {
         assertEquals(SearchPath.fromString("0/0").get().toString(), "0/0");
         assertEquals(SearchPath.fromString("1/0").get().toString(), "1/0");
         assertEquals(SearchPath.fromString("0/1").get().toString(), "0/1");
@@ -43,7 +40,7 @@ public class SearchPathTest {
     }
 
     @Test
-    public void requreThatWildcardsAreDetected() {
+    void requreThatWildcardsAreDetected() {
         assertFalse(SearchPath.fromString("").isPresent());
         assertFalse(SearchPath.fromString("*/*").isPresent());
         assertFalse(SearchPath.fromString("/").isPresent());
@@ -52,7 +49,7 @@ public class SearchPathTest {
     }
 
     @Test
-    public void invalidRangeMustThrowException() {
+    void invalidRangeMustThrowException() {
         try {
             SearchPath.fromString("[p,0>/0");
             fail("Expected exception");
@@ -63,7 +60,7 @@ public class SearchPathTest {
     }
 
     @Test
-    public void invalidPartMustThrowException() {
+    void invalidPartMustThrowException() {
         try {
             SearchPath.fromString("p/0");
             fail("Expected exception");
@@ -74,7 +71,7 @@ public class SearchPathTest {
     }
 
     @Test
-    public void invalidRowMustThrowException() {
+    void invalidRowMustThrowException() {
         try {
             SearchPath.fromString("1,2,3/r");
             fail("Expected exception");
@@ -92,8 +89,8 @@ public class SearchPathTest {
     }
 
     @Test
-    public void searchPathMustFilterNodesBasedOnDefinition() {
-        MockSearchCluster cluster = new MockSearchCluster("a",3, 3);
+    void searchPathMustFilterNodesBasedOnDefinition() {
+        MockSearchCluster cluster = new MockSearchCluster("a", 3, 3);
 
         assertEquals(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), "4");
         assertEquals(distKeysAsString(SearchPath.selectNodes("/1", cluster)), "3,4,5");

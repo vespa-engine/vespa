@@ -16,7 +16,7 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.classic.methods.HttpTrace;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,30 +32,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class JDiscHttpServletTest {
 
     @Test
-    public void requireThatServerRespondsToAllMethods() throws Exception {
+    void requireThatServerRespondsToAllMethods() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new HttpGet(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpPost(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpHead(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpPut(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpDelete(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpOptions(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpTrace(uri))
-              .expectStatusCode(is(OK));
+                .expectStatusCode(is(OK));
         driver.client().execute(new HttpPatch(uri))
                 .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
     }
 
     @Test
-    public void requireThatServerResponds405ToUnknownMethods() throws IOException {
+    void requireThatServerResponds405ToUnknownMethods() throws IOException {
         JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new UnknownMethodHttpRequest(uri))

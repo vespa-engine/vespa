@@ -10,11 +10,12 @@ import com.yahoo.yolean.Exceptions;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -22,7 +23,7 @@ import static org.junit.Assert.*;
 public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testConstants() throws ParseException {
+    void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
@@ -89,7 +90,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testNameCollision() throws ParseException {
+    void testNameCollision() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -118,12 +119,12 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Rank profile 'test' is invalid: Cannot have both a constant and function named 'c'",
-                         Exceptions.toMessageString(e));
+                    Exceptions.toMessageString(e));
         }
     }
 
     @Test
-    public void testNegativeLiteralArgument() throws ParseException {
+    void testNegativeLiteralArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -148,7 +149,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testNegativeConstantArgument() throws ParseException {
+    void testNegativeConstantArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -174,11 +175,11 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
+                profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
-    public void testConstantDivisorInFunction() throws ParseException {
+    void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -197,11 +198,11 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 1.0E8",
-                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
+                profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
     @Test
-    public void test3() throws ParseException {
+    void test3() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -223,7 +224,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
+                profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
 }

@@ -5,7 +5,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class RankModifierTestCase extends AbstractSchemaTestCase {
     @Test
-    public void testLiteral() throws IOException, ParseException {
+    void testLiteral() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/rankmodifier/literal.sd");
     }
 }

@@ -2,12 +2,11 @@
 package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.application.MetricConsumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Simon Thoresen Hult
@@ -15,14 +14,14 @@ import static org.junit.Assert.assertSame;
 public class MetricConsumerProviderTest {
 
     @Test
-    public void requireThatSingleConsumerIsNotDelegated() {
+    void requireThatSingleConsumerIsNotDelegated() {
         MetricConsumer consumer = Mockito.mock(MetricConsumer.class);
         MetricConsumerProvider provider = MetricConsumerProviders.newSingletonFactories(consumer);
         assertSame(consumer, provider.newInstance());
     }
 
     @Test
-    public void requireThatMultipleConsumersAreDelegated() {
+    void requireThatMultipleConsumersAreDelegated() {
         MetricConsumer foo = Mockito.mock(MetricConsumer.class);
         MetricConsumer bar = Mockito.mock(MetricConsumer.class);
         MetricConsumerProvider provider = MetricConsumerProviders.newSingletonFactories(foo, bar);

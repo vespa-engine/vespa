@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yahoo.prelude.hitfield.HitField;
-import com.yahoo.prelude.hitfield.StringFieldPart;
-import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.yahoo.prelude.hitfield.StringFieldPart;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the HitField class
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class HitFieldTestCase {
 
     @Test
-    public void testHitField() {
+    void testHitField() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
         List l = new ArrayList();
@@ -32,7 +32,7 @@ public class HitFieldTestCase {
     }
 
     @Test
-    public void testCjk() {
+    void testCjk() {
         HitField hf = new HitField("boo", "hmm\u001fgr");
         assertEquals(2, hf.getTokenizedContent().size());
         assertEquals("hmmgr", hf.getContent());
@@ -44,7 +44,7 @@ public class HitFieldTestCase {
     }
 
     @Test
-    public void testAnnotateField() {
+    void testAnnotateField() {
         HitField hf = new HitField("boo", "The <hi>Eclipse</hi> SDK \uFFF9include\uFFFAincludes\uFFFB the <hi>Eclipse</hi> Platform");
         assertEquals(11, hf.getTokenizedContent().size());
         hf = new HitField("boo", "\uFFF9include\uFFFAincludes\uFFFB the <hi>Eclipse</hi> Platform");
@@ -72,7 +72,7 @@ public class HitFieldTestCase {
     }
 
     @Test
-    public void testEmptyField() {
+    void testEmptyField() {
         HitField hf = new HitField("boo", "");
         assertEquals(0, hf.getTokenizedContent().size());
     }

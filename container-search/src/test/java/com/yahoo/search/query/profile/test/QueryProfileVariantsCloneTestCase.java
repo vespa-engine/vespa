@@ -5,13 +5,13 @@ package com.yahoo.search.query.profile.test;
 import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Tony Vaagenes
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryProfileVariantsCloneTestCase {
 
     @Test
-    public void test_that_interior_and_leaf_values_on_a_path_are_preserved_when_cloning() {
+    void test_that_interior_and_leaf_values_on_a_path_are_preserved_when_cloning() {
         Map<String, String> dimensionBinding = createDimensionBinding("location", "norway");
 
         QueryProfile profile = new QueryProfile("profile");
@@ -32,10 +32,10 @@ public class QueryProfileVariantsCloneTestCase {
         CompiledQueryProfile clone = profile.compile(null).clone();
 
         assertEquals(profile.get("interior", dimensionBinding, null),
-                       clone.get("interior", dimensionBinding));
+                clone.get("interior", dimensionBinding));
 
         assertEquals(profile.get("interior.leaf", dimensionBinding, null),
-                       clone.get("interior.leaf", dimensionBinding));
+                clone.get("interior.leaf", dimensionBinding));
     }
 
 

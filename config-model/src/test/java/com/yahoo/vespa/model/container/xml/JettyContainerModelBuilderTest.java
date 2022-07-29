@@ -16,16 +16,14 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author einarmr
@@ -34,19 +32,19 @@ import static org.junit.Assert.assertTrue;
 public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void verify_that_overriding_connector_options_works() {
+    void verify_that_overriding_connector_options_works() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>\n" +
-                "  <http>\n" +
-                "    <server id='bananarama' port='4321'>\n" +
-                "      <config name='jdisc.http.connector'>\n" +
-                "        <requestHeaderSize>300000</requestHeaderSize>\n" +
-                "        <headerCacheSize>300000</headerCacheSize>\n" +
-                "      </config>\n" +
-                "    </server>\n" +
-                "  </http>\n" +
-                nodesXml +
-                "</container>\n"
+                        "  <http>\n" +
+                        "    <server id='bananarama' port='4321'>\n" +
+                        "      <config name='jdisc.http.connector'>\n" +
+                        "        <requestHeaderSize>300000</requestHeaderSize>\n" +
+                        "        <headerCacheSize>300000</headerCacheSize>\n" +
+                        "      </config>\n" +
+                        "    </server>\n" +
+                        "  </http>\n" +
+                        nodesXml +
+                        "</container>\n"
         );
         createModel(root, clusterElem);
         ConnectorConfig cfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/bananarama");
@@ -55,7 +53,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_enabling_jetty_works() {
+    void verify_that_enabling_jetty_works() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                         nodesXml +
@@ -66,24 +64,24 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_enabling_jetty_works_for_custom_http_servers() {
+    void verify_that_enabling_jetty_works_for_custom_http_servers() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
                 nodesXml,
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
         assertJettyServerInConfig();
     }
 
     @Test
-    public void verifyThatJettyHttpServerHasFilterBindingsProvider() {
+    void verifyThatJettyHttpServerHasFilterBindingsProvider() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 nodesXml,
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
@@ -100,14 +98,14 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() {
+    void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
                 nodesXml,
-                "</container>" );
+                "</container>");
         createModel(root, clusterElem);
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
@@ -124,7 +122,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void ssl_element_generates_connector_config_and_injects_provider_component() {
+    void ssl_element_generates_connector_config_and_injects_provider_component() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "    <http>",
@@ -196,7 +194,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_tht_ssl_provider_configuration_configures_correct_config() {
+    void verify_tht_ssl_provider_configuration_configures_correct_config() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "    <http>",
@@ -220,7 +218,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_container_factory_sees_same_config(){
+    void verify_that_container_factory_sees_same_config() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "    <http>",
@@ -241,7 +239,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_container_setup_additional_tls4443(){
+    void verify_that_container_setup_additional_tls4443() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "    <http>",
@@ -257,14 +255,14 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "</container>");
 
         String hostsxml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                          "<hosts>\n" +
-                          "  <host name=\"mockhost-1\">\n" +
-                          "    <alias>mockhost1</alias>\n" +
-                          "  </host>\n" +
-                          "  <host name=\"mockhost-2\">\n" +
-                          "    <alias>mockhost2</alias>\n" +
-                          "  </host>\n" +
-                          "</hosts>\n";
+                "<hosts>\n" +
+                "  <host name=\"mockhost-1\">\n" +
+                "    <alias>mockhost1</alias>\n" +
+                "  </host>\n" +
+                "  <host name=\"mockhost-2\">\n" +
+                "    <alias>mockhost2</alias>\n" +
+                "  </host>\n" +
+                "</hosts>\n";
         DeployState deployState = new DeployState.Builder()
                 .properties(
                         new TestProperties()

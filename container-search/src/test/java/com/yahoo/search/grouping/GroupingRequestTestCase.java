@@ -7,7 +7,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
 import com.yahoo.search.result.Hit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class GroupingRequestTestCase {
 
     @Test
-    public void requireThatContinuationListIsMutable() {
+    void requireThatContinuationListIsMutable() {
         GroupingRequest req = GroupingRequest.newInstance(new Query());
         assertTrue(req.continuations().isEmpty());
 
@@ -41,7 +41,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatResultIsFound() {
+    void requireThatResultIsFound() {
         Query query = new Query();
         GroupingRequest req = GroupingRequest.newInstance(query);
         Result res = new Result(query);
@@ -57,7 +57,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatResultIsFoundAfterCloning() {
+    void requireThatResultIsFoundAfterCloning() {
         Query query = new Query();
         GroupingRequest req = GroupingRequest.newInstance(query);
         Result res = new Result(query.clone());
@@ -73,7 +73,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatParallelRequestsAreSupported() {
+    void requireThatParallelRequestsAreSupported() {
         Query query = new Query();
         Result res = new Result(query);
 
@@ -94,7 +94,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatRemovedResultIsNull() {
+    void requireThatRemovedResultIsNull() {
         Query query = new Query();
         GroupingRequest req = GroupingRequest.newInstance(query);
         Result res = new Result(query);
@@ -107,7 +107,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatNonGroupResultIsNull() {
+    void requireThatNonGroupResultIsNull() {
         Query query = new Query();
         GroupingRequest req = GroupingRequest.newInstance(query);
         Result res = new Result(query);
@@ -119,7 +119,7 @@ public class GroupingRequestTestCase {
     }
 
     @Test
-    public void requireThatGetRequestsReturnsAllRequests() {
+    void requireThatGetRequestsReturnsAllRequests() {
         Query query = new Query();
         assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
 

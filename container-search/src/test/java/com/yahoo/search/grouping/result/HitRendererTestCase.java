@@ -6,13 +6,13 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.XMLWriter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 public class HitRendererTestCase {
 
     @Test
-    public void requireThatGroupListsRenderAsExpected() {
+    void requireThatGroupListsRenderAsExpected() {
         assertRender(new GroupList("foo"), "<grouplist label=\"foo\"></grouplist>\n");
         assertRender(new GroupList("b\u00e6z"), "<grouplist label=\"b\u00e6z\"></grouplist>\n");
 
@@ -28,21 +28,21 @@ public class HitRendererTestCase {
         lst.continuations().put("bar.key", new MyContinuation("bar.val"));
         lst.continuations().put("baz.key", new MyContinuation("baz.val"));
         assertRender(lst, "<grouplist label=\"foo\">\n" +
-                          "<continuation id=\"bar.key\">bar.val</continuation>\n" +
-                          "<continuation id=\"baz.key\">baz.val</continuation>\n" +
-                          "</grouplist>\n");
+                "<continuation id=\"bar.key\">bar.val</continuation>\n" +
+                "<continuation id=\"baz.key\">baz.val</continuation>\n" +
+                "</grouplist>\n");
     }
 
     @Test
-    public void requireThatGroupIdsRenderAsExpected() {
+    void requireThatGroupIdsRenderAsExpected() {
         assertRender(newGroup(new DoubleId(6.9)),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"double\">6.9</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"double\">6.9</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new LongId(69L)),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"long\">69</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"long\">69</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new BoolId(true)),
                 "<group relevance=\"1.0\">\n" +
                         "<id type=\"bool\">true</id>\n" +
@@ -52,89 +52,89 @@ public class HitRendererTestCase {
                         "<id type=\"bool\">false</id>\n" +
                         "</group>\n");
         assertRender(newGroup(new NullId()),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"null\"/>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"null\"/>\n" +
+                        "</group>\n");
         assertRender(newGroup(new RawId(Utf8.toBytes("foo"))),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"raw\">[102, 111, 111]</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"raw\">[102, 111, 111]</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new StringId("foo")),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"string\">foo</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"string\">foo</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new StringId("b\u00e6z")),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"string\">b\u00e6z</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"string\">b\u00e6z</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new DoubleBucketId(6.9, 9.6)),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"double_bucket\">\n<from>6.9</from>\n<to>9.6</to>\n</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"double_bucket\">\n<from>6.9</from>\n<to>9.6</to>\n</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new LongBucketId(6L, 9L)),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"long_bucket\">\n<from>6</from>\n<to>9</to>\n</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"long_bucket\">\n<from>6</from>\n<to>9</to>\n</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new StringBucketId("bar", "baz")),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"string_bucket\">\n<from>bar</from>\n<to>baz</to>\n</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"string_bucket\">\n<from>bar</from>\n<to>baz</to>\n</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new StringBucketId("b\u00e6r", "b\u00e6z")),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"string_bucket\">\n<from>b\u00e6r</from>\n<to>b\u00e6z</to>\n</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"string_bucket\">\n<from>b\u00e6r</from>\n<to>b\u00e6z</to>\n</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new RawBucketId(Utf8.toBytes("bar"), Utf8.toBytes("baz"))),
-                     "<group relevance=\"1.0\">\n" +
-                     "<id type=\"raw_bucket\">\n<from>[98, 97, 114]</from>\n<to>[98, 97, 122]</to>\n</id>\n" +
-                     "</group>\n");
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"raw_bucket\">\n<from>[98, 97, 114]</from>\n<to>[98, 97, 122]</to>\n</id>\n" +
+                        "</group>\n");
     }
 
     @Test
-    public void requireThatGroupsRenderAsExpected() {
+    void requireThatGroupsRenderAsExpected() {
         Group group = newGroup(new StringId("foo"));
         group.setField("foo", "bar");
         group.setField("baz", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
-                            "<id type=\"string\">foo</id>\n" +
-                            "<output label=\"foo\">bar</output>\n" +
-                            "<output label=\"baz\">cox</output>\n" +
-                            "</group>\n");
+                "<id type=\"string\">foo</id>\n" +
+                "<output label=\"foo\">bar</output>\n" +
+                "<output label=\"baz\">cox</output>\n" +
+                "</group>\n");
 
         group = newGroup(new StringId("foo"));
         group.setField("foo", "b\u00e6r");
         group.setField("b\u00e5z", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
-                            "<id type=\"string\">foo</id>\n" +
-                            "<output label=\"foo\">b\u00e6r</output>\n" +
-                            "<output label=\"b\u00e5z\">cox</output>\n" +
-                            "</group>\n");
+                "<id type=\"string\">foo</id>\n" +
+                "<output label=\"foo\">b\u00e6r</output>\n" +
+                "<output label=\"b\u00e5z\">cox</output>\n" +
+                "</group>\n");
     }
 
     @Test
-    public void requireThatRootGroupsRenderAsExpected() {
+    void requireThatRootGroupsRenderAsExpected() {
         RootGroup group = new RootGroup(0, new MyContinuation("69"));
         group.setField("foo", "bar");
         group.setField("baz", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
-                            "<id type=\"root\"/>\n" +
-                            "<continuation id=\"this\">69</continuation>\n" +
-                            "<output label=\"foo\">bar</output>\n" +
-                            "<output label=\"baz\">cox</output>\n" +
-                            "</group>\n");
+                "<id type=\"root\"/>\n" +
+                "<continuation id=\"this\">69</continuation>\n" +
+                "<output label=\"foo\">bar</output>\n" +
+                "<output label=\"baz\">cox</output>\n" +
+                "</group>\n");
 
         group = new RootGroup(0, new MyContinuation("96"));
         group.setField("foo", "b\u00e6r");
         group.setField("b\u00e5z", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
-                            "<id type=\"root\"/>\n" +
-                            "<continuation id=\"this\">96</continuation>\n" +
-                            "<output label=\"foo\">b\u00e6r</output>\n" +
-                            "<output label=\"b\u00e5z\">cox</output>\n" +
-                            "</group>\n");
+                "<id type=\"root\"/>\n" +
+                "<continuation id=\"this\">96</continuation>\n" +
+                "<output label=\"foo\">b\u00e6r</output>\n" +
+                "<output label=\"b\u00e5z\">cox</output>\n" +
+                "</group>\n");
     }
 
     @Test
-    public void requireThatHitListsRenderAsExpected() {
+    void requireThatHitListsRenderAsExpected() {
         assertRender(new HitList("foo"), "<hitlist label=\"foo\"></hitlist>\n");
         assertRender(new HitList("b\u00e6z"), "<hitlist label=\"b\u00e6z\"></hitlist>\n");
 
@@ -142,10 +142,10 @@ public class HitRendererTestCase {
         lst.continuations().put("bar.key", new MyContinuation("bar.val"));
         lst.continuations().put("baz.key", new MyContinuation("baz.val"));
         assertRender(lst, "<hitlist label=\"foo\">\n" +
-                          "<continuation id=\"bar.key\">bar.val</continuation>\n" +
-                          "<continuation id=\"baz.key\">baz.val</continuation>\n" +
-                          "</hitlist>\n");
-}
+                "<continuation id=\"bar.key\">bar.val</continuation>\n" +
+                "<continuation id=\"baz.key\">baz.val</continuation>\n" +
+                "</hitlist>\n");
+    }
 
     private static Group newGroup(GroupId id) {
         return new Group(id, new Relevance(1));

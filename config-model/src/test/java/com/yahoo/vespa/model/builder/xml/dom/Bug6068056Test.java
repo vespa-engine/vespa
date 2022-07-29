@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -43,9 +45,11 @@ public class Bug6068056Test {
             "   </content>" +
             "</services>";
 
-    @Test(expected = RuntimeException.class)
-    public void testContainerClusterCalledDocproc() {
-        VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(HOSTS, SERVICES);
-        creator.create();
+    @Test
+    void testContainerClusterCalledDocproc() {
+        assertThrows(RuntimeException.class, () -> {
+            VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(HOSTS, SERVICES);
+            creator.create();
+        });
     }
 }

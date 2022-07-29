@@ -13,15 +13,12 @@ import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.pagetemplates.model.Renderer;
 import com.yahoo.search.pagetemplates.model.Section;
 import com.yahoo.search.pagetemplates.model.Source;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -31,8 +28,8 @@ public class PageTemplateXMLReadingTestCase {
     private String root="src/test/java/com/yahoo/search/pagetemplates/config/test/";
 
     @Test
-    public void testExamples() {
-        PageTemplateRegistry registry=new PageTemplateXMLReader().read(root + "examples");
+    void testExamples() {
+        PageTemplateRegistry registry = new PageTemplateXMLReader().read(root + "examples");
         assertCorrectSerp(registry.getComponent("serp"));
         assertCorrectSlottingSerp(registry.getComponent("slottingSerp"));
         assertCorrectRichSerp(registry.getComponent("richSerp"));
@@ -42,7 +39,7 @@ public class PageTemplateXMLReadingTestCase {
     }
 
     @Test
-    public void testConfigReading() {
+    void testConfigReading() {
         PageTemplatesConfig config = new PageTemplatesConfig(new PageTemplatesConfig.Builder()
                 .page("<page id=\"slottingSerp\" layout=\"mainAndRight\">\n    <section layout=\"column\" region=\"main\" source=\"*\" order=\"-[rank]\"/>\n    <section layout=\"column\" region=\"right\" source=\"ads\"/>\n</page>\n")
                 .page("<page id=\"richSerp\" layout=\"mainAndRight\">\n    <section layout=\"row\" region=\"main\">\n        <section layout=\"column\" description=\"left main pane\">\n            <section layout=\"row\" max=\"5\" description=\"Bar of images, from one of two possible sources\">\n                <choice method=\"annealing\">\n                    <source name=\"images\"/>\n                    <source name=\"flickr\"/>\n                </choice>\n            </section>\n            <section max=\"1\" source=\"local map video ticker weather\" description=\"A single relevant graphically rich element\"/>\n            <section order=\"-[rank]\" max=\"10\" source=\"web news\" description=\"Various kinds of traditional search results\"/>\n        </section>\n        <section layout=\"column\" order=\"[source]\" source=\"answers blogs twitter\" description=\"right main pane, ugc stuff, grouped by source\"/>\n    </section>\n    <section layout=\"column\" source=\"ads\" region=\"right\"/>\n</page>\n")
@@ -57,19 +54,19 @@ public class PageTemplateXMLReadingTestCase {
     }
 
     @Test
-    public void testInvalidFilename() {
+    void testInvalidFilename() {
         try {
-            PageTemplateRegistry registry=new PageTemplateXMLReader().read(root + "examples/invalidfilename");
-            assertEquals(0,registry.allComponents().size());
+            PageTemplateRegistry registry = new PageTemplateXMLReader().read(root + "examples/invalidfilename");
+            assertEquals(0, registry.allComponents().size());
             fail("Should have caused an exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("The file name of page template 'notinvalid' must be 'notinvalid.xml' but was 'invalid.xml'",e.getMessage());
+            assertEquals("The file name of page template 'notinvalid' must be 'notinvalid.xml' but was 'invalid.xml'", e.getMessage());
         }
     }
 
     protected void assertCorrectSerp(PageTemplate page) {
-        assertNotNull("'serp' was read",page);
+        assertNotNull(page,"'serp' was read");
         Section rootSection=page.getSection();
         assertNotNull(rootSection);
         assertEquals("mainAndRight",rootSection.getLayout().getName());
@@ -84,7 +81,7 @@ public class PageTemplateXMLReadingTestCase {
     }
 
     protected void assertCorrectSlottingSerp(PageTemplate page) {
-        assertNotNull("'slotting serp' was read",page);
+        assertNotNull(page,"'slotting serp' was read");
         Section rootSection=page.getSection();
         Section main=(Section)rootSection.elements(Section.class).get(0);
         assertEquals("-[rank]",main.getOrder().toString());
@@ -94,7 +91,7 @@ public class PageTemplateXMLReadingTestCase {
     }
 
     protected void assertCorrectRichSerp(PageTemplate page) {
-        assertNotNull("'rich serp' was read",page);
+        assertNotNull(page,"'rich serp' was read");
         Section rootSection=page.getSection();
         assertNotNull(rootSection);
         assertEquals("mainAndRight",rootSection.getLayout().getName());
@@ -129,7 +126,7 @@ public class PageTemplateXMLReadingTestCase {
     }
 
     protected void assertCorrectRicherSerp(PageTemplate page) {
-        assertNotNull("'richer serp' was read",page);
+        assertNotNull(page,"'richer serp' was read");
 
         // Check resolution as we go
         Resolver resolver=new DeterministicResolver();
@@ -139,7 +136,7 @@ public class PageTemplateXMLReadingTestCase {
         assertNotNull(root);
         assertEquals("column",root.getLayout().getName());
 
-        assertEquals("Sections was correctly imported and combined with the section in this",4,root.elements(Section.class).size());
+        assertEquals(4,root.elements(Section.class).size(),"Sections was correctly imported and combined with the section in this");
 
         assertCorrectHeader((Section)root.elements(Section.class).get(0));
 
@@ -218,14 +215,13 @@ public class PageTemplateXMLReadingTestCase {
         Set<String> sourceNames=new HashSet<>();
         for (Source source : page.getSources())
             sourceNames.add(source.getName());
-        assertEquals("Expected " + expectedSourceNames.length + " elements in " + sourceNames,
-                     expectedSourceNames.length,sourceNames.size());
+        assertEquals(expectedSourceNames.length,sourceNames.size(),"Expected " + expectedSourceNames.length + " elements in " + sourceNames);
         for (String expectedSourceName : expectedSourceNames)
-            assertTrue("Sources did not include '" + expectedSourceName+ "'",sourceNames.contains(expectedSourceName));
+            assertTrue(sourceNames.contains(expectedSourceName),"Sources did not include '" + expectedSourceName+ "'");
     }
 
     protected void assertCorrectIncluder(PageTemplate page) {
-        assertNotNull("'includer' was read",page);
+        assertNotNull(page,"'includer' was read");
 
         Resolution resolution=new DeterministicResolver().resolve(Choice.createSingleton(page),null,null);
 

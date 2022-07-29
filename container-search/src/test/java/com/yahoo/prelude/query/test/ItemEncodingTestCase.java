@@ -10,11 +10,11 @@ import com.yahoo.prelude.query.PureWeightedInteger;
 import com.yahoo.prelude.query.PureWeightedString;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Item encoding tests
@@ -25,17 +25,17 @@ public class ItemEncodingTestCase {
 
     private void assertType(ByteBuffer buffer, int etype, int features) {
         byte type = buffer.get();
-        assertEquals("Code", etype, type & 0x1f);
-        assertEquals("Features", features, (type & 0xe0) >> 5);
+        assertEquals(etype, type & 0x1f, "Code");
+        assertEquals(features, (type & 0xe0) >> 5, "Features");
     }
 
     private void assertWeight(ByteBuffer buffer, int weight) {
         int w = (weight > (1 << 5)) ? buffer.getShort() & 0x3fff: buffer.get();
-        assertEquals("Weight", weight, w);
+        assertEquals(weight, w, "Weight");
     }
 
     @Test
-    public void testWordItemEncoding() {
+    void testWordItemEncoding() {
         WordItem word = new WordItem("test");
 
         word.setWeight(150);
@@ -44,14 +44,14 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 1, count);
+        assertEquals(1, count, "Serialization count");
 
         assertType(buffer, 4, 1);
         assertWeight(buffer, 150);
 
-        assertEquals("Index length", 0, buffer.get());
-        assertEquals("Word length", 4, buffer.get());
-        assertEquals("Word length", 4, buffer.remaining());
+        assertEquals(0, buffer.get(), "Index length");
+        assertEquals(4, buffer.get(), "Word length");
+        assertEquals(4, buffer.remaining(), "Word length");
         assertEquals('t', buffer.get());
         assertEquals('e', buffer.get());
         assertEquals('s', buffer.get());
@@ -59,20 +59,20 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testStartHostMarkerEncoding() {
+    void testStartHostMarkerEncoding() {
         WordItem word = MarkerWordItem.createStartOfHost();
         ByteBuffer buffer = ByteBuffer.allocate(128);
         int count = word.encode(buffer);
 
         buffer.flip();
 
-        assertEquals("Serialization count", 1, count);
+        assertEquals(1, count, "Serialization count");
 
         assertType(buffer, 4, 0);
 
-        assertEquals("Index length", 0, buffer.get());
-        assertEquals("Word length", 9, buffer.get());
-        assertEquals("Word length", 9, buffer.remaining());
+        assertEquals(0, buffer.get(), "Index length");
+        assertEquals(9, buffer.get(), "Word length");
+        assertEquals(9, buffer.remaining(), "Word length");
         assertEquals('S', buffer.get());
         assertEquals('t', buffer.get());
         assertEquals('A', buffer.get());
@@ -85,7 +85,7 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testEndHostMarkerEncoding() {
+    void testEndHostMarkerEncoding() {
         WordItem word = MarkerWordItem.createEndOfHost();
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -93,13 +93,13 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 1, count);
+        assertEquals(1, count, "Serialization count");
 
         assertType(buffer, 4, 0);
 
-        assertEquals("Index length", 0, buffer.get());
-        assertEquals("Word length", 7, buffer.get());
-        assertEquals("Word length", 7, buffer.remaining());
+        assertEquals(0, buffer.get(), "Index length");
+        assertEquals(7, buffer.get(), "Word length");
+        assertEquals(7, buffer.remaining(), "Word length");
         assertEquals('E', buffer.get());
         assertEquals('n', buffer.get());
         assertEquals('D', buffer.get());
@@ -110,7 +110,7 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testFilterWordItemEncoding() {
+    void testFilterWordItemEncoding() {
         WordItem word = new WordItem("test");
 
         word.setFilter(true);
@@ -119,14 +119,14 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 1, count);
+        assertEquals(1, count, "Serialization count");
 
         assertType(buffer, 4, 4);
         assertEquals(0x08, buffer.get());
 
-        assertEquals("Index length", 0, buffer.get());
-        assertEquals("Word length", 4, buffer.get());
-        assertEquals("Word length", 4, buffer.remaining());
+        assertEquals(0, buffer.get(), "Index length");
+        assertEquals(4, buffer.get(), "Word length");
+        assertEquals(4, buffer.remaining(), "Word length");
         assertEquals('t', buffer.get());
         assertEquals('e', buffer.get());
         assertEquals('s', buffer.get());
@@ -134,7 +134,7 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testNoRankedNoPositionDataWordItemEncoding() {
+    void testNoRankedNoPositionDataWordItemEncoding() {
         WordItem word = new WordItem("test");
         word.setRanked(false);
         word.setPositionData(false);
@@ -144,14 +144,14 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 1, count);
+        assertEquals(1, count, "Serialization count");
 
         assertType(buffer, 4, 4);
         assertEquals(0x05, buffer.get());
 
-        assertEquals("Index length", 0, buffer.get());
-        assertEquals("Word length", 4, buffer.get());
-        assertEquals("Word length", 4, buffer.remaining());
+        assertEquals(0, buffer.get(), "Index length");
+        assertEquals(4, buffer.get(), "Word length");
+        assertEquals(4, buffer.remaining(), "Word length");
         assertEquals('t', buffer.get());
         assertEquals('e', buffer.get());
         assertEquals('s', buffer.get());
@@ -159,10 +159,10 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testAndItemEncoding() {
+    void testAndItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
-        AndItem and=new AndItem();
+        AndItem and = new AndItem();
         and.addItem(a);
         and.addItem(b);
 
@@ -171,21 +171,21 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 3, count);
+        assertEquals(3, count, "Serialization count");
 
         assertType(buffer, 1, 0);
 
-        assertEquals("And arity", 2, buffer.get());
+        assertEquals(2, buffer.get(), "And arity");
 
-        assertWord(buffer,"a");
-        assertWord(buffer,"b");
+        assertWord(buffer, "a");
+        assertWord(buffer, "b");
     }
 
     @Test
-    public void testNearItemEncoding() {
+    void testNearItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
-        NearItem near=new NearItem(7);
+        NearItem near = new NearItem(7);
         near.addItem(a);
         near.addItem(b);
 
@@ -194,22 +194,22 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 3, count);
+        assertEquals(3, count, "Serialization count");
 
         assertType(buffer, 11, 0);
 
-        assertEquals("Near arity", 2, buffer.get());
-        assertEquals("Limit", 7, buffer.get());
+        assertEquals(2, buffer.get(), "Near arity");
+        assertEquals(7, buffer.get(), "Limit");
 
-        assertWord(buffer,"a");
-        assertWord(buffer,"b");
+        assertWord(buffer, "a");
+        assertWord(buffer, "b");
     }
 
     @Test
-    public void testONearItemEncoding() {
+    void testONearItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
-        NearItem onear=new ONearItem(7);
+        NearItem onear = new ONearItem(7);
         onear.addItem(a);
         onear.addItem(b);
 
@@ -218,18 +218,18 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 3, count);
+        assertEquals(3, count, "Serialization count");
 
         assertType(buffer, 12, 0);
-        assertEquals("Near arity", 2, buffer.get());
-        assertEquals("Limit", 7, buffer.get());
+        assertEquals(2, buffer.get(), "Near arity");
+        assertEquals(7, buffer.get(), "Limit");
 
-        assertWord(buffer,"a");
-        assertWord(buffer,"b");
+        assertWord(buffer, "a");
+        assertWord(buffer, "b");
     }
 
     @Test
-    public void testEquivItemEncoding() {
+    void testEquivItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
         EquivItem equiv = new EquivItem();
@@ -241,17 +241,17 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 3, count);
+        assertEquals(3, count, "Serialization count");
 
         assertType(buffer, 14, 0);
-        assertEquals("Equiv arity", 2, buffer.get());
+        assertEquals(2, buffer.get(), "Equiv arity");
 
         assertWord(buffer, "a");
         assertWord(buffer, "b");
     }
 
     @Test
-    public void testWandItemEncoding() {
+    void testWandItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
         WeakAndItem wand = new WeakAndItem();
@@ -263,11 +263,11 @@ public class ItemEncodingTestCase {
 
         buffer.flip();
 
-        assertEquals("Serialization count", 3, count);
+        assertEquals(3, count, "Serialization count");
 
         assertType(buffer, 16, 0);
-        assertEquals("WeakAnd arity", 2, buffer.get());
-        assertEquals("WeakAnd N", 100, buffer.getShort() & 0x3fff);
+        assertEquals(2, buffer.get(), "WeakAnd arity");
+        assertEquals(100, buffer.getShort() & 0x3fff, "WeakAnd N");
         assertEquals(0, buffer.get());
 
         assertWord(buffer, "a");
@@ -275,65 +275,66 @@ public class ItemEncodingTestCase {
     }
 
     @Test
-    public void testPureWeightedStringEncoding() {
+    void testPureWeightedStringEncoding() {
         PureWeightedString a = new PureWeightedString("a");
         ByteBuffer buffer = ByteBuffer.allocate(128);
         int count = a.encode(buffer);
         buffer.flip();
-        assertEquals("Serialization size", 3, buffer.remaining());
-        assertEquals("Serialization count", 1, count);
+        assertEquals(3, buffer.remaining(), "Serialization size");
+        assertEquals(1, count, "Serialization count");
         assertType(buffer, 19, 0);
         assertString(buffer, a.getString());
     }
 
     @Test
-    public void testPureWeightedStringEncodingWithNonDefaultWeight() {
+    void testPureWeightedStringEncodingWithNonDefaultWeight() {
         PureWeightedString a = new PureWeightedString("a", 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);
         int count = a.encode(buffer);
         buffer.flip();
-        assertEquals("Serialization size", 4, buffer.remaining());
-        assertEquals("Serialization count", 1, count);
+        assertEquals(4, buffer.remaining(), "Serialization size");
+        assertEquals(1, count, "Serialization count");
         assertType(buffer, 19, 1);
         assertWeight(buffer, 7);
         assertString(buffer, a.getString());
     }
 
     @Test
-    public void testPureWeightedIntegerEncoding() {
+    void testPureWeightedIntegerEncoding() {
         PureWeightedInteger a = new PureWeightedInteger(23432568763534865l);
         ByteBuffer buffer = ByteBuffer.allocate(128);
         int count = a.encode(buffer);
         buffer.flip();
-        assertEquals("Serialization size", 9, buffer.remaining());
-        assertEquals("Serialization count", 1, count);
+        assertEquals(9, buffer.remaining(), "Serialization size");
+        assertEquals(1, count, "Serialization count");
         assertType(buffer, 20, 0);
-        assertEquals("Value", a.getValue(), buffer.getLong());
+        assertEquals(a.getValue(), buffer.getLong(), "Value");
     }
 
     @Test
-    public void testPureWeightedLongEncodingWithNonDefaultWeight() {
+    void testPureWeightedLongEncodingWithNonDefaultWeight() {
         PureWeightedInteger a = new PureWeightedInteger(23432568763534865l, 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);
         int count = a.encode(buffer);
         buffer.flip();
-        assertEquals("Serialization size", 10, buffer.remaining());
-        assertEquals("Serialization count", 1, count);
+        assertEquals(10, buffer.remaining(), "Serialization size");
+        assertEquals(1, count, "Serialization count");
         assertType(buffer, 20, 1);
         assertWeight(buffer, 7);
-        assertEquals("Value", a.getValue(), buffer.getLong());;
+        assertEquals(a.getValue(), buffer.getLong(), "Value");
+        ;
     }
 
     private void assertString(ByteBuffer buffer, String word) {
-        assertEquals("Word length", word.length(), buffer.get());
+        assertEquals(word.length(), buffer.get(), "Word length");
         for (int i=0; i<word.length(); i++) {
-            assertEquals("Character at " + i,word.charAt(i), buffer.get());
+            assertEquals(word.charAt(i), buffer.get(), "Character at " + i);
         }
     }
     private void assertWord(ByteBuffer buffer,String word) {
         assertType(buffer, 4, 0);
 
-        assertEquals("Index length", 0, buffer.get());
+        assertEquals(0, buffer.get(), "Index length");
         assertString(buffer, word);
     }
 

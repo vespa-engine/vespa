@@ -11,15 +11,13 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
 import static com.yahoo.config.provision.Environment.prod;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -28,7 +26,7 @@ import static org.junit.Assert.fail;
 public class CloudWatchValidatorTest {
 
     @Test
-    public void cloudwatch_in_public_zones_passes_validation() throws IOException, SAXException {
+    void cloudwatch_in_public_zones_passes_validation() throws IOException, SAXException {
         DeployState deployState = deployState(servicesWithCloudwatch(), true, true);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -36,7 +34,7 @@ public class CloudWatchValidatorTest {
     }
 
     @Test
-    public void cloudwatch_passes_validation_for_self_hosted_vespa() throws IOException, SAXException {
+    void cloudwatch_passes_validation_for_self_hosted_vespa() throws IOException, SAXException {
         DeployState deployState = deployState(servicesWithCloudwatch(), false, false);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -44,7 +42,7 @@ public class CloudWatchValidatorTest {
     }
 
     @Test
-    public void cloudwatch_in_non_public_zones_fails_validation() throws IOException, SAXException {
+    void cloudwatch_in_non_public_zones_fails_validation() throws IOException, SAXException {
         DeployState deployState = deployState(servicesWithCloudwatch(), true, false);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
@@ -72,8 +70,8 @@ public class CloudWatchValidatorTest {
         final DeployState deployState = builder.build();
 
         if (isHosted) {
-            assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
-            assertEquals("Test must emulate a prod environment.", prod, deployState.zone().environment());
+            assertTrue(deployState.isHosted(), "Test must emulate a hosted deployment.");
+            assertEquals(prod, deployState.zone().environment(), "Test must emulate a prod environment.");
         }
         return deployState;
     }

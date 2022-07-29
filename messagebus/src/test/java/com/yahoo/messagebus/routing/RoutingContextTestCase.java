@@ -11,17 +11,17 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -35,7 +35,7 @@ public class RoutingContextTestCase {
     SourceSession srcSession;
     DestinationSession dstSession;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
@@ -48,7 +48,7 @@ public class RoutingContextTestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -58,7 +58,7 @@ public class RoutingContextTestCase {
     }
 
     @Test
-    public void testSingleDirective() {
+    void testSingleDirective() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
                 false,
@@ -68,10 +68,10 @@ public class RoutingContextTestCase {
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))
                 .addHop(new HopSpec("myhop", "[Custom]")
-                .addRecipient("foo").addRecipient("bar").addRecipient("baz/cox")));
+                        .addRecipient("foo").addRecipient("bar").addRecipient("baz/cox")));
         for (int i = 0; i < 2; ++i) {
             assertTrue(srcSession.send(createMessage("msg"), "myroute").isAccepted());
-            Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
+            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
             System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
@@ -79,7 +79,7 @@ public class RoutingContextTestCase {
     }
 
     @Test
-    public void testMoreDirectives() {
+    void testMoreDirectives() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
                 false,
@@ -89,12 +89,12 @@ public class RoutingContextTestCase {
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))
                 .addHop(new HopSpec("myhop", "foo/[Custom]/baz")
-                .addRecipient("foo").addRecipient("foo/bar")
-                .addRecipient("foo/bar0/baz").addRecipient("foo/bar1/baz")
-                .addRecipient("foo/bar/baz/cox")));
+                        .addRecipient("foo").addRecipient("foo/bar")
+                        .addRecipient("foo/bar0/baz").addRecipient("foo/bar1/baz")
+                        .addRecipient("foo/bar/baz/cox")));
         for (int i = 0; i < 2; ++i) {
             assertTrue(srcSession.send(createMessage("msg"), "myroute").isAccepted());
-            Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
+            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
             System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
@@ -102,7 +102,7 @@ public class RoutingContextTestCase {
     }
 
     @Test
-    public void testRecipientsRemain() {
+    void testRecipientsRemain() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("First", new CustomPolicyFactory(true, Arrays.asList("foo/bar"), Arrays.asList("foo/[Second]")));
         protocol.addPolicyFactory("Second", new CustomPolicyFactory(false, Arrays.asList("foo/bar"), Arrays.asList("foo/bar")));
@@ -110,10 +110,10 @@ public class RoutingContextTestCase {
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))
                 .addHop(new HopSpec("myhop", "[First]/[Second]")
-                .addRecipient("foo/bar")));
+                        .addRecipient("foo/bar")));
         for (int i = 0; i < 2; ++i) {
             assertTrue(srcSession.send(createMessage("msg"), "myroute").isAccepted());
-            Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
+            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
             System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
@@ -121,15 +121,15 @@ public class RoutingContextTestCase {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertEquals("node : null, directive: 1, errors: [], selectOnRetry: true context: null", new RoutingContext(null, 1).toString());
     }
 
     @Test
-    public void testConstRoute() {
+    void testConstRoute() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("DocumentRouteSelector",
-                                  new CustomPolicyFactory(true, Arrays.asList("dst"), Arrays.asList("dst")));
+                new CustomPolicyFactory(true, Arrays.asList("dst"), Arrays.asList("dst")));
         srcServer.mb.putProtocol(protocol);
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("default").addHop("indexing"))
@@ -137,10 +137,10 @@ public class RoutingContextTestCase {
                 .addHop(new HopSpec("dst", "dst/session")));
         for (int i = 0; i < 2; ++i) {
             assertTrue(srcSession.send(createMessage("msg"), Route.parse("route:default")).isAccepted());
-            Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(TIMEOUT_SECS);
+            Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(TIMEOUT_SECS);
             assertNotNull(msg);
             dstSession.acknowledge(msg);
-            Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
+            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
             System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());

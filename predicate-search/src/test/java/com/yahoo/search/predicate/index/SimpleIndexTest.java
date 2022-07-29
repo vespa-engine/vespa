@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -19,7 +19,7 @@ public class SimpleIndexTest {
     private static final int DOC_ID = 42;
 
     @Test
-    public void requireThatValuesCanBeInserted() {
+    void requireThatValuesCanBeInserted() {
         SimpleIndex.Builder builder = new SimpleIndex.Builder();
         builder.insert(KEY, new Posting(DOC_ID, 10));
         SimpleIndex index = builder.build();
@@ -38,7 +38,7 @@ public class SimpleIndexTest {
     }
 
     @Test
-    public void requireThatEntriesAreSortedOnId() {
+    void requireThatEntriesAreSortedOnId() {
         SimpleIndex.Builder builder = new SimpleIndex.Builder();
         builder.insert(KEY, new Posting(DOC_ID, 10));
         builder.insert(KEY, new Posting(DOC_ID - 1, 20));  // Out of order
@@ -52,7 +52,7 @@ public class SimpleIndexTest {
     }
 
     @Test
-    public void requireThatSerializationAndDeserializationRetainDictionary() throws IOException {
+    void requireThatSerializationAndDeserializationRetainDictionary() throws IOException {
         SimpleIndex.Builder builder = new SimpleIndex.Builder();
         builder.insert(KEY, new Posting(DOC_ID, 10));
         builder.insert(KEY, new Posting(DOC_ID + 1, 20));

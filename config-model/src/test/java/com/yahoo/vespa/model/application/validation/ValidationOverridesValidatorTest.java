@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -15,8 +15,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author hmusum
@@ -27,13 +27,13 @@ public class ValidationOverridesValidatorTest {
                                                                                 .withZone(ZoneId.systemDefault());
 
     @Test
-    public void testValidationOverride() throws IOException, SAXException {
+    void testValidationOverride() throws IOException, SAXException {
         String tenDays = dateTimeFormatter.format(Instant.now().plus(Duration.ofDays(10)));
 
         var validationOverridesXml = "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                                     "  <validation-overrides>\n" +
-                                     "    <allow until='" + tenDays + "'>deployment-removal</allow>\n" +
-                                     "  </validation-overrides>";
+                "  <validation-overrides>\n" +
+                "    <allow until='" + tenDays + "'>deployment-removal</allow>\n" +
+                "  </validation-overrides>";
 
         var deployState = createDeployState(validationOverridesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
@@ -41,17 +41,17 @@ public class ValidationOverridesValidatorTest {
     }
 
     @Test
-    public void testFailsWhenValidationOverrideIsTooFarInFuture() {
+    void testFailsWhenValidationOverrideIsTooFarInFuture() {
         Instant now = Instant.now();
         String sixtyDays = dateTimeFormatter.format(now.plus(Duration.ofDays(60)));
         String sixtyOneDays = dateTimeFormatter.format(now.plus(Duration.ofDays(61)));
 
         var validationOverrides = "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                                  "<validation-overrides>\n" +
-                                  "    <allow until='" + sixtyDays + "'>deployment-removal</allow>\n" +
-                                  "</validation-overrides>";
+                "<validation-overrides>\n" +
+                "    <allow until='" + sixtyDays + "'>deployment-removal</allow>\n" +
+                "</validation-overrides>";
         assertValidationError("validation-overrides is invalid: allow 'deployment-removal' until " +
-                              sixtyOneDays + "T00:00:00Z is too far in the future: Max 30 days is allowed", validationOverrides);
+                sixtyOneDays + "T00:00:00Z is too far in the future: Max 30 days is allowed", validationOverrides);
     }
 
     private static void assertValidationError(String message, String validationOverridesXml) {

@@ -19,7 +19,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.NonWorkingRequest;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -28,13 +28,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -44,35 +44,35 @@ public class TimeoutManagerImplTestCase {
     private static final String REQUEST_URI = "http://host/path";
 
     @Test
-    public void requireThatDefaultIsNoTimeout() {
+    void requireThatDefaultIsNoTimeout() {
         Context ctx = new Context(MyRequestHandler.newEagerResponse());
         assertNull(ctx.dispatchRequest(null, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
-    public void requireThatTimeoutCanBeSetByServerProvider() {
+    void requireThatTimeoutCanBeSetByServerProvider() {
         Context ctx = new Context(MyRequestHandler.newEagerResponse());
         assertEquals(Long.valueOf(69), ctx.dispatchRequest(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
-    public void requireThatTimeoutCanBeSetByRequestHandler() {
+    void requireThatTimeoutCanBeSetByRequestHandler() {
         Context ctx = new Context(MyRequestHandler.newTimeoutWithEagerResponse(69));
         assertEquals(Long.valueOf(69), ctx.dispatchRequest(null, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
-    public void requireThatTimeoutRequestHandlerTimeoutHasPrecedence() {
+    void requireThatTimeoutRequestHandlerTimeoutHasPrecedence() {
         Context ctx = new Context(MyRequestHandler.newTimeoutWithEagerResponse(6));
         assertEquals(Long.valueOf(6), ctx.dispatchRequest(9L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
-    public void requireThatResponseCancelsTimeout() throws InterruptedException {
+    void requireThatResponseCancelsTimeout() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newEagerResponse());
         assertEquals(Response.Status.OK, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertEquals(Response.Status.OK, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
@@ -80,7 +80,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatNullRequestContentCanTimeout() throws InterruptedException {
+    void requireThatNullRequestContentCanTimeout() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newNullContent());
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
@@ -88,7 +88,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutWorksAfterRequestDenied() throws InterruptedException {
+    void requireThatTimeoutWorksAfterRequestDenied() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newFirstRequestDenied());
         try {
             ctx.dispatchRequest(null, MyResponseHandler.newInstance());
@@ -101,7 +101,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutWorksAfterResponseDenied() throws InterruptedException {
+    void requireThatTimeoutWorksAfterResponseDenied() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newResponseDenied()));
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
@@ -109,7 +109,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutWorksAfterResponseThrowsException() throws InterruptedException {
+    void requireThatTimeoutWorksAfterResponseThrowsException() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newThrowException()));
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
@@ -117,7 +117,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutWorksAfterResponseInterruptsThread() throws InterruptedException {
+    void requireThatTimeoutWorksAfterResponseInterruptsThread() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInterruptThread()));
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
@@ -125,7 +125,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutOccursInOrder() throws InterruptedException {
+    void requireThatTimeoutOccursInOrder() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
         MyResponseHandler foo = MyResponseHandler.newInstance();
         ctx.dispatchRequest(300L, foo);
@@ -152,7 +152,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatResponseHandlerIsWellBehavedAfterTimeout() throws InterruptedException {
+    void requireThatResponseHandlerIsWellBehavedAfterTimeout() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
         assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
 
@@ -172,11 +172,11 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatManagedHandlerForwardsAllCalls() throws InterruptedException {
+    void requireThatManagedHandlerForwardsAllCalls() throws InterruptedException {
         Request request = NonWorkingRequest.newInstance(REQUEST_URI);
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         TimeoutManagerImpl timeoutManager = new TimeoutManagerImpl(Executors.defaultThreadFactory(),
-                                                                   new SystemTimer());
+                new SystemTimer());
         RequestHandler managedHandler = timeoutManager.manageHandler(requestHandler);
 
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -219,7 +219,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatTimeoutOccursAtExpectedTime() throws InterruptedException {
+    void requireThatTimeoutOccursAtExpectedTime() throws InterruptedException {
         final Context ctx = new Context(MyRequestHandler.newInstance());
         final MyResponseHandler responseHandler = MyResponseHandler.newInstance();
 
@@ -251,7 +251,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatQueueEntryIsRemovedWhenResponseHandlerIsCalledBeforeTimeout() {
+    void requireThatQueueEntryIsRemovedWhenResponseHandlerIsCalledBeforeTimeout() {
         Context ctx = new Context(MyRequestHandler.newInstance());
         ctx.dispatchRequest(69L, MyResponseHandler.newInstance());
         assertTrue(ctx.awaitQueueSize(1, 600, TimeUnit.SECONDS));
@@ -261,7 +261,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatNoEntryIsMadeIfTimeoutIsNull() {
+    void requireThatNoEntryIsMadeIfTimeoutIsNull() {
         Context ctx = new Context(MyRequestHandler.newInstance());
         ctx.dispatchRequest(null, MyResponseHandler.newInstance());
         assertFalse(ctx.awaitQueueSize(1, 100, TimeUnit.MILLISECONDS));
@@ -271,7 +271,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatNoEntryIsMadeIfHandleRequestCallsHandleResponse() {
+    void requireThatNoEntryIsMadeIfHandleRequestCallsHandleResponse() {
         Context ctx = new Context(MyRequestHandler.newEagerResponse());
         ctx.dispatchRequest(69L, MyResponseHandler.newInstance());
         assertFalse(ctx.awaitQueueSize(1, 100, TimeUnit.MILLISECONDS));
@@ -280,7 +280,7 @@ public class TimeoutManagerImplTestCase {
     }
 
     @Test
-    public void requireThatNoEntryIsMadeIfTimeoutHandlerHasBeenSet() {
+    void requireThatNoEntryIsMadeIfTimeoutHandlerHasBeenSet() {
         final Context ctx = new Context(MyRequestHandler.newInstance());
         new RequestDispatch() {
 

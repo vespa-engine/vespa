@@ -10,7 +10,7 @@ import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
@@ -19,8 +19,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the {@link com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder} class.
@@ -31,7 +30,7 @@ import static org.junit.Assert.fail;
 public class DomConfigPayloadBuilderTest {
 
     @Test
-    public void testFunctionTest_DefaultValues() throws FileNotFoundException {
+    void testFunctionTest_DefaultValues() throws FileNotFoundException {
         Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
         String expected = ""
                 + "{"
@@ -57,13 +56,13 @@ public class DomConfigPayloadBuilderTest {
 
     // Multi line strings are not tested in 'DefaultValues', so here it is.
     @Test
-    public void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
+    void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
         Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
         assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", configRoot);
     }
 
     @Test
-    public void put_to_leaf_map() {
+    void put_to_leaf_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<config name=\"test.foobar\">" +
                 "  <intmap>" +
@@ -75,7 +74,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void put_to_inner_map() {
+    void put_to_inner_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<config name=\"test.foobar\">" +
                 "  <innermap>" +
@@ -91,7 +90,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void put_to_nested_map() {
+    void put_to_nested_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<config name=\"test.foobar\">" +
                 "  <nestedmap>" +
@@ -115,7 +114,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void camel_case_via_dashes() {
+    void camel_case_via_dashes() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<config name=\"test.function-test\">" +
                 "  <some-struct> <any-value>17</any-value> </some-struct>" +
@@ -125,7 +124,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailWrongTagName() {
+    void testFailWrongTagName() {
         Element configRoot = getDocument(new StringReader("<configs name=\"foo\"/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -137,7 +136,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailNoNameAttribute() {
+    void testFailNoNameAttribute() {
         Element configRoot = getDocument(new StringReader("<config/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -148,7 +147,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void testNameParsing() {
+    void testNameParsing() {
         Element configRoot = getDocument(new StringReader("<config name=\"test.function-test\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -157,38 +156,42 @@ public class DomConfigPayloadBuilderTest {
         assertEquals("test", key.getNamespace());
     }
 
-    @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidName() {
-        Element configRoot = getDocument(new StringReader("<config name=\" function-test\" version=\"1\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        DomConfigPayloadBuilder.parseConfigName(configRoot);
-    }
-
-    @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidNamespace() {
-        Element configRoot = getDocument(new StringReader("<config name=\"_foo.function-test\" version=\"1\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        DomConfigPayloadBuilder.parseConfigName(configRoot);
+    @Test
+    void testNameParsingInvalidName() {
+        assertThrows(ConfigurationRuntimeException.class, () -> {
+            Element configRoot = getDocument(new StringReader("<config name=\" function-test\" version=\"1\">" +
+                    "<int_val>1</int_val> +" +
+                    "</config>"));
+            DomConfigPayloadBuilder.parseConfigName(configRoot);
+        });
     }
 
     @Test
-    public void require_that_item_syntax_works_with_leaf() {
+    void testNameParsingInvalidNamespace() {
+        assertThrows(ConfigurationRuntimeException.class, () -> {
+            Element configRoot = getDocument(new StringReader("<config name=\"_foo.function-test\" version=\"1\">" +
+                    "<int_val>1</int_val> +" +
+                    "</config>"));
+            DomConfigPayloadBuilder.parseConfigName(configRoot);
+        });
+    }
+
+    @Test
+    void require_that_item_syntax_works_with_leaf() {
         Element configRoot = getDocument(
                 "<config name=\"test.arraytypes\" version=\"1\">" +
-                "    <intarr>" +
-                "        <item>13</item>" +
-                "        <item>10</item>" +
-                "        <item>1337</item>" +
-                "    </intarr>" +
-                "</config>");
+                        "    <intarr>" +
+                        "        <item>13</item>" +
+                        "        <item>10</item>" +
+                        "        <item>1337</item>" +
+                        "    </intarr>" +
+                        "</config>");
 
         assertPayload("{\"intarr\":[\"13\",\"10\",\"1337\"]}", configRoot);
     }
 
     @Test
-    public void require_that_item_syntax_works_with_struct() {
+    void require_that_item_syntax_works_with_struct() {
         Element configRoot = getDocument(
                 "<config name=\"test.arraytypes\" version=\"1\">" +
                         "    <lolarray>" +
@@ -199,42 +202,46 @@ public class DomConfigPayloadBuilderTest {
                         "</config>");
 
         assertPayload("{\"lolarray\":[{\"foo\":\"hei\",\"bar\":\"hei2\"},{\"foo\":\"hoo\",\"bar\":\"hoo2\"},{\"foo\":\"happ\",\"bar\":\"happ2\"}]}",
-                      configRoot);
+                configRoot);
     }
 
     @Test
-    public void require_that_item_syntax_works_with_struct_array() {
+    void require_that_item_syntax_works_with_struct_array() {
         Element configRoot = getDocument(
                 "<config name=\"test.arraytypes\" version=\"1\">" +
-                "    <lolarray>" +
-                "        <item><fooarray><item>13</item></fooarray></item>" +
-                "        <item><fooarray><item>10</item></fooarray></item>" +
-                "        <item><fooarray><item>1337</item></fooarray></item>" +
-                "    </lolarray>" +
-                "</config>");
+                        "    <lolarray>" +
+                        "        <item><fooarray><item>13</item></fooarray></item>" +
+                        "        <item><fooarray><item>10</item></fooarray></item>" +
+                        "        <item><fooarray><item>1337</item></fooarray></item>" +
+                        "    </lolarray>" +
+                        "</config>");
 
         assertPayload("{\"lolarray\":[{\"fooarray\":[\"13\"]},{\"fooarray\":[\"10\"]},{\"fooarray\":[\"1337\"]}]}", configRoot);
     }
 
-    @Test(expected = ConfigurationRuntimeException.class)
-    public void require_that_item_is_reserved_in_root() {
-        Element configRoot = getDocument(
-                "<config name=\"test.arraytypes\" version=\"1\">" +
-                "    <item>13</item>" +
-                "</config>");
-        new DomConfigPayloadBuilder(null).build(configRoot);
+    @Test
+    void require_that_item_is_reserved_in_root() {
+        assertThrows(ConfigurationRuntimeException.class, () -> {
+            Element configRoot = getDocument(
+                    "<config name=\"test.arraytypes\" version=\"1\">" +
+                            "    <item>13</item>" +
+                            "</config>");
+            new DomConfigPayloadBuilder(null).build(configRoot);
+        });
     }
 
-    @Test(expected=ConfigurationRuntimeException.class)
-    public void require_that_exceptions_are_issued() throws FileNotFoundException {
-        Element configRoot = getDocument(
-                "<config name=\"test.simpletypes\">" +
-                "<longval>invalid</longval>" +
-                "</config>");
-        DefParser defParser = new DefParser("simpletypes",
-                new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
-        ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
-        ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
+    @Test
+    void require_that_exceptions_are_issued() throws FileNotFoundException {
+        assertThrows(ConfigurationRuntimeException.class, () -> {
+            Element configRoot = getDocument(
+                    "<config name=\"test.simpletypes\">" +
+                            "<longval>invalid</longval>" +
+                            "</config>");
+            DefParser defParser = new DefParser("simpletypes",
+                    new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
+            ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
+            ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
+        });
     }
 
     private void assertPayload(String expected, Element configRoot) {

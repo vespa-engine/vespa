@@ -4,15 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -24,7 +22,7 @@ public class FileWriterTest {
     private final TaskContext context = mock(TaskContext.class);
 
     @Test
-    public void testWrite() {
+    void testWrite() {
         final String content = "content";
         final String permissions = "rwxr-xr-x";
         final int owner = 123;
@@ -52,7 +50,7 @@ public class FileWriterTest {
     }
 
     @Test
-    public void testAtomicWrite() {
+    void testAtomicWrite() {
         FileWriter writer = new FileWriter(fileSystem.getPath("/foo/bar"))
                 .atomicWrite(true);
 

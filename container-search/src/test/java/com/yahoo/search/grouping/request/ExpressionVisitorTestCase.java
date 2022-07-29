@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class ExpressionVisitorTestCase {
 
     @Test
-    public void requireThatExpressionsAreVisited() {
+    void requireThatExpressionsAreVisited() {
         GroupingOperation op = new AllOperation();
 
         final List<GroupingExpression> lst = new LinkedList<>();
@@ -38,7 +38,7 @@ public class ExpressionVisitorTestCase {
     }
 
     @Test
-    public void requireThatChildOperationsAreVisited() {
+    void requireThatChildOperationsAreVisited() {
         GroupingOperation root, parentA, childA1, childA2, parentB, childB1;
         root = new AllOperation()
                 .addChild(parentA = new AllOperation()
@@ -69,7 +69,7 @@ public class ExpressionVisitorTestCase {
     }
 
     @Test
-    public void requireThatExpressionsArgumentsAreVisited() {
+    void requireThatExpressionsArgumentsAreVisited() {
         final List<GroupingExpression> lst = new LinkedList<>();
         GroupingExpression arg1 = new AttributeValue("arg1");
         lst.add(arg1);

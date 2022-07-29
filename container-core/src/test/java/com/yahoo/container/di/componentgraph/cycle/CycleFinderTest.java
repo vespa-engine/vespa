@@ -2,7 +2,7 @@
 
 package com.yahoo.container.di.componentgraph.cycle;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertic
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.C;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.D;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -20,7 +20,7 @@ public class CycleFinderTest {
     enum Vertices {A, B, C, D}
 
     @Test
-    public void graph_without_cycles_returns_no_cycle() {
+    void graph_without_cycles_returns_no_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
         graph.edge(B, C);
@@ -32,7 +32,7 @@ public class CycleFinderTest {
     }
 
     @Test
-    public void graph_with_cycle_returns_cycle() {
+    void graph_with_cycle_returns_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
         graph.edge(B, C);
@@ -43,7 +43,7 @@ public class CycleFinderTest {
     }
 
     @Test
-    public void graph_with_self_referencing_vertex_returns_cycle() {
+    void graph_with_self_referencing_vertex_returns_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, A);
 
@@ -52,7 +52,7 @@ public class CycleFinderTest {
     }
 
     @Test
-    public void leading_nodes_are_stripped_from_cycle() {
+    void leading_nodes_are_stripped_from_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
         graph.edge(B, C);
@@ -63,7 +63,7 @@ public class CycleFinderTest {
     }
 
     @Test
-    public void findCycle_is_idempotent_with_cycle() {
+    void findCycle_is_idempotent_with_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, A);
 
@@ -73,7 +73,7 @@ public class CycleFinderTest {
     }
 
     @Test
-    public void findCycle_is_idempotent_without_cycle() {
+    void findCycle_is_idempotent_without_cycle() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
 

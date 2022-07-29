@@ -2,11 +2,11 @@
 package com.yahoo.search.yql;
 
 import com.yahoo.prelude.query.WeightedSetItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class ParameterListParserTestCase {
 
     @Test
-    public void testMapParsing() {
+    void testMapParsing() {
         assertParsed("{}", Map.of());
         assertParsed("{a:12}", Map.of("a", 12));
         assertParsed("{'a':12}", Map.of("a", 12));
@@ -27,7 +27,7 @@ public class ParameterListParserTestCase {
     }
 
     @Test
-    public void testArrayParsing() {
+    void testArrayParsing() {
         assertParsed("[]", Map.of());
         assertParsed("[[0,12]]", Map.of(0L, 12));
         assertParsed("[[0,12],[1,13]]", Map.of(0L, 12, 1L, 13));
@@ -39,9 +39,9 @@ public class ParameterListParserTestCase {
         WeightedSetItem item = new WeightedSetItem("test");
         ParameterListParser.addItemsFromString(string, item);
         for (var entry : expected.entrySet()) {
-            assertEquals("Key '" + entry.getKey() + "'", entry.getValue(), item.getTokenWeight(entry.getKey()));
+            assertEquals(entry.getValue(), item.getTokenWeight(entry.getKey()), "Key '" + entry.getKey() + "'");
         }
-        assertEquals("Token count is correct", expected.size(), item.getNumTokens());
+        assertEquals(expected.size(), item.getNumTokens(), "Token count is correct");
     }
 
 }

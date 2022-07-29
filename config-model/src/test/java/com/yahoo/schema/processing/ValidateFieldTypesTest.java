@@ -16,11 +16,12 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -30,22 +31,18 @@ public class ValidateFieldTypesTest {
     private static final String IMPORTED_FIELD_NAME = "imported_myfield";
     private static final String DOCUMENT_NAME = "my_doc";
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
-        Schema schema = createSearchWithDocument(DOCUMENT_NAME);
-        schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
-        schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, schema));
+    void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            Schema schema = createSearchWithDocument(DOCUMENT_NAME);
+            schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
+            schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, schema));
 
-        ValidateFieldTypes validator = new ValidateFieldTypes(schema, null, null, null);
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For schema '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
-                "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string.");
-        validator.process(true, false);
+            ValidateFieldTypes validator = new ValidateFieldTypes(schema, null, null, null);
+            validator.process(true, false);
+        });
+        assertTrue(exception.getMessage().contains("For schema '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
+                "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string."));
     }
 
     private static Schema createSearch(String documentType) {

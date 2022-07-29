@@ -10,7 +10,7 @@ import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.federation.sourceref.SourceRefResolver;
 import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,9 +19,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.search.federation.sourceref.test.SearchChainResolverTestCase.emptySourceToProviderMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for SourceRefResolver.
@@ -60,38 +58,38 @@ public class SourceRefResolverTestCase {
     }
 
     @Test
-    public void check_test_assumptions() {
+    void check_test_assumptions() {
         assertTrue(indexFacts.clustersHavingSearchDefinition("document1").containsAll(List.of("cluster1", "cluster2")));
     }
 
     @Test
-    public void lookup_search_chain() throws Exception {
+    void lookup_search_chain() throws Exception {
         Set<SearchChainInvocationSpec> searchChains = resolve(cluster1);
         assertEquals(1, searchChains.size());
         assertTrue(searchChainIds(searchChains).contains(cluster1));
     }
 
     @Test
-    public void lookup_search_chains_for_document1() throws Exception {
+    void lookup_search_chains_for_document1() throws Exception {
         Set<SearchChainInvocationSpec> searchChains = resolve("document1");
         assertEquals(2, searchChains.size());
         assertTrue(searchChainIds(searchChains).containsAll(List.of(cluster1, cluster2)));
     }
 
     @Test
-    public void error_when_document_gives_cluster_without_matching_search_chain() {
+    void error_when_document_gives_cluster_without_matching_search_chain() {
         try {
             resolve("document3");
             fail("Expected exception");
         } catch (UnresolvedSearchChainException e) {
             assertEquals("Failed to resolve cluster search chain 'cluster3' " +
-                         "when using source ref 'document3' as a document name.",
-                         e.getMessage());
+                    "when using source ref 'document3' as a document name.",
+                    e.getMessage());
         }
     }
 
     @Test
-    public void error_when_no_document_or_search_chain() {
+    void error_when_no_document_or_search_chain() {
         try {
             resolve("document4");
             fail("Expected exception");

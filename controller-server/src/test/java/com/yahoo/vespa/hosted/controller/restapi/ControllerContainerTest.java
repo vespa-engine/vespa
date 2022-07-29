@@ -9,8 +9,8 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_ACCESS_TOKEN_HEADER_NAME;
@@ -33,7 +33,7 @@ public class ControllerContainerTest {
 
     protected JDisc container;
 
-    @Before
+    @BeforeEach
     public void startContainer() {
         container = JDisc.fromServicesXml(controllerServicesXml(), networking());
         addUserToHostedOperatorRole(hostedOperator);
@@ -41,7 +41,7 @@ public class ControllerContainerTest {
 
     protected Networking networking() { return Networking.disable; }
 
-    @After
+    @AfterEach
     public void stopContainer() { container.close(); }
 
     private String controllerServicesXml() {

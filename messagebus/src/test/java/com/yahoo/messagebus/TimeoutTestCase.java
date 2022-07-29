@@ -10,14 +10,14 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -43,12 +43,12 @@ public class TimeoutTestCase {
                 new SourceSessionParams().setTimeout(600.0).setReplyHandler(new Receptor()));
     }
 
-    @Before
+    @BeforeEach
     public void waitForSlobrokRegistration() {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @After
+    @AfterEach
     public void destroyResources() {
         slobrok.stop();
         dstSession.destroy();
@@ -63,17 +63,17 @@ public class TimeoutTestCase {
     }
 
     @Test
-    public void requireThatMessageCanTimeout() throws ListenFailedException, UnknownHostException {
+    void requireThatMessageCanTimeout() throws ListenFailedException, UnknownHostException {
         srcSession.setTimeout(1);
         assertSend(srcSession, newMessage(), "dst/session");
-        assertTimeout(((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertTimeout(((Receptor) srcSession.getReplyHandler()).getReply(60));
     }
 
     @Test
-    public void requireThatZeroTimeoutMeansImmediateTimeout() throws ListenFailedException, UnknownHostException {
+    void requireThatZeroTimeoutMeansImmediateTimeout() throws ListenFailedException, UnknownHostException {
         srcSession.setTimeout(0);
         assertSend(srcSession, newMessage(), "dst/session");
-        assertTimeout(((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertTimeout(((Receptor) srcSession.getReplyHandler()).getReply(60));
     }
 
     private static void assertSend(SourceSession session, Message msg, String route) {
@@ -82,7 +82,7 @@ public class TimeoutTestCase {
 
     private static void assertTimeout(Reply reply) {
         assertNotNull(reply);
-        assertTrue(reply.getTrace().toString(), hasError(reply, ErrorCode.TIMEOUT));
+        assertTrue(hasError(reply, ErrorCode.TIMEOUT), reply.getTrace().toString());
     }
 
     private static Message newMessage() {

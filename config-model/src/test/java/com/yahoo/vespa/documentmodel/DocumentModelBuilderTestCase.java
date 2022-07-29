@@ -8,24 +8,26 @@ import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testDocumentManagerSimple()  throws IOException, ParseException {
+    void testDocumentManagerSimple()  throws IOException, ParseException {
         DocumentModel model = createAndTestModel("src/test/configmodel/types/types.sd");
 
         DocumentmanagerConfig.Builder documentmanagerCfg = new DocumentManager().produce(model, new DocumentmanagerConfig.Builder());
         assertConfigFile("src/test/configmodel/types/documentmanager.cfg",
                 new DocumentmanagerConfig(documentmanagerCfg).toString());
     }
-    @Test
+
     // This is ignored as enums in config are not testable in this way. See bug 4748050
-    public void testDocumentTypesSimple()  throws IOException, ParseException {
+    @Test
+    void testDocumentTypesSimple()  throws IOException, ParseException {
         DocumentModel model = createAndTestModel("src/test/configmodel/types/types.sd");
 
         DocumenttypesConfig.Builder documenttypesCfg = new DocumentTypes().produce(model, new DocumenttypesConfig.Builder());
@@ -34,7 +36,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testDocumentTypesWithDocumentField()  throws IOException, ParseException {
+    void testDocumentTypesWithDocumentField()  throws IOException, ParseException {
         ApplicationBuilder search = new ApplicationBuilder();
         search.addSchemaFile("src/test/configmodel/types/other_doc.sd");
         search.addSchemaFile("src/test/configmodel/types/type_with_doc_field.sd");
@@ -47,7 +49,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testMultipleInheritanceArray() throws IOException, ParseException {
+    void testMultipleInheritanceArray() throws IOException, ParseException {
         ApplicationBuilder search = new ApplicationBuilder();
         search.addSchemaFile("src/test/cfg/search/data/travel/schemas/TTData.sd");
         search.addSchemaFile("src/test/cfg/search/data/travel/schemas/TTEdge.sd");

@@ -7,7 +7,7 @@ import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +16,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Oyvind Bakksjo
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class AccessLogRequestLogTest {
     @Test
-    public void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
+    void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "/search/", "query=year:>2010")
                 .build();
@@ -39,7 +39,7 @@ public class AccessLogRequestLogTest {
     }
 
     @Test
-    public void requireThatDoubleQuotingIsNotPerformed() {
+    void requireThatDoubleQuotingIsNotPerformed() {
         String path = "/search/";
         String query = "query=year%252010+%3B&customParameter=something";
         Request jettyRequest = createRequestBuilder()
@@ -56,7 +56,7 @@ public class AccessLogRequestLogTest {
     }
 
     @Test
-    public void raw_path_and_query_are_set_from_request() {
+    void raw_path_and_query_are_set_from_request() {
         String rawPath = "//search/";
         String rawQuery = "q=%%2";
         Request jettyRequest = createRequestBuilder()
@@ -73,7 +73,7 @@ public class AccessLogRequestLogTest {
     }
 
     @Test
-    public void verify_x_forwarded_for_precedence () {
+    void verify_x_forwarded_for_precedence() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "//search/", "q=%%2")
                 .header("x-forwarded-for", List.of("1.2.3.4"))
@@ -87,7 +87,7 @@ public class AccessLogRequestLogTest {
     }
 
     @Test
-    public void verify_x_forwarded_port_precedence () {
+    void verify_x_forwarded_port_precedence() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "//search/", "q=%%2")
                 .header("X-Forwarded-Port", List.of("80"))
@@ -101,7 +101,7 @@ public class AccessLogRequestLogTest {
     }
 
     @Test
-    public void defaults_to_peer_port_if_remote_port_header_is_invalid() {
+    void defaults_to_peer_port_if_remote_port_header_is_invalid() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "/search/", null)
                 .header("X-Forwarded-Port", List.of("8o8o"))

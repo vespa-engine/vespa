@@ -2,16 +2,14 @@
 
 package com.yahoo.container.di.componentgraph.cycle;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.A;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.C;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -21,7 +19,7 @@ public class GraphTest {
     enum Vertices {A, B, C}
 
     @Test
-    public void vertices_and_edges_are_added_and_can_be_retrieved() {
+    void vertices_and_edges_are_added_and_can_be_retrieved() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
         graph.edge(B, C);
@@ -34,7 +32,7 @@ public class GraphTest {
     }
 
     @Test
-    public void null_vertices_are_not_allowed() {
+    void null_vertices_are_not_allowed() {
         var graph = new Graph<Vertices>();
 
         try {
@@ -46,7 +44,7 @@ public class GraphTest {
     }
 
     @Test
-    public void duplicate_edges_are_ignored() {
+    void duplicate_edges_are_ignored() {
         var graph = new Graph<Vertices>();
         graph.edge(A, B);
         graph.edge(A, B);
@@ -55,7 +53,7 @@ public class GraphTest {
     }
 
     @Test
-    public void self_edges_are_allowed() {
+    void self_edges_are_allowed() {
         var graph = new Graph<Vertices>();
         graph.edge(A, A);
 

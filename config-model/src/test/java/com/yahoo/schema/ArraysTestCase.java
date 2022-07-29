@@ -6,12 +6,12 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * tests importing of document containing array type fields
@@ -21,15 +21,15 @@ import static org.junit.Assert.assertTrue;
 public class ArraysTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testArrayImporting() throws IOException, ParseException {
+    void testArrayImporting() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/arrays.sd");
 
         SDField tags = (SDField) schema.getDocument().getField("tags");
-        assertEquals(DataType.STRING, ((CollectionDataType)tags.getDataType()).getNestedType());
+        assertEquals(DataType.STRING, ((CollectionDataType) tags.getDataType()).getNestedType());
 
         SDField ratings = (SDField) schema.getDocument().getField("ratings");
         assertTrue(ratings.getDataType() instanceof ArrayDataType);
-        assertEquals(DataType.INT, ((ArrayDataType)ratings.getDataType()).getNestedType());
+        assertEquals(DataType.INT, ((ArrayDataType) ratings.getDataType()).getNestedType());
     }
 
 }

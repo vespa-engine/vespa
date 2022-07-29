@@ -3,10 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,24 +26,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Set.of;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 
 /**
  * @author freva
  */
-@RunWith(Enclosed.class)
+
 public class FileFinderTest {
 
-    public static class GeneralLogicTests {
+    @Nested
+    public class GeneralLogicTests {
 
         private final FileSystem fileSystem = TestFileSystem.create();
 
         @Test
-        public void all_files_non_recursive() {
+        void all_files_non_recursive() {
             assertFileHelper(FileFinder.files(testRoot())
                             .maxDepth(1),
 
@@ -53,7 +52,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void all_files_recursive() {
+        void all_files_recursive() {
             assertFileHelper(FileFinder.files(testRoot()),
 
                     of("file-1.json", "test.json", "test.txt", "test/file.txt", "test/data.json", "test/subdir-1/test"),
@@ -61,7 +60,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void all_files_recursive_with_prune_relative() {
+        void all_files_recursive_with_prune_relative() {
             assertFileHelper(FileFinder.files(testRoot()).prune(fileSystem.getPath("test")),
 
                     of("file-1.json", "test.json", "test.txt"),
@@ -69,20 +68,22 @@ public class FileFinderTest {
         }
 
         @Test
-        public void all_files_recursive_with_prune_absolute() {
+        void all_files_recursive_with_prune_absolute() {
             assertFileHelper(FileFinder.files(testRoot()).prune(testRoot().resolve("test/subdir-1")),
 
                     of("file-1.json", "test.json", "test.txt", "test/file.txt", "test/data.json"),
                     of("test", "test/subdir-1", "test/subdir-1/test", "test/subdir-2"));
         }
 
-        @Test(expected = IllegalArgumentException.class)
-        public void throws_if_prune_path_not_under_base_path() {
-            FileFinder.files(Paths.get("/some/path")).prune(Paths.get("/other/path"));
+        @Test
+        void throws_if_prune_path_not_under_base_path() {
+            assertThrows(IllegalArgumentException.class, () -> {
+                FileFinder.files(Paths.get("/some/path")).prune(Paths.get("/other/path"));
+            });
         }
 
         @Test
-        public void with_file_filter_recursive() {
+        void with_file_filter_recursive() {
             assertFileHelper(FileFinder.files(testRoot())
                             .match(FileFinder.nameEndsWith(".json")),
 
@@ -91,7 +92,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void all_files_limited_depth() {
+        void all_files_limited_depth() {
             assertFileHelper(FileFinder.files(testRoot())
                             .maxDepth(2),
 
@@ -100,7 +101,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void directory_with_filter() {
+        void directory_with_filter() {
             assertFileHelper(FileFinder.directories(testRoot())
                             .match(FileFinder.nameStartsWith("subdir"))
                             .maxDepth(2),
@@ -110,7 +111,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void match_file_and_directory_with_same_name() {
+        void match_file_and_directory_with_same_name() {
             assertFileHelper(FileFinder.from(testRoot())
                             .match(FileFinder.nameEndsWith("test")),
 
@@ -119,7 +120,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void all_contents() {
+        void all_contents() {
             assertFileHelper(FileFinder.from(testRoot())
                             .maxDepth(1),
 
@@ -129,7 +130,7 @@ public class FileFinderTest {
             assertTrue(Files.exists(testRoot()));
         }
 
-        @Before
+        @BeforeEach
         public void setup() throws IOException {
             Path root = testRoot();
             Files.createDirectories(root);
@@ -185,12 +186,13 @@ public class FileFinderTest {
         }
     }
 
-    public static class FilterUnitTests {
+    @Nested
+    public class FilterUnitTests {
 
         private final BasicFileAttributes attributes = mock(BasicFileAttributes.class);
 
         @Test
-        public void age_filter_test() {
+        void age_filter_test() {
             Path path = Paths.get("/my/fake/path");
             when(attributes.lastModifiedTime()).thenReturn(FileTime.from(Instant.now().minus(Duration.ofHours(1))));
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
@@ -203,7 +205,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void size_filters() {
+        void size_filters() {
             Path path = Paths.get("/my/fake/path");
             when(attributes.size()).thenReturn(100L);
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
@@ -216,7 +218,7 @@ public class FileFinderTest {
         }
 
         @Test
-        public void filename_filters() {
+        void filename_filters() {
             Path path = Paths.get("/my/fake/path/some-12352-file.json");
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
 

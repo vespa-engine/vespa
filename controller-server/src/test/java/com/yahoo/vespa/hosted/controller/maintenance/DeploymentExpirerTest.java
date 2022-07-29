@@ -12,13 +12,13 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author bratseth
@@ -28,7 +28,7 @@ public class DeploymentExpirerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void testDeploymentExpiry() {
+    void testDeploymentExpiry() {
         ZoneId devZone = ZoneId.from(Environment.dev, RegionName.from("us-east-1"));
         tester.controllerTester().zoneRegistry().setDeploymentTimeToLive(devZone, Duration.ofDays(14));
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(1));
@@ -59,9 +59,10 @@ public class DeploymentExpirerTest {
         Run lastRun = tester.jobs().last(devApp.instanceId(), DeploymentContext.devUsEast1).get();
         assertSame(RunStatus.error, lastRun.status());
         Deployment deployment = tester.applications().requireInstance(devApp.instanceId())
-                                      .deployments().get(devZone);
-        assertEquals("Time of last run is after time of deployment", Duration.ofDays(12),
-                     Duration.between(deployment.at(), lastRun.end().get()));
+                .deployments().get(devZone);
+        assertEquals(Duration.ofDays(12),
+                Duration.between(deployment.at(), lastRun.end().get()),
+                "Time of last run is after time of deployment");
 
         // Dev application does not expire based on time of successful deployment
         tester.clock().advance(Duration.ofDays(2));

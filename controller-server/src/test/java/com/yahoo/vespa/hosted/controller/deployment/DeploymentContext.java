@@ -59,11 +59,11 @@ import java.util.function.Supplier;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A deployment context for an application. This allows fine-grained control of the deployment of an application's
@@ -194,10 +194,10 @@ public class DeploymentContext {
     /** Completely deploy the current change */
     public DeploymentContext deploy() {
         Application application = application();
-        assertTrue("Application package submitted", application.revisions().last().isPresent());
-        assertFalse("Submission is not already deployed", application.instances().values().stream()
+        assertTrue(application.revisions().last().isPresent(), "Application package submitted");
+        assertFalse(application.instances().values().stream()
                                                                      .anyMatch(instance -> instance.deployments().values().stream()
-                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))));
+                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))), "Submission is not already deployed");
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());
@@ -249,8 +249,8 @@ public class DeploymentContext {
     /** Flush all pending DNS updates */
     public DeploymentContext flushDnsUpdates() {
         flushDnsUpdates(Integer.MAX_VALUE);
-        assertTrue("All name service requests dispatched",
-                   tester.controller().curator().readNameServiceQueue().requests().isEmpty());
+        assertTrue(tester.controller().curator().readNameServiceQueue().requests().isEmpty(),
+                   "All name service requests dispatched");
         return this;
     }
 
@@ -362,12 +362,12 @@ public class DeploymentContext {
                                              .filter(kv -> kv.getValue() == failed)
                                              .map(Entry::getKey)
                                              .findFirst();
-            assertTrue("Found failing step", firstFailing.isPresent());
+            assertTrue(firstFailing.isPresent(), "Found failing step");
             Optional<RunLog> details = jobs.details(id);
-            assertTrue("Found log entries for run " + id, details.isPresent());
-            assertTrue("Found log message containing '" + messagePart.get() + "'",
-                       details.get().get(firstFailing.get()).stream()
-                              .anyMatch(entry -> entry.message().contains(messagePart.get())));
+            assertTrue(details.isPresent(), "Found log entries for run " + id);
+            assertTrue(details.get().get(firstFailing.get()).stream()
+                              .anyMatch(entry -> entry.message().contains(messagePart.get())),
+                       "Found log message containing '" + messagePart.get() + "'");
         }
         return this;
     }
@@ -400,7 +400,7 @@ public class DeploymentContext {
                 triggerJobs();
             }
 
-        assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());
+        assertFalse(instance().change().hasTargets(), "Change should have no targets, but was " + instance().change());
         return this;
     }
 
@@ -545,13 +545,13 @@ public class DeploymentContext {
     }
 
     public void assertRunning(JobType type) {
-        assertTrue(jobId(type) + " should be among the active: " + jobs.active(),
-                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
+        assertTrue(jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)),
+                   jobId(type) + " should be among the active: " + jobs.active());
     }
 
     public void assertNotRunning(JobType type) {
-        assertFalse(jobId(type) + " should not be among the active: " + jobs.active(),
-                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
+        assertFalse(jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)),
+                    jobId(type) + " should not be among the active: " + jobs.active());
     }
 
     /** Deploys tester and real app, and completes tester and initial staging installation first if needed. */
@@ -604,8 +604,8 @@ public class DeploymentContext {
         Run run = jobs.last(job)
                       .filter(r -> r.id().type().equals(job.type()))
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
-        assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
-        assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());
+        assertFalse(run.hasFailed(), run.id() + " should not have failed yet: " + run);
+        assertFalse(run.hasEnded(), run.id() + " should not have ended yet: " + run);
         return run;
     }
 
@@ -622,7 +622,7 @@ public class DeploymentContext {
             assertTrue(jobs.run(id).hasEnded());
             return;
         }
-        assertEquals("Status of " + id, succeeded, jobs.run(id).stepStatuses().get(Step.installReal));
+        assertEquals(succeeded, jobs.run(id).stepStatuses().get(Step.installReal), "Status of " + id);
     }
 
     /** Installs tester and starts tests. */

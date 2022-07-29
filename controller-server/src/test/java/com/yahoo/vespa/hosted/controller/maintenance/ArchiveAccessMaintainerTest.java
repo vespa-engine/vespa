@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
@@ -19,8 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author andreer
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertNull;
 public class ArchiveAccessMaintainerTest {
 
     @Test
-    public void grantsRoleAccess() {
+    void grantsRoleAccess() {
         var tester = new ControllerTester(SystemName.Public);
 
         String tenant1role = "arn:aws:iam::123456789012:role/my-role";
@@ -49,10 +48,10 @@ public class ArchiveAccessMaintainerTest {
         assertEquals(new ArchiveAccess().withAWSRole(tenant2role), archiveService.authorizeAccessByTenantName.get(tenant2));
 
         var expected = Map.of("archive.bucketCount",
-                              tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
-                                    .collect(Collectors.toMap(
-                                            zone -> Map.of("zone", zone.value(), "cloud", "default"),
-                                            zone -> zone.equals(testZone) ? 1d : 0d)));
+                tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
+                        .collect(Collectors.toMap(
+                                zone -> Map.of("zone", zone.value(), "cloud", "default"),
+                                zone -> zone.equals(testZone) ? 1d : 0d)));
 
         assertEquals(expected, metric.metrics());
     }

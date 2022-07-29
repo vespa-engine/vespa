@@ -3,14 +3,14 @@ package com.yahoo.search.predicate.index;
 
 import com.yahoo.search.predicate.Hit;
 import com.yahoo.search.predicate.SubqueryBitmap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -19,13 +19,13 @@ import static org.junit.Assert.assertEquals;
 public class PredicateSearchTest {
 
     @Test
-    public void requireThatNoStreamsReturnNoResults() {
+    void requireThatNoStreamsReturnNoResults() {
         PredicateSearch search = new PredicateSearch(new ArrayList<>(), new byte[0], new byte[0], new short[0], 1);
         assertEquals(0, search.stream().count());
     }
 
     @Test
-    public void requireThatSingleStreamFiltersOnConstructedCompleteIntervals() {
+    void requireThatSingleStreamFiltersOnConstructedCompleteIntervals() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1, 1, 1},
                 postingList(
@@ -37,7 +37,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatMinFeatureIsUsedToPruneResults() {
+    void requireThatMinFeatureIsUsedToPruneResults() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{3, 1},
                 postingList(
@@ -48,7 +48,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatAHighKCanYieldResults() {
+    void requireThatAHighKCanYieldResults() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{2},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -59,9 +59,9 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatPostingListsAreSortedAfterAdvancing() {
+    void requireThatPostingListsAreSortedAfterAdvancing() {
         PredicateSearch search = createPredicateSearch(
-                new byte[] {2, 1, 1, 1},
+                new byte[]{2, 1, 1, 1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x000100ff),
                         entry(3, 0x000100ff)),
@@ -72,7 +72,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatEmptyPostingListsWork() {
+    void requireThatEmptyPostingListsWork() {
         PredicateSearch search = createPredicateSearch(
                 new byte[0],
                 postingList(SubqueryBitmap.ALL_SUBQUERIES));
@@ -80,7 +80,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatShorterPostingListEndingIsOk() {
+    void requireThatShorterPostingListEndingIsOk() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1, 1, 1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -92,7 +92,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatSortingWorksForManyPostingLists() {
+    void requireThatSortingWorksForManyPostingLists() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1, 5, 2, 2},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -116,7 +116,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatInsufficientIntervalCoveragePreventsMatch() {
+    void requireThatInsufficientIntervalCoveragePreventsMatch() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1, 1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -126,7 +126,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatIntervalsAreSorted() {
+    void requireThatIntervalsAreSorted() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -139,7 +139,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatThereCanBeManyIntervals() {
+    void requireThatThereCanBeManyIntervals() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -148,7 +148,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatNotIsSupported_NoMatch() {
+    void requireThatNotIsSupported_NoMatch() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -159,7 +159,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatNotIsSupported_Match() {
+    void requireThatNotIsSupported_Match() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -168,7 +168,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatNotIsSupported_NoMatchBecauseOfPreviousTerm() {
+    void requireThatNotIsSupported_NoMatchBecauseOfPreviousTerm() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -177,7 +177,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatIntervalSortingWorksAsUnsigned() {
+    void requireThatIntervalSortingWorksAsUnsigned() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
@@ -188,7 +188,7 @@ public class PredicateSearchTest {
     }
 
     @Test
-    public void requireThatMatchCanRequireMultiplePostingLists() {
+    void requireThatMatchCanRequireMultiplePostingLists() {
         PredicateSearch search = createPredicateSearch(
                 new byte[]{6},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,

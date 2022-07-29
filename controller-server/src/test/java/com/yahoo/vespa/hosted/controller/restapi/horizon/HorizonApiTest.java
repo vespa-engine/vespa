@@ -8,7 +8,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -18,7 +18,7 @@ import java.util.Set;
 public class HorizonApiTest extends ControllerContainerCloudTest {
 
     @Test
-    public void only_operators_and_flag_enabled_tenants_allowed() {
+    void only_operators_and_flag_enabled_tenants_allowed() {
         ContainerTester tester = new ContainerTester(container, "");
         TenantName tenantName = TenantName.defaultName();
 

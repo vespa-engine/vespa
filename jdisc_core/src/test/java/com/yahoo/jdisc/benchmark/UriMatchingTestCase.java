@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.benchmark;
 
 import com.yahoo.jdisc.application.UriPattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ public class UriMatchingTestCase {
     private static long preventOptimization = 0;
 
     @Test
-    public void requireThatUriPatternMatchingIsFast() {
+    void requireThatUriPatternMatchingIsFast() {
         List<String> inputs = Arrays.asList(
                 "other://host/",
                 "scheme://other/",

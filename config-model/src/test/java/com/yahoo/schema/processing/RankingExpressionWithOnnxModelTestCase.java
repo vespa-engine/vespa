@@ -12,23 +12,23 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RankingExpressionWithOnnxModelTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/onnx-model/");
 
-    @After
+    @AfterEach
     public void removeGeneratedModelFiles() {
         IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
     }
 
     @Test
-    public void testOnnxModelFeature() throws Exception  {
+    void testOnnxModelFeature() throws Exception  {
         VespaModel model = loadModel(applicationDir);
         assertTransformedFeature(model);
         assertGeneratedConfig(model);

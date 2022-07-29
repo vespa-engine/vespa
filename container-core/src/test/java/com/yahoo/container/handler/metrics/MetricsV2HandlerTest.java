@@ -4,12 +4,12 @@ package com.yahoo.container.handler.metrics;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,9 +26,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.V2_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.VALUES_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -53,15 +51,15 @@ public class MetricsV2HandlerTest {
 
     private static RequestHandlerTestDriver testDriver;
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
+    @RegisterExtension
+    public WireMockExtension wireMockRule = WireMockExtension.newInstance().options(options().dynamicPort()).build();
 
-    @Before
+    @BeforeEach
     public void setup() {
         setupWireMock();
         var handler = new MetricsV2Handler(Executors.newSingleThreadExecutor(),
                                            new MetricsProxyApiConfig.Builder()
-                                                   .metricsPort(wireMockRule.port())
+                                                   .metricsPort(wireMockRule.getPort())
                                                    .metricsApiPath(MOCK_METRICS_PATH)
                                                    .prometheusApiPath("Not/In/Use")
                                                    .build());
@@ -80,7 +78,7 @@ public class MetricsV2HandlerTest {
     }
 
     @Test
-    public void v2_response_contains_values_uri() throws Exception {
+    void v2_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V2_URI).readAll();
         JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("resources"));
@@ -92,29 +90,29 @@ public class MetricsV2HandlerTest {
         assertEquals(VALUES_URI, valuesUri.get("url").textValue());
     }
 
-    @Ignore
+    @Disabled
     @Test
-    public void visually_inspect_values_response() {
+    void visually_inspect_values_response() {
         JsonNode responseJson = getResponseAsJson(null);
         System.out.println(responseJson);
     }
 
     @Test
-    public void invalid_path_yields_error_response() throws Exception {
+    void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(V2_URI + "/invalid").readAll();
         JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("error"));
-        assertTrue(root.get("error" ).textValue().startsWith("No content"));
+        assertTrue(root.get("error").textValue().startsWith("No content"));
     }
 
     @Test
-    public void values_response_is_equal_to_test_file() {
+    void values_response_is_equal_to_test_file() {
         String response = testDriver.sendRequest(VALUES_URI).readAll();
         assertEquals(RESPONSE, response);
     }
 
     @Test
-    public void consumer_is_propagated_to_metrics_proxy_api() {
+    void consumer_is_propagated_to_metrics_proxy_api() {
         JsonNode responseJson = getResponseAsJson(CUSTOM_CONSUMER);
 
         JsonNode firstNodeMetricsValues =

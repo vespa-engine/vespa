@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,7 +11,7 @@ import static org.junit.Assert.fail;
 public class SchemaCoverageTest {
 
     @Test
-    public void requireThatAccessorWork() {
+    void requireThatAccessorWork() {
         SearchCoverage coverage = new SearchCoverage.Builder()
                 .setMinimum(0.1)
                 .setMinWaitAfterCoverageFactor(0.2)
@@ -25,7 +23,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatDefaultsAreNull() {
+    void requireThatDefaultsAreNull() {
         SearchCoverage search = new SearchCoverage.Builder().build();
         assertNull(search.getMinimum());
         assertNull(search.getMinWaitAfterCoverageFactor());
@@ -33,7 +31,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatInvalidMinimumCanNotBeSet() {
+    void requireThatInvalidMinimumCanNotBeSet() {
         SearchCoverage.Builder coverage = new SearchCoverage.Builder();
         coverage.setMinimum(0.5);
         assertEquals(0.5, coverage.build().getMinimum(), 1E-6);
@@ -54,7 +52,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatInvalidMinWaitAfterCoverageFactorCanNotBeSet() {
+    void requireThatInvalidMinWaitAfterCoverageFactorCanNotBeSet() {
         SearchCoverage.Builder coverage = new SearchCoverage.Builder();
         coverage.setMinWaitAfterCoverageFactor(0.5);
         assertEquals(0.5, coverage.build().getMinWaitAfterCoverageFactor(), 1E-6);
@@ -75,7 +73,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatInvalidMaxWaitAfterCoverageFactorCanNotBeSet() {
+    void requireThatInvalidMaxWaitAfterCoverageFactorCanNotBeSet() {
         SearchCoverage.Builder coverage = new SearchCoverage.Builder();
         coverage.setMaxWaitAfterCoverageFactor(0.5);
         assertEquals(0.5, coverage.build().getMaxWaitAfterCoverageFactor(), 1E-6);
@@ -96,7 +94,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatMinWaitCanNotBeSetLargerThanMaxWait() {
+    void requireThatMinWaitCanNotBeSetLargerThanMaxWait() {
         SearchCoverage.Builder coverage = new SearchCoverage.Builder();
         coverage.setMaxWaitAfterCoverageFactor(0.5);
         coverage.setMinWaitAfterCoverageFactor(0.4);
@@ -113,7 +111,7 @@ public class SchemaCoverageTest {
     }
 
     @Test
-    public void requireThatMaxWaitCanNotBeSetSmallerThanMaxWait() {
+    void requireThatMaxWaitCanNotBeSetSmallerThanMaxWait() {
         SearchCoverage.Builder coverage = new SearchCoverage.Builder();
         coverage.setMinWaitAfterCoverageFactor(0.5);
         coverage.setMaxWaitAfterCoverageFactor(0.6);

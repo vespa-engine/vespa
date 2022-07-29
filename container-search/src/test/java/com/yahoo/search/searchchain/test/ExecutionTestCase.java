@@ -17,14 +17,9 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests basic search chain execution functionality
@@ -34,31 +29,31 @@ import static org.junit.Assert.assertTrue;
 public class ExecutionTestCase {
 
     @Test
-    public void testLinearExecutions()  {
+    void testLinearExecutions()  {
         // Make a chain
-        List<Searcher> searchers1=new ArrayList<>();
+        List<Searcher> searchers1 = new ArrayList<>();
         searchers1.add(new TestSearcher("searcher1"));
         searchers1.add(new TestSearcher("searcher2"));
         searchers1.add(new TestSearcher("searcher3"));
         searchers1.add(new TestSearcher("searcher4"));
-        Chain<Searcher> chain1=new Chain<>(new ComponentId("chain1"), searchers1);
+        Chain<Searcher> chain1 = new Chain<>(new ComponentId("chain1"), searchers1);
         // Make another chain containing two of the same searcher instances and two new
-        List<Searcher> searchers2=new ArrayList<>(searchers1);
-        searchers2.set(1,new TestSearcher("searcher5"));
-        searchers2.set(3,new TestSearcher("searcher6"));
-        Chain<Searcher> chain2=new Chain<>(new ComponentId("chain2"), searchers2);
+        List<Searcher> searchers2 = new ArrayList<>(searchers1);
+        searchers2.set(1, new TestSearcher("searcher5"));
+        searchers2.set(3, new TestSearcher("searcher6"));
+        Chain<Searcher> chain2 = new Chain<>(new ComponentId("chain2"), searchers2);
         // Execute both
-        Query query=new Query("test");
-        Result result1=new Execution(chain1, Execution.Context.createContextStub()).search(query);
-        Result result2=new Execution(chain2, Execution.Context.createContextStub()).search(query);
+        Query query = new Query("test");
+        Result result1 = new Execution(chain1, Execution.Context.createContextStub()).search(query);
+        Result result2 = new Execution(chain2, Execution.Context.createContextStub()).search(query);
         // Verify results
-        assertEquals(4,result1.getConcreteHitCount());
+        assertEquals(4, result1.getConcreteHitCount());
         assertNotNull(result1.hits().get("searcher1-1"));
         assertNotNull(result1.hits().get("searcher2-1"));
         assertNotNull(result1.hits().get("searcher3-1"));
         assertNotNull(result1.hits().get("searcher4-1"));
 
-        assertEquals(4,result2.getConcreteHitCount());
+        assertEquals(4, result2.getConcreteHitCount());
         assertNotNull(result2.hits().get("searcher1-2"));
         assertNotNull(result2.hits().get("searcher5-1"));
         assertNotNull(result2.hits().get("searcher3-2"));
@@ -66,20 +61,20 @@ public class ExecutionTestCase {
     }
 
     @Test
-    public void testNestedExecution() {
+    void testNestedExecution() {
         // Make a chain
-        List<Searcher> searchers1=new ArrayList<>();
+        List<Searcher> searchers1 = new ArrayList<>();
         searchers1.add(new FillableTestSearcher("searcher1"));
         searchers1.add(new WorkflowSearcher());
         searchers1.add(new TestSearcher("searcher2"));
         searchers1.add(new FillingSearcher());
         searchers1.add(new FillableTestSearcherAtTheEnd("searcher3"));
-        Chain<Searcher> chain1=new Chain<>(new ComponentId("chain1"), searchers1);
+        Chain<Searcher> chain1 = new Chain<>(new ComponentId("chain1"), searchers1);
         // Execute it
-        Query query=new Query("test");
-        Result result1=new Execution(chain1, Execution.Context.createContextStub()).search(query);
+        Query query = new Query("test");
+        Result result1 = new Execution(chain1, Execution.Context.createContextStub()).search(query);
         // Verify results
-        assertEquals(7,result1.getConcreteHitCount());
+        assertEquals(7, result1.getConcreteHitCount());
         assertNotNull(result1.hits().get("searcher1-1"));
         assertNotNull(result1.hits().get("searcher2-1"));
         assertNotNull(result1.hits().get("searcher3-1"));
@@ -90,7 +85,7 @@ public class ExecutionTestCase {
     }
 
     @Test
-    public void testContextCacheSingleLengthSearchChain() {
+    void testContextCacheSingleLengthSearchChain() {
         IndexFacts[] contextsBefore = new IndexFacts[1];
         IndexFacts[] contextsAfter = new IndexFacts[1];
         List<Searcher> l = new ArrayList<>(1);
@@ -103,7 +98,7 @@ public class ExecutionTestCase {
     }
 
     @Test
-    public void testContextCache() {
+    void testContextCache() {
         IndexFacts[] contextsBefore = new IndexFacts[5];
         IndexFacts[] contextsAfter = new IndexFacts[5];
         List<Searcher> l = new ArrayList<>(5);
@@ -129,7 +124,7 @@ public class ExecutionTestCase {
     }
 
     @Test
-    public void testContextCacheMoreSearchers() {
+    void testContextCacheMoreSearchers() {
         IndexFacts[] contextsBefore = new IndexFacts[7];
         IndexFacts[] contextsAfter = new IndexFacts[7];
         List<Searcher> l = new ArrayList<>(7);
@@ -161,7 +156,7 @@ public class ExecutionTestCase {
     }
 
     @Test
-    public void testBasicFill() {
+    void testBasicFill() {
         Chain<Searcher> chain = new Chain<Searcher>(new FillableResultSearcher());
         Execution execution = new Execution(chain, Execution.Context.createContextStub());
 

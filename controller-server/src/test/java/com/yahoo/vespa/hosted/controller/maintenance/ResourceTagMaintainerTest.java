@@ -10,14 +10,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.maintenance.ResourceTagMaintainer.SHARED_HOST_APPLICATION;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author olaa
@@ -27,12 +27,12 @@ public class ResourceTagMaintainerTest {
     private final ControllerTester tester = new ControllerTester();
 
     @Test
-    public void maintain() {
+    void maintain() {
         setUpZones();
         MockResourceTagger mockResourceTagger = new MockResourceTagger();
         ResourceTagMaintainer resourceTagMaintainer = new ResourceTagMaintainer(tester.controller(),
-                                                                                Duration.ofMinutes(5),
-                                                                                mockResourceTagger);
+                Duration.ofMinutes(5),
+                mockResourceTagger);
         resourceTagMaintainer.maintain();
         assertEquals(2, mockResourceTagger.getValues().size());
         Map<HostName, ApplicationId> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));

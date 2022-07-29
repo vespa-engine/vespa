@@ -12,9 +12,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -30,8 +29,8 @@ import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author olaa
@@ -47,7 +46,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
     private ContainerTester tester;
 
-    @Before
+    @BeforeEach
     public void setup() {
         tester = new ContainerTester(container, responseFiles);
         billingController = (MockBillingController) tester.serviceRegistry().billingController();
@@ -79,32 +78,32 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void list_plans() {
+    void list_plans() {
         var listPlansRequest = request("/billing/v1/plans", GET)
                 .roles(Role.hostedAccountant());
         tester.assertResponse(listPlansRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");
     }
 
     @Test
-    public void setting_and_deleting_instrument() {
+    void setting_and_deleting_instrument() {
         assertTrue(billingController.getDefaultInstrument(tenant).isEmpty());
 
         var instrumentRequest = request("/billing/v1/tenant/tenant1/instrument", PATCH)
                 .data("{\"active\": \"id-1\"}")
                 .roles(tenantRole);
 
-        tester.assertResponse(instrumentRequest,"OK");
+        tester.assertResponse(instrumentRequest, "OK");
         assertEquals("id-1", billingController.getDefaultInstrument(tenant).get().getId());
 
         var deleteInstrumentRequest = request("/billing/v1/tenant/tenant1/instrument/id-1", DELETE)
                 .roles(tenantRole);
 
-        tester.assertResponse(deleteInstrumentRequest,"OK");
+        tester.assertResponse(deleteInstrumentRequest, "OK");
         assertTrue(billingController.getDefaultInstrument(tenant).isEmpty());
     }
 
     @Test
-    public void response_list_bills() {
+    void response_list_bills() {
         var bill = createBill();
 
         billingController.addBill(tenant, bill, true);
@@ -117,7 +116,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void test_bill_creation() {
+    void test_bill_creation() {
         var bills = billingController.getBillsForTenant(tenant);
         assertEquals(0, bills.size());
 
@@ -141,7 +140,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void adding_and_listing_line_item() {
+    void adding_and_listing_line_item() {
 
         var requestBody = "{" +
                 "\"description\":\"some description\"," +
@@ -155,7 +154,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         tester.assertResponse(request, "{\"message\":\"Added line item for tenant tenant1\"}");
 
         var lineItems = billingController.getUnusedLineItems(tenant);
-        Assert.assertEquals(1, lineItems.size());
+        assertEquals(1, lineItems.size());
         Bill.LineItem lineItem = lineItems.get(0);
         assertEquals("some description", lineItem.description());
         assertEquals(new BigDecimal("123.45"), lineItem.amount());
@@ -167,7 +166,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void adding_new_status() {
+    void adding_new_status() {
         billingController.addBill(tenant, createBill(), true);
 
         var requestBody = "{\"status\":\"DONE\"}";
@@ -181,7 +180,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void list_all_unbilled_items() {
+    void list_all_unbilled_items() {
         tester.controller().tenants().create(new CloudTenantSpec(tenant, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
         tester.controller().tenants().create(new CloudTenantSpec(tenant2, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
 
@@ -198,7 +197,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void setting_plans() {
+    void setting_plans() {
         var planRequest = request("/billing/v1/tenant/tenant1/plan", PATCH)
                 .data("{\"plan\": \"new-plan\"}")
                 .roles(tenantRole);
@@ -207,7 +206,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void csv_export() {
+    void csv_export() {
         var bill = createBill();
         billingController.addBill(tenant, bill, true);
         var csvRequest = request("/billing/v1/invoice/export", GET).roles(financeAdmin);
@@ -215,7 +214,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void patch_collection_method() {
+    void patch_collection_method() {
         test_patch_collection_with_field_name("collectionMethod");
         test_patch_collection_with_field_name("collection");
     }

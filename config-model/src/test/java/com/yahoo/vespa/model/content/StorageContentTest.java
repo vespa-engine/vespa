@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -17,10 +17,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StorageContentTest extends ContentBaseTest {
     // TODO: Test with document-definitions
@@ -105,7 +102,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     @Test
-    public void testDocumentTypesRouting() throws Exception {
+    void testDocumentTypesRouting() throws Exception {
         String cluster1docs = "<documents>\n" +
                 "  <document type=\"type1\" mode=\"store-only\"/>\n" +
                 "  <document type=\"type2\" mode=\"store-only\"/>\n" +
@@ -120,7 +117,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     @Test
-    public void testDocumentTypesAndLocalSelectionRouting() throws Exception {
+    void testDocumentTypesAndLocalSelectionRouting() throws Exception {
         String cluster1docs = "<documents>\n" +
                 "  <document type=\"type1\" mode=\"store-only\" selection=\"1 != 2\"/>\n" +
                 "  <document type=\"type2\" mode=\"store-only\" selection=\"now() &gt; 1000\"/>\n" +
@@ -135,7 +132,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     @Test
-    public void testDocumentTypesAndGlobalSelection() throws Exception {
+    void testDocumentTypesAndGlobalSelection() throws Exception {
         String cluster1docs = "<documents selection=\"5 != 6\">\n" +
                 "  <document type=\"type1\" mode=\"store-only\" selection=\"type1.f1 == 'baz'\"/>\n" + // Can refer to own type
                 "  <document type=\"type2\" mode=\"store-only\"/>\n" +
@@ -150,7 +147,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     @Test
-    public void testIllegalDocumentTypesInSelection() throws Exception {
+    void testIllegalDocumentTypesInSelection() throws Exception {
         String localDefs = "<documents>\n" +
                 "  <document type=\"type1\" mode=\"store-only\"/>\n" +
                 "  <document type=\"type2\" mode=\"store-only\" selection=\"type1.bar == 'baz'\"/>\n" + // Not own type

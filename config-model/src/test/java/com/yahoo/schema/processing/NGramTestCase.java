@@ -8,15 +8,12 @@ import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -24,7 +21,7 @@ import static org.junit.Assert.fail;
 public class NGramTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testNGram() throws IOException, ParseException {
+    void testNGram() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/ngram.sd");
         assertNotNull(schema);
 
@@ -36,8 +33,8 @@ public class NGramTestCase extends AbstractSchemaTestCase {
         assertEquals(MatchType.GRAM, gram2.getMatching().getType());
         assertEquals(-1, gram2.getMatching().getGramSize()); // Not set explicitly
 
-        SDField gram3= schema.getConcreteField("gram_3");
-        assertEquals(MatchType.GRAM,gram3.getMatching().getType());
+        SDField gram3 = schema.getConcreteField("gram_3");
+        assertEquals(MatchType.GRAM, gram3.getMatching().getType());
         assertEquals(3, gram3.getMatching().getGramSize());
 
         assertEquals("input gram_1 | ngram 1 | index gram_1 | summary gram_1", gram1.getIndexingScript().iterator().next().toString());
@@ -53,7 +50,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testInvalidNGramSetting1() throws IOException, ParseException {
+    void testInvalidNGramSetting1() throws IOException, ParseException {
         try {
             Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
             fail("Should cause an exception");
@@ -64,7 +61,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testInvalidNGramSetting2() throws IOException, ParseException {
+    void testInvalidNGramSetting2() throws IOException, ParseException {
         try {
             Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
             fail("Should cause an exception");
@@ -75,7 +72,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testInvalidNGramSetting3() throws IOException, ParseException {
+    void testInvalidNGramSetting3() throws IOException, ParseException {
         try {
             Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
             fail("Should cause an exception");

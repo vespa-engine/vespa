@@ -2,12 +2,12 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,7 +22,7 @@ public class FileContentCacheTest {
     private final byte[] newContent = "new-content".getBytes(StandardCharsets.UTF_8);
 
     @Test
-    public void get() {
+    void get() {
         when(unixPath.readBytes()).thenReturn(content);
         assertArrayEquals(content, cache.get(Instant.ofEpochMilli(0)));
         verify(unixPath, times(1)).readBytes();
@@ -49,7 +49,7 @@ public class FileContentCacheTest {
     }
 
     @Test
-    public void updateWith() {
+    void updateWith() {
         cache.updateWith(content, Instant.ofEpochMilli(2));
         assertArrayEquals(content, cache.get(Instant.ofEpochMilli(2)));
         verifyNoMoreInteractions(unixPath);

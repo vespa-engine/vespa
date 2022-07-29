@@ -2,9 +2,9 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class NonWorkingResponseHandlerTestCase {
 
     @Test
-    public void requireThatHandleResponseThrowsException() {
+    void requireThatHandleResponseThrowsException() {
         NonWorkingResponseHandler handler = new NonWorkingResponseHandler();
         try {
             handler.handleResponse(new Response(Response.Status.OK));

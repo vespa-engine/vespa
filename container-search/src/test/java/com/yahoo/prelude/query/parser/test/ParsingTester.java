@@ -23,9 +23,7 @@ import com.yahoo.search.query.parser.ParserFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * A utility for writing parser tests
@@ -119,10 +117,10 @@ public class ParsingTester {
                               Language language, Linguistics linguistics) {
         Item root = parseQuery(toParse, filter, language, mode, linguistics);
         if (parsed == null) {
-            assertTrue("root should be null, but was " + root, root == null);
+            assertNull(root);
         } else {
-            assertNotNull("Got null from parsing " + toParse, root);
-            assertEquals("Parse of '" + toParse + "'", parsed, root.toString());
+            assertNotNull(root, "Got null from parsing " + toParse);
+            assertEquals(parsed, root.toString(), "Parse of '" + toParse + "'");
         }
         return root;
     }

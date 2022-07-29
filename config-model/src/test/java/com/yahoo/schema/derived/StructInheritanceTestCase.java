@@ -5,14 +5,14 @@ package com.yahoo.schema.derived;
 import com.yahoo.schema.ApplicationBuilder;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 
-
-import org.junit.rules.TemporaryFolder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests struct inheritance
@@ -21,15 +21,11 @@ import org.junit.rules.TemporaryFolder;
  */
 public class StructInheritanceTestCase extends AbstractExportingTestCase {
 
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
-
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
+    @TempDir
+    public File tmpDir;
 
     @Test
-    public void requireThatStructCanInherit() throws IOException, ParseException {
+    void requireThatStructCanInherit() throws IOException, ParseException {
         String dir = "src/test/derived/structinheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "simple.sd");
@@ -39,14 +35,15 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void requireThatRedeclareIsNotAllowed() throws IOException, ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("cannot inherit from base and redeclare field name");
-        String dir = "src/test/derived/structinheritance/";
-        ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "bad.sd");
-        builder.build(true);
-        derive("structinheritance", builder, builder.getSchema("bad"));
+    void requireThatRedeclareIsNotAllowed() throws IOException, ParseException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            String dir = "src/test/derived/structinheritance/";
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "bad.sd");
+            builder.build(true);
+            derive("structinheritance", builder, builder.getSchema("bad"));
+        });
+        assertTrue(exception.getMessage().contains("cannot inherit from base and redeclare field name"));
     }
 
 }

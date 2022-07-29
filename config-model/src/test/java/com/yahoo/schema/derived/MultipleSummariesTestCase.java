@@ -3,7 +3,7 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 public class MultipleSummariesTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testMultipleSummariesNew() throws IOException, ParseException {
+    void testMultipleSummariesNew() throws IOException, ParseException {
         assertCorrectDeriving("multiplesummaries", new TestProperties());
     }
 

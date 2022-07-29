@@ -5,15 +5,12 @@ import com.yahoo.collections.CollectionUtil;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.vespa.model.search.Tuning;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author geirst
@@ -46,7 +43,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseRequestThreadsTag() {
+    void requireThatWeCanParseRequestThreadsTag() {
         Tuning t = createTuning(parseXml("<requestthreads>",
                 "<search>123</search>",
                 "<persearch>34</persearch>",
@@ -58,11 +55,11 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
         assertEquals(cfg.numsearcherthreads(), 123);
         assertEquals(cfg.numthreadspersearch(), 34);
         assertEquals(cfg.numsummarythreads(), 456);
-     }
+    }
 
     @Test
-    public void requireThatWeCanParseFlushStrategyTag() {
-        Tuning t = createTuning(parseXml("<flushstrategy>","<native>",
+    void requireThatWeCanParseFlushStrategyTag() {
+        Tuning t = createTuning(parseXml("<flushstrategy>", "<native>",
                 "<total>",
                 "<maxmemorygain>900</maxmemorygain>",
                 "<diskbloatfactor>8.7</diskbloatfactor>",
@@ -79,7 +76,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "<memory-limit-factor>0.6</memory-limit-factor>",
                 "<disk-limit-factor>0.7</disk-limit-factor>",
                 "</conservative>",
-                "</native>","</flushstrategy>"));
+                "</native>", "</flushstrategy>"));
         assertEquals(900, t.searchNode.strategy.totalMaxMemoryGain.longValue());
         assertEquals(8.7, t.searchNode.strategy.totalDiskBloatFactor, DELTA);
         assertEquals(600, t.searchNode.strategy.componentMaxMemoryGain.longValue());
@@ -100,7 +97,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseResizingTag() {
+    void requireThatWeCanParseResizingTag() {
         Tuning t = createTuning(parseXml("<resizing>",
                 "<initialdocumentcount>128</initialdocumentcount>",
                 "<amortize-count>13</amortize-count>",
@@ -110,14 +107,14 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseIndexTag() {
+    void requireThatWeCanParseIndexTag() {
         Tuning t = createTuning(parseXml("<index>", "<io>",
                 "<write>directio</write>",
                 "<read>normal</read>",
                 "<search>mmap</search>",
                 "</io>",
                 "<warmup>" +
-                "<time>178</time>",
+                        "<time>178</time>",
                 "<unpack>true</unpack>",
                 "</warmup>",
                 "</index>"));
@@ -134,7 +131,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanPopulateIndex() {
+    void requireThatWeCanPopulateIndex() {
         Tuning t = createTuning(parseXml("<index>", "<io>",
                 "<search>populate</search>",
                 "</io>",
@@ -150,7 +147,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
 
 
     @Test
-    public void requireThatWeCanParseRemovedDBTag() {
+    void requireThatWeCanParseRemovedDBTag() {
         Tuning t = createTuning(parseXml("<removed-db>", "<prune>",
                 "<age>19388</age>",
                 "<interval>193</interval>",
@@ -163,7 +160,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseAttributeTag() {
+    void requireThatWeCanParseAttributeTag() {
         Tuning t = createTuning(parseXml("<attribute>", "<io>",
                 "<write>directio</write>",
                 "</io>", "</attribute>"));
@@ -173,7 +170,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseSummaryTag() {
+    void requireThatWeCanParseSummaryTag() {
         Tuning t = createTuning(parseXml("<summary>",
                 "<io>",
                 "<write>directio</write>",
@@ -232,7 +229,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanGiveSummaryCacheSizeInPercentage() {
+    void requireThatWeCanGiveSummaryCacheSizeInPercentage() {
         Tuning t = createTuning(parseXml("<summary>",
                 "<store>",
                 "<cache>",
@@ -242,14 +239,14 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "</summary>"));
 
         assertNull(t.searchNode.summary.store.cache.maxSize);
-        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent,DELTA);
+        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent, DELTA);
 
         ProtonConfig cfg = getProtonCfg(t);
         assertEquals(cfg.summary().cache().maxbytes(), -30);
     }
 
     @Test
-    public void requireThatWeCanPopulateSummary() {
+    void requireThatWeCanPopulateSummary() {
         Tuning t = createTuning(parseXml("<summary>",
                 "<io>",
                 "<read>populate</read>",
@@ -265,7 +262,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
 
 
     @Test
-    public void requireThatWeCanParseInitializeTag() {
+    void requireThatWeCanParseInitializeTag() {
         Tuning t = createTuning(parseXml("<initialize>",
                 "<threads>7</threads>",
                 "</initialize>"));
@@ -275,7 +272,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatWeCanParseFeedingTag() {
+    void requireThatWeCanParseFeedingTag() {
         Tuning t = createTuning(parseXml("<feeding>",
                 "<concurrency>0.7</concurrency>",
                 "</feeding>"));

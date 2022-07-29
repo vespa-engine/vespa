@@ -2,13 +2,13 @@
 package com.yahoo.search.predicate.optimization;
 
 import com.yahoo.document.predicate.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -16,93 +16,93 @@ import static org.junit.Assert.assertEquals;
 public class AndOrSimplifierTest {
 
     @Test
-    public void requireThatNestedConjunctionsAreCollapsed() {
+    void requireThatNestedConjunctionsAreCollapsed() {
         assertSimplified(and(feature("a").inSet("b"),
-                             feature("c").inSet("d")),
-                         and(and(feature("a").inSet("b"),
-                                 feature("c").inSet("d"))));
+                feature("c").inSet("d")),
+                and(and(feature("a").inSet("b"),
+                        feature("c").inSet("d"))));
     }
 
     @Test
-    public void requireThatNestedConjuctionsAreCollapsedInPlace() {
+    void requireThatNestedConjuctionsAreCollapsedInPlace() {
         assertSimplified(and(feature("a").inSet("b"),
-                             feature("c").inSet("d"),
-                             feature("e").inSet("f")),
-                         and(feature("a").inSet("b"),
-                             and(feature("c").inSet("d")),
-                             feature("e").inSet("f")));
+                feature("c").inSet("d"),
+                feature("e").inSet("f")),
+                and(feature("a").inSet("b"),
+                        and(feature("c").inSet("d")),
+                        feature("e").inSet("f")));
     }
 
     @Test
-    public void requireThatDeeplyNestedConjunctionsAreCollapsed() {
+    void requireThatDeeplyNestedConjunctionsAreCollapsed() {
         assertSimplified(and(feature("a").inSet("b"),
-                             feature("c").inSet("d"),
-                             feature("e").inSet("f"),
-                             feature("g").inSet("h"),
-                             feature("i").inSet("j")),
-                         and(feature("a").inSet("b"),
-                             and(feature("c").inSet("d")),
-                             feature("e").inSet("f"),
-                             and(and(feature("g").inSet("h"),
-                                     feature("i").inSet("j")))));
+                feature("c").inSet("d"),
+                feature("e").inSet("f"),
+                feature("g").inSet("h"),
+                feature("i").inSet("j")),
+                and(feature("a").inSet("b"),
+                        and(feature("c").inSet("d")),
+                        feature("e").inSet("f"),
+                        and(and(feature("g").inSet("h"),
+                                feature("i").inSet("j")))));
     }
 
     @Test
-    public void requireThatNestedDisjunctionsAreCollapsed() {
+    void requireThatNestedDisjunctionsAreCollapsed() {
         assertSimplified(or(feature("a").inSet("b"),
-                            feature("c").inSet("d")),
-                         or(or(feature("a").inSet("b"),
-                               feature("c").inSet("d"))));
+                feature("c").inSet("d")),
+                or(or(feature("a").inSet("b"),
+                        feature("c").inSet("d"))));
     }
 
     @Test
-    public void requireThatNestedDisjuctionsAreCollapsedInPlace() {
+    void requireThatNestedDisjuctionsAreCollapsedInPlace() {
         assertSimplified(or(feature("a").inSet("b"),
-                            feature("c").inSet("d"),
-                            feature("e").inSet("f")),
-                         or(feature("a").inSet("b"),
-                            or(feature("c").inSet("d")),
-                            feature("e").inSet("f")));
+                feature("c").inSet("d"),
+                feature("e").inSet("f")),
+                or(feature("a").inSet("b"),
+                        or(feature("c").inSet("d")),
+                        feature("e").inSet("f")));
     }
 
     @Test
-    public void requireThatDeeplyNestedDisjunctionsAreCollapsed() {
+    void requireThatDeeplyNestedDisjunctionsAreCollapsed() {
         assertSimplified(or(feature("a").inSet("b"),
-                            feature("c").inSet("d"),
-                            feature("e").inSet("f"),
-                            feature("g").inSet("h"),
-                            feature("i").inSet("j")),
-                         or(feature("a").inSet("b"),
-                            or(feature("c").inSet("d")),
-                            feature("e").inSet("f"),
-                            or(or(feature("g").inSet("h"),
-                                  feature("i").inSet("j")))));
+                feature("c").inSet("d"),
+                feature("e").inSet("f"),
+                feature("g").inSet("h"),
+                feature("i").inSet("j")),
+                or(feature("a").inSet("b"),
+                        or(feature("c").inSet("d")),
+                        feature("e").inSet("f"),
+                        or(or(feature("g").inSet("h"),
+                                feature("i").inSet("j")))));
     }
 
     @Test
-    public void requireThatConjunctionsAndDisjunctionsAreNotCollapsed() {
+    void requireThatConjunctionsAndDisjunctionsAreNotCollapsed() {
         assertSimplified(and(or(feature("a").inSet("b"),
-                                feature("c").inSet("d"))),
-                         and(or(feature("a").inSet("b"),
-                                feature("c").inSet("d"))));
+                feature("c").inSet("d"))),
+                and(or(feature("a").inSet("b"),
+                        feature("c").inSet("d"))));
     }
 
     @Test
-    public void requireThatNotOrIsTranslatedToAndNot() {
+    void requireThatNotOrIsTranslatedToAndNot() {
         assertSimplified(
                 and(feature("a").notInSet("b"), feature("c").inSet("d")),
                 not(or(feature("a").inSet("b"), feature("c").notInSet("d"))));
     }
 
     @Test
-    public void requireThatNotAndIsTranslatedToOrNot() {
+    void requireThatNotAndIsTranslatedToOrNot() {
         assertSimplified(
                 or(feature("a").notInSet("b"), feature("c").inSet("d")),
                 not(and(feature("a").inSet("b"), feature("c").notInSet("d"))));
     }
 
     @Test
-    public void requireThatTreeWithoutNotIsNotAffected() {
+    void requireThatTreeWithoutNotIsNotAffected() {
         assertSimplified(
                 and(feature("a").inSet("b"), feature("c").notInSet("d")),
                 and(feature("a").inSet("b"), feature("c").notInSet("d")));
@@ -113,14 +113,14 @@ public class AndOrSimplifierTest {
     }
 
     @Test
-    public void requireThatNotOfNotIsRemoved() {
+    void requireThatNotOfNotIsRemoved() {
         assertSimplified(feature("a").inSet("b"), not(not(feature("a").inSet("b"))));
         assertSimplified(feature("a").inSet("b"), not(feature("a").notInSet("b")));
         assertSimplified(feature("a").notInSet("b"), not(not(feature("a").notInSet("b"))));
     }
 
     @Test
-    public void requireThatNotBeneathAndIsTranslated() {
+    void requireThatNotBeneathAndIsTranslated() {
         assertSimplified(
                 and(feature("a").notInSet("b"), feature("c").inSet("d"), feature("b").inSet("c")),
                 and(not(or(feature("a").inSet("b"), feature("c").notInSet("d"))), feature("b").inSet("c")));

@@ -3,15 +3,15 @@ package com.yahoo.jdisc.application;
 
 import com.yahoo.jdisc.NoopSharedResource;
 import com.yahoo.jdisc.service.ServerProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class ServerRepositoryTestCase {
 
     @Test
-    public void requireThatInstallWorks() {
+    void requireThatInstallWorks() {
         ServerRepository servers = newServerRepository();
         MyServer server = new MyServer();
         servers.install(server);
@@ -31,7 +31,7 @@ public class ServerRepositoryTestCase {
     }
 
     @Test
-    public void requireThatInstallAllWorks() {
+    void requireThatInstallAllWorks() {
         ServerRepository servers = newServerRepository();
         ServerProvider foo = new MyServer();
         ServerProvider bar = new MyServer();
@@ -46,7 +46,7 @@ public class ServerRepositoryTestCase {
     }
 
     @Test
-    public void requireThatUninstallWorks() {
+    void requireThatUninstallWorks() {
         ServerRepository servers = newServerRepository();
         ServerProvider server = new MyServer();
         servers.install(server);
@@ -55,7 +55,7 @@ public class ServerRepositoryTestCase {
     }
 
     @Test
-    public void requireThatUninstallAllWorks() {
+    void requireThatUninstallAllWorks() {
         ServerRepository servers = newServerRepository();
         ServerProvider foo = new MyServer();
         ServerProvider bar = new MyServer();

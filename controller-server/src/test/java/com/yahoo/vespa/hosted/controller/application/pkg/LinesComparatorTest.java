@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LinesComparatorTest {
     private static final String text1 = "This part of the\n" +
@@ -64,7 +64,7 @@ public class LinesComparatorTest {
             "to this document.";
 
     @Test
-    public void diff_test() {
+    void diff_test() {
         assertDiff(null, "", "");
         assertDiff(null, text1, text1);
         assertDiff(text1.lines().map(line -> "- " + line).collect(Collectors.joining("\n", "@@ -1,24 +1,0 @@\n", "\n")), text1, "");

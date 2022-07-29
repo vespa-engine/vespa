@@ -6,15 +6,15 @@ import com.yahoo.concurrent.Receiver;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.container.test.MetricMock;
 import com.yahoo.jdisc.Metric;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Steinar Knutsen
@@ -25,14 +25,14 @@ public class ContainerThreadPoolImplTest {
     private static final int CPUS = 16;
 
     @Test
-    public final void testThreadPool() throws InterruptedException {
+    final void testThreadPool() throws InterruptedException {
         Metric metrics = new MetricMock();
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
         ContainerThreadPool threadPool = new ContainerThreadpoolImpl(config, metrics);
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
         FlipIt command = new FlipIt();
-        for (boolean done = false; !done;) {
+        for (boolean done = false; !done; ) {
             try {
                 exec.execute(command);
                 done = true;
@@ -74,7 +74,7 @@ public class ContainerThreadPoolImplTest {
     }
 
     @Test
-    public void testThatThreadPoolSizeFollowsConfig() {
+    void testThatThreadPoolSizeFollowsConfig() {
         MetricMock metrics = new MetricMock();
         ThreadPoolExecutor executor = createPool(metrics, 3, 1200);
         assertEquals(3, executor.getMaximumPoolSize());
@@ -86,11 +86,12 @@ public class ContainerThreadPoolImplTest {
         assertEquals(1200L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
         assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
     }
+
     @Test
-    public void testThatThreadPoolSizeAutoDetected() {
+    void testThatThreadPoolSizeAutoDetected() {
         MetricMock metrics = new MetricMock();
         ThreadPoolExecutor executor = createPool(metrics, 0, 0);
-        assertEquals(CPUS*4, executor.getMaximumPoolSize());
+        assertEquals(CPUS * 4, executor.getMaximumPoolSize());
         assertEquals(0, executor.getQueue().remainingCapacity());
         assertEquals(7, metrics.innvocations().size());
         assertEquals(64L, metrics.innvocations().get("serverThreadPoolSize").val);
@@ -99,17 +100,19 @@ public class ContainerThreadPoolImplTest {
         assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
         assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
     }
+
     @Test
-    public void testThatQueueSizeAutoDetected() {
+    void testThatQueueSizeAutoDetected() {
         ThreadPoolExecutor executor = createPool(24, -50);
         assertEquals(24, executor.getMaximumPoolSize());
-        assertEquals(24*50, executor.getQueue().remainingCapacity());
+        assertEquals(24 * 50, executor.getQueue().remainingCapacity());
     }
+
     @Test
-    public void testThatThreadPoolSizeAndQueueSizeAutoDetected() {
+    void testThatThreadPoolSizeAndQueueSizeAutoDetected() {
         ThreadPoolExecutor executor = createPool(0, -100);
-        assertEquals(CPUS*4, executor.getMaximumPoolSize());
-        assertEquals(CPUS*4*100, executor.getQueue().remainingCapacity());
+        assertEquals(CPUS * 4, executor.getMaximumPoolSize());
+        assertEquals(CPUS * 4 * 100, executor.getQueue().remainingCapacity());
     }
 
     private class FlipIt implements Runnable {
@@ -121,9 +124,10 @@ public class ContainerThreadPoolImplTest {
         }
     }
 
+    // Ignored because it depends on the system time and so is unstable on factory
     @Test
-    @Ignore // Ignored because it depends on the system time and so is unstable on factory
-    public void testThreadPoolTerminationOnBreakdown() throws InterruptedException {
+    @Disabled
+    void testThreadPoolTerminationOnBreakdown() throws InterruptedException {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(
                 new ContainerThreadpoolConfig.Builder()
                         .maxThreads(2)
@@ -138,10 +142,16 @@ public class ContainerThreadPoolImplTest {
         assertEquals(0, terminator.dieRequests);
         assertRejected(threadPool, new Hang(500)); // no more threads
         assertEquals(0, terminator.dieRequests); // ... but not for long enough yet
-        try { Thread.sleep(1500); } catch (InterruptedException e) {}
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+        }
         threadPool.executor().execute(new Hang(1));
         assertEquals(0, terminator.dieRequests);
-        try { Thread.sleep(50); } catch (InterruptedException e) {} // Make sure both threads are available
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+        } // Make sure both threads are available
 
         // Dying when hanging both thread pool threads for longer than max thread execution time
         threadPool.executor().execute(new Hang(2000));
@@ -149,7 +159,10 @@ public class ContainerThreadPoolImplTest {
         assertEquals(0, terminator.dieRequests);
         assertRejected(threadPool, new Hang(2000)); // no more threads
         assertEquals(0, terminator.dieRequests); // ... but not for long enough yet
-        try { Thread.sleep(1500); } catch (InterruptedException e) {}
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+        }
         assertRejected(threadPool, new Hang(2000)); // no more threads
         assertEquals(1, terminator.dieRequests); // ... for longer than maxThreadExecutionTime
     }

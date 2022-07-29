@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,9 +46,9 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.startStagingSetu
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RunSerializerTest {
 
@@ -60,7 +60,7 @@ public class RunSerializerTest {
     private static final Instant start = Instant.parse("2007-12-03T10:15:30.00Z");
 
     @Test
-    public void testSerialization() throws IOException {
+    void testSerialization() throws IOException {
         for (Step step : Step.values())
             assertEquals(step, RunSerializer.stepOf(RunSerializer.valueOf(step)));
 
@@ -89,16 +89,16 @@ public class RunSerializerTest {
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(revision2, run.versions().sourceRevision().get());
         assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)),
-                     run.convergenceSummary());
+                run.convergenceSummary());
         assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
-                                                  "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
-                                                  "ZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\n" +
-                                                  "c2VydmljZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM0JhD8fV2DlAkjQOGX3\n" +
-                                                  "Y50ryMBr3g2+v/uFiRoxJ1muuSOWYrW7HCQIGuzc04fa0QwtaX/voAZKCV51t6jF\n" +
-                                                  "0fwwCgYIKoZIzj0EAwQDRwAwRAIgVbQ3Co1H4X0gmRrtXSyTU0HgBQu9PXHMmX20\n" +
-                                                  "5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n" +
-                                                  "-----END CERTIFICATE-----"),
-                     run.testerCertificate().get());
+                        "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
+                        "ZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\n" +
+                        "c2VydmljZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM0JhD8fV2DlAkjQOGX3\n" +
+                        "Y50ryMBr3g2+v/uFiRoxJ1muuSOWYrW7HCQIGuzc04fa0QwtaX/voAZKCV51t6jF\n" +
+                        "0fwwCgYIKoZIzj0EAwQDRwAwRAIgVbQ3Co1H4X0gmRrtXSyTU0HgBQu9PXHMmX20\n" +
+                        "5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n" +
+                        "-----END CERTIFICATE-----"),
+                run.testerCertificate().get());
         assertEquals(ImmutableMap.<Step, StepInfo>builder()
                         .put(deployInitialReal, new StepInfo(deployInitialReal, unfinished, Optional.empty()))
                         .put(installInitialReal, new StepInfo(installInitialReal, failed, Optional.of(Instant.ofEpochMilli(1196676940000L))))
@@ -118,10 +118,10 @@ public class RunSerializerTest {
                 run.steps());
 
         run = run.with(1L << 50)
-                 .with(Instant.now().truncatedTo(MILLIS))
-                 .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
-                 .aborted()
-                 .finished(Instant.now().truncatedTo(MILLIS));
+                .with(Instant.now().truncatedTo(MILLIS))
+                .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
+                .aborted()
+                .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
@@ -140,7 +140,7 @@ public class RunSerializerTest {
         assertEquals(run.reason(), phoenix.reason());
 
         assertEquals(new String(SlimeUtils.toJsonBytes(serializer.toSlime(run).get(), false), UTF_8),
-                     new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix).get(), false), UTF_8));
+                new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix).get(), false), UTF_8));
 
         Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, Optional.empty());
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));

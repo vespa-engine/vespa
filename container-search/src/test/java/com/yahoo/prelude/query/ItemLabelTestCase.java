@@ -3,9 +3,9 @@ package com.yahoo.prelude.query;
 
 import java.lang.reflect.Modifier;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Test;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -27,13 +27,13 @@ public class ItemLabelTestCase {
     }
 
     @Test
-    public final void testLabelVisibility() throws Exception {
+    final void testLabelVisibility() throws Exception {
         assertTrue(Modifier.isPublic(Item.class.getMethod("setLabel", String.class).getModifiers()));
         assertTrue(Modifier.isPublic(Item.class.getMethod("getLabel").getModifiers()));
     }
 
     @Test
-    public final void testLabelAccess() {
+    final void testLabelAccess() {
         Item item = new WordItem("word");
         assertFalse(item.hasUniqueID());
         assertNull(item.getLabel());
@@ -43,7 +43,7 @@ public class ItemLabelTestCase {
     }
 
     @Test
-    public final void testLabelDisclose() {
+    final void testLabelDisclose() {
         LabelCatcher catcher = new LabelCatcher();
         Item item = new WordItem("word");
         item.disclose(catcher);
@@ -54,7 +54,7 @@ public class ItemLabelTestCase {
     }
 
     @Test
-    public final void testLabelEncode() {
+    final void testLabelEncode() {
         Item w1 = new WordItem("w1");
         Item w2 = new WordItem("w2");
         Item w3 = new WordItem("w3");

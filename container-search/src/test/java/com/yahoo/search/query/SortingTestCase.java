@@ -5,20 +5,19 @@ import com.ibm.icu.lang.UScript;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
 import com.ibm.icu.util.ULocale;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
  */
 public class SortingTestCase {
     @Test
-    public void validAttributeName() {
+    void validAttributeName() {
         assertNotNull(Sorting.fromString("a"));
         assertNotNull(Sorting.fromString("_a"));
         assertNotNull(Sorting.fromString("+a"));
@@ -33,8 +32,9 @@ public class SortingTestCase {
             fail("I only expect 'IllegalArgumentException', not: + " + e.toString());
         }
     }
+
     @Test
-    public void requireThatChineseSortCorrect() {
+    void requireThatChineseSortCorrect() {
         requireThatChineseHasCorrectRules(Collator.getInstance(new ULocale("zh")));
         Sorting ch = Sorting.fromString("uca(a,zh)");
         assertEquals(1, ch.fieldOrders().size());
@@ -69,9 +69,10 @@ public class SortingTestCase {
 
         assertNotEquals("", ((RuleBasedCollator) col).getRules());
     }
+
     @Test
-    @Ignore
-    public void requireThatArabicSortCorrect() {
+    @Disabled
+    void requireThatArabicSortCorrect() {
         requireThatArabicHasCorrectRules(Collator.getInstance(new ULocale("ar")));
         Sorting ar = Sorting.fromString("uca(a,ar)");
         assertEquals(1, ar.fieldOrders().size());

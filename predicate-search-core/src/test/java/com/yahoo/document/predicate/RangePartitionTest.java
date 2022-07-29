@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -12,12 +11,12 @@ import static org.junit.Assert.assertEquals;
 public class RangePartitionTest {
 
     @Test
-    public void requireThatRangePartitionIsAValue() {
+    void requireThatRangePartitionIsAValue() {
         assertTrue(PredicateValue.class.isAssignableFrom(RangePartition.class));
     }
 
     @Test
-    public void requireThatConstructorsWork() {
+    void requireThatConstructorsWork() {
         RangePartition part = new RangePartition("foo=10-19");
         assertEquals("foo=10-19", part.getLabel());
         part = new RangePartition("foo", 10, 19, false);
@@ -27,7 +26,7 @@ public class RangePartitionTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
+    void requireThatCloneIsImplemented() throws CloneNotSupportedException {
         RangePartition node1 = new RangePartition("foo=300-399");
         RangePartition node2 = node1.clone();
         assertEquals(node1, node2);
@@ -35,24 +34,24 @@ public class RangePartitionTest {
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(new RangePartition("foo=0-9").hashCode(), new RangePartition("foo=0-9").hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         RangePartition lhs = new RangePartition("foo=10-19");
-        assertTrue(lhs.equals(lhs));
-        assertFalse(lhs.equals(new Object()));
+        assertEquals(lhs, lhs);
+        assertNotEquals(lhs, new Object());
 
         RangePartition rhs = new RangePartition("bar=1000-1999");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs = new RangePartition("foo=10-19");
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatKeyIsEscapedInToString() {
+    void requireThatKeyIsEscapedInToString() {
         assertEquals("foo=10-19", new RangePartition("foo=10-19").toString());
         assertEquals("'\\foo=10-19'", new RangePartition("\foo=10-19").toString());
         assertEquals("'\\x27foo\\x27=10-19'", new RangePartition("'foo'=10-19").toString());

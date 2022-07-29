@@ -6,14 +6,12 @@ import com.yahoo.data.access.ArrayTraverser;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.data.access.Type;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author arnej
@@ -21,14 +19,14 @@ import static org.junit.Assert.assertTrue;
 public class MatchFeatureDataTest {
 
     @Test
-    public void testHitValueAPI() {
+    void testHitValueAPI() {
         List<String> names = List.of("foo", "bar", "baz", "qux", "quux");
         var mf = new MatchFeatureData(names);
         var hit = mf.addHit();
         assertEquals(hit.type(), Type.OBJECT);
         assertTrue(hit.valid());
         hit.set(0, 1.0);
-        byte[] somebytes = { 42, 0, 17 };
+        byte[] somebytes = {42, 0, 17};
         hit.set(2, somebytes);
         hit.set(4, 5.0);
         hit.set(1, 2.0);
@@ -64,7 +62,7 @@ public class MatchFeatureDataTest {
 
         var fields = hit.fields().iterator();
         assertTrue(fields.hasNext());
-        Map.Entry<String,Inspector> entry = fields.next();
+        Map.Entry<String, Inspector> entry = fields.next();
         assertEquals("foo", entry.getKey());
         assertEquals(f1.type(), entry.getValue().type());
         assertEquals(f1.asDouble(), entry.getValue().asDouble(), 0.0);
@@ -94,9 +92,9 @@ public class MatchFeatureDataTest {
         assertEquals(f5.asDouble(), entry.getValue().asDouble(), 0.0);
 
         assertFalse(fields.hasNext());
-        
+
         assertEquals("{\"foo\":1.0,\"bar\":2.0,\"baz\":\"0x2A0011\",\"qux\":4.0,\"quux\":5.0}",
-                     hit.toString());
+                hit.toString());
     }
 
 }

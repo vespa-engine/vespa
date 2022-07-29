@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class SingleNodeProvisionerTest {
 
     @Test
-    public void require_basic_works() {
+    void require_basic_works() {
         SingleNodeProvisioner hostProvisioner = new SingleNodeProvisioner();
 
         // 4 services, 2 host aliases, mapping to 2 host.
@@ -56,16 +56,16 @@ public class SingleNodeProvisionerTest {
     }
 
     @Test
-    public void require_allocate_clustermembership_works() throws IOException, SAXException {
+    void require_allocate_clustermembership_works() throws IOException, SAXException {
         String servicesXml = "<services version='1.0'>"
-                           + "  <admin version='3.0'>"
-                           + "    <nodes count='1' />"
-                           + "  </admin>"
-                           + "  <container version='1.0'>"
-                           + "    <search />"
-                           + "    <nodes count='1' />"
-                           + "  </container>"
-                           + "</services>";
+                + "  <admin version='3.0'>"
+                + "    <nodes count='1' />"
+                + "  </admin>"
+                + "  <container version='1.0'>"
+                + "    <search />"
+                + "    <nodes count='1' />"
+                + "  </container>"
+                + "</services>";
         ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(app);
         assertThat(model.getHosts().size(), is(1));

@@ -6,15 +6,14 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DiscFilterResponseTest {
 
@@ -33,40 +32,40 @@ public class DiscFilterResponseTest {
     }
 
     @Test
-    public void testGetSetStatus() {
+    void testGetSetStatus() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
 
-        Assert.assertEquals(response.getStatus(), HttpResponse.Status.OK);
+        assertEquals(response.getStatus(), HttpResponse.Status.OK);
         response.setStatus(HttpResponse.Status.REQUEST_TIMEOUT);
-        Assert.assertEquals(response.getStatus(), HttpResponse.Status.REQUEST_TIMEOUT);
+        assertEquals(response.getStatus(), HttpResponse.Status.REQUEST_TIMEOUT);
     }
 
     @Test
-    public void testAttributes() {
+    void testAttributes() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
         response.setAttribute("attr_1", "value1");
-        Assert.assertEquals(response.getAttribute("attr_1"), "value1");
+        assertEquals(response.getAttribute("attr_1"), "value1");
         List<String> list = Collections.list(response.getAttributeNames());
-        Assert.assertEquals(list.get(0), "attr_1");
+        assertEquals(list.get(0), "attr_1");
         response.removeAttribute("attr_1");
-        Assert.assertNull(response.getAttribute("attr_1"));
+        assertNull(response.getAttribute("attr_1"));
     }
 
     @Test
-    public void testAddHeader() {
+    void testAddHeader() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
         response.addHeader("header1", "value1");
-        Assert.assertEquals(response.getHeader("header1"), "value1");
+        assertEquals(response.getHeader("header1"), "value1");
     }
 
     @Test
-    public void testAddCookie() {
+    void testAddCookie() {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
@@ -74,31 +73,31 @@ public class DiscFilterResponseTest {
         response.addCookie(JDiscCookieWrapper.wrap(new Cookie("name", "value")));
 
         List<Cookie> cookies = response.getCookies();
-        Assert.assertEquals(cookies.size(),1);
-        Assert.assertEquals(cookies.get(0).getName(),"name");
+        assertEquals(cookies.size(), 1);
+        assertEquals(cookies.get(0).getName(), "name");
     }
 
     @Test
-    public void testSetCookie() {
+    void testSetCookie() {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new DiscFilterResponse(httpResp);
         response.setCookie("name", "value");
         List<Cookie> cookies = response.getCookies();
-        Assert.assertEquals(cookies.size(),1);
-        Assert.assertEquals(cookies.get(0).getName(),"name");
+        assertEquals(cookies.size(), 1);
+        assertEquals(cookies.get(0).getName(), "name");
 
     }
 
     @Test
-    public void testSetHeader() {
+    void testSetHeader() {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new DiscFilterResponse(httpResp);
         response.setHeader("name", "value");
-        Assert.assertEquals(response.getHeader("name"), "value");
+        assertEquals(response.getHeader("name"), "value");
     }
 
 }

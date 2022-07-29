@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,8 +14,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -31,13 +31,13 @@ public class ChildProcess2ImplTest {
     private final ProcessApi2 processApi = mock(ProcessApi2.class);
     private Path temporaryFile;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         temporaryFile = Files.createTempFile(fileSystem.getPath("/"), "", "");
     }
 
     @Test
-    public void testSuccess() throws Exception {
+    void testSuccess() throws Exception {
         when(commandLine.getTimeout()).thenReturn(Duration.ofHours(1));
         when(commandLine.getMaxOutputBytes()).thenReturn(10L);
         when(commandLine.getOutputEncoding()).thenReturn(StandardCharsets.UTF_8);
@@ -52,13 +52,13 @@ public class ChildProcess2ImplTest {
         when(processApi.waitFor(anyLong(), any())).thenReturn(true);
 
         try (ChildProcess2Impl child =
-                     new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
+                new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
             child.waitForTermination();
         }
     }
 
     @Test
-    public void testTimeout() throws Exception {
+    void testTimeout() throws Exception {
         when(commandLine.getTimeout()).thenReturn(Duration.ofSeconds(1));
         when(commandLine.getMaxOutputBytes()).thenReturn(10L);
         when(commandLine.getOutputEncoding()).thenReturn(StandardCharsets.UTF_8);
@@ -73,7 +73,7 @@ public class ChildProcess2ImplTest {
         when(processApi.waitFor(anyLong(), any())).thenReturn(true);
 
         try (ChildProcess2Impl child =
-                     new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
+                new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
             try {
                 child.waitForTermination();
                 fail();
@@ -86,7 +86,7 @@ public class ChildProcess2ImplTest {
     }
 
     @Test
-    public void testMaxOutputBytes() throws Exception {
+    void testMaxOutputBytes() throws Exception {
         when(commandLine.getTimeout()).thenReturn(Duration.ofSeconds(1));
         when(commandLine.getMaxOutputBytes()).thenReturn(10L);
         when(commandLine.getOutputEncoding()).thenReturn(StandardCharsets.UTF_8);
@@ -103,7 +103,7 @@ public class ChildProcess2ImplTest {
         Files.write(temporaryFile, "1234567890123".getBytes(StandardCharsets.UTF_8));
 
         try (ChildProcess2Impl child =
-                     new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
+                new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
             try {
                 child.waitForTermination();
                 fail();
@@ -116,7 +116,7 @@ public class ChildProcess2ImplTest {
     }
 
     @Test
-    public void testUnkillable() throws Exception {
+    void testUnkillable() throws Exception {
         when(commandLine.getTimeout()).thenReturn(Duration.ofSeconds(1));
         when(commandLine.getMaxOutputBytes()).thenReturn(10L);
         when(commandLine.getOutputEncoding()).thenReturn(StandardCharsets.UTF_8);
@@ -133,7 +133,7 @@ public class ChildProcess2ImplTest {
         Files.write(temporaryFile, "1234567890123".getBytes(StandardCharsets.UTF_8));
 
         try (ChildProcess2Impl child =
-                     new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
+                new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
             try {
                 child.waitForTermination();
                 fail();

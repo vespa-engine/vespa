@@ -2,10 +2,10 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author geirst
@@ -13,16 +13,16 @@ import static org.junit.Assert.fail;
 public class RankingExpressionWithTensorTestCase {
 
     @Test
-    public void requireThatSingleLineConstantMappedTensorCanBeParsed() throws ParseException {
+    void requireThatSingleLineConstantMappedTensorCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x{},y{}):{ {x:1,y:2}:1, {x:2,y:1}:2 }\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x{},y{}):{ {x:1,y:2}:1, {x:2,y:1}:2 }\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0, {x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
@@ -30,16 +30,16 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatSingleLineConstantIndexedTensorCanBeParsed() throws ParseException {
+    void requireThatSingleLineConstantIndexedTensorCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x[3]):{ {x:0}:1, {x:1}:2, {x:2}:3 }\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x[3]):{ {x:0}:1, {x:1}:2, {x:2}:3 }\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x[3]):[1.0, 2.0, 3.0]", "constant(my_tensor).value", "my_profile");
@@ -47,16 +47,16 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatSingleLineConstantIndexedTensorShortFormCanBeParsed() throws ParseException {
+    void requireThatSingleLineConstantIndexedTensorShortFormCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x[3]):[1, 2, 3]\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x[3]):[1, 2, 3]\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x[3]):[1.0, 2.0, 3.0]", "constant(my_tensor).value", "my_profile");
@@ -64,16 +64,16 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireConstantTensorCanBeReferredViaConstantFeature() throws ParseException {
+    void requireConstantTensorCanBeReferredViaConstantFeature() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(constant(my_tensor))\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x{},y{}):{{x:1,y:2}:1, {x:2,y:1}:2}\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: sum(constant(my_tensor))\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x{},y{}):{{x:1,y:2}:1, {x:2,y:1}:2}\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0, {x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
@@ -81,18 +81,18 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatMultiLineConstantTensorAndTypeCanBeParsed() throws ParseException {
+    void requireThatMultiLineConstantTensorAndTypeCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x{},y{}):\n" +
-                "          { {x:1,y:2}:1,\n" +
-                "            {x:2,y:1}:2 }\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x{},y{}):\n" +
+                        "          { {x:1,y:2}:1,\n" +
+                        "            {x:2,y:1}:2 }\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0, {x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
@@ -100,16 +100,16 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatConstantTensorsCanBeUsedInSecondPhaseExpression() throws ParseException {
+    void requireThatConstantTensorsCanBeUsedInSecondPhaseExpression() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    second-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
-                "    }\n" +
-                "  }");
+                        "    second-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertSecondPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{}):{1:1.0}", "constant(my_tensor).value", "my_profile");
@@ -117,20 +117,20 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatConstantTensorsCanBeUsedInInheritedRankProfile() throws ParseException {
+    void requireThatConstantTensorsCanBeUsedInInheritedRankProfile() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile parent {\n" +
-                "    constants {\n" +
-                "      my_tensor {\n" +
-                "        value: { {x:1}:1 }\n" +
-                "      }\n" +
-                "    }\n" +
-                "  }\n" +
-                "  rank-profile my_profile inherits parent {\n" +
-                "    first-phase {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "  }");
+                        "    constants {\n" +
+                        "      my_tensor {\n" +
+                        "        value: { {x:1}:1 }\n" +
+                        "      }\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "  rank-profile my_profile inherits parent {\n" +
+                        "    first-phase {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{}):{1:1.0}", "constant(my_tensor).value", "my_profile");
@@ -138,19 +138,19 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatConstantTensorsCanBeUsedInFunction() throws ParseException {
+    void requireThatConstantTensorsCanBeUsedInFunction() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    function my_macro() {\n" +
-                "      expression: sum(my_tensor)\n" +
-                "    }\n" +
-                "    first-phase {\n" +
-                "      expression: 5.0 + my_macro\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
-                "    }\n" +
-                "  }");
+                        "    function my_macro() {\n" +
+                        "      expression: sum(my_tensor)\n" +
+                        "    }\n" +
+                        "    first-phase {\n" +
+                        "      expression: 5.0 + my_macro\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("5.0 + my_macro", "my_profile");
         f.assertFunction("reduce(constant(my_tensor), sum)", "my_macro", "my_profile");
@@ -159,18 +159,18 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatCombinationOfConstantTensorsAndConstantValuesCanBeUsed() throws ParseException {
+    void requireThatCombinationOfConstantTensorsAndConstantValuesCanBeUsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: my_number_1 + sum(my_tensor) + my_number_2\n" +
-                "    }\n" +
-                "    constants {\n" +
-                "      my_number_1 double: 3.0\n" +
-                "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
-                "      my_number_2 double: 5.0\n" +
-                "    }\n" +
-                "  }");
+                        "    first-phase {\n" +
+                        "      expression: my_number_1 + sum(my_tensor) + my_number_2\n" +
+                        "    }\n" +
+                        "    constants {\n" +
+                        "      my_number_1 double: 3.0\n" +
+                        "      my_tensor tensor(x{}):{ {x:1}:1 }\n" +
+                        "      my_number_2 double: 5.0\n" +
+                        "    }\n" +
+                        "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("3.0 + reduce(constant(my_tensor), sum) + 5.0", "my_profile");
         f.assertRankProperty("tensor(x{}):{1:1.0}", "constant(my_tensor).value", "my_profile");
@@ -178,20 +178,20 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatInvalidTensorTypeSpecThrowsException() throws ParseException {
+    void requireThatInvalidTensorTypeSpecThrowsException() throws ParseException {
         try {
             RankProfileSearchFixture f = new RankProfileSearchFixture(
                     "  rank-profile my_profile {\n" +
-                    "    constants {\n" +
-                    "      my_tensor tensor(x):{ {x:1}:1 }\n" +
-                    "    }\n" +
-                    "  }");
+                            "    constants {\n" +
+                            "      my_tensor tensor(x):{ {x:1}:1 }\n" +
+                            "    }\n" +
+                            "  }");
             f.compileRankProfile("my_profile");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertStartsWith("Type of constant(my_tensor): Illegal tensor type spec: A tensor type spec must be on the form",
-                             e.getMessage());
+                    e.getMessage());
         }
     }
 

@@ -8,12 +8,12 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -26,7 +26,7 @@ public class EndpointTest {
     private static final TenantAndApplicationId app2 = TenantAndApplicationId.from(instance2);
 
     @Test
-    public void global_endpoints() {
+    void global_endpoints() {
         DeploymentId deployment1 = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         DeploymentId deployment2 = new DeploymentId(instance2, ZoneId.from("prod", "us-north-1"));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
@@ -72,7 +72,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void global_endpoints_with_endpoint_id() {
+    void global_endpoints_with_endpoint_id() {
         DeploymentId deployment1 = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         DeploymentId deployment2 = new DeploymentId(instance2, ZoneId.from("prod", "us-north-1"));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
@@ -114,7 +114,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void zone_endpoints() {
+    void zone_endpoints() {
         var cluster = ClusterSpec.Id.from("default"); // Always default for non-direct routing
         var prodZone = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         var prodZone2 = new DeploymentId(instance2, ZoneId.from("prod", "us-north-1"));
@@ -172,7 +172,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void certificate_endpoints() {
+    void certificate_endpoints() {
         var defaultCluster = ClusterSpec.Id.from("default");
         var prodZone = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         var testZone = new DeploymentId(instance1, ZoneId.from("test", "us-north-2"));
@@ -237,7 +237,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void region_endpoints() {
+    void region_endpoints() {
         var cluster = ClusterSpec.Id.from("default");
         var prodZone = ZoneId.from("prod", "us-north-2");
         Map<String, Endpoint> tests = Map.of(
@@ -268,42 +268,42 @@ public class EndpointTest {
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
 
-        assertEquals("Availability zone is removed from region",
-                     "aws-us-north-1",
-                     tests.get("https://a1.t1.aws-us-north-1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value());
-        assertEquals("Availability zone is removed from region",
-                "gcp-us-south1",
-                tests.get("https://a1.t1.gcp-us-south1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value());
+        assertEquals("aws-us-north-1",
+                tests.get("https://a1.t1.aws-us-north-1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value(),
+                "Availability zone is removed from region");
+        assertEquals("gcp-us-south1",
+                tests.get("https://a1.t1.gcp-us-south1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value(),
+                "Availability zone is removed from region");
     }
 
     @Test
-    public void application_endpoints() {
+    void application_endpoints() {
         Map<String, Endpoint> tests = Map.of(
                 "https://weighted.a1.t1.us-west-1.r.vespa-app.cloud/",
                 Endpoint.of(app1)
                         .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
-                                           Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
+                                Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://weighted.a1.t1.us-west-1.r.cd.vespa-app.cloud/",
                 Endpoint.of(app1)
                         .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
-                                           Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
+                                Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.PublicCd),
                 "https://a2.t2.us-east-3-r.vespa.oath.cloud/",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
-                                           Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
+                                Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.main),
                 "https://cd.a2.t2.us-east-3-r.vespa.oath.cloud/",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
-                                           Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
+                                Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.cd)
@@ -312,7 +312,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void upstream_name() {
+    void upstream_name() {
         var zone = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         var zone2 = new DeploymentId(instance2, ZoneId.from("prod", "us-north-1"));
         var tests1 = Map.of(

@@ -2,8 +2,8 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -15,8 +15,8 @@ import java.io.IOException;
 public class NuwaTestCase extends AbstractExportingTestCase {
 
     @Test
-    @Ignore
-    public void testNuwa() throws IOException, ParseException {
+    @Disabled
+    void testNuwa() throws IOException, ParseException {
         System.gc();
         long freeBytesBefore = Runtime.getRuntime().freeMemory();
         long totalBytesBefore = Runtime.getRuntime().totalMemory();
@@ -27,7 +27,7 @@ public class NuwaTestCase extends AbstractExportingTestCase {
         long freeBytesAfter = Runtime.getRuntime().freeMemory();
         long totalBytesAfter = Runtime.getRuntime().totalMemory();
         long additionalAllocated = totalBytesAfter - totalBytesBefore;
-        System.out.println("Consumed " + ((freeBytesBefore - (freeBytesAfter - additionalAllocated) ) / 1000000) + " Mb");
+        System.out.println("Consumed " + ((freeBytesBefore - (freeBytesAfter - additionalAllocated)) / 1000000) + " Mb");
     }
 
 }

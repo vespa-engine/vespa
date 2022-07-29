@@ -14,9 +14,9 @@ import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.SearcherRegistry;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,13 +36,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -65,12 +59,12 @@ public class SearchChainConfigurerTestCase {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void createDefaultComponentsConfigs() throws IOException {
         createComponentsConfig(testDir + "chains.cfg", testDir + "handlers.cfg", testDir + "components.cfg");
     }
 
-    @AfterClass
+    @AfterAll
     public static void removeDefaultComponentsConfigs() {
         new File(testDir + "components.cfg").delete();
     }
@@ -81,7 +75,7 @@ public class SearchChainConfigurerTestCase {
     }
 
     @Test
-    public synchronized void testConfiguration() {
+    synchronized void testConfiguration() {
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
 
         SearchChain simple = getSearchChainRegistryFrom(configurer).getComponent("simple");
@@ -130,7 +124,7 @@ public class SearchChainConfigurerTestCase {
     public static final class DeclaredTestSearcher extends TestSearcher {}
 
     @Test
-    public  void testConfigurableSearcher() {
+    void testConfigurableSearcher() {
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
 
         SearchChain configurable = getSearchChainRegistryFrom(configurer).getComponent("configurable");
@@ -138,9 +132,9 @@ public class SearchChainConfigurerTestCase {
 
         Searcher s = configurable.searchers().get(0);
         assertTrue(s instanceof ConfigurableSearcher);
-        ConfigurableSearcher searcher = (ConfigurableSearcher)s;
-        assertEquals("Value from int.cfg file", 7, searcher.intConfig.intVal());
-        assertEquals("Value from string.cfg file", "com.yahoo.search.searchchain.config.test", searcher.stringConfig.stringVal());
+        ConfigurableSearcher searcher = (ConfigurableSearcher) s;
+        assertEquals(7, searcher.intConfig.intVal(), "Value from int.cfg file");
+        assertEquals("com.yahoo.search.searchchain.config.test", searcher.stringConfig.stringVal(), "Value from string.cfg file");
         configurer.shutdown();
     }
 
@@ -149,7 +143,7 @@ public class SearchChainConfigurerTestCase {
      * that does not contain any bootstrap configs.
      */
     @Test
-    public void testSearcherConfigUpdate() throws IOException {
+    void testSearcherConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
@@ -167,11 +161,11 @@ public class SearchChainConfigurerTestCase {
         SearcherRegistry searchers = getSearchChainRegistryFrom(configurer).getSearcherRegistry();
         assertEquals(3, searchers.getComponentCount());
 
-        IntSearcher intSearcher = (IntSearcher)searchers.getComponent(IntSearcher.class.getName());
+        IntSearcher intSearcher = (IntSearcher) searchers.getComponent(IntSearcher.class.getName());
         assertEquals(16, intSearcher.intConfig.intVal());
-        StringSearcher stringSearcher = (StringSearcher)searchers.getComponent(StringSearcher.class.getName());
+        StringSearcher stringSearcher = (StringSearcher) searchers.getComponent(StringSearcher.class.getName());
         DeclaredTestSearcher noConfigSearcher =
-                (DeclaredTestSearcher)searchers.getComponent(DeclaredTestSearcher.class.getName());
+                (DeclaredTestSearcher) searchers.getComponent(DeclaredTestSearcher.class.getName());
 
         // Update int config for IntSearcher,
         printFile(new File(cfgDir + "/int.cfg"), "intVal 17\n");
@@ -183,7 +177,7 @@ public class SearchChainConfigurerTestCase {
         assertEquals(3, searchers.getComponentCount());
 
         // Searcher with updated config is re-instantiated.
-        IntSearcher intSearcher2 = (IntSearcher)searchers.getComponent(IntSearcher.class.getName());
+        IntSearcher intSearcher2 = (IntSearcher) searchers.getComponent(IntSearcher.class.getName());
         assertNotSame(intSearcher, intSearcher2);
         assertEquals(17, intSearcher2.intConfig.intVal());
 
@@ -203,7 +197,7 @@ public class SearchChainConfigurerTestCase {
      * and that a searcher that has been removed from the configuration is not in the new registry.
      */
     @Test
-    public void testChainsConfigUpdate() throws IOException {
+    void testChainsConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
@@ -225,7 +219,7 @@ public class SearchChainConfigurerTestCase {
         assertNull(searchers.getComponent(ConfigurableSearcher.class.getName()));
         assertNull(searchers.getComponent(DeclaredTestSearcher.class.getName()));
 
-        IntSearcher intSearcher = (IntSearcher)searchers.getComponent(IntSearcher.class.getName());
+        IntSearcher intSearcher = (IntSearcher) searchers.getComponent(IntSearcher.class.getName());
 
         // Update chains config
         copyFile(testDir + "chainsConfigUpdate_2.cfg", cfgDir +  "/chains.cfg");

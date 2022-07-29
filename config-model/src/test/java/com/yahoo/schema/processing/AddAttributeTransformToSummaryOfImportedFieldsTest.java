@@ -17,11 +17,11 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -33,7 +33,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     private static final String SUMMARY_NAME = "mysummary";
 
     @Test
-    public void attribute_summary_transform_applied_to_summary_field_of_imported_field() {
+    void attribute_summary_transform_applied_to_summary_field_of_imported_field() {
         Schema schema = createSearchWithDocument(DOCUMENT_NAME);
         schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME));
         schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, schema));

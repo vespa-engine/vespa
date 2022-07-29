@@ -3,16 +3,16 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.RangeItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RangeItemTestCase {
 
     @Test
-    public void testRangeConstruction() {
+    void testRangeConstruction() {
         verifyRange(new RangeItem(5, 7, 9, "a", true), 9, true);
         verifyRange(new RangeItem(5, 7, "a", true), 0, true);
         verifyRange(new RangeItem(5, 7, "a"), 0, false);

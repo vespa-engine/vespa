@@ -2,15 +2,15 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.application.OsgiFramework;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -19,26 +19,26 @@ import static org.junit.Assert.fail;
 public class NonWorkingOsgiFrameworkTestCase {
 
     @Test
-    public void requireThatFrameworkCanStartAndStop() throws BundleException {
+    void requireThatFrameworkCanStartAndStop() throws BundleException {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         osgi.start();
         osgi.stop();
     }
 
     @Test
-    public void requireThatFrameworkHasNoBundles() throws BundleException {
+    void requireThatFrameworkHasNoBundles() throws BundleException {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         assertTrue(osgi.bundles().isEmpty());
     }
 
     @Test
-    public void requireThatFrameworkHasNoBundleContext() {
+    void requireThatFrameworkHasNoBundleContext() {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         assertNull(osgi.bundleContext());
     }
 
     @Test
-    public void requireThatFrameworkThrowsOnInstallBundle() throws BundleException {
+    void requireThatFrameworkThrowsOnInstallBundle() throws BundleException {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         try {
             osgi.installBundle("file:bundle.jar");
@@ -49,7 +49,7 @@ public class NonWorkingOsgiFrameworkTestCase {
     }
 
     @Test
-    public void requireThatFrameworkThrowsOnStartBundles() throws BundleException {
+    void requireThatFrameworkThrowsOnStartBundles() throws BundleException {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         try {
             osgi.startBundles(Collections.<Bundle>emptyList(), false);
@@ -60,7 +60,7 @@ public class NonWorkingOsgiFrameworkTestCase {
     }
 
     @Test
-    public void requireThatFrameworkThrowsOnRefreshPackages() throws BundleException, InterruptedException {
+    void requireThatFrameworkThrowsOnRefreshPackages() throws BundleException, InterruptedException {
         OsgiFramework osgi = new NonWorkingOsgiFramework();
         try {
             osgi.refreshPackages();

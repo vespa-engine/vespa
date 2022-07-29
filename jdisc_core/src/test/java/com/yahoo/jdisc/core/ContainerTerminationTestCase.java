@@ -4,11 +4,11 @@ package com.yahoo.jdisc.core;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.application.DeactivatedContainer;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -16,14 +16,14 @@ import static org.junit.Assert.assertTrue;
 public class ContainerTerminationTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Object obj = new Object();
         ContainerTermination termination = new ContainerTermination(obj);
         assertSame(obj, termination.appContext());
     }
 
     @Test
-    public void requireThatAppContextIsFromBuilder() {
+    void requireThatAppContextIsFromBuilder() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         Object obj = new Object();
@@ -35,7 +35,7 @@ public class ContainerTerminationTestCase {
     }
 
     @Test
-    public void requireThatEarlyTerminationIsNotified() {
+    void requireThatEarlyTerminationIsNotified() {
         ContainerTermination termination = new ContainerTermination(null);
         termination.run();
         MyTask task = new MyTask();
@@ -44,7 +44,7 @@ public class ContainerTerminationTestCase {
     }
 
     @Test
-    public void requireThatLaterTerminationIsNotified() {
+    void requireThatLaterTerminationIsNotified() {
         ContainerTermination termination = new ContainerTermination(null);
         MyTask task = new MyTask();
         termination.notifyTermination(task);
@@ -54,7 +54,7 @@ public class ContainerTerminationTestCase {
     }
 
     @Test
-    public void requireThatNotifyCanOnlyBeCalledOnce() {
+    void requireThatNotifyCanOnlyBeCalledOnce() {
         ContainerTermination termination = new ContainerTermination(null);
         termination.notifyTermination(new MyTask());
         try {

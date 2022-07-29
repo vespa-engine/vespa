@@ -4,14 +4,14 @@ package com.yahoo.vespa.hosted.controller.api.role;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden
@@ -23,7 +23,7 @@ public class RoleTest {
     private static final Enforcer publicCdEnforcer = new Enforcer(SystemName.PublicCd);
 
     @Test
-    public void operator_membership() {
+    void operator_membership() {
         Role role = Role.hostedOperator();
 
         // Operator actions
@@ -39,7 +39,7 @@ public class RoleTest {
     }
 
     @Test
-    public void supporter_membership() {
+    void supporter_membership() {
         Role role = Role.hostedSupporter();
 
         // No create update or delete
@@ -64,11 +64,11 @@ public class RoleTest {
     }
 
     @Test
-    public void tenant_membership() {
+    void tenant_membership() {
         Role role = Role.athenzTenantAdmin(TenantName.from("t1"));
         assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
-        assertFalse("Deny access to operator API", mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")));
-        assertFalse("Deny access to other tenant and app", mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")), "Deny access to operator API");
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")), "Deny access to other tenant and app");
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
 
         Role publicSystem = Role.athenzTenantAdmin(TenantName.from("t1"));
@@ -78,16 +78,16 @@ public class RoleTest {
     }
 
     @Test
-    public void build_service_membership() {
+    void build_service_membership() {
         Role role = Role.buildService(TenantName.from("t1"), ApplicationName.from("a1"));
         assertFalse(publicEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
         assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/submit")));
-        assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
+        assertFalse(publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")), "No global read access");
     }
 
     @Test
-    public void new_implications() {
+    void new_implications() {
         TenantName tenant1 = TenantName.from("t1");
         ApplicationName application1 = ApplicationName.from("a1");
         ApplicationName application2 = ApplicationName.from("a2");
@@ -103,7 +103,7 @@ public class RoleTest {
     }
 
     @Test
-    public void system_flags() {
+    void system_flags() {
         URI deployUri = URI.create("/system-flags/v1/deploy");
         Action action = Action.update;
         assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, deployUri));
@@ -121,7 +121,7 @@ public class RoleTest {
     }
 
     @Test
-    public void routing() {
+    void routing() {
         var tenantUrl = URI.create("/routing/v1/status/tenant/t1");
         var applicationUrl = URI.create("/routing/v1/status/tenant/t1/application/a1");
         var instanceUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1");
@@ -130,8 +130,8 @@ public class RoleTest {
         for (var url : List.of(tenantUrl, applicationUrl, instanceUrl, deploymentUrl)) {
             var allowedRole = Role.reader(TenantName.from("t1"));
             var disallowedRole = Role.reader(TenantName.from("t2"));
-            assertTrue(allowedRole + " can read " + url, mainEnforcer.allows(allowedRole, Action.read, url));
-            assertFalse(disallowedRole + " cannot read " + url, mainEnforcer.allows(disallowedRole, Action.read, url));
+            assertTrue(mainEnforcer.allows(allowedRole, Action.read, url), allowedRole + " can read " + url);
+            assertFalse(mainEnforcer.allows(disallowedRole, Action.read, url), disallowedRole + " cannot read " + url);
         }
 
         // Write
@@ -139,15 +139,15 @@ public class RoleTest {
             var url = URI.create("/routing/v1/inactive/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
             var allowedRole = Role.developer(TenantName.from("t1"));
             var disallowedRole = Role.developer(TenantName.from("t2"));
-            assertTrue(allowedRole + " can override status at " + url, mainEnforcer.allows(allowedRole, Action.create, url));
-            assertTrue(allowedRole + " can clear status at " + url, mainEnforcer.allows(allowedRole, Action.delete, url));
-            assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));
-            assertFalse(disallowedRole + " cannot clear status at " + url, mainEnforcer.allows(disallowedRole, Action.delete, url));
+            assertTrue(mainEnforcer.allows(allowedRole, Action.create, url), allowedRole + " can override status at " + url);
+            assertTrue(mainEnforcer.allows(allowedRole, Action.delete, url), allowedRole + " can clear status at " + url);
+            assertFalse(mainEnforcer.allows(disallowedRole, Action.create, url), disallowedRole + " cannot override status at " + url);
+            assertFalse(mainEnforcer.allows(disallowedRole, Action.delete, url), disallowedRole + " cannot clear status at " + url);
         }
     }
 
     @Test
-    public void payment_instrument() {
+    void payment_instrument() {
         URI paymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument/foobar");
         URI tenantPaymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument");
         URI tokenUri = URI.create("/billing/v1/tenant/t1/token");
@@ -172,7 +172,7 @@ public class RoleTest {
     }
 
     @Test
-    public void billing_tenant() {
+    void billing_tenant() {
         URI billing = URI.create("/billing/v1/tenant/t1/billing");
 
         Role user = Role.reader(TenantName.from("t1"));
@@ -189,7 +189,7 @@ public class RoleTest {
     }
 
     @Test
-    public void billing_test() {
+    void billing_test() {
         var tester = new EnforcerTester(publicEnforcer);
 
         var accountant = Role.hostedAccountant();
@@ -302,12 +302,12 @@ public class RoleTest {
 
             allowed.forEach(action -> {
                 var msg = String.format("%s should be allowed to %s on %s", role, action, resource);
-                assertTrue(msg, enforcer.allows(role, action, resource));
+                assertTrue(enforcer.allows(role, action, resource), msg);
             });
 
             Action.all().stream().filter(a -> ! allowed.contains(a)).forEach(action -> {
                 var msg = String.format("%s should not be allowed to %s on %s", role, action, resource);
-                assertFalse(msg, enforcer.allows(role, action, resource));
+                assertFalse(enforcer.allows(role, action, resource), msg);
             });
 
             return this;

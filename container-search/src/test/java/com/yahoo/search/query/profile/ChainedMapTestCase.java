@@ -1,28 +1,27 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
  */
 public class ChainedMapTestCase {
     @Test
-    public void testIsEmpty() {
+    void testIsEmpty() {
         assertTrue(new ChainedMap<String, String>(Map.of(), Map.of()).isEmpty());
         assertFalse(new ChainedMap<>(Map.of("k", "v"), Map.of()).isEmpty());
         assertFalse(new ChainedMap<>(Map.of(), Map.of("k", "v")).isEmpty());
         assertFalse(new ChainedMap<>(Map.of("k", "v"), Map.of("k", "v")).isEmpty());
     }
+
     @Test
-    public void testSize() {
+    void testSize() {
         assertEquals(0, new ChainedMap<String, String>(Map.of(), Map.of()).size());
         assertEquals(1, new ChainedMap<>(Map.of("k", "v"), Map.of()).size());
         assertEquals(1, new ChainedMap<>(Map.of(), Map.of("k", "v")).size());
@@ -30,8 +29,9 @@ public class ChainedMapTestCase {
         assertEquals(2, new ChainedMap<>(Map.of("k", "v"), Map.of("K", "v")).size());
         assertEquals(2, new ChainedMap<>(Map.of("k", "v"), Map.of("K", "v", "k", "v")).size());
     }
+
     @Test
-    public void testGetUsesBoth() {
+    void testGetUsesBoth() {
         Map<String, String> a = Map.of("a", "a_1");
         Map<String, String> b = Map.of("b", "b_1");
         Map<String, String> ab = Map.of("a", "a_2", "b", "b_2");
@@ -53,7 +53,7 @@ public class ChainedMapTestCase {
     }
 
     @Test
-    public void testKeySet() {
+    void testKeySet() {
         assertTrue(new ChainedMap<String, String>(Map.of(), Map.of()).keySet().isEmpty());
         Map<String, String> a = Map.of("a", "a_1");
         Map<String, String> b = Map.of("b", "b_1");

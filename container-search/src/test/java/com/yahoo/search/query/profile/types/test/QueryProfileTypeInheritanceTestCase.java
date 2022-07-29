@@ -9,13 +9,10 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -26,7 +23,7 @@ public class QueryProfileTypeInheritanceTestCase {
 
     private QueryProfileType type, typeStrict, user, userStrict;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         type=new QueryProfileType(new ComponentId("testtype"));
         typeStrict=new QueryProfileType(new ComponentId("testtypeStrict"));
@@ -63,7 +60,7 @@ public class QueryProfileTypeInheritanceTestCase {
     }
 
     @Test
-    public void testInheritance() {
+    void testInheritance() {
         type.inherited().add(user);
         type.freeze();
         user.freeze();
@@ -71,11 +68,11 @@ public class QueryProfileTypeInheritanceTestCase {
         assertFalse(type.isOverridable("myUserString"));
         assertEquals("myUserInteger", type.getField("myUserInteger").getName());
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
 
-        test.set("myUserInteger","37", (QueryProfileRegistry)null);
-        test.set("myUnknownInteger","38", (QueryProfileRegistry)null);
+        test.set("myUserInteger", "37", (QueryProfileRegistry) null);
+        test.set("myUnknownInteger", "38", (QueryProfileRegistry) null);
         CompiledQueryProfile ctest = test.compile(null);
 
         assertEquals(37, ctest.get("myUserInteger"));
@@ -83,45 +80,45 @@ public class QueryProfileTypeInheritanceTestCase {
     }
 
     @Test
-    public void testInheritanceStrict() {
+    void testInheritanceStrict() {
         typeStrict.inherited().add(userStrict);
         typeStrict.freeze();
         userStrict.freeze();
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(typeStrict);
 
-        test.set("myUserInteger","37", (QueryProfileRegistry)null);
+        test.set("myUserInteger", "37", (QueryProfileRegistry) null);
         try {
-            test.set("myUnknownInteger","38", (QueryProfileRegistry)null);
+            test.set("myUnknownInteger", "38", (QueryProfileRegistry) null);
             fail("Should have failed");
         }
         catch (IllegalArgumentException e) {
             assertEquals("'myUnknownInteger' is not declared in query profile type 'testtypeStrict', and the type is strict",
-                         e.getCause().getMessage());
+                    e.getCause().getMessage());
         }
 
-        assertEquals(37,test.get("myUserInteger"));
+        assertEquals(37, test.get("myUserInteger"));
         assertNull(test.get("myUnknownInteger"));
     }
 
     @Test
-    public void testStrictIsInherited() {
+    void testStrictIsInherited() {
         type.inherited().add(userStrict);
         type.freeze();
         userStrict.freeze();
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(type);
 
-        test.set("myUserInteger","37", (QueryProfileRegistry)null);
+        test.set("myUserInteger", "37", (QueryProfileRegistry) null);
         try {
-            test.set("myUnknownInteger","38", (QueryProfileRegistry)null);
+            test.set("myUnknownInteger", "38", (QueryProfileRegistry) null);
             fail("Should have failed");
         }
         catch (IllegalArgumentException e) {
             assertEquals("'myUnknownInteger' is not declared in query profile type 'testtype', and the type is strict",
-                         e.getCause().getMessage());
+                    e.getCause().getMessage());
         }
 
         CompiledQueryProfile ctest = test.compile(null);

@@ -7,11 +7,11 @@ import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.config.model.deploy.TestProperties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author arnej
@@ -38,9 +38,9 @@ public class AnnotationReferenceTestCase {
                   "        }",
                   "    }",
                   "}");
-    
+
     @Test
-    public void noAnnotationReferenceInDocument() throws Exception {
+    void noAnnotationReferenceInDocument() throws Exception {
         var builder = new ApplicationBuilder(new TestProperties());
         builder.addSchema(sd);
         builder.build(true);
@@ -49,7 +49,7 @@ public class AnnotationReferenceTestCase {
         var complex = doc.findAnnotation("complex");
         var dt = complex.getDataType();
         assertTrue(dt instanceof StructDataType);
-        var struct = (StructDataType)dt;
+        var struct = (StructDataType) dt;
         var field = struct.getField("owner");
         assertTrue(field.getDataType() instanceof AnnotationReferenceDataType);
     }

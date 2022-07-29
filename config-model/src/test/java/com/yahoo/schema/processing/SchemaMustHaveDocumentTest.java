@@ -3,11 +3,11 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author hmusum
@@ -15,13 +15,13 @@ import static org.junit.Assert.fail;
 public class SchemaMustHaveDocumentTest {
 
     @Test
-    public void requireErrorWhenMissingDocument() throws IOException, ParseException {
+    void requireErrorWhenMissingDocument() throws IOException, ParseException {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_missing_document.sd");
             fail("SD without document");
         } catch (IllegalArgumentException e) {
             if (!e.getMessage()
-                  .contains("For schema 'imageconfig': A search specification must have an equally named document inside of it.")) {
+                    .contains("For schema 'imageconfig': A search specification must have an equally named document inside of it.")) {
                 throw e;
             }
         }

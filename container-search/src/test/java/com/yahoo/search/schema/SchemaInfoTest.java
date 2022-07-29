@@ -2,9 +2,9 @@
 package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -12,38 +12,38 @@ import static org.junit.Assert.assertEquals;
 public class SchemaInfoTest {
 
     @Test
-    public void testSchemaInfoConfiguration() {
+    void testSchemaInfoConfiguration() {
         assertEquals(SchemaInfoTester.createSchemaInfoFromConfig(), SchemaInfoTester.createSchemaInfo());
     }
 
     @Test
-    public void testInputResolution() {
+    void testInputResolution() {
         var tester = new SchemaInfoTester();
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "", "", "commonProfile", "query(myTensor1)");
+                "", "", "commonProfile", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "ab", "", "commonProfile", "query(myTensor1)");
+                "ab", "", "commonProfile", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "a", "", "commonProfile", "query(myTensor1)");
+                "a", "", "commonProfile", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "b", "", "commonProfile", "query(myTensor1)");
+                "b", "", "commonProfile", "query(myTensor1)");
 
         tester.assertInputConflict(TensorType.fromSpec("tensor(a{},b{})"),
-                                   "", "", "inconsistent", "query(myTensor1)");
+                "", "", "inconsistent", "query(myTensor1)");
         tester.assertInputConflict(TensorType.fromSpec("tensor(a{},b{})"),
-                                   "ab", "", "inconsistent", "query(myTensor1)");
+                "ab", "", "inconsistent", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "ab", "a", "inconsistent", "query(myTensor1)");
+                "ab", "a", "inconsistent", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(x[10])"),
-                           "ab", "b", "inconsistent", "query(myTensor1)");
+                "ab", "b", "inconsistent", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "a", "", "inconsistent", "query(myTensor1)");
+                "a", "", "inconsistent", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(x[10])"),
-                           "b", "", "inconsistent", "query(myTensor1)");
+                "b", "", "inconsistent", "query(myTensor1)");
         tester.assertInput(null,
-                           "a", "", "bOnly", "query(myTensor1)");
+                "a", "", "bOnly", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
-                           "ab", "", "bOnly", "query(myTensor1)");
+                "ab", "", "bOnly", "query(myTensor1)");
     }
 
 }

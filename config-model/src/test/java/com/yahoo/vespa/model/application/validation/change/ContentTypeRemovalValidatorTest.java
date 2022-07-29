@@ -7,10 +7,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests validation of removal of a document type.
@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 public class ContentTypeRemovalValidatorTest {
 
     @Test
-    public void testContentTypeRemovalValidation() {
+    void testContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
@@ -31,14 +31,14 @@ public class ContentTypeRemovalValidatorTest {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("content-type-removal: Type 'music' is removed  in content cluster 'test'. " +
-                         "This will cause loss of all data of this type. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.contentTypeRemoval),
-                         Exceptions.toMessageString(expected));
+                    "This will cause loss of all data of this type. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.contentTypeRemoval),
+                    Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testOverridingContentTypeRemovalValidation() {
+    void testOverridingContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();

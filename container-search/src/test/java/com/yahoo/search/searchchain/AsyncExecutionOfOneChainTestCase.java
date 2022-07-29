@@ -7,7 +7,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -28,16 +28,16 @@ public class AsyncExecutionOfOneChainTestCase {
 
     /** Tests having a result with some slow source data which should pass directly to rendering */
     @Test
-    public void testParallelExecutionOfOneChain() {
+    void testParallelExecutionOfOneChain() {
         ExecutorService executor = Executors.newFixedThreadPool(16);
         // Setup
-        Chain<Searcher> mainChain=new Chain<>(new ParallelExecutor(executor),new ResultProcessor(),new RegularProvider());
+        Chain<Searcher> mainChain = new Chain<>(new ParallelExecutor(executor), new ResultProcessor(), new RegularProvider());
 
         // Execute
-        Result result=new Execution(mainChain, Execution.Context.createContextStub()).search(new Query());
+        Result result = new Execution(mainChain, Execution.Context.createContextStub()).search(new Query());
 
         // Verify
-        assertEquals("Received 2 hits from 3 threads",3*2,result.hits().size());
+        assertEquals(3 * 2, result.hits().size(), "Received 2 hits from 3 threads");
         assertEquals(1.0, result.hits().get("thread-0:hit-0").getRelevance().getScore(), delta);
         assertEquals(1.0, result.hits().get("thread-1:hit-0").getRelevance().getScore(), delta);
         assertEquals(1.0, result.hits().get("thread-2:hit-0").getRelevance().getScore(), delta);

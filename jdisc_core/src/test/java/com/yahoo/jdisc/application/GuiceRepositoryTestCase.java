@@ -10,18 +10,18 @@ import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class GuiceRepositoryTestCase {
 
     @Test
-    public void requireThatInstallWorks() {
+    void requireThatInstallWorks() {
         GuiceRepository guice = new GuiceRepository();
         StringBinding module = new StringBinding("fooKey", "fooVal");
         guice.install(module);
@@ -43,7 +43,7 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatInstallAllWorks() {
+    void requireThatInstallAllWorks() {
         GuiceRepository guice = new GuiceRepository();
         StringBinding foo = new StringBinding("fooKey", "fooVal");
         StringBinding bar = new StringBinding("barKey", "barVal");
@@ -60,7 +60,7 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatUninstallWorks() {
+    void requireThatUninstallWorks() {
         GuiceRepository guice = new GuiceRepository();
         StringBinding module = new StringBinding("fooKey", "fooVal");
         guice.install(module);
@@ -72,7 +72,7 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatUninstallAllWorks() {
+    void requireThatUninstallAllWorks() {
         GuiceRepository guice = new GuiceRepository();
         StringBinding foo = new StringBinding("fooKey", "fooVal");
         StringBinding bar = new StringBinding("barKey", "barVal");
@@ -95,7 +95,7 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatBindingsCanBeOverridden() {
+    void requireThatBindingsCanBeOverridden() {
         GuiceRepository guice = new GuiceRepository();
         guice.install(new StringBinding("fooKey", "fooVal1"));
         assertBinding(guice, "fooKey", "fooVal1");
@@ -104,7 +104,7 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatModulesAreOnlyEvaluatedOnce() {
+    void requireThatModulesAreOnlyEvaluatedOnce() {
         GuiceRepository guice = new GuiceRepository();
         EvalCounter foo = new EvalCounter();
         EvalCounter bar = new EvalCounter();
@@ -119,18 +119,18 @@ public class GuiceRepositoryTestCase {
     }
 
     @Test
-    public void requireThatPrivateModulesWorks() {
+    void requireThatPrivateModulesWorks() {
         GuiceRepository guice = new GuiceRepository();
 
         List<Named> names = Arrays.asList(Names.named("A"), Names.named("B"));
 
-        for (Named name: names) {
+        for (Named name : names) {
             guice.install(createPrivateInjectNameModule(name));
         }
 
         Injector injector = guice.getInjector();
 
-        for (Named name: names) {
+        for (Named name : names) {
             NameHolder nameHolder = injector.getInstance(Key.get(NameHolder.class, name));
             assertEquals(name, nameHolder.name);
         }

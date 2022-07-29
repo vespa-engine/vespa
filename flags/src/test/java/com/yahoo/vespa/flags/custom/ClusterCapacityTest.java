@@ -2,15 +2,15 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClusterCapacityTest {
     @Test
-    public void serialization() throws IOException {
+    void serialization() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
@@ -25,7 +25,7 @@ public class ClusterCapacityTest {
     }
 
     @Test
-    public void serialization2() throws IOException {
+    void serialization2() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);

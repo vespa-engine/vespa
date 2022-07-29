@@ -3,13 +3,13 @@ package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.MetricConsumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNotNull;
 public class ForwardingMetricConsumerTest {
 
     @Test
-    public void requireThatAllMethodsAreForwarded() {
+    void requireThatAllMethodsAreForwarded() {
         MetricConsumer fooConsumer = Mockito.mock(MetricConsumer.class);
         Metric.Context fooCtx = Mockito.mock(Metric.Context.class);
         Mockito.when(fooConsumer.createContext(Mockito.<Map<String, ?>>any())).thenReturn(fooCtx);
@@ -26,7 +26,7 @@ public class ForwardingMetricConsumerTest {
         Metric.Context barCtx = Mockito.mock(Metric.Context.class);
         Mockito.when(barConsumer.createContext(Mockito.<Map<String, ?>>any())).thenReturn(barCtx);
 
-        MetricConsumer fwdConsumer = new ForwardingMetricConsumer(new MetricConsumer[] { fooConsumer, barConsumer });
+        MetricConsumer fwdConsumer = new ForwardingMetricConsumer(new MetricConsumer[]{fooConsumer, barConsumer});
 
         Map<String, ?> properties = new HashMap<>();
         Metric.Context ctx = fwdConsumer.createContext(properties);

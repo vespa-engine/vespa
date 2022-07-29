@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author jonmv
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertThrows;
 public class HostNameTest {
 
     @Test
-    public void testNames() {
+    void testNames() {
         HostName.of("name-123.0.321-eman");
         HostName.of(("." + "a".repeat(32)).repeat(2).substring(1, 65));
         HostName.of("123");

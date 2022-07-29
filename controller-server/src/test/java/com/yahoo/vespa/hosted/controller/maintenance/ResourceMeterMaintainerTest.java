@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,9 +29,9 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author olaa
@@ -45,7 +45,7 @@ public class ResourceMeterMaintainerTest {
             new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), metrics, resourceClient);
 
     @Test
-    public void updates_deployment_costs() {
+    void updates_deployment_costs() {
         ApplicationId app1 = ApplicationId.from("t1", "a1", "default");
         ApplicationId app2 = ApplicationId.from("t2", "a1", "default");
         ZoneId z1 = ZoneId.from("prod.aws-us-east-1c");
@@ -79,13 +79,13 @@ public class ResourceMeterMaintainerTest {
         assertEquals(1.72,
                 (Double) metrics.getMetric(context ->
                                 z1.value().equals(context.get("zoneId")) &&
-                                app1.tenant().value().equals(context.get("tenant")),
+                                        app1.tenant().value().equals(context.get("tenant")),
                         "metering.cost.hourly").get(),
                 Double.MIN_VALUE);
     }
 
     @Test
-    public void testMaintainer() {
+    void testMaintainer() {
         setUpZones();
         long lastRefreshTime = tester.clock().millis();
         tester.curator().writeMeteringRefreshTime(lastRefreshTime);
@@ -105,7 +105,7 @@ public class ResourceMeterMaintainerTest {
         assertEquals(24, app2.getMemoryGb(), Double.MIN_VALUE);
         assertEquals(500, app2.getDiskGb(), Double.MIN_VALUE);
 
-        assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
+        assertEquals(tester.clock().millis() / 1000, metrics.getMetric("metering_last_reported"));
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
         assertEquals(24d, (Double) metrics.getMetric(context -> "tenant1".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
         assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);

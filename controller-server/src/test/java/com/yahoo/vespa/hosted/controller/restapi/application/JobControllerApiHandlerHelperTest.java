@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -40,7 +40,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 public class JobControllerApiHandlerHelperTest {
 
     @Test
-    public void testResponses() {
+    void testResponses() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .stagingTest()
                 .blockChange(true, true, "mon,tue", "7-13", "UTC")
@@ -100,7 +100,7 @@ public class JobControllerApiHandlerHelperTest {
 
         // Revision 3 starts.
         app.submit(applicationPackage)
-           .runJob(systemTest).runJob(stagingTest);
+                .runJob(systemTest).runJob(stagingTest);
         tester.triggerJobs(); // Starts runs for us-central-1 and a new staging test run.
         tester.runner().run();
         assertEquals(running, tester.jobs().last(app.instanceId(), productionUsCentral1).get().status());
@@ -147,7 +147,7 @@ public class JobControllerApiHandlerHelperTest {
     }
 
     @Test
-    public void testDevResponses() {
+    void testDevResponses() {
         DeploymentTester tester = new DeploymentTester();
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
@@ -167,7 +167,7 @@ public class JobControllerApiHandlerHelperTest {
     }
 
     @Test
-    public void testResponsesWithDirectDeployment() {
+    void testResponsesWithDirectDeployment() {
         var tester = new DeploymentTester();
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
@@ -176,11 +176,11 @@ public class JobControllerApiHandlerHelperTest {
         // Deploy directly to production zone, like integration tests.
         tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
-                       "jobs-direct-deployment.json");
+                "jobs-direct-deployment.json");
     }
 
     @Test
-    public void testResponsesWithDryRunDeployment() {
+    void testResponsesWithDryRunDeployment() {
         var tester = new DeploymentTester();
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
@@ -189,7 +189,7 @@ public class JobControllerApiHandlerHelperTest {
         // Deploy directly to production zone, like integration tests, with dryRun.
         tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
-                       "jobs-direct-deployment.json");
+                "jobs-direct-deployment.json");
     }
 
     private void assertResponse(HttpResponse response, String fileName) {

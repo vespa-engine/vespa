@@ -4,9 +4,9 @@ package com.yahoo.jdisc.service;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -15,12 +15,12 @@ import static org.junit.Assert.assertTrue;
 public class AbstractClientProviderTestCase {
 
     @Test
-    public void requireThatAbstractClassIsAClientProvider() {
+    void requireThatAbstractClassIsAClientProvider() {
         assertTrue(ClientProvider.class.isInstance(new MyClientProvider()));
     }
 
     @Test
-    public void requireThatStartDoesNotThrowAnException() {
+    void requireThatStartDoesNotThrowAnException() {
         new MyClientProvider().start();
     }
 

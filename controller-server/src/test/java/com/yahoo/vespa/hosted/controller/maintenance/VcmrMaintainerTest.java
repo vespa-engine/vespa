@@ -16,8 +16,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -27,9 +27,9 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.maintenance.VcmrMaintainer.TRACKED_CMRS_METRIC;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author olaa
@@ -47,7 +47,7 @@ public class VcmrMaintainerTest {
     private final HostName host3 = HostName.of("host3");
     private final String changeRequestId = "id123";
 
-    @Before
+    @BeforeEach
     public void setup() {
         tester = new ControllerTester();
         metrics = new MetricsMock();
@@ -56,15 +56,15 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void recycle_hosts_after_completion() {
+    void recycle_hosts_after_completion() {
         var vcmrReport = new VcmrReport();
         vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         var reports = vcmrReport.toNodeReports();
         parkedNode = Node.builder(parkedNode)
-                         .reports(reports)
-                         .build();
+                .reports(reports)
+                .build();
 
         nodeRepo.putNodes(zoneId, List.of(parkedNode, failedNode));
 
@@ -83,7 +83,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void infrastructure_hosts_require_maunal_intervention() {
+    void infrastructure_hosts_require_maunal_intervention() {
         var configNode = createNode(host1, NodeType.config, Node.State.active, false);
         var activeNode = createNode(host2, NodeType.host, Node.State.active, false);
         nodeRepo.putNodes(zoneId, List.of(configNode, activeNode));
@@ -103,7 +103,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void retires_hosts_when_near_vcmr() {
+    void retires_hosts_when_near_vcmr() {
         var activeNode = createNode(host1, NodeType.host, Node.State.active, false);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         nodeRepo.putNodes(zoneId, List.of(activeNode, failedNode));
@@ -125,7 +125,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void no_spare_capacity_requires_operator_action() {
+    void no_spare_capacity_requires_operator_action() {
         var activeNode = createNode(host1, NodeType.host, Node.State.active, false);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         nodeRepo.putNodes(zoneId, List.of(activeNode, failedNode));
@@ -147,7 +147,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void updates_status_when_retiring_host_is_parked() {
+    void updates_status_when_retiring_host_is_parked() {
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         nodeRepo.putNodes(zoneId, parkedNode);
         nodeRepo.hasSpareCapacity(true);
@@ -162,7 +162,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void pending_retirement_when_vcmr_is_far_ahead() {
+    void pending_retirement_when_vcmr_is_far_ahead() {
         var activeNode = createNode(host2, NodeType.host, Node.State.active, false);
         nodeRepo.putNodes(zoneId, List.of(activeNode));
         nodeRepo.hasSpareCapacity(true);
@@ -181,13 +181,13 @@ public class VcmrMaintainerTest {
         activeNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(host2)).get(0);
         var report = VcmrReport.fromReports(activeNode.reports());
         var reportAdded = report.getVcmrs().stream()
-                        .filter(vcmr -> vcmr.getId().equals(changeRequestId))
-                        .count() == 1;
+                .filter(vcmr -> vcmr.getId().equals(changeRequestId))
+                .count() == 1;
         assertTrue(reportAdded);
     }
 
     @Test
-    public void recycles_nodes_if_vcmr_is_postponed() {
+    void recycles_nodes_if_vcmr_is_postponed() {
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, false);
         var retiringNode = createNode(host2, NodeType.host, Node.State.active, true);
         nodeRepo.putNodes(zoneId, List.of(parkedNode, retiringNode));
@@ -210,7 +210,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void handle_multizone_vcmr() {
+    void handle_multizone_vcmr() {
         var configNode = createNode(host1, NodeType.config, Node.State.active, false);
         var tenantNode1 = createNode(host2, NodeType.host, Node.State.active, false);
         var tenantNode2 = createNode(host3, NodeType.host, Node.State.active, false);
@@ -234,7 +234,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void out_of_sync_when_manual_reactivation() {
+    void out_of_sync_when_manual_reactivation() {
         var nonRetiringNode = createNode(host1, NodeType.host, Node.State.active, false);
         nodeRepo.putNodes(zoneId, nonRetiringNode);
 
@@ -253,7 +253,7 @@ public class VcmrMaintainerTest {
     }
 
     @Test
-    public void retirement_start_time_ignores_weekends() {
+    void retirement_start_time_ignores_weekends() {
         var plannedStartTime = ZonedDateTime.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.WEDNESDAY));
         var retirementStartTime = maintainer.getRetirementStartTime(plannedStartTime);
         assertEquals(plannedStartTime.minusDays(2), retirementStartTime);

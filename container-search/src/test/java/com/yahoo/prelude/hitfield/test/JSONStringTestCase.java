@@ -8,10 +8,10 @@ import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Cursor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the JSONString XML rendering.
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class JSONStringTestCase {
 
     @Test
-    public void testWeightedSet() {
+    void testWeightedSet() {
         String json = "[[{\"as1\":[\"per\",\"paal\"],\"l1\":1122334455667788997,\"d1\":87.790001,\"i1\":7,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
                 + "espa\u00F1a\\n"
                 + "wssf1.s1[0]\"},10],"
@@ -44,7 +44,7 @@ public class JSONStringTestCase {
                         + "          <item>paal</item>\n"
                         + "        </struct-field>\n",
                 "        <struct-field name=\"s1\">string\n" + "españa\n"
-                        + "wssf1.s1[0]</struct-field>\n" };
+                        + "wssf1.s1[0]</struct-field>\n"};
         String o2 = "      <item weight=\"20\">\n";
         String[] o2Fields = {
                 "        <struct-field name=\"l1\">1122334455667788998</struct-field>\n",
@@ -59,7 +59,7 @@ public class JSONStringTestCase {
                         + "          <item>paal</item>\n"
                         + "        </struct-field>\n",
                 "        <struct-field name=\"s1\">string\n"
-                        + "españa wssf1.s1[1]</struct-field>\n" };
+                        + "españa wssf1.s1[1]</struct-field>\n"};
         String rendered = js.toString();
         int o1Offset = rendered.indexOf(o1);
         assertTrue(-1 < o1Offset);
@@ -72,88 +72,88 @@ public class JSONStringTestCase {
     }
 
     @Test
-    public void testWeightedSetFromInspector() {
+    void testWeightedSetFromInspector() {
         Value.ArrayValue top = new Value.ArrayValue();
         top.add(new Value.ArrayValue()
                 .add(new Value.ObjectValue()
-                     .put("d1", new Value.DoubleValue(87.790001))
-                     .put("s1", new Value.StringValue("string\n" + "espa\u00F1a\n" + "wssf1.s1[0]"))
-                     .put("al1", new Value.ArrayValue()
-                          .add(new Value.LongValue(11223344556677881L))
-                          .add(new Value.LongValue(11223344556677883L)))
-                     .put("l1", new Value.LongValue(1122334455667788997L))
-                     .put("as1", new Value.ArrayValue()
-                          .add(new Value.StringValue("per"))
-                          .add(new Value.StringValue("paal")))
-                     .put("i1", new Value.LongValue(7)))
+                        .put("d1", new Value.DoubleValue(87.790001))
+                        .put("s1", new Value.StringValue("string\n" + "espa\u00F1a\n" + "wssf1.s1[0]"))
+                        .put("al1", new Value.ArrayValue()
+                                .add(new Value.LongValue(11223344556677881L))
+                                .add(new Value.LongValue(11223344556677883L)))
+                        .put("l1", new Value.LongValue(1122334455667788997L))
+                        .put("as1", new Value.ArrayValue()
+                                .add(new Value.StringValue("per"))
+                                .add(new Value.StringValue("paal")))
+                        .put("i1", new Value.LongValue(7)))
                 .add(new Value.LongValue(10)))
-            .add(new Value.ArrayValue()
-                 .add(new Value.ObjectValue()
-                      .put("d1", new Value.DoubleValue(88.790001))
-                      .put("s1", new Value.StringValue("string\n" + "espa\u00F1a wssf1.s1[1]"))
-                      .put("al1", new Value.ArrayValue()
-                           .add(new Value.LongValue(11223344556677881L))
-                           .add(new Value.LongValue(11223344556677883L)))
-                      .put("l1", new Value.LongValue(1122334455667788998L))
-                      .put("as1", new Value.ArrayValue()
-                           .add(new Value.StringValue("per"))
-                           .add(new Value.StringValue("paal")))
-                      .put("i1", new Value.LongValue(8)))
-                 .add(new Value.LongValue(20)));
+                .add(new Value.ArrayValue()
+                        .add(new Value.ObjectValue()
+                                .put("d1", new Value.DoubleValue(88.790001))
+                                .put("s1", new Value.StringValue("string\n" + "espa\u00F1a wssf1.s1[1]"))
+                                .put("al1", new Value.ArrayValue()
+                                        .add(new Value.LongValue(11223344556677881L))
+                                        .add(new Value.LongValue(11223344556677883L)))
+                                .put("l1", new Value.LongValue(1122334455667788998L))
+                                .put("as1", new Value.ArrayValue()
+                                        .add(new Value.StringValue("per"))
+                                        .add(new Value.StringValue("paal")))
+                                .put("i1", new Value.LongValue(8)))
+                        .add(new Value.LongValue(20)));
 
         JSONString js = new JSONString(top);
         String correct = "\n"
-            + "      <item weight=\"10\">\n"
-            + "        <struct-field name=\"d1\">87.790001</struct-field>\n"
-            + "        <struct-field name=\"s1\">string\n"
-            + "espa\u00F1a\n"
-            + "wssf1.s1[0]</struct-field>\n"
-            + "        <struct-field name=\"al1\">\n"
-            + "          <item>11223344556677881</item>\n"
-            + "          <item>11223344556677883</item>\n"
-            + "        </struct-field>\n"
-            + "        <struct-field name=\"l1\">1122334455667788997</struct-field>\n"
-            + "        <struct-field name=\"as1\">\n"
-            + "          <item>per</item>\n"
-            + "          <item>paal</item>\n"
-            + "        </struct-field>\n"
-            + "        <struct-field name=\"i1\">7</struct-field>\n"
-            + "      </item>\n"
-            + "      <item weight=\"20\">\n"
-            + "        <struct-field name=\"d1\">88.790001</struct-field>\n"
-            + "        <struct-field name=\"s1\">string\n"
-            + "espa\u00F1a wssf1.s1[1]</struct-field>\n"
-            + "        <struct-field name=\"al1\">\n"
-            + "          <item>11223344556677881</item>\n"
-            + "          <item>11223344556677883</item>\n"
-            + "        </struct-field>\n"
-            + "        <struct-field name=\"l1\">1122334455667788998</struct-field>\n"
-            + "        <struct-field name=\"as1\">\n"
-            + "          <item>per</item>\n"
-            + "          <item>paal</item>\n"
-            + "        </struct-field>\n"
-            + "        <struct-field name=\"i1\">8</struct-field>\n"
-            + "      </item>\n"
-            + "    ";
+                + "      <item weight=\"10\">\n"
+                + "        <struct-field name=\"d1\">87.790001</struct-field>\n"
+                + "        <struct-field name=\"s1\">string\n"
+                + "espa\u00F1a\n"
+                + "wssf1.s1[0]</struct-field>\n"
+                + "        <struct-field name=\"al1\">\n"
+                + "          <item>11223344556677881</item>\n"
+                + "          <item>11223344556677883</item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"l1\">1122334455667788997</struct-field>\n"
+                + "        <struct-field name=\"as1\">\n"
+                + "          <item>per</item>\n"
+                + "          <item>paal</item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"i1\">7</struct-field>\n"
+                + "      </item>\n"
+                + "      <item weight=\"20\">\n"
+                + "        <struct-field name=\"d1\">88.790001</struct-field>\n"
+                + "        <struct-field name=\"s1\">string\n"
+                + "espa\u00F1a wssf1.s1[1]</struct-field>\n"
+                + "        <struct-field name=\"al1\">\n"
+                + "          <item>11223344556677881</item>\n"
+                + "          <item>11223344556677883</item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"l1\">1122334455667788998</struct-field>\n"
+                + "        <struct-field name=\"as1\">\n"
+                + "          <item>per</item>\n"
+                + "          <item>paal</item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"i1\">8</struct-field>\n"
+                + "      </item>\n"
+                + "    ";
         assertEquals(correct, js.renderFromInspector());
 
         top = new Value.ArrayValue();
         top.add(new Value.ArrayValue()
                 .add(new Value.StringValue("s1"))
                 .add(new Value.LongValue(10)))
-            .add(new Value.ArrayValue()
-                 .add(new Value.StringValue("s2"))
-                 .add(new Value.LongValue(20)));
+                .add(new Value.ArrayValue()
+                        .add(new Value.StringValue("s2"))
+                        .add(new Value.LongValue(20)));
         js = new JSONString(top);
         correct = "\n" +
-                  "      <item weight=\"10\">s1</item>\n" +
-                  "      <item weight=\"20\">s2</item>\n" +
-                  "    ";
+                "      <item weight=\"10\">s1</item>\n" +
+                "      <item weight=\"20\">s2</item>\n" +
+                "    ";
         assertEquals(correct, js.renderFromInspector());
     }
 
     @Test
-    public void testStruct() {
+    void testStruct() {
         {
             Value.ObjectValue top = new Value.ObjectValue();
             top.put("d1", new Value.DoubleValue(81.790001))
@@ -184,7 +184,7 @@ public class JSONStringTestCase {
                             + "        <item>per</item>\n"
                             + "        <item>paal</item>\n"
                             + "      </struct-field>\n",
-                    "      <struct-field name=\"i1\">1</struct-field>\n" };
+                    "      <struct-field name=\"i1\">1</struct-field>\n"};
 
             String rendered = js.renderFromInspector();
             checkSubstrings(renderedFields, rendered);
@@ -213,7 +213,7 @@ public class JSONStringTestCase {
                             + "        <item>per</item>\n"
                             + "        <item>paal</item>\n"
                             + "      </struct-field>\n",
-                    "      <struct-field name=\"i1\">4</struct-field>\n    " };
+                    "      <struct-field name=\"i1\">4</struct-field>\n    "};
 
             String rendered = js.renderFromInspector();
             checkSubstrings(renderedFields, rendered);
@@ -299,7 +299,7 @@ public class JSONStringTestCase {
             String[] renderedFields = {
                     "      <struct-field name=\"nss1\">\n",
                     "      <struct-field name=\"s2\">string españa\n"
-                            + "ssf8.s2</struct-field>\n    " };
+                            + "ssf8.s2</struct-field>\n    "};
             String nss1Fields[] = {
                     "        <struct-field name=\"al1\">\n"
                             + "          <item>11223344556677881</item>\n"
@@ -310,7 +310,7 @@ public class JSONStringTestCase {
                     "        <struct-field name=\"as1\">\n"
                             + "          <item>per</item>\n"
                             + "          <item>paal</item>\n"
-                            + "        </struct-field>\n" };
+                            + "        </struct-field>\n"};
 
             checkSubstrings(renderedFields, rendered);
             int nss1Offset = rendered.indexOf(renderedFields[0])
@@ -321,58 +321,58 @@ public class JSONStringTestCase {
     }
 
     @Test
-    public void testMap() {
+    void testMap() {
         String json = "[{\"key\":\"k1\",\"value\":\"v1\"},{\"key\":\"k2\",\"value\":\"v2\"}]";
         JSONString js = new JSONString(json);
         String correct = "\n"
-                         + "      <item><key>k1</key><value>v1</value></item>\n"
-                         + "      <item><key>k2</key><value>v2</value></item>\n    ";
-        assertEquals(correct,js.toString());
+                + "      <item><key>k1</key><value>v1</value></item>\n"
+                + "      <item><key>k2</key><value>v2</value></item>\n    ";
+        assertEquals(correct, js.toString());
 
         Inspector top = new Value.ArrayValue()
-                        .add(new Value.ObjectValue()
-                             .put("key", "k1")
-                             .put("value", "v1"))
-                        .add(new Value.ObjectValue()
-                             .put("key", "k2")
-                             .put("value", "v2"));
+                .add(new Value.ObjectValue()
+                        .put("key", "k1")
+                        .put("value", "v1"))
+                .add(new Value.ObjectValue()
+                        .put("key", "k2")
+                        .put("value", "v2"));
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
     }
 
     @Test
-    public void testWithData() {
-        byte[] d1 = { (byte)0x41, (byte)0x42, (byte)0x43 };
-        byte[] d2 = { (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x02 };
-        byte[] d3 = { (byte)0x12, (byte)0x34 };
-        byte[] d4 = { (byte)0xff, (byte)0x80, (byte)0x7f };
+    void testWithData() {
+        byte[] d1 = {(byte) 0x41, (byte) 0x42, (byte) 0x43};
+        byte[] d2 = {(byte) 0x00, (byte) 0x01, (byte) 0x00, (byte) 0x02};
+        byte[] d3 = {(byte) 0x12, (byte) 0x34};
+        byte[] d4 = {(byte) 0xff, (byte) 0x80, (byte) 0x7f};
         Inspector top = new Value.ObjectValue()
-                        .put("simple", new Value.DataValue(d1))
-                        .put("array", new Value.ArrayValue()
-                             .add(new Value.DataValue(d2))
-                             .add(new Value.DataValue(d3))
-                             .add(new Value.DataValue(d4)));
+                .put("simple", new Value.DataValue(d1))
+                .put("array", new Value.ArrayValue()
+                        .add(new Value.DataValue(d2))
+                        .add(new Value.DataValue(d3))
+                        .add(new Value.DataValue(d4)));
         JSONString js = new JSONString(top);
         String correct = "\n"
-                         + "      <struct-field name=\"simple\">"
-                         + "<data length=\"3\" encoding=\"hex\">414243</data>"
-                         + "</struct-field>\n"
-                         + "      <struct-field name=\"array\">\n"
-                         + "        <item>"
-                         + "<data length=\"4\" encoding=\"hex\">00010002</data>"
-                         + "</item>\n"
-                         + "        <item>"
-                         + "<data length=\"2\" encoding=\"hex\">1234</data>"
-                         + "</item>\n"
-                         + "        <item>"
-                         + "<data length=\"3\" encoding=\"hex\">FF807F</data>"
-                         + "</item>\n"
-                         + "      </struct-field>\n    ";
+                + "      <struct-field name=\"simple\">"
+                + "<data length=\"3\" encoding=\"hex\">414243</data>"
+                + "</struct-field>\n"
+                + "      <struct-field name=\"array\">\n"
+                + "        <item>"
+                + "<data length=\"4\" encoding=\"hex\">00010002</data>"
+                + "</item>\n"
+                + "        <item>"
+                + "<data length=\"2\" encoding=\"hex\">1234</data>"
+                + "</item>\n"
+                + "        <item>"
+                + "<data length=\"3\" encoding=\"hex\">FF807F</data>"
+                + "</item>\n"
+                + "      </struct-field>\n    ";
         assertEquals(correct, js.renderFromInspector());
     }
 
     @Test
-    public void testArrayOfArray() {
+    void testArrayOfArray() {
         String json = "[[\"c1\", 0], [\"c2\", 2, 3], [\"c3\", 3, 4, 5], [\"c4\", 4,5,6,7]]";
         JSONString js = new JSONString(json);
         Inspector outer = js.inspect();
@@ -402,48 +402,48 @@ public class JSONStringTestCase {
     }
 
     @Test
-    public void testSimpleArrays() {
+    void testSimpleArrays() {
         String json = "[1, 2, 3]";
         JSONString js = new JSONString(json);
         String correct = "\n"
-                         + "      <item>1</item>\n"
-                         + "      <item>2</item>\n"
-                         + "      <item>3</item>\n    ";
+                + "      <item>1</item>\n"
+                + "      <item>2</item>\n"
+                + "      <item>3</item>\n    ";
         assertEquals(correct, js.toString());
 
         Inspector top = new Value.ArrayValue()
-                        .add(1).add(2).add(3);
+                .add(1).add(2).add(3);
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
 
         json = "[1.0, 2.0, 3.0]";
         js = new JSONString(json);
         correct = "\n"
-                  + "      <item>1.0</item>\n"
-                  + "      <item>2.0</item>\n"
-                  + "      <item>3.0</item>\n    ";
+                + "      <item>1.0</item>\n"
+                + "      <item>2.0</item>\n"
+                + "      <item>3.0</item>\n    ";
         assertEquals(correct, js.toString());
         top = new Value.ArrayValue()
-              .add(1.0).add(2.0).add(3.0);
+                .add(1.0).add(2.0).add(3.0);
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
 
         json = "[\"a\", \"b\", \"c\"]";
         correct = "\n"
-                  + "      <item>a</item>\n"
-                  + "      <item>b</item>\n"
-                  + "      <item>c</item>\n    ";
+                + "      <item>a</item>\n"
+                + "      <item>b</item>\n"
+                + "      <item>c</item>\n    ";
         js = new JSONString(json);
         assertEquals(correct, js.toString());
 
         top = new Value.ArrayValue()
-              .add("a").add("b").add("c");
+                .add("a").add("b").add("c");
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
     }
 
     @Test
-    public void testArrayOfStruct() {
+    void testArrayOfStruct() {
         String json = "[{\"as1\":[\"per\",\"paal\"],"
                 + "\"l1\":1122334455667788994,\"d1\":74.790001,"
                 + "\"i1\":14,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
@@ -465,7 +465,7 @@ public class JSONStringTestCase {
                         + "          <item>paal</item>\n"
                         + "        </struct-field>\n",
                 "        <struct-field name=\"s1\">string\n" + "españa\n"
-                        + "asf1[0].s1</struct-field>\n" };
+                        + "asf1[0].s1</struct-field>\n"};
         String separator = "      </item>\n" + "      <item>\n";
         String[] o2Fields = {
                 "        <struct-field name=\"l1\">1122334455667788995</struct-field>\n",
@@ -480,7 +480,7 @@ public class JSONStringTestCase {
                         + "          <item>paal</item>\n"
                         + "        </struct-field>\n",
                 "        <struct-field name=\"s1\">string\n"
-                        + "españa asf1[1].s1</struct-field>\n" };
+                        + "españa asf1[1].s1</struct-field>\n"};
         String rendered = js.toString();
 
         int o2Offset = rendered.indexOf(separator);
@@ -535,153 +535,153 @@ public class JSONStringTestCase {
         }
     }
 
-/*** here is some json for you
+    /*** here is some json for you
+    
+         [{"asf":"here is 1st simple string field",
+         "map":[{"key":"one key string","value":["one value string","embedded array"]},
+         {"key":"two key string","value":["two value string","embedded array"]}],
+         "sf2":"here is 2nd simple string field"},
+         {"asf":"here is 3rd simple string field",
+         "map":[{"key":"three key string","value":["three value string","embedded array"]},
+         {"key":"four key string","value":["four value string","embedded array"]}],
+         "sf2":"here is 4th simple string field"},
+         ]
+    
+    ***/
 
-     [{"asf":"here is 1st simple string field",
-     "map":[{"key":"one key string","value":["one value string","embedded array"]},
-     {"key":"two key string","value":["two value string","embedded array"]}],
-     "sf2":"here is 2nd simple string field"},
-     {"asf":"here is 3rd simple string field",
-     "map":[{"key":"three key string","value":["three value string","embedded array"]},
-     {"key":"four key string","value":["four value string","embedded array"]}],
-     "sf2":"here is 4th simple string field"},
-     ]
-
-***/
-
-/*** and here is some corresponding XML
-
-     <item>
-     <struct-field name="asf">here is 1st simple string field</struct-field>
-     <struct-field name="map">
-     <item><key>one key string</key><value>
-     <item>one value string</item>
-     <item>embedded array</item>
-     </value></item>
-     <item><key>two key string</key><value>
-     <item>two value string</item>
-     <item>embedded array</item>
-     </value></item>
-     </struct-field>
-     <struct-field name="sf2">here is 2nd simple string field</struct-field>
-     </item>
-     <item>
-     <struct-field name="asf">here is 3rd simple string field</struct-field>
-     <struct-field name="map">
-     <item><key>three key string</key><value>
-     <item>three value string</item>
-     <item>embedded array</item>
-     </value></item>
-     <item><key>four key string</key><value>
-     <item>four value string</item>
-     <item>embedded array</item>
-     </value></item>
-     </struct-field>
-     <struct-field name="sf2">here is 4th simple string field</struct-field>
-     </item>
-
-***/
+    /*** and here is some corresponding XML
+     
+          <item>
+          <struct-field name="asf">here is 1st simple string field</struct-field>
+          <struct-field name="map">
+          <item><key>one key string</key><value>
+          <item>one value string</item>
+          <item>embedded array</item>
+          </value></item>
+          <item><key>two key string</key><value>
+          <item>two value string</item>
+          <item>embedded array</item>
+          </value></item>
+          </struct-field>
+          <struct-field name="sf2">here is 2nd simple string field</struct-field>
+          </item>
+          <item>
+          <struct-field name="asf">here is 3rd simple string field</struct-field>
+          <struct-field name="map">
+          <item><key>three key string</key><value>
+          <item>three value string</item>
+          <item>embedded array</item>
+          </value></item>
+          <item><key>four key string</key><value>
+          <item>four value string</item>
+          <item>embedded array</item>
+          </value></item>
+          </struct-field>
+          <struct-field name="sf2">here is 4th simple string field</struct-field>
+          </item>
+     
+     ***/
 
     @Test
-    public void testArrayOfStructWithMap() {
+    void testArrayOfStructWithMap() {
         String json = "[{\"asf\":\"here is 1st simple string field\",\"map\":[{\"key\":\"one key string\",\"value\":[\"one value string\",\"embedded array\"]},{\"key\":\"two key string\",\"value\":[\"two value string\",\"embedded array\"]}],\"sf2\":\"here is 2nd simple string field\"},{\"asf\":\"here is 3rd simple string field\",\"map\":[{\"key\":\"three key string\",\"value\":[\"three value string\",\"embedded array\"]},{\"key\":\"four key string\",\"value\":[\"four value string\",\"embedded array\"]}],\"sf2\":\"here is 4th simple string field\"}]";
 
 
         JSONString js = new JSONString(json);
         String correct = "\n"
-                         + "      <item>\n"
-                         + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
-                         + "        <struct-field name=\"map\">\n"
-                         + "          <item><key>one key string</key><value>\n"
-                         + "            <item>one value string</item>\n"
-                         + "            <item>embedded array</item>\n"
-                         + "          </value></item>\n"
-                         + "          <item><key>two key string</key><value>\n"
-                         + "            <item>two value string</item>\n"
-                         + "            <item>embedded array</item>\n"
-                         + "          </value></item>\n"
-                         + "        </struct-field>\n"
-                         + "        <struct-field name=\"sf2\">here is 2nd simple string field</struct-field>\n"
-                         + "      </item>\n"
-                         + "      <item>\n"
-                         + "        <struct-field name=\"asf\">here is 3rd simple string field</struct-field>\n"
-                         + "        <struct-field name=\"map\">\n"
-                         + "          <item><key>three key string</key><value>\n"
-                         + "            <item>three value string</item>\n"
-                         + "            <item>embedded array</item>\n"
-                         + "          </value></item>\n"
-                         + "          <item><key>four key string</key><value>\n"
-                         + "            <item>four value string</item>\n"
-                         + "            <item>embedded array</item>\n"
-                         + "          </value></item>\n"
-                         + "        </struct-field>\n"
-                         + "        <struct-field name=\"sf2\">here is 4th simple string field</struct-field>\n"
-                         + "      </item>\n"
-                         + "    ";
+                + "      <item>\n"
+                + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
+                + "        <struct-field name=\"map\">\n"
+                + "          <item><key>one key string</key><value>\n"
+                + "            <item>one value string</item>\n"
+                + "            <item>embedded array</item>\n"
+                + "          </value></item>\n"
+                + "          <item><key>two key string</key><value>\n"
+                + "            <item>two value string</item>\n"
+                + "            <item>embedded array</item>\n"
+                + "          </value></item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"sf2\">here is 2nd simple string field</struct-field>\n"
+                + "      </item>\n"
+                + "      <item>\n"
+                + "        <struct-field name=\"asf\">here is 3rd simple string field</struct-field>\n"
+                + "        <struct-field name=\"map\">\n"
+                + "          <item><key>three key string</key><value>\n"
+                + "            <item>three value string</item>\n"
+                + "            <item>embedded array</item>\n"
+                + "          </value></item>\n"
+                + "          <item><key>four key string</key><value>\n"
+                + "            <item>four value string</item>\n"
+                + "            <item>embedded array</item>\n"
+                + "          </value></item>\n"
+                + "        </struct-field>\n"
+                + "        <struct-field name=\"sf2\">here is 4th simple string field</struct-field>\n"
+                + "      </item>\n"
+                + "    ";
         assertEquals(correct, js.toString());
 
         Inspector top = new Value.ArrayValue()
-                        .add(new Value.ObjectValue()
-                             .put("asf", "here is 1st simple string field")
-                             .put("map", new Value.ArrayValue()
-                                  .add(new Value.ObjectValue()
-                                          .put("key", "one key string")
-                                          .put("value", new Value.ArrayValue()
-                                                  .add("one value string")
-                                                  .add("embedded array")))
-                                  .add(new Value.ObjectValue()
-                                          .put("key", "two key string")
-                                          .put("value", new Value.ArrayValue()
-                                                  .add("two value string")
-                                                  .add("embedded array"))))
-                             .put("sf2", "here is 2nd simple string field"))
-                        .add(new Value.ObjectValue()
-                             .put("asf", "here is 3rd simple string field")
-                             .put("map", new Value.ArrayValue()
-                                  .add(new Value.ObjectValue()
-                                          .put("key", "three key string")
-                                          .put("value", new Value.ArrayValue()
-                                                  .add("three value string")
-                                                  .add("embedded array")))
-                                  .add(new Value.ObjectValue()
-                                          .put("key", "four key string")
-                                          .put("value", new Value.ArrayValue()
-                                                  .add("four value string")
-                                                  .add("embedded array"))))
-                             .put("sf2", "here is 4th simple string field"));
+                .add(new Value.ObjectValue()
+                        .put("asf", "here is 1st simple string field")
+                        .put("map", new Value.ArrayValue()
+                                .add(new Value.ObjectValue()
+                                        .put("key", "one key string")
+                                        .put("value", new Value.ArrayValue()
+                                                .add("one value string")
+                                                .add("embedded array")))
+                                .add(new Value.ObjectValue()
+                                        .put("key", "two key string")
+                                        .put("value", new Value.ArrayValue()
+                                                .add("two value string")
+                                                .add("embedded array"))))
+                        .put("sf2", "here is 2nd simple string field"))
+                .add(new Value.ObjectValue()
+                        .put("asf", "here is 3rd simple string field")
+                        .put("map", new Value.ArrayValue()
+                                .add(new Value.ObjectValue()
+                                        .put("key", "three key string")
+                                        .put("value", new Value.ArrayValue()
+                                                .add("three value string")
+                                                .add("embedded array")))
+                                .add(new Value.ObjectValue()
+                                        .put("key", "four key string")
+                                        .put("value", new Value.ArrayValue()
+                                                .add("four value string")
+                                                .add("embedded array"))))
+                        .put("sf2", "here is 4th simple string field"));
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
     }
 
     @Test
-    public void testArrayOfStructWithEmptyMap() {
+    void testArrayOfStructWithEmptyMap() {
         String json = "[{\"asf\":\"here is 1st simple string field\",\"map\":[],\"sf2\":\"here is 2nd simple string field\"},{\"asf\":\"here is 3rd simple string field\",\"map\":[],\"sf2\":\"here is 4th simple string field\"}]";
 
 
         JSONString js = new JSONString(json);
         String correct = "\n"
-                         + "      <item>\n"
-                         + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
-                         + "        <struct-field name=\"map\"></struct-field>\n"
-                         + "        <struct-field name=\"sf2\">here is 2nd simple string field</struct-field>\n"
-                         + "      </item>\n"
-                         + "      <item>\n"
-                         + "        <struct-field name=\"asf\">here is 3rd simple string field</struct-field>\n"
-                         + "        <struct-field name=\"map\"></struct-field>\n"
-                         + "        <struct-field name=\"sf2\">here is 4th simple string field</struct-field>\n"
-                         + "      </item>\n"
-                         + "    ";
+                + "      <item>\n"
+                + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
+                + "        <struct-field name=\"map\"></struct-field>\n"
+                + "        <struct-field name=\"sf2\">here is 2nd simple string field</struct-field>\n"
+                + "      </item>\n"
+                + "      <item>\n"
+                + "        <struct-field name=\"asf\">here is 3rd simple string field</struct-field>\n"
+                + "        <struct-field name=\"map\"></struct-field>\n"
+                + "        <struct-field name=\"sf2\">here is 4th simple string field</struct-field>\n"
+                + "      </item>\n"
+                + "    ";
         assertEquals(correct, js.toString());
 
         Inspector top = new Value.ArrayValue()
-                        .add(new Value.ObjectValue()
-                             .put("asf", "here is 1st simple string field")
-                             .put("map", new Value.ArrayValue())
-                             .put("sf2", "here is 2nd simple string field"))
-                        .add(new Value.ObjectValue()
-                             .put("asf", "here is 3rd simple string field")
-                             .put("map", new Value.ArrayValue())
-                             .put("sf2", "here is 4th simple string field"));
+                .add(new Value.ObjectValue()
+                        .put("asf", "here is 1st simple string field")
+                        .put("map", new Value.ArrayValue())
+                        .put("sf2", "here is 2nd simple string field"))
+                .add(new Value.ObjectValue()
+                        .put("asf", "here is 3rd simple string field")
+                        .put("map", new Value.ArrayValue())
+                        .put("sf2", "here is 4th simple string field"));
         js = new JSONString(top);
         assertEquals(correct, js.renderFromInspector());
 
@@ -718,7 +718,7 @@ public class JSONStringTestCase {
     }
 
     @Test
-    public void testInspectorToContentMapping() {
+    void testInspectorToContentMapping() {
         String content1 = new JSONString(getSlime1()).getContent();
         String content2 = new JSONString(getSlime2()).getContent();
         String content3 = new JSONString(getSlime3()).getContent();
@@ -732,7 +732,7 @@ public class JSONStringTestCase {
     }
 
     @Test
-    public void testContentToInspectorMapping() {
+    void testContentToInspectorMapping() {
         Inspector value1 = new JSONString("").inspect();
         Inspector value2 = new JSONString("foo").inspect();
         Inspector value3 = new JSONString("\"foo\"").inspect();

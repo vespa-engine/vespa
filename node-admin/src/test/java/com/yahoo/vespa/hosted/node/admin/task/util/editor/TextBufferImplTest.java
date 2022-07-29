@@ -2,15 +2,15 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TextBufferImplTest {
     private final TextBufferImpl textBuffer = new TextBufferImpl();
 
     @Test
-    public void testWrite() {
+    void testWrite() {
         assertEquals("", textBuffer.getString());
         assertWrite(2, 0, "foo\nbar\n",
                 0, 0, "foo\nbar\n");
@@ -25,7 +25,7 @@ public class TextBufferImplTest {
     }
 
     @Test
-    public void testDelete() {
+    void testDelete() {
         write(0, 0, "foo\nbar\nzoo\n");
         delete(0, 2, 2, 1);
         assertEquals("fooo\n", textBuffer.getString());

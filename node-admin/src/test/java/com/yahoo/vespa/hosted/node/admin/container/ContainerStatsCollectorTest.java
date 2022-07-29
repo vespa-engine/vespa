@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -16,8 +16,8 @@ import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TH
 import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_PERIODS;
 import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_USAGE_USEC;
 import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.USER_USAGE_USEC;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,11 +31,11 @@ public class ContainerStatsCollectorTest {
     private final CGroup cgroup = mock(CGroup.class);
 
     @Test
-    public void collect() throws IOException {
+    void collect() throws IOException {
         ContainerStatsCollector collector = new ContainerStatsCollector(cgroup, fileSystem, 24);
         ContainerId containerId = new ContainerId("id1");
         int containerPid = 42;
-        assertTrue("No stats found", collector.collect(containerId, containerPid, "eth0").isEmpty());
+        assertTrue(collector.collect(containerId, containerPid, "eth0").isEmpty(), "No stats found");
 
         mockMemoryStats(containerId);
         mockCpuStats(containerId);
@@ -44,13 +44,13 @@ public class ContainerStatsCollectorTest {
         Optional<ContainerStats> stats = collector.collect(containerId, containerPid, "eth0");
         assertTrue(stats.isPresent());
         assertEquals(new ContainerStats.CpuStats(24, 6049374780000L, 691675615472L,
-                                                 262190000000L, 3L, 1L, 2L),
-                     stats.get().getCpuStats());
+                        262190000000L, 3L, 1L, 2L),
+                stats.get().getCpuStats());
         assertEquals(new ContainerStats.MemoryStats(470790144L, 1228017664L, 2147483648L),
-                     stats.get().getMemoryStats());
+                stats.get().getMemoryStats());
         assertEquals(Map.of("eth0", new ContainerStats.NetworkStats(22280813L, 4L, 3L,
-                                                                    19859383L, 6L, 5L)),
-                     stats.get().getNetworks());
+                        19859383L, 6L, 5L)),
+                stats.get().getNetworks());
     }
 
     private void mockNetworkStats(int pid) {

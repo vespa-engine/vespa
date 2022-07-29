@@ -5,13 +5,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class HitCountTestCase {
 
     @Test
-    public void require_that_offset_and_hits_are_adjusted_when_federating() {
+    void require_that_offset_and_hits_are_adjusted_when_federating() {
         final int chain1RelevanceMultiplier = 1;
         final int chain2RelevanceMultiplier = 10;
 
@@ -38,7 +38,7 @@ public class HitCountTestCase {
     }
 
     @Test
-    public void require_that_hit_counts_are_merged() {
+    void require_that_hit_counts_are_merged() {
         final long chain1TotalHitCount = 3;
         final long chain1DeepHitCount = 5;
 
@@ -56,7 +56,7 @@ public class HitCountTestCase {
     }
 
     @Test
-    public void require_that_logging_hit_is_populated_with_result_count() {
+    void require_that_logging_hit_is_populated_with_result_count() {
         final long chain1TotalHitCount = 9;
         final long chain1DeepHitCount = 14;
 

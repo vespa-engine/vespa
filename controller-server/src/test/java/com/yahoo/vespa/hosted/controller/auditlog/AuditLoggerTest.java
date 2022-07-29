@@ -5,7 +5,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog.Entry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -15,8 +15,8 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden
@@ -27,11 +27,11 @@ public class AuditLoggerTest {
     private final Supplier<AuditLog> log = () -> tester.controller().auditLogger().readLog();
 
     @Test
-    public void test_logging() {
+    void test_logging() {
         { // GET request is ignored
             HttpRequest request = testRequest(Method.GET, URI.create("http://localhost:8080/os/v1/"), "");
             tester.controller().auditLogger().log(request);
-            assertTrue("Not logged", log.get().entries().isEmpty());
+            assertTrue(log.get().entries().isEmpty(), "Not logged");
         }
 
         { // PATCH request is logged in audit log
@@ -47,7 +47,7 @@ public class AuditLoggerTest {
         { // Another PATCH request is logged
             tester.clock().advance(Duration.ofDays(1));
             HttpRequest request = testRequest(Method.PATCH, URI.create("http://localhost:8080/os/v1/"),
-                                              "{\"cloud\":\"cloud9\",\"version\":\"43.0\"}");
+                    "{\"cloud\":\"cloud9\",\"version\":\"43.0\"}");
             tester.controller().auditLogger().log(request);
             assertEntry(Entry.Method.PATCH, 2, "/os/v1/");
         }
@@ -55,7 +55,7 @@ public class AuditLoggerTest {
         { // PUT is logged
             tester.clock().advance(Duration.ofDays(1));
             HttpRequest request = testRequest(Method.PUT, URI.create("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1/"),
-                                              "");
+                    "");
             tester.controller().auditLogger().log(request);
             assertEntry(Entry.Method.PUT, 3, "/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1/");
         }
@@ -63,7 +63,7 @@ public class AuditLoggerTest {
         { // DELETE is logged
             tester.clock().advance(Duration.ofDays(1));
             HttpRequest request = testRequest(Method.DELETE, URI.create("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1"),
-                                              "");
+                    "");
             tester.controller().auditLogger().log(request);
             assertEntry(Entry.Method.DELETE, 4, "/zone/v2/prod/us-north-1/nodes/v2/node/node1");
         }
@@ -71,7 +71,7 @@ public class AuditLoggerTest {
         { // POST is logged
             tester.clock().advance(Duration.ofDays(1));
             HttpRequest request = testRequest(Method.POST, URI.create("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42"),
-                                              "6.42");
+                    "6.42");
             tester.controller().auditLogger().log(request);
             assertEntry(Entry.Method.POST, 5, "/controller/v1/jobs/upgrader/confidence/6.42");
         }
@@ -79,7 +79,7 @@ public class AuditLoggerTest {
         { // 15 days pass and another PATCH request is logged. Older entries are removed due to expiry
             tester.clock().advance(Duration.ofDays(15));
             HttpRequest request = testRequest(Method.PATCH, URI.create("http://localhost:8080/os/v1/"),
-                                              "{\"cloud\":\"cloud9\",\"version\":\"44.0\"}");
+                    "{\"cloud\":\"cloud9\",\"version\":\"44.0\"}");
             tester.controller().auditLogger().log(request);
             assertEntry(Entry.Method.PATCH, 1, "/os/v1/");
         }

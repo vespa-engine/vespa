@@ -8,7 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,8 +17,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.dev
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentUpgrader.mostLikelyWeeHour;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -28,7 +28,7 @@ public class DeploymentUpgraderTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void testDeploymentUpgrading() {
+    void testDeploymentUpgrading() {
         ZoneId devZone = ZoneId.from(Environment.dev, RegionName.from("us-east-1"));
         DeploymentUpgrader upgrader = new DeploymentUpgrader(tester.controller(), Duration.ofDays(1));
         var devApp = tester.newDeploymentContext("tenant1", "app1", "default");
@@ -76,11 +76,11 @@ public class DeploymentUpgraderTest {
     }
 
     @Test
-    public void testNight() {
-        assertEquals(16, mostLikelyWeeHour(new int[]{ 0, 1, 2, 3, 4, 5, 6 }));
-        assertEquals(14, mostLikelyWeeHour(new int[]{ 22, 23, 0, 1, 2, 3, 4 }));
-        assertEquals(18, mostLikelyWeeHour(new int[]{ 6, 5, 4, 3, 2, 1, 0 }));
-        assertEquals(20, mostLikelyWeeHour(new int[]{ 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 11 }));
+    void testNight() {
+        assertEquals(16, mostLikelyWeeHour(new int[]{0, 1, 2, 3, 4, 5, 6}));
+        assertEquals(14, mostLikelyWeeHour(new int[]{22, 23, 0, 1, 2, 3, 4}));
+        assertEquals(18, mostLikelyWeeHour(new int[]{6, 5, 4, 3, 2, 1, 0}));
+        assertEquals(20, mostLikelyWeeHour(new int[]{0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 11}));
     }
 
 }

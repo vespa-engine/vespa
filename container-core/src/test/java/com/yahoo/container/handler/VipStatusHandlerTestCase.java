@@ -15,7 +15,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.text.Utf8;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -27,8 +27,8 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Check semantics of VIP status handler. Do note this handler does not need to
@@ -52,7 +52,7 @@ public class VipStatusHandlerTestCase {
     Metric metric = Mockito.mock(Metric.class);
 
     @Test
-    public void testHandleRequest() {
+    void testHandleRequest() {
         VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
         MockResponseHandler responseHandler = new MockResponseHandler();
@@ -78,7 +78,7 @@ public class VipStatusHandlerTestCase {
     }
 
     @Test
-    public void testFileNotFound() {
+    void testFileNotFound() {
         VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
                 .statusfile("/VipStatusHandlerTestCaseFileThatReallyReallyShouldNotExist"));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
@@ -95,7 +95,7 @@ public class VipStatusHandlerTestCase {
     }
 
     @Test
-    public void testFileFound() throws IOException {
+    void testFileFound() throws IOException {
         File statusFile = File.createTempFile("VipStatusHandlerTestCase", null);
         try {
             FileWriter writer = new FileWriter(statusFile);
@@ -121,7 +121,7 @@ public class VipStatusHandlerTestCase {
     }
 
     @Test
-    public void testExplicitlyRotationControl() {
+    void testExplicitlyRotationControl() {
         VipStatus vipStatus = new VipStatus();
         VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config,  metric, vipStatus);

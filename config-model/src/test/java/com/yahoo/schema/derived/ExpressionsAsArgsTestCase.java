@@ -2,7 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -14,7 +14,7 @@ import java.io.IOException;
 public class ExpressionsAsArgsTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testDocumentDeriving() throws IOException, ParseException {
+    void testDocumentDeriving() throws IOException, ParseException {
         assertCorrectDeriving("function_arguments");
         assertCorrectDeriving("function_arguments_with_expressions");
     }

@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -24,8 +24,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class EmbedderTestCase {
 
@@ -33,7 +33,7 @@ public class EmbedderTestCase {
     private static final String PREDEFINED_EMBEDDER_CONFIG = "embedding.bert-base-embedder";
 
     @Test
-    public void testGenericEmbedConfig() throws IOException, SAXException {
+    void testGenericEmbedConfig() throws IOException, SAXException {
         String embedder = "<embedder id=\"test\" class=\"ai.vespa.test\" bundle=\"bundle\" def=\"def.name\">" +
                 "  <val>123</val>" +
                 "</embedder>";
@@ -46,7 +46,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    public void testGenericEmbedConfigRequiresBundleAndDef() throws IOException, SAXException {
+    void testGenericEmbedConfigRequiresBundleAndDef() throws IOException, SAXException {
         assertTransformThrows("<embedder id=\"test\" class=\"ai.vespa.test\"></embedder>",
                 "Embedder configuration requires a bundle name");
         assertTransformThrows("<embedder id=\"test\" class=\"ai.vespa.test\" bundle=\"bundle\"></embedder>",
@@ -54,7 +54,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    public void testPredefinedEmbedConfigSelfHosted() throws IOException, SAXException {
+    void testPredefinedEmbedConfigSelfHosted() throws IOException, SAXException {
         assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\"></embedder>",
                 "Embedder '" + PREDEFINED_EMBEDDER_CLASS + "' requires options for [vocab, model]");
         assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
@@ -99,7 +99,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    public void testPredefinedEmbedConfigCloud() throws IOException, SAXException {
+    void testPredefinedEmbedConfigCloud() throws IOException, SAXException {
         String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" />";
         String component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
                 "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
@@ -133,7 +133,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    public void testEmbedConfig() throws Exception  {
+    void testEmbedConfig() throws Exception  {
         final String emptyPathFileName = "services.xml";
 
         Path applicationDir = Path.fromString("src/test/cfg/application/embed/");

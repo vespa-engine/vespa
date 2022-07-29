@@ -14,7 +14,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,9 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests queries towards rank profiles using input declarations.
@@ -35,7 +33,7 @@ import static org.junit.Assert.fail;
 public class RankProfileInputTest {
 
     @Test
-    public void testTensorRankFeatureInRequest() {
+    void testTensorRankFeatureInRequest() {
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
 
         {
@@ -55,13 +53,12 @@ public class RankProfileInputTest {
         { // Resolution is limited to the correct sources
             Query query = createTensor1Query(tensorString, "bOnly", "sources=a");
             assertEquals(0, query.errors().size());
-            assertEquals("Not converted to tensor",
-                         tensorString, query.properties().get("ranking.features.query(myTensor1)"));
+            assertEquals(tensorString, query.properties().get("ranking.features.query(myTensor1)"), "Not converted to tensor");
         }
     }
 
     @Test
-    public void testTensorRankFeatureInRequestInconsistentInput() {
+    void testTensorRankFeatureInRequestInconsistentInput() {
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
         try {
             createTensor1Query(tensorString, "inconsistent", "");
@@ -69,14 +66,14 @@ public class RankProfileInputTest {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Conflicting input type declarations for 'query(myTensor1)': " +
-                         "Declared as tensor(a{},b{}) in rank profile 'inconsistent' in schema 'a', " +
-                         "and as tensor(x[10]) in rank profile 'inconsistent' in schema 'b'",
-                         Exceptions.toMessageString(e));
+                    "Declared as tensor(a{},b{}) in rank profile 'inconsistent' in schema 'a', " +
+                    "and as tensor(x[10]) in rank profile 'inconsistent' in schema 'b'",
+                    Exceptions.toMessageString(e));
         }
     }
 
     @Test
-    public void testTensorRankFeatureWithSourceResolution() {
+    void testTensorRankFeatureWithSourceResolution() {
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
 
         {
@@ -99,14 +96,14 @@ public class RankProfileInputTest {
     }
 
     @Test
-    public void testTensorRankFeatureSetProgrammatically() {
+    void testTensorRankFeatureSetProgrammatically() {
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
         Query query = new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
                 .setQueryProfile(createQueryProfile()) // Use the instantiation path with query profiles
                 .setRequest(HttpRequest.createTestRequest("?" +
-                                                          "&ranking=commonProfile",
-                                                          com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                        "&ranking=commonProfile",
+                        com.yahoo.jdisc.http.HttpRequest.Method.GET))
                 .build();
 
         query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
@@ -114,24 +111,24 @@ public class RankProfileInputTest {
     }
 
     @Test
-    public void testTensorRankFeatureSetProgrammaticallyWithWrongType() {
+    void testTensorRankFeatureSetProgrammaticallyWithWrongType() {
         Query query = new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
                 .setQueryProfile(createQueryProfile()) // Use the instantiation path with query profiles
                 .setRequest(HttpRequest.createTestRequest("?" +
-                                                          "&ranking=commonProfile",
-                                                          com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                        "&ranking=commonProfile",
+                        com.yahoo.jdisc.http.HttpRequest.Method.GET))
                 .build();
 
         String tensorString = "tensor(x[3]):[0.1, 0.2, 0.3]";
         try {
-            query.getRanking().getFeatures().put("query(myTensor1)",Tensor.from(tensorString));
+            query.getRanking().getFeatures().put("query(myTensor1)", Tensor.from(tensorString));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
-                         "This input is declared in rank profile 'commonProfile' as tensor(a{},b{})",
-                         Exceptions.toMessageString(e));
+                    "This input is declared in rank profile 'commonProfile' as tensor(a{},b{})",
+                    Exceptions.toMessageString(e));
         }
         try {
             query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
@@ -139,13 +136,13 @@ public class RankProfileInputTest {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
-                         "Require a tensor of type tensor(a{},b{})",
-                         Exceptions.toMessageString(e));
+                    "Require a tensor of type tensor(a{},b{})",
+                    Exceptions.toMessageString(e));
         }
     }
 
     @Test
-    public void testUnembeddedTensorRankFeatureInRequest() {
+    void testUnembeddedTensorRankFeatureInRequest() {
         String text = "text to embed into a tensor";
         Tensor embedding1 = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
         Tensor embedding2 = Tensor.from("tensor<float>(x[5]):[1,2,3,4,0]]");
@@ -159,7 +156,7 @@ public class RankProfileInputTest {
         assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
         assertEmbedQuery("embed(emb1, \"" + text + "\")", embedding1, embedders);
         assertEmbedQueryFails("embed(emb2, \"" + text + "\")", embedding1, embedders,
-                              "Can't find embedder 'emb2'. Valid embedders are emb1");
+                "Can't find embedder 'emb2'. Valid embedders are emb1");
 
         embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1),
@@ -168,7 +165,7 @@ public class RankProfileInputTest {
         assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
         assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders);
         assertEmbedQueryFails("embed(emb3, \"" + text + "\")", embedding1, embedders,
-                              "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
+                "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
 
         // And with specified language
         embedders = Map.of(

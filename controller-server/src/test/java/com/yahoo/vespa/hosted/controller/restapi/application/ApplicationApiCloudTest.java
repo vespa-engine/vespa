@@ -27,8 +27,8 @@ import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Collections;
@@ -40,10 +40,10 @@ import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author oyving
@@ -57,7 +57,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     private static final TenantName tenantName = TenantName.from("scoober");
     private static final ApplicationName applicationName = ApplicationName.from("albums");
 
-    @Before
+    @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         ((InMemoryFlagSource) tester.controller().flagSource())
@@ -66,7 +66,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void test_missing_security_clients_pem() {
+    void test_missing_security_clients_pem() {
         var application = prodBuilder().build();
 
         var deployRequest = request("/application/v4/tenant/scoober/application/albums/submit", POST)
@@ -80,7 +80,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void tenant_info_profile() {
+    void tenant_info_profile() {
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(request, "{}", 200);
@@ -94,7 +94,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void tenant_info_billing() {
+    void tenant_info_billing() {
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(request, "{}", 200);
@@ -111,7 +111,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void tenant_info_contacts() {
+    void tenant_info_contacts() {
         var request = request("/application/v4/tenant/scoober/info/contacts", GET)
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(request, "{\"contacts\":[]}", 200);
@@ -126,10 +126,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void tenant_info_workflow() {
+    void tenant_info_workflow() {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
-                .roles(Set.of(Role.reader(tenantName)));
+                        .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(infoRequest, "{}", 200);
 
         String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
@@ -166,7 +166,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void tenant_info_missing_fields() {
+    void tenant_info_missing_fields() {
         // tenants can be created with empty tenant info - they're not part of the POST to v4/tenant
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
@@ -255,7 +255,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void trial_tenant_limit_reached() {
+    void trial_tenant_limit_reached() {
         ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 1);
         tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), false, false);
 
@@ -273,7 +273,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void test_secret_store_configuration() {
+    void test_secret_store_configuration() {
         var secretStoreRequest =
                 request("/application/v4/tenant/scoober/secret-store/some-name", PUT)
                         .data("{" +
@@ -303,7 +303,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void validate_secret_store() {
+    void validate_secret_store() {
         deployApplication();
         var secretStoreRequest =
                 request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.aws-us-east-1c", GET)
@@ -326,7 +326,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void delete_secret_store() {
+    void delete_secret_store() {
         var deleteRequest =
                 request("/application/v4/tenant/scoober/secret-store/secret-foo", DELETE)
                         .roles(Set.of(Role.developer(tenantName)));
@@ -347,18 +347,18 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void archive_uri_test() {
+    void archive_uri_test() {
         ControllerTester wrapped = new ControllerTester(tester);
         wrapped.upgradeSystem(Version.fromString("7.1"));
         new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
-                                     .submit()
-                                     .deploy();
+                .submit()
+                .deploy();
 
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
                 200);
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
-                .data("{\"role\":\"dummy\"}").roles(Role.administrator(tenantName)),
+                        .data("{\"role\":\"dummy\"}").roles(Role.administrator(tenantName)),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid archive access role 'dummy': Must match expected pattern: 'arn:aws:iam::\\\\d{12}:.+'\"}", 400);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", PUT)
@@ -411,7 +411,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    public void create_application_on_deploy() {
+    void create_application_on_deploy() {
         var application = ApplicationName.from("unique");
         var applicationPackage = new ApplicationPackageBuilder().withoutAthenzIdentity().build();
 
@@ -420,15 +420,15 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         tester.assertResponse(
                 request("/application/v4/tenant/scoober/application/unique/instance/default/deploy/dev-aws-us-east-1c", POST)
-                    .data(createApplicationDeployData(Optional.of(applicationPackage), Optional.empty(), true))
-                    .roles(Set.of(Role.developer(tenantName))),
+                        .data(createApplicationDeployData(Optional.of(applicationPackage), Optional.empty(), true))
+                        .roles(Set.of(Role.developer(tenantName))),
                 "{\"message\":\"Deployment started in run 1 of dev-aws-us-east-1c for scoober.unique. This may take about 15 minutes the first time.\",\"run\":1}");
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
     }
 
     @Test
-    public void create_application_on_submit() {
+    void create_application_on_submit() {
         var application = ApplicationName.from("unique");
         var applicationPackage = new ApplicationPackageBuilder()
                 .trustDefaultCertificate()

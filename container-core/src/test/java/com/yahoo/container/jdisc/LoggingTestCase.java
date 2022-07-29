@@ -3,10 +3,9 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import java.util.logging.Level;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -17,8 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Check error logging from ContentChannelOutputStream is sane.
@@ -72,7 +71,7 @@ public class LoggingTestCase {
 
     ContentChannelOutputStream stream;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         stream = new ContentChannelOutputStream(new FailingContentChannel());
         logger = Logger.getLogger(ContentChannelOutputStream.class.getName());
@@ -83,7 +82,7 @@ public class LoggingTestCase {
         logger.addHandler(logChecker);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         logger.removeHandler(logChecker);
         logger.setUseParentHandlers(initUseParentHandlers);
@@ -96,7 +95,7 @@ public class LoggingTestCase {
     }
 
     @Test
-    public final void testFailed() throws IOException {
+    final void testFailed() throws IOException {
         stream.send(createData());
         stream.send(createData());
         stream.send(createData());

@@ -11,23 +11,14 @@ import com.yahoo.schema.document.ImportedFields;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporarySDField;
 import com.yahoo.tensor.TensorType;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author geirst
  */
 public class ImportedFieldsResolverTestCase {
-
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private void resolve_imported_field(String fieldName, String targetFieldName) {
         SearchModel model = new SearchModel();
@@ -52,54 +43,57 @@ public class ImportedFieldsResolverTestCase {
     }
 
     @Test
-    public void valid_imported_fields_are_resolved() {
+    void valid_imported_fields_are_resolved() {
         resolve_imported_field("my_attribute_field", "attribute_field");
         resolve_imported_field("my_tensor_field", "tensor_field");
         resolve_imported_field("my_ancient_field", "ancient_field");
     }
 
     @Test
-    public void resolver_fails_if_document_reference_is_not_found() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', import field 'my_attribute_field': "
-                + "Reference field 'not_ref' not found");
-        new SearchModel().addImportedField("my_attribute_field", "not_ref", "budget").resolve();
+    void resolver_fails_if_document_reference_is_not_found() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new SearchModel().addImportedField("my_attribute_field", "not_ref", "budget").resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_attribute_field': "
+                + "Reference field 'not_ref' not found"));
     }
 
     @Test
-    public void resolver_fails_if_referenced_field_is_not_found() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', import field 'my_attribute_field': "
-                + "Field 'not_existing' via reference field 'ref': Not found");
-        new SearchModel().addImportedField("my_attribute_field", "ref", "not_existing").resolve();
+    void resolver_fails_if_referenced_field_is_not_found() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new SearchModel().addImportedField("my_attribute_field", "ref", "not_existing").resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_attribute_field': "
+                + "Field 'not_existing' via reference field 'ref': Not found"));
     }
 
     @Test
-    public void resolver_fails_if_imported_field_is_not_an_attribute() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For schema 'child', import field 'my_not_attribute': "
-                + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported");
-        new SearchModel().addImportedField("my_not_attribute", "ref", "not_attribute").resolve();
+    void resolver_fails_if_imported_field_is_not_an_attribute() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new SearchModel().addImportedField("my_not_attribute", "ref", "not_attribute").resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_not_attribute': "
+                + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported"));
     }
 
     @Test
-    public void resolver_fails_if_imported_field_is_indexing() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For schema 'child', import field 'my_attribute_and_index': " +
-                        "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
-        new SearchModel()
-                .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
-                .resolve();
+    void resolver_fails_if_imported_field_is_indexing() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new SearchModel()
+                    .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
+                    .resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_attribute_and_index': " +
+                "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported"));
     }
 
     @Test
-    public void resolver_fails_if_imported_field_is_of_type_predicate() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For schema 'child', import field 'my_predicate_field': " +
-                        "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported");
-        new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
+    void resolver_fails_if_imported_field_is_of_type_predicate() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
+        });
+        assertTrue(exception.getMessage().contains("For schema 'child', import field 'my_predicate_field': " +
+                "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported"));
     }
 
     static class SearchModel extends ParentChildSearchModel {

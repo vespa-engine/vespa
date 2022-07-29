@@ -2,15 +2,13 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.search.federation.FederationConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.List;
 
 import static org.assertj.core.api.Fail.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test generated config for federation.
@@ -52,7 +50,7 @@ public class FederationTest extends SchemaChainsTestBase {
 
 
     @Test
-    public void validateNativeDefaultTargets() {
+    void validateNativeDefaultTargets() {
         FederationConfig.Builder fb = new FederationConfig.Builder();
         root.getConfig(fb, "searchchains/chain/native/component/federation");
         FederationConfig config = new FederationConfig(fb);
@@ -61,9 +59,9 @@ public class FederationTest extends SchemaChainsTestBase {
             String failMessage = "Failed for target " + target.id();
 
             if (target.id().startsWith("source")) {
-                assertTrue(failMessage, target.useByDefault());
+                assertTrue(target.useByDefault(), failMessage);
             } else {
-                assertFalse(failMessage, target.useByDefault());
+                assertFalse(target.useByDefault(), failMessage);
             }
         }
 

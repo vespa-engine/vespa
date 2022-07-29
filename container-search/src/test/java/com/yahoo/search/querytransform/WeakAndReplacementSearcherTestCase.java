@@ -8,11 +8,11 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WeakAndReplacementSearcherTestCase {
 
@@ -42,20 +42,18 @@ public class WeakAndReplacementSearcherTestCase {
     }
 
 
-
-
     @Test
-    public void requireOrItemsToBeReplaced() {
+    void requireOrItemsToBeReplaced() {
         Query query = buildDefaultQuery(true);
         Result result = buildExec().search(query);
         Item root = TestUtils.getQueryTreeRoot(result);
         assertFalse(orItemsExist(root));
         assertTrue(root instanceof WeakAndItem);
-        assertEquals(N, ((WeakAndItem)root).getN());
+        assertEquals(N, ((WeakAndItem) root).getN());
     }
 
     @Test
-    public void requireQueryPropertyToWork() {
+    void requireQueryPropertyToWork() {
         Query query = buildDefaultQuery(false);
         Item preRoot = query.getModel().getQueryTree().getRoot();
         Result result = buildExec().search(query);
@@ -65,7 +63,7 @@ public class WeakAndReplacementSearcherTestCase {
     }
 
     @Test
-    public void requireDoNothingOnNoOrItems() {
+    void requireDoNothingOnNoOrItems() {
         Query query = new Query();
         query.properties().set(WEAKAND_REPLACE, true);
         AndItem andItem = new AndItem();
@@ -78,7 +76,7 @@ public class WeakAndReplacementSearcherTestCase {
     }
 
     @Test
-    public void requireChildrenAreTheSame() {
+    void requireChildrenAreTheSame() {
         Query query = new Query();
         query.properties().set(WEAKAND_REPLACE, true);
         OrItem preRoot = new OrItem();
@@ -87,7 +85,7 @@ public class WeakAndReplacementSearcherTestCase {
 
         query.getModel().getQueryTree().setRoot(preRoot);
         Result result = buildExec().search(query);
-        WeakAndItem root = (WeakAndItem)TestUtils.getQueryTreeRoot(result);
+        WeakAndItem root = (WeakAndItem) TestUtils.getQueryTreeRoot(result);
         assertEquals(preRoot.getItem(0), root.getItem(0));
         assertEquals(preRoot.getItem(1), root.getItem(1));
     }

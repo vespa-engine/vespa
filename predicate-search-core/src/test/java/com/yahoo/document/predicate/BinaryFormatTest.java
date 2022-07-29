@@ -3,10 +3,10 @@ package com.yahoo.document.predicate;
 
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 public class BinaryFormatTest {
 
     @Test
-    public void requireThatEncodeNullThrows() {
+    void requireThatEncodeNullThrows() {
         try {
             BinaryFormat.encode(null);
             fail();
@@ -24,7 +24,7 @@ public class BinaryFormatTest {
     }
 
     @Test
-    public void requireThatDecodeNullThrows() {
+    void requireThatDecodeNullThrows() {
         try {
             BinaryFormat.decode(null);
             fail();
@@ -34,7 +34,7 @@ public class BinaryFormatTest {
     }
 
     @Test
-    public void requireThatDecodeEmptyThrows() {
+    void requireThatDecodeEmptyThrows() {
         try {
             BinaryFormat.decode(new byte[0]);
             fail();
@@ -44,17 +44,17 @@ public class BinaryFormatTest {
     }
 
     @Test
-    public void requireThatConjunctionCanBeSerialized() {
+    void requireThatConjunctionCanBeSerialized() {
         assertSerialize(new Conjunction(new FeatureSet("foo", "bar"), new FeatureSet("baz", "cox")));
     }
 
     @Test
-    public void requireThatDisjunctionCanBeSerialized() {
+    void requireThatDisjunctionCanBeSerialized() {
         assertSerialize(new Disjunction(new FeatureSet("foo", "bar"), new FeatureSet("baz", "cox")));
     }
 
     @Test
-    public void requireThatFeatureRangeCanBeSerialized() {
+    void requireThatFeatureRangeCanBeSerialized() {
         assertSerialize(new FeatureRange("foo", null, null));
         assertSerialize(new FeatureRange("foo", null, 9L));
         assertSerialize(new FeatureRange("foo", 6L, null));
@@ -62,7 +62,7 @@ public class BinaryFormatTest {
     }
 
     @Test
-    public void requireThatPartitionedFeatureRangeCanBeSerialized() {
+    void requireThatPartitionedFeatureRangeCanBeSerialized() {
         FeatureRange expected = new FeatureRange("foo", 8L, 20L);
         FeatureRange f = new FeatureRange("foo", 8L, 20L);
         f.addPartition(new RangeEdgePartition("foo=0", 0, 8, -1));
@@ -87,25 +87,25 @@ public class BinaryFormatTest {
     }
 
     @Test
-    public void requireThatFeatureSetCanBeSerialized() {
+    void requireThatFeatureSetCanBeSerialized() {
         assertSerialize(new FeatureSet("foo"));
         assertSerialize(new FeatureSet("foo", "bar"));
         assertSerialize(new FeatureSet("foo", "bar", "baz"));
     }
 
     @Test
-    public void requireThatNegationCanBeSerialized() {
+    void requireThatNegationCanBeSerialized() {
         assertSerialize(new Negation(new FeatureSet("foo", "bar")));
     }
 
     @Test
-    public void requireThatBooleanCanBeSerialized() {
+    void requireThatBooleanCanBeSerialized() {
         assertSerialize(new BooleanPredicate(true));
         assertSerialize(new BooleanPredicate(false));
     }
 
     @Test
-    public void requireThatUnknownNodeThrows() {
+    void requireThatUnknownNodeThrows() {
         try {
             BinaryFormat.encode(SimplePredicates.newString("foo"));
             fail();

@@ -33,18 +33,12 @@ import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests Query.Select
@@ -61,7 +55,7 @@ public class SelectTestCase {
     //------------------------------------------------------------------- "where" tests
 
     @Test
-    public void test_contains() {
+    void test_contains() {
         ObjectNode json = jsonMapper.createObjectNode();
         ArrayNode arrayNode = jsonMapper.createArrayNode();
         arrayNode.add("default").add("foo");
@@ -70,22 +64,21 @@ public class SelectTestCase {
     }
 
     @Test
-    public void test() {
+    void test() {
         assertParse("{'contains' : ['title', 'madonna']}",
                 "title:madonna");
     }
 
 
     @Test
-    public void testDottedFieldNames() {
+    void testDottedFieldNames() {
         assertParse("{ 'contains' : ['my.nested.title', 'madonna']}",
                 "my.nested.title:madonna");
     }
 
 
-
     @Test
-    public void testOr() throws Exception {
+    void testOr() throws Exception {
         ObjectNode json_two_or = jsonMapper.createObjectNode();
         ObjectNode json_three_or = jsonMapper.createObjectNode();
         ArrayNode contains1 = jsonMapper.createArrayNode().add("title").add("madonna");
@@ -107,7 +100,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testAnd() throws Exception{
+    void testAnd() throws Exception {
         ObjectNode json_two_and = jsonMapper.createObjectNode();
         ObjectNode json_three_and = jsonMapper.createObjectNode();
         ArrayNode contains1 = jsonMapper.createArrayNode().add("title").add("madonna");
@@ -129,7 +122,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testAndNot() {
+    void testAndNot() {
         ObjectNode json_and_not = jsonMapper.createObjectNode();
         ArrayNode contains1 = jsonMapper.createArrayNode().add("title").add("madonna");
         ArrayNode contains2 = jsonMapper.createArrayNode().add("title").add("saint");
@@ -146,7 +139,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testLessThan() {
+    void testLessThan() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("<", 500);
@@ -160,7 +153,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testGreaterThan() {
+    void testGreaterThan() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put(">", 500);
@@ -174,7 +167,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testLessThanOrEqual() {
+    void testLessThanOrEqual() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("<=", 500);
@@ -188,7 +181,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testGreaterThanOrEqual() {
+    void testGreaterThanOrEqual() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put(">=", 500);
@@ -202,7 +195,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testEquality() {
+    void testEquality() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("=", 500);
@@ -216,7 +209,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNegativeLessThan() {
+    void testNegativeLessThan() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("<", -500);
@@ -230,7 +223,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNegativeGreaterThan() {
+    void testNegativeGreaterThan() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put(">", -500);
@@ -244,7 +237,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNegativeLessThanOrEqual() {
+    void testNegativeLessThanOrEqual() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("<=", -500);
@@ -258,7 +251,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNegativeGreaterThanOrEqual() {
+    void testNegativeGreaterThanOrEqual() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put(">=", -500);
@@ -272,7 +265,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNegativeEquality() {
+    void testNegativeEquality() {
         ObjectNode range_json = jsonMapper.createObjectNode();
         ObjectNode operators = jsonMapper.createObjectNode();
         operators.put("=", -500);
@@ -286,38 +279,38 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testAnnotatedLessThan() {
+    void testAnnotatedLessThan() {
         String jsonString = "{ \"range\": { \"children\" : [\"price\", {\"<\" : -500}], \"attributes\" : {\"filter\" : true} } }";
         assertParse(jsonString, "|price:<-500");
     }
 
     @Test
-    public void testAnnotatedGreaterThan() {
+    void testAnnotatedGreaterThan() {
         String jsonString = "{ \"range\": { \"children\" : [\"price\", {\">\" : 500}], \"attributes\" : {\"filter\" : true} } }";
         assertParse(jsonString, "|price:>500");
     }
 
     @Test
-    public void testAnnotatedLessThanOrEqual() {
+    void testAnnotatedLessThanOrEqual() {
         String jsonString = "{ \"range\": { \"children\" : [\"price\", {\"<=\" : -500}], \"attributes\" : {\"filter\" : true} } }";
         assertParse(jsonString, "|price:[;-500]");
     }
 
     @Test
-    public void testAnnotatedGreaterThanOrEqual() {
+    void testAnnotatedGreaterThanOrEqual() {
         String jsonString = "{ \"range\": { \"children\" : [\"price\", {\">=\" : 500}], \"attributes\" : {\"filter\" : true} } }";
         assertParse(jsonString, "|price:[500;]");
     }
 
 
     @Test
-    public void testAnnotatedEquality() {
+    void testAnnotatedEquality() {
         String jsonString = "{ \"range\": { \"children\" : [\"price\", {\"=\" : -500}], \"attributes\" : {\"filter\" : true} } }";
         assertParse(jsonString, "|price:-500");
     }
 
     @Test
-    public void testTermAnnotations() {
+    void testTermAnnotations() {
         assertEquals("merkelapp",
                 getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"label\" : \"merkelapp\"} } }").getLabel());
         assertEquals("another",
@@ -334,7 +327,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testSameElement() {
+    void testSameElement() {
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"f1\", \"a\"] }, { \"contains\" : [\"f2\", \"b\"] } ]} ] }",
                 "baz:{f1:a f2:b}");
 
@@ -346,53 +339,53 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testPhrase() {
+    void testPhrase() {
         assertParse("{ \"contains\": [ \"baz\", {\"phrase\" : [ \"a\", \"b\"] } ] }",
                 "baz:\"a b\"");
     }
 
     @Test
-    public void testNestedPhrase() {
+    void testNestedPhrase() {
         assertParse("{ \"contains\": [ \"baz\", {\"phrase\" : [ \"a\", \"b\", {\"phrase\" : [ \"c\", \"d\"] }] } ] }",
                 "baz:\"a b c d\"");
     }
 
     @Test
-    public void testStemming() {
+    void testStemming() {
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"stem\" : false} } }").isStemmed());
         assertFalse(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"stem\" : true} } }").isStemmed());
         assertFalse(getRootWord("{ \"contains\": [\"baz\", \"colors\"] }").isStemmed());
     }
 
     @Test
-    public void testRaw() {
+    void testRaw() {
         Item root = parseWhere("{ \"contains\":[ \"baz\", \"yoni jo dima\" ] }").getRoot();
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
-        assertEquals("yoni jo dima", ((WordItem)root).getWord());
+        assertEquals("yoni jo dima", ((WordItem) root).getWord());
 
         root = parseWhere("{ \"contains\": { \"children\" : [\"baz\", \"yoni jo dima\"], \"attributes\" : {\"grammar\" : \"raw\"} } }").getRoot();
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
-        assertEquals("yoni jo dima", ((WordItem)root).getWord());
+        assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }
 
     @Test
-    public void testAccentDropping() {
+    void testAccentDropping() {
         assertFalse(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"accentDrop\" : false} } }").isNormalizable());
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"accentDrop\" : true} } }").isNormalizable());
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"] } }").isNormalizable());
     }
 
     @Test
-    public void testCaseNormalization() {
+    void testCaseNormalization() {
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"normalizeCase\" : false} } }").isLowercased());
         assertFalse(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"normalizeCase\" : true} } }").isLowercased());
         assertFalse(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"] } }").isLowercased());
     }
 
     @Test
-    public void testSegmentingRule() {
+    void testSegmentingRule() {
         assertEquals(SegmentingRule.PHRASE,
                 getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"andSegmenting\" : false} } }").getSegmentingRule());
         assertEquals(SegmentingRule.BOOLEAN_AND,
@@ -402,30 +395,30 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNfkc() {
+    void testNfkc() {
         assertEquals("a\u030a", getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"a\\u030a\"], \"attributes\" : {\"nfkc\" : false} } }").getWord());
         assertEquals("\u00e5", getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"a\\u030a\"], \"attributes\" : {\"nfkc\" : true} } }").getWord());
-        assertEquals("No NKFC by default", "a\u030a", getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"a\\u030a\"] } } ").getWord());
+        assertEquals("a\u030a", getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"a\\u030a\"] } } ").getWord(), "No NKFC by default");
     }
 
     @Test
-    public void testImplicitTransforms() {
+    void testImplicitTransforms() {
         assertFalse(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"cox\"], \"attributes\" : {\"implicitTransforms\" : false} } }").isFromQuery());
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"cox\"], \"attributes\" : {\"implicitTransforms\" : true} } }").isFromQuery());
         assertTrue(getRootWord("{ \"contains\": { \"children\" : [\"baz\", \"cox\"] } }").isFromQuery());
     }
 
     @Test
-    public void testConnectivity() {
+    void testConnectivity() {
         QueryTree parsed = parseWhere("{ \"and\": [ {\"contains\" : { \"children\" : [\"title\", \"madonna\"], \"attributes\" : {\"id\": 1, \"connectivity\": {\"id\": 3, \"weight\": 7.0}} } }, " +
                 "{ \"contains\" : { \"children\" : [\"title\", \"saint\"], \"attributes\" : {\"id\": 2} } }, " +
                 "{ \"contains\" : { \"children\" : [\"title\", \"angel\"], \"attributes\" : {\"id\": 3} } } ] }");
         assertEquals("AND title:madonna title:saint title:angel", parsed.toString());
 
-        AndItem root = (AndItem)parsed.getRoot();
-        WordItem first = (WordItem)root.getItem(0);
-        WordItem second = (WordItem)root.getItem(1);
-        WordItem third = (WordItem)root.getItem(2);
+        AndItem root = (AndItem) parsed.getRoot();
+        WordItem first = (WordItem) root.getItem(0);
+        WordItem second = (WordItem) root.getItem(1);
+        WordItem third = (WordItem) root.getItem(2);
         assertEquals(third, first.getConnectedItem());
         assertEquals(first.getConnectivity(), 7.0d, 1E-6);
         assertNull(second.getConnectedItem());
@@ -434,37 +427,37 @@ public class SelectTestCase {
                 "{ \"contains\" : { \"children\" : [\"title\", \"saint\"], \"attributes\" : {\"id\": 2} } }, " +
                 "{ \"contains\" : { \"children\" : [\"title\", \"angel\"], \"attributes\" : {\"id\": 3} } } ] }",
                 new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
-                "which does not exist in the query."));
+                        "which does not exist in the query."));
     }
 
     @Test
-    public void testAnnotatedPhrase() {
+    void testAnnotatedPhrase() {
         QueryTree parsed = parseWhere("{ \"contains\": [\"baz\", { \"phrase\": { \"children\": [\"a\", \"b\"], \"attributes\": { \"label\": \"hello world\" } } }] }");
         assertEquals("baz:\"a b\"", parsed.toString());
-        PhraseItem phrase = (PhraseItem)parsed.getRoot();
+        PhraseItem phrase = (PhraseItem) parsed.getRoot();
         assertEquals("hello world", phrase.getLabel());
     }
 
     @Test
-    public void testRange() {
+    void testRange() {
         QueryTree parsed = parseWhere("{ \"range\": [\"baz\", { \">=\": 1, \"<=\": 8 }] }");
         assertEquals("baz:[1;8]", parsed.toString());
     }
 
     @Test
-    public void testNegativeRange() {
+    void testNegativeRange() {
         QueryTree parsed = parseWhere("{ \"range\": [\"baz\", { \">=\": -8, \"<=\": -1 }] }");
         assertEquals("baz:[-8;-1]", parsed.toString());
     }
 
     @Test
-    public void testRangeIllegalArguments() {
+    void testRangeIllegalArguments() {
         assertParseFail("{ \"range\": [\"baz\", { \">=\": \"cox\", \"<=\": -1 }] }",
                 new IllegalArgumentException("Expected a numeric argument to range, but got the string 'cox'"));
     }
 
     @Test
-    public void testNear() {
+    void testNear() {
         assertParse("{ \"contains\": [\"description\", { \"near\": [\"a\", \"b\"] }] }",
                 "NEAR(2) description:a description:b");
         assertParse("{ \"contains\": [\"description\", { \"near\": { \"children\": [\"a\", \"b\"], \"attributes\": { \"distance\": 100 } } } ] }",
@@ -472,7 +465,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testOrderedNear() {
+    void testOrderedNear() {
         assertParse("{ \"contains\": [\"description\", { \"onear\": [\"a\", \"b\"] }] }",
                 "ONEAR(2) description:a description:b");
         assertParse("{ \"contains\": [\"description\", { \"onear\": { \"children\": [\"a\", \"b\"], \"attributes\": { \"distance\": 100 } } } ] }",
@@ -480,7 +473,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testWand() {
+    void testWand() {
         assertParse("{ \"wand\": [\"description\", { \"a\": 1, \"b\": 2 }] }",
                 "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
         assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
@@ -488,7 +481,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testNumericWand() {
+    void testNumericWand() {
         String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
         assertParse("{ \"wand\" : [\"description\", [[11,1], [37,2]] ]}", numWand);
         assertParseFail("{ \"wand\" : [\"description\", 12] }",
@@ -496,7 +489,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testWeightedSet() {
+    void testWeightedSet() {
         assertParse("{ \"weightedSet\" : [\"description\", {\"a\":1, \"b\":2} ]}",
                 "WEIGHTEDSET description{[1]:\"a\",[2]:\"b\"}");
         assertParseFail("{ \"weightedSet\" : [\"description\", {\"a\":\"g\", \"b\":2} ]}",
@@ -506,7 +499,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testDotProduct() {
+    void testDotProduct() {
         assertParse("{ \"dotProduct\" : [\"description\", {\"a\":1, \"b\":2} ]}",
                 "DOTPRODUCT description{[1]:\"a\",[2]:\"b\"}");
         assertParse("{ \"dotProduct\" : [\"description\", {\"a\":2} ]}",
@@ -514,7 +507,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testPredicate() {
+    void testPredicate() {
         assertParse("{ \"predicate\" : [\"predicate_field\", {\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23} ]}",
                 "PREDICATE_QUERY_ITEM gender=male, hobby=music, hobby=hiking, age:23");
         assertParse("{ \"predicate\" : [\"predicate_field\", 0, \"void\" ]}",
@@ -522,7 +515,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testRank() {
+    void testRank() {
         assertParse("{ \"rank\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "RANK a:A b:B");
         assertParse("{ \"rank\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] }, { \"contains\": [\"c\", \"C\"] } ] }",
@@ -532,19 +525,19 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testGeoLocation() {
+    void testGeoLocation() {
         assertParse("{ \"geoLocation\": [ \"workplace\", 63.418417, 10.433033, \"0.5 deg\" ] }",
-                    "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
+                "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
         assertParse("{ \"geoLocation\": [ \"headquarters\", \"37.416383\", \"-122.024683\", \"100 miles\" ] }",
-                    "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
+                "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
         assertParse("{ \"geoLocation\": [ \"home\", \"E10.433033\", \"N63.418417\", \"5km\" ] }",
-                    "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
+                "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
         assertParse("{ \"geoLocation\": [ \"workplace\", -12.0, -34.0, \"-77 deg\" ] }",
-                    "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
+                "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
     }
 
     @Test
-    public void testNearestNeighbor() {
+    void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
                 "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
 
@@ -554,7 +547,7 @@ public class SelectTestCase {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testWeakAnd() {
+    void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "WEAKAND(100) a:A b:B");
         assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetHits\": 37} }}",
@@ -566,7 +559,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testEquiv() {
+    void testEquiv() {
         assertParse("{ \"contains\" : [\"fieldName\", {\"equiv\" : [\"A\",\"B\"]}]}",
                 "EQUIV fieldName:A fieldName:B");
 
@@ -582,42 +575,42 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testAffixItems() {
+    void testAffixItems() {
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true} } }",
-                        SuffixItem.class);
+                SuffixItem.class);
 
 
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"prefix\": true} } }",
-                        PrefixItem.class);
+                PrefixItem.class);
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"substring\": true} } }",
-                        SubstringItem.class);
+                SubstringItem.class);
         assertParseFail("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true, \"prefix\" : true} } }",
-                        new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
+                new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
         assertParseFail("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true, \"substring\" : true} } }",
-                        new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
+                new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
     }
 
     @Test
-    public void testLongNumberInSimpleExpression() {
+    void testLongNumberInSimpleExpression() {
         assertParse("{ \"range\" : [ \"price\", { \"=\" : 8589934592 }]}",
                 "price:8589934592");
     }
 
     @Test
-    public void testNegativeLongNumberInSimpleExpression() {
+    void testNegativeLongNumberInSimpleExpression() {
         assertParse("{ \"range\" : [ \"price\", { \"=\" : -8589934592 }]}",
                 "price:-8589934592");
     }
 
     @Test
-    public void testNegativeHitLimit() {
+    void testNegativeHitLimit() {
         assertParse(
                 "{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": -38 } } }",
                 "foo:[0;1;-38]");
     }
 
     @Test
-    public void testRangeSearchHitPopulationOrdering() {
+    void testRangeSearchHitPopulationOrdering() {
         assertParse("{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": 38 ,\"ascending\": true} } }", "foo:[0;1;38]");
         assertParse("{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": 38 ,\"ascending\": false} } }", "foo:[0;1;-38]");
         assertParse("{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": 38 ,\"descending\": true} } }", "foo:[0;1;-38]");
@@ -627,8 +620,8 @@ public class SelectTestCase {
         try {
             parseWhere("{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": 38, \"ascending\": true, \"descending\": false} } }");
         } catch (IllegalArgumentException e) {
-            assertTrue("Expected information about abuse of settings.",
-                    e.getCause().getMessage().contains("both ascending and descending ordering set"));
+            assertTrue(e.getCause().getMessage().contains("both ascending and descending ordering set"),
+                    "Expected information about abuse of settings.");
             gotExceptionFromParse = true;
         }
         assertTrue(gotExceptionFromParse);
@@ -636,9 +629,9 @@ public class SelectTestCase {
 
     // NB: Uses operator-keys to set bounds, not annotations
     @Test
-    public void testOpenIntervals() {
+    void testOpenIntervals() {
         assertParse("{ \"range\" : { \"children\":[ \"title\", { \">=\" : 0.0, \"<=\" : 500.0 }] } }" +
-                        "select * from sources * where range(title, 0.0, 500.0)",
+                "select * from sources * where range(title, 0.0, 500.0)",
                 "title:[0.0;500.0]");
         assertParse(
                 "{ \"range\" : { \"children\":[ \"title\", { \">\" : 0.0, \"<\" : 500.0 }] } }",
@@ -652,13 +645,13 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testEquals() {
-        assertParse("{\"equals\": [\"public\",true]}","public:true");
-        assertParse("{\"equals\": [\"public\",5]}","public:5");
+    void testEquals() {
+        assertParse("{\"equals\": [\"public\",true]}", "public:true");
+        assertParse("{\"equals\": [\"public\",5]}", "public:5");
     }
 
     @Test
-    public void testRegexp() {
+    void testRegexp() {
         QueryTree x = parseWhere("{ \"matches\" : [\"foo\", \"a b\"]}");
         Item root = x.getRoot();
         assertSame(RegExpItem.class, root.getClass());
@@ -666,7 +659,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testWordAlternatives() {
+    void testWordAlternatives() {
         QueryTree x = parseWhere("{\"contains\" : [\"foo\", {\"alternatives\" : [{\"trees\": 1.0, \"tree\": 0.7}]}]}");
         Item root = x.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
@@ -675,7 +668,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testFuzzy() {
+    void testFuzzy() {
         QueryTree x = parseWhere("{ \"contains\": [\"description\", { \"fuzzy\": [\"a b\"] }] }");
         Item root = x.getRoot();
         assertSame(FuzzyItem.class, root.getClass());
@@ -686,14 +679,14 @@ public class SelectTestCase {
     //------------------------------------------------------------------- grouping tests
 
     @Test
-    public void testGrouping(){
+    void testGrouping() {
         String grouping = "[ { \"all\" : { \"group\" : \"time.year(a)\", \"each\" : { \"output\" : \"count()\" } } } ]";
         String expected = "[[]all(group(time.year(a)) each(output(count())))]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
-    public void testMultipleGroupings() {
+    void testMultipleGroupings() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\"}}}, { \"all\" : { \"group\" : \"b\", \"each\" : { \"output\" : \"count()\"}}} ]";
         String expected = "[[]all(group(a) each(output(count()))), []all(group(b) each(output(count())))]";
 
@@ -701,14 +694,14 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testGroupingWithPredefinedBuckets() {
+    void testGroupingWithPredefinedBuckets() {
         String grouping = "[ { \"all\" : { \"group\" : { \"predefined\" : [ \"foo\", { \"bucket\": [1,2]}, { \"bucket\": [3,4]} ] } } } ]";
         String expected = "[[]all(group(predefined(foo, bucket[1, 2>, bucket[3, 4>)))]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
-    public void testMultipleOutputs() {
+    void testMultipleOutputs() {
         String grouping = "[ { \"all\" : { \"group\" : \"b\", \"each\" : {\"output\": [ \"count()\", \"avg(foo)\" ] } } } ]";
         String expected = "[[]all(group(b) each(output(count(), avg(foo))))]";
         assertGrouping(expected, parseGrouping(grouping));
@@ -717,7 +710,7 @@ public class SelectTestCase {
     //------------------------------------------------------------------- Other tests
 
     @Test
-    public void testOverridingOtherQueryTree() {
+    void testOverridingOtherQueryTree() {
         Query query = new Query("?query=default:query");
         assertEquals("WEAKAND(100) default:query", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.WEAKAND, query.getModel().getType());
@@ -728,7 +721,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testOverridingWhereQueryTree() {
+    void testOverridingWhereQueryTree() {
         Query query = new Query("?query=default:query");
         query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());
@@ -741,7 +734,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testProgrammaticAssignment() {
+    void testProgrammaticAssignment() {
         Query query = new Query();
         query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.year(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
         assertEquals(1, query.getSelect().getGrouping().size());
@@ -754,7 +747,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testConstructionAndClone() {
+    void testConstructionAndClone() {
         Query query = new Query();
         query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.dayofmonth(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
@@ -776,7 +769,7 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testCloneWithGroupingExpressionString() {
+    void testCloneWithGroupingExpressionString() {
         Query query = new Query();
         query.getSelect().setGroupingExpressionString("all(group(foo) each(output(count())))");
 
@@ -785,12 +778,12 @@ public class SelectTestCase {
     }
 
     @Test
-    public void testProgrammaticBuilding() {
+    void testProgrammaticBuilding() {
         String expected =
                 "all(group(myfield) max(10000) each(" +
-                  "output(min(foo), max(bar)) " +
-                  "all(group(foo) max(10000) output(count()))" +
-                "))";
+                        "output(min(foo), max(bar)) " +
+                        "all(group(foo) max(10000) output(count()))" +
+                        "))";
         Query query = new Query();
         GroupingRequest grouping = GroupingRequest.newInstance(query);
         AllOperation root = new AllOperation();
@@ -871,11 +864,11 @@ public class SelectTestCase {
         assertEquals(2, alternatives.getAlternatives().size());
         for (WordAlternativesItem.Alternative alternative : alternatives.getAlternatives()) {
             if (tree.equals(alternative.word)) {
-                assertFalse("Duplicate term introduced", seenTree);
+                assertFalse(seenTree, "Duplicate term introduced");
                 seenTree = true;
                 assertEquals(.7d, alternative.exactness, 1e-15d);
             } else if (forest.equals(alternative.word)) {
-                assertFalse("Duplicate term introduced", seenForest);
+                assertFalse(seenForest, "Duplicate term introduced");
                 seenForest = true;
                 assertEquals(1.0d, alternative.exactness, 1e-15d);
             } else {

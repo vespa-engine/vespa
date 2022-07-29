@@ -20,8 +20,8 @@ import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SignatureFilterTest {
 
@@ -63,7 +63,7 @@ public class SignatureFilterTest {
     private SignatureFilter filter;
     private RequestSigner signer;
 
-    @Before
+    @BeforeEach
     public void setup() {
         tester = new ControllerTester();
         applications = tester.controller().applications();
@@ -82,12 +82,12 @@ public class SignatureFilterTest {
     }
 
     @Test
-    public void testFilter() {
+    void testFilter() {
         // Unsigned request gets no role.
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("https://host:123/path/./..//..%2F?query=empty&%3F=%26"));
         byte[] emptyBody = new byte[0];
         verifySecurityContext(requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody),
-                              null);
+                null);
 
         // Signed request gets no role when no key is stored for the application.
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
@@ -97,42 +97,42 @@ public class SignatureFilterTest {
         applications.lockApplicationOrThrow(appId, application -> applications.store(application.withDeployKey(otherPublicKey)));
         // Signed request gets no role when no key is stored for the application.
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
-                              null);
+                null);
 
         // Signed request gets a headless role when a matching key is stored for the application.
         applications.lockApplicationOrThrow(appId, application -> applications.store(application.withDeployKey(publicKey)));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
-                              new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
-                                                  Set.of(Role.reader(id.tenant()),
-                                                         Role.headless(id.tenant(), id.application())),
-                                                  tester.clock().instant()));
+                new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
+                        Set.of(Role.reader(id.tenant()),
+                                Role.headless(id.tenant(), id.application())),
+                        tester.clock().instant()));
 
         // Signed POST request with X-Key header gets a headless role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
-                              new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
-                                                  Set.of(Role.reader(id.tenant()),
-                                                         Role.headless(id.tenant(), id.application())),
-                                                  tester.clock().instant()));
+                new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
+                        Set.of(Role.reader(id.tenant()),
+                                Role.headless(id.tenant(), id.application())),
+                        tester.clock().instant()));
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
-                                                     Instant.EPOCH,
-                                                     LastLoginInfo.EMPTY,
-                                                     Optional.empty(),
-                                                     ImmutableBiMap.of(publicKey, () -> "user"),
-                                                     TenantInfo.empty(),
-                                                     List.of(),
-                                                     new ArchiveAccess()));
+                Instant.EPOCH,
+                LastLoginInfo.EMPTY,
+                Optional.empty(),
+                ImmutableBiMap.of(publicKey, () -> "user"),
+                TenantInfo.empty(),
+                List.of(),
+                new ArchiveAccess()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
-                              new SecurityContext(new SimplePrincipal("user"),
-                                                  Set.of(Role.reader(id.tenant()),
-                                                         Role.developer(id.tenant())),
-                                                  tester.clock().instant()));
+                new SecurityContext(new SimplePrincipal("user"),
+                        Set.of(Role.reader(id.tenant()),
+                                Role.developer(id.tenant())),
+                        tester.clock().instant()));
 
         // Unsigned requests still get no roles.
         verifySecurityContext(requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody),
-                              null);
+                null);
     }
 
     private void verifySecurityContext(DiscFilterRequest request, SecurityContext securityContext) {

@@ -1,17 +1,17 @@
 package com.yahoo.search.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Json2SinglelevelMapTestCase {
     @Test
-    public void testDecodeString() {
+    void testDecodeString() {
         Map<String, String> m = new Json2SingleLevelMap(new ByteArrayInputStream("{\"yql\":\"text\", \"f1\":7.3, \"i1\":7, \"t\":true, \"f\":false,  \"n\":null, \"a\":[0.786, 0.193]}".getBytes(StandardCharsets.UTF_8))).parse();
         assertEquals(7, m.size());
         assertTrue(m.containsKey("yql"));
@@ -29,8 +29,9 @@ public class Json2SinglelevelMapTestCase {
         assertEquals("null", m.get("n"));
         assertEquals("[0.786, 0.193]", m.get("a"));
     }
+
     @Test
-    public void testThatWeAllowSingleQuotes() {
+    void testThatWeAllowSingleQuotes() {
         Map<String, String> m = new Json2SingleLevelMap(new ByteArrayInputStream("{'yql':'text'}".getBytes(StandardCharsets.UTF_8))).parse();
         assertTrue(m.containsKey("yql"));
         assertEquals("text", m.get("yql"));

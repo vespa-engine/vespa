@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -14,7 +12,7 @@ import static org.junit.Assert.fail;
 public class PredicateParserTest {
 
     @Test
-    public void requireThatParseErrorThrowsException() {
+    void requireThatParseErrorThrowsException() {
         try {
             Predicate.fromString("a in b");
             fail("Expected an exception");
@@ -24,7 +22,7 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatLexerErrorThrowsException() {
+    void requireThatLexerErrorThrowsException() {
         try {
             Predicate.fromString("a-b in [b]");
             fail("Expected an exception");
@@ -34,7 +32,7 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatSingleValueLeafNodesParse() {
+    void requireThatSingleValueLeafNodesParse() {
         assertParsesTo("a in [b]", "a in [b]");
         assertParsesTo("0 in [1]", "0 in [1]");
         assertParsesTo("in in [in]", "in in [in]");
@@ -44,17 +42,17 @@ public class PredicateParserTest {
         assertParsesTo("string in ['!@#$%^&*()[]']", "'string' in ['!@#$%^&*()[]']");
         assertParsesTo("a in [b]", "a in [b]");
         assertParsesTo("string in ['foo\\\\_\"\\t\\n\\f\\rbar']",
-                       "string in ['foo\\\\_\\x22\\t\\n\\f\\rbar']");
+                "string in ['foo\\\\_\\x22\\t\\n\\f\\rbar']");
         assertParsesTo("'\\xC3\\xB8' in [b]", "'ø' in [b]");
         assertParsesTo("'\\xEF\\xBF\\xBD' in [b]", "'\\xf8' in [b]");
         assertParsesTo("'\\xEF\\xBF\\xBD' in [b]", "'\\xef\\xbf\\xbd' in ['b']");
         assertParsesTo("'\\xE4\\xB8\\x9C\\xE8\\xA5\\xBF' in ['\\xE8\\x87\\xAA\\xE8\\xA1\\x8C\\xE8\\xBD\\xA6']",
-                       "'东西' in ['自行车']");
+                "'东西' in ['自行车']");
         assertParsesTo("true in [false]", "true in [false]");
     }
 
     @Test
-    public void requireThatMultiValueLeafNodesParse() {
+    void requireThatMultiValueLeafNodesParse() {
         assertParsesTo("a in [b]", "a in [b]");
         assertParsesTo("0 in [1]", "0 in [1]");
         assertParsesTo("in in [and, in]", "in in [in, and]");
@@ -62,7 +60,7 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatBothSingleAndDoubleQuotesWork() {
+    void requireThatBothSingleAndDoubleQuotesWork() {
         assertParsesTo("a in [b]", "'a' in ['b']");
         assertParsesTo("a in [b]", "\"a\" in [\"b\"]");
         assertParsesTo("'a\\x27' in [b]", "'a\\'' in ['b']");
@@ -70,7 +68,7 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatRangeLeafNodesParse() {
+    void requireThatRangeLeafNodesParse() {
         assertParsesTo("a in [0..100]", "a in [0..100]");
         assertParsesTo("0 in [..100]", "0 in [..100]");
         assertParsesTo("0 in [0..]", "0 in [0..]");
@@ -81,7 +79,7 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatRangePartitionsAreIgnored() {
+    void requireThatRangePartitionsAreIgnored() {
         assertParsesTo("a in [0..100]", "a in [0..100 (a=0-99,a=100+[..0])]");
         assertParsesTo("a in [-100..0]", "a in [-100..0 (a=-0-99,a=-100+[..0])]");
         assertParsesTo("a in [-9223372036854775808..0]", "a in [-9223372036854775808..0 (a=-0-9223372036854775808)]");
@@ -91,57 +89,57 @@ public class PredicateParserTest {
     }
 
     @Test
-    public void requireThatNotInSetWorks() {
+    void requireThatNotInSetWorks() {
         assertParsesTo("a not in [b]", "a not in [b]");
     }
 
     @Test
-    public void requireThatConjunctionWorks() {
+    void requireThatConjunctionWorks() {
         assertParsesTo("a in [b] and c in [d]", "a in [b] and c in [d]");
         assertParsesTo("a in [b] and c in [d] and e in [f]", "a in [b] and c in [d] and e in [f]");
     }
 
     @Test
-    public void requireThatDisjunctionWorks() {
+    void requireThatDisjunctionWorks() {
         assertParsesTo("a in [b] or c in [d]", "a in [b] or c in [d]");
         assertParsesTo("a in [b] or c in [d] or e in [f]", "a in [b] or c in [d] or e in [f]");
     }
 
     @Test
-    public void requireThatParenthesesWorks() {
+    void requireThatParenthesesWorks() {
         assertParsesTo("a in [b] or c in [d]",
-                       "(a in [b]) or (c in [d])");
+                "(a in [b]) or (c in [d])");
         assertParsesTo("a in [b] or c in [d] or e in [f]",
-                       "(((a in [b]) or c in [d]) or e in [f])");
+                "(((a in [b]) or c in [d]) or e in [f])");
         assertParsesTo("(a in [b] and c in [d]) or e in [f]",
-                       "a in [b] and c in [d] or e in [f]");
+                "a in [b] and c in [d] or e in [f]");
         assertParsesTo("a in [b] and (c in [d] or e in [f])",
-                       "a in [b] and (c in [d] or e in [f])");
+                "a in [b] and (c in [d] or e in [f])");
         assertParsesTo("a in [b] and (c in [d] or e in [f]) and g in [h]",
-                       "a in [b] and (c in [d] or e in [f]) and g in [h]");
+                "a in [b] and (c in [d] or e in [f]) and g in [h]");
     }
 
     @Test
-    public void requireThatNotOutsideParenthesesWorks() {
+    void requireThatNotOutsideParenthesesWorks() {
         assertParsesTo("a not in [b]", "not (a in [b])");
     }
 
     @Test
-    public void requireThatConjunctionsCanGetMoreThanTwoChildren() {
+    void requireThatConjunctionsCanGetMoreThanTwoChildren() {
         Predicate p = Predicate.fromString("a in [b] and c in [d] and e in [f] and g in [h]");
         assertTrue(p instanceof Conjunction);
-        assertEquals(4, ((Conjunction)p).getOperands().size());
+        assertEquals(4, ((Conjunction) p).getOperands().size());
     }
 
     @Test
-    public void requireThatDisjunctionsCanGetMoreThanTwoChildren() {
+    void requireThatDisjunctionsCanGetMoreThanTwoChildren() {
         Predicate p = Predicate.fromString("a in [b] or c in [d] or e in [f] or g in [h]");
         assertTrue(p instanceof Disjunction);
-        assertEquals(4, ((Disjunction)p).getOperands().size());
+        assertEquals(4, ((Disjunction) p).getOperands().size());
     }
 
     @Test
-    public void requireThatBooleanCanBeParsed() {
+    void requireThatBooleanCanBeParsed() {
         assertParsesTo("true", "true");
         assertParsesTo("false", "false");
         assertParsesTo("true or false", "true or false");

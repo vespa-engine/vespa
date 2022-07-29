@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TopKEstimatorTest {
     @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbability() {
+    void requireHitsAreEstimatedAccordingToPartitionsAndProbability() {
         TopKEstimator estimator = new TopKEstimator(30, 0.999);
         assertEquals(91.97368471911312, estimator.estimateExactK(200, 3), 0.0);
         assertEquals(92, estimator.estimateK(200, 3));
@@ -27,8 +27,9 @@ public class TopKEstimatorTest {
         assertEquals(44.909040374464155, estimator.estimateExactK(200, 10, 0.99999), 0.0);
         assertEquals(45, estimator.estimateK(200, 10, 0.99999));
     }
+
     @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K200() {
+    void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K200() {
         TopKEstimator estimator = new TopKEstimator(30, 0.99999);
         assertEquals(200, estimator.estimateExactK(200, 1), 0.0);
         assertEquals(200, estimator.estimateK(200, 1));
@@ -39,7 +40,7 @@ public class TopKEstimatorTest {
     }
 
     @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K20() {
+    void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K20() {
         TopKEstimator estimator = new TopKEstimator(30, 0.99999);
         assertEquals(20, estimator.estimateExactK(20, 1), 0.0);
         assertEquals(20, estimator.estimateK(20, 1));
@@ -50,7 +51,7 @@ public class TopKEstimatorTest {
     }
 
     @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K10_Five9() {
+    void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K10_Five9() {
         TopKEstimator estimator = new TopKEstimator(30, 0.99999);
         assertEquals(10, estimator.estimateExactK(10, 1), 0.0);
         assertEquals(10, estimator.estimateK(10, 1));
@@ -61,7 +62,7 @@ public class TopKEstimatorTest {
     }
 
     @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K10_Four9() {
+    void requireHitsAreEstimatedAccordingToPartitionsAndProbabilityForVaryingN_K10_Four9() {
         TopKEstimator estimator = new TopKEstimator(30, 0.9999);
         assertEquals(10, estimator.estimateExactK(10, 1), 0.0);
         assertEquals(10, estimator.estimateK(10, 1));
@@ -72,21 +73,21 @@ public class TopKEstimatorTest {
     }
 
     @Test
-    public void requireEstimatesAreRoundeUp() {
+    void requireEstimatesAreRoundeUp() {
         TopKEstimator estimator = new TopKEstimator(30, 0.9999);
         assertEquals(5.794676146031378, estimator.estimateExactK(10, 10), 0.0);
         assertEquals(6, estimator.estimateK(10, 10));
     }
 
     @Test
-    public void requireEstimatesAreCappedAtInputK() {
+    void requireEstimatesAreCappedAtInputK() {
         TopKEstimator estimator = new TopKEstimator(30, 0.9999);
         assertEquals(12.087323848369289, estimator.estimateExactK(10, 2), 0.0);
         assertEquals(10, estimator.estimateK(10, 2));
     }
 
     @Test
-    public void requireThatLargeKAreSane() {
+    void requireThatLargeKAreSane() {
         System.out.println(dumpProbability(10, 0.05));
         TopKEstimator idealEstimator = new TopKEstimator(30, 0.9999);
         TopKEstimator skewedEstimator = new TopKEstimator(30, 0.9999, 0.05);
@@ -100,23 +101,23 @@ public class TopKEstimatorTest {
 
         String expected =
                 "Prob/Hits: 1.0000000000 0.9999000000 0.9999900000 0.9999990000 0.9999999000 0.9999999900 0.9999999990 0.9999999999\n" +
-                "       10:       10.000        6.000        7.000        8.000        9.000       10.000       10.000       10.000\n" +
-                "       20:       10.000        4.500        5.000        5.500        6.500        7.000        7.500        8.000\n" +
-                "       40:       10.000        3.500        4.000        4.250        4.750        5.250        5.500        6.000\n" +
-                "       80:       10.000        2.750        3.000        3.250        3.625        3.875        4.250        4.500\n" +
-                "      100:       10.000        2.600        2.800        3.100        3.300        3.600        3.900        4.200\n" +
-                "      200:       10.000        2.100        2.250        2.450        2.650        2.800        3.000        3.200\n" +
-                "      400:       10.000        1.775        1.900        2.025        2.150        2.275        2.425        2.575\n" +
-                "      800:       10.000        1.538        1.625        1.713        1.813        1.900        2.000        2.100\n" +
-                "     1000:       10.000        1.480        1.560        1.640        1.720        1.810        1.890        1.990\n" +
-                "     2000:       10.000        1.340        1.395        1.450        1.510        1.570        1.630        1.695\n" +
-                "     4000:       10.000        1.240        1.280        1.320        1.360        1.403        1.445        1.493\n" +
-                "     8000:       10.000        1.170        1.198        1.225        1.254        1.284        1.315        1.348\n" +
-                "    10000:       10.000        1.152        1.177        1.202        1.227        1.254        1.282        1.311\n" +
-                "    20000:       10.000        1.108        1.125        1.143        1.161        1.180        1.199        1.220\n" +
-                "    40000:       10.000        1.076        1.088        1.101        1.114        1.127        1.141        1.156\n" +
-                "    80000:       10.000        1.054        1.062        1.071        1.080        1.090        1.100        1.110\n" +
-                "   100000:       10.000        1.048        1.056        1.064        1.072        1.080        1.089        1.098\n";
+                        "       10:       10.000        6.000        7.000        8.000        9.000       10.000       10.000       10.000\n" +
+                        "       20:       10.000        4.500        5.000        5.500        6.500        7.000        7.500        8.000\n" +
+                        "       40:       10.000        3.500        4.000        4.250        4.750        5.250        5.500        6.000\n" +
+                        "       80:       10.000        2.750        3.000        3.250        3.625        3.875        4.250        4.500\n" +
+                        "      100:       10.000        2.600        2.800        3.100        3.300        3.600        3.900        4.200\n" +
+                        "      200:       10.000        2.100        2.250        2.450        2.650        2.800        3.000        3.200\n" +
+                        "      400:       10.000        1.775        1.900        2.025        2.150        2.275        2.425        2.575\n" +
+                        "      800:       10.000        1.538        1.625        1.713        1.813        1.900        2.000        2.100\n" +
+                        "     1000:       10.000        1.480        1.560        1.640        1.720        1.810        1.890        1.990\n" +
+                        "     2000:       10.000        1.340        1.395        1.450        1.510        1.570        1.630        1.695\n" +
+                        "     4000:       10.000        1.240        1.280        1.320        1.360        1.403        1.445        1.493\n" +
+                        "     8000:       10.000        1.170        1.198        1.225        1.254        1.284        1.315        1.348\n" +
+                        "    10000:       10.000        1.152        1.177        1.202        1.227        1.254        1.282        1.311\n" +
+                        "    20000:       10.000        1.108        1.125        1.143        1.161        1.180        1.199        1.220\n" +
+                        "    40000:       10.000        1.076        1.088        1.101        1.114        1.127        1.141        1.156\n" +
+                        "    80000:       10.000        1.054        1.062        1.071        1.080        1.090        1.100        1.110\n" +
+                        "   100000:       10.000        1.048        1.056        1.064        1.072        1.080        1.089        1.098\n";
         assertEquals(expected, dumpProbability(10, 0.0));
         String expectedSkew =
                 "Prob/Hits: 1.0000000000 0.9999000000 0.9999900000 0.9999990000 0.9999999000 0.9999999900 0.9999999990 0.9999999999\n" +

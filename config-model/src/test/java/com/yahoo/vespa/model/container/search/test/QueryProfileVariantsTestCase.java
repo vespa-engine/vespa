@@ -6,13 +6,13 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.logging.Level;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -22,45 +22,45 @@ public class QueryProfileVariantsTestCase {
     private final String root = "src/test/java/com/yahoo/vespa/model/container/search/test/";
 
     @Test
-    public void testConfigCreation() throws IOException {
+    void testConfigCreation() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "queryprofilevariants");
         QueryProfiles profiles = new QueryProfiles(registry, new SilentDeployLogger());
         assertSerializedConfigFileEquals(root + "query-profile-variants-configuration.cfg", profiles.getConfig().toString());
     }
 
     @Test
-    public void testConfigCreation2() throws IOException {
+    void testConfigCreation2() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/vespa/model/container/search/test/queryprofilevariants2");
         QueryProfiles profiles = new QueryProfiles(registry, new SilentDeployLogger());
         assertSerializedConfigFileEquals(root + "query-profile-variants2-configuration.cfg", profiles.getConfig().toString());
     }
 
     @Test
-    public void testConfigCreationNewsBESimple() throws IOException {
+    void testConfigCreationNewsBESimple() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "newsbesimple");
         QueryProfiles profiles = new QueryProfiles(registry, new SilentDeployLogger());
         assertSerializedConfigFileEquals(root + "newsbe-query-profiles-simple.cfg", profiles.getConfig().toString());
     }
 
     @Test
-    public void testConfigCreationNewsFESimple() throws IOException {
+    void testConfigCreationNewsFESimple() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "newsfesimple");
         QueryProfiles profiles = new QueryProfiles(registry, new SilentDeployLogger());
         assertSerializedConfigFileEquals(root + "newsfe-query-profiles-simple.cfg", profiles.getConfig().toString());
     }
 
     @Test
-    public void testVariantsOfExplicitCompound() throws IOException {
+    void testVariantsOfExplicitCompound() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
         QueryProfile a1 = new QueryProfile("a1");
         a1.set("b", "a1.b", registry);
 
         QueryProfile profile = new QueryProfile("test");
-        profile.setDimensions(new String[] {"x"});
+        profile.setDimensions(new String[]{"x"});
         profile.set("a", a1, registry);
-        profile.set("a.b", "a.b.x1", new String[] {"x1"}, registry);
-        profile.set("a.b", "a.b.x2", new String[] {"x2"}, registry);
+        profile.set("a.b", "a.b.x1", new String[]{"x1"}, registry);
+        profile.set("a.b", "a.b.x2", new String[]{"x2"}, registry);
 
         registry.register(a1);
         registry.register(profile);
@@ -70,7 +70,7 @@ public class QueryProfileVariantsTestCase {
     }
 
     @Test
-    public void testVariantsOfExplicitCompoundWithVariantReference() throws IOException {
+    void testVariantsOfExplicitCompoundWithVariantReference() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
         QueryProfile a1 = new QueryProfile("a1");
@@ -80,11 +80,11 @@ public class QueryProfileVariantsTestCase {
         a2.set("b", "a2.b", registry);
 
         QueryProfile profile = new QueryProfile("test");
-        profile.setDimensions(new String[] {"x"});
+        profile.setDimensions(new String[]{"x"});
         profile.set("a", a1, registry);
-        profile.set("a", a2, new String[] {"x1"}, registry);
-        profile.set("a.b", "a.b.x1", new String[] {"x1"}, registry);
-        profile.set("a.b", "a.b.x2", new String[] {"x2"}, registry);
+        profile.set("a", a2, new String[]{"x1"}, registry);
+        profile.set("a.b", "a.b.x1", new String[]{"x1"}, registry);
+        profile.set("a.b", "a.b.x2", new String[]{"x2"}, registry);
 
         registry.register(a1);
         registry.register(a2);
@@ -96,7 +96,7 @@ public class QueryProfileVariantsTestCase {
 
     /** For comparison with the above */
     @Test
-    public void testExplicitReferenceOverride() throws IOException {
+    void testExplicitReferenceOverride() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
         QueryProfile a1 = new QueryProfile("a1");

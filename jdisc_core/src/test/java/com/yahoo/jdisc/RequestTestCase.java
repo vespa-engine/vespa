@@ -12,19 +12,19 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 public class RequestTestCase {
 
     @Test
-    public void requireThatAccessorsWork() throws BindingSetNotFoundException {
+    void requireThatAccessorsWork() throws BindingSetNotFoundException {
         MyTimer timer = new MyTimer();
         timer.currentTime = 69;
 
@@ -58,7 +58,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatCancelWorks() {
+    void requireThatCancelWorks() {
         MyTimer timer = new MyTimer();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
         Request request = newRequest(driver);
@@ -70,7 +70,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatDefaultTimeoutIsInfinite() {
+    void requireThatDefaultTimeoutIsInfinite() {
         MyTimer timer = new MyTimer();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
         Request request = newRequest(driver);
@@ -84,7 +84,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatTimeRemainingUsesTimer() {
+    void requireThatTimeRemainingUsesTimer() {
         MyTimer timer = new MyTimer();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
         Request request = newRequest(driver);
@@ -93,14 +93,14 @@ public class RequestTestCase {
              ++timer.currentTime)
         {
             assertEquals(request.getTimeout(TimeUnit.MILLISECONDS) - timer.currentTime,
-                         request.timeRemaining(TimeUnit.MILLISECONDS).longValue());
+                    request.timeRemaining(TimeUnit.MILLISECONDS).longValue());
         }
         request.release();
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatTimeoutCausesCancel() {
+    void requireThatTimeoutCausesCancel() {
         MyTimer timer = new MyTimer();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
         Request request = newRequest(driver);
@@ -113,7 +113,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatCancelIsTrueIfParentIsCancelled() {
+    void requireThatCancelIsTrueIfParentIsCancelled() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         Request parent = newRequest(driver);
         Request child = new Request(parent, URI.create("http://localhost/"));
@@ -125,7 +125,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatDestroyReleasesContainer() {
+    void requireThatDestroyReleasesContainer() {
         final MyContainer container = new MyContainer();
         Request request = new Request(new CurrentContainer() {
 
@@ -140,7 +140,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatServerConnectResolvesToServerBinding() {
+    void requireThatServerConnectResolvesToServerBinding() {
         MyContainer container = new MyContainer();
         Request request = new Request(container, URI.create("http://localhost/"));
         request.connect(new MyResponseHandler());
@@ -149,7 +149,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatClientConnectResolvesToClientBinding() {
+    void requireThatClientConnectResolvesToClientBinding() {
         MyContainer container = new MyContainer();
         Request serverReq = new Request(container, URI.create("http://localhost/"));
         Request clientReq = new Request(serverReq, URI.create("http://localhost/"));
@@ -159,7 +159,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatNullTimeoutManagerThrowsException() {
+    void requireThatNullTimeoutManagerThrowsException() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         Request request = newRequest(driver);
 
@@ -175,7 +175,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatTimeoutManagerCanNotBeReplaced() {
+    void requireThatTimeoutManagerCanNotBeReplaced() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         Request request = newRequest(driver);
 
@@ -193,7 +193,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatSetTimeoutCallsTimeoutManager() {
+    void requireThatSetTimeoutCallsTimeoutManager() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         Request request = newRequest(driver);
 
@@ -207,7 +207,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatSetTimeoutManagerPropagatesCurrentTimeout() {
+    void requireThatSetTimeoutManagerPropagatesCurrentTimeout() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         Request request = newRequest(driver);
 
@@ -221,7 +221,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatUriIsNormalized() {
+    void requireThatUriIsNormalized() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
 

@@ -2,14 +2,14 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 public class FieldsetTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void testRankProfiles() throws IOException, ParseException {
+    void testRankProfiles() throws IOException, ParseException {
         assertCorrectDeriving("fieldset");
     }
 

@@ -8,12 +8,12 @@ import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class RankPropertiesTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testRankPropertyInheritance() throws ParseException {
+    void testRankPropertyInheritance() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(joinLines(
@@ -69,16 +69,17 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
 
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(schema, "child"),
-                                                         new LargeRankExpressions(new MockFileRegistry()),
-                                                         new QueryProfileRegistry(),
-                                                         new ImportedMlModels(),
-                                                         attributeFields,
-                                                         new TestProperties());
+                    new LargeRankExpressions(new MockFileRegistry()),
+                    new QueryProfileRegistry(),
+                    new ImportedMlModels(),
+                    attributeFields,
+                    new TestProperties());
             assertEquals("(query(a), 2000)", rawChild.configProperties().get(0).toString());
         }
     }
+
     @Test
-    public void testRankProfileMutate() throws ParseException {
+    void testRankProfileMutate() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(joinLines(

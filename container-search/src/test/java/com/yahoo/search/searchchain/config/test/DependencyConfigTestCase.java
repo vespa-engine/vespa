@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import com.yahoo.component.chain.dependencies.After;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.dependencies.Provides;
@@ -17,11 +19,9 @@ import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Tony Vaagenes
@@ -34,14 +34,14 @@ public class DependencyConfigTestCase {
 
     public static final String root = "src/test/java/com/yahoo/search/searchchain/config/test/dependencyConfig";
 
-    @BeforeClass
+    @BeforeAll
     public static void createComponentsConfig() throws IOException {
         SearchChainConfigurerTestCase.
                 createComponentsConfig(root + "/chains.cfg", root + "/handlers.cfg", root + "/components.cfg");
         setUp();
     }
 
-    @AfterClass
+    @AfterAll
     public static void removeComponentsConfig() {
         new File(root + "/components.cfg").delete();
         tearDown();
@@ -69,7 +69,7 @@ public class DependencyConfigTestCase {
     }
 
     @Test
-    public void test() {
+    void test() {
         Dependencies dependencies = registry.getSearcherRegistry().getComponent(Searcher1.class.getName()).getDependencies();
 
         assertTrue(dependencies.provides().containsAll(Arrays.asList("P", "P1", "P2", Searcher1.class.getSimpleName())));

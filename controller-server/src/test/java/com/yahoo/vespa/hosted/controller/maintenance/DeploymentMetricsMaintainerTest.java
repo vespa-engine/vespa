@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author smorgrav
@@ -35,7 +35,7 @@ public class DeploymentMetricsMaintainerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void updates_metrics() {
+    void updates_metrics() {
         var application = tester.newDeploymentContext();
         application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
 
@@ -46,17 +46,17 @@ public class DeploymentMetricsMaintainerTest {
         // No metrics gathered yet
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
-        assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
-        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
-        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
+        assertFalse(deployment.get().metrics().instant().isPresent(), "No timestamp set");
+        assertFalse(deployment.get().activity().lastQueried().isPresent(), "Never received any queries");
+        assertFalse(deployment.get().activity().lastWritten().isPresent(), "Never received any writes");
 
         // Metrics are gathered and saved to application
         application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
-                              ClusterMetrics.FEED_PER_SECOND, 2D,
-                              ClusterMetrics.DOCUMENT_COUNT, 3D,
-                              ClusterMetrics.QUERY_LATENCY, 4D,
-                              ClusterMetrics.FEED_LATENCY, 5D);
+                ClusterMetrics.FEED_PER_SECOND, 2D,
+                ClusterMetrics.DOCUMENT_COUNT, 3D,
+                ClusterMetrics.QUERY_LATENCY, 4D,
+                ClusterMetrics.FEED_LATENCY, 5D);
         setMetrics(application.application().id().defaultInstance(), metrics0);
         maintainer.maintain();
         Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
@@ -107,7 +107,7 @@ public class DeploymentMetricsMaintainerTest {
     }
 
     @Test
-    public void cluster_metric_aggregation_test() {
+    void cluster_metric_aggregation_test() {
         List<ClusterMetrics> clusterMetrics = List.of(
                 new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0), Map.of()),
                 new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0), Map.of()));

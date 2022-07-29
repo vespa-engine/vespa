@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertSame;
 public class ReadableContentChannelTestCase {
 
     @Test
-    public void requireThatWriteNullThrowsException() {
+    void requireThatWriteNullThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         try {
             content.write(null, new MyCompletion());
@@ -34,7 +34,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWriteAfterCloseThrowsException() {
+    void requireThatWriteAfterCloseThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.close(null);
         try {
@@ -46,7 +46,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWriteAfterFailedThrowsException() {
+    void requireThatWriteAfterFailedThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.failed(new RuntimeException());
         try {
@@ -58,7 +58,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseAfterCloseThrowsException() {
+    void requireThatCloseAfterCloseThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.close(null);
         try {
@@ -70,7 +70,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseAfterFailedThrowsException() {
+    void requireThatCloseAfterFailedThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.failed(new RuntimeException());
         try {
@@ -82,7 +82,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatFailedAfterFailedThrowsException() {
+    void requireThatFailedAfterFailedThrowsException() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.failed(new RuntimeException());
         try {
@@ -94,7 +94,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatIteratorDoesNotSupportRemove() {
+    void requireThatIteratorDoesNotSupportRemove() {
         try {
             new ReadableContentChannel().iterator().remove();
             fail();
@@ -104,7 +104,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWrittenBufferCanBeRead() {
+    void requireThatWrittenBufferCanBeRead() {
         ReadableContentChannel content = new ReadableContentChannel();
         ByteBuffer buf = ByteBuffer.allocate(69);
         content.write(buf, null);
@@ -112,7 +112,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWrittenBuffersAreReadInOrder() {
+    void requireThatWrittenBuffersAreReadInOrder() {
         ReadableContentChannel content = new ReadableContentChannel();
         ByteBuffer foo = ByteBuffer.allocate(69);
         content.write(foo, null);
@@ -124,7 +124,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatReadAfterCloseIsNull() {
+    void requireThatReadAfterCloseIsNull() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.close(null);
         assertNull(content.read());
@@ -132,7 +132,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWrittenBufferCanBeReadByIterator() {
+    void requireThatWrittenBufferCanBeReadByIterator() {
         ReadableContentChannel content = new ReadableContentChannel();
         ByteBuffer foo = ByteBuffer.allocate(69);
         content.write(foo, null);
@@ -155,7 +155,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatReadAfterFailedIsNull() {
+    void requireThatReadAfterFailedIsNull() {
         ReadableContentChannel content = new ReadableContentChannel();
         content.failed(new RuntimeException());
         assertNull(content.read());
@@ -163,7 +163,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatReadCallsCompletion() {
+    void requireThatReadCallsCompletion() {
         ReadableContentChannel content = new ReadableContentChannel();
         ByteBuffer buf = ByteBuffer.allocate(69);
         MyCompletion completion = new MyCompletion();
@@ -180,7 +180,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatReadWaitsForWrite() throws Exception {
+    void requireThatReadWaitsForWrite() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         ReadableContentChannel content = new ReadableContentChannel();
         Future<ByteBuffer> readBuf = executor.submit(new ReadTask(content));
@@ -196,7 +196,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseNotifiesRead() throws Exception {
+    void requireThatCloseNotifiesRead() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         ReadableContentChannel content = new ReadableContentChannel();
         Future<ByteBuffer> buf = executor.submit(new ReadTask(content));
@@ -211,7 +211,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatFailedNotifiesRead() throws Exception {
+    void requireThatFailedNotifiesRead() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         ReadableContentChannel content = new ReadableContentChannel();
         Future<ByteBuffer> buf = executor.submit(new ReadTask(content));
@@ -226,7 +226,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatFailedCallsPendingCompletions() {
+    void requireThatFailedCallsPendingCompletions() {
         MyCompletion foo = new MyCompletion();
         MyCompletion bar = new MyCompletion();
         ReadableContentChannel content = new ReadableContentChannel();
@@ -239,10 +239,10 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatAvailableIsNotBlocking() {
+    void requireThatAvailableIsNotBlocking() {
         ReadableContentChannel content = new ReadableContentChannel();
         assertEquals(0, content.available());
-        ByteBuffer buf = ByteBuffer.wrap(new byte[] { 6, 9 });
+        ByteBuffer buf = ByteBuffer.wrap(new byte[]{6, 9});
         content.write(buf, null);
         assertTrue(content.available() > 0);
         assertSame(buf, content.read());
@@ -253,7 +253,7 @@ public class ReadableContentChannelTestCase {
     }
 
     @Test
-    public void requireThatContentIsThreadSafe() {
+    void requireThatContentIsThreadSafe() {
         ExecutorService executor = Executors.newFixedThreadPool(100);
         for (int run = 0; run < 69; ++run) {
             List<ByteBuffer> bufs = new LinkedList<>();

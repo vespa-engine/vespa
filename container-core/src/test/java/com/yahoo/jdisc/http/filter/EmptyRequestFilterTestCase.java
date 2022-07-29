@@ -6,14 +6,14 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.chain.EmptyRequestFilter;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static com.yahoo.jdisc.http.HttpRequest.Version;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 public class EmptyRequestFilterTestCase {
 
     @Test
-    public void requireThatEmptyFilterDoesNothing() throws Exception {
+    void requireThatEmptyFilterDoesNothing() throws Exception {
         final HttpRequest lhs = newRequest(Method.GET, "/status.html", Version.HTTP_1_1);
         final HttpRequest rhs = newRequest(Method.GET, "/status.html", Version.HTTP_1_1);
 

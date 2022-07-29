@@ -6,8 +6,8 @@ import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
-import junit.framework.AssertionFailedError;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,9 +16,9 @@ import java.util.Optional;
 import java.util.Random;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author ollivir
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class LoadBalancerTest {
 
     @Test
-    public void requireThatLoadBalancerServesSingleNodeSetups() {
+    void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
@@ -39,7 +39,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireThatLoadBalancerServesMultiGroupSetups() {
+    void requireThatLoadBalancerServesMultiGroupSetups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
@@ -53,7 +53,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireThatLoadBalancerServesClusteredGroups() {
+    void requireThatLoadBalancerServesClusteredGroups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 0);
         Node n3 = new Node(0, "test-node3", 1);
@@ -66,10 +66,10 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireThatLoadBalancerReturnsDifferentGroups() {
+    void requireThatLoadBalancerReturnsDifferentGroups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null,null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         // get first group
@@ -86,7 +86,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireCorrectAverageSearchTimeDecay() {
+    void requireCorrectAverageSearchTimeDecay() {
         final double delta = 0.00001;
 
         GroupStatus gs = newGroupStatus(1);
@@ -115,7 +115,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireEqualDistributionInFlatWeightListWithAdaptiveScheduler() {
+    void requireEqualDistributionInFlatWeightListWithAdaptiveScheduler() {
         List<GroupStatus> scoreboard = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             scoreboard.add(newGroupStatus(i));
@@ -134,7 +134,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requireThatAdaptiveSchedulerObeysWeights() {
+    void requireThatAdaptiveSchedulerObeysWeights() {
         List<GroupStatus> scoreboard = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             GroupStatus gs = newGroupStatus(i);

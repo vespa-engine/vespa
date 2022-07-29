@@ -3,9 +3,9 @@ package com.yahoo.vespastat;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,7 +24,7 @@ public class BucketStatsPrinterTest {
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final String bucketSpace = "default";
 
-    @Before
+    @BeforeEach
     public void mockBucketStatsRetriever() throws BucketStatsException {
         retriever = mock(BucketStatsRetriever.class);
         when(retriever.getBucketIdForType(any(), any())).thenReturn(new BucketId(0x42));
@@ -32,7 +32,7 @@ public class BucketStatsPrinterTest {
         when(retriever.retrieveBucketStats(any(), any(), any(), any())).thenReturn("");
     }
 
-    @After
+    @AfterEach
     public void resetOutputMock() {
         out.reset();
     }
@@ -50,7 +50,7 @@ public class BucketStatsPrinterTest {
     }
 
     @Test
-    public void testShouldPrintBucketIdForUserAndGroup() throws BucketStatsException {
+    void testShouldPrintBucketIdForUserAndGroup() throws BucketStatsException {
         String output = retreiveAndPrintBucketStats(ClientParameters.SelectionType.USER, "1234", false);
         assertTrue(output.contains("Generated 32-bit bucket id"));
 
@@ -59,13 +59,13 @@ public class BucketStatsPrinterTest {
     }
 
     @Test
-    public void testShouldPrintWarningIfBucketListEmpty() throws BucketStatsException {
+    void testShouldPrintWarningIfBucketListEmpty() throws BucketStatsException {
         String output = retreiveAndPrintBucketStats(ClientParameters.SelectionType.USER, "1234", false);
         assertTrue(output.contains("No actual files were stored for this bucket"));
     }
 
     @Test
-    public void testShouldPrintBucketList() throws BucketStatsException {
+    void testShouldPrintBucketList() throws BucketStatsException {
         List<GetBucketListReply.BucketInfo> bucketList = new ArrayList<>();
         String dummyInfoString = "dummyinformation";
         bucketList.add(new GetBucketListReply.BucketInfo(new BucketId(0), dummyInfoString));
@@ -76,7 +76,7 @@ public class BucketStatsPrinterTest {
     }
 
     @Test
-    public void testShouldPrintBucketStats() throws BucketStatsException {
+    void testShouldPrintBucketStats() throws BucketStatsException {
         String dummyBucketStats = "dummystats";
         GetBucketListReply.BucketInfo bucketInfo = new GetBucketListReply.BucketInfo(new BucketId(0), "dummy");
         when(retriever.retrieveBucketList(any(), any())).thenReturn(Collections.singletonList(bucketInfo));

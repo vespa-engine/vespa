@@ -5,7 +5,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.system;
 import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jonmv
@@ -75,65 +75,65 @@ public class TestPackageTest {
     }
 
     @Test
-    public void testBundleValidation() throws IOException {
+    void testBundleValidation() throws IOException {
         byte[] testZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "StagingSetup", "ProductionTest"),
-                                                            "artifacts/key", new byte[0]));
+                "artifacts/key", new byte[0]));
         TestSummary summary = validateTests(List.of(system), testZip);
 
         assertEquals(List.of(system, staging_setup, production), summary.suites());
         assertEquals(List.of("test package contains 'artifacts/key'; this conflicts with credentials used to run tests in Vespa Cloud",
-                             "test package has staging setup, so it should also include staging tests",
-                             "test package has production tests, but no production tests are declared in deployment.xml",
-                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                     summary.problems());
+                        "test package has staging setup, so it should also include staging tests",
+                        "test package has production tests, but no production tests are declared in deployment.xml",
+                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                summary.problems());
     }
 
     @Test
-    public void testFatTestsValidation() {
+    void testFatTestsValidation() {
         byte[] testZip = ApplicationPackage.filesZip(Map.of("artifacts/foo-tests.jar", new byte[0]));
         TestSummary summary = validateTests(List.of(staging, production), testZip);
 
         assertEquals(List.of(staging, production), summary.suites());
         assertEquals(List.of("test package has staging tests, so it should also include staging setup",
-                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                     summary.problems());
+                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                summary.problems());
     }
 
     @Test
-    public void testBasicTestsValidation() {
+    void testBasicTestsValidation() {
         byte[] testZip = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0],
-                                                            "tests/staging-setup/foo.json", new byte[0]));
+                "tests/staging-setup/foo.json", new byte[0]));
         TestSummary summary = validateTests(List.of(system, production), testZip);
         assertEquals(List.of(staging_setup, staging), summary.suites());
         assertEquals(List.of("test package has no system tests, but <test /> is declared in deployment.xml",
-                             "test package has no production tests, but production tests are declared in deployment.xml",
-                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                     summary.problems());
+                        "test package has no production tests, but production tests are declared in deployment.xml",
+                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                summary.problems());
     }
 
     @Test
-    public void generates_correct_tester_flavor() {
+    void generates_correct_tester_flavor() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                                                     "    <instance id='first'>\n" +
-                                                     "        <test tester-flavor=\"d-6-16-100\" />\n" +
-                                                     "        <prod>\n" +
-                                                     "            <region active=\"true\">us-west-1</region>\n" +
-                                                     "            <test>us-west-1</test>\n" +
-                                                     "        </prod>\n" +
-                                                     "    </instance>\n" +
-                                                     "    <instance id='second'>\n" +
-                                                     "        <test />\n" +
-                                                     "        <staging />\n" +
-                                                     "        <prod tester-flavor=\"d-6-16-100\">\n" +
-                                                     "            <parallel>\n" +
-                                                     "                <region active=\"true\">us-east-3</region>\n" +
-                                                     "                <region active=\"true\">us-central-1</region>\n" +
-                                                     "            </parallel>\n" +
-                                                     "            <region active=\"true\">us-west-1</region>\n" +
-                                                     "            <test>us-west-1</test>\n" +
-                                                     "        </prod>\n" +
-                                                     "    </instance>\n" +
-                                                     "</deployment>\n");
+                "    <instance id='first'>\n" +
+                "        <test tester-flavor=\"d-6-16-100\" />\n" +
+                "        <prod>\n" +
+                "            <region active=\"true\">us-west-1</region>\n" +
+                "            <test>us-west-1</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "    <instance id='second'>\n" +
+                "        <test />\n" +
+                "        <staging />\n" +
+                "        <prod tester-flavor=\"d-6-16-100\">\n" +
+                "            <parallel>\n" +
+                "                <region active=\"true\">us-east-3</region>\n" +
+                "                <region active=\"true\">us-central-1</region>\n" +
+                "            </parallel>\n" +
+                "            <region active=\"true\">us-west-1</region>\n" +
+                "            <test>us-west-1</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "</deployment>\n");
 
         NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
         assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES, firstResources);
@@ -145,13 +145,13 @@ public class TestPackageTest {
     }
 
     @Test
-    public void generates_correct_services_xml() throws IOException {
+    void generates_correct_services_xml() throws IOException {
         assertEquals(Files.readString(Paths.get("src/test/resources/test_runner_services.xml-cd")),
-                     new String(TestPackage.servicesXml(true,
-                                                        false,
-                                                        new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
-                                                        new ControllerConfig.Steprunner.Testerapp.Builder().build()),
-                                UTF_8));
+                new String(TestPackage.servicesXml(true,
+                                false,
+                                new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
+                                new ControllerConfig.Steprunner.Testerapp.Builder().build()),
+                        UTF_8));
     }
 
 }

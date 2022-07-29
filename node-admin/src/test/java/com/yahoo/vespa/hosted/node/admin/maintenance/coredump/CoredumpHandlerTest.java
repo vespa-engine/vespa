@@ -9,8 +9,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -59,7 +58,7 @@ public class CoredumpHandlerTest {
 
 
     @Test
-    public void coredump_enqueue_test() throws IOException {
+    void coredump_enqueue_test() throws IOException {
         ContainerPath crashPath = context.paths().of("/some/crash/path");
         ContainerPath processingDir = context.paths().of("/some/other/processing");
 
@@ -93,7 +92,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void enqueue_with_hs_err_files() throws IOException {
+    void enqueue_with_hs_err_files() throws IOException {
         ContainerPath crashPath = context.paths().of("/some/crash/path");
         ContainerPath processingDir = context.paths().of("/some/other/processing");
         Files.createDirectories(crashPath);
@@ -114,7 +113,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void coredump_to_process_test() throws IOException {
+    void coredump_to_process_test() throws IOException {
         ContainerPath processingDir = context.paths().of("/some/other/processing");
 
         // Initially there are no core dumps
@@ -138,7 +137,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void get_metadata_test() throws IOException {
+    void get_metadata_test() throws IOException {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("bin_path", "/bin/bash");
         metadata.put("backtrace", List.of("call 1", "function 2", "something something"));
@@ -174,21 +173,25 @@ public class CoredumpHandlerTest {
         verify(coreCollector, times(1)).collect(any(), any());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void cant_get_metadata_if_no_core_file() throws IOException {
-        coredumpHandler.getMetadata(context, context.paths().of("/fake/path"), Map::of);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void fails_to_get_core_file_if_only_compressed() throws IOException {
-        ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
-        Files.createDirectories(coredumpDirectory);
-        Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.zstd"));
-        coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
+    @Test
+    void cant_get_metadata_if_no_core_file() throws IOException {
+        assertThrows(IllegalStateException.class, () -> {
+            coredumpHandler.getMetadata(context, context.paths().of("/fake/path"), Map::of);
+        });
     }
 
     @Test
-    public void process_single_coredump_test() throws IOException {
+    void fails_to_get_core_file_if_only_compressed() throws IOException {
+        assertThrows(IllegalStateException.class, () -> {
+            ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
+            Files.createDirectories(coredumpDirectory);
+            Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.zstd"));
+            coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
+        });
+    }
+
+    @Test
+    void process_single_coredump_test() throws IOException {
         ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.write(coredumpDirectory.resolve("metadata.json"), "metadata".getBytes());
@@ -204,7 +207,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void report_enqueued_and_processed_metrics() throws IOException {
+    void report_enqueued_and_processed_metrics() throws IOException {
         Path processingPath = containerCrashPath.resolve("processing");
         Files.createFile(containerCrashPath.resolve("dump-1"));
         Files.createFile(containerCrashPath.resolve("dump-2"));
@@ -225,7 +228,7 @@ public class CoredumpHandlerTest {
         assertEquals(1, values.get("coredumps.processed").intValue());
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         Files.createDirectories(containerCrashPath.pathOnHost());
     }

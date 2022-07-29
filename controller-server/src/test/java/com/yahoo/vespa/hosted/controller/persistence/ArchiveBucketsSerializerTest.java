@@ -3,16 +3,16 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArchiveBucketsSerializerTest {
 
     @Test
-    public void serdes() {
+    void serdes() {
         var testTenants = new LinkedHashSet<TenantName>();
         testTenants.add(TenantName.from("tenant1"));
         testTenants.add(TenantName.from("tenant2"));

@@ -4,7 +4,7 @@ package com.yahoo.jdisc.application;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.test.NonWorkingRequestHandler;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -14,12 +14,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 public class BindingSetTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://host/foo"), foo);
@@ -51,7 +51,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatSimpleResolutionWorks() {
+    void requireThatSimpleResolutionWorks() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://host/foo"), foo);
@@ -72,7 +72,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPatternResolutionWorks() {
+    void requireThatPatternResolutionWorks() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://host/*"), foo);
@@ -94,7 +94,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPatternResolutionWorksForWildCards() {
+    void requireThatPatternResolutionWorksForWildCards() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://host:*/bar"), foo);
@@ -125,7 +125,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPatternResolutionWorksForFilters() {
+    void requireThatPatternResolutionWorksForFilters() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://*/filtered/*"), foo);
@@ -139,7 +139,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeSplitCanBeBoundForSchemes() {
+    void requireThatTreeSplitCanBeBoundForSchemes() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler httpfoo = new NonWorkingRequestHandler();
         RequestHandler httpsfoo = new NonWorkingRequestHandler();
@@ -152,7 +152,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeSplitCanBeBoundForHosts() {
+    void requireThatTreeSplitCanBeBoundForHosts() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler foobar = new NonWorkingRequestHandler();
@@ -165,7 +165,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeSplitCanBeBoundForPorts() {
+    void requireThatTreeSplitCanBeBoundForPorts() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo8080 = new NonWorkingRequestHandler();
         RequestHandler foo80 = new NonWorkingRequestHandler();
@@ -181,7 +181,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeSplitCanBeBoundForPaths() {
+    void requireThatTreeSplitCanBeBoundForPaths() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler foobar = new NonWorkingRequestHandler();
@@ -194,7 +194,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeSplitCanBeBoundForWildcards() {
+    void requireThatTreeSplitCanBeBoundForWildcards() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo8080 = new NonWorkingRequestHandler();
         RequestHandler foo80 = new NonWorkingRequestHandler();
@@ -213,7 +213,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeWorksForURIWithQueryOrFragments() {
+    void requireThatTreeWorksForURIWithQueryOrFragments() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         handlers.put(new UriPattern("http://*/application/v1/session"), foo);
@@ -226,7 +226,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatTreeWorksForURIWithPathWildCards() {
+    void requireThatTreeWorksForURIWithPathWildCards() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler foo1 = new NonWorkingRequestHandler();
@@ -303,7 +303,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPathOverPortWorks() {
+    void requireThatPathOverPortWorks() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler applicationStatus = new NonWorkingRequestHandler();
         RequestHandler search = new NonWorkingRequestHandler();
@@ -327,7 +327,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPathOverPortsDoNotWorkOverStricterPatterns() {
+    void requireThatPathOverPortsDoNotWorkOverStricterPatterns() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler bar = new NonWorkingRequestHandler();
@@ -339,7 +339,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatSchemeOrderOverHost() {
+    void requireThatSchemeOrderOverHost() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler bar = new NonWorkingRequestHandler();
@@ -352,7 +352,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPortsAreOrdered() {
+    void requireThatPortsAreOrdered() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler bar = new NonWorkingRequestHandler();
@@ -370,7 +370,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatPathsAreOrdered() {
+    void requireThatPathsAreOrdered() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler bar = new NonWorkingRequestHandler();
@@ -388,7 +388,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatStrictPatternsOrderBeforeWildcards() {
+    void requireThatStrictPatternsOrderBeforeWildcards() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
 
         RequestHandler fooScheme = new NonWorkingRequestHandler();
@@ -436,7 +436,7 @@ public class BindingSetTestCase {
     }
 
     @Test
-    public void requireThatToStringMethodWorks() {
+    void requireThatToStringMethodWorks() {
         Map<UriPattern, RequestHandler> handlers = new LinkedHashMap<>();
         RequestHandler foo = new NonWorkingRequestHandler();
         RequestHandler bar = new NonWorkingRequestHandler();
@@ -449,7 +449,7 @@ public class BindingSetTestCase {
 
 
     @Test
-    public void requireThatPatternsAreOrderedMoreSpecificToLess() {
+    void requireThatPatternsAreOrderedMoreSpecificToLess() {
         assertOrder("3://host/path", "2://host/path", "1://host/path");
         assertOrder("http://3/path", "http://2/path", "http://1/path");
         assertOrder("http://host:3/path", "http://host:2/path", "http://host:1/path");
@@ -459,19 +459,19 @@ public class BindingSetTestCase {
         assertOrder("http://host:*/3", "http://host:2/2", "http://host:1/1");
         assertOrder("http://host/*/3/2/", "http://host/*/1/2", "http://host/*/2/*");
         assertOrder("http://host:69/path",
-                    "http://host/*",
-                    "http://*:69/path",
-                    "http://*/path",
-                    "http://*:69/*",
-                    "http://*/*",
-                    "*://host/path",
-                    "*://*/path",
-                    "*://*/*");
+                "http://host/*",
+                "http://*:69/path",
+                "http://*/path",
+                "http://*:69/*",
+                "http://*/*",
+                "*://host/path",
+                "*://*/path",
+                "*://*/*");
         assertOrder("http://*/HelloWorld",
-                    "http://*:4080/state/v1/*",
-                    "http://*:4083/*",
-                    "http://*:4081/*",
-                    "http://*:4080/*");
+                "http://*:4080/state/v1/*",
+                "http://*:4083/*",
+                "http://*:4081/*",
+                "http://*:4080/*");
     }
 
     private static void assertOrder(String... expected) {

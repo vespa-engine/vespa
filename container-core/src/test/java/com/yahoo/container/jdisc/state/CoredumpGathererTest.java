@@ -2,12 +2,12 @@
 package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -16,12 +16,12 @@ import static org.junit.Assert.assertEquals;
 public class CoredumpGathererTest {
 
     @Test
-    public void finds_one_coredump()  {
-    JsonNode packet = CoredumpGatherer.gatherCoredumpMetrics(new MockFileWrapper());
+    void finds_one_coredump()  {
+        JsonNode packet = CoredumpGatherer.gatherCoredumpMetrics(new MockFileWrapper());
 
-    assertEquals("system-coredumps-processing", packet.get("application").textValue());
-    assertEquals(1, packet.get("status_code").intValue());
-    assertEquals("Found 1 coredump(s)", packet.get("status_msg").textValue());
+        assertEquals("system-coredumps-processing", packet.get("application").textValue());
+        assertEquals(1, packet.get("status_code").intValue());
+        assertEquals("Found 1 coredump(s)", packet.get("status_msg").textValue());
 
     }
 

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class BufferedContentChannelTestCase {
 
     @Test
-    public void requireThatIsConnectedWorks() {
+    void requireThatIsConnectedWorks() {
         MyContent target = new MyContent();
         BufferedContentChannel content = new BufferedContentChannel();
         assertFalse(content.isConnected());
@@ -30,7 +30,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatConnectToNullThrowsException() {
+    void requireThatConnectToNullThrowsException() {
         BufferedContentChannel content = new BufferedContentChannel();
         try {
             content.connectTo(null);
@@ -41,7 +41,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWriteAfterCloseThrowsException() {
+    void requireThatWriteAfterCloseThrowsException() {
         BufferedContentChannel content = new BufferedContentChannel();
         content.close(null);
         try {
@@ -53,7 +53,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseAfterCloseThrowsException() {
+    void requireThatCloseAfterCloseThrowsException() {
         BufferedContentChannel content = new BufferedContentChannel();
         content.close(null);
         try {
@@ -65,7 +65,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatConnecToAfterConnecToThrowsException() {
+    void requireThatConnecToAfterConnecToThrowsException() {
         BufferedContentChannel content = new BufferedContentChannel();
         content.connectTo(new MyContent());
         try {
@@ -77,7 +77,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWriteBeforeConnectToWritesToTarget() {
+    void requireThatWriteBeforeConnectToWritesToTarget() {
         BufferedContentChannel content = new BufferedContentChannel();
         ByteBuffer buf = ByteBuffer.allocate(69);
         MyCompletion completion = new MyCompletion();
@@ -89,7 +89,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatWriteAfterConnectToWritesToTarget() {
+    void requireThatWriteAfterConnectToWritesToTarget() {
         MyContent target = new MyContent();
         BufferedContentChannel content = new BufferedContentChannel();
         content.connectTo(target);
@@ -101,7 +101,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseBeforeConnectToClosesTarget() {
+    void requireThatCloseBeforeConnectToClosesTarget() {
         BufferedContentChannel content = new BufferedContentChannel();
         MyCompletion completion = new MyCompletion();
         content.close(completion);
@@ -112,7 +112,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatCloseAfterConnectToClosesTarget() {
+    void requireThatCloseAfterConnectToClosesTarget() {
         MyContent target = new MyContent();
         BufferedContentChannel content = new BufferedContentChannel();
         content.connectTo(target);
@@ -123,7 +123,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatIsConnectedIsTrueWhenConnectedBeforeClose() {
+    void requireThatIsConnectedIsTrueWhenConnectedBeforeClose() {
         BufferedContentChannel content = new BufferedContentChannel();
         assertFalse(content.isConnected());
         content.connectTo(new MyContent());
@@ -133,7 +133,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatIsConnectedIsTrueWhenClosedBeforeConnected() {
+    void requireThatIsConnectedIsTrueWhenClosedBeforeConnected() {
         BufferedContentChannel content = new BufferedContentChannel();
         assertFalse(content.isConnected());
         content.close(null);
@@ -143,7 +143,7 @@ public class BufferedContentChannelTestCase {
     }
 
     @Test
-    public void requireThatContentIsThreadSafe() throws Exception {
+    void requireThatContentIsThreadSafe() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(101);
         for (int run = 0; run < 69; ++run) {
             List<ByteBuffer> bufs = new LinkedList<>();

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yahoo.component.ComponentId;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
@@ -16,9 +18,7 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class ClusterSearcherTestCase {
 
@@ -144,26 +144,26 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testSimple() {
+    void testSimple() {
         Hit blockingHit = new Hit("blocking");
         Hit nonblockingHit = new Hit("nonblocking");
         BlockingBackendSearcher blockingSearcher  = new BlockingBackendSearcher(blockingHit);
-        List<Searcher> searchers=new ArrayList<>();
+        List<Searcher> searchers = new ArrayList<>();
         searchers.add(blockingSearcher);
         searchers.add(new TestingBackendSearcher(nonblockingHit));
-        ClusterSearcher<?> provider = new SearcherClusterSearcher(new ComponentId("simple"),searchers,new SimpleHasher<>());
+        ClusterSearcher<?> provider = new SearcherClusterSearcher(new ComponentId("simple"), searchers, new SimpleHasher<>());
 
         Result blockingResult = new Execution(provider, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals(blockingHit,blockingResult.hits().get(0));
+        assertEquals(blockingHit, blockingResult.hits().get(0));
         Result nonblockingResult = new Execution(provider, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals(nonblockingHit,nonblockingResult.hits().get(0));
+        assertEquals(nonblockingHit, nonblockingResult.hits().get(0));
 
         blockingSearcher.setBlocking(true);
 
         blockingResult = new Execution(provider, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals(blockingResult.hits().get(0),nonblockingHit);
+        assertEquals(blockingResult.hits().get(0), nonblockingHit);
         nonblockingResult = new Execution(provider, Execution.Context.createContextStub()).search(new SimpleQuery(1));
-        assertEquals(nonblockingResult.hits().get(0),nonblockingHit);
+        assertEquals(nonblockingResult.hits().get(0), nonblockingHit);
     }
 
 }

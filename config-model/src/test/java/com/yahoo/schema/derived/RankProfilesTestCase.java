@@ -3,7 +3,7 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public class RankProfilesTestCase extends AbstractExportingTestCase {
     @Test
-    public void testRankProfiles() throws IOException, ParseException {
+    void testRankProfiles() throws IOException, ParseException {
         assertCorrectDeriving("rankprofiles", null, new TestProperties(), new TestableDeployLogger());
     }
 }

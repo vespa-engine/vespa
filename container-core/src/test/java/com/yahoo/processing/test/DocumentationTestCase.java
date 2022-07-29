@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.test;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
@@ -24,7 +23,7 @@ public class DocumentationTestCase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public final void test() {
+    final void test() {
         Processor p = new ExampleProcessor();
         Chain<Processor> basic = new Chain<>(p);
         Processor initiator = new AsyncDataProcessingInitiator(basic);

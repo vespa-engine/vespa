@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class ZipBuilderTest {
 
     @Test
-    public void test() {
+    void test() {
         Map<String, String> expected = new HashMap<>();
         expected.put("dir/myfile", "my content");
         expected.put("rootfile", "this is root");

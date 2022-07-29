@@ -16,7 +16,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -27,12 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SlimeSummaryTestCase {
 
@@ -43,7 +38,7 @@ public class SlimeSummaryTestCase {
     private static final String partial_summary3_cf = cf_pre + "partial-summary3.cfg";
 
     @Test
-    public void testDecodingEmpty() {
+    void testDecodingEmpty() {
         DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertNull(docsum.lazyDecode("default", emptySummary(), hit));
@@ -69,23 +64,23 @@ public class SlimeSummaryTestCase {
     }
 
     @Test
-    public void testTimeout() {
+    void testTimeout() {
         DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance 0.0) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
-                     docsum.lazyDecode("default", timeoutSummary(), hit));
+                docsum.lazyDecode("default", timeoutSummary(), hit));
     }
 
     @Test
-    public void testDecoding() {
+    void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
         Tensor tensor2 = Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:-0.3}");
         DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertNull(docsum.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
         assertEquals(4, hit.getField("integer_field"));
-        assertEquals((short)2, hit.getField("short_field"));
-        assertEquals((byte)1, hit.getField("byte_field"));
+        assertEquals((short) 2, hit.getField("short_field"));
+        assertEquals((byte) 1, hit.getField("byte_field"));
         assertEquals(4.5F, hit.getField("float_field"));
         assertEquals(8.75, hit.getField("double_field"));
         assertEquals(8L, hit.getField("int64_field"));
@@ -117,7 +112,7 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor2, hit.getField("tensor_field2"));
         FeatureData featureData = hit.features();
         assertEquals("double_feature,rankingExpression(tensor1_feature),tensor2_feature",
-                     featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
+                featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
         assertEquals(0.5, featureData.getDouble("double_feature"), 0.00000001);
         assertEquals(tensor1, featureData.getTensor("tensor1_feature"));
         assertEquals(tensor1, featureData.getTensor("rankingExpression(tensor1_feature)"));
@@ -125,7 +120,7 @@ public class SlimeSummaryTestCase {
     }
 
     @Test
-    public void testFieldAccessAPI() {
+    void testFieldAccessAPI() {
         DocsumDefinitionSet partialDocsum1 = createPartialDocsumDefinitionSet1();
         DocsumDefinitionSet partialDocsum2 = createPartialDocsumDefinitionSet2();
         DocsumDefinitionSet partialDocsum3 = createPartialDocsumDefinitionSet3();
@@ -253,8 +248,8 @@ public class SlimeSummaryTestCase {
         Tensor tensor2 = Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:-0.3}");
         assertNull(fullDocsum.lazyDecode("default", fullishSummary(tensor1, tensor2), hit));
         expected.put("integer_field", 4);
-        expected.put("short_field", (short)2);
-        expected.put("byte_field", (byte)1);
+        expected.put("short_field", (short) 2);
+        expected.put("byte_field", (byte) 1);
         expected.put("float_field", 4.5f);
         expected.put("double_field", 8.75d);
         expected.put("int64_field", 8L);
@@ -303,7 +298,7 @@ public class SlimeSummaryTestCase {
         for (Iterator<String> i = hit.fieldKeys().iterator(); i.hasNext(); ) {
             fieldNameIteratorFieldCount++;
             String name = i.next();
-            assertTrue("Expected field " + name, expected.containsKey(name));
+            assertTrue(expected.containsKey(name), "Expected field " + name);
         }
         assertEquals(expected.size(), fieldNameIteratorFieldCount);
         // fieldKeys
@@ -324,11 +319,10 @@ public class SlimeSummaryTestCase {
     }
 
     private void assertEqualMaps(Map<String, Object> expected, Map<String, Object> actual) {
-        assertEquals("Map sizes", expected.size(), actual.size());
-        assertEquals("Keys", expected.keySet(), actual.keySet());
+        assertEquals(expected.size(), actual.size(), "Map sizes");
+        assertEquals(expected.keySet(), actual.keySet(), "Keys");
         for (var expectedEntry : expected.entrySet()) {
-            assertEquals("Key '" + expectedEntry.getKey() + "'",
-                         expectedEntry.getValue(), actual.get(expectedEntry.getKey()));
+            assertEquals(expectedEntry.getValue(), actual.get(expectedEntry.getKey()), "Key '" + expectedEntry.getKey() + "'");
         }
     }
 

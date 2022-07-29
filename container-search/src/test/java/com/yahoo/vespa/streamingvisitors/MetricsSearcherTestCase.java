@@ -9,11 +9,9 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vdslib.VisitorStatistics;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Carlin
@@ -36,12 +34,12 @@ public class MetricsSearcherTestCase {
             assertEquals("news:0", result.hits().get(0).getId().toString());
         } else {
             assertNotNull(result.hits().getError());
-            assertTrue("Expected '" + message + "' to be contained in '"
-                    + result.hits().getErrorHit().errors().iterator().next().getMessage() + "'",
-                    result.hits().getErrorHit().errors().iterator().next().getMessage().contains(message));
-            assertTrue("Expected '" + detailedMessage + "' to be contained in '"
-                    + result.hits().getErrorHit().errors().iterator().next().getDetailedMessage() + "'",
-                    result.hits().getErrorHit().errors().iterator().next().getDetailedMessage().contains(detailedMessage));
+            assertTrue(result.hits().getErrorHit().errors().iterator().next().getMessage().contains(message),
+                    "Expected '" + message + "' to be contained in '"
+                    + result.hits().getErrorHit().errors().iterator().next().getMessage() + "'");
+            assertTrue(result.hits().getErrorHit().errors().iterator().next().getDetailedMessage().contains(detailedMessage),
+                    "Expected '" + detailedMessage + "' to be contained in '"
+                    + result.hits().getErrorHit().errors().iterator().next().getDetailedMessage() + "'");
         }
 
         if (metricParam == null) {
@@ -77,21 +75,21 @@ public class MetricsSearcherTestCase {
     }
 
     @Test
-    public void testBasics() {
+    void testBasics() {
         // Start counting at -1 since count is reset upon the first query by MetricsSearcher.search
         expStatsLt1.count--;
-        String[] loadTypes = { LOADTYPE1, LOADTYPE2};
+        String[] loadTypes = {LOADTYPE1, LOADTYPE2};
         for (String loadType : loadTypes) {
-            verifySearch("streaming.loadtype="+loadType, null, null);
-            verifySearch("metricsearcher.id="+loadType, null, null);
+            verifySearch("streaming.loadtype=" + loadType, null, null);
+            verifySearch("metricsearcher.id=" + loadType, null, null);
             verifySearch(null, null, null);
-            verifySearch("streaming.loadtype="+loadType, "Backend communication error", "Detailed error message");
+            verifySearch("streaming.loadtype=" + loadType, "Backend communication error", "Detailed error message");
         }
 
     }
 
     @Test
-    public void searcherDoesNotTryToDereferenceNullQueryContext() {
+    void searcherDoesNotTryToDereferenceNullQueryContext() {
         backend.setImplicitlyCreateContext(false);
         // This will crash with an NPE if the searcher does not cope with null
         // query contexts.

@@ -5,11 +5,11 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Correct casing for derived attributes
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class CasingTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testCasing() throws IOException, ParseException {
+    void testCasing() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/casing.sd");
         assertEquals(schema.getIndex("color").getName(), "color");
         assertEquals(schema.getIndex("Foo").getName(), "Foo");

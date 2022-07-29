@@ -7,10 +7,10 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author gjoranv
@@ -47,13 +47,13 @@ public class GenericConfigTest {
                 "</services>";
     }
 
-    @Before
+    @BeforeEach
     public void getVespaModel() {
         model = (new VespaModelCreatorWithMockPkg(ContentBaseTest.getHosts(), servicesXml(), ApplicationPackageUtils.generateSchemas("type1"))).create();
     }
 
     @Test
-    public void config_override_on_root_is_visible_on_storage_cluster() {
+    void config_override_on_root_is_visible_on_storage_cluster() {
         StorageCluster cluster = model.getContentClusters().get("storage").getStorageCluster();
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
@@ -61,7 +61,7 @@ public class GenericConfigTest {
     }
 
     @Test
-    public void config_override_on_root_is_visible_on_content_cluster() {
+    void config_override_on_root_is_visible_on_content_cluster() {
         ContentCluster cluster = model.getContentClusters().get("storage");
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());

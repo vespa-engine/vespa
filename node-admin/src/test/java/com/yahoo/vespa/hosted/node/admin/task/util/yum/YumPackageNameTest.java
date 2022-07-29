@@ -1,14 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hakonhall
@@ -16,7 +13,7 @@ import static org.junit.Assert.fail;
 public class YumPackageNameTest {
 
     @Test
-    public void testBuilder() {
+    void testBuilder() {
         YumPackageName yumPackage = new YumPackageName.Builder("docker")
                 .setEpoch("2")
                 .setVersion("1.12.6")
@@ -27,7 +24,7 @@ public class YumPackageNameTest {
     }
 
     @Test
-    public void testAllValidFormats() {
+    void testAllValidFormats() {
         // name
         verifyPackageName(
                 "docker-engine-selinux",
@@ -63,13 +60,13 @@ public class YumPackageNameTest {
 
         // name-ver
         verifyPackageName("docker-engine-selinux-1.12.6",
-                          null,
-                          "docker-engine-selinux",
-                          "1.12.6",
-                          null,
-                          null,
-                          "docker-engine-selinux-0:1.12.6",
-                          null);
+                null,
+                "docker-engine-selinux",
+                "1.12.6",
+                null,
+                null,
+                "docker-engine-selinux-0:1.12.6",
+                null);
 
         // name-ver-rel
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7",
@@ -135,9 +132,9 @@ public class YumPackageNameTest {
                 yumPackageName.toVersionLockName();
                 fail();
             } catch (IllegalStateException e) {
-                assertTrue("Exception message contains expected substring: " + e.getMessage(),
-                           e.getMessage().contains("Version is missing ") ||
-                           e.getMessage().contains("Release is missing "));
+                assertTrue(e.getMessage().contains("Version is missing ") ||
+                           e.getMessage().contains("Release is missing "),
+                           "Exception message contains expected substring: " + e.getMessage());
             }
         } else {
             assertEquals(toVersionName, yumPackageName.toVersionLockName());
@@ -146,28 +143,28 @@ public class YumPackageNameTest {
 
     private void assertPackageField(String field, String expected, Optional<String> actual) {
         if (expected == null) {
-            assertFalse(field + " is not present", actual.isPresent());
+            assertFalse(actual.isPresent(), field + " is not present");
         } else {
-            assertEquals(field + " has expected value", expected, actual.get());
+            assertEquals(expected, actual.get(), field + " has expected value");
         }
     }
 
     @Test
-    public void testArchitectures() {
+    void testArchitectures() {
         assertEquals("x86_64", YumPackageName.fromString("docker.x86_64").getArchitecture().get());
         assertEquals("i686", YumPackageName.fromString("docker.i686").getArchitecture().get());
         assertEquals("noarch", YumPackageName.fromString("docker.noarch").getArchitecture().get());
     }
 
     @Test
-    public void unrecognizedArchitectureGetsGobbledUp() {
+    void unrecognizedArchitectureGetsGobbledUp() {
         YumPackageName packageName = YumPackageName.fromString("docker-engine-selinux-1.12.6-1.el7.i486");
         // This is not a great feature - please use YumPackageName.Builder instead.
         assertEquals("1.el7.i486", packageName.getRelease().get());
     }
 
     @Test
-    public void failParsingOfPackageNameWithEpochAndArchitecture() {
+    void failParsingOfPackageNameWithEpochAndArchitecture() {
         try {
             YumPackageName.fromString("epoch:docker-engine-selinux-1.12.6-1.el7.x86_64");
             fail();
@@ -177,7 +174,7 @@ public class YumPackageNameTest {
     }
 
     @Test
-    public void testSubset() {
+    void testSubset() {
         YumPackageName yumPackage = new YumPackageName.Builder("docker")
                 .setVersion("1.12.6")
                 .build();

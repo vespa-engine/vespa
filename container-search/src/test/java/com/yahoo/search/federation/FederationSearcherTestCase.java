@@ -19,17 +19,13 @@ import com.yahoo.search.test.QueryTestCase;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for federation searcher. The searcher is also tested in
@@ -60,13 +56,13 @@ public class FederationSearcherTestCase {
     private FederationConfig.Builder builder;
     private SearchChainRegistry chainRegistry;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         builder = new FederationConfig.Builder();
         chainRegistry = new SearchChainRegistry();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         builder = null;
         chainRegistry = null;
@@ -93,7 +89,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testQueryProfileNestedReferencing() {
+    void testQueryProfileNestedReferencing() {
         addChained(new MockSearcher(), "mySource1");
         addChained(new MockSearcher(), "mySource2");
         Chain<Searcher> mainChain = new Chain<>("default", createFederationSearcher());
@@ -110,7 +106,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testTraceTwoSources() {
+    void testTraceTwoSources() {
         Chain<Searcher> mainChain = twoTracingSources(false);
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1"));
@@ -148,7 +144,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testTraceOneSourceNoCloning() {
+    void testTraceOneSourceNoCloning() {
         Chain<Searcher> mainChain = twoTracingSources(true);
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1&sources=source1"));
@@ -163,7 +159,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testTraceOneSourceWithCloning() {
+    void testTraceOneSourceWithCloning() {
         Chain<Searcher> mainChain = twoTracingSources(false);
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1&sources=source1"));
@@ -179,7 +175,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testPropertyPropagation() {
+    void testPropertyPropagation() {
         Result result = searchWithPropertyPropagation();
 
         assertEquals("source:mySource1", result.hits().get(0).getId().stringValue());
@@ -210,7 +206,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testTopLevelHitGroupFieldPropagation() {
+    void testTopLevelHitGroupFieldPropagation() {
         addChained(new MockSearcher(), "mySource1");
         addChained(new AnotherMockSearcher(), "mySource2");
         Chain<Searcher> mainChain = new Chain<>("default", createFederationSearcher());
@@ -256,7 +252,7 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testProviderSelectionFromQueryProperties() {
+    void testProviderSelectionFromQueryProperties() {
         SearchChainRegistry registry = new SearchChainRegistry();
         registry.register(new Chain<>("provider1", new MockProvider("provider1")));
         registry.register(new Chain<>("provider2", new MockProvider("provider2")));

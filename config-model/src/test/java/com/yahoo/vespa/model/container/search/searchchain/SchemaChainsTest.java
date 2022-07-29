@@ -6,11 +6,11 @@ import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.vespa.defaults.Defaults;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -23,7 +23,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
 
     private ClusterConfig clusterConfig;
 
-    @Before
+    @BeforeEach
     public void subscribe() {
         ClusterConfig.Builder clusterBuilder = new ClusterConfig.Builder();
         clusterBuilder = (ClusterConfig.Builder)root.getConfig(clusterBuilder, "searchchains/chain/cluster2/component/" + ClusterSearcher.class.getName());
@@ -70,13 +70,13 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
     }
 
     @Test
-    public void require_that_source_chain_spec_id_is_namespaced_in_provider_id() {
+    void require_that_source_chain_spec_id_is_namespaced_in_provider_id() {
         Source source = (Source) getSearchChains().allChains().getComponent("source:1@provider:1");
         assertEquals(ComponentId.fromString("provider:1"), source.getChainSpecification().componentId.getNamespace());
     }
 
     @Test
-    public void validateLocalProviderConfig() {
+    void validateLocalProviderConfig() {
         assertEquals(2, clusterConfig.clusterId());
         assertEquals("cluster2", clusterConfig.clusterName());
     }

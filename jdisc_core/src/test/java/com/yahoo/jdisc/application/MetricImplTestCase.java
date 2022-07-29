@@ -5,7 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yahoo.jdisc.Metric;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,8 +14,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -24,13 +24,13 @@ import static org.junit.Assert.assertTrue;
 public class MetricImplTestCase {
 
     @Test
-    public void requireThatClassIsInjectedByDefault() {
+    void requireThatClassIsInjectedByDefault() {
         Metric metric = Guice.createInjector().getInstance(Metric.class);
         assertTrue(metric instanceof MetricImpl);
     }
 
     @Test
-    public void requireThatConsumerIsOptional() {
+    void requireThatConsumerIsOptional() {
         Injector injector = Guice.createInjector();
         Metric metric = injector.getInstance(Metric.class);
         metric.set("foo", 6, null);
@@ -38,7 +38,7 @@ public class MetricImplTestCase {
     }
 
     @Test
-    public void requireThatConsumerIsCalled() throws InterruptedException {
+    void requireThatConsumerIsCalled() throws InterruptedException {
         final MyConsumer consumer = new MyConsumer();
         Injector injector = Guice.createInjector(new AbstractModule() {
 
@@ -57,7 +57,7 @@ public class MetricImplTestCase {
     }
 
     @Test
-    public void requireThatWorkerMetricHasPrecedence() throws InterruptedException {
+    void requireThatWorkerMetricHasPrecedence() throws InterruptedException {
         final MyConsumer globalConsumer = new MyConsumer();
         Injector injector = Guice.createInjector(new AbstractModule() {
 

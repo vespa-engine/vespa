@@ -11,9 +11,9 @@ import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -23,10 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the NodeRepository class used for talking to the node repository. It uses a mock from the node repository
@@ -54,7 +51,7 @@ public class RealNodeRepositoryTest {
      *   {@link NodesV2ApiHandler}
      * These classes define some test data that is used in these tests.
      */
-    @Before
+    @BeforeEach
     public void startContainer() throws Exception {
         Exception lastException = null;
 
@@ -89,7 +86,7 @@ public class RealNodeRepositoryTest {
         throw new RuntimeException("Could not get answer from container.");
     }
 
-    @After
+    @AfterEach
     public void stopContainer() {
         if (container != null) {
             container.close();
@@ -97,7 +94,7 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainersToRunApi() {
+    void testGetContainersToRunApi() {
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
@@ -114,7 +111,7 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainer() {
+    void testGetContainer() {
         String hostname = "host4.yahoo.com";
         Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertTrue(node.isPresent());
@@ -122,14 +119,14 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainerForNonExistingNode() {
+    void testGetContainerForNonExistingNode() {
         String hostname = "host-that-does-not-exist";
         Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertFalse(node.isPresent());
     }
 
     @Test
-    public void testUpdateNodeAttributes() {
+    void testUpdateNodeAttributes() {
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -139,7 +136,7 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testMarkAsReady() {
+    void testMarkAsReady() {
         nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.dirty);
         nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.ready);
 
@@ -159,13 +156,13 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testAddNodes() {
+    void testAddNodes() {
         AddNode host = AddNode.forHost("host123.domain.tld",
-                                       "id1",
-                                       "default",
-                                       Optional.of(FlavorOverrides.ofDisk(123)),
-                                       NodeType.confighost,
-                                       Set.of("::1"), Set.of("::2", "::3"));
+                "id1",
+                "default",
+                Optional.of(FlavorOverrides.ofDisk(123)),
+                NodeType.confighost,
+                Set.of("::1"), Set.of("::2", "::3"));
 
         NodeResources nodeResources = new NodeResources(1, 2, 3, 4, NodeResources.DiskSpeed.slow, NodeResources.StorageType.local);
         AddNode node = AddNode.forNode("host123-1.domain.tld", "id1", "host123.domain.tld", nodeResources, NodeType.config, Set.of("::2", "::3"));

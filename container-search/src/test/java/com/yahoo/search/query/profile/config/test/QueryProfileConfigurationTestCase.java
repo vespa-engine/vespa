@@ -7,15 +7,13 @@ import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
@@ -25,9 +23,9 @@ public class QueryProfileConfigurationTestCase {
     public final String CONFIG_DIR ="src/test/java/com/yahoo/search/query/profile/config/test/";
 
     @Test
-    public void testConfiguration() {
+    void testConfiguration() {
         var profile = QueryProfileConfigurer.createFromConfigId("file:" + CONFIG_DIR + "query-profiles-configuration.cfg")
-                                            .getComponent("default");
+                .getComponent("default");
 
         assertEquals("a-value", profile.get("a"));
         assertEquals("b-value", profile.get("b"));
@@ -43,9 +41,9 @@ public class QueryProfileConfigurationTestCase {
     }
 
     @Test
-    public void testBug3197426() {
+    void testBug3197426() {
         var profile = QueryProfileConfigurer.createFromConfigId("file:" + CONFIG_DIR + "bug3197426.cfg")
-                                            .getComponent("default").compile(null);
+                .getComponent("default").compile(null);
 
         Map<String, Object> properties = new QueryProfileProperties(profile).listProperties("source.image");
         assertEquals("yes", properties.get("mlr"));
@@ -63,42 +61,42 @@ public class QueryProfileConfigurationTestCase {
     }
 
     @Test
-    public void testVariantConfiguration() {
+    void testVariantConfiguration() {
         var registry = QueryProfileConfigurer.createFromConfigId("file:" + CONFIG_DIR + "query-profile-variants-configuration.cfg");
 
         // Variant 1
         QueryProfile variants1 = registry.getComponent("variants1");
-        assertGet("x1.y1.a", "a", new String[] { "x1","y1" }, variants1);
-        assertGet("x1.y1.b", "b", new String[] { "x1","y1" }, variants1);
-        assertGet("x1.y?.a", "a", new String[] { "x1","zz" }, variants1);
-        assertGet("x?.y1.a", "a", new String[] { "zz","y1" }, variants1);
-        assertGet("a-deflt", "a", new String[] { "z1","z2" }, variants1);
+        assertGet("x1.y1.a", "a", new String[]{"x1", "y1"}, variants1);
+        assertGet("x1.y1.b", "b", new String[]{"x1", "y1"}, variants1);
+        assertGet("x1.y?.a", "a", new String[]{"x1", "zz"}, variants1);
+        assertGet("x?.y1.a", "a", new String[]{"zz", "y1"}, variants1);
+        assertGet("a-deflt", "a", new String[]{"z1", "z2"}, variants1);
         // ...inherited
-        assertGet("parent1-value", "parent1", new String[] { "x1","y1" }, variants1);
-        assertGet("parent2-value", "parent2", new String[] { "x1","y1" }, variants1);
-        assertGet(null, "parent1", new String[] { "x1","y2" }, variants1);
-        assertGet(null, "parent2", new String[] { "x1","y2" }, variants1);
+        assertGet("parent1-value", "parent1", new String[]{"x1", "y1"}, variants1);
+        assertGet("parent2-value", "parent2", new String[]{"x1", "y1"}, variants1);
+        assertGet(null, "parent1", new String[]{"x1", "y2"}, variants1);
+        assertGet(null, "parent2", new String[]{"x1", "y2"}, variants1);
 
         // Variant 2
         QueryProfile variants2 = registry.getComponent("variants2");
-        assertGet("variant2:y1.c", "c", new String[] { "*","y1" }, variants2);
-        assertGet("variant2:y2.c", "c", new String[] { "*","y2" }, variants2);
-        assertGet("variant2:c-df", "c", new String[] { "*","z1" }, variants2);
-        assertGet("variant2:c-df", "c", new String[] {          }, variants2);
-        assertGet("variant2:c-df", "c", new String[] { "*"      }, variants2);
-        assertGet(null,            "d", new String[] { "*","y1" }, variants2);
+        assertGet("variant2:y1.c", "c", new String[]{"*", "y1"}, variants2);
+        assertGet("variant2:y2.c", "c", new String[]{"*", "y2"}, variants2);
+        assertGet("variant2:c-df", "c", new String[]{"*", "z1"}, variants2);
+        assertGet("variant2:c-df", "c", new String[]{          }, variants2);
+        assertGet("variant2:c-df", "c", new String[]{"*"      }, variants2);
+        assertGet(null,            "d", new String[]{"*", "y1"}, variants2);
 
         // Reference following from variant 1
-        assertGet("variant2:y1.c", "toVariants.c", new String[] { "**", "y1" } , variants1);
-        assertGet("variant3:c-df", "toVariants.c", new String[] { "x1", "**" } , variants1);
-        assertGet("variant3:y1.c", "toVariants.c", new String[] { "x1", "y1" } , variants1); // variant3 by order priority
-        assertGet("variant3:y2.c", "toVariants.c", new String[] { "x1", "y2" } , variants1);
+        assertGet("variant2:y1.c", "toVariants.c", new String[]{"**", "y1"}, variants1);
+        assertGet("variant3:c-df", "toVariants.c", new String[]{"x1", "**"}, variants1);
+        assertGet("variant3:y1.c", "toVariants.c", new String[]{"x1", "y1"}, variants1); // variant3 by order priority
+        assertGet("variant3:y2.c", "toVariants.c", new String[]{"x1", "y2"}, variants1);
     }
 
     @Test
-    public void testVariantConfigurationThroughQueryLookup() {
+    void testVariantConfigurationThroughQueryLookup() {
         var registry = QueryProfileConfigurer.createFromConfigId("file:" + CONFIG_DIR + "query-profile-variants-configuration.cfg")
-                                             .compile();
+                .compile();
 
         CompiledQueryProfile variants1 = registry.getComponent("variants1");
 
@@ -107,7 +105,7 @@ public class QueryProfileConfigurationTestCase {
         assertEquals("x1.y1.b", new Query(QueryTestCase.httpEncode("?query=foo&x=x1&y=y1"), variants1).properties().get("b"));
         assertEquals("x1.y1.defaultIndex", new Query(QueryTestCase.httpEncode("?query=foo&x=x1&y=y1"), variants1).getModel().getDefaultIndex());
         assertEquals("x1.y?.a", new Query(QueryTestCase.httpEncode("?query=foo&x=x1&y=zz"), variants1).properties().get("a"));
-        assertEquals("x1.y?.defaultIndex", new Query(QueryTestCase.httpEncode("?query=foo&x=x1&y=zz"),variants1).getModel().getDefaultIndex());
+        assertEquals("x1.y?.defaultIndex", new Query(QueryTestCase.httpEncode("?query=foo&x=x1&y=zz"), variants1).getModel().getDefaultIndex());
         assertEquals("x?.y1.a", new Query(QueryTestCase.httpEncode("?query=foo&x=zz&y=y1"), variants1).properties().get("a"));
         assertEquals("x?.y1.defaultIndex", new Query(QueryTestCase.httpEncode("?query=foo&x=zz&y=y1"), variants1).getModel().getDefaultIndex());
         assertEquals("x?.y1.filter", new Query(QueryTestCase.httpEncode("?query=foo&x=zz&y=y1"), variants1).getModel().getFilter());
@@ -130,14 +128,14 @@ public class QueryProfileConfigurationTestCase {
     }
 
     @Test
-    public void testVariant2ConfigurationThroughQueryLookup() {
+    void testVariant2ConfigurationThroughQueryLookup() {
         final double delta = 0.0000001;
 
         var registry = QueryProfileConfigurer.createFromConfigId("file:" + CONFIG_DIR + "query-profile-variants2.cfg")
-                                             .compile();
+                .compile();
 
         Query query = new Query(QueryTestCase.httpEncode("?query=heh&queryProfile=multi&myindex=default&myquery=lo ve&tracelevel=5"),
-                                registry.findQueryProfile("multi"));
+                registry.findQueryProfile("multi"));
         assertEquals("love", query.properties().get("model.queryString"));
         assertEquals("default", query.properties().get("model.defaultIndex"));
 
@@ -152,8 +150,7 @@ public class QueryProfileConfigurationTestCase {
         Map<String, String> context = new HashMap<>();
         for (int i = 0; i<dimensionValues.length; i++)
             context.put(profile.getVariants().getDimensions().get(i), dimensionValues[i]); // Lookup dim. names to ease test...
-        assertEquals("Looking up '" + parameter + "' for '" + Arrays.toString(dimensionValues) + "'",
-                     expectedValue, profile.get(parameter, context, null));
+        assertEquals(expectedValue, profile.get(parameter, context, null), "Looking up '" + parameter + "' for '" + Arrays.toString(dimensionValues) + "'");
     }
 
 }

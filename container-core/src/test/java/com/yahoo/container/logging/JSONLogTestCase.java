@@ -2,7 +2,7 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.yolean.trace.TraceNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,35 +41,36 @@ public class JSONLogTestCase {
     }
 
     @Test
-    public void test_json_log_entry() {
+    void test_json_log_entry() {
         RequestLogEntry entry = newRequestLogEntry("test").build();
 
-         String expectedOutput =
-            "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
-            "\"time\":920880005.023," +
-            "\"duration\":0.122," +
-            "\"responsesize\":9875," +
-            "\"requestsize\":0," +
-            "\"code\":200," +
-            "\"method\":\"GET\"," +
-            "\"uri\":\"?query=test\"," +
-            "\"version\":\"HTTP/1.1\"," +
-            "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-            "\"host\":\"localhost\"," +
-            "\"scheme\":null," +
-            "\"localport\":0," +
-            "\"search\":{" +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
-            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
-            "}" +
-            "}";
+        String expectedOutput =
+                "{\"ip\":\"152.200.54.243\"," +
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                        "}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
     }
+
     @Test
-    public void test_json_of_trace() {
+    void test_json_of_trace() {
         TraceNode root = new TraceNode("root", 7);
         RequestLogEntry entry = newRequestLogEntry("test")
                 .traceNode(root)
@@ -77,31 +78,32 @@ public class JSONLogTestCase {
 
         String expectedOutput =
                 "{\"ip\":\"152.200.54.243\"," +
-                "\"peeraddr\":\"152.200.54.243\"," +
-                "\"time\":920880005.023," +
-                "\"duration\":0.122," +
-                "\"responsesize\":9875," +
-                "\"requestsize\":0," +
-                "\"code\":200," +
-                "\"method\":\"GET\"," +
-                "\"uri\":\"?query=test\"," +
-                "\"version\":\"HTTP/1.1\"," +
-                "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-                "\"host\":\"localhost\"," +
-                "\"scheme\":null," +
-                "\"localport\":0," +
-                "\"trace\":{\"timestamp\":0,\"message\":\"root\"}," +
-                "\"search\":{" +
-                "\"totalhits\":1234," +
-                "\"hits\":0," +
-                "\"coverage\":{\"coverage\":100,\"documents\":100}" +
-                "}" +
-                "}";
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"trace\":{\"timestamp\":0,\"message\":\"root\"}," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                        "}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
     }
+
     @Test
-    public void test_with_keyvalues() {
+    void test_with_keyvalues() {
         RequestLogEntry entry = newRequestLogEntry("test")
                 .addExtraAttribute("singlevalue", "value1")
                 .addExtraAttribute("multivalue", "value2")
@@ -109,62 +111,62 @@ public class JSONLogTestCase {
                 .build();
 
         String expectedOutput =
-            "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
-            "\"time\":920880005.023," +
-            "\"duration\":0.122," +
-            "\"responsesize\":9875," +
-            "\"requestsize\":0," +
-            "\"code\":200," +
-            "\"method\":\"GET\"," +
-            "\"uri\":\"?query=test\"," +
-            "\"version\":\"HTTP/1.1\"," +
-            "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-            "\"host\":\"localhost\"," +
-            "\"scheme\":null," +
-            "\"localport\":0," +
-            "\"search\":{" +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
-            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
-            "}," +
-            "\"attributes\":{" +
-            "\"singlevalue\":\"value1\"," +
-            "\"multivalue\":[\"value2\",\"value3\"]}" +
-            "}";
+                "{\"ip\":\"152.200.54.243\"," +
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                        "}," +
+                        "\"attributes\":{" +
+                        "\"singlevalue\":\"value1\"," +
+                        "\"multivalue\":[\"value2\",\"value3\"]}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
 
     }
 
     @Test
-    public void test_with_remoteaddrport() throws Exception {
+    void test_with_remoteaddrport() throws Exception {
         RequestLogEntry entry = newRequestLogEntry("test")
                 .remoteAddress("FE80:0000:0000:0000:0202:B3FF:FE1E:8329")
                 .build();
 
         String expectedOutput =
-            "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
-            "\"time\":920880005.023," +
-            "\"duration\":0.122," +
-            "\"responsesize\":9875," +
-            "\"requestsize\":0," +
-            "\"code\":200," +
-            "\"method\":\"GET\"," +
-            "\"uri\":\"?query=test\"," +
-            "\"version\":\"HTTP/1.1\"," +
-            "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-            "\"host\":\"localhost\"," +
-            "\"scheme\":null," +
-            "\"localport\":0," +
-            "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
-            "\"search\":{" +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
-            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
-            "}" +
-            "}";
+                "{\"ip\":\"152.200.54.243\"," +
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                        "}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
 
@@ -175,34 +177,34 @@ public class JSONLogTestCase {
                 .build();
 
         expectedOutput =
-            "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
-            "\"time\":920880005.023," +
-            "\"duration\":0.122," +
-            "\"responsesize\":9875," +
-            "\"requestsize\":0," +
-            "\"code\":200," +
-            "\"method\":\"GET\"," +
-            "\"uri\":\"?query=test\"," +
-            "\"version\":\"HTTP/1.1\"," +
-            "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-            "\"host\":\"localhost\"," +
-            "\"scheme\":null," +
-            "\"localport\":0," +
-            "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
-            "\"remoteport\":1234," +
-            "\"search\":{" +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
-            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
-            "}" +
-            "}";
+                "{\"ip\":\"152.200.54.243\"," +
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
+                        "\"remoteport\":1234," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                        "}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
     }
 
     @Test
-    public void test_remote_address_same_as_ip_address() throws Exception {
+    void test_remote_address_same_as_ip_address() throws Exception {
         RequestLogEntry entry = newRequestLogEntry("test").build();
         RequestLogEntry entrywithremote = newRequestLogEntry("test")
                 .remoteAddress(entry.peerAddress().get())
@@ -212,7 +214,7 @@ public class JSONLogTestCase {
     }
 
     @Test
-    public void test_useragent_with_quotes() {
+    void test_useragent_with_quotes() {
         RequestLogEntry entry = new RequestLogEntry.Builder()
                 .rawQuery("query=test")
                 .rawPath("")
@@ -231,26 +233,26 @@ public class JSONLogTestCase {
                 .build();
 
         String expectedOutput =
-            "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
-            "\"time\":920880005.023," +
-            "\"duration\":0.122," +
-            "\"responsesize\":9875," +
-            "\"requestsize\":0," +
-            "\"code\":200," +
-            "\"method\":\"GET\"," +
-            "\"uri\":\"?query=test\"," +
-            "\"version\":\"HTTP/1.1\"," +
-            "\"agent\":\"Mozilla/4.05 [en] (Win95; I; \\\"Best Browser Ever\\\")\"," +
-            "\"host\":\"localhost\"," +
-            "\"scheme\":null," +
-            "\"localport\":0," +
-            "\"search\":{" +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
-            "\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}" +
-            "}" +
-            "}";
+                "{\"ip\":\"152.200.54.243\"," +
+                        "\"peeraddr\":\"152.200.54.243\"," +
+                        "\"time\":920880005.023," +
+                        "\"duration\":0.122," +
+                        "\"responsesize\":9875," +
+                        "\"requestsize\":0," +
+                        "\"code\":200," +
+                        "\"method\":\"GET\"," +
+                        "\"uri\":\"?query=test\"," +
+                        "\"version\":\"HTTP/1.1\"," +
+                        "\"agent\":\"Mozilla/4.05 [en] (Win95; I; \\\"Best Browser Ever\\\")\"," +
+                        "\"host\":\"localhost\"," +
+                        "\"scheme\":null," +
+                        "\"localport\":0," +
+                        "\"search\":{" +
+                        "\"totalhits\":1234," +
+                        "\"hits\":0," +
+                        "\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}" +
+                        "}" +
+                        "}";
 
         assertJsonEquals(formatEntry(entry), expectedOutput);
     }
@@ -280,15 +282,15 @@ public class JSONLogTestCase {
     }
 
     @Test
-    public void test_with_coverage_degradation() {
+    void test_with_coverage_degradation() {
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,0)).build());
+                newRequestLogEntry("test",  new Coverage(100, 200, 200, 0)).build());
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"match-phase\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,1)).build());
+                newRequestLogEntry("test",  new Coverage(100, 200, 200, 1)).build());
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"timeout\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,2)).build());
+                newRequestLogEntry("test",  new Coverage(100, 200, 200, 2)).build());
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"adaptive-timeout\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,4)).build());
+                newRequestLogEntry("test",  new Coverage(100, 200, 200, 4)).build());
     }
 
     private String formatEntry(RequestLogEntry entry) {

@@ -2,10 +2,10 @@
 package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.BundleException;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -14,20 +14,20 @@ import static org.junit.Assert.fail;
 public class FelixFrameworkTestCase {
 
     @Test
-    public void requireThatLifecycleWorks() throws BundleException {
+    void requireThatLifecycleWorks() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
         felix.stop();
     }
 
     @Test
-    public void requireThatStopWithoutStartDoesNotThrowException() throws BundleException {
+    void requireThatStopWithoutStartDoesNotThrowException() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.stop();
     }
 
     @Test
-    public void requireThatInstallCanThrowException() throws BundleException {
+    void requireThatInstallCanThrowException() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
         try {

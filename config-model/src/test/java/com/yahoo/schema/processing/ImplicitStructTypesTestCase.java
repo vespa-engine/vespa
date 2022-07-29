@@ -8,14 +8,15 @@ import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
     @Test
-    public void testRequireThatImplicitStructsAreCreated() throws IOException, ParseException {
+    void testRequireThatImplicitStructsAreCreated() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/nextgen/toggleon.sd");
         assertNotNull(schema);
 
@@ -23,8 +24,9 @@ public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
         assertNotNull(docType);
         assertStruct(docType, PositionDataType.INSTANCE);
     }
+
     @Test
-    public void testRequireThatImplicitStructsAreUsed() throws IOException, ParseException {
+    void testRequireThatImplicitStructsAreUsed() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/nextgen/implicitstructtypes.sd");
         assertNotNull(schema);
 

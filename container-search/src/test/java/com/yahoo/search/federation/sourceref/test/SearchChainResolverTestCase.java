@@ -10,15 +10,13 @@ import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.federation.sourceref.Target;
 import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.SortedSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -53,7 +51,7 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void check_default_search_chains() {
+    void check_default_search_chains() {
         assertEquals(2, searchChainResolver.defaultTargets().size());
 
         Iterator<Target> iterator = searchChainResolver.defaultTargets().iterator();
@@ -62,7 +60,7 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void require_error_message_for_invalid_source() {
+    void require_error_message_for_invalid_source() {
         try {
             resolve("no-such-source");
             fail("Expected exception.");
@@ -72,7 +70,7 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void lookup_search_chain() throws Exception {
+    void lookup_search_chain() throws Exception {
         SearchChainInvocationSpec res = resolve(searchChainId.getName());
         assertEquals(searchChainId, res.searchChainId);
     }
@@ -86,13 +84,13 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void lookup_source() throws Exception {
+    void lookup_source() throws Exception {
         SearchChainInvocationSpec res = resolve(sourceId.getName());
         assertIsSourceInProvider(res);
     }
 
     @Test
-    public void lookup_source_search_chain_directly() throws Exception {
+    void lookup_source_search_chain_directly() throws Exception {
         SearchChainInvocationSpec res = resolve(sourceChainInProviderId.stringValue());
         assertIsSourceInProvider(res);
     }
@@ -104,7 +102,7 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void lookup_source_for_provider2() throws Exception {
+    void lookup_source_for_provider2() throws Exception {
         SearchChainInvocationSpec res = resolve(sourceId.getName(), provider2Id.getName());
         assertEquals(provider2Id, res.provider);
         assertEquals(sourceId, res.source);
@@ -112,7 +110,7 @@ public class SearchChainResolverTestCase {
     }
 
     @Test
-    public void lists_source_ref_description_for_top_level_targets() {
+    void lists_source_ref_description_for_top_level_targets() {
         SortedSet<Target> topLevelTargets = searchChainResolver.allTopLevelTargets();
         assertEquals(3, topLevelTargets.size());
 

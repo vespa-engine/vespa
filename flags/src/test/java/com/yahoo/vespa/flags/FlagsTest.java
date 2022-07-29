@@ -4,7 +4,7 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.BooleanNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -12,11 +12,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -29,7 +28,7 @@ import static org.mockito.Mockito.when;
  */
 public class FlagsTest {
     @Test
-    public void testBoolean() {
+    void testBoolean() {
         final boolean defaultValue = false;
         FlagSource source = mock(FlagSource.class);
         BooleanFlag booleanFlag = Flags.defineFeatureFlag("id", defaultValue, List.of("owner"), "1970-01-01", "2100-01-01", "description",
@@ -45,8 +44,9 @@ public class FlagsTest {
         ArgumentCaptor<FetchVector> vector = ArgumentCaptor.forClass(FetchVector.class);
         verify(source).fetch(any(), vector.capture());
         // hostname is set by default
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.HOSTNAME).isPresent(), is(true));
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.HOSTNAME).get(), is(not(emptyOrNullString())));
+        Optional<String> hostname = vector.getValue().getValue(FetchVector.Dimension.HOSTNAME);
+        assertTrue(hostname.isPresent());
+        assertFalse(hostname.get().isEmpty());
         // zone is set because it was set on the unbound flag above
         assertThat(vector.getValue().getValue(FetchVector.Dimension.ZONE_ID), is(Optional.of("a-zone")));
         // application and node type are not set
@@ -66,41 +66,41 @@ public class FlagsTest {
     }
 
     @Test
-    public void testString() {
+    void testString() {
         testGeneric(Flags.defineStringFlag("string-id", "default value", List.of("owner"), "1970-01-01", "2100-01-01", "description",
-                "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
-                "other value");
+                                           "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
+                    "other value");
     }
 
     @Test
-    public void testInt() {
+    void testInt() {
         testGeneric(Flags.defineIntFlag("int-id", 2, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 3);
     }
 
     @Test
-    public void testLong() {
+    void testLong() {
         testGeneric(Flags.defineLongFlag("long-id", 1L, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 2L);
     }
 
     @Test
-    public void testDouble() {
+    void testDouble() {
         testGeneric(Flags.defineDoubleFlag("double-id", 3.142, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 2.718);
     }
 
     @Test
-    public void testList() {
+    void testList() {
         testGeneric(Flags.defineListFlag("list-id", List.of("a"), String.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), List.of("a", "b", "c"));
     }
 
     @Test
-    public void testJacksonClass() {
+    void testJacksonClass() {
         ExampleJacksonClass defaultInstance = new ExampleJacksonClass();
         ExampleJacksonClass instance = new ExampleJacksonClass();
         instance.integer = -2;
         instance.string = "foo";
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
-                List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", FetchVector.Dimension.HOSTNAME),
+                        List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", FetchVector.Dimension.HOSTNAME),
                 instance);
 
         testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"),

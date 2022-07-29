@@ -2,9 +2,9 @@
 package com.yahoo.prelude.test;
 
 import com.yahoo.prelude.Location;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests the Location class. Currently does not test all "features" of Location class.
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class LocationTestCase {
 
     @Test
-    public void testAspect() {
+    void testAspect() {
         //0 degrees latitude, on the equator
         Location loc1 = new Location("[2,-1110000,330000,-1160000,340000](2,-1100222,0,300,0,1,0,CalcLatLon)");
         assertEquals(loc1.toString(), "[2,-1110000,330000,-1160000,340000](2,-1100222,0,300,0,1,0,4294967295)");

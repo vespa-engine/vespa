@@ -6,7 +6,7 @@ import com.yahoo.schema.parser.ParseException;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult

@@ -2,11 +2,11 @@
 package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author bratseth
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertNotNull;
 public class ReservedWordsAsFieldNamesTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testIt() throws IOException, ParseException {
+    void testIt() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
         assertNotNull(schema.getDocument().getField("inline"));
         assertNotNull(schema.getDocument().getField("constants"));

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -9,8 +9,7 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.regex.PatternSyntaxException;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.prelude.query.Item.ItemType;
 
 /**
@@ -21,7 +20,7 @@ import com.yahoo.prelude.query.Item.ItemType;
 public class ItemsCommonStuffTestCase {
 
     @Test
-    public void testLoops() {
+    void testLoops() {
         AndSegmentItem as = new AndSegmentItem("farmyards", false, false);
         boolean caught = false;
         try {
@@ -58,7 +57,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testIndexName() {
+    void testIndexName() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         a.addItem(w);
@@ -68,7 +67,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testBoundaries() {
+    void testBoundaries() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         boolean caught = false;
@@ -102,7 +101,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testRemoving() {
+    void testRemoving() {
         AndItem other = new AndItem();
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
@@ -117,7 +116,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testGeneralMutability() {
+    void testGeneralMutability() {
         AndItem a = new AndItem();
         assertFalse(a.isLocked());
         a.lock();
@@ -125,7 +124,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testCounting() {
+    void testCounting() {
         WordItem w = new WordItem("nalle");
         AndItem a = new AndItem();
         WordItem v = new WordItem("bamse");
@@ -139,7 +138,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testIteratorJuggling() {
+    void testIteratorJuggling() {
         AndItem a = new AndItem();
         WordItem w0 = new WordItem("nalle");
         WordItem w1 = new WordItem("bamse");
@@ -168,7 +167,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testIdStuff() {
+    void testIdStuff() {
         Item i;
         String expected = "i";
         i = new ExactStringItem(expected);
@@ -187,7 +186,7 @@ public class ItemsCommonStuffTestCase {
         i = new WeightedSetItem("nalle");
         assertEquals(ItemType.WEIGHTEDSET, i.getItemType());
         assertEquals("WEIGHTEDSET", i.getName());
-        i = new AndSegmentItem("",false, false);
+        i = new AndSegmentItem("", false, false);
         assertEquals(ItemType.AND, i.getItemType());
         assertEquals("SAND", i.getName());
         i = new WeakAndItem();
@@ -196,7 +195,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testEquivBuilding() {
+    void testEquivBuilding() {
         WordItem w = new WordItem("nalle");
         WordItem v = new WordItem("bamse");
         w.setConnectivity(v, 1.0);
@@ -206,7 +205,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public final void testEquivBuildingFromCollection() {
+    final void testEquivBuildingFromCollection() {
         WordItem w = new WordItem("nalle");
         WordItem v = new WordItem("bamse");
         w.setConnectivity(v, 1.0);
@@ -220,7 +219,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testSegment() {
+    void testSegment() {
         AndSegmentItem as = new AndSegmentItem("farmyards", false, false);
         assertFalse(as.isLocked());
         WordItem firstItem = new WordItem("nalle");
@@ -253,20 +252,20 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testMarkersVsWords() {
+    void testMarkersVsWords() {
         WordItem mw0 = MarkerWordItem.createEndOfHost();
         WordItem mw1 = MarkerWordItem.createStartOfHost();
         WordItem w0 = new WordItem("$");
         WordItem w1 = new WordItem("^");
         assertEquals(w0.getWord(), mw0.getWord());
         assertEquals(w1.getWord(), mw1.getWord());
-        assertFalse(mw0.equals(w0));
-        assertTrue(mw0.equals(MarkerWordItem.createEndOfHost()));
-        assertFalse(w1.hashCode() == mw1.hashCode());
+        assertNotEquals(mw0, w0);
+        assertEquals(mw0, MarkerWordItem.createEndOfHost());
+        assertNotNull(mw1.hashCode());
     }
 
     @Test
-    public void testNumberBasics() {
+    void testNumberBasics() {
         String expected = "12";
         IntItem i = new IntItem(expected, "num");
         assertEquals(expected, i.stringValue());
@@ -279,12 +278,12 @@ public class ItemsCommonStuffTestCase {
         assertTrue(i.isStemmed());
         assertFalse(i.isWords());
         assertEquals(1, i.getNumWords());
-        assertFalse(i.equals(new IntItem(expected3)));
-        assertTrue(i.equals(new IntItem(expected3, "num")));
+        assertNotEquals(i, new IntItem(expected3));
+        assertEquals(i, new IntItem(expected3, "num"));
     }
 
     @Test
-    public void testNullItemFailsProperly() {
+    void testNullItemFailsProperly() {
         NullItem n = new NullItem();
         n.setIndexName("nalle");
         boolean caught = false;
@@ -311,7 +310,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testNearisNotAnd() {
+    void testNearisNotAnd() {
         AndItem a = new AndItem();
         NearItem n = new NearItem();
         n.setDistance(2);
@@ -323,14 +322,14 @@ public class ItemsCommonStuffTestCase {
         fill(n);
         fill(n2);
         fill(n3);
-        assertFalse(a.hashCode() == n.hashCode());
-        assertFalse(n.equals(a));
-        assertTrue(n.equals(n2));
-        assertFalse(n.equals(n3));
+        assertNotNull(n.hashCode());
+        assertNotEquals(n, a);
+        assertEquals(n, n2);
+        assertNotEquals(n, n3);
     }
 
     @Test
-    public void testPhraseSegmentBasics() {
+    void testPhraseSegmentBasics() {
         AndSegmentItem a = new AndSegmentItem("gnurk", "gurk", false, false);
         fill(a);
         a.lock();
@@ -352,7 +351,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testPhraseConnectivity() {
+    void testPhraseConnectivity() {
         WordItem w = new WordItem("a");
         PhraseItem p = new PhraseItem();
         fill(p);
@@ -362,7 +361,7 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testBaseClassPhraseSegments() {
+    void testBaseClassPhraseSegments() {
         PhraseSegmentItem p = new PhraseSegmentItem("g", false, true);
         fill(p);
         assertEquals(4, p.encode(ByteBuffer.allocate(5000)));
@@ -373,18 +372,18 @@ public class ItemsCommonStuffTestCase {
     }
 
     @Test
-    public void testTermTypeBasic() {
-        assertFalse(TermType.AND.equals(TermType.DEFAULT));
-        assertFalse(TermType.AND.equals(Integer.valueOf(10)));
-        assertTrue(TermType.AND.equals(TermType.AND));
+    void testTermTypeBasic() {
+        assertNotEquals(TermType.AND, TermType.DEFAULT);
+        assertNotEquals(TermType.AND, Integer.valueOf(10));
+        assertEquals(TermType.AND, TermType.AND);
         assertSame(AndItem.class, TermType.DEFAULT.createItemClass().getClass());
         assertSame(CompositeItem.class, TermType.DEFAULT.getItemClass());
-        assertFalse(TermType.AND.hashCode() == TermType.PHRASE.hashCode());
+        assertNotNull(TermType.PHRASE.hashCode());
         assertEquals("term type 'not'", TermType.NOT.toString());
     }
 
     @Test
-    public void testRegexp() {
+    void testRegexp() {
         RegExpItem empty = new RegExpItem("a", true, "");
         assertTrue(empty.isFromQuery());
         assertTrue(empty.isStemmed());

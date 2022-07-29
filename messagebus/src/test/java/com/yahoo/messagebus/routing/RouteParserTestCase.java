@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.routing;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 public class RouteParserTestCase {
 
     @Test
-    public void testHopParser() {
+    void testHopParser() {
         Hop hop = Hop.parse("foo");
         assertNotNull(hop);
         assertEquals(1, hop.getNumDirectives());
@@ -34,45 +32,45 @@ public class RouteParserTestCase {
 
         assertNotNull(hop = Hop.parse("[Extern:tcp/localhost:3619;foo/bar]"));
         assertEquals(1, hop.getNumDirectives());
-        assertPolicyDirective(hop.getDirective(0), "Extern","tcp/localhost:3619;foo/bar");
+        assertPolicyDirective(hop.getDirective(0), "Extern", "tcp/localhost:3619;foo/bar");
 
         assertNotNull(hop = Hop.parse("[AND:foo bar]"));
         assertEquals(1, hop.getNumDirectives());
-        assertPolicyDirective(hop.getDirective(0), "AND","foo bar");
+        assertPolicyDirective(hop.getDirective(0), "AND", "foo bar");
 
         assertNotNull(hop = Hop.parse("[DocumentRouteSelector:raw:route[2]\n" +
-                                      "route[0].name \"foo\"\n" +
-                                      "route[0].selector \"testdoc\"\n" +
-                                      "route[0].feed \"myfeed\"\n" +
-                                      "route[1].name \"bar\"\n" +
-                                      "route[1].selector \"other\"\n" +
-                                      "route[1].feed \"myfeed\"\n" +
-                                      "]"));
+                "route[0].name \"foo\"\n" +
+                "route[0].selector \"testdoc\"\n" +
+                "route[0].feed \"myfeed\"\n" +
+                "route[1].name \"bar\"\n" +
+                "route[1].selector \"other\"\n" +
+                "route[1].feed \"myfeed\"\n" +
+                "]"));
         assertEquals(1, hop.getNumDirectives());
         assertPolicyDirective(hop.getDirective(0), "DocumentRouteSelector",
-                              "raw:route[2]\n" +
-                              "route[0].name \"foo\"\n" +
-                              "route[0].selector \"testdoc\"\n" +
-                              "route[0].feed \"myfeed\"\n" +
-                              "route[1].name \"bar\"\n" +
-                              "route[1].selector \"other\"\n" +
-                              "route[1].feed \"myfeed\"");
+                "raw:route[2]\n" +
+                        "route[0].name \"foo\"\n" +
+                        "route[0].selector \"testdoc\"\n" +
+                        "route[0].feed \"myfeed\"\n" +
+                        "route[1].name \"bar\"\n" +
+                        "route[1].selector \"other\"\n" +
+                        "route[1].feed \"myfeed\"");
 
         assertNotNull(hop = Hop.parse("[DocumentRouteSelector:raw:route[1]\n" +
-                                      "route[0].name \"docproc/cluster.foo\"\n" +
-                                      "route[0].selector \"testdoc\"\n" +
-                                      "route[0].feed \"myfeed\"" +
-                                      "]"));
+                "route[0].name \"docproc/cluster.foo\"\n" +
+                "route[0].selector \"testdoc\"\n" +
+                "route[0].feed \"myfeed\"" +
+                "]"));
         assertEquals(1, hop.getNumDirectives());
         assertPolicyDirective(hop.getDirective(0), "DocumentRouteSelector",
-                              "raw:route[1]\n" +
-                              "route[0].name \"docproc/cluster.foo\"\n" +
-                              "route[0].selector \"testdoc\"\n" +
-                              "route[0].feed \"myfeed\"");
+                "raw:route[1]\n" +
+                        "route[0].name \"docproc/cluster.foo\"\n" +
+                        "route[0].selector \"testdoc\"\n" +
+                        "route[0].feed \"myfeed\"");
     }
 
     @Test
-    public void testHopParserErrors() {
+    void testHopParserErrors() {
         assertError(Hop.parse(""), "Failed to parse empty string.");
         assertError(Hop.parse("[foo"), "Unterminated '[' in '[foo'");
         assertError(Hop.parse("foo/[bar]]"), "Unexpected token ']' in 'foo/[bar]]'");
@@ -80,7 +78,7 @@ public class RouteParserTestCase {
     }
 
     @Test
-    public void testShortRoute() {
+    void testShortRoute() {
         Route shortRoute = Route.parse("c");
         assertNotNull(shortRoute);
         assertEquals(1, shortRoute.getNumHops());
@@ -91,7 +89,7 @@ public class RouteParserTestCase {
     }
 
     @Test
-    public void testShortHops() {
+    void testShortHops() {
         Route shortRoute = Route.parse("a b c");
         assertNotNull(shortRoute);
         assertEquals(3, shortRoute.getNumHops());
@@ -102,7 +100,7 @@ public class RouteParserTestCase {
     }
 
     @Test
-    public void testRouteParser() {
+    void testRouteParser() {
         Route route = Route.parse("foo bar/baz");
         assertNotNull(route);
         assertEquals(2, route.getNumHops());
@@ -126,7 +124,7 @@ public class RouteParserTestCase {
     }
 
     @Test
-    public void testRouteParserErrors() {
+    void testRouteParserErrors() {
         assertError(Route.parse(""), "Failed to parse empty string.");
         assertError(Route.parse("foo [bar"), "Unterminated '[' in '[bar'");
         assertError(Route.parse("foo bar/[baz]]"), "Unexpected token ']' in 'bar/[baz]]'");

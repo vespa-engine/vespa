@@ -21,9 +21,9 @@ import org.apache.http.util.EntityUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
@@ -71,7 +71,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
      * Reduce logging of every stack trace for {@link ServerProviderConformanceTest.ConformanceException} thrown.
      * This makes the log more readable and the test faster as well.
      */
-    @BeforeClass
+    @BeforeAll
     public static void reduceExcessiveLogging() {
         httpRequestDispatchLoggerOriginalLevel = httpRequestDispatchLogger.getLevel();
         httpRequestDispatchLogger.setLevel(Level.SEVERE);
@@ -79,7 +79,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
         executorService = Executors.newSingleThreadExecutor();
     }
 
-    @AfterClass
+    @AfterAll
     public static void restoreExcessiveLogging() throws IOException, InterruptedException {
         httpRequestDispatchLogger.setLevel(httpRequestDispatchLoggerOriginalLevel);
         httpClient.close();
@@ -87,7 +87,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
         executorService.awaitTermination(30, TimeUnit.SECONDS);
     }
 
-    @AfterClass
+    @AfterAll
     public static void reportDiagnostics() {
         System.out.println(
                 "After " + HttpServerConformanceTest.class.getSimpleName()

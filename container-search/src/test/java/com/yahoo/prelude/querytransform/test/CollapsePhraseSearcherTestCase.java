@@ -9,12 +9,12 @@ import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.CollapsePhraseSearcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Check CollapsePhraseSearcher works and only is triggered when it
@@ -25,14 +25,14 @@ import static org.junit.Assert.assertEquals;
 public class CollapsePhraseSearcherTestCase {
 
     @Test
-    public void testSimplePositive() {
+    void testSimplePositive() {
         PhraseItem root = new PhraseItem();
         root.addItem(new WordItem("abc"));
         assertEquals("abc", transformQuery(root));
     }
 
     @Test
-    public void testPositive1() {
+    void testPositive1() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
         PhraseItem embedded = new PhraseItem();
@@ -40,11 +40,11 @@ public class CollapsePhraseSearcherTestCase {
         root.addItem(embedded);
         root.addItem(new WordItem("e"));
         assertEquals("AND a bcd e",
-                     transformQuery(root));
+                transformQuery(root));
     }
 
     @Test
-    public void testPositive2() {
+    void testPositive2() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
         CompositeItem embedded = new AndItem();
@@ -55,21 +55,21 @@ public class CollapsePhraseSearcherTestCase {
         root.addItem(embedded);
         root.addItem(new WordItem("e"));
         assertEquals("AND a (AND bcd def) e",
-                     transformQuery(root));
+                transformQuery(root));
     }
 
     @Test
-    public void testNoTerms() {
+    void testNoTerms() {
         assertEquals("NULL", transformQuery("?query=" + enc("\"\"")));
     }
 
     @Test
-    public void testNegative1() {
+    void testNegative1() {
         assertEquals("WEAKAND(100) \"abc def\"", transformQuery("?query=" + enc("\"abc def\"")));
     }
 
     @Test
-    public void testNegative2() {
+    void testNegative2() {
         assertEquals("WEAKAND(100) a \"abc def\" b", transformQuery("?query=" + enc("a \"abc def\" b")));
     }
 
@@ -83,7 +83,7 @@ public class CollapsePhraseSearcherTestCase {
     }
 
     @Test
-    public void testNegative3() {
+    void testNegative3() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
         CompositeItem embedded = new AndItem();
@@ -95,7 +95,7 @@ public class CollapsePhraseSearcherTestCase {
         root.addItem(embedded);
         root.addItem(new WordItem("e"));
         assertEquals("AND a (AND bcd \"def ghi\") e",
-                     transformQuery(root));
+                transformQuery(root));
     }
 
     private String transformQuery(String rawQuery) {

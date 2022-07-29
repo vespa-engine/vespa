@@ -7,10 +7,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -20,7 +20,7 @@ public class RedundancyIncreaseValidatorTest {
     private final ValidationTester tester = new ValidationTester(7);
 
     @Test
-    public void testRedundancyIncreaseValidation() {
+    void testRedundancyIncreaseValidation() {
         VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices(3), Environment.prod, null);
@@ -28,15 +28,15 @@ public class RedundancyIncreaseValidatorTest {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("redundancy-increase: " +
-                         "Increasing redundancy from 2 to 3 in 'content cluster 'contentClusterId'. " +
-                         "This is a safe operation but verify that you have room for a 3/2x increase in content size. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.redundancyIncrease),
-                         Exceptions.toMessageString(expected));
+                    "Increasing redundancy from 2 to 3 in 'content cluster 'contentClusterId'. " +
+                    "This is a safe operation but verify that you have room for a 3/2x increase in content size. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.redundancyIncrease),
+                    Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testOverridingContentRemovalValidation() {
+    void testOverridingContentRemovalValidation() {
         VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(3), Environment.prod, redundancyIncreaseOverride); // Allowed due to override
     }

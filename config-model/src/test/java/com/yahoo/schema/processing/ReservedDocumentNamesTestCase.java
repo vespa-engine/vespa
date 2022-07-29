@@ -3,12 +3,12 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.schema.derived.AbstractExportingTestCase;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 public class ReservedDocumentNamesTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void requireThatPositionIsAReservedDocumentName() throws IOException, ParseException {
+    void requireThatPositionIsAReservedDocumentName() throws IOException, ParseException {
         try {
             assertCorrectDeriving("reserved_position");
             fail();

@@ -1,15 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests rank feature names.
@@ -19,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class FeatureNamesTestCase {
 
     @Test
-    public void testArgument() {
+    void testArgument() {
         assertFalse(FeatureNames.argumentOf("foo(bar)").isPresent());
         assertFalse(FeatureNames.argumentOf("foo(bar.baz)").isPresent());
         assertEquals("bar", FeatureNames.argumentOf("query(bar)").get());
@@ -31,25 +29,25 @@ public class FeatureNamesTestCase {
     }
 
     @Test
-    public void testConstantFeature() {
+    void testConstantFeature() {
         assertEquals("constant(foo)",
-                     FeatureNames.asConstantFeature("foo").toString());
+                FeatureNames.asConstantFeature("foo").toString());
     }
 
     @Test
-    public void testAttributeFeature() {
+    void testAttributeFeature() {
         assertEquals("attribute(foo)",
-                     FeatureNames.asAttributeFeature("foo").toString());
+                FeatureNames.asAttributeFeature("foo").toString());
     }
 
     @Test
-    public void testQueryFeature() {
+    void testQueryFeature() {
         assertEquals("query(\"foo.bar\")",
-                     FeatureNames.asQueryFeature("foo.bar").toString());
+                FeatureNames.asQueryFeature("foo.bar").toString());
     }
 
     @Test
-    public void testLegalFeatureNames() {
+    void testLegalFeatureNames() {
         assertTrue(FeatureNames.notNeedQuotes("_"));
         assertFalse(FeatureNames.notNeedQuotes("-"));
         assertTrue(FeatureNames.notNeedQuotes("_-"));
@@ -57,15 +55,15 @@ public class FeatureNamesTestCase {
         assertFalse(FeatureNames.notNeedQuotes("0_-azAZxy98-_+"));
     }
 
-    @Test
-    @Ignore
     /*
      * Unignore to verify performance
      * 2021/09/05 performance was a factor of 5.25
      * 'Identifier handcoded validity check took 4301ms
      *  Identifier regexp validity check took 22609ms'
      */
-    public void benchMarkPatternMatching() {
+    @Test
+    @Disabled
+    void benchMarkPatternMatching() {
         Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
         String[] strings = new String[1000];
         for (int i = 0; i < strings.length; i++) {

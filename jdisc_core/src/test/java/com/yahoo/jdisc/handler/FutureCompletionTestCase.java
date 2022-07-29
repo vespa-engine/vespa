@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertSame;
 public class FutureCompletionTestCase {
 
     @Test
-    public void requireThatCancelIsUnsupported() {
+    void requireThatCancelIsUnsupported() {
         FutureCompletion future = new FutureCompletion();
         assertFalse(future.isCancelled());
         try {
@@ -38,7 +38,7 @@ public class FutureCompletionTestCase {
     }
 
     @Test
-    public void requireThatCompletedReturnsTrue() throws Exception {
+    void requireThatCompletedReturnsTrue() throws Exception {
         FutureCompletion future = new FutureCompletion();
         try {
             future.get(0, TimeUnit.MILLISECONDS);
@@ -52,7 +52,7 @@ public class FutureCompletionTestCase {
     }
 
     @Test
-    public void requireThatCompletionIsDoneWhenCompleted() {
+    void requireThatCompletionIsDoneWhenCompleted() {
         FutureCompletion future = new FutureCompletion();
         assertFalse(future.isDone());
         future.completed();
@@ -60,7 +60,7 @@ public class FutureCompletionTestCase {
     }
 
     @Test
-    public void requireThatCompletionIsDoneWhenFailed() {
+    void requireThatCompletionIsDoneWhenFailed() {
         FutureCompletion future = new FutureCompletion();
         assertFalse(future.isDone());
         future.failed(new Throwable());
@@ -68,7 +68,7 @@ public class FutureCompletionTestCase {
     }
 
     @Test
-    public void requireThatFailedCauseIsRethrown() throws Exception {
+    void requireThatFailedCauseIsRethrown() throws Exception {
         FutureCompletion future = new FutureCompletion();
         Throwable t = new Throwable();
         future.failed(t);
@@ -87,7 +87,7 @@ public class FutureCompletionTestCase {
     }
 
     @Test
-    public void requireThatCompletionCanBeListenedTo() throws InterruptedException {
+    void requireThatCompletionCanBeListenedTo() throws InterruptedException {
         FutureCompletion completion = new FutureCompletion();
         RunnableLatch listener = new RunnableLatch();
         completion.addListener(listener, Runnable::run);

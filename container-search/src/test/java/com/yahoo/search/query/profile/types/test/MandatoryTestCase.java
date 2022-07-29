@@ -13,9 +13,9 @@ import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -55,18 +55,18 @@ public class MandatoryTestCase {
     }
 
     @Test
-    public void testMandatoryFullySpecifiedQueryProfile() {
+    void testMandatoryFullySpecifiedQueryProfile() {
         Fixture1 fixture = new Fixture1();
 
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setType(fixture.type);
         test.set("myString", "aString", fixture.registry);
         fixture.registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
+        QueryProfile myUser = new QueryProfile("user");
         myUser.setType(fixture.user);
-        myUser.set("myUserInteger",1, fixture.registry);
-        myUser.set("myUserString",1, fixture.registry);
+        myUser.set("myUserInteger", 1, fixture.registry);
+        myUser.set("myUserString", 1, fixture.registry);
         test.set("myUserQueryProfile", myUser, fixture.registry);
         fixture.registry.register(myUser);
 
@@ -77,7 +77,7 @@ public class MandatoryTestCase {
     }
 
     @Test
-    public void testMandatoryRequestPropertiesNeeded() {
+    void testMandatoryRequestPropertiesNeeded() {
         Fixture1 fixture = new Fixture1();
 
         QueryProfile test = new QueryProfile("test");
@@ -94,11 +94,11 @@ public class MandatoryTestCase {
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'myString' is mandatory in query profile 'test' of type 'testtype' but is not set",
-                    new Query(HttpRequest.createTestRequest("", Method.GET), cRegistry.getComponent("test")));
+                new Query(HttpRequest.createTestRequest("", Method.GET), cRegistry.getComponent("test")));
 
         // Underspecified request 2
         assertError("Incomplete query: Parameter 'myUserQueryProfile.myUserString' is mandatory in query profile 'test' of type 'testtype' but is not set",
-                    new Query(HttpRequest.createTestRequest("?myString=aString", Method.GET), cRegistry.getComponent("test")));
+                new Query(HttpRequest.createTestRequest("?myString=aString", Method.GET), cRegistry.getComponent("test")));
 
         // Fully specified request
         assertError(null, new Query(HttpRequest.createTestRequest("?myString=aString&myUserQueryProfile.myUserString=userString", Method.GET), cRegistry.getComponent("test")));
@@ -106,7 +106,7 @@ public class MandatoryTestCase {
 
     /** Same as above except the whole thing is nested in maps */
     @Test
-    public void testMandatoryNestedInMaps() {
+    void testMandatoryNestedInMaps() {
         Fixture1 fixture = new Fixture1();
 
         QueryProfile topMap = new QueryProfile("topMap");
@@ -123,7 +123,7 @@ public class MandatoryTestCase {
 
         QueryProfile myUser = new QueryProfile("user");
         myUser.setType(fixture.user);
-        myUser.set("myUserInteger",1, fixture.registry);
+        myUser.set("myUserInteger", 1, fixture.registry);
         test.set("myUserQueryProfile", myUser, fixture.registry);
         fixture.registry.register(myUser);
 
@@ -132,11 +132,11 @@ public class MandatoryTestCase {
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'subMap.test.myString' is mandatory in query profile 'topMap' but is not set",
-                    new Query(HttpRequest.createTestRequest("", Method.GET), cRegistry.getComponent("topMap")));
+                new Query(HttpRequest.createTestRequest("", Method.GET), cRegistry.getComponent("topMap")));
 
         // Underspecified request 2
         assertError("Incomplete query: Parameter 'subMap.test.myUserQueryProfile.myUserString' is mandatory in query profile 'topMap' but is not set",
-                    new Query(HttpRequest.createTestRequest("?subMap.test.myString=aString", Method.GET), cRegistry.getComponent("topMap")));
+                new Query(HttpRequest.createTestRequest("?subMap.test.myString=aString", Method.GET), cRegistry.getComponent("topMap")));
 
         // Fully specified request
         assertError(null, new Query(HttpRequest.createTestRequest("?subMap.test.myString=aString&subMap.test.myUserQueryProfile.myUserString=userString", Method.GET), cRegistry.getComponent("topMap")));
@@ -144,7 +144,7 @@ public class MandatoryTestCase {
 
     /** Here, no user query profile is referenced in the query profile, but one is chosen in the request */
     @Test
-    public void testMandatoryUserProfileSetInRequest() {
+    void testMandatoryUserProfileSetInRequest() {
         Fixture1 fixture = new Fixture1();
 
         QueryProfile test = new QueryProfile("test");
@@ -161,11 +161,11 @@ public class MandatoryTestCase {
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'myUserQueryProfile' is mandatory in query profile 'test' of type 'testtype' but is not set",
-                    new Query(HttpRequest.createTestRequest("?myString=aString", Method.GET), cRegistry.getComponent("test")));
+                new Query(HttpRequest.createTestRequest("?myString=aString", Method.GET), cRegistry.getComponent("test")));
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'myUserQueryProfile.myUserString' is mandatory in query profile 'test' of type 'testtype' but is not set",
-                    new Query(HttpRequest.createTestRequest("?myString=aString&myUserQueryProfile=user", Method.GET), cRegistry.getComponent("test")));
+                new Query(HttpRequest.createTestRequest("?myString=aString&myUserQueryProfile=user", Method.GET), cRegistry.getComponent("test")));
 
         // Fully specified request
         assertError(null, new Query(HttpRequest.createTestRequest("?myString=aString&myUserQueryProfile=user&myUserQueryProfile.myUserString=userString", Method.GET), cRegistry.getComponent("test")));
@@ -173,7 +173,7 @@ public class MandatoryTestCase {
 
     /** Here, a partially specified query profile is added to a non-mandatory field, making the request underspecified */
     @Test
-    public void testNonMandatoryUnderspecifiedUserProfileSetInRequest() {
+    void testNonMandatoryUnderspecifiedUserProfileSetInRequest() {
         Fixture1 fixture = new Fixture1();
 
         QueryProfile test = new QueryProfile("test");
@@ -199,7 +199,7 @@ public class MandatoryTestCase {
 
         // Underspecified because an underspecified profile is added
         assertError("Incomplete query: Parameter 'myQueryProfile.myUserString' is mandatory in query profile 'test' of type 'testtype' but is not set",
-                    new Query(HttpRequest.createTestRequest("?myString=aString&myQueryProfile=otherUser", Method.GET), cRegistry.getComponent("test")));
+                new Query(HttpRequest.createTestRequest("?myString=aString&myQueryProfile=otherUser", Method.GET), cRegistry.getComponent("test")));
 
         // Back to fully specified
         assertError(null, new Query(HttpRequest.createTestRequest("?myString=aString&myQueryProfile=otherUser&myQueryProfile.myUserString=userString", Method.GET), cRegistry.getComponent("test")));
@@ -223,7 +223,7 @@ public class MandatoryTestCase {
     }
 
     @Test
-    public void testMandatoryInParentType() {
+    void testMandatoryInParentType() {
         Fixture2 fixture = new Fixture2();
 
         QueryProfile defaultProfile = new QueryProfile("default");
@@ -237,11 +237,11 @@ public class MandatoryTestCase {
         CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         assertError("Incomplete query: Parameter 'foobar' is mandatory in query profile 'mandatory' of type 'mandatory-type' but is not set",
-                    new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
+                new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
     }
 
     @Test
-    public void testMandatoryInParentTypeWithInheritance() {
+    void testMandatoryInParentTypeWithInheritance() {
         Fixture2 fixture = new Fixture2();
 
         QueryProfile defaultProfile = new QueryProfile("default");
@@ -256,7 +256,7 @@ public class MandatoryTestCase {
         CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         assertError("Incomplete query: Parameter 'foobar' is mandatory in query profile 'mandatory' of type 'mandatory-type' but is not set",
-                    new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
+                new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
     }
 
     private void assertError(String message,Query query) {

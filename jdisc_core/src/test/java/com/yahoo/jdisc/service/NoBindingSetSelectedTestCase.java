@@ -4,12 +4,12 @@ package com.yahoo.jdisc.service;
 import com.google.inject.AbstractModule;
 import com.yahoo.jdisc.application.BindingSetSelector;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -18,14 +18,14 @@ import static org.junit.Assert.fail;
 public class NoBindingSetSelectedTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         URI uri = URI.create("http://host/path");
         NoBindingSetSelectedException e = new NoBindingSetSelectedException(uri);
         assertEquals(uri, e.uri());
     }
 
     @Test
-    public void requireThatNoBindingSetSelectedIsThrown() {
+    void requireThatNoBindingSetSelectedIsThrown() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 
             @Override

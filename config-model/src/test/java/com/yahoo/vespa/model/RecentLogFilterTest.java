@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class RecentLogFilterTest {
 
     @Test
-    public void basic() {
+    void basic() {
         RecentLogFilter rlf = new RecentLogFilter();
         List<LogRecord> logRecords = new ArrayList<>();
         for (int i = 0; i < RecentLogFilter.maxMessages + 1; i++) {

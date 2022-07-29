@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -13,9 +13,9 @@ import org.osgi.service.log.LogService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 /**
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertSame;
 public class OsgiLogManagerTestCase {
 
     @Test
-    public void requireThatAllLogMethodsAreImplemented() throws BundleException {
+    void requireThatAllLogMethodsAreImplemented() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
 
@@ -55,7 +55,7 @@ public class OsgiLogManagerTestCase {
     }
 
     @Test
-    public void requireThatLogManagerWritesToAllRegisteredLogServices() throws BundleException {
+    void requireThatLogManagerWritesToAllRegisteredLogServices() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
         felix.start();
 
@@ -122,7 +122,7 @@ public class OsgiLogManagerTestCase {
     }
 
     @Test
-    public void requireThatRootLoggerModificationCanBeDisabled() throws BundleException {
+    void requireThatRootLoggerModificationCanBeDisabled() throws BundleException {
         Logger logger = Logger.getLogger("");
         logger.setLevel(Level.WARNING);
 
@@ -134,7 +134,7 @@ public class OsgiLogManagerTestCase {
     }
 
     @Test
-    public void requireThatRootLoggerLevelIsModifiedIfNoLoggerConfigIsGiven() {
+    void requireThatRootLoggerLevelIsModifiedIfNoLoggerConfigIsGiven() {
         Logger logger = Logger.getLogger("");
         logger.setLevel(Level.WARNING);
 

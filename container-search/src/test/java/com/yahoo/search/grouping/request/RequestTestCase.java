@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class RequestTestCase {
 
     @Test
-    public void requireThatApiWorks() {
+    void requireThatApiWorks() {
         GroupingOperation op = new AllOperation()
                 .setGroupBy(new AttributeValue("foo"))
                 .addOrderBy(new CountAggregator())
@@ -22,19 +22,19 @@ public class RequestTestCase {
                         .addOutput(new CountAggregator())
                         .addOutput(new MinAggregator(new AttributeValue("bar")))
                         .addChild(new EachOperation()
-                        .addOutput(new AddFunction(
-                                new LongValue(69),
-                                new AttributeValue("baz")))
-                        .addOutput(new SummaryValue("cox"))));
+                                .addOutput(new AddFunction(
+                                        new LongValue(69),
+                                        new AttributeValue("baz")))
+                                .addOutput(new SummaryValue("cox"))));
         assertEquals("all(group(foo) order(count()) all() each() " +
-                     "each(output(count(), min(bar)) each(output(add(69, baz), summary(cox)))))",
-                     op.toString());
+                "each(output(count(), min(bar)) each(output(add(69, baz), summary(cox)))))",
+                op.toString());
         op.resolveLevel(1);
 
         GroupingExpression exp = op.getGroupBy();
         assertNotNull(exp);
         assertTrue(exp instanceof AttributeValue);
-        assertEquals("foo", ((AttributeValue)exp).getAttributeName());
+        assertEquals("foo", ((AttributeValue) exp).getAttributeName());
         assertEquals(1, op.getNumOrderBy());
         assertNotNull(exp = op.getOrderBy(0));
         assertTrue(exp instanceof CountAggregator);
@@ -49,9 +49,9 @@ public class RequestTestCase {
         assertTrue(exp instanceof CountAggregator);
         assertNotNull(exp = op.getOutput(1));
         assertTrue(exp instanceof MinAggregator);
-        assertNotNull(exp = ((MinAggregator)exp).getExpression());
+        assertNotNull(exp = ((MinAggregator) exp).getExpression());
         assertTrue(exp instanceof AttributeValue);
-        assertEquals("bar", ((AttributeValue)exp).getAttributeName());
+        assertEquals("bar", ((AttributeValue) exp).getAttributeName());
 
         assertEquals(1, op.getNumChildren());
         assertNotNull(op = op.getChild(0));
@@ -59,24 +59,24 @@ public class RequestTestCase {
         assertEquals(2, op.getNumOutputs());
         assertNotNull(exp = op.getOutput(0));
         assertTrue(exp instanceof AddFunction);
-        assertEquals(2, ((AddFunction)exp).getNumArgs());
-        GroupingExpression arg = ((AddFunction)exp).getArg(0);
+        assertEquals(2, ((AddFunction) exp).getNumArgs());
+        GroupingExpression arg = ((AddFunction) exp).getArg(0);
         assertNotNull(arg);
         assertTrue(arg instanceof LongValue);
-        assertEquals(69L, ((LongValue)arg).getValue().longValue());
-        assertNotNull(arg = ((AddFunction)exp).getArg(1));
+        assertEquals(69L, ((LongValue) arg).getValue().longValue());
+        assertNotNull(arg = ((AddFunction) exp).getArg(1));
         assertTrue(arg instanceof AttributeValue);
-        assertEquals("baz", ((AttributeValue)arg).getAttributeName());
+        assertEquals("baz", ((AttributeValue) arg).getAttributeName());
         assertNotNull(exp = op.getOutput(1));
         assertTrue(exp instanceof SummaryValue);
-        assertEquals("cox", ((SummaryValue)exp).getSummaryName());
+        assertEquals("cox", ((SummaryValue) exp).getSummaryName());
     }
 
     @Test
-    public void requireThatPredefinedApiWorks() {
+    void requireThatPredefinedApiWorks() {
         PredefinedFunction fnc = new LongPredefined(new AttributeValue("foo"),
-                                                    new LongBucket(1, 2),
-                                                    new LongBucket(3, 4));
+                new LongBucket(1, 2),
+                new LongBucket(3, 4));
         assertEquals(2, fnc.getNumBuckets());
         BucketValue bucket = fnc.getBucket(0);
         assertNotNull(bucket);
@@ -91,7 +91,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void requireThatBucketIntegrityIsChecked() {
+    void requireThatBucketIntegrityIsChecked() {
         try {
             new LongBucket(2, 1);
         } catch (IllegalArgumentException e) {
@@ -99,37 +99,37 @@ public class RequestTestCase {
         }
         try {
             new LongPredefined(new AttributeValue("foo"),
-                               new LongBucket(3, 4),
-                               new LongBucket(1, 2));
+                    new LongBucket(3, 4),
+                    new LongBucket(1, 2));
         } catch (IllegalArgumentException e) {
             assertEquals("Buckets must be monotonically increasing, got bucket[3, 4> before bucket[1, 2>.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatAliasWorks() {
+    void requireThatAliasWorks() {
         GroupingOperation all = new AllOperation();
         all.putAlias("myalias", new AttributeValue("foo"));
         GroupingExpression exp = all.getAlias("myalias");
         assertNotNull(exp);
         assertTrue(exp instanceof AttributeValue);
-        assertEquals("foo", ((AttributeValue)exp).getAttributeName());
+        assertEquals("foo", ((AttributeValue) exp).getAttributeName());
 
         GroupingOperation each = new EachOperation();
         all.addChild(each);
         assertNotNull(exp = each.getAlias("myalias"));
         assertTrue(exp instanceof AttributeValue);
-        assertEquals("foo", ((AttributeValue)exp).getAttributeName());
+        assertEquals("foo", ((AttributeValue) exp).getAttributeName());
 
         each.putAlias("myalias", new AttributeValue("bar"));
         assertNotNull(exp = each.getAlias("myalias"));
         assertTrue(exp instanceof AttributeValue);
-        assertEquals("bar", ((AttributeValue)exp).getAttributeName());
+        assertEquals("bar", ((AttributeValue) exp).getAttributeName());
     }
 
     @Test
-    public void testOrderBy() {
+    void testOrderBy() {
         GroupingOperation all = new AllOperation();
         all.addOrderBy(new AttributeValue("foo"));
         try {
@@ -143,7 +143,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void testMax() {
+    void testMax() {
         GroupingOperation all = new AllOperation();
         all.setMax(69);
         try {
@@ -156,10 +156,10 @@ public class RequestTestCase {
     }
 
     @Test
-    public void testAccuracy() {
+    void testAccuracy() {
         GroupingOperation all = new AllOperation();
         all.setAccuracy(0.53);
-        assertEquals((long)(100.0 * all.getAccuracy()), 53);
+        assertEquals((long) (100.0 * all.getAccuracy()), 53);
         try {
             all.setAccuracy(1.2);
             fail();
@@ -175,7 +175,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void testLevelChange() {
+    void testLevelChange() {
         GroupingOperation all = new AllOperation();
         all.resolveLevel(0);
         assertEquals(0, all.getLevel());
@@ -198,7 +198,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void testLevelInheritance() {
+    void testLevelInheritance() {
         GroupingOperation grandParent, parent, child, grandChild;
         grandParent = new AllOperation()
                 .addChild(parent = new EachOperation()
@@ -213,7 +213,7 @@ public class RequestTestCase {
     }
 
     @Test
-    public void testLevelPropagation() {
+    void testLevelPropagation() {
         GroupingOperation all = new AllOperation()
                 .setGroupBy(new AttributeValue("foo"))
                 .addOrderBy(new MaxAggregator(new AttributeValue("bar")))
@@ -224,6 +224,6 @@ public class RequestTestCase {
         assertEquals(0, all.getGroupBy().getLevel());
         assertEquals(1, all.getOrderBy(0).getLevel());
         assertEquals(1, all.getChild(0).getOutput(0).getLevel());
-        assertEquals(0, ((AggregatorNode)all.getChild(0).getOutput(0)).getExpression().getLevel());
+        assertEquals(0, ((AggregatorNode) all.getChild(0).getOutput(0)).getExpression().getLevel());
     }
 }

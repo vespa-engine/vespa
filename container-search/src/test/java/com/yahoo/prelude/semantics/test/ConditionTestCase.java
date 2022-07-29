@@ -14,10 +14,10 @@ import com.yahoo.prelude.semantics.rule.ProductionRule;
 import com.yahoo.prelude.semantics.rule.ReplacingProductionRule;
 import com.yahoo.prelude.semantics.rule.SequenceCondition;
 import com.yahoo.prelude.semantics.rule.TermCondition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class ConditionTestCase {
 
     @Test
-    public void testTermCondition() {
+    void testTermCondition() {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term = new TermCondition("foo", linguistics);
         Query query = new Query("?query=foo");
@@ -33,23 +33,23 @@ public class ConditionTestCase {
     }
 
     @Test
-    public void testSequenceCondition() {
+    void testSequenceCondition() {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term1 = new TermCondition("foo", linguistics);
-        TermCondition term2 = new TermCondition("bar",linguistics);
+        TermCondition term2 = new TermCondition("bar", linguistics);
         SequenceCondition sequence = new SequenceCondition();
         sequence.addCondition(term1);
         sequence.addCondition(term2);
         Query query = new Query("?query=foo+bar");
-        assertTrue(query + " matches " + sequence,sequence.matches(new Evaluation(query, null).freshRuleEvaluation()));
+        assertTrue(sequence.matches(new Evaluation(query, null).freshRuleEvaluation()), query + " matches " + sequence);
         Query query2 = new Query("?query=foo");
-        assertFalse(query2 + " does not match " + sequence,sequence.matches(new Evaluation(query2, null).freshRuleEvaluation()));
+        assertFalse(sequence.matches(new Evaluation(query2, null).freshRuleEvaluation()), query2 + " does not match " + sequence);
         Query query3 = new Query("?query=bar");
-        assertFalse(query3 + " does not match " + sequence,sequence.matches(new Evaluation(query3, null).freshRuleEvaluation()));
+        assertFalse(sequence.matches(new Evaluation(query3, null).freshRuleEvaluation()), query3 + " does not match " + sequence);
     }
 
     @Test
-    public void testChoiceCondition() {
+    void testChoiceCondition() {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term1 = new TermCondition("foo", linguistics);
         TermCondition term2 = new TermCondition("bar", linguistics);
@@ -57,18 +57,18 @@ public class ConditionTestCase {
         choice.addCondition(term1);
         choice.addCondition(term2);
         Query query1 = new Query("?query=foo+bar");
-        assertTrue(query1 + " matches " + choice, choice.matches(new Evaluation(query1, null).freshRuleEvaluation()));
+        assertTrue(choice.matches(new Evaluation(query1, null).freshRuleEvaluation()), query1 + " matches " + choice);
         Query query2 = new Query("?query=foo");
-        assertTrue(query2 + " matches " + choice, choice.matches(new Evaluation(query2, null).freshRuleEvaluation()));
+        assertTrue(choice.matches(new Evaluation(query2, null).freshRuleEvaluation()), query2 + " matches " + choice);
         Query query3 = new Query("?query=bar");
-        assertTrue(query3 + " matches " + choice, choice.matches(new Evaluation(query3, null).freshRuleEvaluation()));
+        assertTrue(choice.matches(new Evaluation(query3, null).freshRuleEvaluation()), query3 + " matches " + choice);
     }
 
     @Test
-    public void testNamedConditionReference() {
+    void testNamedConditionReference() {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term = new TermCondition("foo", linguistics);
-        NamedCondition named = new NamedCondition("cond",term);
+        NamedCondition named = new NamedCondition("cond", term);
         ConditionReference reference = new ConditionReference("cond");
 
         // To initialize the condition reference...
@@ -81,7 +81,7 @@ public class ConditionTestCase {
         ruleBase.initialize();
 
         Query query = new Query("?query=foo");
-        assertTrue(query + "  matches " + reference,reference.matches(new Evaluation(query, null).freshRuleEvaluation()));
+        assertTrue(reference.matches(new Evaluation(query, null).freshRuleEvaluation()), query + "  matches " + reference);
     }
 
 }

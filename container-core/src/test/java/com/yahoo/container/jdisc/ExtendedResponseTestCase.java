@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -48,18 +48,18 @@ public class ExtendedResponseTestCase {
     }
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         r = new TestResponse(Response.Status.OK);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         r = null;
     }
 
     @Test
-    public final void testRenderOutputStreamContentChannelCompletionHandler() throws IOException {
+    final void testRenderOutputStreamContentChannelCompletionHandler() throws IOException {
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         r.render(b, null, null);
         assertEquals(COM_YAHOO_CONTAINER_JDISC_EXTENDED_RESPONSE_TEST_CASE, Utf8.toString(b.toByteArray()));
@@ -67,22 +67,22 @@ public class ExtendedResponseTestCase {
 
 
     @Test
-    public final void testGetParsedQuery() {
+    final void testGetParsedQuery() {
         assertNull(r.getParsedQuery());
     }
 
     @Test
-    public final void testGetTiming() {
+    final void testGetTiming() {
         assertNull(r.getTiming());
     }
 
     @Test
-    public final void testGetCoverage() {
+    final void testGetCoverage() {
         assertNull(r.getCoverage());
     }
 
     @Test
-    public final void testGetHitCounts() {
+    final void testGetHitCounts() {
         assertNull(r.getHitCounts());
     }
 

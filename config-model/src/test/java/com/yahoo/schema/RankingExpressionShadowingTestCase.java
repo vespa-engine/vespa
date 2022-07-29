@@ -12,11 +12,11 @@ import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author lesters
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testBasicFunctionShadowing() throws ParseException {
+    void testBasicFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -52,14 +52,14 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
         assertEquals("(rankingExpression(sin@).rankingScript, 2 * 2)",
                 censorBindingHash(testRankProperties.get(0).toString()));
         assertEquals("(rankingExpression(sin).rankingScript, x * x)",
-                     testRankProperties.get(1).toString());
+                testRankProperties.get(1).toString());
         assertEquals("(vespa.rank.firstphase, rankingExpression(sin@))",
-                     censorBindingHash(testRankProperties.get(2).toString()));
+                censorBindingHash(testRankProperties.get(2).toString()));
     }
 
 
     @Test
-    public void testMultiLevelFunctionShadowing() throws ParseException {
+    void testMultiLevelFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -97,21 +97,21 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
         assertEquals("(rankingExpression(sin@).rankingScript, rankingExpression(cos@))",
                 censorBindingHash(testRankProperties.get(2).toString()));
         assertEquals("(rankingExpression(tan).rankingScript, x * x)",
-                     testRankProperties.get(3).toString());
+                testRankProperties.get(3).toString());
         assertEquals("(rankingExpression(tan@).rankingScript, x * x)",
-                     censorBindingHash(testRankProperties.get(4).toString()));
+                censorBindingHash(testRankProperties.get(4).toString()));
         assertEquals("(rankingExpression(cos).rankingScript, rankingExpression(tan@))",
-                     censorBindingHash(testRankProperties.get(5).toString()));
+                censorBindingHash(testRankProperties.get(5).toString()));
         assertEquals("(rankingExpression(cos@).rankingScript, rankingExpression(tan@))",
                 censorBindingHash(testRankProperties.get(6).toString()));
         assertEquals("(rankingExpression(sin).rankingScript, rankingExpression(cos@))",
-                     censorBindingHash(testRankProperties.get(7).toString()));
+                censorBindingHash(testRankProperties.get(7).toString()));
         assertEquals("(vespa.rank.firstphase, rankingExpression(sin@))",
-                     censorBindingHash(testRankProperties.get(8).toString()));
+                censorBindingHash(testRankProperties.get(8).toString()));
     }
 
     @Test
-    public void testFunctionShadowingArguments() throws ParseException {
+    void testFunctionShadowingArguments() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
@@ -141,15 +141,15 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
         assertEquals("(rankingExpression(sin@).rankingScript, cos(5.0) * cos(5.0))",
                 censorBindingHash(testRankProperties.get(1).toString()));
         assertEquals("(rankingExpression(sin).rankingScript, x * x)",
-                     testRankProperties.get(2).toString());
+                testRankProperties.get(2).toString());
         assertEquals("(vespa.rank.firstphase, rankingExpression(firstphase))",
-                     censorBindingHash(testRankProperties.get(3).toString()));
+                censorBindingHash(testRankProperties.get(3).toString()));
         assertEquals("(rankingExpression(firstphase).rankingScript, cos(rankingExpression(sin@)) + rankingExpression(sin@))",
-                     censorBindingHash(testRankProperties.get(4).toString()));
+                censorBindingHash(testRankProperties.get(4).toString()));
     }
 
     @Test
-    public void testNeuralNetworkSetup() throws ParseException {
+    void testNeuralNetworkSetup() throws ParseException {
         // Note: the type assigned to query profile and constant tensors here is not the correct type
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(input[1])");

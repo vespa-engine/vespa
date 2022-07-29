@@ -13,14 +13,14 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeResourceChangeValidatorTest {
 
     @Test
-    public void test_restart_action_count() {
+    void test_restart_action_count() {
         assertEquals(0, validate(model(1, 1, 1, 1), model(1, 1, 1, 1)).size());
         assertEquals(1, validate(model(1, 1, 1, 1), model(2, 1, 1, 1)).size());
         assertEquals(2, validate(model(1, 1, 1, 1), model(1, 2, 1, 1)).size());
@@ -43,7 +43,7 @@ public class NodeResourceChangeValidatorTest {
     }
 
     @Test
-    public void test_restart_action_details() {
+    void test_restart_action_details() {
         ConfigChangeAction containerAction = validate(model(1, 1, 1, 1), model(2, 1, 1, 1)).get(0);
         assertEquals(ConfigChangeAction.Type.RESTART, containerAction.getType());
         assertEquals("service 'container' of type container on host0", containerAction.getServices().get(0).toString());

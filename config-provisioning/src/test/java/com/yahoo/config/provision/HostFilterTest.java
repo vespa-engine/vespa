@@ -2,13 +2,13 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Vtag;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 public class HostFilterTest {
 
     @Test
-    public void testSingleConditionFilter() {
+    void testSingleConditionFilter() {
         HostFilter all = HostFilter.all();
         HostFilter hostname = HostFilter.hostname("host1");
         HostFilter type = HostFilter.clusterType(ClusterSpec.Type.content);
@@ -33,22 +33,22 @@ public class HostFilterTest {
         assertFalse(      id.matches("anyhost", "flavor", membership("content/anytype/0/0/stateful")));
 
         assertTrue(      all.matches("host1", "flavor", membership("content/anytype/0/0/stateful")));
-        assertTrue( hostname.matches("host1", "flavor", membership("content/anytype/0/0/stateful")));
+        assertTrue(hostname.matches("host1", "flavor", membership("content/anytype/0/0/stateful")));
         assertTrue(     type.matches("host1", "flavor", membership("content/anytype/0/0/stateful")));
         assertFalse(      id.matches("host1", "flavor", membership("content/anytype/0/0/stateful")));
 
         assertTrue(      all.matches("host1", "flavor", membership("content/type1/0/0/stateful")));
-        assertTrue( hostname.matches("host1", "flavor", membership("content/type1/0/0/stateful")));
+        assertTrue(hostname.matches("host1", "flavor", membership("content/type1/0/0/stateful")));
         assertTrue(     type.matches("host1", "flavor", membership("content/type1/0/0/stateful")));
         assertTrue(       id.matches("host1", "flavor", membership("content/type1/0/0/stateful")));
     }
 
     @Test
-    public void testMultiConditionFilter() {
+    void testMultiConditionFilter() {
         HostFilter typeAndId = HostFilter.from(Collections.emptyList(),
-                                               Collections.emptyList(),
-                                               Collections.singletonList(ClusterSpec.Type.content),
-                                               Collections.singletonList(ClusterSpec.Id.from("type1")));
+                               Collections.emptyList(),
+                               Collections.singletonList(ClusterSpec.Type.content),
+                               Collections.singletonList(ClusterSpec.Id.from("type1")));
 
         assertFalse(typeAndId.matches("anyhost", "flavor", membership("content/anyType/0/0/stateful")));
         assertFalse(typeAndId.matches("anyhost", "flavor", membership("container/type1/0/0")));
@@ -56,7 +56,7 @@ public class HostFilterTest {
     }
 
     @Test
-    public void testMultiConditionFilterFromStrings() {
+    void testMultiConditionFilterFromStrings() {
         HostFilter typeAndId = HostFilter.from("host1  host2, host3,host4", "  , ,flavor", null, "type1  ");
 
         assertFalse(typeAndId.matches("anotherhost", "flavor", membership("content/type1/0/0/stateful")));

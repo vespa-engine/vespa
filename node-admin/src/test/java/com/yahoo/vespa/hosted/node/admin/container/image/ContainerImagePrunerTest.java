@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerEngineMock;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerId;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author freva
@@ -29,90 +29,90 @@ public class ContainerImagePrunerTest {
     private final Tester tester = new Tester();
 
     @Test
-    public void noImagesMeansNoUnusedImages() {
+    void noImagesMeansNoUnusedImages() {
         tester.withExistingImages()
-              .expectDeletedImages();
+                .expectDeletedImages();
     }
 
     @Test
-    public void singleImageWithoutContainersIsUnused() {
+    void singleImageWithoutContainersIsUnused() {
         tester.withExistingImages(image("image-1"))
-              // Even though nothing is using the image, we will keep it for at least 1h
-              .expectDeletedImagesAfterMinutes(0)
-              .expectDeletedImagesAfterMinutes(30)
-              .expectDeletedImagesAfterMinutes(30, "image-1");
+                // Even though nothing is using the image, we will keep it for at least 1h
+                .expectDeletedImagesAfterMinutes(0)
+                .expectDeletedImagesAfterMinutes(30)
+                .expectDeletedImagesAfterMinutes(30, "image-1");
     }
 
     @Test
-    public void singleImageWithContainerIsUsed() {
+    void singleImageWithContainerIsUsed() {
         tester.withExistingImages(image("image-1"))
-              .withExistingContainers(container("container-1", "image-1"))
-              .expectDeletedImages();
+                .withExistingContainers(container("container-1", "image-1"))
+                .expectDeletedImages();
     }
 
     @Test
-    public void multipleUnusedImagesAreIdentified() {
+    void multipleUnusedImagesAreIdentified() {
         tester.withExistingImages(image("image-1"), image("image-2"))
-              .expectDeletedImages("image-1", "image-2");
+                .expectDeletedImages("image-1", "image-2");
     }
 
     @Test
-    public void unusedImagesWithMultipleTags() {
+    void unusedImagesWithMultipleTags() {
         tester.withExistingImages(image("image-1", "vespa-6", "vespa-6.28", "vespa:latest"))
-              .expectDeletedImages("vespa-6", "vespa-6.28", "vespa:latest");
+                .expectDeletedImages("vespa-6", "vespa-6.28", "vespa:latest");
     }
 
     @Test
-    public void unusedImagesWithMultipleUntagged() {
+    void unusedImagesWithMultipleUntagged() {
         tester.withExistingImages(image("image1", "<none>:<none>"),
-                                  image("image2", "<none>:<none>"))
-              .expectDeletedImages("image1", "image2");
+                image("image2", "<none>:<none>"))
+                .expectDeletedImages("image1", "image2");
     }
 
     @Test
-    public void taggedImageWithNoContainersIsUnused() {
+    void taggedImageWithNoContainersIsUnused() {
         tester.withExistingImages(image("image-1", "vespa-6"))
-              .expectDeletedImages("vespa-6");
+                .expectDeletedImages("vespa-6");
     }
 
     @Test
-    public void reDownloadingImageIsNotImmediatelyDeleted() {
+    void reDownloadingImageIsNotImmediatelyDeleted() {
         tester.withExistingImages(image("image"))
-              .expectDeletedImages("image") // After 1h we delete image
-              .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
-              .expectDeletedImagesAfterMinutes(10)
-              .expectDeletedImages("image"); // 1h after re-download it is deleted again
+                .expectDeletedImages("image") // After 1h we delete image
+                .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
+                .expectDeletedImagesAfterMinutes(10)
+                .expectDeletedImages("image"); // 1h after re-download it is deleted again
     }
 
     @Test
-    public void reDownloadingImageIsNotImmediatelyDeletedWhenDeletingByTag() {
+    void reDownloadingImageIsNotImmediatelyDeletedWhenDeletingByTag() {
         tester.withExistingImages(image("image", "my-tag"))
-              .expectDeletedImages("my-tag") // After 1h we delete image
-              .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
-              .expectDeletedImagesAfterMinutes(10)
-              .expectDeletedImages("my-tag"); // 1h after re-download it is deleted again
+                .expectDeletedImages("my-tag") // After 1h we delete image
+                .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
+                .expectDeletedImagesAfterMinutes(10)
+                .expectDeletedImages("my-tag"); // 1h after re-download it is deleted again
     }
 
     /** Same scenario as in {@link #multipleUnusedImagesAreIdentified()} */
     @Test
-    public void doesNotDeleteExcludedByIdImages() {
+    void doesNotDeleteExcludedByIdImages() {
         tester.withExistingImages(image("image-1"), image("image-2"))
-              // Normally, image-1 should also be deleted, but because we exclude image-1 only image-2 is deleted
-              .expectDeletedImages(List.of("image-1"), "image-2");
+                // Normally, image-1 should also be deleted, but because we exclude image-1 only image-2 is deleted
+                .expectDeletedImages(List.of("image-1"), "image-2");
     }
 
     /** Same as in {@link #doesNotDeleteExcludedByIdImages()} but with tags */
     @Test
-    public void doesNotDeleteExcludedByTagImages() {
+    void doesNotDeleteExcludedByTagImages() {
         tester.withExistingImages(image("image-1", "vespa:6.288.16"), image("image-2", "vespa:6.289.94"))
-              .expectDeletedImages(List.of("vespa:6.288.16"), "vespa:6.289.94");
+                .expectDeletedImages(List.of("vespa:6.288.16"), "vespa:6.289.94");
     }
 
     @Test
-    public void excludingNotDownloadedImageIsNoop() {
+    void excludingNotDownloadedImageIsNoop() {
         tester.withExistingImages(image("image-1", "vespa:6.288.16"),
-                                  image("image-2", "vespa:6.289.94"))
-              .expectDeletedImages(List.of("vespa:6.300.1"), "vespa:6.288.16", "vespa:6.289.94", "rhel-6");
+                image("image-2", "vespa:6.289.94"))
+                .expectDeletedImages(List.of("vespa:6.300.1"), "vespa:6.288.16", "vespa:6.289.94", "rhel-6");
     }
 
     private static Image image(String id, String... tags) {
@@ -174,8 +174,8 @@ public class ContainerImagePrunerTest {
                       int newValue = removalCountByImageId.getOrDefault(imageId, 0) + 1;
                       removalCountByImageId.put(imageId, newValue);
 
-                      assertTrue("Image " + imageId + " removed",
-                                 containerEngine.listImages(context).stream().noneMatch(image -> image.id().equals(imageId)));
+                      assertTrue(containerEngine.listImages(context).stream().noneMatch(image -> image.id().equals(imageId)),
+                                 "Image " + imageId + " removed");
                   });
             return this;
         }

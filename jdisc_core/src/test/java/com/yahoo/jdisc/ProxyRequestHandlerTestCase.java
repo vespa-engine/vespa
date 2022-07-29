@@ -7,7 +7,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -16,13 +16,13 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class ProxyRequestHandlerTestCase {
 
     @Test
-    public void requireThatRequestHandlerIsProxied() {
+    void requireThatRequestHandlerIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Request request = newRequest(driver, requestHandler);
@@ -54,7 +54,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestContentCompletedIsProxied() {
+    void requireThatRequestContentCompletedIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         Request request = newRequest(driver, requestHandler);
@@ -90,7 +90,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestContentFailedIsProxied() {
+    void requireThatRequestContentFailedIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         Request request = newRequest(driver, requestHandler);
@@ -128,7 +128,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatNullRequestContentIsProxied() {
+    void requireThatNullRequestContentIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newNullContent();
         Request request = newRequest(driver, requestHandler);
@@ -140,7 +140,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestWriteCompletionCanOnlyBeCalledOnce() {
+    void requireThatRequestWriteCompletionCanOnlyBeCalledOnce() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         Request request = newRequest(driver, requestHandler);
@@ -178,7 +178,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatRequestCloseCompletionCanOnlyBeCalledOnce() {
+    void requireThatRequestCloseCompletionCanOnlyBeCalledOnce() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         Request request = newRequest(driver, requestHandler);
@@ -214,7 +214,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatResponseContentCompletedIsProxied() {
+    void requireThatResponseContentCompletedIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Request request = newRequest(driver, requestHandler);
@@ -251,7 +251,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatResponseContentFailedIsProxied() {
+    void requireThatResponseContentFailedIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Request request = newRequest(driver, requestHandler);
@@ -290,7 +290,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatNullResponseContentIsProxied() {
+    void requireThatNullResponseContentIsProxied() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Request request = newRequest(driver, requestHandler);
@@ -308,7 +308,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatResponseWriteCompletionCanOnlyBeCalledOnce() {
+    void requireThatResponseWriteCompletionCanOnlyBeCalledOnce() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -347,7 +347,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatResponseCloseCompletionCanOnlyBeCalledOnce() {
+    void requireThatResponseCloseCompletionCanOnlyBeCalledOnce() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -383,7 +383,7 @@ public class ProxyRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatUncaughtCompletionFailureIsLogged() {
+    void requireThatUncaughtCompletionFailureIsLogged() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
         Request request = newRequest(driver, requestHandler);

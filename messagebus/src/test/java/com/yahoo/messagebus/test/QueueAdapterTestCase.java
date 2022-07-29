@@ -4,11 +4,11 @@ package com.yahoo.messagebus.test;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.text.Utf8String;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ public class QueueAdapterTestCase {
     private static final int WAIT_FOREVER = 60;
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         QueueAdapter queue = new QueueAdapter();
         assertTrue(queue.isEmpty());
         assertEquals(0, queue.size());
@@ -39,7 +39,7 @@ public class QueueAdapterTestCase {
     }
 
     @Test
-    public void requireThatSizeCanBeWaitedFor() {
+    void requireThatSizeCanBeWaitedFor() {
         final QueueAdapter queue = new QueueAdapter();
         assertTrue(queue.waitSize(0, NO_WAIT));
         assertFalse(queue.waitSize(1, NO_WAIT));
@@ -64,7 +64,7 @@ public class QueueAdapterTestCase {
     }
 
     @Test
-    public void requireThatWaitCanBeInterrupted() throws InterruptedException {
+    void requireThatWaitCanBeInterrupted() throws InterruptedException {
         final QueueAdapter queue = new QueueAdapter();
         final AtomicReference<Boolean> result = new AtomicReference<>();
         Thread thread = new Thread() {

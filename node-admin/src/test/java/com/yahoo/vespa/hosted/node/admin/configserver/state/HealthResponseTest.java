@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.configserver.state;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.bindings.HealthResponse;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HealthResponseTest {
     @Test
-    public void deserializationOfNormalResponse() throws Exception {
+    void deserializationOfNormalResponse() throws Exception {
         String jsonResponse = "{\n" +
                 "    \"metrics\": {\n" +
                 "        \"snapshot\": {\n" +

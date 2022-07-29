@@ -11,14 +11,14 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -26,7 +26,7 @@ import static org.junit.Assert.fail;
 public class ContainerShutdownTestCase {
 
     @Test
-    public void requireThatContainerBlocksTermination() {
+    void requireThatContainerBlocksTermination() {
         Context ctx = Context.newInstance();
         Container container = ctx.driver.newReference(URI.create("http://host/path"));
         assertFalse(ctx.shutdown());
@@ -36,7 +36,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatNewRequestBlocksTermination() {
+    void requireThatNewRequestBlocksTermination() {
         Context ctx = Context.newPendingRequest(MyRequestHandler.newInstance());
         assertFalse(ctx.shutdown());
         ctx.request.release();
@@ -45,7 +45,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatOpenRequestBlocksTermination() {
+    void requireThatOpenRequestBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -58,7 +58,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponsePendingBlocksTermination() {
+    void requireThatResponsePendingBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newEagerCompletion()).close(null);
@@ -70,7 +70,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatOpenResponseBlocksTermination() {
+    void requireThatOpenResponseBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newEagerCompletion()).close(null);
@@ -83,7 +83,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestExceptionDoesNotBlockTermination() {
+    void requireThatRequestExceptionDoesNotBlockTermination() {
         Context ctx = Context.newPendingRequest(MyRequestHandler.newRequestException());
         try {
             ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -97,7 +97,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestExceptionWithEagerHandleResponseBlocksTermination() {
+    void requireThatRequestExceptionWithEagerHandleResponseBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newRequestExceptionWithEagerHandleResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         try {
@@ -114,7 +114,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestExceptionWithEagerCloseResponseDoesNotBlockTermination() {
+    void requireThatRequestExceptionWithEagerCloseResponseDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newRequestExceptionWithEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         try {
@@ -129,7 +129,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatNullRequestContentBlocksTermination() {
+    void requireThatNullRequestContentBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newNullContent();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newEagerCompletion()).close(null);
@@ -142,7 +142,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatNullRequestContentWithEagerHandleResponseBlocksTermination() {
+    void requireThatNullRequestContentWithEagerHandleResponseBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newNullContentWithEagerHandleResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newEagerCompletion()).close(null);
@@ -154,7 +154,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatNullRequestContentWithEagerCloseResponseBlocksTermination() {
+    void requireThatNullRequestContentWithEagerCloseResponseBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newNulContentWithEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -166,7 +166,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentWriteFailedDoesNotBlockTermination() {
+    void requireThatRequestContentWriteFailedDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerFail();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -179,7 +179,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentWriteExceptionDoesNotBlockTermination() {
+    void requireThatRequestContentWriteExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newContentWriteExceptionWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -197,7 +197,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentWriteExceptionDoesNotForceTermination() {
+    void requireThatRequestContentWriteExceptionDoesNotForceTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newContentWriteExceptionWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -216,7 +216,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentWriteExceptionWithCompletionDoesNotBlockTermination() {
+    void requireThatRequestContentWriteExceptionWithCompletionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newContentWriteExceptionWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -234,7 +234,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentCloseFailedDoesNotBlockTermination() {
+    void requireThatRequestContentCloseFailedDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerFail();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -246,7 +246,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentCloseExceptionDoesNotBlockTermination() {
+    void requireThatRequestContentCloseExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newContentCloseException();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -263,7 +263,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestContentCloseExceptionWithCompletionDoesNotBlockTermination() {
+    void requireThatRequestContentCloseExceptionWithCompletionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newContentCloseException();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -280,7 +280,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestWriteCompletionBlocksTermination() {
+    void requireThatRequestWriteCompletionBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -295,7 +295,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestWriteCompletionExceptionDoesNotBlockTermination() {
+    void requireThatRequestWriteCompletionExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -315,7 +315,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestCloseCompletionBlocksTermination() {
+    void requireThatRequestCloseCompletionBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -328,7 +328,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatRequestCloseCompletionExceptionDoesNotBlockTermination() {
+    void requireThatRequestCloseCompletionExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCloseResponse();
         Context ctx = Context.newPendingRequest(requestHandler);
         ContentChannel requestContent = ctx.request.connect(MyResponseHandler.newEagerCompletion());
@@ -346,7 +346,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatNullResponseContentBlocksTermination() {
+    void requireThatNullResponseContentBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerRespondWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newNullContent();
@@ -360,7 +360,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseExceptionDoesNotBlockTermination() {
+    void requireThatResponseExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newResponseException()).close(null);
@@ -376,7 +376,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentWriteFailedDoesNotBlockTermination() {
+    void requireThatResponseContentWriteFailedDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newEagerFail();
@@ -390,7 +390,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentCloseFailedDoesNotBlockTermination() {
+    void requireThatResponseContentCloseFailedDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newEagerFail();
@@ -403,7 +403,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentWriteExceptionDoesNotBlockTermination() {
+    void requireThatResponseContentWriteExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newContentWriteException();
@@ -423,7 +423,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentWriteExceptionDoesNotForceTermination() {
+    void requireThatResponseContentWriteExceptionDoesNotForceTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newContentWriteException();
@@ -444,7 +444,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentWriteExceptionWithCompletionDoesNotBlockTermination() {
+    void requireThatResponseContentWriteExceptionWithCompletionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newContentWriteException();
@@ -464,7 +464,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentCloseExceptionDoesNotBlockTermination() {
+    void requireThatResponseContentCloseExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newContentCloseException()).close(null);
@@ -480,7 +480,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseContentCloseExceptionWithCompletionDoesNotBlockTermination() {
+    void requireThatResponseContentCloseExceptionWithCompletionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         ctx.request.connect(MyResponseHandler.newContentCloseException()).close(null);
@@ -496,7 +496,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseWriteCompletionBlocksTermination() {
+    void requireThatResponseWriteCompletionBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerRespondWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -513,7 +513,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseWriteCompletionExceptionDoesNotBlockTermination() {
+    void requireThatResponseWriteCompletionExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerRespondWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -535,7 +535,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseCloseCompletionBlocksTermination() {
+    void requireThatResponseCloseCompletionBlocksTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerRespondWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();
@@ -550,7 +550,7 @@ public class ContainerShutdownTestCase {
     }
 
     @Test
-    public void requireThatResponseCloseCompletionExceptionDoesNotBlockTermination() {
+    void requireThatResponseCloseCompletionExceptionDoesNotBlockTermination() {
         MyRequestHandler requestHandler = MyRequestHandler.newEagerRespondWithEagerCompletion();
         Context ctx = Context.newPendingRequest(requestHandler);
         MyResponseHandler responseHandler = MyResponseHandler.newInstance();

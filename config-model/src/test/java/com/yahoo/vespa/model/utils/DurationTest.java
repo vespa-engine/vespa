@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class DurationTest {
     @Test
-    public void testDurationUnits() {
+    void testDurationUnits() {
         assertEquals(1000, new Duration("1").getMilliSeconds());
         assertEquals(2.0, new Duration("2").getSeconds(), 0.0001);
         assertEquals(1, new Duration("1ms").getMilliSeconds());
@@ -30,7 +30,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseError() {
+    void testParseError() {
         assertException("bjarne");
         assertException("");
         assertException("1 foo");

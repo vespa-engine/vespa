@@ -22,47 +22,36 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
  */
 public class ContentBuilderTest extends DomBuilderTest {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
-    public void handleSingleNonSearchPersistentDummy() {
+    void handleSingleNonSearchPersistentDummy() {
         ContentCluster a = createContent(
-                "<content version =\"1.0\" id=\"a\">"+
-                "    <redundancy>3</redundancy>"+
-                "    <documents>" +
-                "       <document type=\"music\" mode=\"store-only\"/>" +
-                "    </documents>" +
-                "    <engine>"+
-                "      <dummy/>"+
-                "    </engine>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                "<content version =\"1.0\" id=\"a\">" +
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type=\"music\" mode=\"store-only\"/>" +
+                        "    </documents>" +
+                        "    <engine>" +
+                        "      <dummy/>" +
+                        "    </engine>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
@@ -72,17 +61,17 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchPersistentVds() {
+    void handleSingleNonSearchPersistentVds() {
         ContentCluster a = createContent(
-                "<content version =\"1.0\" id=\"a\">"+
-                "    <redundancy>3</redundancy>"+
-                "    <documents>" +
-                "       <document type=\"music\" mode=\"store-only\"/>" +
-                "    </documents>" +
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                "<content version =\"1.0\" id=\"a\">" +
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type=\"music\" mode=\"store-only\"/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
@@ -94,20 +83,20 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchPersistentProton() {
+    void handleSingleNonSearchPersistentProton() {
         ContentCluster a = createContent(
-                "<content version =\"1.0\" id=\"a\">"+
-                "    <redundancy>3</redundancy>"+
-                "    <documents>" +
-                "       <document type=\"music\" mode=\"store-only\"/>" +
-                "    </documents>" +
-                "    <engine>"+
-                "      <proton/>"+
-                "    </engine>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                "<content version =\"1.0\" id=\"a\">" +
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type=\"music\" mode=\"store-only\"/>" +
+                        "    </documents>" +
+                        "    <engine>" +
+                        "      <proton/>" +
+                        "    </engine>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
@@ -119,17 +108,17 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchNonPersistentCluster() {
+    void handleSingleNonSearchNonPersistentCluster() {
         ContentCluster a = createContent(
-                "<content version =\"1.0\" id=\"a\">"+
-                "    <redundancy>3</redundancy>"+
-                "    <documents>" +
-                "       <document type=\"music\" mode=\"store-only\"/>" +
-                "    </documents>" +
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                "<content version =\"1.0\" id=\"a\">" +
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type=\"music\" mode=\"store-only\"/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
@@ -148,7 +137,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleIndexedOnlyWithoutPersistence() {
+    void handleIndexedOnlyWithoutPersistence() {
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), getBasicServices())).create();
 
         ContentCluster c = CollectionUtil.first(m.getContentClusters().values());
@@ -166,7 +155,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("clu/storage/0", c.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
         assertEquals(1, c.getRoot().hostSystem().getHosts().size());
         HostResource h = c.getRoot().hostSystem().getHost("mockhost");
-        String [] expectedServices = {"configserver", "logserver", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy","config-sentinel", "container", "storagenode", "searchnode", "distributor", "transactionlogserver"};
+        String [] expectedServices = {"configserver", "logserver", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy", "config-sentinel", "container", "storagenode", "searchnode", "distributor", "transactionlogserver"};
         assertServices(h, expectedServices);
         assertEquals("clu/storage/0", h.getService("storagenode").getConfigId());
         assertEquals("clu/search/cluster.clu/0", h.getService("searchnode").getConfigId());
@@ -174,28 +163,28 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testMultipleSearchNodesOnSameHost() {
+    void testMultipleSearchNodesOnSameHost() {
         String services = getServices("<node hostalias='mockhost' distribution-key='0'/>" +
-                                      "<node hostalias='mockhost' distribution-key='1'/>");
+                "<node hostalias='mockhost' distribution-key='1'/>");
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), services)).create();
         IndexedSearchCluster sc = m.getContentClusters().get("clu").getSearch().getIndexed();
         assertEquals(2, sc.getSearchNodeCount());
     }
 
     @Test
-    public void handleStreamingOnlyWithoutPersistence() {
+    void handleStreamingOnlyWithoutPersistence() {
         final String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContent(
                 "<content version='1.0' id='" + musicClusterId + "'>" +
-                "    <redundancy>3</redundancy>"+
-                "    <documents>"+
-                "       <document type='music' mode='streaming'/>"+
-                "    </documents>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type='music' mode='streaming'/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = cluster.getSearch();
@@ -204,7 +193,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertNull(s.getIndexed());
         SearchCluster sc = s.getClusters().get(musicClusterId + ".music");
         assertEquals(musicClusterId + ".music", sc.getClusterName());
-        assertEquals(musicClusterId, ((StreamingSearchCluster)sc).getStorageRouteSpec());
+        assertEquals(musicClusterId, ((StreamingSearchCluster) sc).getStorageRouteSpec());
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, cluster.getStorageCluster().getChildren().size());
@@ -216,7 +205,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         HostResource h = cluster.getRoot().hostSystem().getHost("mockhost");
         String [] expectedServices = {
                 "logd", "configproxy", "config-sentinel", "configserver", "logserver",
-                "slobrok", "storagenode", "distributor","searchnode","transactionlogserver",
+                "slobrok", "storagenode", "distributor", "searchnode", "transactionlogserver",
                 CLUSTERCONTROLLER_CONTAINER.serviceName, METRICS_PROXY_CONTAINER.serviceName
         };
         assertServices(h, expectedServices);
@@ -231,20 +220,20 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatContentStreamingHandlesMultipleSchemas() {
+    void requireThatContentStreamingHandlesMultipleSchemas() {
         String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContentWithBooksToo(
                 "<content version='1.0' id='" + musicClusterId + "'>" +
-                "    <redundancy>3</redundancy>"+
-                "    <documents>"+
-                "       <document type='music' mode='streaming'/>"+
-                "       <document type='book' mode='streaming'/>"+
-                "    </documents>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                        "    <redundancy>3</redundancy>" +
+                        "    <documents>" +
+                        "       <document type='music' mode='streaming'/>" +
+                        "       <document type='book' mode='streaming'/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = cluster.getSearch();
@@ -271,17 +260,17 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleIndexedWithoutPersistence() {
+    void handleIndexedWithoutPersistence() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>3</redundancy>"+
-                "      <documents>"+
-                "        <document type='music' mode='index'/>"+
-                "      </documents>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
-                "    </group>"+
-                "</content>");
+                        "    <redundancy>3</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -302,18 +291,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureMmapNoCoreLimit() {
+    void canConfigureMmapNoCoreLimit() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group mmap-core-limit=\"200000\">" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group mmap-core-limit=\"200000\">" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -329,7 +318,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canAddEnvironmentVariable() {
+    void canAddEnvironmentVariable() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                         "    <redundancy>1</redundancy>" +
@@ -360,7 +349,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void addsEnvironmentVariablesfromFeatureFlag() {
+    void addsEnvironmentVariablesfromFeatureFlag() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                         "    <redundancy>1</redundancy>" +
@@ -385,18 +374,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCoreOnOOM() {
+    void canConfigureCoreOnOOM() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group core-on-oom=\"true\">" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group core-on-oom=\"true\">" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -412,18 +401,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void defaultCoreOnOOMIsFalse() {
+    void defaultCoreOnOOMIsFalse() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -436,18 +425,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureMmapNoCoreLimitPerHost() {
+    void canConfigureMmapNoCoreLimitPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-core-limit=\"200000\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-core-limit=\"200000\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -460,18 +449,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCoreOnOOMPerHost() {
+    void canConfigureCoreOnOOMPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" core-on-oom=\"true\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" core-on-oom=\"false\"/>" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" core-on-oom=\"true\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" core-on-oom=\"false\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -484,20 +473,20 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureVespaMalloc() {
+    void canConfigureVespaMalloc() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group no-vespamalloc=\"proton\" vespamalloc-debug=\"distributord\" vespamalloc-debug-stacktrace=\"all\" vespamalloc=\"storaged\">" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"2\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"3\"/>" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group no-vespamalloc=\"proton\" vespamalloc-debug=\"distributord\" vespamalloc-debug-stacktrace=\"all\" vespamalloc=\"storaged\">" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"2\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"3\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -518,20 +507,20 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureVespaMallocPerHost() {
+    void canConfigureVespaMallocPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>" +
-                "      <documents>" +
-                "        <document type='music' mode='index'/>" +
-                "      </documents>" +
-                "    <group>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" no-vespamalloc=\"proton\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" vespamalloc-debug=\"distributord\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"2\" vespamalloc-debug-stacktrace=\"all\"/>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"3\" vespamalloc=\"storaged\"/>" +
-                "    </group>" +
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" no-vespamalloc=\"proton\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" vespamalloc-debug=\"distributord\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"2\" vespamalloc-debug-stacktrace=\"all\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"3\" vespamalloc=\"storaged\"/>" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -549,18 +538,18 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCpuAffinity() {
+    void canConfigureCpuAffinity() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>"+
-                "      <documents>"+
-                "        <document type='music' mode='index'/>"+
-                "      </documents>"+
-                "    <group>"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" cpu-socket=\"0\" />"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" cpu-socket=\"1\" />"+
-                "    </group>"+
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" cpu-socket=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" cpu-socket=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -580,22 +569,22 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCpuAffinityAutomatically() {
+    void canConfigureCpuAffinityAutomatically() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                "    <redundancy>2</redundancy>"+
-                "      <documents>"+
-                "        <document type='music' mode='index'/>"+
-                "      </documents>"+
-                "    <group cpu-socket-affinity=\"true\">"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />"+
-                "      <node hostalias=\"mockhost\" distribution-key=\"2\" />"+
-                "      <node hostalias=\"mockhost2\" distribution-key=\"3\" />"+
-                "      <node hostalias=\"mockhost2\" distribution-key=\"4\" />"+
-                "      <node hostalias=\"mockhost3\" distribution-key=\"5\" />"+
-                "    </group>"+
-                "</content>");
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group cpu-socket-affinity=\"true\">" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"2\" />" +
+                        "      <node hostalias=\"mockhost2\" distribution-key=\"3\" />" +
+                        "      <node hostalias=\"mockhost2\" distribution-key=\"4\" />" +
+                        "      <node hostalias=\"mockhost3\" distribution-key=\"5\" />" +
+                        "    </group>" +
+                        "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -635,21 +624,21 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireBug5357273() {
+    void requireBug5357273() {
         try {
             createContent(
-                "  <content version='1.0' id='storage'>\n" +
-                "      <redundancy>3</redundancy>\n" +
-                "    <documents>"+
-                "       <document type='music' mode='index'/>"+
-                "    </documents>" +
-                "      <group>\n" +
-                "        <node hostalias='mockhost' distribution-key='0' />\n" +
-                "      </group>\n" +
-                "      <engine>\n" +
-                "       <dummy/>\n" +
-                "      </engine>\n" +
-                "  </content>\n");
+                    "  <content version='1.0' id='storage'>\n" +
+                            "      <redundancy>3</redundancy>\n" +
+                            "    <documents>" +
+                            "       <document type='music' mode='index'/>" +
+                            "    </documents>" +
+                            "      <group>\n" +
+                            "        <node hostalias='mockhost' distribution-key='0' />\n" +
+                            "      </group>\n" +
+                            "      <engine>\n" +
+                            "       <dummy/>\n" +
+                            "      </engine>\n" +
+                            "  </content>\n");
 
             fail();
         } catch (Exception e) {
@@ -659,39 +648,39 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleProtonTuning() {
+    void handleProtonTuning() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">" +
-                "    <redundancy>3</redundancy>" +
-                "    <engine>" +
-                "      <proton>" +
-                "        <tuning>" +
-                "          <searchnode>" +
-                "            <summary>" +
-                "              <store>" +
-                "                <cache>" +
-                "                  <maxsize>8192</maxsize>" +
-                "                  <compression>" +
-                "                    <type>lz4</type>" +
-                "                    <level>8</level>" +
-                "                  </compression>" +
-                "                </cache>" +
-                "              </store>" +
-                "              <io>" +
-                "                <read>directio</read>" +
-                "              </io>" +
-                "            </summary>" +
-                "          </searchnode>" +
-                "        </tuning>" +
-                "      </proton>" +
-                "    </engine>" +
-                "    <documents>" +
-                "       <document type='music' mode='index'/>" +
-                "    </documents>" +
-                "    <group>" +
-                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
-                "    </group>" +
-                "</content>"
+                        "    <redundancy>3</redundancy>" +
+                        "    <engine>" +
+                        "      <proton>" +
+                        "        <tuning>" +
+                        "          <searchnode>" +
+                        "            <summary>" +
+                        "              <store>" +
+                        "                <cache>" +
+                        "                  <maxsize>8192</maxsize>" +
+                        "                  <compression>" +
+                        "                    <type>lz4</type>" +
+                        "                    <level>8</level>" +
+                        "                  </compression>" +
+                        "                </cache>" +
+                        "              </store>" +
+                        "              <io>" +
+                        "                <read>directio</read>" +
+                        "              </io>" +
+                        "            </summary>" +
+                        "          </searchnode>" +
+                        "        </tuning>" +
+                        "      </proton>" +
+                        "    </engine>" +
+                        "    <documents>" +
+                        "       <document type='music' mode='index'/>" +
+                        "    </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>"
         );
 
         assertTrue(a.getPersistence() instanceof  ProtonEngine.Factory);
@@ -706,26 +695,26 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    @Ignore
-    public void ensureOverrideAppendedOnlyOnce() {
+    @Disabled
+    void ensureOverrideAppendedOnlyOnce() {
         ContentCluster content = createContent(
                 "<content version='1.0' id='search'>" +
-                "  <config name=\"vespa.config.search.core.proton\">" +
-                "    <numthreadspersearch>1</numthreadspersearch>" +
-                "    <search>" +
-                "      <mmap>" +
-                "        <options><item>POPULATE</item></options>" +
-                "      </mmap>" +
-                "    </search>" +
-                "  </config>" +
-                "  <redundancy>2</redundancy>" +
-                "  <documents>" +
-                "    <document type='music' mode='index'/>" +
-                "  </documents>" +
-                "  <group>" +
-                "    <node hostalias='mockhost' distribution-key='0'/>" +
-                "  </group>" +
-                "</content>");
+                        "  <config name=\"vespa.config.search.core.proton\">" +
+                        "    <numthreadspersearch>1</numthreadspersearch>" +
+                        "    <search>" +
+                        "      <mmap>" +
+                        "        <options><item>POPULATE</item></options>" +
+                        "      </mmap>" +
+                        "    </search>" +
+                        "  </config>" +
+                        "  <redundancy>2</redundancy>" +
+                        "  <documents>" +
+                        "    <document type='music' mode='index'/>" +
+                        "  </documents>" +
+                        "  <group>" +
+                        "    <node hostalias='mockhost' distribution-key='0'/>" +
+                        "  </group>" +
+                        "</content>");
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         content.getSearch().getIndexed().getSearchNode(0).cascadeConfig(builder);
         content.getSearch().getIndexed().getSearchNode(0).addUserConfig(builder);
@@ -745,19 +734,20 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "</content>" +
                 "</services>";
     }
+
     @Test
-    public void ensurePruneRemovedDocumentsAgeForHostedVespa() {
+    void ensurePruneRemovedDocumentsAgeForHostedVespa() {
         {
             ContentCluster contentNonHosted = createContent(
                     "<content version='1.0' id='search'>" +
-                    "  <redundancy>1</redundancy>" +
-                    "  <documents>" +
-                    "    <document type='music' mode='index'/>" +
-                    "  </documents>" +
-                    "  <nodes>" +
-                    "    <node hostalias='mockhost' distribution-key='0'/>" +
-                    "  </nodes>" +
-                    "</content>");
+                            "  <redundancy>1</redundancy>" +
+                            "  <documents>" +
+                            "    <document type='music' mode='index'/>" +
+                            "  </documents>" +
+                            "  <nodes>" +
+                            "    <node hostalias='mockhost' distribution-key='0'/>" +
+                            "  </nodes>" +
+                            "</content>");
             ProtonConfig configNonHosted = getProtonConfig(contentNonHosted);
             ProtonConfig defaultConfig = new ProtonConfig(new ProtonConfig.Builder());
             assertEquals(defaultConfig.pruneremoveddocumentsage(), configNonHosted.pruneremoveddocumentsage(), 0.001);
@@ -768,9 +758,9 @@ public class ContentBuilderTest extends DomBuilderTest {
 
             DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                                                                    .withServices(hostedXml)
-                                                                    .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
-                                                                    .build())
+                    .withServices(hostedXml)
+                    .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
+                    .build())
                     .create(deployStateBuilder);
             ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
             assertEquals(349260.0, config.pruneremoveddocumentsage(), 0.001);
@@ -813,7 +803,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void ensureFeedSequencerIsControlledByFlag() {
+    void ensureFeedSequencerIsControlledByFlag() {
         verifyFeedSequencer("LATENCY", "LATENCY");
         verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
         verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0);
@@ -831,26 +821,27 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
+    void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
         verifyThatFeatureFlagControlsVisibilityDelayDefault(null, 0.0);
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.5, 0.5);
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
     }
 
     @Test
-    public void failWhenNoDocumentsElementSpecified() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The specified content engine requires the <documents> element to be specified.");
-        createContent(
-                "<content version =\"1.0\" id=\"a\">" +
-                        "    <redundancy>3</redundancy>" +
-                        "    <engine>" +
-                        "      <dummy/>" +
-                        "    </engine>" +
-                        "    <group>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
-                        "    </group>" +
-                        "</content>");
+    void failWhenNoDocumentsElementSpecified() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            createContent(
+                    "<content version =\"1.0\" id=\"a\">" +
+                            "    <redundancy>3</redundancy>" +
+                            "    <engine>" +
+                            "      <dummy/>" +
+                            "    </engine>" +
+                            "    <group>" +
+                            "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                            "    </group>" +
+                            "</content>");
+        });
+        assertTrue(exception.getMessage().contains("The specified content engine requires the <documents> element to be specified."));
     }
 
     private ProtonConfig getProtonConfig(ContentCluster content) {

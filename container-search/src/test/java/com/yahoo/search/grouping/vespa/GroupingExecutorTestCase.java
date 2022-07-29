@@ -34,7 +34,7 @@ import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,12 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -58,14 +53,14 @@ import static org.junit.Assert.fail;
 public class GroupingExecutorTestCase {
 
     @Test
-    public void requireThatNullRequestsPass() {
+    void requireThatNullRequestsPass() {
         Result res = newExecution(new GroupingExecutor()).search(newQuery());
         assertNotNull(res);
         assertEquals(0, res.hits().size());
     }
 
     @Test
-    public void requireThatEmptyRequestsPass() {
+    void requireThatEmptyRequestsPass() {
         Query query = newQuery();
         GroupingRequest.newInstance(query).setRootOperation(new AllOperation());
         Result res = newExecution(new GroupingExecutor()).search(query);
@@ -74,7 +69,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatRequestsAreTransformed() {
+    void requireThatRequestsAreTransformed() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
@@ -90,7 +85,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatEachBelowAllDoesNotBlowUp() {
+    void requireThatEachBelowAllDoesNotBlowUp() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(each(output(summary(bar))))"));
@@ -100,7 +95,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatSearchIsMultiPass() {
+    void requireThatSearchIsMultiPass() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
@@ -110,7 +105,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatPassRequestsSingleLevel() {
+    void requireThatPassRequestsSingleLevel() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
@@ -126,7 +121,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatAggregationPerHitWithoutGroupingDoesNotWorkYet() {
+    void requireThatAggregationPerHitWithoutGroupingDoesNotWorkYet() {
         try {
             execute("each(output(strlen(customer)))");
             fail();
@@ -136,19 +131,19 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatAggregationWithoutGroupingWorks() {
-        List<Grouping> groupings=execute("all(output(count()))");
-        assertEquals(1,groupings.size());
+    void requireThatAggregationWithoutGroupingWorks() {
+        List<Grouping> groupings = execute("all(output(count()))");
+        assertEquals(1, groupings.size());
         assertEquals(0, groupings.get(0).getLevels().size());
         assertEquals(ConstantNode.class, groupings.get(0).getRoot().getAggregationResults().get(0).getExpression().getClass());
     }
 
     @Test
-    public void requireThatGroupingIsParallel() {
+    void requireThatGroupingIsParallel() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))) as(max)" +
-                                                          "               each(output(min(bar))) as(min))"));
+                "               each(output(min(bar))) as(min))"));
         GroupingCounter cnt = new GroupingCounter();
         newExecution(new GroupingExecutor(), cnt).search(query);
         assertEquals(2, cnt.passList.size());
@@ -157,11 +152,11 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatParallelGroupingIsNotRedundant() {
+    void requireThatParallelGroupingIsNotRedundant() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))) as(shallow)" +
-                                                          "               each(group(baz) each(output(max(cox)))) as(deep))"));
+                "               each(group(baz) each(output(max(cox)))) as(deep))"));
         GroupingCounter cnt = new GroupingCounter();
         newExecution(new GroupingExecutor(), cnt).search(query);
         assertEquals(3, cnt.passList.size());
@@ -171,7 +166,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatPassResultsAreMerged() {
+    void requireThatPassResultsAreMerged() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(min(bar), max(bar))))"));
@@ -187,14 +182,14 @@ public class GroupingExecutorTestCase {
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3)))
         );
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(grpA), null),
-                                              new GroupingListHit(List.of(grpB), null))));
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grpA), null),
+                        new GroupingListHit(List.of(grpB), null))));
         Group grp = req.getResultGroup(exec.search(query));
         assertEquals(1, grp.size());
         Hit hit = grp.get(0);
         assertTrue(hit instanceof GroupList);
-        GroupList lst = (GroupList)hit;
+        GroupList lst = (GroupList) hit;
         assertEquals(3, lst.size());
         assertNotNull(hit = lst.get("group:string:uniqueA"));
         assertEquals(6L, hit.getField("max(bar)"));
@@ -206,7 +201,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatUnexpectedGroupingResultsAreIgnored() {
+    void requireThatUnexpectedGroupingResultsAreIgnored() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
@@ -220,14 +215,14 @@ public class GroupingExecutorTestCase {
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("unexpected")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(96)).setTag(3)))
         );
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(grpExpected), null),
-                                              new GroupingListHit(List.of(grpUnexpected), null))));
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grpExpected), null),
+                        new GroupingListHit(List.of(grpUnexpected), null))));
         Group grp = req.getResultGroup(exec.search(query));
         assertEquals(1, grp.size());
         Hit hit = grp.get(0);
         assertTrue(hit instanceof GroupList);
-        GroupList lst = (GroupList)hit;
+        GroupList lst = (GroupList) hit;
         assertEquals(1, lst.size());
         assertNotNull(hit = lst.get("group:string:expected"));
         assertEquals(69L, hit.getField("max(bar)"));
@@ -235,7 +230,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatHitsAreFilled() {
+    void requireThatHitsAreFilled() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar)))))"));
@@ -243,20 +238,20 @@ public class GroupingExecutorTestCase {
         Grouping grp0 = new Grouping(0);
         grp0.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar"))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar"))
+                ));
         Grouping grp1 = new Grouping(0);
         grp1.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))
+                ));
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(grp0), null),
-                                              new GroupingListHit(List.of(grp1), null))),
-                                      new FillRequestThrower());
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grp0), null),
+                        new GroupingListHit(List.of(grp1), null))),
+                new FillRequestThrower());
         Result res = exec.search(query);
-        
+
         // Fill with summary specified in grouping
         try {
             exec.fill(res);
@@ -275,59 +270,59 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatUnfilledHitsRenderError() {
+    void requireThatUnfilledHitsRenderError() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar)))))"));
 
         Grouping grp0 = new Grouping(0);
         grp0.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                     .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                               .addAggregationResult(new HitsAggregationResult(1, "bar"))));
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
+                        .addAggregationResult(new HitsAggregationResult(1, "bar"))));
         Grouping grp1 = new Grouping(0);
         grp1.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                     .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                                                                          .addAggregationResult(
-                                                                                  new HitsAggregationResult(1, "bar")
-                                                                                          .addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))));
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
+                        .addAggregationResult(
+                                new HitsAggregationResult(1, "bar")
+                                        .addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))));
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(grp0), null),
-                                              new GroupingListHit(List.of(grp1), null))),
-                                      new FillErrorProvider());
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grp0), null),
+                        new GroupingListHit(List.of(grp1), null))),
+                new FillErrorProvider());
         Result res = exec.search(query);
         exec.fill(res);
         assertNotNull(res.hits().getError());
     }
 
     @Test
-    public void requireThatGroupRelevanceCanBeSynthesized() {
+    void requireThatGroupRelevanceCanBeSynthesized() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) order(count()) each(output(count())))"));
 
         Grouping grp = new Grouping(0);
         grp.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                    .addChild(new com.yahoo.searchlib.aggregation.Group()
-                                      .setId(new StringResultNode("foo"))
-                                      .addAggregationResult(new CountAggregationResult(1))
-                                      .addOrderBy(new AggregationRefNode(0), true))
-                    .addChild(new com.yahoo.searchlib.aggregation.Group()
-                                      .setId(new StringResultNode("bar"))
-                                      .addAggregationResult(new CountAggregationResult(2))
-                                      .addOrderBy(new AggregationRefNode(0), true)));
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("foo"))
+                        .addAggregationResult(new CountAggregationResult(1))
+                        .addOrderBy(new AggregationRefNode(0), true))
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("bar"))
+                        .addAggregationResult(new CountAggregationResult(2))
+                        .addOrderBy(new AggregationRefNode(0), true)));
         Result res = newExecution(new GroupingExecutor(),
-                                  new ResultProvider(Arrays.asList(
-                                          new GroupingListHit(List.of(grp), null),
-                                          new GroupingListHit(List.of(grp), null)))).search(query);
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grp), null),
+                        new GroupingListHit(List.of(grp), null)))).search(query);
 
-        GroupList groupList = (GroupList)req.getResultGroup(res).get(0);
+        GroupList groupList = (GroupList) req.getResultGroup(res).get(0);
         assertEquals(1.0, groupList.get(0).getRelevance().getScore(), 1E-6);
         assertEquals(0.5, groupList.get(1).getRelevance().getScore(), 1E-6);
     }
 
     @Test
-    public void requireThatErrorsAreHandled() {
+    void requireThatErrorsAreHandled() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar)))))"));
@@ -335,20 +330,20 @@ public class GroupingExecutorTestCase {
         Grouping grp0 = new Grouping(0);
         grp0.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar"))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar"))
+                ));
         Grouping grp1 = new Grouping(0);
         grp1.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))
+                ));
 
         ErrorProvider err = new ErrorProvider(1);
         Execution exec = newExecution(new GroupingExecutor(),
-                                      err,
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(grp0), null),
-                                              new GroupingListHit(List.of(grp1), null))));
+                err,
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grp0), null),
+                        new GroupingListHit(List.of(grp1), null))));
         Result res = exec.search(query);
         assertNotNull(res.hits().getError());
         assertEquals(Error.TIMEOUT.code, res.hits().getError().getCode());
@@ -356,10 +351,10 @@ public class GroupingExecutorTestCase {
 
         err = new ErrorProvider(0);
         exec = newExecution(new GroupingExecutor(),
-                            err,
-                            new ResultProvider(Arrays.asList(
-                                    new GroupingListHit(List.of(grp0), null),
-                                    new GroupingListHit(List.of(grp1), null))));
+                err,
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(grp0), null),
+                        new GroupingListHit(List.of(grp1), null))));
         res = exec.search(query);
         assertNotNull(res.hits().getError());
         assertEquals(Error.TIMEOUT.code, res.hits().getError().getCode());
@@ -367,39 +362,39 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void requireThatHitsAreFilledWithCorrectSummary() {
+    void requireThatHitsAreFilledWithCorrectSummary() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar))) as(bar) " +
-                                                          "                    each(output(summary(baz))) as(baz)))"));
+                "                    each(output(summary(baz))) as(baz)))"));
         Grouping pass0A = new Grouping(0);
         pass0A.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar"))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar"))
+                ));
         Grouping pass0B = new Grouping(1);
         pass0B.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "baz"))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "baz"))
+                ));
         GlobalId gid1 = new GlobalId((new DocumentId("id:ns:type::1")).getGlobalId());
         GlobalId gid2 = new GlobalId((new DocumentId("id:ns:type::2")).getGlobalId());
         Grouping pass1A = new Grouping(0);
         pass1A.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(1, gid1, 3)))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(1, gid1, 3)))
+                ));
         Grouping pass1B = new Grouping(1);
         pass1B.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "baz").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(4, gid2, 6)))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "baz").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(4, gid2, 6)))
+                ));
         SummaryMapper sm = new SummaryMapper();
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(Arrays.asList(pass0A, pass0B), null),
-                                              new GroupingListHit(Arrays.asList(pass1A, pass1B), null))),
-                                      sm);
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(Arrays.asList(pass0A, pass0B), null),
+                        new GroupingListHit(Arrays.asList(pass1A, pass1B), null))),
+                sm);
         exec.fill(exec.search(query), "default");
         assertEquals(2, sm.hitsBySummary.size());
 
@@ -408,51 +403,51 @@ public class GroupingExecutorTestCase {
         assertEquals(1, lst.size());
         Hit hit = lst.get(0);
         assertTrue(hit instanceof FastHit);
-        assertEquals(1, ((FastHit)hit).getPartId());
-        assertEquals(gid1, ((FastHit)hit).getGlobalId());
+        assertEquals(1, ((FastHit) hit).getPartId());
+        assertEquals(gid1, ((FastHit) hit).getGlobalId());
 
         assertNotNull(lst = sm.hitsBySummary.get("baz"));
         assertNotNull(lst);
         assertEquals(1, lst.size());
         hit = lst.get(0);
         assertTrue(hit instanceof FastHit);
-        assertEquals(4, ((FastHit)hit).getPartId());
-        assertEquals(gid2, ((FastHit)hit).getGlobalId());
+        assertEquals(4, ((FastHit) hit).getPartId());
+        assertEquals(gid2, ((FastHit) hit).getGlobalId());
     }
 
     @Test
-    public void requireThatDefaultSummaryNameFillsHitsWithNull() {
+    void requireThatDefaultSummaryNameFillsHitsWithNull() {
         Query query = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(query);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary()))) as(foo))"));
 
         Grouping pass0 = new Grouping(0);
         pass0.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                          .addChild(new com.yahoo.searchlib.aggregation.Group()
-                              .setId(new StringResultNode("foo"))
-                              .addAggregationResult(
-                                  new HitsAggregationResult(1, ExpressionConverter.DEFAULT_SUMMARY_NAME))));
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("foo"))
+                        .addAggregationResult(
+                                new HitsAggregationResult(1, ExpressionConverter.DEFAULT_SUMMARY_NAME))));
         Grouping pass1 = new Grouping(0);
         pass1.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                          .addChild(new com.yahoo.searchlib.aggregation.Group()
-                              .setId(new StringResultNode("foo"))
-                              .addAggregationResult(
-                                  new HitsAggregationResult(1, ExpressionConverter.DEFAULT_SUMMARY_NAME)
-                                      .addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))));
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("foo"))
+                        .addAggregationResult(
+                                new HitsAggregationResult(1, ExpressionConverter.DEFAULT_SUMMARY_NAME)
+                                        .addHit(new com.yahoo.searchlib.aggregation.FS4Hit()))));
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(
-                                              new GroupingListHit(List.of(pass0), null),
-                                              new GroupingListHit(List.of(pass1), null))));
+                new ResultProvider(Arrays.asList(
+                        new GroupingListHit(List.of(pass0), null),
+                        new GroupingListHit(List.of(pass1), null))));
         Result res = exec.search(query);
         exec.fill(res);
 
-        Hit hit = ((HitList)((Group)((GroupList)req.getResultGroup(res).get(0)).get(0)).get(0)).get(0);
+        Hit hit = ((HitList) ((Group) ((GroupList) req.getResultGroup(res).get(0)).get(0)).get(0)).get(0);
         assertTrue(hit instanceof FastHit);
         assertTrue(hit.isFilled(null));
     }
 
     @Test
-    public void requireThatHitsAreAttachedToCorrectQuery() {
+    void requireThatHitsAreAttachedToCorrectQuery() {
         Query queryA = newQuery();
         GroupingRequest req = GroupingRequest.newInstance(queryA);
         req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar)))))"));
@@ -460,24 +455,24 @@ public class GroupingExecutorTestCase {
         Grouping grp = new Grouping(0);
         grp.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar"))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar"))
+                ));
         GroupingListHit pass0 = new GroupingListHit(List.of(grp), null);
 
         GlobalId gid = new GlobalId((new DocumentId("id:ns:type::1")).getGlobalId());
         grp = new Grouping(0);
         grp.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
-                .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(4, gid, 6)))
-        ));
+                        .addAggregationResult(new HitsAggregationResult(1, "bar").addHit(new com.yahoo.searchlib.aggregation.FS4Hit(4, gid, 6)))
+                ));
         GroupingListHit pass1 = new GroupingListHit(List.of(grp), null);
         Query queryB = newQuery(); // required by GroupingListHit.getSearchQuery()
         pass1.setQuery(queryB);
 
         QueryMapper qm = new QueryMapper();
         Execution exec = newExecution(new GroupingExecutor(),
-                                      new ResultProvider(Arrays.asList(pass0, pass1)),
-                                      qm);
+                new ResultProvider(Arrays.asList(pass0, pass1)),
+                qm);
         exec.fill(exec.search(queryA));
         assertEquals(1, qm.hitsByQuery.size());
         assertTrue(qm.hitsByQuery.containsKey(queryB));
@@ -488,7 +483,7 @@ public class GroupingExecutorTestCase {
      * (triggered by the exc.search call in the below).
      */
     @Test
-    public void testRankProperties() {
+    void testRankProperties() {
         final double delta = 0.000000001;
         Execution exc = newExecution(new GroupingExecutor());
         {
@@ -532,7 +527,7 @@ public class GroupingExecutorTestCase {
     }
 
     @Test
-    public void testIllegalQuery() {
+    void testIllegalQuery() {
         Execution exc = newExecution(new GroupingExecutor());
 
         Query query = new Query();
@@ -541,14 +536,14 @@ public class GroupingExecutorTestCase {
         Result result = exc.search(query);
         com.yahoo.search.result.ErrorMessage message = result.hits().getError();
 
-        assertNotNull("Got error", message);
+        assertNotNull(message, "Got error");
         assertEquals("Illegal query", message.getMessage());
         assertEquals("No query", message.getDetailedMessage());
         assertEquals(3, message.getCode());
     }
 
     @Test
-    public void testResultsFromMultipleDocumentTypes() {
+    void testResultsFromMultipleDocumentTypes() {
         Query query = newQuery();
         GroupingRequest request = GroupingRequest.newInstance(query);
         request.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(min(bar), max(bar))))"));
@@ -556,38 +551,38 @@ public class GroupingExecutorTestCase {
         Map<String, List<GroupingListHit>> resultsByDocumentType = new HashMap<>();
         Grouping groupA1 = new Grouping(0);
         groupA1.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                             .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueA")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(6)).setTag(4)))
-                             .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueA")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(6)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4)))
         );
         Grouping groupA2 = new Grouping(0);
         groupA2.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                             .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueB")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4)))
-                             .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueB")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3)))
         );
         Grouping groupB1 = new Grouping(0);
         groupB1.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueA")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(2)).setTag(4)))
-                                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(3)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueA")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(2)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(3)).setTag(4)))
         );
         Grouping groupB2 = new Grouping(0);
         groupB2.setRoot(new com.yahoo.searchlib.aggregation.Group()
-                                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueC")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(7)).setTag(4)))
-                                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(11)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("uniqueC")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(7)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("common")).addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(11)).setTag(4)))
         );
         resultsByDocumentType.put("typeA", List.of(new GroupingListHit(List.of(groupA1), null),
-                                                   new GroupingListHit(List.of(groupA2), null)));
+                new GroupingListHit(List.of(groupA2), null)));
         resultsByDocumentType.put("typeB", List.of(new GroupingListHit(List.of(groupB1), null),
-                                                   new GroupingListHit(List.of(groupB2), null)));
+                new GroupingListHit(List.of(groupB2), null)));
         Execution execution = newExecution(new GroupingExecutor(),
-                                           new MockClusterSearcher(),
-                                           new MultiDocumentTypeResultProvider(resultsByDocumentType));
+                new MockClusterSearcher(),
+                new MultiDocumentTypeResultProvider(resultsByDocumentType));
 
         Result result = execution.search(query);
         Group group = request.getResultGroup(result);
         assertEquals(1, group.size());
         Hit hit = group.get(0);
         assertTrue(hit instanceof GroupList);
-        GroupList list = (GroupList)hit;
+        GroupList list = (GroupList) hit;
 
         assertEquals(4, list.size());
 

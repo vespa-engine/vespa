@@ -14,8 +14,8 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.SimpleConfigProducer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -23,7 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Ulf Lilleengen
@@ -64,7 +65,7 @@ public class FileSenderTest {
         return new FileSender(serviceList, fileRegistry, new BaseDeployLogger());
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockRoot root = new MockRoot();
         producer = new SimpleConfigProducer<>(root, "test");
@@ -81,7 +82,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_simple_file_fields_are_modified() {
+    void require_that_simple_file_fields_are_modified() {
         def.addFileDef("fileVal");
         def.addStringDef("stringVal");
         builder.setField("fileVal", "foo.txt");
@@ -93,7 +94,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_simple_path_fields_are_modified() {
+    void require_that_simple_path_fields_are_modified() {
         def.addPathDef("fileVal");
         def.addStringDef("stringVal");
         builder.setField("fileVal", "foo.txt");
@@ -105,7 +106,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_fields_in_inner_arrays_are_modified() {
+    void require_that_fields_in_inner_arrays_are_modified() {
         def.innerArrayDef("inner").addFileDef("fileVal");
         def.innerArrayDef("inner").addStringDef("stringVal");
         ConfigPayloadBuilder inner = builder.getArray("inner").append();
@@ -118,7 +119,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_arrays_are_modified() {
+    void require_that_arrays_are_modified() {
         def.arrayDef("fileArray").setTypeSpec(new ConfigDefinition.TypeSpec("fileArray", "file", null, null, null, null));
         def.arrayDef("pathArray").setTypeSpec(new ConfigDefinition.TypeSpec("pathArray", "path", null, null, null, null));
         def.arrayDef("stringArray").setTypeSpec(new ConfigDefinition.TypeSpec("stringArray", "string", null, null, null, null));
@@ -137,7 +138,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_structs_are_modified() {
+    void require_that_structs_are_modified() {
         def.structDef("struct").addFileDef("fileVal");
         def.structDef("struct").addStringDef("stringVal");
         builder.getObject("struct").setField("fileVal", "foo.txt");
@@ -149,7 +150,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_leaf_maps_are_modified() {
+    void require_that_leaf_maps_are_modified() {
         def.leafMapDef("fileMap").setTypeSpec(new ConfigDefinition.TypeSpec("fileMap", "file", null, null, null, null));
         def.leafMapDef("pathMap").setTypeSpec(new ConfigDefinition.TypeSpec("pathMap", "path", null, null, null, null));
         def.leafMapDef("stringMap").setTypeSpec(new ConfigDefinition.TypeSpec("stringMap", "string", null, null, null, null));
@@ -168,7 +169,7 @@ public class FileSenderTest {
     }
 
     @Test
-    public void require_that_fields_in_inner_maps_are_modified() {
+    void require_that_fields_in_inner_maps_are_modified() {
         def.structMapDef("inner").addFileDef("fileVal");
         def.structMapDef("inner").addStringDef("stringVal");
         ConfigPayloadBuilder inner = builder.getMap("inner").put("foo");
@@ -180,11 +181,13 @@ public class FileSenderTest {
         assertEquals("bar.txt", builder.getMap("inner").get("foo").getObject("stringVal").getValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void require_that_null_files_are_not_sent() {
-        def.addFileDef("fileVal");
-        fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+    @Test
+    void require_that_null_files_are_not_sent() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            def.addFileDef("fileVal");
+            fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
+            fileSender().sendUserConfiguredFiles(producer);
+        });
     }
 
 

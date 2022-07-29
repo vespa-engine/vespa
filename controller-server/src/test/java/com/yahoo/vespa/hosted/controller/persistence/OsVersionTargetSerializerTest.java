@@ -6,13 +6,13 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class OsVersionTargetSerializerTest {
 
     @Test
-    public void serialization() {
+    void serialization() {
         OsVersionTargetSerializer serializer = new OsVersionTargetSerializer(new OsVersionSerializer());
         Set<OsVersionTarget> targets = ImmutableSet.of(
                 new OsVersionTarget(new OsVersion(Version.fromString("7.1"), CloudName.defaultName()), Duration.ZERO, Instant.ofEpochMilli(123)),

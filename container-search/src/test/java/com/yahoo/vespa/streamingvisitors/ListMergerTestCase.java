@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.LinkedList;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Ulf Carlin
@@ -31,9 +31,9 @@ public class ListMergerTestCase {
     }
 
     @Test
-    public void testMergeLists() {
+    void testMergeLists() {
         int entryCount = 6;
-        int padding = (int)Math.log10(entryCount) + 1;
+        int padding = (int) Math.log10(entryCount) + 1;
 
         List<String> list1 = new LinkedList<>();
         List<String> list2 = new LinkedList<>();
@@ -42,17 +42,17 @@ public class ListMergerTestCase {
         List<String> newList = ListMerger.mergeIntoArrayList(list1, list2);
         verifyList(newList, entryCount, padding);
 
-        newList = ListMerger.mergeIntoArrayList(list1, list2, entryCount/2);
-        verifyList(newList, entryCount/2, padding);
+        newList = ListMerger.mergeIntoArrayList(list1, list2, entryCount / 2);
+        verifyList(newList, entryCount / 2, padding);
 
-        ListMerger.mergeLinkedLists(list1, list2, entryCount/2);
-        verifyList(list1, entryCount/2, padding);
+        ListMerger.mergeLinkedLists(list1, list2, entryCount / 2);
+        verifyList(list1, entryCount / 2, padding);
     }
 
     @Test
-    public void testMergeListsReversed() {
+    void testMergeListsReversed() {
         int entryCount = 6;
-        int padding = (int)Math.log10(entryCount) + 1;
+        int padding = (int) Math.log10(entryCount) + 1;
 
         List<String> list1 = new LinkedList<>();
         List<String> list2 = new LinkedList<>();
@@ -61,11 +61,11 @@ public class ListMergerTestCase {
         List<String> newList = ListMerger.mergeIntoArrayList(list1, list2);
         verifyList(newList, entryCount, padding);
 
-        newList = ListMerger.mergeIntoArrayList(list1, list2, entryCount/2);
-        verifyList(newList, entryCount/2, padding);
+        newList = ListMerger.mergeIntoArrayList(list1, list2, entryCount / 2);
+        verifyList(newList, entryCount / 2, padding);
 
-        ListMerger.mergeLinkedLists(list1, list2, entryCount/2);
-        verifyList(list1, entryCount/2, padding);
+        ListMerger.mergeLinkedLists(list1, list2, entryCount / 2);
+        verifyList(list1, entryCount / 2, padding);
     }
 
 }

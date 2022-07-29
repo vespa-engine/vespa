@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.service.ServerProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Simon Thoresen Hult
@@ -10,25 +10,25 @@ import org.junit.Test;
 public class NonWorkingServerTestCase {
 
     @Test
-    public void requireThatStartDoesNotThrow() {
+    void requireThatStartDoesNotThrow() {
         ServerProvider server = new NonWorkingServerProvider();
         server.start();
     }
 
     @Test
-    public void requireThatCloseDoesNotThrow() {
+    void requireThatCloseDoesNotThrow() {
         ServerProvider server = new NonWorkingServerProvider();
         server.close();
     }
 
     @Test
-    public void requireThatReferDoesNotThrow() {
+    void requireThatReferDoesNotThrow() {
         ServerProvider server = new NonWorkingServerProvider();
         server.refer();
     }
 
     @Test
-    public void requireThatReleaseDoesNotThrow() {
+    void requireThatReleaseDoesNotThrow() {
         ServerProvider server = new NonWorkingServerProvider();
         server.release();
     }

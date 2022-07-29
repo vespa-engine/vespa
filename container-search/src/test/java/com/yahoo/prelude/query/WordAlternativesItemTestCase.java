@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
 
 /**
@@ -18,7 +18,7 @@ import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
 public class WordAlternativesItemTestCase {
 
     @Test
-    public final void testWordAlternativesItem() {
+    final void testWordAlternativesItem() {
         List<Alternative> terms = new ArrayList<>();
         List<Alternative> expected;
         terms.add(new Alternative("1", 1.0));
@@ -35,7 +35,7 @@ public class WordAlternativesItemTestCase {
     }
 
     @Test
-    public final void testSetAlternatives() {
+    final void testSetAlternatives() {
         List<Alternative> terms = new ArrayList<>();
         terms.add(new Alternative("1", 1.0));
         terms.add(new Alternative("2", 1.0));
@@ -43,19 +43,19 @@ public class WordAlternativesItemTestCase {
         terms.add(new Alternative("1", 1.5));
         terms.add(new Alternative("2", 0.5));
         w.setAlternatives(terms);
-        assertTrue("Could not overwrite alternative",
-                w.getAlternatives().stream().anyMatch((a) -> a.word.equals("1") && a.exactness == 1.5));
-        assertTrue("Old alternative unexpectedly removed",
-                w.getAlternatives().stream().anyMatch((a) -> a.word.equals("2") && a.exactness == 1.0));
+        assertTrue(w.getAlternatives().stream().anyMatch((a) -> a.word.equals("1") && a.exactness == 1.5),
+                "Could not overwrite alternative");
+        assertTrue(w.getAlternatives().stream().anyMatch((a) -> a.word.equals("2") && a.exactness == 1.0),
+                "Old alternative unexpectedly removed");
         assertEquals(2, w.getAlternatives().size());
         terms.add(new Alternative("3", 0.5));
         w.setAlternatives(terms);
-        assertTrue("Could not add new term",
-                w.getAlternatives().stream().anyMatch((a) -> a.word.equals("3") && a.exactness == 0.5));
+        assertTrue(w.getAlternatives().stream().anyMatch((a) -> a.word.equals("3") && a.exactness == 0.5),
+                "Could not add new term");
     }
 
     @Test
-    public final void testAddTerm() {
+    final void testAddTerm() {
         List<Alternative> terms = new ArrayList<>();
         terms.add(new Alternative("1", 1.0));
         terms.add(new Alternative("2", 1.0));
@@ -63,12 +63,12 @@ public class WordAlternativesItemTestCase {
         w.addTerm("1", 0.1);
         assertEquals(terms, w.getAlternatives());
         w.addTerm("1", 2.0);
-        assertTrue("Could not add new alternative",
-                w.getAlternatives().stream().anyMatch((a) -> a.word.equals("1") && a.exactness == 2.0));
+        assertTrue(w.getAlternatives().stream().anyMatch((a) -> a.word.equals("1") && a.exactness == 2.0),
+                "Could not add new alternative");
         assertEquals(2, w.getAlternatives().size());
         w.addTerm("3", 0.5);
-        assertTrue("Could not add new term",
-                w.getAlternatives().stream().anyMatch((a) -> a.word.equals("3") && a.exactness == 0.5));
+        assertTrue(w.getAlternatives().stream().anyMatch((a) -> a.word.equals("3") && a.exactness == 0.5),
+                "Could not add new term");
     }
 
 }

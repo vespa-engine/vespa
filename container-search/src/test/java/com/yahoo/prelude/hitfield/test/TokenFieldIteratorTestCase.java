@@ -4,11 +4,11 @@ package com.yahoo.prelude.hitfield.test;
 import java.util.ListIterator;
 
 import com.yahoo.prelude.hitfield.FieldPart;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.StringFieldPart;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the FieldTokenIterator class
@@ -18,35 +18,35 @@ import static org.junit.Assert.assertEquals;
 public class TokenFieldIteratorTestCase {
 
     @Test
-    public void testTokenIteratorNext() {
+    void testTokenIteratorNext() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
         ListIterator<?> l = hf.tokenIterator();
-        FieldPart p = (FieldPart)l.next();
+        FieldPart p = (FieldPart) l.next();
         assertEquals("hei", p.getContent());
-        p = (FieldPart)l.next();
+        p = (FieldPart) l.next();
         assertEquals("paa", p.getContent());
-        p = (FieldPart)l.next();
+        p = (FieldPart) l.next();
         assertEquals("deg", p.getContent());
         assertEquals(false, l.hasNext());
     }
 
     @Test
-    public void testTokenIteratorPrevious() {
+    void testTokenIteratorPrevious() {
         HitField hf = new HitField("boo", "hei paa");
         ListIterator<?> l = hf.tokenIterator();
-        FieldPart p = (FieldPart)l.next();
+        FieldPart p = (FieldPart) l.next();
         assertEquals("hei", p.getContent());
-        p = (FieldPart)l.next();
+        p = (FieldPart) l.next();
         assertEquals("paa", p.getContent());
-        p = (FieldPart)l.previous();
+        p = (FieldPart) l.previous();
         assertEquals("paa", p.getContent());
-        p = (FieldPart)l.previous();
+        p = (FieldPart) l.previous();
         assertEquals("hei", p.getContent());
     }
 
     @Test
-    public void testTokenIteratorSet() {
+    void testTokenIteratorSet() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
         ListIterator<FieldPart> l = hf.tokenIterator();
@@ -61,7 +61,7 @@ public class TokenFieldIteratorTestCase {
     }
 
     @Test
-    public void testTokenIteratorAdd() {
+    void testTokenIteratorAdd() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
         ListIterator<FieldPart> l = hf.tokenIterator();
@@ -76,7 +76,7 @@ public class TokenFieldIteratorTestCase {
     }
 
     @Test
-    public void testTokenIteratorRemove() {
+    void testTokenIteratorRemove() {
         HitField hf = new HitField("boo", "hei paa deg");
         ListIterator<FieldPart> l = hf.tokenIterator();
         l.next();

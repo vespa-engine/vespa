@@ -6,18 +6,18 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.test.NonWorkingRequest;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -28,7 +28,7 @@ public class AbstractRequestHandlerTestCase {
     private static final int NUM_REQUESTS = 666;
 
     @Test
-    public void requireThatHandleTimeoutIsImplemented() throws Exception {
+    void requireThatHandleTimeoutIsImplemented() throws Exception {
         FutureResponse handler = new FutureResponse();
         new AbstractRequestHandler() {
 
@@ -43,7 +43,7 @@ public class AbstractRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatHelloWorldWorks() throws InterruptedException {
+    void requireThatHelloWorldWorks() throws InterruptedException {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://localhost/", new HelloWorldHandler());
@@ -62,7 +62,7 @@ public class AbstractRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatEchoWorks() throws InterruptedException {
+    void requireThatEchoWorks() throws InterruptedException {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://localhost/", new EchoHandler());
@@ -83,7 +83,7 @@ public class AbstractRequestHandlerTestCase {
     }
 
     @Test
-    public void requireThatForwardWorks() throws InterruptedException {
+    void requireThatForwardWorks() throws InterruptedException {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("http://localhost/", new ForwardHandler());

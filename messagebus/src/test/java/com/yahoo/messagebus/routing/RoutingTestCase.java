@@ -23,11 +23,11 @@ import com.yahoo.messagebus.routing.test.CustomPolicyFactory;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -36,11 +36,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author havardpe
@@ -60,7 +56,7 @@ public class RoutingTestCase {
     String sessName = "session";
     String dstSessName = "dst/session";
 
-    @BeforeClass
+    @BeforeAll
     public static void commonSetup() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer("dst", null, slobrok, new SimpleProtocol());
@@ -70,7 +66,7 @@ public class RoutingTestCase {
                                    slobrok);
     }
 
-    @AfterClass
+    @AfterAll
     public static void commonTeardown() {
         dstServer.destroy();
         srcServer.destroy();
@@ -80,7 +76,7 @@ public class RoutingTestCase {
         slobrok = null;
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException, UnknownHostException {
         // reset some params:
         retryPolicy.setEnabled(true);
@@ -99,7 +95,7 @@ public class RoutingTestCase {
         assertTrue(srcServer.waitSlobrok(dstSessName, 1));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dstSession.destroy();
         srcSession.destroy();
@@ -108,10 +104,10 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatNullRouteIsCaught() {
+    void requireThatNullRouteIsCaught() {
         log.log(Level.INFO, "Starting: requireThatNullRouteIsCaught");
         assertTrue(srcSession.send(createMessage("msg")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -120,10 +116,10 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatEmptyRouteIsCaught() {
+    void requireThatEmptyRouteIsCaught() {
         log.log(Level.INFO, "Starting: requireThatEmptyRouteIsCaught");
         assertTrue(srcSession.send(createMessage("msg"), new Route()).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -132,15 +128,15 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatHopNameIsExpanded() {
+    void requireThatHopNameIsExpanded() {
         log.log(Level.INFO, "Starting: requireThatHopNameIsExpanded");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addHop(new HopSpec("dst", dstSessName)));
+                .addHop(new HopSpec("dst", dstSessName)));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
@@ -148,16 +144,16 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRouteDirectiveWorks() {
+    void requireThatRouteDirectiveWorks() {
         log.log(Level.INFO, "Starting: requireThatRouteDirectiveWorks");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addRoute(new RouteSpec("dst").addHop(dstSessName))
-                                       .addHop(new HopSpec("dir", "route:dst")));
+                .addRoute(new RouteSpec("dst").addHop(dstSessName))
+                .addHop(new HopSpec("dir", "route:dst")));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dir")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
@@ -165,15 +161,15 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRouteNameIsExpanded() {
+    void requireThatRouteNameIsExpanded() {
         log.log(Level.INFO, "Starting: requireThatRouteNameIsExpanded");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addRoute(new RouteSpec("dst").addHop(dstSessName)));
+                .addRoute(new RouteSpec("dst").addHop(dstSessName)));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
@@ -181,13 +177,13 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatHopResolutionOverflowIsCaught() {
+    void requireThatHopResolutionOverflowIsCaught() {
         log.log(Level.INFO, "Starting: requireThatHopResolutionOverflowIsCaught");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addHop(new HopSpec("foo", "bar"))
-                                       .addHop(new HopSpec("bar", "foo")));
+                .addHop(new HopSpec("foo", "bar"))
+                .addHop(new HopSpec("bar", "foo")));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("foo")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -196,12 +192,12 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRouteResolutionOverflowIsCaught() {
+    void requireThatRouteResolutionOverflowIsCaught() {
         log.log(Level.INFO, "Starting: requireThatRouteResolutionOverflowIsCaught");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addRoute(new RouteSpec("foo").addHop("route:foo")));
+                .addRoute(new RouteSpec("foo").addHop("route:foo")));
         assertTrue(srcSession.send(createMessage("msg"), "foo").isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -210,18 +206,18 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRouteExpansionOnlyReplacesFirstHop() {
+    void requireThatRouteExpansionOnlyReplacesFirstHop() {
         log.log(Level.INFO, "Starting: requireThatRouteExpansionOnlyReplacesFirstHop");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addRoute(new RouteSpec("foo").addHop(dstSessName).addHop("bar")));
+                .addRoute(new RouteSpec("foo").addHop(dstSessName).addHop("bar")));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("route:foo baz")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         assertEquals(2, msg.getRoute().getNumHops());
         assertEquals("bar", msg.getRoute().getHop(0).toString());
         assertEquals("baz", msg.getRoute().getHop(1).toString());
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
@@ -229,12 +225,12 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatErrorDirectiveWorks() {
+    void requireThatErrorDirectiveWorks() {
         log.log(Level.INFO, "Starting: requireThatErrorDirectiveWorks");
         Route route = Route.parse("foo/bar/baz");
         route.getHop(0).setDirective(1, new ErrorDirective("err"));
         assertTrue(srcSession.send(createMessage("msg"), route).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -244,7 +240,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatIllegalSelectIsCaught() {
+    void requireThatIllegalSelectIsCaught() {
         log.log(Level.INFO, "Starting: requireThatIllegalSelectIsCaught");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
@@ -252,7 +248,7 @@ public class RoutingTestCase {
         Route route = Route.parse("[Custom: ]");
         assertNotNull(route);
         assertTrue(srcSession.send(createMessage("msg"), route).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -261,13 +257,13 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatEmptySelectIsCaught() {
+    void requireThatEmptySelectIsCaught() {
         log.log(Level.INFO, "Starting: requireThatEmptySelectIsCaught");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -276,16 +272,16 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatPolicySelectWorks() {
+    void requireThatPolicySelectWorks() {
         log.log(Level.INFO, "Starting: requireThatPolicySelectWorks");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:" + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
@@ -293,110 +289,110 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatTransientErrorsAreRetried() {
+    void requireThatTransientErrorsAreRetried() {
         log.log(Level.INFO, "Starting: requireThatTransientErrorsAreRetried");
         assertTrue(srcSession.send(createMessage("msg"), Route.parse(dstSessName)).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err1"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err2"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
         assertTrace(Arrays.asList("[APP_TRANSIENT_ERROR @ localhost]: err1",
-                                  "-[APP_TRANSIENT_ERROR @ localhost]: err1",
-                                  "[APP_TRANSIENT_ERROR @ localhost]: err2",
-                                  "-[APP_TRANSIENT_ERROR @ localhost]: err2"),
-                    reply.getTrace());
+                        "-[APP_TRANSIENT_ERROR @ localhost]: err1",
+                        "[APP_TRANSIENT_ERROR @ localhost]: err2",
+                        "-[APP_TRANSIENT_ERROR @ localhost]: err2"),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatTransientErrorsAreRetried");
     }
 
     @Test
-    public void requireThatTransientErrorsAreRetriedWithPolicy() {
+    void requireThatTransientErrorsAreRetriedWithPolicy() {
         log.log(Level.INFO, "Starting: requireThatTransientErrorsAreRetriedWithPolicy");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:" + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err1"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err2"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
         assertTrace(Arrays.asList("Source session accepted a 3 byte message. 1 message(s) now pending.",
-                                  "Running routing policy 'Custom'.",
-                                  "Selecting ["+dstSessName+"].",
-                                  "Component '"+dstSessName+"' selected by policy 'Custom'.",
-                                  "Resolving '"+dstSessName+"'.",
-                                  "Sending message (version ${VERSION}) from client to '"+dstSessName+"'",
-                                  "Message (type 1) received at 'dst' for session '"+sessName+"'.",
-                                  "[APP_TRANSIENT_ERROR @ localhost]: err1",
-                                  "Sending reply (version ${VERSION}) from 'dst'.",
-                                  "Reply (type 0) received at client.",
-                                  "Routing policy 'Custom' merging replies.",
-                                  "Merged ["+dstSessName+"].",
-                                  "Message scheduled for retry 1 in 0.0 seconds.",
-                                  "Resender resending message.",
-                                  "Running routing policy 'Custom'.",
-                                  "Selecting ["+dstSessName+"].",
-                                  "Component '"+dstSessName+"' selected by policy 'Custom'.",
-                                  "Resolving '"+dstSessName+"'.",
-                                  "Sending message (version ${VERSION}) from client to '"+dstSessName+"'",
-                                  "Message (type 1) received at 'dst' for session '"+sessName+"'.",
-                                  "[APP_TRANSIENT_ERROR @ localhost]: err2",
-                                  "Sending reply (version ${VERSION}) from 'dst'.",
-                                  "Reply (type 0) received at client.",
-                                  "Routing policy 'Custom' merging replies.",
-                                  "Merged ["+dstSessName+"].",
-                                  "Message scheduled for retry 2 in 0.0 seconds.",
-                                  "Resender resending message.",
-                                  "Running routing policy 'Custom'.",
-                                  "Selecting ["+dstSessName+"].",
-                                  "Component '"+dstSessName+"' selected by policy 'Custom'.",
-                                  "Resolving '"+dstSessName+"'.",
-                                  "Sending message (version ${VERSION}) from client to '"+dstSessName+"'",
-                                  "Message (type 1) received at 'dst' for session '"+sessName+"'.",
-                                  "Sending reply (version ${VERSION}) from 'dst'.",
-                                  "Reply (type 0) received at client.",
-                                  "Routing policy 'Custom' merging replies.",
-                                  "Merged ["+dstSessName+"].",
-                                  "Source session received reply. 0 message(s) now pending."),
-                    reply.getTrace());
+                        "Running routing policy 'Custom'.",
+                        "Selecting [" + dstSessName + "].",
+                        "Component '" + dstSessName + "' selected by policy 'Custom'.",
+                        "Resolving '" + dstSessName + "'.",
+                        "Sending message (version ${VERSION}) from client to '" + dstSessName + "'",
+                        "Message (type 1) received at 'dst' for session '" + sessName + "'.",
+                        "[APP_TRANSIENT_ERROR @ localhost]: err1",
+                        "Sending reply (version ${VERSION}) from 'dst'.",
+                        "Reply (type 0) received at client.",
+                        "Routing policy 'Custom' merging replies.",
+                        "Merged [" + dstSessName + "].",
+                        "Message scheduled for retry 1 in 0.0 seconds.",
+                        "Resender resending message.",
+                        "Running routing policy 'Custom'.",
+                        "Selecting [" + dstSessName + "].",
+                        "Component '" + dstSessName + "' selected by policy 'Custom'.",
+                        "Resolving '" + dstSessName + "'.",
+                        "Sending message (version ${VERSION}) from client to '" + dstSessName + "'",
+                        "Message (type 1) received at 'dst' for session '" + sessName + "'.",
+                        "[APP_TRANSIENT_ERROR @ localhost]: err2",
+                        "Sending reply (version ${VERSION}) from 'dst'.",
+                        "Reply (type 0) received at client.",
+                        "Routing policy 'Custom' merging replies.",
+                        "Merged [" + dstSessName + "].",
+                        "Message scheduled for retry 2 in 0.0 seconds.",
+                        "Resender resending message.",
+                        "Running routing policy 'Custom'.",
+                        "Selecting [" + dstSessName + "].",
+                        "Component '" + dstSessName + "' selected by policy 'Custom'.",
+                        "Resolving '" + dstSessName + "'.",
+                        "Sending message (version ${VERSION}) from client to '" + dstSessName + "'",
+                        "Message (type 1) received at 'dst' for session '" + sessName + "'.",
+                        "Sending reply (version ${VERSION}) from 'dst'.",
+                        "Reply (type 0) received at client.",
+                        "Routing policy 'Custom' merging replies.",
+                        "Merged [" + dstSessName + "].",
+                        "Source session received reply. 0 message(s) now pending."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatTransientErrorsAreRetriedWithPolicy");
     }
 
     @Test
-    public void requireThatRetryCanBeDisabled() {
+    void requireThatRetryCanBeDisabled() {
         log.log(Level.INFO, "Starting: requireThatRetryCanBeDisabled");
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse(dstSessName)).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err"));
         dstSession.reply(reply);
-        reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -405,120 +401,120 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRetryCallsSelect() {
+    void requireThatRetryCallsSelect() {
         log.log(Level.INFO, "Starting: requireThatRetryCallsSelect");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:" + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Selecting ["+dstSessName+"].",
-                                  "[APP_TRANSIENT_ERROR @ localhost]",
-                                  "-[APP_TRANSIENT_ERROR @ localhost]",
-                                  "Merged ["+dstSessName+"].",
-                                  "Selecting ["+dstSessName+"].",
-                                  "Sending reply",
-                                  "Merged ["+dstSessName+"]."),
-                    reply.getTrace());
+        assertTrace(Arrays.asList("Selecting [" + dstSessName + "].",
+                        "[APP_TRANSIENT_ERROR @ localhost]",
+                        "-[APP_TRANSIENT_ERROR @ localhost]",
+                        "Merged [" + dstSessName + "].",
+                        "Selecting [" + dstSessName + "].",
+                        "Sending reply",
+                        "Merged [" + dstSessName + "]."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatRetryCallsSelect");
     }
 
     @Test
-    public void requireThatPolicyCanDisableReselectOnRetry() {
+    void requireThatPolicyCanDisableReselectOnRetry() {
         log.log(Level.INFO, "Starting: requireThatPolicyCanDisableReselectOnRetry");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(false));
         srcServer.mb.putProtocol(protocol);
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:" + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "err"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Selecting ["+dstSessName+"].",
-                                  "[APP_TRANSIENT_ERROR @ localhost]",
-                                  "-[APP_TRANSIENT_ERROR @ localhost]",
-                                  "Merged ["+dstSessName+"].",
-                                  "-Selecting ["+dstSessName+"].",
-                                  "Sending reply",
-                                  "Merged ["+dstSessName+"]."),
-                    reply.getTrace());
+        assertTrace(Arrays.asList("Selecting [" + dstSessName + "].",
+                        "[APP_TRANSIENT_ERROR @ localhost]",
+                        "-[APP_TRANSIENT_ERROR @ localhost]",
+                        "Merged [" + dstSessName + "].",
+                        "-Selecting [" + dstSessName + "].",
+                        "Sending reply",
+                        "Merged [" + dstSessName + "]."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatPolicyCanDisableReselectOnRetry");
     }
 
     @Test
-    public void requireThatPolicyCanConsumeErrors() {
+    void requireThatPolicyCanConsumeErrors() {
         log.log(Level.INFO, "Starting: requireThatPolicyCanConsumeErrors");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(true, ErrorCode.NO_ADDRESS_FOR_SERVICE));
         srcServer.mb.putProtocol(protocol);
         retryPolicy.setEnabled(false);
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:"+dstSessName+",dst/unknown]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:" + dstSessName + ",dst/unknown]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(0).getCode());
-        assertTrace(Arrays.asList("Selecting ["+dstSessName+", dst/unknown].",
-                                  "[NO_ADDRESS_FOR_SERVICE @ localhost]",
-                                  "Sending reply",
-                                  "Merged ["+dstSessName+", dst/unknown]."),
-                    reply.getTrace());
+        assertTrace(Arrays.asList("Selecting [" + dstSessName + ", dst/unknown].",
+                        "[NO_ADDRESS_FOR_SERVICE @ localhost]",
+                        "Sending reply",
+                        "Merged [" + dstSessName + ", dst/unknown]."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatPolicyCanConsumeErrors");
     }
 
     @Test
-    public void requireThatPolicyOnlyConsumesDeclaredErrors() {
+    void requireThatPolicyOnlyConsumesDeclaredErrors() {
         log.log(Level.INFO, "Starting: requireThatPolicyOnlyConsumesDeclaredErrors");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom:dst/unknown]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(0).getCode());
         assertTrace(Arrays.asList("Selecting [dst/unknown].",
-                                  "[NO_ADDRESS_FOR_SERVICE @ localhost]",
-                                  "Merged [dst/unknown]."),
-                    reply.getTrace());
+                        "[NO_ADDRESS_FOR_SERVICE @ localhost]",
+                        "Merged [dst/unknown]."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatPolicyOnlyConsumesDeclaredErrors");
     }
 
     @Test
-    public void requireThatPolicyCanExpandToPolicy() {
+    void requireThatPolicyCanExpandToPolicy() {
         log.log(Level.INFO, "Starting: requireThatPolicyCanExpandToPolicy");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(true, ErrorCode.NO_ADDRESS_FOR_SERVICE));
         srcServer.mb.putProtocol(protocol);
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"),
-                                   Route.parse("[Custom:[Custom:"+dstSessName+"],[Custom:dst/unknown]]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+                Route.parse("[Custom:[Custom:" + dstSessName + "],[Custom:dst/unknown]]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -527,7 +523,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatReplyCanBeRemovedFromChildNodes() {
+    void requireThatReplyCanBeRemovedFromChildNodes() {
         log.log(Level.INFO, "Starting: requireThatReplyCanBeRemovedFromChildNodes");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new SimpleProtocol.PolicyFactory() {
@@ -535,32 +531,32 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new RemoveReplyPolicy(true,
-                                             Arrays.asList(ErrorCode.NO_ADDRESS_FOR_SERVICE),
-                                             CustomPolicyFactory.parseRoutes(param),
-                                             0);
+                        Arrays.asList(ErrorCode.NO_ADDRESS_FOR_SERVICE),
+                        CustomPolicyFactory.parseRoutes(param),
+                        0);
             }
         });
         srcServer.mb.putProtocol(protocol);
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"),
-                                   Route.parse("[Custom:[Custom:"+dstSessName+"],[Custom:dst/unknown]]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+                Route.parse("[Custom:[Custom:" + dstSessName + "],[Custom:dst/unknown]]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
         assertTrace(Arrays.asList("[NO_ADDRESS_FOR_SERVICE @ localhost]",
-                                  "-[NO_ADDRESS_FOR_SERVICE @ localhost]",
-                                  "Sending message",
-                                  "-Sending message"),
-                    reply.getTrace());
+                        "-[NO_ADDRESS_FOR_SERVICE @ localhost]",
+                        "Sending message",
+                        "-Sending message"),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatReplyCanBeRemovedFromChildNodes");
     }
 
     @Test
-    public void requireThatSetReplyWorks() {
+    void requireThatSetReplyWorks() {
         log.log(Level.INFO, "Starting: requireThatSetReplyWorks");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Select", new CustomPolicyFactory(true, ErrorCode.APP_FATAL_ERROR));
@@ -574,11 +570,11 @@ public class RoutingTestCase {
         srcServer.mb.putProtocol(protocol);
         retryPolicy.setEnabled(false);
         assertTrue(
-                srcSession.send(createMessage("msg"), Route.parse("[Select:[SetReply:foo],"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+                srcSession.send(createMessage("msg"), Route.parse("[Select:[SetReply:foo]," + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -588,7 +584,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatReplyCanBeReusedOnRetry() {
+    void requireThatReplyCanBeReusedOnRetry() {
         log.log(Level.INFO, "Starting: requireThatReplyCanBeReusedOnRetry");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("ReuseReply", new SimpleProtocol.PolicyFactory() {
@@ -596,8 +592,8 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new ReuseReplyPolicy(false,
-                                            Arrays.asList(ErrorCode.APP_FATAL_ERROR),
-                                            CustomPolicyFactory.parseRoutes(param));
+                        Arrays.asList(ErrorCode.APP_FATAL_ERROR),
+                        CustomPolicyFactory.parseRoutes(param));
             }
         });
         protocol.addPolicyFactory("SetReply", new SimpleProtocol.PolicyFactory() {
@@ -605,29 +601,29 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new SetReplyPolicy(false,
-                                          Arrays.asList(ErrorCode.APP_FATAL_ERROR),
-                                          param);
+                        Arrays.asList(ErrorCode.APP_FATAL_ERROR),
+                        param);
             }
         });
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"),
-                                   Route.parse("[ReuseReply:[SetReply:foo],"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+                Route.parse("[ReuseReply:[SetReply:foo]," + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_TRANSIENT_ERROR, "dst"));
         dstSession.reply(reply);
-        assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         dstSession.acknowledge(msg);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
         log.log(Level.INFO, "Finished: requireThatReplyCanBeReusedOnRetry");
     }
 
     @Test
-    public void requireThatReplyCanBeRemovedAndRetried() {
+    void requireThatReplyCanBeRemovedAndRetried() {
         log.log(Level.INFO, "Starting: requireThatReplyCanBeRemovedAndRetried");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("RemoveReply", new SimpleProtocol.PolicyFactory() {
@@ -635,9 +631,9 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new RemoveReplyPolicy(false,
-                                             Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR),
-                                             CustomPolicyFactory.parseRoutes(param),
-                                             0);
+                        Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR),
+                        CustomPolicyFactory.parseRoutes(param),
+                        0);
             }
         });
         protocol.addPolicyFactory("SetReply", new SimpleProtocol.PolicyFactory() {
@@ -645,71 +641,71 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new SetReplyPolicy(false,
-                                          Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
-                                          param);
+                        Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
+                        param);
             }
         });
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession
-                           .send(createMessage("msg"), Route.parse("[RemoveReply:[SetReply:foo],"+dstSessName+"]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+                .send(createMessage("msg"), Route.parse("[RemoveReply:[SetReply:foo]," + dstSessName + "]")).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.APP_FATAL_ERROR, reply.getError(0).getCode());
         assertEquals("foo", reply.getError(0).getMessage());
         assertTrace(Arrays.asList("Resolving '[SetReply:foo]'.",
-                                  "Resolving '"+dstSessName+"'.",
-                                  "Resender resending message.",
-                                  "Resolving '"+dstSessName+"'.",
-                                  "Resolving '[SetReply:foo]'."),
-                    reply.getTrace());
+                        "Resolving '" + dstSessName + "'.",
+                        "Resender resending message.",
+                        "Resolving '" + dstSessName + "'.",
+                        "Resolving '[SetReply:foo]'."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatReplyCanBeRemovedAndRetried");
     }
 
     @Test
-    public void requireThatIgnoreResultWorks() {
+    void requireThatIgnoreResultWorks() {
         log.log(Level.INFO, "Starting: requireThatIgnoreResultWorks");
-        assertTrue(srcSession.send(createMessage("msg"), Route.parse("?"+dstSessName)).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertTrue(srcSession.send(createMessage("msg"), Route.parse("?" + dstSessName)).isAccepted());
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "dst"));
         dstSession.reply(reply);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Not waiting for a reply from '"+dstSessName+"'."),
-                    reply.getTrace());
+        assertTrace(Arrays.asList("Not waiting for a reply from '" + dstSessName + "'."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatIgnoreResultWorks");
     }
 
     @Test
-    public void requireThatIgnoreResultCanBeSetInHopBlueprint() {
+    void requireThatIgnoreResultCanBeSetInHopBlueprint() {
         log.log(Level.INFO, "Starting: requireThatIgnoreResultCanBeSetInHopBlueprint");
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
-                                       .addHop(new HopSpec("foo", dstSessName).setIgnoreResult(true)));
+                .addHop(new HopSpec("foo", dstSessName).setIgnoreResult(true)));
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("foo")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "dst"));
         dstSession.reply(reply);
-        assertNotNull(reply = ((Receptor)srcSession.getReplyHandler()).getReply(60));
+        assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         System.out.println(reply.getTrace());
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Not waiting for a reply from '"+dstSessName+"'."),
-                    reply.getTrace());
+        assertTrace(Arrays.asList("Not waiting for a reply from '" + dstSessName + "'."),
+                reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatIgnoreResultCanBeSetInHopBlueprint");
     }
 
     @Test
-    public void requireThatIgnoreFlagPersistsThroughHopLookup() {
+    void requireThatIgnoreFlagPersistsThroughHopLookup() {
         log.log(Level.INFO, "Starting: requireThatIgnoreFlagPersistsThroughHopLookup");
         setupRouting(new RoutingTableSpec(SimpleProtocol.NAME).addHop(new HopSpec("foo", "dst/unknown")));
         assertSend("?foo");
@@ -718,7 +714,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatIgnoreFlagPersistsThroughRouteLookup() {
+    void requireThatIgnoreFlagPersistsThroughRouteLookup() {
         log.log(Level.INFO, "Starting: requireThatIgnoreFlagPersistsThroughRouteLookup");
         setupRouting(new RoutingTableSpec(SimpleProtocol.NAME).addRoute(new RouteSpec("foo").addHop("dst/unknown")));
         assertSend("?foo");
@@ -727,7 +723,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatIgnoreFlagPersistsThroughPolicySelect() {
+    void requireThatIgnoreFlagPersistsThroughPolicySelect() {
         log.log(Level.INFO, "Starting: requireThatIgnoreFlagPersistsThroughPolicySelect");
         setupPolicy("Custom", MyPolicy.newSelectAndMerge("dst/unknown"));
         assertSend("?[Custom]");
@@ -736,10 +732,10 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatIgnoreFlagIsSerializedWithMessage() {
+    void requireThatIgnoreFlagIsSerializedWithMessage() {
         log.log(Level.INFO, "Starting: requireThatIgnoreFlagIsSerializedWithMessage");
-        assertSend(dstSessName+" foo ?bar");
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        assertSend(dstSessName + " foo ?bar");
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         Route route = msg.getRoute();
         assertEquals(2, route.getNumHops());
@@ -755,7 +751,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatIgnoreFlagDoesNotInterfere() {
+    void requireThatIgnoreFlagDoesNotInterfere() {
         log.log(Level.INFO, "Starting: requireThatIgnoreFlagDoesNotInterfere");
         setupPolicy("Custom", MyPolicy.newSelectAndMerge(dstSessName));
         assertSend("?[Custom]");
@@ -764,7 +760,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatEmptySelectionCanBeIgnored() {
+    void requireThatEmptySelectionCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatEmptySelectionCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newEmptySelection());
         assertSend("?[Custom]");
@@ -773,7 +769,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatSelectErrorCanBeIgnored() {
+    void requireThatSelectErrorCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatSelectErrorCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newSelectError(ErrorCode.APP_FATAL_ERROR, "foo"));
         assertSend("?[Custom]");
@@ -782,7 +778,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatSelectExceptionCanBeIgnored() {
+    void requireThatSelectExceptionCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatSelectExceptionCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newSelectException(new RuntimeException()));
         assertSend("?[Custom]");
@@ -791,7 +787,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatSelectAndThrowCanBeIgnored() {
+    void requireThatSelectAndThrowCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatSelectAndThrowCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newSelectAndThrow(dstSessName, new RuntimeException()));
         assertSend("?[Custom]");
@@ -800,7 +796,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatEmptyMergeCanBeIgnored() {
+    void requireThatEmptyMergeCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatEmptyMergeCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newEmptyMerge(dstSessName));
         assertSend("?[Custom]");
@@ -810,7 +806,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatMergeErrorCanBeIgnored() {
+    void requireThatMergeErrorCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatMergeErrorCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newMergeError(dstSessName, ErrorCode.APP_FATAL_ERROR, "foo"));
         assertSend("?[Custom]");
@@ -820,7 +816,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatMergeExceptionCanBeIgnored() {
+    void requireThatMergeExceptionCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatMergeExceptionCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newMergeException(dstSessName, new RuntimeException()));
         assertSend("?[Custom]");
@@ -830,7 +826,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatMergeAndThrowCanBeIgnored() {
+    void requireThatMergeAndThrowCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatMergeAndThrowCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newMergeAndThrow(dstSessName, new RuntimeException()));
         assertSend("?[Custom]");
@@ -840,7 +836,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatAllocServiceAddressCanBeIgnored() {
+    void requireThatAllocServiceAddressCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatAllocServiceAddressCanBeIgnored");
         assertSend("?dst/unknown");
         assertTrace("Ignoring errors in reply.");
@@ -848,7 +844,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatDepthLimitCanBeIgnored() {
+    void requireThatDepthLimitCanBeIgnored() {
         log.log(Level.INFO, "Starting: requireThatDepthLimitCanBeIgnored");
         setupPolicy("Custom", MyPolicy.newSelectAndMerge("[Custom]"));
         assertSend("?[Custom]");
@@ -857,21 +853,21 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatRouteCanBeEmptyInDestination() {
+    void requireThatRouteCanBeEmptyInDestination() {
         log.log(Level.INFO, "Starting: requireThatRouteCanBeEmptyInDestination");
         assertTrue(srcSession.send(createMessage("msg"), Route.parse(dstSessName)).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         assertNull(msg.getRoute());
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         log.log(Level.INFO, "Finished: requireThatRouteCanBeEmptyInDestination");
     }
 
     @Test
-    public void requireThatOnlyActiveNodesAreAborted() {
+    void requireThatOnlyActiveNodesAreAborted() {
         log.log(Level.INFO, "Starting: requireThatOnlyActiveNodesAreAborted");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(false));
@@ -880,16 +876,16 @@ public class RoutingTestCase {
             @Override
             public RoutingPolicy create(String param) {
                 return new SetReplyPolicy(false,
-                                          Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR,
-                                                        ErrorCode.APP_TRANSIENT_ERROR,
-                                                        ErrorCode.APP_FATAL_ERROR),
-                                          param);
+                        Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR,
+                                ErrorCode.APP_TRANSIENT_ERROR,
+                                ErrorCode.APP_FATAL_ERROR),
+                        param);
             }
         });
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"),
-                                   Route.parse("[Custom:[SetReply:foo],?bar,"+dstSessName+"]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+                Route.parse("[Custom:[SetReply:foo],?bar," + dstSessName + "]")).isAccepted());
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(2, reply.getNumErrors());
@@ -899,12 +895,12 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatTimeoutWorks() {
+    void requireThatTimeoutWorks() {
         log.log(Level.INFO, "Starting: requireThatTimeoutWorks");
         retryPolicy.setBaseDelay(0.01);
         srcSession.setTimeout(0.5);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/unknown")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(2, reply.getNumErrors());
@@ -914,10 +910,10 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatUnknownPolicyIsCaught() {
+    void requireThatUnknownPolicyIsCaught() {
         log.log(Level.INFO, "Starting: requireThatUnknownPolicyIsCaught");
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Unknown]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -950,13 +946,13 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatSelectExceptionIsCaught() {
+    void requireThatSelectExceptionIsCaught() {
         log.log(Level.INFO, "Starting: requireThatSelectExceptionIsCaught");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", exceptionOnSelectThrowingMockFactory());
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -966,12 +962,12 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void selectExceptionIncludesStackTraceInMessage() {
+    void selectExceptionIncludesStackTraceInMessage() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", exceptionOnSelectThrowingMockFactory());
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom]")).isAccepted());
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertEquals(ErrorCode.POLICY_ERROR, reply.getError(0).getCode());
         // Attempting any sort of full matching of the stack trace is brittle, so
         // simplify by assuming any message which mentions the source file of the
@@ -980,7 +976,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatMergeExceptionIsCaught() {
+    void requireThatMergeExceptionIsCaught() {
         log.log(Level.INFO, "Starting: requireThatMergeExceptionIsCaught");
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new SimpleProtocol.PolicyFactory() {
@@ -1008,10 +1004,10 @@ public class RoutingTestCase {
         });
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("[Custom]")).isAccepted());
-        Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
+        Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
         dstSession.acknowledge(msg);
-        Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
+        Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         System.out.println(reply.getTrace());
         assertEquals(1, reply.getNumErrors());
@@ -1066,11 +1062,11 @@ public class RoutingTestCase {
             String line = expected.get(i).replaceFirst("\\$\\{VERSION\\}", Vtag.currentVersion.toString());
             if (line.charAt(0) == '-') {
                 String str = line.substring(1);
-                assertTrue("Line " + i + " '" + str + "' not expected.",
-                           actual.indexOf(str, pos + 1) < 0);
+                assertTrue(actual.indexOf(str, pos + 1) < 0,
+                           "Line " + i + " '" + str + "' not expected.");
             } else {
                 pos = actual.indexOf(line, pos + 1);
-                assertTrue("Line " + i + " '" + line + "' missing.", pos >= 0);
+                assertTrue(pos >= 0, "Line " + i + " '" + line + "' missing.");
             }
         }
     }

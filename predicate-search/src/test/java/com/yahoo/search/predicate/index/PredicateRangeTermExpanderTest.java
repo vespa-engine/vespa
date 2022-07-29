@@ -2,21 +2,19 @@
 package com.yahoo.search.predicate.index;
 
 import com.yahoo.document.predicate.PredicateHash;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  */
 public class PredicateRangeTermExpanderTest {
     @Test
-    public void requireThatSmallRangeIsExpanded() {
+    void requireThatSmallRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=40-49",
@@ -38,12 +36,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=0-99999999999999999",
                 "key=0-999999999999999999").iterator();
         expander.expand("key", 42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=40"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=40"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatLargeRangeIsExpanded() {
+    void requireThatLargeRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=123456789012345670-123456789012345679",
@@ -65,12 +66,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=100000000000000000-199999999999999999",
                 "key=0-999999999999999999").iterator();
         expander.expand("key", 123456789012345678L, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=123456789012345670"), edge); assertEquals(8, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=123456789012345670"), edge);
+                    assertEquals(8, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatMaxRangeIsExpanded() {
+    void requireThatMaxRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         expander.expand("key", 9223372036854775807L, range -> fail(),
                 (edge, value) -> {
@@ -80,7 +84,7 @@ public class PredicateRangeTermExpanderTest {
     }
 
     @Test
-    public void requireThatSmallNegativeRangeIsExpanded() {
+    void requireThatSmallNegativeRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=-49-40",
@@ -102,12 +106,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=-99999999999999999-0",
                 "key=-999999999999999999-0").iterator();
         expander.expand("key", -42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=-40"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=-40"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatMinRangeIsExpanded() {
+    void requireThatMinRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         expander.expand("key", -9223372036854775808L, range -> fail(),
                 (edge, value) -> {
@@ -117,18 +124,21 @@ public class PredicateRangeTermExpanderTest {
     }
 
     @Test
-    public void requireThatMinRangeMinus9IsExpanded() {
+    void requireThatMinRangeMinus9IsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=-9223372036854775799-9223372036854775790",
                 "key=-9223372036854775799-9223372036854775700").iterator();
         expander.expand("key", -9223372036854775799L, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=-9223372036854775790"), edge); assertEquals(9, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=-9223372036854775790"), edge);
+                    assertEquals(9, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatMinRangeIsExpandedWithArity8() {
+    void requireThatMinRangeIsExpandedWithArity8() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(8);
         expander.expand("key", -9223372036854775808L, range -> fail(),
                 (edge, value) -> {
@@ -138,7 +148,7 @@ public class PredicateRangeTermExpanderTest {
     }
 
     @Test
-    public void requireThatSmallRangeIsExpandedInArity2() {
+    void requireThatSmallRangeIsExpandedInArity2() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(2);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=42-43",
@@ -205,12 +215,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=0-4611686018427387903",
                 "key=0-9223372036854775807").iterator();
         expander.expand("key", 42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=42"), edge); assertEquals(0, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=42"), edge);
+                    assertEquals(0, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatSmallNegativeRangeIsExpandedInArity2() {
+    void requireThatSmallNegativeRangeIsExpandedInArity2() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(2);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=-43-42",
@@ -277,12 +290,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=-4611686018427387903-0",
                 "key=-9223372036854775807-0").iterator();
         expander.expand("key", -42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=-42"), edge); assertEquals(0, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=-42"), edge);
+                    assertEquals(0, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatUpperBoundIsUsed() {
+    void requireThatUpperBoundIsUsed() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -99, 9999);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=40-49",
@@ -290,12 +306,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=0-999",
                 "key=0-9999").iterator();
         expander.expand("key", 42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=40"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=40"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatLowerBoundIsUsed() {
+    void requireThatLowerBoundIsUsed() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -9999, 99);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=-49-40",
@@ -303,19 +322,22 @@ public class PredicateRangeTermExpanderTest {
                 "key=-999-0",
                 "key=-9999-0").iterator();
         expander.expand("key", -42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=-40"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=-40"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatSearchesOutsideBoundsGenerateNoLabels() {
+    void requireThatSearchesOutsideBoundsGenerateNoLabels() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, 0, 200);
-        expander.expand("key", -10, x -> fail(), (x,y) -> fail());
+        expander.expand("key", -10, x -> fail(), (x, y) -> fail());
         expander.expand("key", 210, x -> fail(), (x, y) -> fail());
     }
 
     @Test
-    public void requireThatUpperAndLowerBoundGreaterThan0Works() {
+    void requireThatUpperAndLowerBoundGreaterThan0Works() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, 100, 9999);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=140-149",
@@ -323,12 +345,15 @@ public class PredicateRangeTermExpanderTest {
                 "key=0-999",
                 "key=0-9999").iterator();
         expander.expand("key", 142, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=140"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=140"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatSearchCloseToUnevenUpperBoundIsSensible() {
+    void requireThatSearchCloseToUnevenUpperBoundIsSensible() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -99, 1234);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=40-49",
@@ -336,19 +361,25 @@ public class PredicateRangeTermExpanderTest {
                 "key=0-999",
                 "key=0-9999").iterator();
         expander.expand("key", 42, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=40"), edge); assertEquals(2, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=40"), edge);
+                    assertEquals(2, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 
     @Test
-    public void requireThatSearchCloseToMaxUnevenUpperBoundIsSensible() {
+    void requireThatSearchCloseToMaxUnevenUpperBoundIsSensible() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, 0, 9223372036854771234L);
         Iterator<String> expectedLabels = Arrays.asList(
                 "key=9223372036854770000-9223372036854770009",
                 "key=9223372036854770000-9223372036854770099",
                 "key=9223372036854770000-9223372036854770999").iterator();
         expander.expand("key", 9223372036854770000L, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
-                (edge, value) -> { assertEquals(PredicateHash.hash64("key=9223372036854770000"), edge); assertEquals(0, value); });
+                (edge, value) -> {
+                    assertEquals(PredicateHash.hash64("key=9223372036854770000"), edge);
+                    assertEquals(0, value);
+                });
         assertFalse(expectedLabels.hasNext());
     }
 }

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,12 +13,12 @@ import static org.junit.Assert.*;
 public class FeatureRangeTest {
 
     @Test
-    public void requireThatFeatureRangeIsAValue() {
+    void requireThatFeatureRangeIsAValue() {
         assertTrue(PredicateValue.class.isAssignableFrom(FeatureRange.class));
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         FeatureRange node = new FeatureRange("foo");
         assertEquals("foo", node.getKey());
         node.setKey("bar");
@@ -36,7 +36,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatConstructorsWork() {
+    void requireThatConstructorsWork() {
         FeatureRange node = new FeatureRange("foo");
         assertEquals("foo", node.getKey());
         assertNull(node.getFromInclusive());
@@ -64,7 +64,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
+    void requireThatCloneIsImplemented() throws CloneNotSupportedException {
         FeatureRange node1 = new FeatureRange("foo", 6L, 9L);
         FeatureRange node2 = node1.clone();
         assertEquals(node1, node2);
@@ -72,36 +72,36 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(new FeatureRange("key").hashCode(), new FeatureRange("key").hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         FeatureRange lhs = new FeatureRange("foo", 6L, 9L);
-        assertTrue(lhs.equals(lhs));
-        assertFalse(lhs.equals(new Object()));
+        assertEquals(lhs, lhs);
+        assertNotEquals(lhs, new Object());
 
         FeatureRange rhs = new FeatureRange("bar");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.setKey("foo");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.setFromInclusive(6L);
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.setToInclusive(9L);
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
         rhs.addPartition(new RangePartition("foo"));
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         lhs.addPartition(new RangePartition("foo"));
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
         rhs.addPartition(new RangeEdgePartition("foo", 10, 0, 2));
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         lhs.addPartition(new RangeEdgePartition("foo", 10, 0, 2));
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatFeatureKeyIsMandatoryInConstructor() {
+    void requireThatFeatureKeyIsMandatoryInConstructor() {
         try {
             new FeatureRange(null);
             fail();
@@ -111,7 +111,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatFeatureKeyIsMandatoryInSetter() {
+    void requireThatFeatureKeyIsMandatoryInSetter() {
         FeatureRange node = new FeatureRange("foo");
         try {
             node.setKey(null);
@@ -123,7 +123,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatRangeCanBeSingleValue() {
+    void requireThatRangeCanBeSingleValue() {
         FeatureRange node = new FeatureRange("key", 6L, 6L);
         assertEquals(6, node.getFromInclusive().intValue());
         assertEquals(6, node.getToInclusive().intValue());
@@ -134,7 +134,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatFromCanNotBeConstructedGreaterThanTo() {
+    void requireThatFromCanNotBeConstructedGreaterThanTo() {
         try {
             new FeatureRange("key", 9L, 6L);
             fail();
@@ -144,7 +144,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatFromCanNotBeSetGreaterThanTo() {
+    void requireThatFromCanNotBeSetGreaterThanTo() {
         FeatureRange node = new FeatureRange("key", null, 6L);
         try {
             node.setFromInclusive(9L);
@@ -165,7 +165,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatToCanNotBeSetLessThanFrom() {
+    void requireThatToCanNotBeSetLessThanFrom() {
         FeatureRange node = new FeatureRange("key", 9L, null);
         try {
             node.setToInclusive(6L);
@@ -186,49 +186,49 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatKeyIsEscapedInToString() {
+    void requireThatKeyIsEscapedInToString() {
         assertEquals("foo in [6..9]",
-                     new FeatureRange("foo", 6L, 9L).toString());
+                new FeatureRange("foo", 6L, 9L).toString());
         assertEquals("'\\foo' in [6..9]",
-                     new FeatureRange("\foo", 6L, 9L).toString());
+                new FeatureRange("\foo", 6L, 9L).toString());
         assertEquals("'\\x27foo\\x27' in [6..9]",
-                     new FeatureRange("'foo'", 6L, 9L).toString());
+                new FeatureRange("'foo'", 6L, 9L).toString());
     }
 
     @Test
-    public void requireThatToStringIncludesLimits() {
+    void requireThatToStringIncludesLimits() {
         assertEquals("foo in [6..9]", new FeatureRange("foo", 6L, 9L).toString());
     }
 
     @Test
-    public void requireThatToStringAllowsNullLimits() {
+    void requireThatToStringAllowsNullLimits() {
         assertEquals("foo in [..]", new FeatureRange("foo").toString());
     }
 
     @Test
-    public void requireThatToStringAllowsNullFromLimit() {
+    void requireThatToStringAllowsNullFromLimit() {
         assertEquals("foo in [..69]", new FeatureRange("foo", null, 69L).toString());
     }
 
     @Test
-    public void requireThatToStringAllowsNullToLimit() {
+    void requireThatToStringAllowsNullToLimit() {
         assertEquals("foo in [69..]", new FeatureRange("foo", 69L, null).toString());
     }
 
     @Test
-    public void requireThatSimpleStringsArePrettyPrinted() {
+    void requireThatSimpleStringsArePrettyPrinted() {
         assertEquals("foo in [6..9]",
-                     new FeatureRange("foo", 6L, 9L).toString());
+                new FeatureRange("foo", 6L, 9L).toString());
     }
 
     @Test
-    public void requireThatComplexStringsAreEscaped() {
+    void requireThatComplexStringsAreEscaped() {
         assertEquals("'\\foo' in [6..9]",
-                     new FeatureRange("\foo", 6L, 9L).toString());
+                new FeatureRange("\foo", 6L, 9L).toString());
     }
 
     @Test
-    public void requireThatRangePartitionsCanBeAdded() {
+    void requireThatRangePartitionsCanBeAdded() {
         FeatureRange range = new FeatureRange("foo", 10L, 22L);
         range.addPartition(new RangePartition("foo=10-19"));
         range.addPartition(new RangePartition("foo", 0, 0x8000000000000000L, true));
@@ -237,7 +237,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatRangePartitionsCanBeCleared() {
+    void requireThatRangePartitionsCanBeCleared() {
         FeatureRange range = new FeatureRange("foo", 10L, 22L);
         range.addPartition(new RangePartition("foo=10-19"));
         range.addPartition(new RangeEdgePartition("foo=20", 20, 0, 2));
@@ -247,7 +247,7 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatFeatureRangeCanBeBuiltFromMixedInNode() {
+    void requireThatFeatureRangeCanBeBuiltFromMixedInNode() {
         assertEquals(new FeatureRange("foo", 10L, 19L),
                 FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=10-19"), 10));
         assertEquals(new FeatureRange("foo", -19L, -10L),

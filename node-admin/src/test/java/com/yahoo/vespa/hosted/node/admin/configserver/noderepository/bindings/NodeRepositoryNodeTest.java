@@ -9,12 +9,12 @@ import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author hakonhall
@@ -31,7 +31,7 @@ public class NodeRepositoryNodeTest {
      *   NodeAttributes -> NodeRepositoryNode -> JSON.
      */
     @Test
-    public void testReportsSerialization() {
+    void testReportsSerialization() {
         // Make sure we don't accidentally patch with "reports": null, as that actually means removing all reports.
         assertEquals(JsonInclude.Include.NON_NULL, NodeRepositoryNode.class.getAnnotation(JsonInclude.class).value());
 

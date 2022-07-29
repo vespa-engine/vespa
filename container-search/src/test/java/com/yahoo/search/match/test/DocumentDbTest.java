@@ -6,17 +6,16 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.search.Result;
 import com.yahoo.search.match.DocumentDb;
 import com.yahoo.text.MapParser;
-import org.junit.Ignore;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class DocumentDbTest {
 
     @Test
-    @Ignore
-    public void testWand() {
+    @Disabled
+    void testWand() {
         DocumentDb db = new DocumentDb();
-        db.put(createFeatureDocument("1","[a:7, b:5, c:3]"));
+        db.put(createFeatureDocument("1", "[a:7, b:5, c:3]"));
         db.put(createFeatureDocument("2", "[a:2, b:1, c:4]"));
         //Result r = execute(createWandQuery("[a:1, b:3, c:5]"));
         //assertEquals(67,r.hits().get(0).getRelevance());

@@ -4,14 +4,14 @@ package com.yahoo.jdisc.http.filter.util;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.Cookie;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.jdisc.http.filter.util.FilterUtils.sendMessageResponse;
 import static com.yahoo.jdisc.http.filter.util.FilterUtils.sendRedirectResponse;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author valerijf
@@ -21,7 +21,7 @@ public class FilterUtilsTest {
     private static final List<Cookie> cookies = List.of(new Cookie("my-cookie", "value1"), new Cookie("second-cookie", "value2"));
 
     @Test
-    public void redirect_test() {
+    void redirect_test() {
         RequestHandlerTestDriver.MockResponseHandler responseHandler = new RequestHandlerTestDriver.MockResponseHandler();
 
         String location = "http://domain.tld/path?query";
@@ -31,7 +31,7 @@ public class FilterUtilsTest {
     }
 
     @Test
-    public void message_response() {
+    void message_response() {
         RequestHandlerTestDriver.MockResponseHandler responseHandler = new RequestHandlerTestDriver.MockResponseHandler();
 
         sendMessageResponse(responseHandler, List.of(), 404, "Not found");

@@ -23,9 +23,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Helper for testing of imported models.
@@ -79,8 +77,8 @@ public class ImportedModelTester {
 
             if (expectedSize.isPresent()) {
                 Path constantPath = applicationDir.append(constantApplicationPackagePath);
-                assertTrue("Constant file '" + constantPath + "' has been written",
-                           constantPath.toFile().exists());
+                assertTrue(constantPath.toFile().exists(),
+                           "Constant file '" + constantPath + "' has been written");
                 Tensor deserializedConstant = TypedBinaryFormat.decode(Optional.empty(),
                                                                        GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantPath.toFile())));
                 assertEquals(expectedSize.get().longValue(), deserializedConstant.size());

@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
@@ -18,9 +18,9 @@ import java.util.Optional;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author andreer
@@ -33,14 +33,14 @@ public class EndpointCertificateMaintainerTest {
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty());
 
     @Test
-    public void old_and_unused_cert_is_deleted() {
+    void old_and_unused_cert_is_deleted() {
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), exampleMetadata);
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
         assertTrue(tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()).isEmpty());
     }
 
     @Test
-    public void unused_but_recently_used_cert_is_not_deleted() {
+    void unused_but_recently_used_cert_is_not_deleted() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
@@ -48,7 +48,7 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    public void refreshed_certificate_is_updated() {
+    void refreshed_certificate_is_updated() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
 
@@ -63,7 +63,7 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    public void certificate_in_use_is_not_deleted() {
+    void certificate_in_use_is_not_deleted() {
         var appId = ApplicationId.from("tenant", "application", "default");
 
         DeploymentTester deploymentTester = new DeploymentTester(tester);
@@ -82,7 +82,7 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    public void refreshed_certificate_is_discovered_and_after_four_days_deployed() {
+    void refreshed_certificate_is_discovered_and_after_four_days_deployed() {
         var appId = ApplicationId.from("tenant", "application", "default");
 
         DeploymentTester deploymentTester = new DeploymentTester(tester);
@@ -111,7 +111,7 @@ public class EndpointCertificateMaintainerTest {
         deploymentContext.assertNotRunning(productionUsWest1);
         var updatedMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
         assertNotEquals(originalMetadata.leafRequestId().orElseThrow(), updatedMetadata.leafRequestId().orElseThrow());
-        assertEquals(updatedMetadata.version(), originalMetadata.version()+1);
+        assertEquals(updatedMetadata.version(), originalMetadata.version() + 1);
 
         // after another 4 days, we should force trigger deployment if it hasn't already happened
         tester.clock().advance(Duration.ofDays(4).plusSeconds(1));
@@ -121,7 +121,7 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    public void unmaintained_cert_is_deleted() {
+    void unmaintained_cert_is_deleted() {
         EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
         ApplicationId unknown = ApplicationId.fromSerializedForm("applicationid:is:unknown");

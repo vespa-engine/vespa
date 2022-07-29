@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.util.zip.ZipOutputStream;
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff.diff;
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff.diffAgainstEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author freva
@@ -24,12 +24,12 @@ public class ApplicationPackageDiffTest {
     private static final ApplicationPackage app2 = applicationPackage(Map.of("file1", "updated contents\nof the\nfirst file\nafter some changes", "dir/myfile2", "Second file", "dir/binary", "øøøø"));
 
     @Test
-    public void no_diff() {
+    void no_diff() {
         assertEquals("No diff\n", new String(diff(app1, app1)));
     }
 
     @Test
-    public void diff_against_empty() {
+    void diff_against_empty() {
         assertEquals("--- dir/binary\n" +
                 "Diff skipped: File is binary (new file -> 8B)\n" +
                 "\n" +
@@ -45,7 +45,7 @@ public class ApplicationPackageDiffTest {
     }
 
     @Test
-    public void full_diff() {
+    void full_diff() {
         // Even though dir/binary is binary file, we can see they are identical, so it should not print "Diff skipped"
         assertEquals("--- dir/myfile\n" +
                 "@@ -1,1 +1,0 @@\n" +
@@ -66,7 +66,7 @@ public class ApplicationPackageDiffTest {
     }
 
     @Test
-    public void skips_diff_for_too_large_files() {
+    void skips_diff_for_too_large_files() {
         assertEquals("--- dir/myfile\n" +
                 "@@ -1,1 +1,0 @@\n" +
                 "- Second file\n" +
@@ -81,7 +81,7 @@ public class ApplicationPackageDiffTest {
     }
 
     @Test
-    public void skips_diff_if_file_diff_is_too_large() {
+    void skips_diff_if_file_diff_is_too_large() {
         assertEquals("--- dir/myfile\n" +
                 "@@ -1,1 +1,0 @@\n" +
                 "- Second file\n" +
@@ -96,7 +96,7 @@ public class ApplicationPackageDiffTest {
     }
 
     @Test
-    public void skips_diff_if_total_diff_is_too_large() {
+    void skips_diff_if_total_diff_is_too_large() {
         assertEquals("--- dir/myfile\n" +
                 "@@ -1,1 +1,0 @@\n" +
                 "- Second file\n" +

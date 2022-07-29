@@ -6,12 +6,12 @@ import com.yahoo.concurrent.Timer;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.EmptyReply;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BenchmarkProgressPrinterTest {
 
@@ -22,7 +22,7 @@ public class BenchmarkProgressPrinterTest {
     }
 
     @Test
-    public void testSimple() {
+    void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DummyTimer timer = new DummyTimer();
         timer.ms = 0;
@@ -72,7 +72,7 @@ public class BenchmarkProgressPrinterTest {
         String val = output.toString().split("\n")[1];
 
         String correctPattern = "62000, \\d+, \\d+, \\d+, \\d+, \\d+$";
-        assertTrue("Value '" + val + "' does not match pattern '" + correctPattern + "'", val.matches(correctPattern));
+        assertTrue(val.matches(correctPattern), "Value '" + val + "' does not match pattern '" + correctPattern + "'");
     }
 
 }

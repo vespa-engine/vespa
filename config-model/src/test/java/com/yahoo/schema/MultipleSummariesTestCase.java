@@ -3,7 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 public class MultipleSummariesTestCase extends AbstractSchemaTestCase {
 
     @Test
-    public void testArrayImporting() throws IOException, ParseException {
+    void testArrayImporting() throws IOException, ParseException {
         var builder = new ApplicationBuilder(new TestProperties());
         builder.addSchemaFile("src/test/examples/multiplesummaries.sd");
         builder.build(true);

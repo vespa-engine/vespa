@@ -14,7 +14,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -25,9 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -35,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class DeployStateTest {
 
     @Test
-    public void testProvisionerIsSet() {
+    void testProvisionerIsSet() {
         DeployState.Builder builder = new DeployState.Builder();
         HostProvisioner provisioner = new InMemoryProvisioner(true, false, "foo.yahoo.com");
         builder.modelHostProvisioner(provisioner);
@@ -44,7 +42,7 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testBuilder() {
+    void testBuilder() {
         DeployState.Builder builder = new DeployState.Builder();
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         builder.permanentApplicationPackage(Optional.of(app));
@@ -53,20 +51,20 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testPreviousModelIsProvided() throws IOException, SAXException {
+    void testPreviousModelIsProvided() throws IOException, SAXException {
         VespaModel prevModel = new VespaModel(MockApplicationPackage.createEmpty());
         DeployState.Builder builder = new DeployState.Builder();
         assertEquals(prevModel, builder.previousModel(prevModel).build().getPreviousModel().get());
     }
 
     @Test
-    public void testProperties() {
+    void testProperties() {
         DeployState.Builder builder = new DeployState.Builder();
         DeployState state = builder.build();
         assertEquals(ApplicationId.defaultId(), state.getProperties().applicationId());
         ApplicationId customId = new ApplicationId.Builder()
-                                 .tenant("bar")
-                                 .applicationName("foo").instanceName("quux").build();
+                .tenant("bar")
+                .applicationName("foo").instanceName("quux").build();
         ModelContext.Properties properties = new TestProperties().setApplicationId(customId);
         builder.properties(properties);
         state = builder.build();
@@ -74,11 +72,11 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testDefinitionRepoIsUsed() {
+    void testDefinitionRepoIsUsed() {
         Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("foo", "bar"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("foo", new String[]{"namespace=bar", "foo int default=0"}));
         defs.put(new ConfigDefinitionKey("test2", "a.b"),
-                 new com.yahoo.vespa.config.buildergen.ConfigDefinition("namespace-in-filename", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
+                new com.yahoo.vespa.config.buildergen.ConfigDefinition("namespace-in-filename", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
         DeployState state = createDeployState(app, defs);
 
@@ -91,7 +89,7 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testGetConfigDefinition() {
+    void testGetConfigDefinition() {
         Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("test2", "a.b"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         //defs.put(new ConfigDefinitionKey("test2", "c.d"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=c.d", "doubleVal double default=1.0"}));
@@ -108,7 +106,7 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testContainerEndpoints() {
+    void testContainerEndpoints() {
         assertTrue(new DeployState.Builder().endpoints(Set.of()).build().getEndpoints().isEmpty());
         var endpoints = Set.of(new ContainerEndpoint("c1", ApplicationClusterEndpoint.Scope.global, List.of("c1.example.com", "c1-alias.example.com")));
         assertEquals(endpoints, new DeployState.Builder().endpoints(endpoints).build().getEndpoints());

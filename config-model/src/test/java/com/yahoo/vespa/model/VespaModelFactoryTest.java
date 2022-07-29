@@ -19,16 +19,14 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Ulf Lilleengen
@@ -37,13 +35,13 @@ public class VespaModelFactoryTest {
 
     private ModelContext testModelContext;
 
-    @Before
+    @BeforeEach
     public void setupContext() {
         testModelContext = new MockModelContext();
     }
 
     @Test
-    public void testThatFactoryCanBuildModel() {
+    void testThatFactoryCanBuildModel() {
         VespaModelFactory modelFactory =  VespaModelFactory.createTestFactory();
         Model model = modelFactory.createModel(testModelContext);
         assertNotNull(model);
@@ -51,21 +49,25 @@ public class VespaModelFactoryTest {
     }
 
     // Uses an application package that throws IllegalArgumentException when validating
-    @Test(expected = IllegalArgumentException.class)
-    public void testThatFactoryModelValidationFailsWithIllegalArgumentException() {
-        VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
-        modelFactory.createAndValidateModel(new MockModelContext(createApplicationPackageThatFailsWhenValidating()), new ValidationParameters());
+    @Test
+    void testThatFactoryModelValidationFailsWithIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
+            modelFactory.createAndValidateModel(new MockModelContext(createApplicationPackageThatFailsWhenValidating()), new ValidationParameters());
+        });
     }
 
     // Uses a MockApplicationPackage that throws throws UnsupportedOperationException (rethrown as RuntimeException) when validating
-    @Test(expected = RuntimeException.class)
-    public void testThatFactoryModelValidationFails() {
-        VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
-        modelFactory.createAndValidateModel(testModelContext, new ValidationParameters());
+    @Test
+    void testThatFactoryModelValidationFails() {
+        assertThrows(RuntimeException.class, () -> {
+            VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
+            modelFactory.createAndValidateModel(testModelContext, new ValidationParameters());
+        });
     }
 
     @Test
-    public void testThatFactoryModelValidationCanBeIgnored() {
+    void testThatFactoryModelValidationCanBeIgnored() {
         VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
         ModelCreateResult createResult = modelFactory.createAndValidateModel(
                 new MockModelContext(createApplicationPackageThatFailsWhenValidating()),
@@ -76,7 +78,7 @@ public class VespaModelFactoryTest {
     }
 
     @Test
-    public void hostedVespaZoneApplicationAllocatesNodesFromNodeRepo() {
+    void hostedVespaZoneApplicationAllocatesNodesFromNodeRepo() {
         String hostName = "test-host-name";
         String routingClusterName = "routing-cluster";
 
@@ -103,17 +105,17 @@ public class VespaModelFactoryTest {
             @Override
             public HostSpec allocateHost(String alias) {
                 return new HostSpec(hostName,
-                                    NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                                    Optional.empty(), Optional.empty(), Optional.empty());
+                        NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                        ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                        Optional.empty(), Optional.empty(), Optional.empty());
             }
 
             @Override
             public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
                 return List.of(new HostSpec(hostName,
-                                            NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                                            Optional.empty(), Optional.empty(), Optional.empty()));
+                        NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                        ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                        Optional.empty(), Optional.empty(), Optional.empty()));
             }
         };
 
@@ -125,10 +127,10 @@ public class VespaModelFactoryTest {
         HostInfo hostInfo = allocatedHosts.get(0);
 
         assertEquals(hostName, hostInfo.getHostname());
-        assertTrue("Routing service should run on host " + hostName,
-                   hostInfo.getServices().stream()
-                           .map(ServiceInfo::getConfigId)
-                           .anyMatch(configId -> configId.contains(routingClusterName)));
+        assertTrue(hostInfo.getServices().stream()
+                        .map(ServiceInfo::getConfigId)
+                        .anyMatch(configId -> configId.contains(routingClusterName)),
+                "Routing service should run on host " + hostName);
     }
 
     private ModelContext createMockModelContext(String hosts, String services, HostProvisioner provisionerToOverride) {

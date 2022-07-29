@@ -3,9 +3,9 @@ package com.yahoo.jdisc.client;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -14,14 +14,14 @@ import static org.junit.Assert.assertEquals;
 public class ClientDriverTestCase {
 
     @Test
-    public void requireThatApplicationInstanceInjectionWorks() throws Exception {
+    void requireThatApplicationInstanceInjectionWorks() throws Exception {
         MyModule module = new MyModule();
         ClientDriver.runApplication(new MyApplication(module));
         assertEquals(5, module.state);
     }
 
     @Test
-    public void requireThatApplicationClassInjectionWorks() throws Exception {
+    void requireThatApplicationClassInjectionWorks() throws Exception {
         MyModule module = new MyModule();
         ClientDriver.runApplication(MyApplication.class, module);
         assertEquals(5, module.state);

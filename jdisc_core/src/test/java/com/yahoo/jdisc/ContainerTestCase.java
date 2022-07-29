@@ -4,12 +4,12 @@ package com.yahoo.jdisc;
 import com.google.inject.AbstractModule;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 /**
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertSame;
 public class ContainerTestCase {
 
     @Test
-    public void requireThatNewRequestsReferenceSameSnapshot() throws Exception {
+    void requireThatNewRequestsReferenceSameSnapshot() throws Exception {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         Request foo = new Request(driver, URI.create("http://foo"));
@@ -31,7 +31,7 @@ public class ContainerTestCase {
     }
 
     @Test
-    public void requireThatInjectionWorks() throws BindingSetNotFoundException {
+    void requireThatInjectionWorks() throws BindingSetNotFoundException {
         final Object foo = new Object();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 

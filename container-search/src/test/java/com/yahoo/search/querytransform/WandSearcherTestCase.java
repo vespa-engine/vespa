@@ -19,17 +19,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.ListIterator;
 
 import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testing of WandSearcher.
@@ -88,17 +85,17 @@ public class WandSearcherTestCase {
         assertEquals(expWeight, wordItem.getWeight());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         exec = buildExec();
     }
 
     @Test
-    public void requireThatVespaWandCanBeSpecified() {
+    void requireThatVespaWandCanBeSpecified() {
         Query q = buildDefaultQuery();
         Result r = exec.search(q);
 
-        WeakAndItem root = (WeakAndItem)TestUtils.getQueryTreeRoot(r);
+        WeakAndItem root = (WeakAndItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(100, root.getN());
         assertEquals(3, root.getItemCount());
         ListIterator<Item> itr = root.getItemIterator();
@@ -109,21 +106,21 @@ public class WandSearcherTestCase {
     }
 
     @Test
-    public void requireThatVespaWandHeapSizeCanBeSpecified() {
+    void requireThatVespaWandHeapSizeCanBeSpecified() {
         Query q = buildDefaultQuery(VESPA_FIELD, "50");
         Result r = exec.search(q);
 
-        WeakAndItem root = (WeakAndItem)TestUtils.getQueryTreeRoot(r);
+        WeakAndItem root = (WeakAndItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(50, root.getN());
     }
 
     @Test
-    public void requireThatWandCanBeSpecifiedTogetherWithNonAndQueryRoot() {
+    void requireThatWandCanBeSpecifiedTogetherWithNonAndQueryRoot() {
         Query q = buildDefaultQuery();
         q.getModel().getQueryTree().setRoot(new WordItem("foo", "otherfield"));
         Result r = exec.search(q);
 
-        AndItem root = (AndItem)TestUtils.getQueryTreeRoot(r);
+        AndItem root = (AndItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(2, root.getItemCount());
         ListIterator<Item> itr = root.getItemIterator();
         assertTrue(itr.next() instanceof WordItem);
@@ -132,7 +129,7 @@ public class WandSearcherTestCase {
     }
 
     @Test
-    public void requireThatWandCanBeSpecifiedTogetherWithAndQueryRoot() {
+    void requireThatWandCanBeSpecifiedTogetherWithAndQueryRoot() {
         Query q = buildDefaultQuery();
         {
             AndItem root = new AndItem();
@@ -142,7 +139,7 @@ public class WandSearcherTestCase {
         }
         Result r = exec.search(q);
 
-        AndItem root = (AndItem)TestUtils.getQueryTreeRoot(r);
+        AndItem root = (AndItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(3, root.getItemCount());
         ListIterator<Item> itr = root.getItemIterator();
         assertTrue(itr.next() instanceof WordItem);
@@ -153,42 +150,42 @@ public class WandSearcherTestCase {
 
 
     @Test
-    public void requireThatNothingIsAddedWithoutWandPropertiesSet() {
+    void requireThatNothingIsAddedWithoutWandPropertiesSet() {
         Query foo = new Query("");
         foo.getModel().getQueryTree().setRoot(new WordItem("foo", "otherfield"));
         Result r = exec.search(foo);
 
-        WordItem root = (WordItem)TestUtils.getQueryTreeRoot(r);
+        WordItem root = (WordItem) TestUtils.getQueryTreeRoot(r);
         assertEquals("foo", root.getWord());
     }
 
     @Test
-    public void requireThatErrorIsReturnedOnInvalidTokenList() {
+    void requireThatErrorIsReturnedOnInvalidTokenList() {
         Query q = buildQuery(VESPA_FIELD, "{a1,b:1}", null, null, null, null);
         Result r = exec.search(q);
 
         ErrorMessage msg = r.hits().getError();
         assertNotNull(msg);
         assertEquals(INVALID_QUERY_PARAMETER.code, msg.getCode());
-        assertEquals("'{a1,b:1}' is not a legal sparse vector string: Expected ':' starting at position 3 but was ','",msg.getDetailedMessage());
+        assertEquals("'{a1,b:1}' is not a legal sparse vector string: Expected ':' starting at position 3 but was ','", msg.getDetailedMessage());
     }
 
     @Test
-    public void requireThatErrorIsReturnedOnUnknownField() {
+    void requireThatErrorIsReturnedOnUnknownField() {
         Query q = buildDefaultQuery("unknown", "50");
         Result r = exec.search(q);
         ErrorMessage msg = r.hits().getError();
         assertNotNull(msg);
         assertEquals(INVALID_QUERY_PARAMETER.code, msg.getCode());
-        assertEquals("Field 'unknown' was not found in index facts for search definitions [test]",msg.getDetailedMessage());
+        assertEquals("Field 'unknown' was not found in index facts for search definitions [test]", msg.getDetailedMessage());
     }
 
     @Test
-    public void requireThatVespaOrCanBeSpecified() {
+    void requireThatVespaOrCanBeSpecified() {
         Query q = buildQuery(VESPA_FIELD, "{a:1,b:2,c:3}", null, "or", null, null);
         Result r = exec.search(q);
 
-        OrItem root = (OrItem)TestUtils.getQueryTreeRoot(r);
+        OrItem root = (OrItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(3, root.getItemCount());
         ListIterator<Item> itr = root.getItemIterator();
         assertWordItem("a", VESPA_FIELD, 1, itr.next());
@@ -205,11 +202,11 @@ public class WandSearcherTestCase {
     }
 
     @Test
-    public void requireThatDefaultParallelWandCanBeSpecified() {
+    void requireThatDefaultParallelWandCanBeSpecified() {
         Query q = buildQuery(VESPA_FIELD, "{a:1,b:2,c:3}", null, "parallel", null, null);
         Result r = exec.search(q);
 
-        WandItem root = (WandItem)TestUtils.getQueryTreeRoot(r);
+        WandItem root = (WandItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
         assertEquals(100, root.getTargetNumHits());
         assertEquals(0.0, root.getScoreThreshold(), delta);
@@ -218,11 +215,11 @@ public class WandSearcherTestCase {
     }
 
     @Test
-    public void requireThatParallelWandCanBeSpecified() {
+    void requireThatParallelWandCanBeSpecified() {
         Query q = buildQuery(VESPA_FIELD, "{a:1,b:2,c:3}", "50", "parallel", "70.5", "2.3");
         Result r = exec.search(q);
 
-        WandItem root = (WandItem)TestUtils.getQueryTreeRoot(r);
+        WandItem root = (WandItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
         assertEquals(50, root.getTargetNumHits());
         assertEquals(70.5, root.getScoreThreshold(), delta);
@@ -231,11 +228,11 @@ public class WandSearcherTestCase {
     }
 
     @Test
-    public void requireThatDotProductCanBeSpecified() {
+    void requireThatDotProductCanBeSpecified() {
         Query q = buildQuery(VESPA_FIELD, "{a:1,b:2,c:3}", null, "dotProduct", null, null);
         Result r = exec.search(q);
 
-        DotProductItem root = (DotProductItem)TestUtils.getQueryTreeRoot(r);
+        DotProductItem root = (DotProductItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
         assertWeightedSetItem(root);
     }

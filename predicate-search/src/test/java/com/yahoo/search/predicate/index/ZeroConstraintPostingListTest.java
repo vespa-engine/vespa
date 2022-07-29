@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
@@ -13,9 +11,9 @@ import static org.junit.Assert.assertTrue;
 public class ZeroConstraintPostingListTest {
 
     @Test
-    public void requireThatPostingListCanIterate() {
+    void requireThatPostingListCanIterate() {
         ZeroConstraintPostingList postingList =
-                new ZeroConstraintPostingList(new int[] {2, 4, 6, 8});
+                new ZeroConstraintPostingList(new int[]{2, 4, 6, 8});
         assertEquals(-1, postingList.getDocId());
         assertEquals(Interval.fromBoundaries(1, Interval.ZERO_CONSTRAINT_RANGE), postingList.getInterval());
         assertEquals(0xffffffffffffffffL, postingList.getSubquery());

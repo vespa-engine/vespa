@@ -28,8 +28,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintai
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.nio.file.FileSystem;
@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -76,7 +76,7 @@ public class NodeAgentImplTest {
     private final ManualClock clock = new ManualClock(Instant.now());
     private final FileSystem fileSystem = TestFileSystem.create();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         when(containerOperations.suspendNode(any())).thenReturn("");
         when(containerOperations.resumeNode(any())).thenReturn("");
@@ -86,7 +86,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void upToDateContainerIsUntouched() {
+    void upToDateContainerIsUntouched() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -111,7 +111,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void verifyRemoveOldFilesIfDiskFull() {
+    void verifyRemoveOldFilesIfDiskFull() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -127,7 +127,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void startsAfterStoppingServices() {
+    void startsAfterStoppingServices() {
         final InOrder inOrder = inOrder(containerOperations);
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
@@ -161,7 +161,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void absentContainerCausesStart() {
+    void absentContainerCausesStart() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion)
@@ -192,7 +192,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsNotStoppedIfNewImageMustBePulled() {
+    void containerIsNotStoppedIfNewImageMustBePulled() {
         final DockerImage newDockerImage = DockerImage.fromString("registry.example.com/repo/new-image");
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(newDockerImage).currentDockerImage(dockerImage)
@@ -216,7 +216,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsUpdatedIfCpuChanged() {
+    void containerIsUpdatedIfCpuChanged() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -263,7 +263,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsRecreatedIfMemoryChanged() {
+    void containerIsRecreatedIfMemoryChanged() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -294,7 +294,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void noRestartIfOrchestratorSuspendFails() {
+    void noRestartIfOrchestratorSuspendFails() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -308,7 +308,8 @@ public class NodeAgentImplTest {
         try {
             nodeAgent.doConverge(context);
             fail("Expected to throw an exception");
-        } catch (OrchestratorException ignored) { }
+        } catch (OrchestratorException ignored) {
+        }
 
         verify(containerOperations, never()).createContainer(eq(context), any());
         verify(containerOperations, never()).startContainer(eq(context));
@@ -320,7 +321,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void recreatesContainerIfRebootWanted() {
+    void recreatesContainerIfRebootWanted() {
         final long wantedRebootGeneration = 2;
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
@@ -338,7 +339,8 @@ public class NodeAgentImplTest {
 
         try {
             nodeAgent.doConverge(context);
-        } catch (ConvergenceException ignored) {}
+        } catch (ConvergenceException ignored) {
+        }
 
         // First time we fail to resume because health verification fails
         verify(orchestrator, times(1)).suspend(eq(hostName));
@@ -359,7 +361,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void failedNodeRunningContainerShouldStillBeRunning() {
+    void failedNodeRunningContainerShouldStillBeRunning() {
         final NodeSpec node = nodeBuilder(NodeState.failed)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -378,11 +380,11 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void readyNodeLeadsToNoAction() {
+    void readyNodeLeadsToNoAction() {
         final NodeSpec node = nodeBuilder(NodeState.ready).build();
 
         NodeAgentContext context = createContext(node);
-        NodeAgentImpl nodeAgent = makeNodeAgent(null,false);
+        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
 
@@ -400,7 +402,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void inactiveNodeRunningContainerShouldStillBeRunning() {
+    void inactiveNodeRunningContainerShouldStillBeRunning() {
         final NodeSpec node = nodeBuilder(NodeState.inactive)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -421,7 +423,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void reservedNodeDoesNotUpdateNodeRepoWithVersion() {
+    void reservedNodeDoesNotUpdateNodeRepoWithVersion() {
         final NodeSpec node = nodeBuilder(NodeState.reserved)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion)
@@ -470,17 +472,17 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() {
+    void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() {
         nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.dirty, Optional.of(1L));
     }
 
     @Test
-    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() {
+    void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() {
         nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.dirty, Optional.empty());
     }
 
     @Test
-    public void provisionedNodeIsMarkedAsReady() {
+    void provisionedNodeIsMarkedAsReady() {
         final NodeSpec node = nodeBuilder(NodeState.provisioned)
                 .wantedDockerImage(dockerImage)
                 .build();
@@ -494,7 +496,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void testRestartDeadContainerAfterNodeAdminRestart() {
+    void testRestartDeadContainerAfterNodeAdminRestart() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .currentDockerImage(dockerImage).wantedDockerImage(dockerImage)
                 .currentVespaVersion(vespaVersion)
@@ -513,7 +515,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void resumeProgramRunsUntilSuccess() {
+    void resumeProgramRunsUntilSuccess() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .currentVespaVersion(vespaVersion)
@@ -535,7 +537,8 @@ public class NodeAgentImplTest {
         try {
             nodeAgent.doConverge(context);
             fail("Expected to throw an exception");
-        } catch (RuntimeException ignored) { }
+        } catch (RuntimeException ignored) {
+        }
 
         inOrder.verify(containerOperations, times(1)).resumeNode(any());
         inOrder.verifyNoMoreInteractions();
@@ -549,7 +552,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void start_container_subtask_failure_leads_to_container_restart() {
+    void start_container_subtask_failure_leads_to_container_restart() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion)
@@ -565,7 +568,8 @@ public class NodeAgentImplTest {
         try {
             nodeAgent.doConverge(context);
             fail("Expected to get RuntimeException");
-        } catch (RuntimeException ignored) { }
+        } catch (RuntimeException ignored) {
+        }
 
         verify(containerOperations, never()).removeContainer(eq(context), any());
         verify(containerOperations, times(1)).createContainer(eq(context), any());
@@ -584,7 +588,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void testRunningConfigServer() {
+    void testRunningConfigServer() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .type(NodeType.config)
                 .wantedDockerImage(dockerImage)
@@ -617,7 +621,7 @@ public class NodeAgentImplTest {
 
     // Tests that only containers without owners are stopped
     @Test
-    public void testThatStopContainerDependsOnOwnerPresent() {
+    void testThatStopContainerDependsOnOwnerPresent() {
         verifyThatContainerIsStopped(NodeState.parked, Optional.empty());
         verifyThatContainerIsStopped(NodeState.parked, Optional.of(ApplicationId.defaultId()));
         verifyThatContainerIsStopped(NodeState.failed, Optional.empty());
@@ -626,7 +630,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void initial_cpu_cap_test() {
+    void initial_cpu_cap_test() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion);
@@ -678,7 +682,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void resumes_normally_if_container_is_already_capped_on_start() {
+    void resumes_normally_if_container_is_already_capped_on_start() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -700,7 +704,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void uncaps_and_caps_cpu_for_services_restart() {
+    void uncaps_and_caps_cpu_for_services_restart() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)

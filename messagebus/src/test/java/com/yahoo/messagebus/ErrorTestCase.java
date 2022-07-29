@@ -7,11 +7,11 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 public class ErrorTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Error err = new Error(69, "foo");
         assertEquals(69, err.getCode());
         assertEquals("foo", err.getMessage());
@@ -31,7 +31,7 @@ public class ErrorTestCase {
     }
 
     @Test
-    public void requireThatErrorIsPropagated() throws Exception {
+    void requireThatErrorIsPropagated() throws Exception {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
         table.addHop("itr", "test/itr/session", Arrays.asList("test/itr/session"));
         table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
@@ -89,8 +89,9 @@ public class ErrorTestCase {
         src.destroy();
         slobrok.stop();
     }
+
     @Test
-    public void testErrorCodeCategorization() {
+    void testErrorCodeCategorization() {
         assertTrue(ErrorCode.isFatal(ErrorCode.FATAL_ERROR));
         assertFalse(ErrorCode.isTransient(ErrorCode.FATAL_ERROR));
         assertTrue(ErrorCode.isMBusError(ErrorCode.FATAL_ERROR));

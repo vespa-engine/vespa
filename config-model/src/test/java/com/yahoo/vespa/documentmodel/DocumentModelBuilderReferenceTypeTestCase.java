@@ -5,12 +5,12 @@ import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author geirst
@@ -18,31 +18,31 @@ import static org.junit.Assert.assertEquals;
 public class DocumentModelBuilderReferenceTypeTestCase extends AbstractReferenceFieldTestCase {
 
     @Test
-    public void reference_fields_can_reference_other_document_types() throws ParseException, IOException {
+    void reference_fields_can_reference_other_document_types() throws ParseException, IOException {
         assertDocumentConfigs(new TestDocumentModelBuilder().addCampaign().addPerson().build(joinLines(
-                "search ad {",
-                "  document ad {",
-                "    field campaign_ref type reference<campaign> { indexing: attribute }",
-                "    field person_ref type reference<person> { indexing: attribute }",
-                "  }",
-                "}")),
+                        "search ad {",
+                        "  document ad {",
+                        "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                        "    field person_ref type reference<person> { indexing: attribute }",
+                        "  }",
+                        "}")),
                 "refs_to_other_types");
     }
 
     @Test
-    public void reference_fields_can_reference_same_document_type_multiple_times() throws ParseException, IOException {
+    void reference_fields_can_reference_same_document_type_multiple_times() throws ParseException, IOException {
         assertDocumentConfigs(new TestDocumentModelBuilder().addCampaign().build(joinLines(
-                "search ad {",
-                "  document ad {",
-                "    field campaign_ref type reference<campaign> { indexing: attribute }",
-                "    field other_campaign_ref type reference<campaign> { indexing: attribute }",
-                "  }",
-                "}")),
+                        "search ad {",
+                        "  document ad {",
+                        "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                        "    field other_campaign_ref type reference<campaign> { indexing: attribute }",
+                        "  }",
+                        "}")),
                 "refs_to_same_type");
     }
 
     @Test
-    public void reference_data_type_has_a_concrete_target_type() throws ParseException {
+    void reference_data_type_has_a_concrete_target_type() throws ParseException {
         DocumentModel model = new TestDocumentModelBuilder().addCampaign().build(joinLines(
                 "search ad {",
                 "  document ad {",

@@ -8,9 +8,9 @@ import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Einar M R Rosenvinge
@@ -28,12 +28,12 @@ public class ConnectorFactoryTest {
 
     private Server server;
 
-    @Before
+    @BeforeEach
     public void createServer() {
         server = new Server();
     }
 
-    @After
+    @AfterEach
     public void stopServer() {
         try {
             server.stop();
@@ -44,7 +44,7 @@ public class ConnectorFactoryTest {
     }
 
     @Test
-    public void requireThatServerCanBindChannel() throws Exception {
+    void requireThatServerCanBindChannel() throws Exception {
         ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
         ConnectorFactory factory = createConnectorFactory(config);
         JDiscServerConnector connector = createConnectorFromFactory(factory);
@@ -59,7 +59,7 @@ public class ConnectorFactoryTest {
     }
 
     @Test
-    public void constructed_connector_is_based_on_jdisc_connector_config() {
+    void constructed_connector_is_based_on_jdisc_connector_config() {
         ConnectorConfig config = new ConnectorConfig.Builder()
                 .idleTimeout(25)
                 .name("my-server-name")

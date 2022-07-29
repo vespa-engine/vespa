@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 public class ResultIdTestCase {
 
     @Test
-    public void requireThatStartsWithWorks() {
+    void requireThatStartsWithWorks() {
         assertFalse(ResultId.valueOf().startsWith(1, 1, 2, 3));
         assertFalse(ResultId.valueOf(1).startsWith(1, 1, 2, 3));
         assertFalse(ResultId.valueOf(1, 1).startsWith(1, 1, 2, 3));
@@ -26,32 +24,32 @@ public class ResultIdTestCase {
     }
 
     @Test
-    public void requireThatChildIdStartsWithParentId() {
+    void requireThatChildIdStartsWithParentId() {
         ResultId parentId = ResultId.valueOf(1, 1, 2);
         ResultId childId = parentId.newChildId(3);
         assertTrue(childId.startsWith(1, 1, 2));
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(ResultId.valueOf(1, 1, 2, 3).hashCode(), ResultId.valueOf(1, 1, 2, 3).hashCode());
-        assertFalse(ResultId.valueOf(1, 1, 2, 3).hashCode() == ResultId.valueOf(5, 8, 13, 21).hashCode());
+        assertNotNull(ResultId.valueOf(5, 8, 13, 21).hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         assertEquals(ResultId.valueOf(1, 1, 2, 3), ResultId.valueOf(1, 1, 2, 3));
-        assertFalse(ResultId.valueOf(1, 1, 2, 3).equals(ResultId.valueOf(5, 8, 13, 21)));
+        assertNotEquals(ResultId.valueOf(1, 1, 2, 3), ResultId.valueOf(5, 8, 13, 21));
     }
 
     @Test
-    public void requireThatResultIdCanBeEncoded() {
+    void requireThatResultIdCanBeEncoded() {
         assertEncode("BIBCBCBEBG", ResultId.valueOf(1, 1, 2, 3));
         assertEncode("BIBKCBACBKCCK", ResultId.valueOf(5, 8, 13, 21));
     }
 
     @Test
-    public void requireThatResultIdCanBeDecoded() {
+    void requireThatResultIdCanBeDecoded() {
         assertDecode(ResultId.valueOf(1, 1, 2, 3), "BIBCBCBEBG");
         assertDecode(ResultId.valueOf(5, 8, 13, 21), "BIBKCBACBKCCK");
     }

@@ -30,7 +30,7 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +47,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -70,18 +70,18 @@ public class ApplicationSerializerTest {
 
 
     @Test
-    public void testSerialization() throws Exception {
+    void testSerialization() throws Exception {
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>\n" +
-                                                               "   <staging/>\n" +
-                                                               "   <instance id=\"i1\">\n" +
-                                                               "      <prod global-service-id=\"default\">\n" +
-                                                               "         <region active=\"true\">us-west-1</region>\n" +
-                                                               "      </prod>\n" +
-                                                               "   </instance>\n" +
-                                                               "</deployment>");
+                "   <staging/>\n" +
+                "   <instance id=\"i1\">\n" +
+                "      <prod global-service-id=\"default\">\n" +
+                "         <region active=\"true\">us-west-1</region>\n" +
+                "      </prod>\n" +
+                "   </instance>\n" +
+                "</deployment>");
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml("<validation-overrides version='1.0'>" +
-                                                                              "  <allow until='2017-06-15'>deployment-removal</allow>" +
-                                                                              "</validation-overrides>");
+                "  <allow until='2017-06-15'>deployment-removal</allow>" +
+                "</validation-overrides>");
 
         OptionalLong projectId = OptionalLong.of(123L);
 
@@ -89,69 +89,69 @@ public class ApplicationSerializerTest {
         ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");
         List<Deployment> deployments = new ArrayList<>();
         ApplicationVersion applicationVersion1 = new ApplicationVersion(RevisionId.forProduction(31),
-                                                                        Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
-                                                                        Optional.of("william@shakespeare"),
-                                                                        Optional.of(Version.fromString("1.2.3")),
-                                                                        Optional.of(Instant.ofEpochMilli(666)),
-                                                                        Optional.empty(),
-                                                                        Optional.of("best commit"),
-                                                                        Optional.of("hash1"),
-                                                                        true,
-                                                                        false,
-                                                                        Optional.of("~(˘▾˘)~"),
-                                                                        3);
+                Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
+                Optional.of("william@shakespeare"),
+                Optional.of(Version.fromString("1.2.3")),
+                Optional.of(Instant.ofEpochMilli(666)),
+                Optional.empty(),
+                Optional.of("best commit"),
+                Optional.of("hash1"),
+                true,
+                false,
+                Optional.of("~(˘▾˘)~"),
+                3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion.from(RevisionId.forDevelopment(31, new JobId(id1, DeploymentContext.productionUsEast3)),
-                                                                         new SourceRevision("repo1", "branch1", "commit1"), "a@b",
-                                                                         Version.fromString("6.3.1"),
-                                                                         Instant.ofEpochMilli(496));
+                new SourceRevision("repo1", "branch1", "commit1"), "a@b",
+                Version.fromString("6.3.1"),
+                Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
-                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
+                DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
         deployments.add(new Deployment(zone2, applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                                       new DeploymentMetrics(2, 3, 4, 5, 6,
-                                                             Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
-                                                             Map.of(DeploymentMetrics.Warning.all, 3)),
-                                       DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10)),
-                                       QuotaUsage.create(OptionalDouble.of(23.5)),
-                                       OptionalDouble.of(12.3)));
+                new DeploymentMetrics(2, 3, 4, 5, 6,
+                        Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
+                        Map.of(DeploymentMetrics.Warning.all, 3)),
+                DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
+                        OptionalDouble.of(200), OptionalDouble.of(10)),
+                QuotaUsage.create(OptionalDouble.of(23.5)),
+                OptionalDouble.of(12.3)));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
-                                                        new RotationStatus.Targets(
-                                                                Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
-                                                                       ZoneId.from("prod", "us-east-3"), RotationState.out),
-                                                                Instant.ofEpochMilli(42))));
+                new RotationStatus.Targets(
+                        Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
+                                ZoneId.from("prod", "us-east-3"), RotationState.out),
+                        Instant.ofEpochMilli(42))));
 
         RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion1),
-                                                                Map.of(new JobId(id1, DeploymentContext.productionUsEast3), List.of(applicationVersion2)));
+                Map.of(new JobId(id1, DeploymentContext.productionUsEast3), List.of(applicationVersion2)));
         List<Instance> instances = List.of(new Instance(id1,
-                                                        deployments,
-                                                        Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
-                                                        List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
-                                                        rotationStatus,
-                                                        Change.of(new Version("6.1"))),
-                                           new Instance(id3,
-                                                        List.of(),
-                                                        Map.of(),
-                                                        List.of(),
-                                                        RotationStatus.EMPTY,
-                                                        Change.of(Version.fromString("6.7")).withPin()));
+                        deployments,
+                        Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
+                        List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
+                        rotationStatus,
+                        Change.of(new Version("6.1"))),
+                new Instance(id3,
+                        List.of(),
+                        Map.of(),
+                        List.of(),
+                        RotationStatus.EMPTY,
+                        Change.of(Version.fromString("6.7")).withPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
-                                               Instant.now().truncatedTo(ChronoUnit.MILLIS),
-                                               deploymentSpec,
-                                               validationOverrides,
-                                               Optional.of(IssueId.from("4321")),
-                                               Optional.of(IssueId.from("1234")),
-                                               Optional.of(User.from("by-username")),
-                                               OptionalInt.of(7),
-                                               new ApplicationMetrics(0.5, 0.9),
-                                               Set.of(publicKey, otherPublicKey),
-                                               projectId,
-                                               revisions,
-                                               instances
+                Instant.now().truncatedTo(ChronoUnit.MILLIS),
+                deploymentSpec,
+                validationOverrides,
+                Optional.of(IssueId.from("4321")),
+                Optional.of(IssueId.from("1234")),
+                Optional.of(User.from("by-username")),
+                OptionalInt.of(7),
+                new ApplicationMetrics(0.5, 0.9),
+                Set.of(publicKey, otherPublicKey),
+                projectId,
+                revisions,
+                instances
         );
 
         Application serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(original)));
@@ -189,9 +189,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2), serialized.require(id1.instance()).deployments().get(zone2));
 
         assertEquals(original.require(id1.instance()).jobPause(DeploymentContext.systemTest),
-                     serialized.require(id1.instance()).jobPause(DeploymentContext.systemTest));
+                serialized.require(id1.instance()).jobPause(DeploymentContext.systemTest));
         assertEquals(original.require(id1.instance()).jobPause(DeploymentContext.stagingTest),
-                     serialized.require(id1.instance()).jobPause(DeploymentContext.stagingTest));
+                serialized.require(id1.instance()).jobPause(DeploymentContext.stagingTest));
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
@@ -220,7 +220,7 @@ public class ApplicationSerializerTest {
     }
 
     @Test
-    public void testCompleteApplicationDeserialization() throws Exception {
+    void testCompleteApplicationDeserialization() throws Exception {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         APPLICATION_SERIALIZER.fromSlime(applicationJson);
         // ok if no error

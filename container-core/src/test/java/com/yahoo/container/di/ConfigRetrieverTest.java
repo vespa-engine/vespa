@@ -9,18 +9,20 @@ import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
 import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -32,18 +34,21 @@ public class ConfigRetrieverTest {
 
     private DirConfigSource dirConfigSource = null;
 
-    @Before
+    @TempDir
+    File tmpDir;
+
+    @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource("ConfigRetrieverTest-");
+        dirConfigSource = new DirConfigSource(tmpDir, "ConfigRetrieverTest-");
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         dirConfigSource.cleanup();
     }
 
     @Test
-    public void require_that_bootstrap_configs_come_first() {
+    void require_that_bootstrap_configs_come_first() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
@@ -53,7 +58,7 @@ public class ConfigRetrieverTest {
 
     @Test
     @SuppressWarnings("unused")
-    public void require_that_components_comes_after_bootstrap() {
+    void require_that_components_comes_after_bootstrap() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
@@ -68,7 +73,7 @@ public class ConfigRetrieverTest {
         }
     }
 
-    @Ignore
+    @Disabled
     @SuppressWarnings("unused")
     public void require_exception_upon_modified_components_keys_without_bootstrap() {
 
@@ -89,7 +94,7 @@ public class ConfigRetrieverTest {
     }
 
     @Test
-    public void require_that_empty_components_keys_after_bootstrap_returns_components_configs() {
+    void require_that_empty_components_keys_after_bootstrap_returns_components_configs() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof BootstrapConfigs);

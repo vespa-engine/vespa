@@ -3,10 +3,10 @@ package com.yahoo.search.grouping.result;
 
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,7 +14,7 @@ import static org.junit.Assert.assertNull;
 public class GroupTestCase {
 
     @Test
-    public void requireThatListsAreAccessibleByLabel() {
+    void requireThatListsAreAccessibleByLabel() {
         Group grp = new Group(new LongId(69L), new Relevance(1));
         grp.add(new Hit("hit"));
         grp.add(new HitList("hitList"));

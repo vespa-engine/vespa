@@ -6,17 +6,14 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.Identity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -26,7 +23,7 @@ public class ServiceAddressTestCase {
     private Slobrok slobrok;
     private RPCNetwork network;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
         network = new RPCNetwork(new RPCNetworkParams()
@@ -35,14 +32,14 @@ public class ServiceAddressTestCase {
                                                      new Spec("localhost", slobrok.port()).toString() + "\"\n"));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         network.shutdown();
         slobrok.stop();
     }
 
     @Test
-    public void testAddrServiceAddress() {
+    void testAddrServiceAddress() {
         assertNullAddress("tcp");
         assertNullAddress("tcp/");
         assertNullAddress("tcp/localhost");
@@ -56,7 +53,7 @@ public class ServiceAddressTestCase {
     }
 
     @Test
-    public void testNameServiceAddress() {
+    void testNameServiceAddress() {
         network.unregisterSession("session");
         assertTrue(waitSlobrok("foo/session", 0));
         assertNullAddress("foo/session");

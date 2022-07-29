@@ -6,7 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.jdisc.application.BundleInstaller;
 import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -16,8 +16,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class AbstractClientApplicationTestCase {
 
     @Test
-    public void requireThatApplicationCanBeShutdown() throws Exception {
+    void requireThatApplicationCanBeShutdown() throws Exception {
         MyDriver driver = newDriver();
         assertFalse(driver.awaitDone(100, TimeUnit.MILLISECONDS));
         assertTrue(driver.awaitApp(600, TimeUnit.SECONDS));
@@ -35,7 +35,7 @@ public class AbstractClientApplicationTestCase {
     }
 
     @Test
-    public void requireThatShutdownCanBeWaitedForWithTimeout() throws Exception {
+    void requireThatShutdownCanBeWaitedForWithTimeout() throws Exception {
         final MyDriver driver = newDriver();
         assertFalse(driver.awaitDone(100, TimeUnit.MILLISECONDS));
         assertTrue(driver.awaitApp(600, TimeUnit.SECONDS));
@@ -57,7 +57,7 @@ public class AbstractClientApplicationTestCase {
     }
 
     @Test
-    public void requireThatShutdownCanBeWaitedForWithoutTimeout() throws Exception {
+    void requireThatShutdownCanBeWaitedForWithoutTimeout() throws Exception {
         final MyDriver driver = newDriver();
         assertFalse(driver.awaitDone(100, TimeUnit.MILLISECONDS));
         assertTrue(driver.awaitApp(600, TimeUnit.SECONDS));

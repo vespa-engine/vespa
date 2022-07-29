@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 public class SearchClusterCoverageTest {
 
     @Test
-    public void two_groups_equal_docs() {
+    void two_groups_equal_docs() {
         var tester =  new SearchClusterTester(2, 3);
 
         tester.setDocsPerNode(100, 0);
@@ -23,22 +23,22 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void two_groups_one_missing_docs() {
+    void two_groups_one_missing_docs() {
         var tester =  new SearchClusterTester(2, 3);
 
         tester.setDocsPerNode(100, 0);
-        tester.setDocsPerNode( 70, 1);
+        tester.setDocsPerNode(70, 1);
         tester.pingIterationCompleted();
         assertTrue(tester.group(0).hasSufficientCoverage());
         assertFalse(tester.group(1).hasSufficientCoverage());
     }
 
     @Test
-    public void three_groups_one_missing_docs() {
+    void three_groups_one_missing_docs() {
         var tester =  new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
-        tester.setDocsPerNode( 87, 1);  // min is set to 88 in MockSearchCluster
+        tester.setDocsPerNode(87, 1);  // min is set to 88 in MockSearchCluster
         tester.setDocsPerNode(100, 2);
         tester.pingIterationCompleted();
         assertTrue(tester.group(0).hasSufficientCoverage());
@@ -47,11 +47,11 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void three_groups_one_missing_docs_but_too_few() {
+    void three_groups_one_missing_docs_but_too_few() {
         var tester =  new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
-        tester.setDocsPerNode( 89, 1);  // min is set to 88 in MockSearchCluster
+        tester.setDocsPerNode(89, 1);  // min is set to 88 in MockSearchCluster
         tester.setDocsPerNode(100, 2);
         tester.pingIterationCompleted();
         assertTrue(tester.group(0).hasSufficientCoverage());
@@ -60,7 +60,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void three_groups_one_has_too_many_docs() {
+    void three_groups_one_has_too_many_docs() {
         var tester =  new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
@@ -73,7 +73,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void three_groups_one_has_a_node_down() {
+    void three_groups_one_has_a_node_down() {
         var tester = new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
@@ -87,7 +87,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void three_groups_one_has_a_node_down_but_remaining_has_enough_docs() {
+    void three_groups_one_has_a_node_down_but_remaining_has_enough_docs() {
         var tester = new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
@@ -96,12 +96,12 @@ public class SearchClusterCoverageTest {
         tester.setWorking(1, 1, false);
         tester.pingIterationCompleted();
         assertTrue(tester.group(0).hasSufficientCoverage());
-        assertTrue("Sufficient documents on remaining two nodes", tester.group(1).hasSufficientCoverage());
+        assertTrue(tester.group(1).hasSufficientCoverage(), "Sufficient documents on remaining two nodes");
         assertTrue(tester.group(2).hasSufficientCoverage());
     }
 
     @Test
-    public void one_group_few_docs_unbalanced() {
+    void one_group_few_docs_unbalanced() {
         var tester = new SearchClusterTester(1, 2);
 
         Node node0 = tester.group(0).nodes().get(0);
@@ -120,7 +120,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void one_group_many_docs_unbalanced() {
+    void one_group_many_docs_unbalanced() {
         var tester = new SearchClusterTester(1, 2);
 
         Node node0 = tester.group(0).nodes().get(0);

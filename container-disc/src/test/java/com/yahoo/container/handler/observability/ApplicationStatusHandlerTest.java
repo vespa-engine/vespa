@@ -12,13 +12,13 @@ import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.execution.chain.ChainRegistry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
 
 import static com.yahoo.container.jdisc.JdiscBindingsConfig.Handlers;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationStatusHandlerTest {
 
     @Test
-    public void application_configs_are_rendered()  {
+    void application_configs_are_rendered()  {
         ApplicationMetadataConfig metaConfig = new ApplicationMetadataConfig(
                 new ApplicationMetadataConfig.Builder()
                         .checksum("abc")
@@ -52,7 +52,7 @@ public class ApplicationStatusHandlerTest {
     }
 
     @Test
-    public void object_components_are_rendered() {
+    void object_components_are_rendered() {
         HashMap<ComponentId, Object> id2object = new HashMap<>();
         id2object.put(new ComponentId("myComponent"), new Object());
 
@@ -61,7 +61,7 @@ public class ApplicationStatusHandlerTest {
     }
 
     @Test
-    public void request_handlers_are_rendered() {
+    void request_handlers_are_rendered() {
         final String id = "myHandler";
         final String serverBinding1 = "http://*/serverBinding";
         final String serverBinding2 = "http://*/anotherServerBinding";
@@ -84,7 +84,7 @@ public class ApplicationStatusHandlerTest {
     }
 
     @Test
-    public void client_providers_are_rendered() {
+    void client_providers_are_rendered() {
         final String id = "myClient";
         final String clientBinding = "http://*/clientBinding";
         final String clientBinding2 = "http://*/anotherClientBinding";
@@ -108,7 +108,7 @@ public class ApplicationStatusHandlerTest {
     }
 
     @Test
-    public void chains_are_rendered()  {
+    void chains_are_rendered()  {
         ChainRegistry<Processor> chains = new ChainRegistry<>();
         Chain<Processor> chain = new Chain<>("myChain", new VoidProcessor(new ComponentId("voidProcessor")));
         chains.register(new ComponentId("myChain"), chain);

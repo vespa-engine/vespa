@@ -9,13 +9,13 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mortent
@@ -25,11 +25,11 @@ public class TenantRoleMaintainerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void maintains_iam_roles_for_tenants_in_production() {
+    void maintains_iam_roles_for_tenants_in_production() {
         var devAppTenant1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodAppTenant2 = tester.newDeploymentContext("tenant2", "app2", "default");
-        var devAppTenant2 = tester.newDeploymentContext("tenant2","app3","default");
-        var perfAppTenant1 = tester.newDeploymentContext("tenant3","app1","default");
+        var devAppTenant2 = tester.newDeploymentContext("tenant2", "app3", "default");
+        var perfAppTenant1 = tester.newDeploymentContext("tenant3", "app1", "default");
         ApplicationPackage appPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();

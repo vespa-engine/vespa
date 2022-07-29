@@ -2,9 +2,9 @@
 package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -14,14 +14,14 @@ public class GroupingTransformTestCase {
     private static final int REQUEST_ID = 0;
 
     @Test
-    public void requireThatLabelCanBeSet() {
+    void requireThatLabelCanBeSet() {
         GroupingTransform transform = newTransform();
         transform.putLabel(0, 1, "foo", "my_type");
         assertEquals("foo", transform.getLabel(1));
     }
 
     @Test
-    public void requireThatLabelCanNotBeReplaced() {
+    void requireThatLabelCanNotBeReplaced() {
         GroupingTransform transform = newTransform();
         transform.putLabel(0, 1, "foo", "my_type");
         try {
@@ -29,12 +29,12 @@ public class GroupingTransformTestCase {
             fail();
         } catch (IllegalStateException e) {
             assertEquals("Can not set label of my_type 1 to 'bar' because it is already set to 'foo'.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatLabelIsUniqueAmongSiblings() {
+    void requireThatLabelIsUniqueAmongSiblings() {
         GroupingTransform transform = newTransform();
         transform.putLabel(0, 1, "foo", "my_type");
         try {
@@ -42,26 +42,26 @@ public class GroupingTransformTestCase {
             fail();
         } catch (UnsupportedOperationException e) {
             assertEquals("Can not use my_type label 'foo' for multiple siblings.",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void requireThatMaxDefaultsToZero() {
+    void requireThatMaxDefaultsToZero() {
         GroupingTransform transform = newTransform();
         assertEquals(0, transform.getMax(6));
         assertEquals(0, transform.getMax(9));
     }
 
     @Test
-    public void requireThatMaxCanBeSet() {
+    void requireThatMaxCanBeSet() {
         GroupingTransform transform = newTransform();
         transform.putMax(0, 69, "my_type");
         assertEquals(69, transform.getMax(0));
     }
 
     @Test
-    public void requireThatMaxCanNotBeReplaced() {
+    void requireThatMaxCanNotBeReplaced() {
         GroupingTransform transform = newTransform();
         transform.putMax(0, 6, "my_type");
         try {
@@ -69,27 +69,27 @@ public class GroupingTransformTestCase {
             fail();
         } catch (IllegalStateException e) {
             assertEquals("Can not set max of my_type 0 to 9 because it is already set to 6.",
-                         e.getMessage());
+                    e.getMessage());
         }
         assertEquals(6, transform.getMax(0));
     }
 
     @Test
-    public void requireThatOffsetDefaultsToZero() {
+    void requireThatOffsetDefaultsToZero() {
         GroupingTransform transform = newTransform();
         assertEquals(0, transform.getOffset(6));
         assertEquals(0, transform.getOffset(9));
     }
 
     @Test
-    public void requireThatOffsetContinuationsCanBeAdded() {
+    void requireThatOffsetContinuationsCanBeAdded() {
         GroupingTransform transform = newTransform();
         transform.addContinuation(newStableOffset(newResultId(), 6, 9));
         assertEquals(9, transform.getOffset(6));
     }
 
     @Test
-    public void requireThatOffsetByIdCanBeReplaced() {
+    void requireThatOffsetByIdCanBeReplaced() {
         GroupingTransform transform = newTransform();
         ResultId id = newResultId(6, 9);
         transform.addContinuation(newStableOffset(id, 0, 6));
@@ -103,7 +103,7 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatOffsetByTagEqualsHighestSibling() {
+    void requireThatOffsetByTagEqualsHighestSibling() {
         GroupingTransform transform = newTransform();
         transform.addContinuation(newStableOffset(newResultId(1), 69, 6));
         assertEquals(6, transform.getOffset(69));
@@ -116,7 +116,7 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatOffsetContinuationsCanBeReplaced() {
+    void requireThatOffsetContinuationsCanBeReplaced() {
         GroupingTransform transform = newTransform();
         ResultId id = newResultId(6, 9);
         transform.addContinuation(newStableOffset(id, 1, 1));
@@ -136,7 +136,7 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatUnstableOffsetsAreTracked() {
+    void requireThatUnstableOffsetsAreTracked() {
         GroupingTransform transform = newTransform();
         ResultId stableId = newResultId(6);
         transform.addContinuation(newStableOffset(stableId, 1, 1));
@@ -148,17 +148,17 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatCompositeContinuationsAreDecomposed() {
+    void requireThatCompositeContinuationsAreDecomposed() {
         GroupingTransform transform = newTransform();
         transform.addContinuation(new CompositeContinuation()
-                                          .add(newStableOffset(newResultId(), 6, 9))
-                                          .add(newStableOffset(newResultId(), 9, 6)));
+                .add(newStableOffset(newResultId(), 6, 9))
+                .add(newStableOffset(newResultId(), 9, 6)));
         assertEquals(9, transform.getOffset(6));
         assertEquals(6, transform.getOffset(9));
     }
 
     @Test
-    public void requireThatUnsupportedContinuationsCanNotBeAdded() {
+    void requireThatUnsupportedContinuationsCanNotBeAdded() {
         GroupingTransform transform = newTransform();
         try {
             transform.addContinuation(new Continuation() {
@@ -174,7 +174,7 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatUnrelatedContinuationsAreIgnored() {
+    void requireThatUnrelatedContinuationsAreIgnored() {
         GroupingTransform transform = new GroupingTransform(REQUEST_ID);
         ResultId id = ResultId.valueOf(REQUEST_ID + 1, 1);
         transform.addContinuation(new OffsetContinuation(id, 2, 3, OffsetContinuation.FLAG_UNSTABLE));
@@ -184,7 +184,7 @@ public class GroupingTransformTestCase {
     }
 
     @Test
-    public void requireThatToStringIsVerbose() {
+    void requireThatToStringIsVerbose() {
         GroupingTransform transform = new GroupingTransform(REQUEST_ID);
         transform.putLabel(1, 1, "label1", "type1");
         transform.putLabel(2, 2, "label2", "type2");
@@ -193,19 +193,19 @@ public class GroupingTransformTestCase {
         transform.putMax(5, 5, "type5");
         transform.putMax(6, 6, "type6");
         assertEquals("groupingTransform {\n" +
-                     "\tlabels {\n" +
-                     "\t\t1 : label1\n" +
-                     "\t\t2 : label2\n" +
-                     "\t}\n" +
-                     "\toffsets {\n" +
-                     "\t\t3 : 3\n" +
-                     "\t\t4 : 4\n" +
-                     "\t}\n" +
-                     "\tmaxes {\n" +
-                     "\t\t5 : 5\n" +
-                     "\t\t6 : 6\n" +
-                     "\t}\n" +
-                     "}", transform.toString());
+                "\tlabels {\n" +
+                "\t\t1 : label1\n" +
+                "\t\t2 : label2\n" +
+                "\t}\n" +
+                "\toffsets {\n" +
+                "\t\t3 : 3\n" +
+                "\t\t4 : 4\n" +
+                "\t}\n" +
+                "\tmaxes {\n" +
+                "\t\t5 : 5\n" +
+                "\t\t6 : 6\n" +
+                "\t}\n" +
+                "}", transform.toString());
     }
 
     private static GroupingTransform newTransform() {

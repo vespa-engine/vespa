@@ -49,7 +49,7 @@ import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContex
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,13 +69,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -86,7 +86,7 @@ public class ControllerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    public void testDeployment() {
+    void testDeployment() {
         // Setup system
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -97,14 +97,14 @@ public class ControllerTest {
         Version version1 = tester.configServer().initialVersion();
         var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
-        assertEquals("Application version is known from completion of initial job",
-                     ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                     context.application().revisions().get(context.instance().change().revision().get()));
+        assertEquals(ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
+                context.application().revisions().get(context.instance().change().revision().get()),
+                "Application version is known from completion of initial job");
         context.runJob(systemTest);
         context.runJob(stagingTest);
 
         RevisionId applicationVersion = context.instance().change().revision().get();
-        assertTrue("Application version has been set during deployment", applicationVersion.isProduction());
+        assertTrue(applicationVersion.isProduction(), "Application version has been set during deployment");
 
         tester.triggerJobs();
         // Causes first deployment job to be triggered
@@ -171,11 +171,11 @@ public class ControllerTest {
         }
         catch (IllegalArgumentException e) {
             assertEquals("deployment-removal: application 'tenant.application' is deployed in us-west-1, but does not include this zone in deployment.xml. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval),
-                         e.getMessage());
+                    ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval),
+                    e.getMessage());
         }
-        assertNotNull("Zone was not removed",
-                      context.instance().deployments().get(productionUsWest1.zone()));
+        assertNotNull(context.instance().deployments().get(productionUsWest1.zone()),
+                "Zone was not removed");
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -184,14 +184,14 @@ public class ControllerTest {
                 .region("us-east-3")
                 .build();
         context.submit(applicationPackage);
-        assertNull("Zone was removed",
-                   context.instance().deployments().get(productionUsWest1.zone()));
-        assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
+        assertNull(context.instance().deployments().get(productionUsWest1.zone()),
+                "Zone was removed");
+        assertNull(context.instanceJobs().get(productionUsWest1), "Deployment job was removed");
 
         // Submission has stored application meta.
         assertNotNull(tester.controllerTester().serviceRegistry().applicationStore()
-                            .getMeta(context.instanceId())
-                            .get(tester.clock().instant()));
+                .getMeta(context.instanceId())
+                .get(tester.clock().instant()));
 
         // Meta data tombstone placed on delete
         tester.clock().advance(Duration.ofSeconds(1));
@@ -199,18 +199,18 @@ public class ControllerTest {
         tester.clock().advance(Duration.ofSeconds(1));
         context.submit(ApplicationPackage.deploymentRemoval());
         tester.applications().deleteApplication(context.application().id(),
-                                                tester.controllerTester().credentialsFor(context.instanceId().tenant()));
+                tester.controllerTester().credentialsFor(context.instanceId().tenant()));
         assertArrayEquals(new byte[0],
-                          tester.controllerTester().serviceRegistry().applicationStore()
-                                .getMeta(context.instanceId())
-                                .get(tester.clock().instant()));
+                tester.controllerTester().serviceRegistry().applicationStore()
+                        .getMeta(context.instanceId())
+                        .get(tester.clock().instant()));
 
         assertNull(tester.controllerTester().serviceRegistry().applicationStore()
-                         .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
+                .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
     }
 
     @Test
-    public void testGlobalRotationStatus() {
+    void testGlobalRotationStatus() {
         var context = tester.newDeploymentContext();
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
@@ -238,7 +238,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsUpdatesForGlobalEndpoint() {
+    void testDnsUpdatesForGlobalEndpoint() {
         var betaContext = tester.newDeploymentContext("tenant1", "app1", "beta");
         var defaultContext = tester.newDeploymentContext("tenant1", "app1", "default");
 
@@ -251,23 +251,23 @@ public class ControllerTest {
                 .region(usCentral.region()) // Two deployments should result in each DNS alias being registered once
                 .build();
         tester.controllerTester().zoneRegistry().setRoutingMethod(List.of(ZoneApiMock.from(usWest), ZoneApiMock.from(usCentral)),
-                                                                  RoutingMethod.sharedLayer4);
+                RoutingMethod.sharedLayer4);
         betaContext.submit(applicationPackage).deploy();
 
         { // Expected rotation names are passed to beta instance deployments
             Collection<Deployment> betaDeployments = betaContext.instance().deployments().values();
             assertFalse(betaDeployments.isEmpty());
             Set<ContainerEndpoint> containerEndpoints = Set.of(new ContainerEndpoint("foo",
-                                                                                     "global",
-                                                                                     List.of("beta.app1.tenant1.global.vespa.oath.cloud",
-                                                                                             "rotation-id-01"),
-                                                                                     OptionalInt.empty(),
-                                                                                     RoutingMethod.sharedLayer4));
+                    "global",
+                    List.of("beta.app1.tenant1.global.vespa.oath.cloud",
+                            "rotation-id-01"),
+                    OptionalInt.empty(),
+                    RoutingMethod.sharedLayer4));
 
             for (Deployment deployment : betaDeployments) {
                 assertEquals(containerEndpoints,
-                             tester.configServer().containerEndpoints()
-                                   .get(betaContext.deploymentIdIn(deployment.zone())));
+                        tester.configServer().containerEndpoints()
+                                .get(betaContext.deploymentIdIn(deployment.zone())));
             }
             betaContext.flushDnsUpdates();
         }
@@ -276,20 +276,20 @@ public class ControllerTest {
             Collection<Deployment> defaultDeployments = defaultContext.instance().deployments().values();
             assertFalse(defaultDeployments.isEmpty());
             Set<ContainerEndpoint> containerEndpoints = Set.of(new ContainerEndpoint("foo",
-                                                                                     "global",
-                                                                                     List.of("app1.tenant1.global.vespa.oath.cloud",
-                                                                                             "rotation-id-02"),
-                                                                                     OptionalInt.empty(),
-                                                                                     RoutingMethod.sharedLayer4));
+                    "global",
+                    List.of("app1.tenant1.global.vespa.oath.cloud",
+                            "rotation-id-02"),
+                    OptionalInt.empty(),
+                    RoutingMethod.sharedLayer4));
             for (Deployment deployment : defaultDeployments) {
                 assertEquals(containerEndpoints,
-                             tester.configServer().containerEndpoints().get(defaultContext.deploymentIdIn(deployment.zone())));
+                        tester.configServer().containerEndpoints().get(defaultContext.deploymentIdIn(deployment.zone())));
             }
             defaultContext.flushDnsUpdates();
         }
 
         Map<String, String> rotationCnames = Map.of("beta.app1.tenant1.global.vespa.oath.cloud", "rotation-fqdn-01.",
-                                                    "app1.tenant1.global.vespa.oath.cloud", "rotation-fqdn-02.");
+                "app1.tenant1.global.vespa.oath.cloud", "rotation-fqdn-02.");
         rotationCnames.forEach((cname, data) -> {
             var record = tester.controllerTester().findCname(cname);
             assertTrue(record.isPresent());
@@ -298,20 +298,20 @@ public class ControllerTest {
         });
 
         Map<ApplicationId, Set<String>> globalDnsNamesByInstance = Map.of(betaContext.instanceId(), Set.of("beta.app1.tenant1.global.vespa.oath.cloud"),
-                                                                          defaultContext.instanceId(), Set.of("app1.tenant1.global.vespa.oath.cloud"));
+                defaultContext.instanceId(), Set.of("app1.tenant1.global.vespa.oath.cloud"));
 
         globalDnsNamesByInstance.forEach((instance, dnsNames) -> {
             Set<String> actualDnsNames = tester.controller().routing().readDeclaredEndpointsOf(instance)
-                                               .scope(Endpoint.Scope.global)
-                                               .asList().stream()
-                                               .map(Endpoint::dnsName)
-                                               .collect(Collectors.toSet());
-            assertEquals("Global DNS names for " + instance, dnsNames, actualDnsNames);
+                    .scope(Endpoint.Scope.global)
+                    .asList().stream()
+                    .map(Endpoint::dnsName)
+                    .collect(Collectors.toSet());
+            assertEquals(dnsNames, actualDnsNames, "Global DNS names for " + instance);
         });
     }
 
     @Test
-    public void testDnsUpdatesForGlobalEndpointLegacySyntax() {
+    void testDnsUpdatesForGlobalEndpointLegacySyntax() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
@@ -323,10 +323,10 @@ public class ControllerTest {
         Collection<Deployment> deployments = context.instance().deployments().values();
         assertFalse(deployments.isEmpty());
         for (Deployment deployment : deployments) {
-            assertEquals("Rotation names are passed to config server in " + deployment.zone(),
-                    Set.of("rotation-id-01",
+            assertEquals(Set.of("rotation-id-01",
                             "app1.tenant1.global.vespa.oath.cloud"),
-                    tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())));
+                    tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())),
+                    "Rotation names are passed to config server in " + deployment.zone());
         }
         context.flushDnsUpdates();
         assertEquals(1, tester.controllerTester().nameService().records().size());
@@ -337,15 +337,15 @@ public class ControllerTest {
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
         List<String> globalDnsNames = tester.controller().routing().readDeclaredEndpointsOf(context.instanceId())
-                                            .scope(Endpoint.Scope.global)
-                                            .sortedBy(Comparator.comparing(Endpoint::dnsName))
-                                            .mapToList(Endpoint::dnsName);
+                .scope(Endpoint.Scope.global)
+                .sortedBy(Comparator.comparing(Endpoint::dnsName))
+                .mapToList(Endpoint::dnsName);
         assertEquals(List.of("app1.tenant1.global.vespa.oath.cloud"),
-                     globalDnsNames);
+                globalDnsNames);
     }
 
     @Test
-    public void testDnsUpdatesForMultipleGlobalEndpoints() {
+    void testDnsUpdatesForMultipleGlobalEndpoints() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")  // Rotation 01
@@ -368,9 +368,9 @@ public class ControllerTest {
         var west = Sets.union(notWest, Set.of("rotation-id-04", "west.app1.tenant1.global.vespa.oath.cloud"));
 
         for (Deployment deployment : deployments) {
-            assertEquals("Rotation names are passed to config server in " + deployment.zone(),
-                    ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
-                    tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())));
+            assertEquals(ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
+                    tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())),
+                    "Rotation names are passed to config server in " + deployment.zone());
         }
         context.flushDnsUpdates();
 
@@ -398,7 +398,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsUpdatesForGlobalEndpointChanges() {
+    void testDnsUpdatesForGlobalEndpointChanges() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         var west = ZoneId.from("prod", "us-west-1");
         var central = ZoneId.from("prod", "us-central-1");
@@ -415,10 +415,10 @@ public class ControllerTest {
 
         for (var zone : List.of(west, central)) {
             assertEquals(
-                    "Zone " + zone + " is a member of global endpoint",
                     Set.of("rotation-id-01", "app1.tenant1.global.vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone))
-            );
+            ,
+                    "Zone " + zone + " is a member of global endpoint");
         }
 
         // Application is deployed with an additional endpoint
@@ -433,16 +433,16 @@ public class ControllerTest {
 
         for (var zone : List.of(west, central)) {
             assertEquals(
-                    "Zone " + zone + " is a member of global endpoint",
                     Set.of("rotation-id-01", "app1.tenant1.global.vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone))
-            );
+            ,
+                    "Zone " + zone + " is a member of global endpoint");
         }
         assertEquals(
-                "Zone " + east + " is a member of global endpoint",
                 Set.of("rotation-id-02", "east.app1.tenant1.global.vespa.oath.cloud"),
                 tester.configServer().containerEndpointNames(context.deploymentIdIn(east))
-        );
+        ,
+                "Zone " + east + " is a member of global endpoint");
 
         // Application is deployed with default endpoint pointing to 3/3 zones
         ApplicationPackage applicationPackage3 = new ApplicationPackageBuilder()
@@ -455,13 +455,13 @@ public class ControllerTest {
         context.submit(applicationPackage3).deploy();
         for (var zone : List.of(west, central, east)) {
             assertEquals(
-                    "Zone " + zone + " is a member of global endpoint",
                     zone.equals(east)
                             ? Set.of("rotation-id-01", "app1.tenant1.global.vespa.oath.cloud",
-                                     "rotation-id-02", "east.app1.tenant1.global.vespa.oath.cloud")
+                            "rotation-id-02", "east.app1.tenant1.global.vespa.oath.cloud")
                             : Set.of("rotation-id-01", "app1.tenant1.global.vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone))
-            );
+            ,
+                    "Zone " + zone + " is a member of global endpoint");
         }
 
         // Region is removed from an endpoint without override
@@ -477,11 +477,11 @@ public class ControllerTest {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("global-endpoint-change: application 'tenant1.app1' has endpoints " +
-                         "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
-                         "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
-                         "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1] " +
-                         "and add [endpoint 'default' (cluster qrs) -> us-central-1, us-west-1]. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
+                    "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
+                    "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
+                    "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1] " +
+                    "and add [endpoint 'default' (cluster qrs) -> us-central-1, us-west-1]. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
         }
 
         // Entire endpoint is removed without override
@@ -496,10 +496,10 @@ public class ControllerTest {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("global-endpoint-change: application 'tenant1.app1' has endpoints " +
-                         "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
-                         "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
-                         "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1]. " +
-                         ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
+                    "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
+                    "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
+                    "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1]. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
         }
 
         // ... override is added
@@ -514,7 +514,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testUnassignRotations() {
+    void testUnassignRotations() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
@@ -540,7 +540,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsUpdatesWithChangeInRotationAssignment() {
+    void testDnsUpdatesWithChangeInRotationAssignment() {
         // Application 1 is deployed and deleted
         String dnsName1 = "app1.tenant1.global.vespa.oath.cloud";
         {
@@ -567,17 +567,17 @@ public class ControllerTest {
                     .build();
             context.submit(applicationPackage);
             tester.applications().deleteApplication(context.application().id(),
-                                                    tester.controllerTester().credentialsFor(context.application().id().tenant()));
+                    tester.controllerTester().credentialsFor(context.application().id().tenant()));
             try (RotationLock lock = tester.controller().routing().rotations().lock()) {
-                assertTrue("Rotation is unassigned",
-                           tester.controller().routing().rotations().availableRotations(lock)
-                                 .containsKey(new RotationId("rotation-id-01")));
+                assertTrue(tester.controller().routing().rotations().availableRotations(lock)
+                                .containsKey(new RotationId("rotation-id-01")),
+                        "Rotation is unassigned");
             }
             context.flushDnsUpdates();
 
             // Record is removed
             Optional<Record> record = tester.controllerTester().findCname(dnsName1);
-            assertTrue(dnsName1 + " is removed", record.isEmpty());
+            assertTrue(record.isEmpty(), dnsName1 + " is removed");
         }
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
@@ -624,7 +624,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsUpdatesForApplicationEndpoint() {
+    void testDnsUpdatesForApplicationEndpoint() {
         ApplicationId beta = ApplicationId.from("tenant1", "app1", "beta");
         ApplicationId main = ApplicationId.from("tenant1", "app1", "main");
         var context = tester.newDeploymentContext(beta);
@@ -633,14 +633,14 @@ public class ControllerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .applicationEndpoint("a", "default", "us-west-1",
-                                     Map.of(beta.instance(), 2,
-                                            main.instance(), 8))
+                        Map.of(beta.instance(), 2,
+                                main.instance(), 8))
                 .applicationEndpoint("b", "default", "us-west-1",
-                                     Map.of(beta.instance(), 1,
-                                            main.instance(), 1))
+                        Map.of(beta.instance(), 1,
+                                main.instance(), 1))
                 .applicationEndpoint("c", "default", "us-east-3",
-                                     Map.of(beta.instance(), 4,
-                                            main.instance(), 6))
+                        Map.of(beta.instance(), 4,
+                                main.instance(), 6))
                 .build();
         context.submit(applicationPackage).deploy();
 
@@ -649,63 +649,63 @@ public class ControllerTest {
         // Expected container endpoints are passed to each deployment
         Map<DeploymentId, Map<String, Integer>> deploymentEndpoints = Map.of(
                 new DeploymentId(beta, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 2,
-                                                       "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
+                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
                 new DeploymentId(main, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 8,
-                                                       "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
+                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
                 new DeploymentId(beta, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 4),
                 new DeploymentId(main, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 6)
         );
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
-                                                       .map(kv -> new ContainerEndpoint("default", "application",
-                                                                                        List.of(kv.getKey()),
-                                                                                        OptionalInt.of(kv.getValue()),
-                                                                                        RoutingMethod.sharedLayer4))
-                                                       .collect(Collectors.toSet());
-            assertEquals("Endpoint names for " + deployment + " are passed to config server",
-                         expected,
-                         tester.configServer().containerEndpoints().get(deployment));
+                    .map(kv -> new ContainerEndpoint("default", "application",
+                            List.of(kv.getKey()),
+                            OptionalInt.of(kv.getValue()),
+                            RoutingMethod.sharedLayer4))
+                    .collect(Collectors.toSet());
+            assertEquals(expected,
+                    tester.configServer().containerEndpoints().get(deployment),
+                    "Endpoint names for " + deployment + " are passed to config server");
         });
         context.flushDnsUpdates();
 
         // DNS records are created for each endpoint
         Set<Record> records = tester.controllerTester().nameService().records();
         assertEquals(Set.of(new Record(Record.Type.CNAME,
-                                       RecordName.from("a.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                       RecordData.from("vip.prod.us-west-1.")),
-                            new Record(Record.Type.CNAME,
-                                       RecordName.from("b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                       RecordData.from("vip.prod.us-west-1.")),
-                            new Record(Record.Type.CNAME,
-                                       RecordName.from("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
-                                       RecordData.from("vip.prod.us-east-3."))),
-                     records);
+                                RecordName.from("a.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
+                                RecordData.from("vip.prod.us-west-1.")),
+                        new Record(Record.Type.CNAME,
+                                RecordName.from("b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
+                                RecordData.from("vip.prod.us-west-1.")),
+                        new Record(Record.Type.CNAME,
+                                RecordName.from("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                                RecordData.from("vip.prod.us-east-3."))),
+                records);
         List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
-                                              .scope(Endpoint.Scope.application)
-                                              .mapToList(Endpoint::dnsName);
+                .scope(Endpoint.Scope.application)
+                .mapToList(Endpoint::dnsName);
         assertEquals(List.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud",
-                             "b.app1.tenant1.us-west-1-r.vespa.oath.cloud",
-                             "c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
-                     endpointDnsNames);
+                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud",
+                        "c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                endpointDnsNames);
     }
 
     @Test
-    public void testDevDeployment() {
+    void testDevDeployment() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().build();
 
         // Create application
         var context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("dev", "us-east-1");
         tester.controllerTester().zoneRegistry()
-              .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.sharedLayer4);
+                .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.sharedLayer4);
 
         // Deploy
         context.runJob(zone, applicationPackage);
-        assertTrue("Application deployed and activated",
-                   tester.configServer().application(context.instanceId(), zone).get().activated());
-        assertTrue("No job status added",
-                   context.instanceJobs().isEmpty());
-        assertEquals("DeploymentSpec is not stored", DeploymentSpec.empty, context.application().deploymentSpec());
+        assertTrue(tester.configServer().application(context.instanceId(), zone).get().activated(),
+                "Application deployed and activated");
+        assertTrue(context.instanceJobs().isEmpty(),
+                "No job status added");
+        assertEquals(DeploymentSpec.empty, context.application().deploymentSpec(), "DeploymentSpec is not stored");
 
         // Verify zone supports shared layer 4 and shared routing methods
         Set<RoutingMethod> routingMethods = tester.controller().routing().readEndpointsOf(context.deploymentIdIn(zone))
@@ -717,20 +717,20 @@ public class ControllerTest {
 
         // Deployment has stored application meta.
         assertNotNull(tester.controllerTester().serviceRegistry().applicationStore()
-                            .getMeta(new DeploymentId(context.instanceId(), zone))
-                            .get(tester.clock().instant()));
+                .getMeta(new DeploymentId(context.instanceId(), zone))
+                .get(tester.clock().instant()));
 
         // Meta data tombstone placed on delete
         tester.clock().advance(Duration.ofSeconds(1));
         tester.controller().applications().deactivate(context.instanceId(), zone);
         assertArrayEquals(new byte[0],
-                          tester.controllerTester().serviceRegistry().applicationStore()
-                                .getMeta(new DeploymentId(context.instanceId(), zone))
-                                .get(tester.clock().instant()));
+                tester.controllerTester().serviceRegistry().applicationStore()
+                        .getMeta(new DeploymentId(context.instanceId(), zone))
+                        .get(tester.clock().instant()));
     }
 
     @Test
-    public void testDevDeploymentWithIncompatibleVersions() {
+    void testDevDeploymentWithIncompatibleVersions() {
         Version version1 = new Version("7");
         Version version2 = new Version("7.5");
         Version version3 = new Version("8");
@@ -778,12 +778,12 @@ public class ControllerTest {
     }
 
     @Test
-    public void testSuspension() {
+    void testSuspension() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                                                        .region("us-west-1")
-                                                        .region("us-east-3")
-                                                        .build();
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
         context.submit(applicationPackage).deploy();
 
         DeploymentId deployment1 = context.deploymentIdIn(ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
@@ -798,7 +798,7 @@ public class ControllerTest {
     // Application may already have been deleted, or deployment failed without response, test that deleting a
     // second time will not fail
     @Test
-    public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
+    void testDeletingApplicationThatHasAlreadyBeenDeleted() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -811,7 +811,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployApplicationWithWarnings() {
+    void testDeployApplicationWithWarnings() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
@@ -821,11 +821,11 @@ public class ControllerTest {
         tester.configServer().generateWarnings(context.deploymentIdIn(zone), warnings);
         context.submit(applicationPackage).deploy();
         assertEquals(warnings, context.deployment(zone)
-                                      .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
+                .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
     }
 
     @Test
-    public void testDeploySelectivelyProvisionsCertificate() {
+    void testDeploySelectivelyProvisionsCertificate() {
         Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readEndpointCertificateMetadata(application.id());
 
         // Create app1
@@ -835,22 +835,22 @@ public class ControllerTest {
         var testZone = ZoneId.from("test", "us-east-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                                                                .region(prodZone.region())
-                                                                .build();
+                .region(prodZone.region())
+                .build();
         // Deploy app1 in production
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
-        assertTrue("Provisions certificate in " + Environment.prod, cert.isPresent());
+        assertTrue(cert.isPresent(), "Provisions certificate in " + Environment.prod);
         assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
-                                             "app1.tenant1.global.vespa.oath.cloud",
-                                             "*.app1.tenant1.global.vespa.oath.cloud"),
-                                   Stream.of(prodZone, testZone, stagingZone)
-                                         .flatMap(zone -> Stream.of("", "*.")
-                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
-                                                                               (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
-                                                                               ".vespa.oath.cloud")))
-                           .collect(Collectors.toUnmodifiableSet()),
-                     Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId())));
+                                "app1.tenant1.global.vespa.oath.cloud",
+                                "*.app1.tenant1.global.vespa.oath.cloud"),
+                        Stream.of(prodZone, testZone, stagingZone)
+                                .flatMap(zone -> Stream.of("", "*.")
+                                        .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
+                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
+                                                ".vespa.oath.cloud")))
+                        .collect(Collectors.toUnmodifiableSet()),
+                Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId())));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
@@ -862,13 +862,13 @@ public class ControllerTest {
 
         // Deploy app2 in a zone with shared routing
         context2.runJob(devZone, applicationPackage);
-        assertTrue("Application deployed and activated",
-                   tester.configServer().application(context2.instanceId(), devZone).get().activated());
-        assertTrue("Provisions certificate also in zone with routing layer", certificate.apply(context2.instance()).isPresent());
+        assertTrue(tester.configServer().application(context2.instanceId(), devZone).get().activated(),
+                "Application deployed and activated");
+        assertTrue(certificate.apply(context2.instance()).isPresent(), "Provisions certificate also in zone with routing layer");
     }
 
     @Test
-    public void testDeployWithGlobalEndpointsInMultipleClouds() {
+    void testDeployWithGlobalEndpointsInMultipleClouds() {
         tester.controllerTester().zoneRegistry().setZones(
                 ZoneApiMock.fromId("test.us-west-1"),
                 ZoneApiMock.fromId("staging.us-west-1"),
@@ -904,7 +904,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployWithoutSourceRevision() {
+    void testDeployWithoutSourceRevision() {
         var context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
@@ -913,12 +913,12 @@ public class ControllerTest {
 
         // Submit without source revision
         context.submit(applicationPackage, Optional.empty())
-               .deploy();
-        assertEquals("Deployed application", 1, context.instance().deployments().size());
+                .deploy();
+        assertEquals(1, context.instance().deployments().size(), "Deployed application");
     }
 
     @Test
-    public void testDeployWithGlobalEndpointsAndMultipleRoutingMethods() {
+    void testDeployWithGlobalEndpointsAndMultipleRoutingMethods() {
         var context = tester.newDeploymentContext();
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
@@ -939,25 +939,25 @@ public class ControllerTest {
         var expectedRecords = List.of(
                 // The weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
-                           RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                           new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
-                                                   "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
+                        RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                        new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
+                                "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
-                           RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           new LatencyAliasTarget(HostName.of("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                                                  "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
+                        RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
+                        new LatencyAliasTarget(HostName.of("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                                "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The zone-scoped endpoint pointing to zone 2 with exclusive routing
                 new Record(Record.Type.CNAME,
-                           RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
-                           RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
+                        RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
+                        RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 
     @Test
-    public void testDeploymentDirectRouting() {
+    void testDeploymentDirectRouting() {
         // Rotation-less system
         DeploymentTester tester = new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build(), main));
         var context = tester.newDeploymentContext();
@@ -965,7 +965,7 @@ public class ControllerTest {
         var zone2 = ZoneId.from("prod", "us-east-3");
         var zone3 = ZoneId.from("prod", "eu-west-1");
         tester.controllerTester().zoneRegistry()
-              .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
+                .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
 
         var applicationPackageBuilder = new ApplicationPackageBuilder()
                 .region(zone1.region())
@@ -979,20 +979,20 @@ public class ControllerTest {
 
         // Deployment passes container endpoints to config server
         for (var zone : List.of(zone1, zone2)) {
-            assertEquals("Expected container endpoints in " + zone,
-                         Set.of("application.tenant.global.vespa.oath.cloud",
-                                "foo.application.tenant.global.vespa.oath.cloud",
-                                "us.application.tenant.global.vespa.oath.cloud"),
-                         tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)));
+            assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
+                            "foo.application.tenant.global.vespa.oath.cloud",
+                            "us.application.tenant.global.vespa.oath.cloud"),
+                    tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)),
+                    "Expected container endpoints in " + zone);
         }
-        assertEquals("Expected container endpoints in " + zone3,
-                     Set.of("application.tenant.global.vespa.oath.cloud",
-                            "foo.application.tenant.global.vespa.oath.cloud"),
-                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone3)));
+        assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
+                        "foo.application.tenant.global.vespa.oath.cloud"),
+                tester.configServer().containerEndpointNames(context.deploymentIdIn(zone3)),
+                "Expected container endpoints in " + zone3);
     }
 
     @Test
-    public void testChangeEndpointCluster() {
+    void testChangeEndpointCluster() {
         var context = tester.newDeploymentContext();
         var west = ZoneId.from("prod", "us-west-1");
         var east = ZoneId.from("prod", "us-east-3");
@@ -1005,7 +1005,7 @@ public class ControllerTest {
                 .build();
         context.submit(applicationPackage).deploy();
         assertEquals(ClusterSpec.Id.from("foo"), tester.applications().requireInstance(context.instanceId())
-                                                       .rotations().get(0).clusterId());
+                .rotations().get(0).clusterId());
 
         // Redeploy with endpoint cluster changed needs override
         applicationPackage = new ApplicationPackageBuilder()
@@ -1018,12 +1018,12 @@ public class ControllerTest {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("global-endpoint-change: application 'tenant.application' has endpoints [endpoint " +
-                         "'default' (cluster foo) -> us-east-3, us-west-1], but does not include all of these in " +
-                         "deployment.xml. Deploying given deployment.xml will remove " +
-                         "[endpoint 'default' (cluster foo) -> us-east-3, us-west-1] and add " +
-                         "[endpoint 'default' (cluster bar) -> us-east-3, us-west-1]. To allow this add " +
-                         "<allow until='yyyy-mm-dd'>global-endpoint-change</allow> to validation-overrides.xml, see " +
-                         "https://docs.vespa.ai/en/reference/validation-overrides.html", e.getMessage());
+                    "'default' (cluster foo) -> us-east-3, us-west-1], but does not include all of these in " +
+                    "deployment.xml. Deploying given deployment.xml will remove " +
+                    "[endpoint 'default' (cluster foo) -> us-east-3, us-west-1] and add " +
+                    "[endpoint 'default' (cluster bar) -> us-east-3, us-west-1]. To allow this add " +
+                    "<allow until='yyyy-mm-dd'>global-endpoint-change</allow> to validation-overrides.xml, see " +
+                    "https://docs.vespa.ai/en/reference/validation-overrides.html", e.getMessage());
         }
 
         // Redeploy with override succeeds
@@ -1035,26 +1035,26 @@ public class ControllerTest {
                 .build();
         context.submit(applicationPackage).deploy();
         assertEquals(ClusterSpec.Id.from("bar"), tester.applications().requireInstance(context.instanceId())
-                                                       .rotations().get(0).clusterId());
+                .rotations().get(0).clusterId());
     }
 
     @Test
-    public void testReadableApplications() {
+    void testReadableApplications() {
         var db = new MockCuratorDb(tester.controller().system());
         var tester = new DeploymentTester(new ControllerTester(db));
 
         // Create and deploy two applications
         var app1 = tester.newDeploymentContext("t1", "a1", "default")
-                         .submit()
-                         .deploy();
+                .submit()
+                .deploy();
         var app2 = tester.newDeploymentContext("t2", "a2", "default")
-                         .submit()
-                         .deploy();
+                .submit()
+                .deploy();
         assertEquals(2, tester.applications().readable().size());
 
         // Write invalid data to one application
         db.curator().set(Path.fromString("/controller/v1/applications/" + app2.application().id().serialized()),
-                         new byte[]{(byte) 0xDE, (byte) 0xAD});
+                new byte[]{(byte) 0xDE, (byte) 0xAD});
 
         // Can read the remaining readable
         assertEquals(1, tester.applications().readable().size());
@@ -1071,57 +1071,57 @@ public class ControllerTest {
     }
 
     @Test
-    public void testClashingEndpointIdAndInstanceName() {
+    void testClashingEndpointIdAndInstanceName() {
         String deploymentXml = "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                               "  <instance id=\"default\">\n" +
-                               "    <prod>\n" +
-                               "      <region active=\"true\">us-west-1</region>\n" +
-                               "    </prod>\n" +
-                               "    <endpoints>\n" +
-                               "      <endpoint id=\"dev\" container-id=\"qrs\"/>\n" +
-                               "    </endpoints>\n" +
-                               "  </instance>\n" +
-                               "  <instance id=\"dev\">\n" +
-                               "    <prod>\n" +
-                               "      <region active=\"true\">us-west-1</region>\n" +
-                               "    </prod>\n" +
-                               "    <endpoints>\n" +
-                               "      <endpoint id=\"default\" container-id=\"qrs\"/>\n" +
-                               "    </endpoints>\n" +
-                               "  </instance>\n" +
-                               "</deployment>\n";
+                "  <instance id=\"default\">\n" +
+                "    <prod>\n" +
+                "      <region active=\"true\">us-west-1</region>\n" +
+                "    </prod>\n" +
+                "    <endpoints>\n" +
+                "      <endpoint id=\"dev\" container-id=\"qrs\"/>\n" +
+                "    </endpoints>\n" +
+                "  </instance>\n" +
+                "  <instance id=\"dev\">\n" +
+                "    <prod>\n" +
+                "      <region active=\"true\">us-west-1</region>\n" +
+                "    </prod>\n" +
+                "    <endpoints>\n" +
+                "      <endpoint id=\"default\" container-id=\"qrs\"/>\n" +
+                "    </endpoints>\n" +
+                "  </instance>\n" +
+                "</deployment>\n";
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
         try {
             tester.newDeploymentContext().submit(applicationPackage);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint with ID 'default' in instance 'dev' clashes with endpoint 'dev' in instance 'default'",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 
     @Test
-    public void testTestPackageWarnings() {
+    void testTestPackageWarnings() {
         String deploymentXml = "<deployment version='1.0'>\n" +
-                               "  <prod>\n" +
-                               "    <region>us-west-1</region>\n" +
-                               "  </prod>\n" +
-                               "</deployment>\n";
+                "  <prod>\n" +
+                "    <region>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>\n";
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
         byte[] testPackage = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0]));
         var app = tester.newDeploymentContext();
         tester.jobs().submit(app.application().id(), Submission.basic(applicationPackage, testPackage), 1);
         assertEquals(List.of(new Notification(tester.clock().instant(),
-                                              Type.testPackage,
-                                              Level.warning,
-                                              NotificationSource.from(app.application().id()),
-                                              List.of("test package has staging tests, so it should also include staging setup",
-                                                      "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
-                     tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));
+                        Type.testPackage,
+                        Level.warning,
+                        NotificationSource.from(app.application().id()),
+                        List.of("test package has staging tests, so it should also include staging setup",
+                                "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
+                tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));
     }
 
     @Test
-    public void testCompileVersion() {
+    void testCompileVersion() {
         DeploymentContext context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
         TenantAndApplicationId application = TenantAndApplicationId.from(context.instanceId());
@@ -1186,7 +1186,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testCloudAccount() {
+    void testCloudAccount() {
         DeploymentContext context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("prod", "us-west-1");
         String cloudAccount = "012345678912";
@@ -1197,7 +1197,8 @@ public class ControllerTest {
         try {
             context.submit(applicationPackage).deploy();
             fail("Expected exception"); // Account invalid for tenant
-        } catch (IllegalArgumentException ignored) {}
+        } catch (IllegalArgumentException ignored) {
+        }
 
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
         context.submit(applicationPackage).deploy();
@@ -1205,7 +1206,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testSubmitWithElementDeprecatedOnPreviousMajor() {
+    void testSubmitWithElementDeprecatedOnPreviousMajor() {
         DeploymentContext context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .compileVersion(Version.fromString("8.1"))

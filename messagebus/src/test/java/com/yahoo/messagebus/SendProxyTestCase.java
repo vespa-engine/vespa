@@ -13,18 +13,15 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -36,7 +33,7 @@ public class SendProxyTestCase {
     SourceSession srcSession;
     DestinationSession dstSession;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
@@ -49,7 +46,7 @@ public class SendProxyTestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -59,7 +56,7 @@ public class SendProxyTestCase {
     }
 
     @Test
-    public void testTraceByLogLevel() {
+    void testTraceByLogLevel() {
         Logger log = Logger.getLogger(SendProxy.class.getName());
         LogHandler logHandler = new LogHandler();
         log.addHandler(logHandler);
@@ -77,17 +74,17 @@ public class SendProxyTestCase {
 
         sendMessage(0, new Error(ErrorCode.FATAL_ERROR, "err"));
         assertEquals("Trace for reply with error(s):\n" +
-                     "<trace>\n" +
-                     "    <trace>\n" +
-                     "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
-                     "        <trace>\n" +
-                     "            Message (type 1) received at 'dst' for session 'session'.\n" +
-                     "            [FATAL_ERROR @ localhost]: err\n" +
-                     "            Sending reply (version ${VERSION}) from 'dst'.\n" +
-                     "        </trace>\n" +
-                     "        Reply (type 2) received at client.\n" +
-                     "    </trace>\n" +
-                     "</trace>\n", logHandler.trace);
+                "<trace>\n" +
+                "    <trace>\n" +
+                "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
+                "        <trace>\n" +
+                "            Message (type 1) received at 'dst' for session 'session'.\n" +
+                "            [FATAL_ERROR @ localhost]: err\n" +
+                "            Sending reply (version ${VERSION}) from 'dst'.\n" +
+                "        </trace>\n" +
+                "        Reply (type 2) received at client.\n" +
+                "    </trace>\n" +
+                "</trace>\n", logHandler.trace);
         logHandler.trace = null;
 
         log.setLevel(Level.FINEST);
@@ -96,16 +93,16 @@ public class SendProxyTestCase {
 
         sendMessage(0, null);
         assertEquals("Trace for reply:\n" +
-                     "<trace>\n" +
-                     "    <trace>\n" +
-                     "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
-                     "        <trace>\n" +
-                     "            Message (type 1) received at 'dst' for session 'session'.\n" +
-                     "            Sending reply (version ${VERSION}) from 'dst'.\n" +
-                     "        </trace>\n" +
-                     "        Reply (type 0) received at client.\n" +
-                     "    </trace>\n" +
-                     "</trace>\n", logHandler.trace);
+                "<trace>\n" +
+                "    <trace>\n" +
+                "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
+                "        <trace>\n" +
+                "            Message (type 1) received at 'dst' for session 'session'.\n" +
+                "            Sending reply (version ${VERSION}) from 'dst'.\n" +
+                "        </trace>\n" +
+                "        Reply (type 0) received at client.\n" +
+                "    </trace>\n" +
+                "</trace>\n", logHandler.trace);
         logHandler.trace = null;
 
         sendMessage(1, new Error(ErrorCode.FATAL_ERROR, "err"));
@@ -113,17 +110,17 @@ public class SendProxyTestCase {
 
         sendMessage(0, new Error(ErrorCode.FATAL_ERROR, "err"));
         assertEquals("Trace for reply with error(s):\n" +
-                     "<trace>\n" +
-                     "    <trace>\n" +
-                     "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
-                     "        <trace>\n" +
-                     "            Message (type 1) received at 'dst' for session 'session'.\n" +
-                     "            [FATAL_ERROR @ localhost]: err\n" +
-                     "            Sending reply (version ${VERSION}) from 'dst'.\n" +
-                     "        </trace>\n" +
-                     "        Reply (type 2) received at client.\n" +
-                     "    </trace>\n" +
-                     "</trace>\n", logHandler.trace);
+                "<trace>\n" +
+                "    <trace>\n" +
+                "        Sending message (version ${VERSION}) from client to 'dst/session' with x seconds timeout.\n" +
+                "        <trace>\n" +
+                "            Message (type 1) received at 'dst' for session 'session'.\n" +
+                "            [FATAL_ERROR @ localhost]: err\n" +
+                "            Sending reply (version ${VERSION}) from 'dst'.\n" +
+                "        </trace>\n" +
+                "        Reply (type 2) received at client.\n" +
+                "    </trace>\n" +
+                "</trace>\n", logHandler.trace);
         logHandler.trace = null;
     }
 

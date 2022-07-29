@@ -7,13 +7,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,13 +21,14 @@ import static org.junit.Assert.fail;
 public class GroupingValidatorTestCase {
 
     @Test
-    public void requireThatAvailableAttributesDoNotThrow() {
+    void requireThatAvailableAttributesDoNotThrow() {
         validateGrouping(List.of("foo", "bar"),
-                "all(group(foo) each(output(max(bar))))");;
+                "all(group(foo) each(output(max(bar))))");
+        ;
     }
 
     @Test
-    public void requireThatUnavailableAttributesThrow() {
+    void requireThatUnavailableAttributesThrow() {
         try {
             validateGrouping(List.of("foo"), "all(group(foo) each(output(max(bar))))");
             fail("Excpected exception");
@@ -38,20 +39,20 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void requireThatEnableFlagPreventsThrow() {
+    void requireThatEnableFlagPreventsThrow() {
         Query query = createQuery("all(group(foo) each(output(max(bar))))");
         query.properties().set(GroupingValidator.PARAM_ENABLED, "false");
         validateGrouping(List.of("foo"), query);
     }
 
     @Test
-    public void available_primitive_map_attribute_does_not_throw() {
+    void available_primitive_map_attribute_does_not_throw() {
         validateGrouping(List.of("map.key", "map.value"),
                 "all(group(map{\"foo\"}) each(output(count())))");
     }
 
     @Test
-    public void unavailable_primitive_map_key_attribute_throws() {
+    void unavailable_primitive_map_key_attribute_throws() {
         try {
             validateGrouping(List.of("null"), "all(group(map{\"foo\"}) each(output(count())))");
             fail("Expected exception");
@@ -62,7 +63,7 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void unavailable_primitive_map_value_attribute_throws() {
+    void unavailable_primitive_map_value_attribute_throws() {
         try {
             validateGrouping(List.of("map.key"), "all(group(map{\"foo\"}) each(output(count())))");
             fail("Expected exception");
@@ -73,13 +74,13 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void available_struct_map_attribute_does_not_throw() {
+    void available_struct_map_attribute_does_not_throw() {
         validateGrouping(List.of("map.key", "map.value.name"),
                 "all(group(map{\"foo\"}.name) each(output(count())))");
     }
 
     @Test
-    public void unavailable_struct_map_key_attribute_throws() {
+    void unavailable_struct_map_key_attribute_throws() {
         try {
             validateGrouping(List.of("null"), "all(group(map{\"foo\"}.name) each(output(count())))");
             fail("Expected exception");
@@ -90,7 +91,7 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void unavailable_struct_map_value_attribute_throws() {
+    void unavailable_struct_map_value_attribute_throws() {
         try {
             validateGrouping(List.of("map.key"), "all(group(map{\"foo\"}.name) each(output(count())))");
             fail("Expected exception");
@@ -101,16 +102,16 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void available_key_source_attribute_does_not_throw() {
+    void available_key_source_attribute_does_not_throw() {
         validateGrouping(List.of("map.key", "map.value", "key_source"),
                 "all(group(map{attribute(key_source)}) each(output(count())))");
     }
 
     @Test
-    public void unavailable_key_source_attribute_throws() {
+    void unavailable_key_source_attribute_throws() {
         try {
             validateGrouping(List.of("map.key", "map.value"),
-                             "all(group(map{attribute(key_source)}) each(output(count())))");
+                    "all(group(map{attribute(key_source)}) each(output(count())))");
             fail("Expected exception");
         }
         catch (UnavailableAttributeException e) {
@@ -119,29 +120,29 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    public void key_source_attribute_with_mismatching_data_type_throws() {
+    void key_source_attribute_with_mismatching_data_type_throws() {
         try {
             validateGrouping(setupMismatchingKeySourceAttribute(false),
-                             "all(group(map{attribute(key_source)}) each(output(count())))");
+                    "all(group(map{attribute(key_source)}) each(output(count())))");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Grouping request references key source attribute 'key_source' with data type 'INT32' " +
-                         "that is different than data type 'STRING' of key attribute 'map.key'",
-                         e.getMessage());
+                    "that is different than data type 'STRING' of key attribute 'map.key'",
+                    e.getMessage());
         }
     }
 
     @Test
-    public void key_source_attribute_with_multi_value_collection_type_throws() {
+    void key_source_attribute_with_multi_value_collection_type_throws() {
         try {
             validateGrouping(setupMismatchingKeySourceAttribute(true),
-                             "all(group(map{attribute(key_source)}) each(output(count())))");
+                    "all(group(map{attribute(key_source)}) each(output(count())))");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Grouping request references key source attribute 'key_source' which is not of single value type",
-                         e.getMessage());
+                    e.getMessage());
         }
     }
 

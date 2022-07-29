@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * tersts the ellipsis rule base
@@ -15,8 +15,8 @@ public class Ellipsis2TestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testUnreferencedEllipsis() {
-        assertSemantics("AND a b c someindex:\"a b c\"","a b c");
+    void testUnreferencedEllipsis() {
+        assertSemantics("AND a b c someindex:\"a b c\"", "a b c");
     }
 
 }

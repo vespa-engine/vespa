@@ -4,10 +4,10 @@ package com.yahoo.jdisc.service;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -16,14 +16,14 @@ import static org.junit.Assert.assertTrue;
 public class AbstractServerProviderTestCase {
 
     @Test
-    public void requireThatAbstractClassIsAServerProvider() {
+    void requireThatAbstractClassIsAServerProvider() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         assertTrue(ServerProvider.class.isInstance(new MyServerProvider(driver)));
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         MyServerProvider server = builder.getInstance(MyServerProvider.class);

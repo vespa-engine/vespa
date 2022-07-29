@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -9,8 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yahoo.search.test.QueryTestCase;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.search.Query;
 
 
@@ -23,14 +23,14 @@ import com.yahoo.search.Query;
 public class ItemHelperTestCase {
 
     @Test
-    public final void testGetNumTerms() {
+    final void testGetNumTerms() {
         ItemHelper helper = new ItemHelper();
         Query q = new Query("/?query=" + enc("a b c"));
         assertEquals(3, helper.getNumTerms(q.getModel().getQueryTree().getRoot()));
     }
 
     @Test
-    public final void testGetPositiveTerms() {
+    final void testGetPositiveTerms() {
         ItemHelper helper = new ItemHelper();
         Query q = new Query("/?query=" + enc("a b c \"d e\" -f"));
         List<IndexedItem> l = new ArrayList<>();
@@ -52,7 +52,7 @@ public class ItemHelperTestCase {
                 c = true;
             }
         }
-        assertFalse("An item is missing.", (a & b & c & d) == false);
+        assertNotNull(false);
     }
 
     private String enc(String s) {

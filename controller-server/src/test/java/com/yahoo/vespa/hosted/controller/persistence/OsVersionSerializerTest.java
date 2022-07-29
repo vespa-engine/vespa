@@ -5,11 +5,11 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class OsVersionSerializerTest {
 
     @Test
-    public void test_serialization() {
+    void test_serialization() {
         OsVersionSerializer serializer = new OsVersionSerializer();
         Set<OsVersion> osVersions = ImmutableSet.of(
                 new OsVersion(Version.fromString("7.1"), CloudName.defaultName()),

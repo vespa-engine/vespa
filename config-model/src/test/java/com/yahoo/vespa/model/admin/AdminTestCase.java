@@ -22,16 +22,12 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class AdminTestCase {
@@ -46,7 +42,7 @@ public class AdminTestCase {
      * Test that version 2.0 of adminconfig works as expected.
      */
     @Test
-    public void testAdmin20() {
+    void testAdmin20() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "adminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -110,7 +106,7 @@ public class AdminTestCase {
      * adminserver, logserver, configserver and slobroks
      */
     @Test
-    public void testOnlyAdminserver() {
+    void testOnlyAdminserver() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "simpleadminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -150,7 +146,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testTenantAndAppInSentinelConfig() {
+    void testTenantAndAppInSentinelConfig() {
         DeployState state = new DeployState.Builder()
                 .zone(new Zone(Environment.dev, RegionName.from("baz")))
                 .properties(new TestProperties()
@@ -171,7 +167,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testMultipleConfigServers() {
+    void testMultipleConfigServers() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "multipleconfigservers");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -213,7 +209,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testContainerMetricsSnapshotInterval() {
+    void testContainerMetricsSnapshotInterval() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "metricconfig");
 
         ApplicationContainerCluster qrCluster = vespaModel.getContainerClusters().get("container");
@@ -224,7 +220,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testLogForwarding() {
+    void testLogForwarding() {
         String hosts = "<hosts>"
                 + "  <host name=\"myhost0\">"
                 + "    <alias>node0</alias>"
@@ -244,7 +240,7 @@ public class AdminTestCase {
 
         Set<String> configIds = vespaModel.getConfigIds();
         // 1 logforwarder on each host
-        assertTrue(configIds.toString(), configIds.contains("hosts/myhost0/logforwarder"));
+        assertTrue(configIds.contains("hosts/myhost0/logforwarder"), configIds.toString());
     }
 
 }

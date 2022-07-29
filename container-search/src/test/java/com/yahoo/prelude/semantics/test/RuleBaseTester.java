@@ -14,7 +14,7 @@ import com.yahoo.search.test.QueryTestCase;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Helper for testing with a rule base.

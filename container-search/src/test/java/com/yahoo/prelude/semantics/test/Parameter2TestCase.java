@@ -2,9 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests parameter matching and production
@@ -19,8 +19,8 @@ public class Parameter2TestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter production */
     @Test
-    public void testParameterProduction() {
-        assertRankParameterSemantics("WEAKAND(100) a","a&ranking=usrank","date",0);
+    void testParameterProduction() {
+        assertRankParameterSemantics("WEAKAND(100) a", "a&ranking=usrank", "date", 0);
     }
 
     private void assertRankParameterSemantics(String producedQuery,String inputQuery,

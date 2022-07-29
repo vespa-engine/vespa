@@ -11,11 +11,11 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.yahoo.prelude.query.Item;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test of TextualQueryRepresentation.
@@ -102,14 +102,14 @@ public class TextualQueryRepresentationTestCase {
     }
 
     @Test
-    public void testBasic() throws Exception {
+    void testBasic() throws Exception {
         String basicText = getTextualQueryRepresentation(basic);
         assertEquals(getCorrect("basic.txt"), basicText);
 
     }
 
     @Test
-    public void testComposite() throws Exception {
+    void testComposite() throws Exception {
         String compositeText = getTextualQueryRepresentation(composite);
         assertEquals(getCorrect("composite.txt"), compositeText);
     }

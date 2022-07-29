@@ -2,9 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests parameter matching and production
@@ -19,7 +19,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter literal matching */
     @Test
-    public void testLiteralEquals() {
+    void testLiteralEquals() {
         assertSemantics("a", "a");
         assertSemantics("RANK a foo:a", "a&ranking=category");
         assertSemantics("a", "a&ranking=somethingelse");
@@ -28,7 +28,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter matching of larger */
     @Test
-    public void testLarger() {
+    void testLarger() {
         assertSemantics("a", "a");
         assertSemantics("AND a largepage", "a&hits=11");
         assertSemantics("AND a largepage", "a&hits=12");
@@ -36,8 +36,8 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter containment matching */
     @Test
-    public void testContainsAsList() {
-        assertSemantics("a","a");
+    void testContainsAsList() {
+        assertSemantics("a", "a");
         assertSemantics("AND a intent:music", "a&search=music");
         assertSemantics("AND a intent:music", "a&search=music,books");
         assertSemantics("AND a intent:music", "a&search=kanoos,music,books");
@@ -45,7 +45,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
     /** Tests parameter production */
     @Test
-    public void testParameterProduction() {
+    void testParameterProduction() {
         assertParameterSemantics("AND a b c", "a b c", "search", "[letters, alphabet]");
         assertParameterSemantics("AND a c d", "a c d", "search", "[letters, someletters]");
         assertParameterSemantics("+(AND a d e) -letter:c", "a d e", "search", "[someletters]");
@@ -54,7 +54,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testMultipleAlternativeParameterValuesInCondition() {
+    void testMultipleAlternativeParameterValuesInCondition() {
         assertInputRankParameterSemantics("WEAKAND(100) one", "foo", "cat");
         assertInputRankParameterSemantics("WEAKAND(100) one", "foo", "cat0");
         assertInputRankParameterSemantics("WEAKAND(100) one", "bar", "cat");

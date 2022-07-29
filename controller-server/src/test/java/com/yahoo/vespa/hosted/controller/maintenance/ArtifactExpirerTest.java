@@ -6,13 +6,13 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.artifact.Artifact;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRegistryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class ArtifactExpirerTest {
 
     @Test
-    public void maintain() {
+    void maintain() {
         DeploymentTester tester = new DeploymentTester();
         ArtifactExpirer expirer = new ArtifactExpirer(tester.controller(), Duration.ofDays(1));
         ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().artifactRegistry(CloudName.defaultName()).orElseThrow();

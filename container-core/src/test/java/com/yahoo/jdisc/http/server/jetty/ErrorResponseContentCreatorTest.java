@@ -2,12 +2,12 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -16,20 +16,20 @@ import static org.junit.Assert.assertEquals;
 public class ErrorResponseContentCreatorTest {
 
     @Test
-    public void response_content_matches_expected_string() {
+    void response_content_matches_expected_string() {
         String expectedHtml =
                 "<html>\n" +
-                "<head>\n" +
-                "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=ISO-8859-1\"/>\n" +
-                "<title>Error 200</title>\n" +
-                "</head>\n" +
-                "<body>\n" +
-                "<h2>HTTP ERROR: 200</h2>\n" +
-                "<p>Problem accessing http://foo.bar. Reason:\n" +
-                "<pre>    My custom error message</pre></p>\n" +
-                "<hr/>\n" +
-                "</body>\n" +
-                "</html>\n";
+                        "<head>\n" +
+                        "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=ISO-8859-1\"/>\n" +
+                        "<title>Error 200</title>\n" +
+                        "</head>\n" +
+                        "<body>\n" +
+                        "<h2>HTTP ERROR: 200</h2>\n" +
+                        "<p>Problem accessing http://foo.bar. Reason:\n" +
+                        "<pre>    My custom error message</pre></p>\n" +
+                        "<hr/>\n" +
+                        "</body>\n" +
+                        "</html>\n";
 
         ErrorResponseContentCreator c = new ErrorResponseContentCreator();
         byte[] rawContent = c.createErrorContent(

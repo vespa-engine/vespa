@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.administrator;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.developer;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.user;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LastLoginUpdateFilterTest {
 
@@ -27,7 +27,7 @@ public class LastLoginUpdateFilterTest {
     private final LastLoginUpdateFilter filter = new LastLoginUpdateFilter(tester.controller());
 
     @Test
-    public void updateLastLoginTimeTest() {
+    void updateLastLoginTimeTest() {
         tester.createTenant(tenant1.value());
         tester.createTenant(tenant2.value());
 

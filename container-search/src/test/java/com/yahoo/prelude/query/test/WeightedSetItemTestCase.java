@@ -6,19 +6,16 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordItem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WeightedSetItemTestCase {
 
     @Test
-    public void testTokenAPI() {
+    void testTokenAPI() {
         WeightedSetItem ws = new WeightedSetItem("index");
         assertEquals(0, ws.getNumTokens());
         assertNull(ws.getTokenWeight("bogus"));
@@ -55,11 +52,11 @@ public class WeightedSetItemTestCase {
     }
 
     @Test
-    public void testNegativeWeight() {
+    void testNegativeWeight() {
         WeightedSetItem ws = new WeightedSetItem("index");
         assertEquals(Integer.valueOf(-10), ws.addToken("bad", -10));
         assertEquals(1, ws.getNumTokens());
-        assertEquals(Integer.valueOf(-10), ws.getTokenWeight("bad"));        
+        assertEquals(Integer.valueOf(-10), ws.getTokenWeight("bad"));
     }
 
     static class FakeWSItem extends CompositeIndexedItem {
@@ -77,7 +74,7 @@ public class WeightedSetItemTestCase {
     }
 
     @Test
-    public void testEncoding() {
+    void testEncoding() {
         WeightedSetItem item = new WeightedSetItem("index");
         // need 2 alternative reference encoding, as the encoding
         // order is kept undefined to improve performance.
@@ -94,11 +91,11 @@ public class WeightedSetItemTestCase {
         ByteBuffer actual = ByteBuffer.allocate(128);
         ByteBuffer expect1 = ByteBuffer.allocate(128);
         ByteBuffer expect2 = ByteBuffer.allocate(128);
-        expect1.put((byte)15).put((byte)2);
+        expect1.put((byte) 15).put((byte) 2);
         Item.putString("index", expect1);
         new PureWeightedString("foo", 10).encode(expect1);
         new PureWeightedString("bar", 20).encode(expect1);
-        expect2.put((byte)15).put((byte)2);
+        expect2.put((byte) 15).put((byte) 2);
         Item.putString("index", expect2);
         new PureWeightedString("bar", 20).encode(expect2);
         new PureWeightedString("foo", 10).encode(expect2);
@@ -110,9 +107,9 @@ public class WeightedSetItemTestCase {
         expect2.flip();
 
         if (actual.equals(expect1)) {
-            assertFalse(actual.equals(expect2));
+            assertNotEquals(actual, expect2);
         } else {
-            assertTrue(actual.equals(expect2));
+            assertEquals(actual, expect2);
         }
     }
 

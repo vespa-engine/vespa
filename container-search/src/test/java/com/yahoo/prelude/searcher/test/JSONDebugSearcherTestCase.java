@@ -14,10 +14,10 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Visit the trace and check JSON payload is stored there when requested.
@@ -30,7 +30,7 @@ public class JSONDebugSearcherTestCase {
     private static final String DUMPJSON = "?query=1&dumpjson=jsonfield&tracelevel=6";
 
     @Test
-    public void test() {
+    void test() {
         Chain<Searcher> searchChain = makeSearchChain("{1: 2}", new JSONDebugSearcher());
         Execution e = new Execution(searchChain, Execution.Context.createContextStub());
         e.search(new Query(NODUMPJSON));

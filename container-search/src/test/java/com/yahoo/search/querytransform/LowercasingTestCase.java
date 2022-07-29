@@ -2,19 +2,16 @@
 package com.yahoo.search.querytransform;
 
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.yahoo.prelude.IndexModel;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.SameElementItem;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
@@ -69,7 +66,7 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void simple() {
+    void simple() {
         Query q = new Query();
         AndItem root = new AndItem();
         WordItem tmp;
@@ -92,7 +89,7 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void slightlyMoreComplexTree() {
+    void slightlyMoreComplexTree() {
         Query q = new Query();
         AndItem a0 = new AndItem();
         OrItem o0 = new OrItem();
@@ -148,7 +145,7 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void testWeightedSet() {
+    void testWeightedSet() {
         Query q = new Query();
         AndItem root = new AndItem();
         WeightedSetItem tmp;
@@ -170,11 +167,11 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void testDisableLowercasingWeightedSet() {
+    void testDisableLowercasingWeightedSet() {
         Execution execution = new Execution(new Chain<Searcher>(
-                new VespaLowercasingSearcher(new LowercasingConfig(
-                        new LowercasingConfig.Builder()
-                                .transform_weighted_sets(false)))),
+                        new VespaLowercasingSearcher(new LowercasingConfig(
+                                new LowercasingConfig.Builder()
+                                        .transform_weighted_sets(false)))),
                 Execution.Context.createContextStub(createIndexFacts()));
 
         Query q = new Query();
@@ -198,7 +195,7 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void testLowercasingWordAlternatives() {
+    void testLowercasingWordAlternatives() {
         Execution execution = new Execution(new Chain<Searcher>(new VespaLowercasingSearcher(new LowercasingConfig(
                 new LowercasingConfig.Builder().transform_weighted_sets(false)))), Execution.Context.createContextStub(createIndexFacts()));
 
@@ -221,7 +218,7 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void testLowercasingSameElement() {
+    void testLowercasingSameElement() {
         Query q = new Query();
         SameElementItem root = new SameElementItem(SARR);
         root.addItem(new WordItem("ABC", BAMSE, true));

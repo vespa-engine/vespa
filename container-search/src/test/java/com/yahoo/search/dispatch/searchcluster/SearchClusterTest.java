@@ -9,7 +9,7 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.MockSearchCluster;
 import com.yahoo.search.result.ErrorMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,9 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author baldersheim
@@ -151,7 +149,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultDownButComesUpAfterPinging() {
+    void requireThatVipStatusIsDefaultDownButComesUpAfterPinging() {
         try (State test = new State("cluster.1", 2, "a", "b")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
 
@@ -162,7 +160,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatZeroDocsAreFine() {
+    void requireThatZeroDocsAreFine() {
         try (State test = new State("cluster.1", 2, "a", "b")) {
             test.waitOneFullPingRound();
 
@@ -180,7 +178,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultDownWithLocalDispatch() {
+    void requireThatVipStatusIsDefaultDownWithLocalDispatch() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "b")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
@@ -191,7 +189,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
+    void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost())) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
@@ -205,7 +203,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
+    void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "otherhost")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
@@ -219,7 +217,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusDownWhenLocalIsDown() {
+    void requireThatVipStatusDownWhenLocalIsDown() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "b")) {
 
             test.waitOneFullPingRound();
@@ -276,8 +274,8 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusDownRequireAllNodesDown() {
-        verifyThatVipStatusDownRequireAllNodesDown(1,2);
+    void requireThatVipStatusDownRequireAllNodesDown() {
+        verifyThatVipStatusDownRequireAllNodesDown(1, 2);
         verifyThatVipStatusDownRequireAllNodesDown(3, 3);
     }
 
@@ -315,13 +313,13 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
+    void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(1, 2);
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(3, 3);
     }
 
     @Test
-    public void requireThatPingSequenceIsUpHeld() {
+    void requireThatPingSequenceIsUpHeld() {
         Node node = new Node(1, "n", 1);
         assertEquals(1, node.createPingSequenceId());
         assertEquals(2, node.createPingSequenceId());
@@ -335,7 +333,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatEmptyGroupIsInBalance() {
+    void requireThatEmptyGroupIsInBalance() {
         Group group = new Group(0, new ArrayList<>());
         assertTrue(group.isBalanced());
         group.aggregateNodeValues();
@@ -343,7 +341,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatSingleNodeGroupIsInBalance() {
+    void requireThatSingleNodeGroupIsInBalance() {
         Group group = new Group(0, Arrays.asList(new Node(1, "n", 1)));
         group.nodes().forEach(node -> node.setWorking(true));
         assertTrue(group.isBalanced());
@@ -355,7 +353,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatMultiNodeGroupDetectsBalance() {
+    void requireThatMultiNodeGroupDetectsBalance() {
         Group group = new Group(0, Arrays.asList(new Node(1, "n1", 1), new Node(2, "n2", 1)));
         assertTrue(group.isBalanced());
         group.nodes().forEach(node -> node.setWorking(true));

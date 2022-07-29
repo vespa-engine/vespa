@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Utility functions for testing the ContainerModelBuilder. Note that XML validation will
@@ -54,7 +54,7 @@ public abstract class ContainerModelBuilderTestBase {
 
     protected MockRoot root;
 
-    @Before
+    @BeforeEach
     public void prepareTest() {
         root = new MockRoot("root");
     }

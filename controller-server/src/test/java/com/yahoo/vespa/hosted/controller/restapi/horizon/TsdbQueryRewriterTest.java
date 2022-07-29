@@ -5,7 +5,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.util.Set;
 import static com.yahoo.slime.SlimeUtils.jsonToSlimeOrThrow;
 import static com.yahoo.slime.SlimeUtils.toJsonBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author valerijf
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class TsdbQueryRewriterTest {
 
     @Test
-    public void rewrites_query() throws IOException {
+    void rewrites_query() throws IOException {
         assertRewrite("filters-complex.json", "filters-complex.expected.json", Set.of(TenantName.from("tenant2")), false);
 
         assertRewrite("filter-in-execution-graph.json",

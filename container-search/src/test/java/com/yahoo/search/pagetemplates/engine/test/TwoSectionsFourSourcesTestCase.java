@@ -8,11 +8,11 @@ import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
 import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bratseth
@@ -20,95 +20,95 @@ import static org.junit.Assert.assertEquals;
 public class TwoSectionsFourSourcesTestCase extends ExecutionAbstractTestCase {
 
     @Test
-    public void testExecution() {
+    void testExecution() {
         // Create the page template
-        Choice page=Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
+        Choice page = Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
 
         // Create a federated result
-        Query query=new Query();
-        Result result=new Result(query);
-        result.hits().add(createHits("source1",3));
-        result.hits().add(createHits("source2",4));
-        result.hits().add(createHits("source3",12));
-        result.hits().add(createHits("source4",13));
+        Query query = new Query();
+        Result result = new Result(query);
+        result.hits().add(createHits("source1", 3));
+        result.hits().add(createHits("source2", 4));
+        result.hits().add(createHits("source3", 12));
+        result.hits().add(createHits("source4", 13));
 
-        new Organizer().organize(page,new DeterministicResolver().resolve(page,query,result),result);
+        new Organizer().organize(page, new DeterministicResolver().resolve(page, query, result), result);
 
         // Check execution:
         // Two subsections with two sources each, the first grouped the second blended
-        assertEquals(2,result.hits().size());
-        HitGroup section1=(HitGroup)result.hits().get(0);
-        HitGroup section2=(HitGroup)result.hits().get(1);
+        assertEquals(2, result.hits().size());
+        HitGroup section1 = (HitGroup) result.hits().get(0);
+        HitGroup section2 = (HitGroup) result.hits().get(1);
         assertGroupedSource3Source1(section1.asList());
         assertBlendedSource4Source2(section2.asList());
 
         // Check rendering
-        assertRendered(result,"TwoSectionsFourSourcesResult.xml");
+        assertRendered(result, "TwoSectionsFourSourcesResult.xml");
     }
 
     @Test
-    public void testExecutionMissingOneSource() {
+    void testExecutionMissingOneSource() {
         // Create the page template
-        Choice page=Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
+        Choice page = Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
 
         // Create a federated result
-        Query query=new Query();
-        Result result=new Result(query);
-        result.hits().add(createHits("source1",3));
-        result.hits().add(createHits("source3",12));
-        result.hits().add(createHits("source4",13));
+        Query query = new Query();
+        Result result = new Result(query);
+        result.hits().add(createHits("source1", 3));
+        result.hits().add(createHits("source3", 12));
+        result.hits().add(createHits("source4", 13));
 
-        new Organizer().organize(page,new DeterministicResolver().resolve(page,query,result),result);
+        new Organizer().organize(page, new DeterministicResolver().resolve(page, query, result), result);
 
         // Check execution:
         // Two subsections with two sources each, the first grouped the second blended
-        assertEquals(2,result.hits().size());
-        HitGroup section1=(HitGroup)result.hits().get(0);
-        HitGroup section2=(HitGroup)result.hits().get(1);
+        assertEquals(2, result.hits().size());
+        HitGroup section1 = (HitGroup) result.hits().get(0);
+        HitGroup section2 = (HitGroup) result.hits().get(1);
         assertGroupedSource3Source1(section1.asList());
-        assertEqualHitGroups(createHits("source4",10),section2);
+        assertEqualHitGroups(createHits("source4", 10), section2);
     }
 
     @Test
-    public void testExecutionMissingTwoSources() {
+    void testExecutionMissingTwoSources() {
         // Create the page template
-        Choice page=Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
+        Choice page = Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
 
         // Create a federated result
-        Query query=new Query();
-        Result result=new Result(query);
-        result.hits().add(createHits("source1",3));
-        result.hits().add(createHits("source3",12));
+        Query query = new Query();
+        Result result = new Result(query);
+        result.hits().add(createHits("source1", 3));
+        result.hits().add(createHits("source3", 12));
 
-        new Organizer().organize(page,new DeterministicResolver().resolve(page,query,result),result);
+        new Organizer().organize(page, new DeterministicResolver().resolve(page, query, result), result);
 
         // Check execution:
         // Two subsections with two sources each, the first grouped the second blended
-        assertEquals(2,result.hits().size());
-        HitGroup section1=(HitGroup)result.hits().get(0);
-        HitGroup section2=(HitGroup)result.hits().get(1);
+        assertEquals(2, result.hits().size());
+        HitGroup section1 = (HitGroup) result.hits().get(0);
+        HitGroup section2 = (HitGroup) result.hits().get(1);
         assertGroupedSource3Source1(section1.asList());
-        assertEquals(0,section2.size());
+        assertEquals(0, section2.size());
     }
 
     @Test
-    public void testExecutionMissingAllSources() {
+    void testExecutionMissingAllSources() {
         // Create the page template
-        Choice page=Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
+        Choice page = Choice.createSingleton(importPage("TwoSectionsFourSources.xml"));
 
         // Create a federated result
-        Query query=new Query();
-        Result result=new Result(query);
+        Query query = new Query();
+        Result result = new Result(query);
 
-        new Organizer().organize(page,new DeterministicResolver().resolve(page,query,result),result);
+        new Organizer().organize(page, new DeterministicResolver().resolve(page, query, result), result);
 
         // Check execution:
         // Two subsections with two sources each, the first grouped the second blended
-        assertEquals(2,result.hits().size());
-        HitGroup section1=(HitGroup)result.hits().get(0);
-        HitGroup section2=(HitGroup)result.hits().get(1);
-        assertEquals(0,section1.size());
-        assertEquals(0,section2.size());
+        assertEquals(2, result.hits().size());
+        HitGroup section1 = (HitGroup) result.hits().get(0);
+        HitGroup section2 = (HitGroup) result.hits().get(1);
+        assertEquals(0, section1.size());
+        assertEquals(0, section2.size());
     }
 
     private void assertGroupedSource3Source1(List<Hit> hits) {

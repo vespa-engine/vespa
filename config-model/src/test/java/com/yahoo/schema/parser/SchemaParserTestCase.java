@@ -8,12 +8,9 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.io.File;
 
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author arnej
@@ -38,12 +35,12 @@ public class SchemaParserTestCase {
     }
 
     @Test
-    public void minimal_schema_can_be_parsed() throws Exception {
+    void minimal_schema_can_be_parsed() throws Exception {
         String input = joinLines
-            ("schema foo {",
-             "  document foo {",
-             "  }",
-             "}");
+                ("schema foo {",
+                        "  document foo {",
+                        "  }",
+                        "}");
         ParsedSchema schema = parseString(input);
         assertEquals("foo", schema.name());
         assertTrue(schema.hasDocument());
@@ -51,10 +48,10 @@ public class SchemaParserTestCase {
     }
 
     @Test
-    public void document_only_can_be_parsed() throws Exception {
+    void document_only_can_be_parsed() throws Exception {
         String input = joinLines
-            ("document bar {",
-             "}");
+                ("document bar {",
+                        "}");
         ParsedSchema schema = parseString(input);
         assertEquals("bar", schema.name());
         assertTrue(schema.hasDocument());
@@ -62,28 +59,28 @@ public class SchemaParserTestCase {
     }
 
     @Test
-    public void multiple_documents_disallowed() {
+    void multiple_documents_disallowed() {
         String input = joinLines
                 ("schema foo {",
-                 "  document foo {",
-                 "  }",
-                 "  document foo2 {",
-                 "  }",
-                 "}");
+                        "  document foo {",
+                        "  }",
+                        "  document foo2 {",
+                        "  }",
+                        "}");
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
         assertEquals("schema 'foo' error: already has document 'foo' so cannot add document 'foo2'", e.getMessage());
     }
 
     @Test
-    public void backwards_path_is_disallowed() {
+    void backwards_path_is_disallowed() {
         assertEquals("'..' is not allowed in path",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> parseString("schema foo {\n" +
-                                                    "  constant my_constant_tensor {\n" +
-                                                    "    file: foo/../bar\n" +
-                                                    "    type: tensor<float>(x{},y{})\n" +
-                                                    "  }\n" +
-                                                    "}\n")).getMessage());
+                assertThrows(IllegalArgumentException.class,
+                        () -> parseString("schema foo {\n" +
+                                "  constant my_constant_tensor {\n" +
+                                "    file: foo/../bar\n" +
+                                "    type: tensor<float>(x{},y{})\n" +
+                                "  }\n" +
+                                "}\n")).getMessage());
     }
 
     void checkFileParses(String fileName) throws Exception {
@@ -95,7 +92,7 @@ public class SchemaParserTestCase {
 
     // TODO: Many (all)? of the files below are parsed from other tests and can be removed from here
     @Test
-    public void parse_various_old_sdfiles() throws Exception {
+    void parse_various_old_sdfiles() throws Exception {
         checkFileParses("src/test/cfg/search/data/travel/schemas/TTData.sd");
         checkFileParses("src/test/cfg/search/data/travel/schemas/TTEdge.sd");
         checkFileParses("src/test/cfg/search/data/travel/schemas/TTPOI.sd");

@@ -11,13 +11,13 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDeniedException;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -26,7 +26,7 @@ import static org.junit.Assert.fail;
 public class TestDriverTestCase {
 
     @Test
-    public void requireThatFactoryMethodsWork() {
+    void requireThatFactoryMethodsWork() {
         TestDriver.newInjectedApplicationInstance(MyApplication.class).close();
         TestDriver.newInjectedApplicationInstanceWithoutOsgi(MyApplication.class).close();
         TestDriver.newInjectedApplicationInstance(new MyApplication()).close();
@@ -36,14 +36,14 @@ public class TestDriverTestCase {
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         assertNotNull(driver.bootstrapLoader());
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatConnectRequestWorks() {
+    void requireThatConnectRequestWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = new MyRequestHandler(new MyContentChannel());
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -58,7 +58,7 @@ public class TestDriverTestCase {
     }
 
     @Test
-    public void requireThatDispatchRequestWorks() {
+    void requireThatDispatchRequestWorks() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         MyRequestHandler requestHandler = new MyRequestHandler(new MyContentChannel());
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -72,7 +72,7 @@ public class TestDriverTestCase {
     }
 
     @Test
-    public void requireThatFailedRequestCreateDoesNotBlockClose() {
+    void requireThatFailedRequestCreateDoesNotBlockClose() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         try {
             driver.connectRequest("scheme://host/path", new MyResponseHandler());
@@ -84,7 +84,7 @@ public class TestDriverTestCase {
     }
 
     @Test
-    public void requireThatFailedRequestConnectDoesNotBlockClose() {
+    void requireThatFailedRequestConnectDoesNotBlockClose() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.serverBindings().bind("scheme://host/path", new MyRequestHandler(null));

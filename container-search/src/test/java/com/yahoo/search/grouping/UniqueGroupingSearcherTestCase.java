@@ -15,11 +15,9 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author andreer
@@ -27,21 +25,21 @@ import static org.junit.Assert.fail;
 public class UniqueGroupingSearcherTestCase {
 
     @Test
-    public void testSkipGroupingBasedDedup() {
+    void testSkipGroupingBasedDedup() {
         Result result = search("?query=foo",
-                               new MockResultProvider(0, false));
+                new MockResultProvider(0, false));
         assertEquals(0, result.hits().size());
     }
 
     @Test
-    public void testSkipGroupingBasedDedupIfMultiLevelSorting() {
+    void testSkipGroupingBasedDedupIfMultiLevelSorting() {
         Result result = search("?query=foo&unique=fingerprint&sorting=-pubdate%20-[rank]",
-                               new MockResultProvider(0, false));
+                new MockResultProvider(0, false));
         assertEquals(0, result.hits().size());
     }
 
     @Test
-    public void testIllegalSortingSpec() {
+    void testIllegalSortingSpec() {
         try {
             search("?query=foo&unique=fingerprint&sorting=-1",
                     new MockResultProvider(0, true).addGroupList(new GroupList("fingerprint")));
@@ -49,31 +47,31 @@ public class UniqueGroupingSearcherTestCase {
         } catch (IllegalArgumentException e) {
             // As expected.
             assertTrue(Exceptions.toMessageString(e).contains("Could not set 'ranking.sorting' to '-1': " +
-                                                              "Illegal attribute name '1' for sorting. " +
-                                                              "Requires '[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*'"));
+                    "Illegal attribute name '1' for sorting. " +
+                    "Requires '[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*'"));
         }
     }
 
     @Test
-    public void testGroupingBasedDedupNoGroupingHits() {
+    void testGroupingBasedDedupNoGroupingHits() {
         Result result = search("?query=foo&unique=fingerprint",
-                               new MockResultProvider(0, true));
+                new MockResultProvider(0, true));
         assertEquals(0, result.hits().size());
     }
 
     @Test
-    public void testGroupingBasedDedupWithEmptyGroupingHitsList() {
+    void testGroupingBasedDedupWithEmptyGroupingHitsList() {
         Result result = search("?query=foo&unique=fingerprint",
-                               new MockResultProvider(0, true).addGroupList(new GroupList("fingerprint")));
+                new MockResultProvider(0, true).addGroupList(new GroupList("fingerprint")));
         assertEquals(0, result.hits().size());
         assertEquals(0, result.getTotalHitCount());
     }
 
     @Test
-    public void testGroupingBasedDedupWithNullGroupingResult() {
+    void testGroupingBasedDedupWithNullGroupingResult() {
         try {
             search("?query=foo&unique=fingerprint",
-                   new MockResultProvider(0, false));
+                    new MockResultProvider(0, false));
             fail();
         } catch (IllegalStateException e) {
             assertEquals("Failed to produce deduped result set.", e.getMessage());
@@ -81,7 +79,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupWithGroupingHits() {
+    void testGroupingBasedDedupWithGroupingHits() {
         GroupList fingerprint = new GroupList("fingerprint");
         fingerprint.add(makeHitGroup("1"));
         fingerprint.add(makeHitGroup("2"));
@@ -105,7 +103,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupWithGroupingHitsAndSorting() {
+    void testGroupingBasedDedupWithGroupingHitsAndSorting() {
         GroupList fingerprint = new GroupList("fingerprint");
         fingerprint.add(makeSortingHitGroup("1"));
         fingerprint.add(makeSortingHitGroup("2"));
@@ -130,29 +128,29 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testBuildGroupingExpression() {
+    void testBuildGroupingExpression() {
         assertEquals("all(group(title) max(11) output(count() as(uniqueCount)) each(max(1) each(output(summary())) " +
-                     "as(uniqueHits)))",
-                     UniqueGroupingSearcher
-                             .buildGroupingExpression("title", 11, null, null)
-                             .toString());
+                "as(uniqueHits)))",
+                UniqueGroupingSearcher
+                        .buildGroupingExpression("title", 11, null, null)
+                        .toString());
         assertEquals("all(group(fingerprint) max(5) output(count() as(uniqueCount)) each(max(1) " +
-                     "each(output(summary(attributeprefetch))) as(uniqueHits)))",
-                     UniqueGroupingSearcher
-                             .buildGroupingExpression("fingerprint", 5, "attributeprefetch", null)
-                             .toString());
+                "each(output(summary(attributeprefetch))) as(uniqueHits)))",
+                UniqueGroupingSearcher
+                        .buildGroupingExpression("fingerprint", 5, "attributeprefetch", null)
+                        .toString());
         assertEquals("all(group(fingerprint) max(5) order(neg(max(pubdate))) output(count() as(uniqueCount)) each(" +
-                     "all(group(neg(pubdate)) max(1) order(neg(max(pubdate))) each(each(output(summary())) " +
-                     "as(uniqueHits)) as(uniqueGroups))))",
-                     UniqueGroupingSearcher
-                             .buildGroupingExpression("fingerprint", 5, null, new Sorting("-pubdate"))
-                             .toString());
+                "all(group(neg(pubdate)) max(1) order(neg(max(pubdate))) each(each(output(summary())) " +
+                "as(uniqueHits)) as(uniqueGroups))))",
+                UniqueGroupingSearcher
+                        .buildGroupingExpression("fingerprint", 5, null, new Sorting("-pubdate"))
+                        .toString());
         assertEquals("all(group(fingerprint) max(5) order(min(pubdate)) output(count() as(uniqueCount)) each(" +
-                     "all(group(pubdate) max(1) order(min(pubdate)) each(each(output(summary(attributeprefetch))) " +
-                     "as(uniqueHits)) as(uniqueGroups))))",
-                     UniqueGroupingSearcher
-                             .buildGroupingExpression("fingerprint", 5, "attributeprefetch", new Sorting("+pubdate"))
-                             .toString());
+                "all(group(pubdate) max(1) order(min(pubdate)) each(each(output(summary(attributeprefetch))) " +
+                "as(uniqueHits)) as(uniqueGroups))))",
+                UniqueGroupingSearcher
+                        .buildGroupingExpression("fingerprint", 5, "attributeprefetch", new Sorting("+pubdate"))
+                        .toString());
     }
 
     private static Group makeHitGroup(String name) {

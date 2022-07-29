@@ -7,18 +7,18 @@ import com.yahoo.test.FunctionTestConfig.*;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.codegen.*;
 import com.yahoo.text.StringUtilities;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InstanceResolverTest {
 
     @Test
-    public void testApplyDefToBuilder() throws Exception {
+    void testApplyDefToBuilder() throws Exception {
         FunctionTestConfig.Builder builder = createVariableAccessBuilder();
         InnerCNode targetDef = getDef(FunctionTestConfig.CONFIG_DEF_SCHEMA);
 
@@ -58,7 +58,7 @@ public class InstanceResolverTest {
      * Values unset on builder, trying to set them from def file, but type mismatches there
      */
     @Test
-    public void testApplyDefToBuilderMismatches() throws Exception {
+    void testApplyDefToBuilderMismatches() throws Exception {
         FunctionTestConfig.Builder builder = createVariableAccessBuilderManyUnset();
         InnerCNode targetDef = getDef(FunctionTestConfig.CONFIG_DEF_SCHEMA);
 
@@ -223,7 +223,7 @@ public class InstanceResolverTest {
     }
 
     @Test
-    public void testExtraFieldsAreIgnored() throws Exception {
+    void testExtraFieldsAreIgnored() throws Exception {
         try {
             SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
             InnerCNode defWithExtra = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n") + "\nnewfield string default=\"foo\"\n")).getTree();

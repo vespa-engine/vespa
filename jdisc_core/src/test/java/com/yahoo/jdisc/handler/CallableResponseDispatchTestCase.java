@@ -2,11 +2,11 @@
 package com.yahoo.jdisc.handler;
 
 import com.yahoo.jdisc.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 /**
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertSame;
 public class CallableResponseDispatchTestCase {
 
     @Test
-    public void requireThatDispatchIsCalled() throws Exception {
+    void requireThatDispatchIsCalled() throws Exception {
         final Response response = new Response(Response.Status.OK);
         FutureResponse handler = new FutureResponse();
         new CallableResponseDispatch(handler) {

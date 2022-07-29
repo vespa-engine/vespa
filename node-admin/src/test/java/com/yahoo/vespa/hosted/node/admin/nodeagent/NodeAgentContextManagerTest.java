@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -12,10 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author freva
@@ -28,8 +26,9 @@ public class NodeAgentContextManagerTest {
     private final NodeAgentContext initialContext = generateContext();
     private final NodeAgentContextManager manager = new NodeAgentContextManager(clock, initialContext);
 
-    @Test(timeout = TIMEOUT)
-    public void context_is_ignored_unless_scheduled_while_waiting() {
+    @Test
+    @Timeout(TIMEOUT)
+    void context_is_ignored_unless_scheduled_while_waiting() {
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
         assertSame(initialContext, manager.currentContext());
@@ -45,8 +44,9 @@ public class NodeAgentContextManagerTest {
         assertSame(context2, manager.currentContext());
     }
 
-    @Test(timeout = TIMEOUT)
-    public void returns_no_earlier_than_at_given_time() {
+    @Test
+    @Timeout(TIMEOUT)
+    void returns_no_earlier_than_at_given_time() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         manager.waitUntilWaitingForNextContext();
 
@@ -60,8 +60,9 @@ public class NodeAgentContextManagerTest {
         assertFalse(clock.instant().plusMillis(1).isBefore(returnAt));
     }
 
-    @Test(timeout = TIMEOUT)
-    public void blocks_in_nextContext_until_one_is_scheduled() {
+    @Test
+    @Timeout(TIMEOUT)
+    void blocks_in_nextContext_until_one_is_scheduled() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         manager.waitUntilWaitingForNextContext();
         assertFalse(async.isCompleted());
@@ -74,8 +75,9 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.exception.isPresent());
     }
 
-    @Test(timeout = TIMEOUT)
-    public void blocks_in_nextContext_until_interrupt() {
+    @Test
+    @Timeout(TIMEOUT)
+    void blocks_in_nextContext_until_interrupt() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         manager.waitUntilWaitingForNextContext();
         assertFalse(async.isCompleted());
@@ -87,8 +89,9 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.response.isPresent());
     }
 
-    @Test(timeout = TIMEOUT)
-    public void setFrozen_does_not_block_with_no_timeout() {
+    @Test
+    @Timeout(TIMEOUT)
+    void setFrozen_does_not_block_with_no_timeout() {
         assertFalse(manager.setFrozen(false, Duration.ZERO));
 
         // Generate new context and get it from the supplier, this completes the unfreeze
@@ -101,8 +104,9 @@ public class NodeAgentContextManagerTest {
         assertTrue(manager.setFrozen(false, Duration.ZERO));
     }
 
-    @Test(timeout = TIMEOUT)
-    public void setFrozen_blocks_at_least_for_duration_of_timeout() {
+    @Test
+    @Timeout(TIMEOUT)
+    void setFrozen_blocks_at_least_for_duration_of_timeout() {
         long wantedDurationMillis = 100;
         long start = clock.millis();
         assertFalse(manager.setFrozen(false, Duration.ofMillis(wantedDurationMillis)));

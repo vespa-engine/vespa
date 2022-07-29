@@ -16,8 +16,8 @@ import com.yahoo.vespa.model.container.search.searchchain.Source;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -28,10 +28,7 @@ import static com.yahoo.container.core.ChainsConfig.Chains;
 import static com.yahoo.container.core.ChainsConfig.Components;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test of Search chains builder.
@@ -70,13 +67,13 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
             "</search>");
 
 
-    @Before
+    @BeforeEach
     public void createSearchChains() {
         searchChains = new DomSearchChainsBuilder().build(root.getDeployState(), root, element);
     }
 
     @Test
-    public void referToFederationAsSearcher() {
+    void referToFederationAsSearcher() {
         final Element element = parse(
                 "<search>",
                 "  <federation id='federationSearcher'>",
@@ -100,14 +97,14 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void ensureSearchChainsExists() {
+    void ensureSearchChainsExists() {
         for (String id : Arrays.asList("provider:1", "source:1@provider:1", "default")) {
-            assertNotNull("Missing search chain " + id, getSearchChain(id));
+            assertNotNull(getSearchChain(id), "Missing search chain " + id);
         }
     }
 
     @Test
-    public void ensureSearcherExists() {
+    void ensureSearcherExists() {
         assertThat(searchChains.allComponents(), hasItem(searcherWithId("searcher:1")));
     }
 
@@ -127,7 +124,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void checkProviderFederationOptions() {
+    void checkProviderFederationOptions() {
         FederationOptions options = getProvider().federationOptions();
 
         assertTrue(options.getOptional());
@@ -135,7 +132,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void checkSourceFederationOptions() {
+    void checkSourceFederationOptions() {
         FederationOptions options = getSource().federationOptions();
 
         assertTrue(options.getOptional()); //inherited
@@ -143,7 +140,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void checkDefaultTargets() {
+    void checkDefaultTargets() {
         Collection<? extends GenericTarget> defaultTargets =
                 getProvider().defaultFederationTargets();
 
@@ -152,7 +149,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void checkInnerSearcherIdIsNestedInSearchChainId() {
+    void checkInnerSearcherIdIsNestedInSearchChainId() {
         ChainsConfig.Builder builder = new ChainsConfig.Builder();
         searchChains.getConfig(builder);
         ChainsConfig config = new ChainsConfig(builder);

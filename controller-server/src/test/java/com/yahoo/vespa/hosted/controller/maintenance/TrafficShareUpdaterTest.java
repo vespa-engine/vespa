@@ -10,12 +10,12 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests the traffic fraction updater. This also tests its dependency on DeploymentMetricsMaintainer.
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class TrafficShareUpdaterTest {
 
     @Test
-    public void testTrafficUpdater() {
+    void testTrafficUpdater() {
         DeploymentTester tester = new DeploymentTester();
         var application = tester.newDeploymentContext();
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
@@ -70,7 +70,7 @@ public class TrafficShareUpdaterTest {
         assertTrafficFraction(0.47, 0.50, application.instanceId(), prod2, tester);
         assertTrafficFraction(0.00, 0.50, application.instanceId(), prod3, tester);
         // - all hot
-        setQpsMetric( 50.0, application.application().id().defaultInstance(), prod1, tester);
+        setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(25.0, application.application().id().defaultInstance(), prod2, tester);
         setQpsMetric(25.0, application.application().id().defaultInstance(), prod3, tester);
         deploymentMetricsMaintainer.maintain();

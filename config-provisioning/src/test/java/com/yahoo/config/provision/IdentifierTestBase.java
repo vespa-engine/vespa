@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Generic test for identifiers such as {@link Environment} and {@link RegionName}.
@@ -23,7 +23,7 @@ public abstract class IdentifierTestBase<ID_TYPE> {
     protected abstract boolean isDefault(ID_TYPE instance);
 
     @Test
-    public void testDefault() {
+    void testDefault() {
         ID_TYPE def = createDefaultInstance();
         ID_TYPE def2 = createInstance("default");
         ID_TYPE notdef = createInstance("default2");
@@ -35,9 +35,9 @@ public abstract class IdentifierTestBase<ID_TYPE> {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertEquals(Set.of(createInstance("foo"), createInstance("bar"), createInstance("baz")),
-                     new HashSet<>(List.of(createInstance("foo"), createInstance("foo"), createInstance("bar"), createInstance("baz"))));
+                               new HashSet<>(List.of(createInstance("foo"), createInstance("foo"), createInstance("bar"), createInstance("baz"))));
     }
 
 }

@@ -14,24 +14,24 @@ import com.yahoo.messagebus.routing.test.CustomPolicyFactory;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageBusTestCase {
 
     @Test
-    public void requireThatBucketSequencingWithResenderEnabledCausesError() throws ListenFailedException {
+    void requireThatBucketSequencingWithResenderEnabledCausesError() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer server = new TestServer(new MessageBusParams()
-                                                   .addProtocol(new SimpleProtocol())
-                                                   .setRetryPolicy(new RetryTransientErrorsPolicy()),
-                                           new RPCNetworkParams()
-                                                   .setSlobrokConfigId(slobrok.configId()));
+                        .addProtocol(new SimpleProtocol())
+                        .setRetryPolicy(new RetryTransientErrorsPolicy()),
+                new RPCNetworkParams()
+                        .setSlobrokConfigId(slobrok.configId()));
         Receptor receptor = new Receptor();
         SourceSession session = server.mb.createSourceSession(
                 new SourceSessionParams().setTimeout(600.0).setReplyHandler(receptor));
@@ -51,7 +51,7 @@ public class MessageBusTestCase {
     }
 
     @Test
-    public void testConnectionSpec() throws ListenFailedException, UnknownHostException {
+    void testConnectionSpec() throws ListenFailedException, UnknownHostException {
         // Setup servers and sessions.
         Slobrok slobrok = new Slobrok();
         List<TestServer> servers = new ArrayList<>();
@@ -84,28 +84,28 @@ public class MessageBusTestCase {
         assertTrue(src.send(msg, Route.parse(route.toString())).isAccepted());
         for (IntermediateSession itr : sessions) {
             // Received using session name.
-            assertNotNull(msg = ((Receptor)itr.getMessageHandler()).getMessage(60));
+            assertNotNull(msg = ((Receptor) itr.getMessageHandler()).getMessage(60));
             itr.forward(msg);
 
             // Received using connection spec.
-            assertNotNull(msg = ((Receptor)itr.getMessageHandler()).getMessage(60));
+            assertNotNull(msg = ((Receptor) itr.getMessageHandler()).getMessage(60));
             itr.forward(msg);
         }
-        assertNotNull(msg = ((Receptor)dst.getMessageHandler()).getMessage(60));
+        assertNotNull(msg = ((Receptor) dst.getMessageHandler()).getMessage(60));
         dst.acknowledge(msg);
-        for (int i = sessions.size(); --i >= 0;) {
+        for (int i = sessions.size(); --i >= 0; ) {
             IntermediateSession itr = sessions.get(i);
 
             // Received for connection spec.
-            Reply reply = ((Receptor)itr.getReplyHandler()).getReply(60);
+            Reply reply = ((Receptor) itr.getReplyHandler()).getReply(60);
             assertNotNull(reply);
             itr.forward(reply);
 
             // Received for session name.
-            assertNotNull(reply = ((Receptor)itr.getReplyHandler()).getReply(60));
+            assertNotNull(reply = ((Receptor) itr.getReplyHandler()).getReply(60));
             itr.forward(reply);
         }
-        assertNotNull(((Receptor)src.getReplyHandler()).getReply(60));
+        assertNotNull(((Receptor) src.getReplyHandler()).getReply(60));
 
         // Cleanup.
         for (IntermediateSession session : sessions) {
@@ -118,13 +118,13 @@ public class MessageBusTestCase {
     }
 
     @Test
-    public void testRoutingPolicyCache() throws ListenFailedException, UnknownHostException {
+    void testRoutingPolicyCache() throws ListenFailedException, UnknownHostException {
         Slobrok slobrok = new Slobrok();
         String config = "slobrok[1]\nslobrok[0].connectionspec \"" + new Spec("localhost", slobrok.port()).toString() + "\"\n";
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         MessageBus bus = new MessageBus(new RPCNetwork(new RPCNetworkParams().setSlobrokConfigId("raw:" + config)),
-                                        new MessageBusParams().addProtocol(protocol));
+                new MessageBusParams().addProtocol(protocol));
 
         RoutingPolicy all = bus.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null);
         assertNotNull(all);

@@ -11,10 +11,10 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.PhrasingSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests phrasing stuff
@@ -25,104 +25,104 @@ import static org.junit.Assert.assertTrue;
 public class PhrasingSearcherTestCase {
 
     @Test
-    public void testTotalPhrasing() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testTotalPhrasing() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query();
-        AndItem andItem=new AndItem();
-        andItem.addItem(new WordItem("tudor","someindex"));
-        andItem.addItem(new WordItem("vidor","someindex"));
+        Query query = new Query();
+        AndItem andItem = new AndItem();
+        andItem.addItem(new WordItem("tudor", "someindex"));
+        andItem.addItem(new WordItem("vidor", "someindex"));
         query.getModel().getQueryTree().setRoot(andItem);
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        Item item=((CompositeItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        Item item = ((CompositeItem) query.getModel().getQueryTree().getRoot()).getItem(0);
         assertTrue(item instanceof PhraseItem);
-        PhraseItem phrase=(PhraseItem)item;
-        assertEquals(2,phrase.getItemCount());
-        assertEquals("tudor",phrase.getWordItem(0).getWord());
-        assertEquals("vidor",phrase.getWordItem(1).getWord());
-        assertEquals("someindex",phrase.getIndexName());
+        PhraseItem phrase = (PhraseItem) item;
+        assertEquals(2, phrase.getItemCount());
+        assertEquals("tudor", phrase.getWordItem(0).getWord());
+        assertEquals("vidor", phrase.getWordItem(1).getWord());
+        assertEquals("someindex", phrase.getIndexName());
     }
 
     @Test
-    public void testPartialPhrasing() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testPartialPhrasing() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=void%20tudor%20vidor%20kanoo");
+        Query query = new Query("?query=void%20tudor%20vidor%20kanoo");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
-        assertEquals("void",((WordItem)item.getItem(0)).getWord());
-        assertEquals("kanoo",((WordItem)item.getItem(2)).getWord());
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals("void", ((WordItem) item.getItem(0)).getWord());
+        assertEquals("kanoo", ((WordItem) item.getItem(2)).getWord());
 
-        PhraseItem phrase=(PhraseItem)item.getItem(1);
-        assertEquals(2,phrase.getItemCount());
-        assertEquals("tudor",phrase.getWordItem(0).getWord());
-        assertEquals("vidor",phrase.getWordItem(1).getWord());
+        PhraseItem phrase = (PhraseItem) item.getItem(1);
+        assertEquals(2, phrase.getItemCount());
+        assertEquals("tudor", phrase.getWordItem(0).getWord());
+        assertEquals("vidor", phrase.getWordItem(1).getWord());
     }
 
     @Test
-    public void testPartialPhrasingSuggestOnly() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testPartialPhrasingSuggestOnly() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query("?query=void%20tudor%20vidor%20kanoo&suggestonly=true");
+        Query query = new Query("?query=void%20tudor%20vidor%20kanoo&suggestonly=true");
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
-        assertEquals("void", ((WordItem)item.getItem(0)).getWord());
-        assertEquals("tudor",((WordItem)item.getItem(1)).getWord());
-        assertEquals("vidor",((WordItem)item.getItem(2)).getWord());
-        assertEquals("kanoo",((WordItem)item.getItem(3)).getWord());
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals("void", ((WordItem) item.getItem(0)).getWord());
+        assertEquals("tudor", ((WordItem) item.getItem(1)).getWord());
+        assertEquals("vidor", ((WordItem) item.getItem(2)).getWord());
+        assertEquals("kanoo", ((WordItem) item.getItem(3)).getWord());
     }
 
     @Test
-    public void testNoPhrasingIfDifferentIndices() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testNoPhrasingIfDifferentIndices() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query();
-        AndItem andItem=new AndItem();
-        andItem.addItem(new WordItem("tudor","someindex"));
-        andItem.addItem(new WordItem("vidor","anotherindex"));
+        Query query = new Query();
+        AndItem andItem = new AndItem();
+        andItem.addItem(new WordItem("tudor", "someindex"));
+        andItem.addItem(new WordItem("vidor", "anotherindex"));
         query.getModel().getQueryTree().setRoot(andItem);
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        CompositeItem item=(CompositeItem) query.getModel().getQueryTree().getRoot();
+        CompositeItem item = (CompositeItem) query.getModel().getQueryTree().getRoot();
 
         assertTrue(item.getItem(0) instanceof WordItem);
-        WordItem word=(WordItem)item.getItem(0);
-        assertEquals("tudor",word.getWord());
+        WordItem word = (WordItem) item.getItem(0);
+        assertEquals("tudor", word.getWord());
 
         assertTrue(item.getItem(1) instanceof WordItem);
-        word=(WordItem)item.getItem(1);
-        assertEquals("vidor",word.getWord());
+        word = (WordItem) item.getItem(1);
+        assertEquals("vidor", word.getWord());
     }
 
     @Test
-    public void testMultiplePhrases() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testMultiplePhrases() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query();
-        AndItem andItem=new AndItem();
-        andItem.addItem(new WordItem("tudor","someindex"));
-        andItem.addItem(new WordItem("tudor","someindex"));
-        andItem.addItem(new WordItem("vidor","someindex"));
-        andItem.addItem(new WordItem("vidor","someindex"));
+        Query query = new Query();
+        AndItem andItem = new AndItem();
+        andItem.addItem(new WordItem("tudor", "someindex"));
+        andItem.addItem(new WordItem("tudor", "someindex"));
+        andItem.addItem(new WordItem("vidor", "someindex"));
+        andItem.addItem(new WordItem("vidor", "someindex"));
 
-        OrItem orItem=new OrItem();
+        OrItem orItem = new OrItem();
         andItem.addItem(orItem);
 
         orItem.addItem(new WordItem("tudor"));
-        AndItem andItem2=new AndItem();
-        andItem2.addItem(new WordItem("this","anotherindex"));
-        andItem2.addItem(new WordItem("is","anotherindex"));
-        andItem2.addItem(new WordItem("a","anotherindex"));
-        andItem2.addItem(new WordItem("test","anotherindex"));
-        andItem2.addItem(new WordItem("tudor","anotherindex"));
-        andItem2.addItem(new WordItem("vidor","anotherindex"));
+        AndItem andItem2 = new AndItem();
+        andItem2.addItem(new WordItem("this", "anotherindex"));
+        andItem2.addItem(new WordItem("is", "anotherindex"));
+        andItem2.addItem(new WordItem("a", "anotherindex"));
+        andItem2.addItem(new WordItem("test", "anotherindex"));
+        andItem2.addItem(new WordItem("tudor", "anotherindex"));
+        andItem2.addItem(new WordItem("vidor", "anotherindex"));
         orItem.addItem(andItem2);
         orItem.addItem(new WordItem("vidor"));
 
@@ -134,12 +134,12 @@ public class PhrasingSearcherTestCase {
     }
 
     @Test
-    public void testNoDetection() {
-        Searcher searcher=
-            new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+    void testNoDetection() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
-        Query query=new Query();
-        AndItem andItem=new AndItem();
+        Query query = new Query();
+        AndItem andItem = new AndItem();
         andItem.addItem(new WordItem("no"));
         andItem.addItem(new WordItem("such"));
         andItem.addItem(new WordItem("phrase"));
@@ -152,11 +152,11 @@ public class PhrasingSearcherTestCase {
     }
 
     @Test
-    public void testNoFileNoChange() {
+    void testNoFileNoChange() {
         Searcher searcher = new PhrasingSearcher("");
 
-        Query query=new Query();
-        AndItem andItem=new AndItem();
+        Query query = new Query();
+        AndItem andItem = new AndItem();
         andItem.addItem(new WordItem("no", "anindex"));
         andItem.addItem(new WordItem("such", "anindex"));
         andItem.addItem(new WordItem("phrase", "indexo"));

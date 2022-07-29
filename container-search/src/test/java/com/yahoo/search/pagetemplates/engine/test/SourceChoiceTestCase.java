@@ -8,7 +8,7 @@ import com.yahoo.search.pagetemplates.engine.Resolution;
 import com.yahoo.search.pagetemplates.engine.Resolver;
 import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
 import com.yahoo.search.pagetemplates.model.Choice;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author bratseth
@@ -16,7 +16,7 @@ import org.junit.Test;
 public class SourceChoiceTestCase extends ExecutionAbstractTestCase {
 
     @Test
-    public void testExecution() {
+    void testExecution() {
         // Create the page template
         Choice page = Choice.createSingleton(importPage("SourceChoice.xml"));
 
@@ -29,14 +29,14 @@ public class SourceChoiceTestCase extends ExecutionAbstractTestCase {
 
         // Resolve (noop here)
         Resolver resolver = new DeterministicResolver();
-        Resolution resolution = resolver.resolve(page,query,result);
+        Resolution resolution = resolver.resolve(page, query, result);
 
         // Execute
         Organizer organizer = new Organizer();
         organizer.organize(page, resolution, result);
 
         // Check rendering
-        assertRendered(result,"SourceChoiceResult.xml", false);
+        assertRendered(result, "SourceChoiceResult.xml", false);
     }
 
 }

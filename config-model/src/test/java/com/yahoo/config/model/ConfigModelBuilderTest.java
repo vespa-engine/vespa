@@ -3,14 +3,14 @@ package com.yahoo.config.model;
 
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -18,33 +18,33 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConfigModelBuilderTest {
     @Test
-    public void testEquals() {
+    void testEquals() {
         ConfigModelBuilder<?> ba = new A.Builder();
         ConfigModelBuilder<?> ba2 = new A2.Builder();
         ConfigModelBuilder<?> bb = new B.Builder();
-        ConfigModelBuilder <?>bb2 = new B2.Builder();
+        ConfigModelBuilder<?> bb2 = new B2.Builder();
 
-        assertTrue(ba.equals(ba));
-        assertTrue(ba.equals(ba2));
-        assertFalse(ba.equals(bb));
-        assertFalse(ba.equals(bb2));
+        assertEquals(ba, ba);
+        assertEquals(ba, ba2);
+        assertNotEquals(ba, bb);
+        assertNotEquals(ba, bb2);
 
-        assertTrue(ba2.equals(ba));
-        assertTrue(ba2.equals(ba2));
-        assertFalse(ba2.equals(bb));
-        assertFalse(ba2.equals(bb2));
+        assertEquals(ba2, ba);
+        assertEquals(ba2, ba2);
+        assertNotEquals(ba2, bb);
+        assertNotEquals(ba2, bb2);
 
-        assertFalse(bb.equals(ba));
-        assertFalse(bb.equals(ba2));
-        assertTrue(bb.equals(bb));
-        assertFalse(bb.equals(bb2));
+        assertNotEquals(bb, ba);
+        assertNotEquals(bb, ba2);
+        assertEquals(bb, bb);
+        assertNotEquals(bb, bb2);
 
-        assertFalse(bb2.equals(ba));
-        assertFalse(bb2.equals(ba2));
-        assertFalse(bb2.equals(bb));
-        assertTrue(bb2.equals(bb2));
+        assertNotEquals(bb2, ba);
+        assertNotEquals(bb2, ba2);
+        assertNotEquals(bb2, bb);
+        assertEquals(bb2, bb2);
 
-        assertFalse(ba.equals(new ArrayList<>()));
+        assertNotEquals(ba, new ArrayList<>());
     }
 
     private static class A extends ConfigModel {

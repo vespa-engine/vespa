@@ -14,16 +14,14 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.ExecutorPro
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent2;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author gjoranv
@@ -32,7 +30,7 @@ import static org.junit.Assert.assertSame;
  */
 public class ReuseComponentsTest {
     @Test
-    public void require_that_component_is_reused_when_componentNode_is_unmodified() {
+    void require_that_component_is_reused_when_componentNode_is_unmodified() {
         reuseAndTest(SimpleComponent.class, SimpleComponent.class);
         reuseAndTest(ExecutorProvider.class, Executor.class);
     }
@@ -48,23 +46,25 @@ public class ReuseComponentsTest {
         assertSame(instance2, instance);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void require_that_component_is_not_reused_when_class_is_changed() {
-        ComponentGraph graph = buildGraphAndSetNoConfigs(SimpleComponent.class);
-        SimpleComponent instance = getComponent(graph, SimpleComponent.class);
+    @Test
+    void require_that_component_is_not_reused_when_class_is_changed() {
+        assertThrows(IllegalStateException.class, () -> {
+            ComponentGraph graph = buildGraphAndSetNoConfigs(SimpleComponent.class);
+            SimpleComponent instance = getComponent(graph, SimpleComponent.class);
 
-        ComponentGraph newGraph = buildGraphAndSetNoConfigs(SimpleComponent2.class);
-        newGraph.reuseNodes(graph);
-        SimpleComponent2 instance2 = getComponent(newGraph, SimpleComponent2.class);
+            ComponentGraph newGraph = buildGraphAndSetNoConfigs(SimpleComponent2.class);
+            newGraph.reuseNodes(graph);
+            SimpleComponent2 instance2 = getComponent(newGraph, SimpleComponent2.class);
 
-        assertEquals(instance2.getId(),instance.getId());
-        @SuppressWarnings("unused")
-        SimpleComponent throwsException = getComponent(newGraph, SimpleComponent.class);
+            assertEquals(instance2.getId(), instance.getId());
+            @SuppressWarnings("unused")
+            SimpleComponent throwsException = getComponent(newGraph, SimpleComponent.class);
+        });
     }
 
     @SuppressWarnings("deprecation")
     @Test
-    public void require_that_component_is_not_reused_when_config_is_changed() {
+    void require_that_component_is_not_reused_when_config_is_changed() {
         Class<ComponentTakingConfig> componentClass = ComponentTakingConfig.class;
 
         ComponentGraph graph = buildGraph(componentClass);
@@ -83,7 +83,7 @@ public class ReuseComponentsTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void require_that_component_is_not_reused_when_injected_component_is_changed() {
+    void require_that_component_is_not_reused_when_injected_component_is_changed() {
         Function<String, ComponentGraph> buildGraph = config -> {
             ComponentGraph graph = new ComponentGraph();
 
@@ -115,7 +115,7 @@ public class ReuseComponentsTest {
     }
 
     @Test
-    public void require_that_component_is_not_reused_when_injected_component_registry_has_one_component_removed() {
+    void require_that_component_is_not_reused_when_injected_component_registry_has_one_component_removed() {
         Function<Boolean, ComponentGraph> buildGraph = useBothInjectedComponents -> {
             ComponentGraph graph = new ComponentGraph();
             graph.add(mockComponentNode(ComponentTakingAllSimpleComponents.class, "root_component"));
@@ -148,7 +148,7 @@ public class ReuseComponentsTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void require_that_injected_component_is_reused_even_when_dependent_component_is_changed() {
+    void require_that_injected_component_is_reused_even_when_dependent_component_is_changed() {
         Function<String, ComponentGraph> buildGraph = config -> {
             ComponentGraph graph = new ComponentGraph();
 
@@ -183,7 +183,7 @@ public class ReuseComponentsTest {
     }
 
     @Test
-    public void require_that_node_depending_on_guice_node_is_reused() {
+    void require_that_node_depending_on_guice_node_is_reused() {
         Supplier<ComponentGraph> makeGraph = () -> {
             ComponentGraph graph = new ComponentGraph();
             graph.add(mockComponentNode(ComponentTakingExecutor.class, "dummyId"));
@@ -202,7 +202,7 @@ public class ReuseComponentsTest {
     }
 
     @Test
-    public void require_that_node_equals_only_checks_first_level_components_to_inject() {
+    void require_that_node_equals_only_checks_first_level_components_to_inject() {
         Function<String, Node> createNodeWithInjectedNodeWithInjectedNode = indirectlyInjectedComponentId -> {
             ComponentNode targetComponent = mockComponentNode(SimpleComponent.class, "target");
             ComponentNode directlyInjectedComponent = mockComponentNode(SimpleComponent.class, "directlyInjected");
