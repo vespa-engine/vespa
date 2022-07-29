@@ -2,8 +2,8 @@
 package com.yahoo.container.plugin;
 
 import com.yahoo.vespa.config.VespaVersion;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,9 +18,9 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies the bundle jar file built and its manifest.
@@ -38,7 +38,7 @@ public class BundleTest {
     private JarFile jarFile;
     private Attributes mainAttributes;
 
-    @Before
+    @BeforeEach
     public void setup() {
         try {
             File componentJar = findBundleJar("main");
@@ -60,7 +60,7 @@ public class BundleTest {
     }
 
     @Test
-    public void require_that_bundle_version_is_added_to_manifest() {
+    void require_that_bundle_version_is_added_to_manifest() {
         String bundleVersion = mainAttributes.getValue("Bundle-Version");
 
         // Because of snapshot builds, we can only verify the major version.
@@ -69,12 +69,12 @@ public class BundleTest {
     }
 
     @Test
-    public void require_that_bundle_symbolic_name_matches_pom_artifactId() {
+    void require_that_bundle_symbolic_name_matches_pom_artifactId() {
         assertEquals("main", mainAttributes.getValue("Bundle-SymbolicName"));
     }
 
     @Test
-    public void require_that_manifest_contains_inferred_imports() {
+    void require_that_manifest_contains_inferred_imports() {
         String importPackage = mainAttributes.getValue("Import-Package");
 
         // From SimpleSearcher
@@ -87,35 +87,35 @@ public class BundleTest {
     }
 
     @Test
-    public void require_that_manifest_contains_manual_imports() {
+    void require_that_manifest_contains_manual_imports() {
         String importPackage = mainAttributes.getValue("Import-Package");
 
         assertTrue(importPackage.contains("manualImport.withoutVersion"));
         assertTrue(importPackage.contains("manualImport.withVersion;version=\"12.3.4\""));
 
-        for (int i=1; i<=2; ++i)
+        for (int i = 1; i <= 2; ++i)
             assertTrue(importPackage.contains("multiple.packages.with.the.same.version" + i + ";version=\"[1,2)\""));
     }
 
     @Test
-    public void require_that_manifest_contains_exports() {
+    void require_that_manifest_contains_exports() {
         String exportPackage = mainAttributes.getValue("Export-Package");
         assertTrue(exportPackage.contains("com.yahoo.test;version=1.2.3.RELEASE"));
     }
 
-    @Test
     // TODO: use another jar than jrt, which now pulls in a lot of dependencies that pollute the manifest of the
     //       generated bundle. (It's compile scoped in pom.xml to be added to the bundle-cp.)
-    public void require_that_manifest_contains_bundle_class_path() {
+    @Test
+    void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertTrue(bundleClassPath.contains(".,"));
 
         Pattern jrtPattern = Pattern.compile("dependencies/jrt" + snapshotOrVersionOrNone);
-        assertTrue("Bundle class path did not contain jrt.", jrtPattern.matcher(bundleClassPath).find());
+        assertTrue(jrtPattern.matcher(bundleClassPath).find(), "Bundle class path did not contain jrt.");
     }
 
     @Test
-    public void require_that_component_jar_file_contains_compile_artifacts() {
+    void require_that_component_jar_file_contains_compile_artifacts() {
         String depJrt = "dependencies/jrt";
         Pattern jrtPattern = Pattern.compile(depJrt + snapshotOrVersionOrNone);
         ZipEntry jrtEntry = null;
@@ -130,12 +130,12 @@ public class BundleTest {
                 }
             }
         }
-        assertNotNull("Component jar file did not contain jrt dependency.", jrtEntry);
+        assertNotNull(jrtEntry, "Component jar file did not contain jrt dependency.");
     }
 
 
     @Test
-    public void require_that_web_inf_url_is_propagated_to_the_manifest() {
+    void require_that_web_inf_url_is_propagated_to_the_manifest() {
         String webInfUrl = mainAttributes.getValue("WebInfUrl");
         assertTrue(webInfUrl.contains("/WEB-INF/web.xml"));
     }
