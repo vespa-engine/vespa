@@ -94,6 +94,14 @@ public class Container {
         }
     }
 
+    private void constructComponents(ComponentGraph graph) {
+        graph.nodes().forEach(n -> {
+            if (Thread.interrupted())
+                throw new UncheckedInterruptedException("Interrupted while constructing component graph", true);
+            n.constructInstance();
+        });
+    }
+
     private ComponentGraph waitForNewConfigGenAndCreateGraph(
             ComponentGraph graph, Injector fallbackInjector, boolean isInitializing, Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
@@ -122,7 +130,7 @@ public class Container {
                 Collection<Bundle> bundlesToRemove = installApplicationBundles(snapshot.configs());
                 obsoleteBundles.addAll(bundlesToRemove);
 
-                graph = createComponentsGraph(snapshot.configs(), getBootstrapGeneration(), fallbackInjector);
+                graph = createComponentGraph(snapshot.configs(), getBootstrapGeneration(), fallbackInjector);
 
                 // Continues loop
 
@@ -131,7 +139,7 @@ public class Container {
             }
         }
         log.log(FINE, () -> "Got components configs,\n" + configGenerationsString());
-        return createAndConfigureComponentsGraph(snapshot.configs(), fallbackInjector);
+        return createAndConfigureComponentGraph(snapshot.configs(), fallbackInjector);
     }
 
     private long getBootstrapGeneration() {
@@ -153,19 +161,11 @@ public class Container {
             throw new RuntimeException("Platform bundles are not allowed to change!\nOld: " + platformBundles + "\nNew: " + checkPlatformBundles);
     }
 
-    private ComponentGraph createAndConfigureComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> componentsConfigs,
-                                                             Injector fallbackInjector) {
-        ComponentGraph componentGraph = createComponentsGraph(componentsConfigs, getComponentsGeneration(), fallbackInjector);
+    private ComponentGraph createAndConfigureComponentGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> componentsConfigs,
+                                                            Injector fallbackInjector) {
+        ComponentGraph componentGraph = createComponentGraph(componentsConfigs, getComponentsGeneration(), fallbackInjector);
         componentGraph.setAvailableConfigs(componentsConfigs);
         return componentGraph;
-    }
-
-    private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(n -> {
-            if (Thread.interrupted())
-                throw new UncheckedInterruptedException("Interrupted while constructing component graph", true);
-            n.constructInstance();
-        });
     }
 
     private void deconstructFailedGraph(ComponentGraph currentGraph, ComponentGraph failedGraph) {
@@ -199,8 +199,8 @@ public class Container {
         return osgi.useApplicationBundles(applicationBundlesConfig.bundles());
     }
 
-    private ComponentGraph createComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
-                                                 long generation, Injector fallbackInjector) {
+    private ComponentGraph createComponentGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
+                                                long generation, Injector fallbackInjector) {
         previousConfigGeneration = generation;
 
         ComponentGraph graph = new ComponentGraph(generation);
