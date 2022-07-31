@@ -9,6 +9,7 @@ import com.yahoo.nativec.NativeHeap;
 
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +40,7 @@ public class MetricUpdater extends AbstractComponent {
     private static final String DIRECT_COUNT = "mem.direct.count";
     private static final String MEMORY_MAPPINGS_COUNT = "jdisc.memory_mappings";
     private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
+    private static final String TOTAL_THREADS = "jdisc.threads.total";
 
     private final Scheduler scheduler;
 
@@ -99,6 +101,7 @@ public class MetricUpdater extends AbstractComponent {
         private final ContainerWatchdogMetrics containerWatchdogMetrics;
         private final GarbageCollectionMetrics garbageCollectionMetrics;
         private final JrtMetrics jrtMetrics;
+        private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 
         public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
@@ -148,6 +151,7 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(HEAP_TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
+            metric.set(TOTAL_THREADS, threadMXBean.getThreadCount(), null);
             directMemoryUsed();
             nativeHeapUsed();
 
