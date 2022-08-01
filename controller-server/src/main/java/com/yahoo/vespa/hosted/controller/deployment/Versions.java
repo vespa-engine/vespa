@@ -76,7 +76,7 @@ public class Versions {
                targetRevision.equals(versions.targetRevision());
     }
 
-    /** Returns wheter this change could result in the given target versions. */
+    /** Returns whether this change could result in the given target versions. */
     public boolean targetsMatch(Change change) {
         return    change.platform().map(targetPlatform::equals).orElse(true)
                && change.revision().map(targetRevision::equals).orElse(true);
