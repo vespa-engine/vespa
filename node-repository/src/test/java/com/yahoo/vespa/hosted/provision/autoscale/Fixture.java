@@ -9,9 +9,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
@@ -42,7 +43,24 @@ public class Fixture {
         tester.deploy(builder.application, builder.cluster, deployCapacity);
     }
 
-    public AutoscalingTester  tester() { return tester; }
+    public AutoscalingTester tester() { return tester; }
+
+    public ApplicationId applicationId() { return application; }
+
+    public ClusterSpec.Id clusterId() { return cluster.id(); }
+
+    public Application application() {
+        return tester().nodeRepository().applications().get(application).orElse(Application.empty(application));
+    }
+
+    public Cluster cluster() {
+        return application().cluster(clusterId()).get();
+    }
+
+    /** Returns the nodes allocated to the fixture application cluster */
+    public NodeList nodes() {
+        return tester().nodeRepository().nodes().list().owner(application).cluster(cluster.id());
+    }
 
     /** Autoscale within the deployed capacity of this. */
     public Autoscaler.Advice autoscale() {
@@ -67,11 +85,6 @@ public class Fixture {
     /** Redeploy with the given capacity. */
     public void deploy(Capacity capacity) {
         tester().deploy(application, cluster, capacity);
-    }
-
-    /** Returns the nodes allocated to the fixture application cluster */
-    public NodeList nodes() {
-        return tester().nodeRepository().nodes().list().owner(application).cluster(cluster.id());
     }
 
     public void deactivateRetired(Capacity capacity) {

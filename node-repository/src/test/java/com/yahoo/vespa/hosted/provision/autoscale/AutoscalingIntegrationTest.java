@@ -1,22 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,40 +22,27 @@ public class AutoscalingIntegrationTest {
 
     @Test
     public void testComponentIntegration() {
-        NodeResources nodes = new NodeResources(1, 10, 100, 1);
-        NodeResources hosts = new NodeResources(3, 20, 200, 1);
-
-        AutoscalingTester tester = new AutoscalingTester(hosts);
-        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(),
+        var fixture = AutoscalingTester.fixture()
+                                       .hostResources(new NodeResources(3, 20, 200, 1))
+                                       .initialResources(Optional.of(new ClusterResources(2, 1,
+                                                                                          new NodeResources(1, 10, 100, 1))))
+                                       .build();
+        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(fixture.tester().nodeRepository(),
                                                                       new OrchestratorMock(),
-                                                                      new MockHttpClient(tester.clock()));
-        Autoscaler autoscaler = new Autoscaler(tester.nodeRepository());
+                                                                      new MockHttpClient(fixture.tester().clock()));
+        Autoscaler autoscaler = new Autoscaler(fixture.tester().nodeRepository());
 
-        ApplicationId application1 = AutoscalingTester.applicationId("test1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "test");
-        Set<String> hostnames = tester.deploy(application1, cluster1, 2, 1, nodes)
-                                      .stream().map(HostSpec::hostname)
-                                      .collect(Collectors.toSet());
         // The metrics response (below) hardcodes these hostnames:
-        assertEquals(Set.of("node-1-of-host-1.yahoo.com", "node-1-of-host-10.yahoo.com"), hostnames);
+        assertEquals(Set.of("node-1-of-host-1.yahoo.com", "node-1-of-host-10.yahoo.com"), fixture.nodes().hostnames());
 
         for (int i = 0; i < 1000; i++) {
-            tester.clock().advance(Duration.ofSeconds(10));
-            fetcher.fetchMetrics(application1).whenComplete((r, e) -> tester.nodeMetricsDb().addNodeMetrics(r.nodeMetrics()));
-            tester.clock().advance(Duration.ofSeconds(10));
-            tester.nodeMetricsDb().gc();
+            fixture.tester().clock().advance(Duration.ofSeconds(10));
+            fetcher.fetchMetrics(fixture.applicationId()).whenComplete((r, e) -> fixture.tester().nodeMetricsDb().addNodeMetrics(r.nodeMetrics()));
+            fixture.tester().clock().advance(Duration.ofSeconds(10));
+            fixture.tester().nodeMetricsDb().gc();
         }
 
-        ClusterResources min = new ClusterResources(2, 1, nodes);
-        ClusterResources max = new ClusterResources(2, 1, nodes);
-
-        Application application = tester.nodeRepository().applications().get(application1).orElse(Application.empty(application1))
-                                        .withCluster(cluster1.id(), false, Capacity.from(min, max));
-        try (Mutex lock = tester.nodeRepository().nodes().lock(application1)) {
-            tester.nodeRepository().applications().put(application, lock);
-        }
-        var scaledResources = autoscaler.suggest(application, application.clusters().get(cluster1.id()),
-                                                 tester.nodeRepository().nodes().list().owner(application1));
+        var scaledResources = autoscaler.suggest(fixture.application(), fixture.cluster(), fixture.nodes());
         assertTrue(scaledResources.isPresent());
     }
 
