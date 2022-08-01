@@ -13,8 +13,11 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 
 /**
  * Fixture for autoscaling tests.
@@ -32,7 +35,7 @@ public class Fixture {
         application = builder.application;
         cluster = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.zone, builder.hostResources, builder.resourceCalculator);
+        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostResources);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
     }
@@ -47,6 +50,11 @@ public class Fixture {
     /** Autoscale within the given capacity. */
     public Autoscaler.Advice autoscale(Capacity capacity) {
         return tester().autoscale(application, cluster, capacity);
+    }
+
+    /** Compute an autoscaling suggestion for this. */
+    public Autoscaler.Advice suggest() {
+        return tester().suggest(application, cluster.id(), capacity.minResources(), capacity.maxResources());
     }
 
     /** Redeploy with the deployed capacity of this. */
@@ -88,8 +96,15 @@ public class Fixture {
     }
 
     public void applyMemLoad(double memLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
+        Duration samplingInterval = Duration.ofSeconds(150L); // in addMemMeasurements
         tester().addMemMeasurements((float)memLoad, 1.0f, measurements, application);
+        tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
+        tester().addQueryRateMeasurements(application, cluster.id(), measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+    }
+
+    public void applyDiskLoad(double diskLoad, int measurements) {
+        Duration samplingInterval = Duration.ofSeconds(150L); // in addDiskMeasurements
+        tester().addDiskMeasurements((float)diskLoad, 1.0f, measurements, application);
         tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
         tester().addQueryRateMeasurements(application, cluster.id(), measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
@@ -114,15 +129,15 @@ public class Fixture {
 
     public static class Builder {
 
-        NodeResources hostResources = new NodeResources(100, 100, 100, 1);
+        ApplicationId application = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+        List<NodeResources> hostResources = List.of(new NodeResources(100, 100, 100, 1));
         Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(3, 10, 100, 1)));
         Capacity capacity = Capacity.from(new ClusterResources(2, 1,
                                                                new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
-        ApplicationId application = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
-        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone, 0);
 
         public Fixture.Builder zone(Zone zone) {
@@ -135,8 +150,8 @@ public class Fixture {
             return this;
         }
 
-        public Fixture.Builder hostResources(NodeResources hostResources) {
-            this.hostResources = hostResources;
+        public Fixture.Builder hostResources(NodeResources ... hostResources) {
+            this.hostResources = Arrays.stream(hostResources).collect(Collectors.toList());
             return this;
         }
 

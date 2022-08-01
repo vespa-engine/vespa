@@ -229,35 +229,51 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void prefers_remote_disk_when_no_local_match() {
-        NodeResources resources = new NodeResources(3, 100, 50, 1);
-        ClusterResources min = new ClusterResources( 2, 1, resources);
-        ClusterResources max = min;
-        // AutoscalingTester hardcodes 3Gb memory overhead:
-        Flavor localFlavor  = new Flavor("local",  new NodeResources(3, 97,  75, 1, DiskSpeed.fast, StorageType.local));
-        Flavor remoteFlavor = new Flavor("remote", new NodeResources(3, 97,  50, 1, DiskSpeed.fast, StorageType.remote));
+    public void container_prefers_remote_disk_when_no_local_match() {
+        var resources = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
+        var local  = new NodeResources(3, 100,  75, 1, DiskSpeed.fast, StorageType.local);
+        var remote = new NodeResources(3, 100,  50, 1, DiskSpeed.fast, StorageType.remote);
+        var fixture = AutoscalingTester.fixture()
+                                       .zone(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
+                                                      SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
+                                       .clusterType(ClusterSpec.Type.container)
+                                       .hostResources(local, remote)
+                                       .capacity(Capacity.from(resources))
+                                       .initialResources(Optional.of(new ClusterResources(3, 1, resources.nodeResources())))
+                                       .build();
 
-        var tester = new AutoscalingTester(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
-                                                    SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()),
-                                           List.of(localFlavor, remoteFlavor));
-        tester.provisioning().makeReadyNodes(5, localFlavor.name(),  NodeType.host, 8);
-        tester.provisioning().makeReadyNodes(5, remoteFlavor.name(), NodeType.host, 8);
-        tester.provisioning().activateTenantHosts();
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 3, 1, min.nodeResources());
-        Duration timeAdded = tester.addDiskMeasurements(0.01f, 1f, 120, application1);
-        tester.clock().advance(timeAdded.negated());
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> 10.0); // Query traffic only
-        Autoscaler.Advice suggestion = tester.suggest(application1, cluster1.id(), min, max);
-        tester.assertResources("Choosing the remote disk flavor as it has less disk",
-                               6, 1, 3.0,  100.0, 10.0,
-                               suggestion);
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(0.01, 0.01, 0.01, 120);
+        Autoscaler.Advice suggestion = fixture.suggest();
+        fixture.tester().assertResources("Choosing the remote disk flavor as it has less disk",
+                                         2, 1, 3.0,  100.0, 10.0,
+                                         suggestion);
         assertEquals("Choosing the remote disk flavor as it has less disk",
                      StorageType.remote, suggestion.target().get().nodeResources().storageType());
+    }
+
+    @Test
+    public void content_prefers_local_disk_when_no_local_match() {
+        var resources = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
+        var local  = new NodeResources(3, 100,  75, 1, DiskSpeed.fast, StorageType.local);
+        var remote = new NodeResources(3, 100,  50, 1, DiskSpeed.fast, StorageType.remote);
+        var fixture = AutoscalingTester.fixture()
+                                       .zone(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
+                                                      SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
+                                       .clusterType(ClusterSpec.Type.content)
+                                       .hostResources(local, remote)
+                                       .capacity(Capacity.from(resources))
+                                       .initialResources(Optional.of(new ClusterResources(3, 1, resources.nodeResources())))
+                                       .build();
+
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(0.01, 0.01, 0.01, 120);
+        Autoscaler.Advice suggestion = fixture.suggest();
+        fixture.tester().assertResources("Always prefers local disk for content",
+                                         2, 1, 3.0,  100.0, 75.0,
+                                         suggestion);
+        assertEquals("Always prefers local disk for content",
+                     StorageType.local, suggestion.target().get().nodeResources().storageType());
     }
 
     @Test

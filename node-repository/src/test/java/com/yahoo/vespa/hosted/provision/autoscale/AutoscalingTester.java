@@ -30,10 +30,12 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -54,16 +56,17 @@ class AutoscalingTester {
     }
 
     public AutoscalingTester(Environment environment, NodeResources hostResources) {
-        this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
+        this(new Zone(environment, RegionName.from("us-east")), null, List.of(hostResources));
     }
 
-    public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<NodeResources> hostResources) {
         this(zone, hostResources, resourcesCalculator, 20);
     }
 
-    private AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
-        this(zone, List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
-        provisioningTester.makeReadyNodes(hostCount, "hostFlavor", NodeType.host, 8);
+    private AutoscalingTester(Zone zone, List<NodeResources> hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
+        this(zone, toFlavors(hostResources), resourcesCalculator);
+        for (Flavor flavor : toFlavors(hostResources))
+            provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
@@ -81,6 +84,13 @@ class AutoscalingTester {
         hostResourcesCalculator = resourcesCalculator;
         autoscaler = new Autoscaler(nodeRepository());
         capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
+    }
+
+    private static List<Flavor> toFlavors(List<NodeResources> resources) {
+        List<Flavor> flavors = new ArrayList<>();
+        for (int i = 0; i < resources.size(); i++)
+            flavors.add(new Flavor("flavor" + i, resources.get(i)));
+        return flavors;
     }
 
     public static Fixture.Builder fixture() { return new Fixture.Builder(); }
