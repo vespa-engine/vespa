@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -142,6 +144,20 @@ public class Fixture {
 
         public Fixture.Builder zone(Zone zone) {
             this.zone = zone;
+            return this;
+        }
+
+        /**
+         * Set to true to behave as if hosts are provisioned dynamically,
+         * and must therefore be allocated completely to one tenant node.
+         */
+        public Fixture. Builder dynamicProvisioning(boolean dynamic) {
+            this.zone = new Zone(Cloud.builder()
+                                      .dynamicProvisioning(dynamic)
+                                      .build(),
+                                 zone.system(),
+                                 zone.environment(),
+                                 zone.region());
             return this;
         }
 

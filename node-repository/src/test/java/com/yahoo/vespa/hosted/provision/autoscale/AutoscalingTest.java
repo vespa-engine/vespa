@@ -1,19 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import com.yahoo.config.provision.NodeResources.StorageType;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
@@ -22,8 +22,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -97,7 +95,7 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_handles_disk_setting_changes() {
-        var resources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
+        var resources = new NodeResources(3, 100, 100, 1, slow);
         var fixture = AutoscalingTester.fixture()
                                        .hostResources(resources)
                                        .initialResources(Optional.of(new ClusterResources(5, 1, resources)))
@@ -105,32 +103,32 @@ public class AutoscalingTest {
                                        .build();
 
         assertTrue(fixture.tester().nodeRepository().nodes().list().owner(fixture.application).stream()
-                         .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.slow));
+                         .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == slow));
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.applyCpuLoad(0.25, 120);
 
         // Changing min and max from slow to any
         ClusterResources min = new ClusterResources( 2, 1,
-                                                     new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
+                                                     new NodeResources(1, 1, 1, 1, DiskSpeed.any));
         ClusterResources max = new ClusterResources(20, 1,
-                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
+                                                    new NodeResources(100, 1000, 1000, 1, DiskSpeed.any));
         var capacity = Capacity.from(min, max);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling up",
                                                                             14, 1, 1.4,  30.8, 30.8,
                                                                             fixture.autoscale(capacity));
         assertEquals("Disk speed from new capacity is used",
-                     NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
+                     DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
         fixture.deploy(Capacity.from(scaledResources));
         assertTrue(fixture.nodes().stream()
-                          .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+                          .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == DiskSpeed.any));
     }
 
     @Test
     public void autoscaling_target_preserves_any() {
         NodeResources resources = new NodeResources(1, 10, 10, 1);
-        var capacity = Capacity.from(new ClusterResources( 2, 1, resources.with(NodeResources.DiskSpeed.any)),
-                                     new ClusterResources( 10, 1, resources.with(NodeResources.DiskSpeed.any)));
+        var capacity = Capacity.from(new ClusterResources( 2, 1, resources.with(DiskSpeed.any)),
+                                     new ClusterResources( 10, 1, resources.with(DiskSpeed.any)));
         var fixture = AutoscalingTester.fixture()
                                        .capacity(capacity)
                                        .initialResources(Optional.empty())
@@ -139,13 +137,13 @@ public class AutoscalingTest {
         // Redeployment without target: Uses current resource numbers with *requested* non-numbers (i.e disk-speed any)
         assertTrue(fixture.tester().nodeRepository().applications().get(fixture.application).get().cluster(fixture.cluster.id()).get().targetResources().isEmpty());
         fixture.deploy();
-        assertEquals(NodeResources.DiskSpeed.any, fixture.nodes().first().get().allocation().get().requestedResources().diskSpeed());
+        assertEquals(DiskSpeed.any, fixture.nodes().first().get().allocation().get().requestedResources().diskSpeed());
 
         // Autoscaling: Uses disk-speed any as well
         fixture.deactivateRetired(capacity);
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.applyCpuLoad(0.8, 120);
-        assertEquals(NodeResources.DiskSpeed.any, fixture.autoscale(capacity).target().get().nodeResources().diskSpeed());
+        assertEquals(DiskSpeed.any, fixture.autoscale(capacity).target().get().nodeResources().diskSpeed());
     }
 
     @Test
@@ -231,11 +229,10 @@ public class AutoscalingTest {
     @Test
     public void container_prefers_remote_disk_when_no_local_match() {
         var resources = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
-        var local  = new NodeResources(3, 100,  75, 1, DiskSpeed.fast, StorageType.local);
-        var remote = new NodeResources(3, 100,  50, 1, DiskSpeed.fast, StorageType.remote);
+        var local  = new NodeResources(3, 100,  75, 1, fast, StorageType.local);
+        var remote = new NodeResources(3, 100,  50, 1, fast, StorageType.remote);
         var fixture = AutoscalingTester.fixture()
-                                       .zone(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
-                                                      SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
+                                       .dynamicProvisioning(true)
                                        .clusterType(ClusterSpec.Type.container)
                                        .hostResources(local, remote)
                                        .capacity(Capacity.from(resources))
@@ -255,11 +252,10 @@ public class AutoscalingTest {
     @Test
     public void content_prefers_local_disk_when_no_local_match() {
         var resources = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
-        var local  = new NodeResources(3, 100,  75, 1, DiskSpeed.fast, StorageType.local);
-        var remote = new NodeResources(3, 100,  50, 1, DiskSpeed.fast, StorageType.remote);
+        var local  = new NodeResources(3, 100,  75, 1, fast, StorageType.local);
+        var remote = new NodeResources(3, 100,  50, 1, fast, StorageType.remote);
         var fixture = AutoscalingTester.fixture()
-                                       .zone(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
-                                                      SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
+                                       .dynamicProvisioning(true)
                                        .clusterType(ClusterSpec.Type.content)
                                        .hostResources(local, remote)
                                        .capacity(Capacity.from(resources))
@@ -429,41 +425,30 @@ public class AutoscalingTest {
     public void test_autoscaling_with_dynamic_provisioning() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        List<Flavor> flavors = new ArrayList<>();
-        flavors.add(new Flavor("aws-xlarge", new NodeResources(3, 200, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        flavors.add(new Flavor("aws-large",  new NodeResources(3, 150, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        flavors.add(new Flavor("aws-medium", new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        flavors.add(new Flavor("aws-small",  new NodeResources(3,  80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        AutoscalingTester tester = new AutoscalingTester(new Zone(Cloud.builder()
-                                                                       .dynamicProvisioning(true)
-                                                                       .build(),
-                                                                  SystemName.main,
-                                                                  Environment.prod, RegionName.from("us-east")),
-                                                         flavors);
+        var fixture = AutoscalingTester.fixture()
+                                       .dynamicProvisioning(true)
+                                       .hostResources(new NodeResources(3, 200, 100, 1, fast, remote),
+                                                      new NodeResources(3, 150, 100, 1, fast, remote),
+                                                      new NodeResources(3, 100, 100, 1, fast, remote),
+                                                      new NodeResources(3,  80, 100, 1, fast, remote))
+                                       .capacity(Capacity.from(min, max))
+                                       .initialResources(Optional.of(new ClusterResources(5, 1,
+                                                                                          new NodeResources(3, 100, 100, 1))))
+                                       .build();
 
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyMemLoad(0.9, 120);
+        var scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high.",
+                                                               8, 1, 3,  80, 57.1,
+                                                               fixture.autoscale());
+        fixture.deploy(Capacity.from(scaledResources));
+        fixture.deactivateRetired(Capacity.from(scaledResources));
 
-        // deploy (Why 103 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
-        tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
-
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addMemMeasurements(0.9f, 0.6f, 120, application1);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
-                                                                  8, 1, 3,  83, 34.3,
-                                                                  tester.autoscale(application1, cluster1, capacity));
-
-        tester.deploy(application1, cluster1, scaledResources);
-        tester.deactivateRetired(application1, cluster1, scaledResources);
-
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addMemMeasurements(0.3f, 0.6f, 1000, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling down since resource usage has gone down",
-                               5, 1, 3, 83, 36.0,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyMemLoad(0.3, 1000);
+        fixture.tester().assertResources("Scaling down since resource usage has gone down",
+                                         5, 1, 3, 80, 100,
+                                         fixture.autoscale());
     }
 
     @Test
