@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -13,15 +13,14 @@ import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.forNode;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
-
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ResourceUsageStatsTest {
 
     private final double DELTA = 0.00001;
 
     @Test
-    public void disk_and_memory_utilization_is_max_among_all_content_nodes() {
+    void disk_and_memory_utilization_is_max_among_all_content_nodes() {
         var stats = ResourceUsageStats.calculateFrom(createNodeInfo(
                 forNode(1, usage("disk", 0.3), usage("memory", 0.6)),
                 forNode(2, usage("disk", 0.4), usage("memory", 0.5))),
@@ -34,7 +33,7 @@ public class ResourceUsageStatsTest {
     }
 
     @Test
-    public void disk_and_memory_utilization_is_zero_if_no_samples_are_available() {
+    void disk_and_memory_utilization_is_zero_if_no_samples_are_available() {
         var stats = ResourceUsageStats.calculateFrom(createNodeInfo(
                 forNode(1), forNode(2)),
                 createFeedBlockLimits(0.8, 0.9),
@@ -46,20 +45,20 @@ public class ResourceUsageStatsTest {
     }
 
     @Test
-    public void nodes_above_limit_is_zero_without_feed_block_status() {
+    void nodes_above_limit_is_zero_without_feed_block_status() {
         var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(), Optional.empty());
         assertEquals(0, stats.getNodesAboveLimit());
     }
 
     @Test
-    public void nodes_above_limit_is_equal_to_node_resource_exhaustions() {
+    void nodes_above_limit_is_equal_to_node_resource_exhaustions() {
         var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(),
                 createFeedBlock(exhaustion(1, "disk"), exhaustion(2, "memory")));
         assertEquals(2, stats.getNodesAboveLimit());
     }
 
     @Test
-    public void nodes_above_limit_counts_each_node_only_once() {
+    void nodes_above_limit_counts_each_node_only_once() {
         var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(),
                 createFeedBlock(exhaustion(1, "disk"), exhaustion(1, "memory")));
         assertEquals(1, stats.getNodesAboveLimit());

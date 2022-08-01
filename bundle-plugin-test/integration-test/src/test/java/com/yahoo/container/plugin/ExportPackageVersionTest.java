@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,8 +10,8 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
 import static com.yahoo.container.plugin.BundleTest.findBundleJar;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that the 'useArtifactVersionForExportPackages' setting for the bundle-plugin works as intended.
@@ -23,7 +23,7 @@ public class ExportPackageVersionTest {
     private static Attributes mainAttributes;
     private static String bundleVersion;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         try {
             File componentJar = findBundleJar("artifact-version-for-exports");
@@ -36,7 +36,7 @@ public class ExportPackageVersionTest {
     }
 
     @Test
-    public void artifact_version_without_qualifier_is_used_as_export_version() {
+    void artifact_version_without_qualifier_is_used_as_export_version() {
         // Bundle-Version is artifact version without qualifier
         String expectedExport = "ai.vespa.noversion;version=" + bundleVersion;
 
@@ -48,13 +48,13 @@ public class ExportPackageVersionTest {
     }
 
     @Test
-    public void explicit_version_in_ExportPackage_annotation_overrides_artifact_version() {
+    void explicit_version_in_ExportPackage_annotation_overrides_artifact_version() {
         String exportPackage = mainAttributes.getValue("Export-Package");
         assertTrue(exportPackage.contains("ai.vespa.explicitversion;version=2.4.6.RELEASE"));
     }
 
     @Test
-    public void artifact_version_of_dependency_is_used_as_export_version_for_package_in_compile_scoped_dependency() {
+    void artifact_version_of_dependency_is_used_as_export_version_for_package_in_compile_scoped_dependency() {
         String exportPackage = mainAttributes.getValue("Export-Package");
 
         // TODO: This test should have checked for a fixed version of the dependency bundle, different than the main bundle version.
@@ -63,7 +63,7 @@ public class ExportPackageVersionTest {
     }
 
     @Test
-    public void explicit_version_in_ExportPackage_annotation_overrides_artifact_version_of_compile_scoped_dependency() {
+    void explicit_version_in_ExportPackage_annotation_overrides_artifact_version_of_compile_scoped_dependency() {
         String exportPackage = mainAttributes.getValue("Export-Package");
         assertTrue(exportPackage.contains("ai.vespa.explicitversion_dep;version=3.6.9.RELEASE"));
     }

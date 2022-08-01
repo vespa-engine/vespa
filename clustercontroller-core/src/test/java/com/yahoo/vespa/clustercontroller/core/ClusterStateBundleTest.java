@@ -6,7 +6,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -15,9 +15,7 @@ import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterStateBundleTest {
 
@@ -67,7 +65,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void builder_creates_baseline_state_and_derived_state_per_space() {
+    void builder_creates_baseline_state_and_derived_state_per_space() {
         ClusterStateBundle bundle = createTestBundle();
         assertThat(bundle.getBaselineClusterState(), equalTo(stateOf("distributor:2 storage:2")));
         assertThat(bundle.getDerivedBucketSpaceStates().size(), equalTo(3));
@@ -77,7 +75,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void version_clone_sets_version_for_all_spaces() {
+    void version_clone_sets_version_for_all_spaces() {
         ClusterStateBundle bundle = createTestBundle().clonedWithVersionSet(123);
         assertThat(bundle.getBaselineClusterState(), equalTo(stateOf("version:123 distributor:2 storage:2")));
         assertThat(bundle.getDerivedBucketSpaceStates().size(), equalTo(3));
@@ -87,13 +85,13 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void same_bundle_instance_considered_similar() {
+    void same_bundle_instance_considered_similar() {
         ClusterStateBundle bundle = createTestBundle();
         assertTrue(bundle.similarTo(bundle));
     }
 
     @Test
-    public void similarity_test_considers_all_bucket_spaces() {
+    void similarity_test_considers_all_bucket_spaces() {
         ClusterStateBundle bundle = createTestBundle(false);
         ClusterStateBundle unchangedBundle = createTestBundle(false);
 
@@ -106,7 +104,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void similarity_test_considers_cluster_feed_block_state() {
+    void similarity_test_considers_cluster_feed_block_state() {
         var nonBlockingBundle = createTestBundle(false);
         var blockingBundle = createTestBundleWithFeedBlock("foo");
         var blockingBundleWithOtherDesc = createTestBundleWithFeedBlock("bar");
@@ -119,7 +117,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void similarity_test_considers_cluster_feed_block_concrete_exhaustion_set() {
+    void similarity_test_considers_cluster_feed_block_concrete_exhaustion_set() {
         var blockingBundleNoSet        = createTestBundleWithFeedBlock("foo");
         var blockingBundleWithSet      = createTestBundleWithFeedBlock("bar", setOf(exhaustion(1, "beer"), exhaustion(1, "wine")));
         var blockingBundleWithOtherSet = createTestBundleWithFeedBlock("bar", setOf(exhaustion(1, "beer"), exhaustion(1, "soda")));
@@ -132,7 +130,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void feed_block_state_is_available() {
+    void feed_block_state_is_available() {
         var nonBlockingBundle = createTestBundle(false);
         var blockingBundle = createTestBundleWithFeedBlock("foo");
 
@@ -147,14 +145,14 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void toString_without_bucket_space_states_prints_only_baseline_state() {
+    void toString_without_bucket_space_states_prints_only_baseline_state() {
         ClusterStateBundle bundle = ClusterStateBundle.ofBaselineOnly(
                 annotatedStateOf("distributor:2 storage:2"));
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
     }
 
     @Test
-    public void toString_includes_all_bucket_space_states() {
+    void toString_includes_all_bucket_space_states() {
         ClusterStateBundle bundle = createTestBundle();
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2 .0.s:d', " +
@@ -163,7 +161,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void toString_with_feed_blocked_includes_description() {
+    void toString_with_feed_blocked_includes_description() {
         var blockingBundle = createTestBundleWithFeedBlock("bear sleeping on server rack");
         assertThat(blockingBundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2', " +
@@ -173,19 +171,19 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void toString_without_derived_states_specifies_deferred_activation_iff_set() {
+    void toString_without_derived_states_specifies_deferred_activation_iff_set() {
         var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), null, true);
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2' (deferred activation))"));
     }
 
     @Test
-    public void toString_without_derived_states_does_not_specify_deferred_activation_iff_not_set() {
+    void toString_without_derived_states_does_not_specify_deferred_activation_iff_not_set() {
         var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), null, false);
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
     }
 
     @Test
-    public void toString_with_derived_states_specifies_deferred_activation_iff_set() {
+    void toString_with_derived_states_specifies_deferred_activation_iff_set() {
         var bundle = createTestBundleBuilder(true).deferredActivation(true).deriveAndBuild();
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2 .0.s:d', " +
@@ -194,7 +192,7 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void toString_with_derived_states_does_not_specify_deferred_activation_iff_not_set() {
+    void toString_with_derived_states_does_not_specify_deferred_activation_iff_not_set() {
         var bundle = createTestBundleBuilder(true).deferredActivation(false).deriveAndBuild();
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2 .0.s:d', " +
@@ -203,25 +201,25 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void deferred_activation_is_disabled_by_default() {
+    void deferred_activation_is_disabled_by_default() {
         ClusterStateBundle bundle = createTestBundle();
         assertFalse(bundle.deferredActivation());
     }
 
     @Test
-    public void can_build_bundle_with_deferred_activation_enabled() {
+    void can_build_bundle_with_deferred_activation_enabled() {
         var bundle = createTestBundleBuilder(false).deferredActivation(true).deriveAndBuild();
         assertTrue(bundle.deferredActivation());
     }
 
     @Test
-    public void can_build_bundle_with_deferred_activation_disabled() {
+    void can_build_bundle_with_deferred_activation_disabled() {
         var bundle = createTestBundleBuilder(false).deferredActivation(false).deriveAndBuild();
         assertFalse(bundle.deferredActivation());
     }
 
     @Test
-    public void simple_bundle_without_derived_states_propagates_deferred_activation_flag() {
+    void simple_bundle_without_derived_states_propagates_deferred_activation_flag() {
         var bundle = ClusterStateBundle
                 .builder(annotatedStateOf("distributor:2 storage:2"))
                 .deferredActivation(true) // defaults to false
@@ -230,22 +228,23 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void cloning_preserves_false_deferred_activation_flag() {
+    void cloning_preserves_false_deferred_activation_flag() {
         var bundle = createTestBundleBuilder(true).deferredActivation(false).deriveAndBuild();
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }
 
     @Test
-    public void cloning_preserves_true_deferred_activation_flag() {
+    void cloning_preserves_true_deferred_activation_flag() {
         var bundle = createTestBundleBuilder(true).deferredActivation(true).deriveAndBuild();
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }
 
     @Test
-    public void cloning_preserves_feed_block_state() {
-        var bundle = createTestBundleWithFeedBlock("foo");;
+    void cloning_preserves_feed_block_state() {
+        var bundle = createTestBundleWithFeedBlock("foo");
+        ;
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }

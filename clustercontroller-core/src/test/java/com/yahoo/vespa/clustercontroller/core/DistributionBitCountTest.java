@@ -6,12 +6,12 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DistributionBitCountTest extends FleetControllerTest {
 
@@ -37,7 +37,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      * Test that then altering config to increased bit count, that a new system state is not sent out (and not altered) if a storagenode needs it to be no further split.
      */
     @Test
-    public void testDistributionBitCountConfigIncrease() throws Exception {
+    void testDistributionBitCountConfigIncrease() throws Exception {
         setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigIncrease");
         options.distributionBits = 20;
         fleetController.updateOptions(options);
@@ -53,7 +53,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      * Test that then altering config to decrease bit count, that a new system state is sent out with that bit count.
      */
     @Test
-    public void testDistributionBitCountConfigDecrease() throws Exception {
+    void testDistributionBitCountConfigDecrease() throws Exception {
         setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigDecrease");
         options.distributionBits = 12;
         fleetController.updateOptions(options);
@@ -69,7 +69,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      * node now being lowest, the fleetcontroller adjusts to use that bit in system state.
      */
     @Test
-    public void testStorageNodeReportingHigherBitCount() throws Exception {
+    void testStorageNodeReportingHigherBitCount() throws Exception {
         setUpSystem("DistributionBitCountTest::testStorageNodeReportingHigherBitCount");
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(11));
@@ -78,12 +78,11 @@ public class DistributionBitCountTest extends FleetControllerTest {
         ClusterState startState = waitForState("version:\\d+ bits:11 distributor:10 storage:10");
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(12));
-        assertEquals(startState + "->" + fleetController.getSystemState(),
-                     startState.getVersion(), fleetController.getSystemState().getVersion());
+        assertEquals(startState.getVersion(), fleetController.getSystemState().getVersion(), startState + "->" + fleetController.getSystemState());
 
         for (int i = 0; i < 10; ++i) {
             // nodes is array of [distr.0, stor.0, distr.1, stor.1, ...] and we just want the storage nodes
-            nodes.get(i*2 + 1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(17));
+            nodes.get(i * 2 + 1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(17));
         }
         assertEquals(startState.getVersion() + 1, waitForState("version:\\d+ bits:17 distributor:10 storage:10").getVersion());
     }
@@ -93,7 +92,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      * Test that then storage node report lower bit count, and then becomes the smallest, the fleetcontroller adjusts to use that bit in system state.
      */
     @Test
-    public void testStorageNodeReportingLowerBitCount() throws Exception {
+    void testStorageNodeReportingLowerBitCount() throws Exception {
         setUpSystem("DistributionBitCountTest::testStorageNodeReportingLowerBitCount");
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(13));

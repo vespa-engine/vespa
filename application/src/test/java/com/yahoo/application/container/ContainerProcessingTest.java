@@ -7,13 +7,14 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.Container;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -36,13 +37,13 @@ public class ContainerProcessingTest {
         return xml;
     }
 
-    @Before
+    @BeforeEach
     public void resetContainer() {
         Container.resetInstance();
     }
 
     @Test
-    public void requireThatBasicProcessingWorks() {
+    void requireThatBasicProcessingWorks() {
         try (JDisc container = getContainerWithRot13()) {
             Processing processing = container.processing();
 
@@ -55,10 +56,10 @@ public class ContainerProcessingTest {
     }
 
     @Test
-    public void requireThatBasicProcessingDoesNotTruncateBigResponse() {
-        int SIZE = 50*1000;
+    void requireThatBasicProcessingDoesNotTruncateBigResponse() {
+        int SIZE = 50 * 1000;
         StringBuilder foo = new StringBuilder();
-        for (int j = 0 ; j < SIZE ; j++) {
+        for (int j = 0; j < SIZE; j++) {
             foo.append('b');
         }
 
@@ -69,13 +70,13 @@ public class ContainerProcessingTest {
                         container.handleRequest(
                                 new com.yahoo.application.container.handler.Request("http://foo/processing/?chain=foo&title=" + foo.toString()));
 
-                assertEquals(SIZE+26, response.getBody().length);
+                assertEquals(SIZE + 26, response.getBody().length);
             }
         }
     }
 
     @Test
-    public void processing_and_rendering_works() throws Exception {
+    void processing_and_rendering_works() throws Exception {
         try (JDisc container = getContainerWithRot13()) {
             Processing processing = container.processing();
 
@@ -90,27 +91,36 @@ public class ContainerProcessingTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void requireThatUnknownChainThrows() {
-        try (JDisc container = getContainerWithRot13()) {
-            container.processing().process(ComponentSpecification.fromString("unknown"), new Request());
-        }
+    @Test
+    void requireThatUnknownChainThrows() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            try (JDisc container = getContainerWithRot13()) {
+                container.processing().process(ComponentSpecification.fromString("unknown"), new Request());
+            }
+
+        });
 
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void requireThatDocprocFails() {
-        try (JDisc container = getContainerWithRot13()) {
-            container.documentProcessing();
-        }
+    @Test
+    void requireThatDocprocFails() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (JDisc container = getContainerWithRot13()) {
+                container.documentProcessing();
+            }
+
+        });
 
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void requireThatSearchFails() {
-        try (JDisc container = getContainerWithRot13()) {
-            container.search();
-        }
+    @Test
+    void requireThatSearchFails() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (JDisc container = getContainerWithRot13()) {
+                container.search();
+            }
+
+        });
 
     }
 

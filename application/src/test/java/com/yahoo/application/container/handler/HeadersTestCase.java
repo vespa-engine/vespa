@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.handler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,12 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**
@@ -27,7 +28,7 @@ import static org.junit.Assert.fail;
 public class HeadersTestCase {
 
     @Test
-    public void requireThatSizeWorksAsExpected() {
+    void requireThatSizeWorksAsExpected() {
         Headers headers = new Headers();
         assertEquals(0, headers.size());
         headers.add("foo", "bar");
@@ -43,7 +44,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatIsEmptyWorksAsExpected() {
+    void requireThatIsEmptyWorksAsExpected() {
         Headers headers = new Headers();
         assertTrue(headers.isEmpty());
         headers.add("foo", "bar");
@@ -53,7 +54,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatContainsKeyWorksAsExpected() {
+    void requireThatContainsKeyWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.containsKey("foo"));
         assertFalse(headers.containsKey("FOO"));
@@ -63,7 +64,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatContainsValueWorksAsExpected() {
+    void requireThatContainsValueWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.containsValue(Arrays.asList("bar")));
         headers.add("foo", "bar");
@@ -71,7 +72,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatContainsWorksAsExpected() {
+    void requireThatContainsWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.contains("foo", "bar"));
         assertFalse(headers.contains("FOO", "bar"));
@@ -85,7 +86,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatContainsIgnoreCaseWorksAsExpected() {
+    void requireThatContainsIgnoreCaseWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.containsIgnoreCase("foo", "bar"));
         assertFalse(headers.containsIgnoreCase("FOO", "bar"));
@@ -99,7 +100,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatAddStringWorksAsExpected() {
+    void requireThatAddStringWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
@@ -109,7 +110,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatAddListWorksAsExpected() {
+    void requireThatAddListWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.add("foo", Arrays.asList("bar"));
@@ -119,7 +120,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatAddAllWorksAsExpected() {
+    void requireThatAddAllWorksAsExpected() {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -136,7 +137,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatPutStringWorksAsExpected() {
+    void requireThatPutStringWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.put("foo", "bar");
@@ -146,7 +147,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatPutListWorksAsExpected() {
+    void requireThatPutListWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.put("foo", Arrays.asList("bar"));
@@ -156,7 +157,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatPutAllWorksAsExpected() {
+    void requireThatPutAllWorksAsExpected() {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -173,7 +174,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatRemoveWorksAsExpected() {
+    void requireThatRemoveWorksAsExpected() {
         Headers headers = new Headers();
         headers.put("foo", Arrays.asList("bar", "baz"));
         assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
@@ -183,7 +184,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatRemoveStringWorksAsExpected() {
+    void requireThatRemoveStringWorksAsExpected() {
         Headers headers = new Headers();
         headers.put("foo", Arrays.asList("bar", "baz"));
         assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
@@ -196,7 +197,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatClearWorksAsExpected() {
+    void requireThatClearWorksAsExpected() {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
@@ -208,7 +209,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatGetWorksAsExpected() {
+    void requireThatGetWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
@@ -216,7 +217,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatGetFirstWorksAsExpected() {
+    void requireThatGetFirstWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.getFirst("foo"));
         headers.add("foo", Arrays.asList("bar", "baz"));
@@ -224,7 +225,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatIsTrueWorksAsExpected() {
+    void requireThatIsTrueWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.isTrue("foo"));
         headers.put("foo", Arrays.asList("true"));
@@ -242,7 +243,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatKeySetWorksAsExpected() {
+    void requireThatKeySetWorksAsExpected() {
         Headers headers = new Headers();
         assertEquals(Collections.<Set<String>>emptySet(), headers.keySet());
         headers.add("foo", "bar");
@@ -252,7 +253,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatValuesWorksAsExpected() {
+    void requireThatValuesWorksAsExpected() {
         Headers headers = new Headers();
         assertTrue(headers.values().isEmpty());
         headers.add("foo", "bar");
@@ -268,7 +269,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatEntrySetWorksAsExpected() {
+    void requireThatEntrySetWorksAsExpected() {
         Headers headers = new Headers();
         assertEquals(Collections.emptySet(), headers.entrySet());
         headers.put("foo", Arrays.asList("bar", "baz"));
@@ -282,7 +283,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatEntriesWorksAsExpected() {
+    void requireThatEntriesWorksAsExpected() {
         Headers headers = new Headers();
         assertEquals(Collections.emptyList(), headers.entries());
         headers.put("foo", Arrays.asList("bar", "baz"));
@@ -301,7 +302,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatEntryIsUnmodifiable() {
+    void requireThatEntryIsUnmodifiable() {
         Headers headers = new Headers();
         headers.put("foo", "bar");
         Map.Entry<String, String> entry = headers.entries().get(0);
@@ -314,7 +315,7 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatEntriesAreUnmodifiable() {
+    void requireThatEntriesAreUnmodifiable() {
         Headers headers = new Headers();
         headers.put("foo", "bar");
         List<Map.Entry<String, String>> entries = headers.entries();
@@ -333,25 +334,25 @@ public class HeadersTestCase {
     }
 
     @Test
-    public void requireThatEqualsWorksAsExpected() {
+    void requireThatEqualsWorksAsExpected() {
         Headers lhs = new Headers();
         Headers rhs = new Headers();
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
         lhs.add("foo", "bar");
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.add("foo", "bar");
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatHashCodeWorksAsExpected() {
+    void requireThatHashCodeWorksAsExpected() {
         Headers lhs = new Headers();
         Headers rhs = new Headers();
-        assertTrue(lhs.hashCode() == rhs.hashCode());
+        assertEquals(lhs.hashCode(), rhs.hashCode());
         lhs.add("foo", "bar");
         assertTrue(lhs.hashCode() != rhs.hashCode());
         rhs.add("foo", "bar");
-        assertTrue(lhs.hashCode() == rhs.hashCode());
+        assertEquals(lhs.hashCode(), rhs.hashCode());
     }
 
     private static class MyEntry implements Map.Entry<String, String> {

@@ -6,7 +6,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +30,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_with_all_nodes_reported_down_has_state_down() {
+    void cluster_with_all_nodes_reported_down_has_state_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(6).markEntireClusterDown();
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
@@ -41,7 +41,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_with_all_nodes_up_state_correct_distributor_and_storage_count() {
+    void cluster_with_all_nodes_up_state_correct_distributor_and_storage_count() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(6).bringEntireClusterUp();
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
@@ -49,7 +49,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void distributor_reported_states_reflected_in_generated_state() {
+    void distributor_reported_states_reflected_in_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(9)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(2, State.DOWN)
@@ -61,7 +61,7 @@ public class ClusterStateGeneratorTest {
 
     // NOTE: initializing state tested separately since it involves init progress state info
     @Test
-    public void storage_reported_states_reflected_in_generated_state() {
+    void storage_reported_states_reflected_in_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(9)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
@@ -72,7 +72,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void worse_distributor_wanted_state_overrides_reported_state() {
+    void worse_distributor_wanted_state_overrides_reported_state() {
         // Maintenance mode is illegal for distributors and therefore not tested
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
                 .bringEntireClusterUp()
@@ -85,7 +85,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void worse_storage_wanted_state_overrides_reported_state() {
+    void worse_storage_wanted_state_overrides_reported_state() {
         // Does not test all maintenance mode overrides; see maintenance_mode_overrides_reported_state
         // for that.
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
@@ -100,7 +100,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void better_distributor_wanted_state_does_not_override_reported_state() {
+    void better_distributor_wanted_state_does_not_override_reported_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN)
@@ -111,7 +111,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void better_storage_wanted_state_does_not_override_reported_state() {
+    void better_storage_wanted_state_does_not_override_reported_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, State.DOWN)
@@ -130,7 +130,7 @@ public class ClusterStateGeneratorTest {
      * directly from Maintenance -> Up.
      */
     @Test
-    public void retired_node_in_init_state_is_set_to_maintenance() {
+    void retired_node_in_init_state_is_set_to_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, State.INITIALIZING)
@@ -152,7 +152,7 @@ public class ClusterStateGeneratorTest {
      * value and triggering on a sufficiently low value.
      */
     @Test
-    public void storage_node_in_init_mode_while_listing_buckets_is_marked_down() {
+    void storage_node_in_init_mode_while_listing_buckets_is_marked_down() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
         initWhileListingBuckets.setInitProgress(0.0f);
 
@@ -169,7 +169,7 @@ public class ClusterStateGeneratorTest {
      * is set to Maintenance.
      */
     @Test
-    public void implicit_down_while_listing_buckets_does_not_override_wanted_state() {
+    void implicit_down_while_listing_buckets_does_not_override_wanted_state() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
         initWhileListingBuckets.setInitProgress(0.0f);
 
@@ -183,7 +183,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void distributor_nodes_in_init_mode_are_not_mapped_to_down() {
+    void distributor_nodes_in_init_mode_are_not_mapped_to_down() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.DISTRIBUTOR, State.INITIALIZING);
         initWhileListingBuckets.setInitProgress(0.0f);
 
@@ -199,7 +199,7 @@ public class ClusterStateGeneratorTest {
      * Maintenance mode overrides all reported states, even Down.
      */
     @Test
-    public void maintenance_mode_wanted_state_overrides_reported_state() {
+    void maintenance_mode_wanted_state_overrides_reported_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
                 .bringEntireClusterUp()
                 .proposeStorageNodeWantedState(0, State.MAINTENANCE)
@@ -215,7 +215,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void wanted_state_description_carries_over_to_generated_state() {
+    void wanted_state_description_carries_over_to_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
                 .bringEntireClusterUp()
                 .proposeStorageNodeWantedState(1, State.MAINTENANCE, "foo")
@@ -230,7 +230,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void config_retired_mode_is_reflected_in_generated_state() {
+    void config_retired_mode_is_reflected_in_generated_state() {
         ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .markNodeAsConfigRetired(2)
                 .bringEntireClusterUp();
@@ -241,7 +241,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void config_retired_mode_is_overridden_by_worse_wanted_state() {
+    void config_retired_mode_is_overridden_by_worse_wanted_state() {
         ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .markNodeAsConfigRetired(2)
                 .markNodeAsConfigRetired(3)
@@ -279,17 +279,17 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void reported_down_node_within_transition_time_has_maintenance_generated_state() {
+    void reported_down_node_within_transition_time_has_maintenance_generated_state() {
         do_test_change_within_node_transition_time_window_generates_maintenance(State.DOWN);
     }
 
     @Test
-    public void reported_stopping_node_within_transition_time_has_maintenance_generated_state() {
+    void reported_stopping_node_within_transition_time_has_maintenance_generated_state() {
         do_test_change_within_node_transition_time_window_generates_maintenance(State.STOPPING);
     }
 
     @Test
-    public void reported_node_down_after_transition_time_has_down_generated_state() {
+    void reported_node_down_after_transition_time_has_down_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .currentTimeInMilllis(11_000)
@@ -306,7 +306,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void distributor_nodes_are_not_implicitly_transitioned_to_maintenance_mode() {
+    void distributor_nodes_are_not_implicitly_transitioned_to_maintenance_mode() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .currentTimeInMilllis(10_000)
@@ -323,7 +323,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void transient_maintenance_mode_does_not_override_wanted_down_state() {
+    void transient_maintenance_mode_does_not_override_wanted_down_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .currentTimeInMilllis(10_000)
@@ -340,7 +340,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void reported_down_retired_node_within_transition_time_transitions_to_maintenance() {
+    void reported_down_retired_node_within_transition_time_transitions_to_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .currentTimeInMilllis(10_000)
@@ -356,7 +356,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void crash_count_exceeding_limit_marks_node_as_down() {
+    void crash_count_exceeding_limit_marks_node_as_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
 
@@ -368,7 +368,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void crash_count_not_exceeding_limit_does_not_mark_node_as_down() {
+    void crash_count_not_exceeding_limit_does_not_mark_node_as_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
 
@@ -380,7 +380,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void exceeded_crash_count_does_not_override_wanted_maintenance_state() {
+    void exceeded_crash_count_does_not_override_wanted_maintenance_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
                 .proposeStorageNodeWantedState(1, State.MAINTENANCE);
@@ -395,7 +395,7 @@ public class ClusterStateGeneratorTest {
 
     // Stopping -> Down is expected and does not indicate an unstable node.
     @Test
-    public void transition_from_controlled_stop_to_down_does_not_add_to_crash_counter() {
+    void transition_from_controlled_stop_to_down_does_not_add_to_crash_counter() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(2)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, State.STOPPING, "controlled shutdown") // urgh, string matching logic
@@ -405,7 +405,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void non_observed_storage_node_start_timestamp_is_included_in_state() {
+    void non_observed_storage_node_start_timestamp_is_included_in_state() {
         final NodeState nodeState = new NodeState(NodeType.STORAGE, State.UP);
         // A reported state timestamp that is not yet marked as observed in the NodeInfo
         // for the same node is considered not observed by other nodes and must therefore
@@ -421,7 +421,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void non_observed_distributor_start_timestamp_is_included_in_state() {
+    void non_observed_distributor_start_timestamp_is_included_in_state() {
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, State.UP);
         nodeState.setStartTimestamp(6000);
 
@@ -434,7 +434,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void fully_observed_storage_node_timestamp_not_included_in_state() {
+    void fully_observed_storage_node_timestamp_not_included_in_state() {
         final NodeState nodeState = new NodeState(NodeType.STORAGE, State.UP);
         nodeState.setStartTimestamp(5000);
 
@@ -450,7 +450,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void fully_observed_distributor_timestamp_not_included_in_state() {
+    void fully_observed_distributor_timestamp_not_included_in_state() {
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, State.UP);
         nodeState.setStartTimestamp(6000);
 
@@ -466,7 +466,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_count_of_storage_nodes_available() {
+    void cluster_down_if_less_than_min_count_of_storage_nodes_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
@@ -479,7 +479,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_count_of_storage_nodes_are_available() {
+    void cluster_not_down_if_more_than_min_count_of_storage_nodes_are_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN);
@@ -491,7 +491,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_count_of_distributors_available() {
+    void cluster_down_if_less_than_min_count_of_distributors_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN)
@@ -504,7 +504,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_count_of_distributors_are_available() {
+    void cluster_not_down_if_more_than_min_count_of_distributors_are_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN);
@@ -516,7 +516,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void maintenance_mode_counted_as_down_for_cluster_availability() {
+    void maintenance_mode_counted_as_down_for_cluster_availability() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
@@ -528,7 +528,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void init_and_retired_counted_as_up_for_cluster_availability() {
+    void init_and_retired_counted_as_up_for_cluster_availability() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.INITIALIZING)
@@ -541,7 +541,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_ratio_of_storage_nodes_available() {
+    void cluster_down_if_less_than_min_ratio_of_storage_nodes_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
@@ -555,7 +555,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_ratio_of_storage_nodes_available() {
+    void cluster_not_down_if_more_than_min_ratio_of_storage_nodes_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN);
@@ -568,7 +568,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_ratio_of_distributors_available() {
+    void cluster_down_if_less_than_min_ratio_of_distributors_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN)
@@ -582,7 +582,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_ratio_of_distributors_available() {
+    void cluster_not_down_if_more_than_min_ratio_of_distributors_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN);
@@ -594,7 +594,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void group_nodes_are_marked_down_if_group_availability_too_low() {
+    void group_nodes_are_marked_down_if_group_availability_too_low() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
                 .bringEntireClusterUp()
@@ -608,7 +608,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void group_nodes_are_not_marked_down_if_group_availability_sufficiently_high() {
+    void group_nodes_are_not_marked_down_if_group_availability_sufficiently_high() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
                 .bringEntireClusterUp()
@@ -620,7 +620,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void implicitly_downed_group_nodes_receive_a_state_description() {
+    void implicitly_downed_group_nodes_receive_a_state_description() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(2).eachWithNodeCount(2))
                 .bringEntireClusterUp()
@@ -634,7 +634,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void implicitly_downed_group_nodes_are_annotated_with_group_reason() {
+    void implicitly_downed_group_nodes_are_annotated_with_group_reason() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(2).eachWithNodeCount(2))
                 .bringEntireClusterUp()
@@ -647,7 +647,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void maintenance_nodes_in_downed_group_are_not_affected() {
+    void maintenance_nodes_in_downed_group_are_not_affected() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
                 .bringEntireClusterUp()
@@ -664,7 +664,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void group_nodes_are_marked_maintenance_if_group_availability_too_low_by_orchestrator() {
+    void group_nodes_are_marked_maintenance_if_group_availability_too_low_by_orchestrator() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
                 .bringEntireClusterUp()
@@ -679,7 +679,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void group_nodes_are_not_marked_maintenance_if_group_availability_high_by_orchestrator() {
+    void group_nodes_are_not_marked_maintenance_if_group_availability_high_by_orchestrator() {
         final ClusterFixture fixture = ClusterFixture
                 .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
                 .bringEntireClusterUp()
@@ -698,7 +698,7 @@ public class ClusterStateGeneratorTest {
      * and any buckets caught over this level would not be accessible in the data space.
      */
     @Test
-    public void distribution_bits_bounded_by_reported_min_bits_from_storage_node() {
+    void distribution_bits_bounded_by_reported_min_bits_from_storage_node() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7));
@@ -708,7 +708,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void distribution_bits_bounded_by_lowest_reporting_storage_node() {
+    void distribution_bits_bounded_by_lowest_reporting_storage_node() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(6))
@@ -719,7 +719,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void distribution_bits_bounded_by_config_parameter() {
+    void distribution_bits_bounded_by_config_parameter() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3).bringEntireClusterUp();
 
         final ClusterStateGenerator.Params params = fixture.generatorParams().idealDistributionBits(12);
@@ -731,7 +731,7 @@ public class ClusterStateGeneratorTest {
     // TODO We generally want to avoid distribution bit decreases if at all possible, since "collapsing"
     // the top-level bucket space can cause data loss on timestamp collisions across super buckets.
     @Test
-    public void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
+    void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7))
@@ -760,20 +760,20 @@ public class ClusterStateGeneratorTest {
      * let e.g. a transition from 10 bits to 20 bits cause 10 interim full re-distributions.
      */
     @Test
-    public void published_distribution_bit_bound_by_low_watermark_when_nodes_report_less_than_config_bits() {
+    void published_distribution_bit_bound_by_low_watermark_when_nodes_report_less_than_config_bits() {
         assertThat(do_test_distribution_bit_watermark(5, 5),
-                   equalTo("bits:5 distributor:3 storage:3"));
+                equalTo("bits:5 distributor:3 storage:3"));
         assertThat(do_test_distribution_bit_watermark(5, 6),
-                   equalTo("bits:5 distributor:3 storage:3"));
+                equalTo("bits:5 distributor:3 storage:3"));
         assertThat(do_test_distribution_bit_watermark(5, 15),
-                   equalTo("bits:5 distributor:3 storage:3"));
+                equalTo("bits:5 distributor:3 storage:3"));
     }
 
     @Test
-    public void published_state_jumps_to_configured_ideal_bits_when_all_nodes_report_it() {
+    void published_state_jumps_to_configured_ideal_bits_when_all_nodes_report_it() {
         // Note: the rest of the mocked nodes always report 16 bits by default
         assertThat(do_test_distribution_bit_watermark(5, 16),
-                   equalTo("distributor:3 storage:3")); // "bits:16" implied
+                equalTo("distributor:3 storage:3")); // "bits:16" implied
     }
 
     private String do_test_storage_node_with_no_init_progress(State wantedState) {
@@ -793,9 +793,9 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void storage_node_with_no_init_progress_within_timeout_is_marked_down() {
+    void storage_node_with_no_init_progress_within_timeout_is_marked_down() {
         assertThat(do_test_storage_node_with_no_init_progress(State.UP),
-                   equalTo("distributor:3 storage:3 .0.s:d"));
+                equalTo("distributor:3 storage:3 .0.s:d"));
     }
 
     /**
@@ -803,9 +803,9 @@ public class ClusterStateGeneratorTest {
      * as the wanted state.
      */
     @Test
-    public void maintenance_wanted_state_overrides_storage_node_with_no_init_progress() {
+    void maintenance_wanted_state_overrides_storage_node_with_no_init_progress() {
         assertThat(do_test_storage_node_with_no_init_progress(State.MAINTENANCE),
-                   equalTo("distributor:3 storage:3 .0.s:m"));
+                equalTo("distributor:3 storage:3 .0.s:m"));
     }
 
     /**
@@ -816,7 +816,7 @@ public class ClusterStateGeneratorTest {
      * their init stage and would otherwise pop in and out of the cluster state.
      */
     @Test
-    public void unstable_init_storage_node_has_init_state_substituted_by_down() {
+    void unstable_init_storage_node_has_init_state_substituted_by_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.INITIALIZING)
@@ -828,7 +828,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void storage_node_with_crashes_but_not_unstable_init_does_not_have_init_state_substituted_by_down() {
+    void storage_node_with_crashes_but_not_unstable_init_does_not_have_init_state_substituted_by_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f));
@@ -846,7 +846,7 @@ public class ClusterStateGeneratorTest {
      * potentially contributing additional instability to the cluster.
      */
     @Test
-    public void unstable_retired_node_should_be_marked_down() {
+    void unstable_retired_node_should_be_marked_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
                 .proposeStorageNodeWantedState(3, State.RETIRED);
@@ -860,7 +860,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void generator_params_can_inherit_values_from_controller_options() {
+    void generator_params_can_inherit_values_from_controller_options() {
         FleetControllerOptions options = new FleetControllerOptions("foocluster", Set.of(new ConfiguredNode(0, false)));
         options.maxPrematureCrashes = 1;
         options.minStorageNodesUp = 2;
@@ -881,7 +881,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void configured_zero_init_progress_time_disables_auto_init_to_down_feature() {
+    void configured_zero_init_progress_time_disables_auto_init_to_down_feature() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f));

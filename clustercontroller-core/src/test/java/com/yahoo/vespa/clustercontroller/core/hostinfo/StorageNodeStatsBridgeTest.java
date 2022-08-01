@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
 import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
 import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +14,7 @@ import java.util.Iterator;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author hakonhall
@@ -29,7 +29,7 @@ public class StorageNodeStatsBridgeTest {
     }
 
     @Test
-    public void testContentNodeStats() throws IOException {
+    void testContentNodeStats() throws IOException {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 

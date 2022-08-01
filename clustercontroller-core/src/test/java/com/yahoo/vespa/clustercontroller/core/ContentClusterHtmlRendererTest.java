@@ -7,8 +7,8 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONWriter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringWriter;
 import java.io.Writer;
@@ -27,7 +27,7 @@ public class ContentClusterHtmlRendererTest {
     private final TreeMap<Integer, NodeInfo> distributorNodeInfoByIndex = new TreeMap<>();
     private String result;
 
-    @Before
+    @BeforeEach
     public void before() throws JSONException {
         final ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
                 AnnotatedClusterState.withoutAnnotations(
@@ -71,7 +71,7 @@ public class ContentClusterHtmlRendererTest {
     }
 
     @Test
-    public void testVtagRendering() {
+    void testVtagRendering() {
         // 9 distribution nodes should have green tag on release1.
         assertThat(result.split("<td bgcolor=\"#c0ffc0\" align=\"right\"><nobr>release1</nobr></td>").length, is(10));
         // 1 distribution node should have warning on release1bad.

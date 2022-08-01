@@ -9,10 +9,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
@@ -21,13 +21,13 @@ import static org.junit.Assert.assertNotNull;
 public class NormalizedDefinitionTest {
 
     @Test
-    public void testNormalizingFromReader() {
+    void testNormalizingFromReader() {
         String def =
                 "aString string \n" +
-                "anInt int #comment \n" +
-                "aStringCommentCharacterAfter string default=\"ab\" #foo\n" +
-                "aStringWithCommentCharacter string default=\"a#b\"\n" +
-                "aStringWithEscapedQuote string default=\"a\"b\"\n";
+                        "anInt int #comment \n" +
+                        "aStringCommentCharacterAfter string default=\"ab\" #foo\n" +
+                        "aStringWithCommentCharacter string default=\"a#b\"\n" +
+                        "aStringWithEscapedQuote string default=\"a\"b\"\n";
 
         StringReader reader = new StringReader(def);
 
@@ -52,7 +52,7 @@ public class NormalizedDefinitionTest {
     }
 
     @Test
-    public void testNormalizingFromFile() throws IOException {
+    void testNormalizingFromFile() throws IOException {
         FileReader fileReader = null;
         try {
             fileReader = new FileReader("src/test/resources/configgen.allfeatures.def");

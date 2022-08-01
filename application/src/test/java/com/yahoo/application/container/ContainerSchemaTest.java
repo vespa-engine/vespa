@@ -6,12 +6,13 @@ import com.yahoo.application.container.searchers.AddHitSearcher;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -20,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class ContainerSchemaTest {
 
     @Test
-    public void processing_and_rendering_works() throws Exception {
+    void processing_and_rendering_works() throws Exception {
         final String searcherId = AddHitSearcher.class.getName();
 
         try (JDisc container = containerWithSearch(searcherId)) {
@@ -32,7 +33,7 @@ public class ContainerSchemaTest {
     }
 
     @Test
-    public void searching_works() {
+    void searching_works() {
         final String searcherId = AddHitSearcher.class.getName();
 
         try (JDisc container = containerWithSearch(searcherId)) {
@@ -54,11 +55,14 @@ public class ContainerSchemaTest {
                 "</container>", Networking.disable);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void retrieving_search_from_container_without_search_is_illegal() {
-        try (JDisc container = JDisc.fromServicesXml("<container version=\"1.0\" />", Networking.disable)) {
-            container.search(); // throws
-        }
+    @Test
+    void retrieving_search_from_container_without_search_is_illegal() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (JDisc container = JDisc.fromServicesXml("<container version=\"1.0\" />", Networking.disable)) {
+                container.search(); // throws
+            }
+
+        });
 
     }
 }

@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundleUtil;
 import com.yahoo.vespa.clustercontroller.core.StateMapping;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
@@ -25,13 +25,13 @@ public class SlimeClusterStateBundleCodecTest {
     }
 
     @Test
-    public void baseline_only_bundle_can_be_round_trip_encoded() {
+    void baseline_only_bundle_can_be_round_trip_encoded() {
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
         assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
     }
 
     @Test
-    public void multi_space_state_bundle_can_be_round_trip_encoded() {
+    void multi_space_state_bundle_can_be_round_trip_encoded() {
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
                 StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
                 StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
@@ -49,7 +49,7 @@ public class SlimeClusterStateBundleCodecTest {
     }
 
     @Test
-    public void encoded_cluster_states_can_be_compressed() {
+    void encoded_cluster_states_can_be_compressed() {
         ClusterStateBundle stateBundle = makeCompressableBundle();
 
         SlimeClusterStateBundleCodec codec = new SlimeClusterStateBundleCodec();
@@ -60,20 +60,20 @@ public class SlimeClusterStateBundleCodecTest {
     }
 
     @Test
-    public void uncompressed_enveloped_bundle_can_be_roundtrip_encoded() {
+    void uncompressed_enveloped_bundle_can_be_roundtrip_encoded() {
         // Insufficient length and too much entropy to be compressed
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:3");
         assertThat(roundtripEncodeWithEnvelope(stateBundle), equalTo(stateBundle));
     }
 
     @Test
-    public void compressable_enveloped_bundle_can_be_roundtrip_encoded() {
+    void compressable_enveloped_bundle_can_be_roundtrip_encoded() {
         ClusterStateBundle stateBundle = makeCompressableBundle();
         assertThat(roundtripEncodeWithEnvelope(stateBundle), equalTo(stateBundle));
     }
 
     @Test
-    public void can_roundtrip_encode_bundle_with_deferred_activation_enabled() {
+    void can_roundtrip_encode_bundle_with_deferred_activation_enabled() {
         var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
                 .deferredActivation(true)
                 .deriveAndBuild();
@@ -81,7 +81,7 @@ public class SlimeClusterStateBundleCodecTest {
     }
 
     @Test
-    public void can_roundtrip_encode_bundle_with_deferred_activation_disabled() {
+    void can_roundtrip_encode_bundle_with_deferred_activation_disabled() {
         var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
                 .deferredActivation(false)
                 .deriveAndBuild();
@@ -89,7 +89,7 @@ public class SlimeClusterStateBundleCodecTest {
     }
 
     @Test
-    public void can_roundtrip_encode_bundle_with_feed_block_state() {
+    void can_roundtrip_encode_bundle_with_feed_block_state() {
         var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
                 .feedBlock(ClusterStateBundle.FeedBlock.blockedWithDescription("more cake needed"))
                 .deriveAndBuild();

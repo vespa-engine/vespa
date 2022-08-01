@@ -4,9 +4,9 @@ package com.yahoo.config.codegen;
 import com.github.myproject.NamespaceAndPackageConfig;
 import com.github.myproject.PackageConfig;
 import com.yahoo.my.namespace.NamespaceConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author gjoranv
@@ -16,17 +16,17 @@ public class NamespaceAndPackageTest {
     private static String PACKAGE = "com.github.myproject";
 
     @Test
-    public void namespace_is_set_from_def_file() {
+    void namespace_is_set_from_def_file() {
         assertEquals(NAMESPACE, NamespaceConfig.CONFIG_DEF_NAMESPACE);
     }
 
     @Test
-    public void package_is_used_as_namespace_when_namespace_is_not_set_explicitly() {
+    void package_is_used_as_namespace_when_namespace_is_not_set_explicitly() {
         assertEquals(PACKAGE, PackageConfig.CONFIG_DEF_NAMESPACE);
     }
 
     @Test
-    public void package_does_not_override_namespace() {
+    void package_does_not_override_namespace() {
         assertEquals(NAMESPACE, NamespaceAndPackageConfig.CONFIG_DEF_NAMESPACE);
 
     }

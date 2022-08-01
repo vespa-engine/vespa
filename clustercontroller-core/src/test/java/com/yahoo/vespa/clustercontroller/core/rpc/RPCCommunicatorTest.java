@@ -21,7 +21,7 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.HashSet;
@@ -33,7 +33,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,7 +51,7 @@ public class RPCCommunicatorTest {
     private static final int ROUNDTRIP_LATENCY_SECONDS = 2000;
 
     @Test
-    public void testGenerateNodeStateRequestTimeoutMs() {
+    void testGenerateNodeStateRequestTimeoutMs() {
         final RPCCommunicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 null /* Timer */,
@@ -74,11 +74,11 @@ public class RPCCommunicatorTest {
         assertThat(min, is(not(max)));
         assertTrue(min >= NODE_STATE_REQUEST_TIMEOUT_INTERVAL_START_PERCENTAGE *
                 NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS / 100);
-        assertTrue(uniqueTimeoutValues.size()> TEST_ITERATIONS/2);
+        assertTrue(uniqueTimeoutValues.size() > TEST_ITERATIONS / 2);
     }
 
     @Test
-    public void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
+    void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
         final RPCCommunicator communicator = new RPCCommunicator(RPCCommunicator.createRealSupervisor(), null /* Timer */, INDEX, 1, 1, 100, 0);
         FleetControllerOptions fleetControllerOptions = new FleetControllerOptions(null /*clustername*/, Set.of(new ConfiguredNode(0, false)));
         fleetControllerOptions.nodeStateRequestTimeoutEarliestPercentage = 100;
@@ -90,7 +90,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void testRoundtripLatency() {
+    void testRoundtripLatency() {
         final Timer timer = new FakeTimer();
         final RPCCommunicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
@@ -111,7 +111,7 @@ public class RPCCommunicatorTest {
         communicator.getNodeState(nodeInfo, null);
         Mockito.verify(target).invokeAsync(
                 any(),
-                eq(ROUNDTRIP_LATENCY_SECONDS + NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS/1000.0),
+                eq(ROUNDTRIP_LATENCY_SECONDS + NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS / 1000.0),
                 any());
     }
 
@@ -146,7 +146,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void setSystemState_v3_sends_distribution_states_rpc() {
+    void setSystemState_v3_sends_distribution_states_rpc() {
         var f = new Fixture<SetClusterStateRequest>();
         var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
         var sentBundle = ClusterStateBundleUtil.makeBundle("distributor:3 storage:3");
@@ -162,7 +162,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void set_distribution_states_v3_rpc_auto_downgrades_to_v2_on_unknown_method_error() {
+    void set_distribution_states_v3_rpc_auto_downgrades_to_v2_on_unknown_method_error() {
         var f = new Fixture<SetClusterStateRequest>();
         var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
         var sentBundle = ClusterStateBundleUtil.makeBundle("version:123 distributor:3 storage:3");
@@ -188,7 +188,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void activateClusterStateVersion_sends_version_activation_rpc() {
+    void activateClusterStateVersion_sends_version_activation_rpc() {
         var f = new Fixture<ActivateClusterStateVersionRequest>();
         var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
         f.communicator.activateClusterStateVersion(12345, cf.cluster().getNodeInfo(Node.ofDistributor(1)), f.mockWaiter);

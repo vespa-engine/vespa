@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.Group;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class LeafGroupsTest {
 
     @Test
-    public void rootGroupCountedAsLeafWhenNoChildren() {
+    void rootGroupCountedAsLeafWhenNoChildren() {
         Group g = new Group(0, "donkeykong");
 
         List<Group> leaves = LeafGroups.enumerateFrom(g);
@@ -25,7 +25,7 @@ public class LeafGroupsTest {
     }
 
     @Test
-    public void singleLeafIsEnumerated() throws Exception {
+    void singleLeafIsEnumerated() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group child = new Group(1, "mario");
         g.addSubGroup(child);
@@ -36,7 +36,7 @@ public class LeafGroupsTest {
     }
 
     @Test
-    public void singleLeafIsEnumeratedInNestedCase() throws Exception {
+    void singleLeafIsEnumeratedInNestedCase() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group child = new Group(1, "mario", dummyDistribution());
         child.addSubGroup(new Group(2, "toad"));
@@ -48,7 +48,7 @@ public class LeafGroupsTest {
     }
 
     @Test
-    public void multipleLeafGroupsAreEnumerated() throws Exception {
+    void multipleLeafGroupsAreEnumerated() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group child = new Group(1, "mario", dummyDistribution());
         child.addSubGroup(new Group(2, "toad"));

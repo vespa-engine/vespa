@@ -8,14 +8,14 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.Payload;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -47,7 +47,7 @@ public class MemoryCacheTest {
     private Payload payload2;
     private Payload payloadDifferentMd5;
 
-    @Before
+    @BeforeEach
     public void setup() {
         ArrayList<String> defContent = new ArrayList<>();
         defContent.add("bar string");
@@ -74,7 +74,7 @@ public class MemoryCacheTest {
     }
 
     @Test
-    public void basic() {
+    void basic() {
         MemoryCache cache = new MemoryCache();
 
         cache.update(config);
@@ -97,7 +97,7 @@ public class MemoryCacheTest {
     }
 
     @Test
-    public void testSameConfigNameDifferentMd5() {
+    void testSameConfigNameDifferentMd5() {
         MemoryCache cache = new MemoryCache();
 
         cache.update(config);

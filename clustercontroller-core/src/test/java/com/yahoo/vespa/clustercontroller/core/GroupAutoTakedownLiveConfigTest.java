@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
@@ -53,14 +53,14 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     }
 
     @Test
-    public void bootstrap_min_ratio_option_is_propagated_to_group_availability_logic() throws Exception {
+    void bootstrap_min_ratio_option_is_propagated_to_group_availability_logic() throws Exception {
         setUp3x3ClusterWithMinNodeRatio(0.67);
         takeDownContentNode(0);
         waitForStateExcludingNodeSubset("version:\\d+ distributor:9 storage:9 .0.s:d .1.s:d .2.s:d", asIntSet(0));
     }
 
     @Test
-    public void min_ratio_live_reconfig_immediately_takes_effect() throws Exception {
+    void min_ratio_live_reconfig_immediately_takes_effect() throws Exception {
         // Initially, arbitrarily many nodes may be down in a group.
         setUp3x3ClusterWithMinNodeRatio(0.0);
         takeDownContentNode(3);
@@ -75,7 +75,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     }
 
     @Test
-    public void live_distribution_config_changes_trigger_cluster_state_change() throws Exception {
+    void live_distribution_config_changes_trigger_cluster_state_change() throws Exception {
         setUp3x3ClusterWithMinNodeRatio(0.65);
         takeDownContentNode(6);
 

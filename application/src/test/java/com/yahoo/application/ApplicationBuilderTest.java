@@ -2,13 +2,12 @@
 package com.yahoo.application;
 
 import com.yahoo.io.IOUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -16,55 +15,53 @@ import static org.junit.Assert.assertTrue;
  */
 public class ApplicationBuilderTest {
     @Test
-    public void query_profile_types_can_be_added() throws Exception {
+    void query_profile_types_can_be_added() throws Exception {
         withApplicationBuilder(builder -> {
             builder.queryProfileType("MyProfileType", "<query-profile-type id=\"MyProfileType\">" + //
-            "<field name=\"age\" type=\"integer\" />" + //
-            "<field name=\"profession\" type=\"string\" />" + //
-            "<field name=\"user\" type=\"query-profile:MyUserProfile\" />" + //
-            "</query-profile-type>");
+                    "<field name=\"age\" type=\"integer\" />" + //
+                    "<field name=\"profession\" type=\"string\" />" + //
+                    "<field name=\"user\" type=\"query-profile:MyUserProfile\" />" + //
+                    "</query-profile-type>");
 
             assertTrue(Files.exists(builder.getPath().resolve("search/query-profiles/types/MyProfileType.xml")));
         });
     }
 
     @Test
-    public void query_profile_can_be_added() throws Exception {
+    void query_profile_can_be_added() throws Exception {
         withApplicationBuilder(builder -> {
             builder.queryProfile("MyProfile",
-                                 "<query-profile id=\"MyProfile\">" +
-                                 "<field name=\"message\">Hello world!</field>" +
-                                 "</query-profile>");
+                    "<query-profile id=\"MyProfile\">" +
+                            "<field name=\"message\">Hello world!</field>" +
+                            "</query-profile>");
 
             assertTrue(Files.exists(builder.getPath().resolve("search/query-profiles/MyProfile.xml")));
         });
     }
 
     @Test
-    public void rank_expression_can_be_added() throws Exception {
+    void rank_expression_can_be_added() throws Exception {
         withApplicationBuilder(builder -> {
             builder.rankExpression("myExpression", "content");
             assertTrue(Files.exists(builder.getPath().resolve("schemas/myExpression.expression")));
         });
     }
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
+    // application unreferenced inside try
     @Test
-    @SuppressWarnings("try") // application unreferenced inside try
-    public void builder_cannot_be_reused() throws Exception {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("build method");
+    @SuppressWarnings("try")
+    void builder_cannot_be_reused() throws Exception {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
 
-        ApplicationBuilder builder = new ApplicationBuilder();
-        builder.servicesXml("<container version=\"1.0\" />");
-        try (Application application = builder.build()) {
-            // do nothing
-        }
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.servicesXml("<container version=\"1.0\" />");
+            try (Application application = builder.build()) {
+                // do nothing
+            }
 
-        builder.servicesXml(""); // should fail
+            builder.servicesXml(""); // should fail
+        });
+        assertTrue(exception.getMessage().contains("build method")); // should fail
     }
 
     private interface TestCase {

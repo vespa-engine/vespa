@@ -1,13 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Ulf Lilleengen
@@ -15,38 +16,78 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeVectorTest {
 
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_add_throws_exception() { new TestNodeVector("foo").add(barNode()); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addindex_throws_exception() { new TestNodeVector("foo").add(0, barNode()); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addAll_throws_exception() { new TestNodeVector("foo").addAll(Arrays.asList(barNode())); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addAllindex_throws_exception() { new TestNodeVector("foo").addAll(0, Arrays.asList(barNode())); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_clear_throws_exception() { new TestNodeVector("foo").clear(); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_remove_index_throws_exception() { new TestNodeVector("foo").remove(0); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_remove_object_throws_exception() { new TestNodeVector("foo").remove(null); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_removeAll_throws_exception() { new TestNodeVector("foo").removeAll(null); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_retainAll_throws_exception() { new TestNodeVector("foo").retainAll(null); }
-
-    @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_set_throws_exception() { new TestNodeVector("foo").set(0, null); }
+    @Test
+    void require_that_add_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").add(barNode());
+        });
+    }
 
     @Test
-    public void require_that_contains_works() {
+    void require_that_addindex_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").add(0, barNode());
+        });
+    }
+
+    @Test
+    void require_that_addAll_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").addAll(Arrays.asList(barNode()));
+        });
+    }
+
+    @Test
+    void require_that_addAllindex_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").addAll(0, Arrays.asList(barNode()));
+        });
+    }
+
+    @Test
+    void require_that_clear_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").clear();
+        });
+    }
+
+    @Test
+    void require_that_remove_index_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").remove(0);
+        });
+    }
+
+    @Test
+    void require_that_remove_object_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").remove(null);
+        });
+    }
+
+    @Test
+    void require_that_removeAll_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").removeAll(null);
+        });
+    }
+
+    @Test
+    void require_that_retainAll_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").retainAll(null);
+        });
+    }
+
+    @Test
+    void require_that_set_throws_exception() {
+        assertThrows(NodeVector.ReadOnlyException.class, () -> {
+            new TestNodeVector("foo").set(0, null);
+        });
+    }
+
+    @Test
+    void require_that_contains_works() {
         StringNode val = new StringNode("foo");
         TestNodeVector v = new TestNodeVector(val.getValue());
         assertTrue(v.contains(val));
@@ -56,7 +97,7 @@ public class NodeVectorTest {
     }
 
     @Test
-    public void require_that_indexOf_works() {
+    void require_that_indexOf_works() {
         StringNode val = new StringNode("foo");
         TestNodeVector v = new TestNodeVector(val.getValue());
         assertFalse(v.isEmpty());
@@ -67,7 +108,7 @@ public class NodeVectorTest {
     }
 
     @Test
-    public void require_that_iterators_work() {
+    void require_that_iterators_work() {
         String val = "foo";
         TestNodeVector v = new TestNodeVector(val, val, val);
         assertTrue(v.listIterator().hasNext());
@@ -78,7 +119,7 @@ public class NodeVectorTest {
     }
 
     @Test
-    public void require_that_sublisting_works() {
+    void require_that_sublisting_works() {
         String val = "foo";
         TestNodeVector v = new TestNodeVector(val, val, val);
         assertEquals(1, v.subList(0, 1).size());

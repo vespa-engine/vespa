@@ -127,6 +127,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     @Override
     public void start() throws Exception {
         log.finer("Initializing application.");
+        watchdog.start();
         Injector injector = guiceModules.activate();
         Application app;
         if (!appBundles.isEmpty()) {

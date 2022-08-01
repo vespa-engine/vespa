@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -57,7 +57,7 @@ public class MetricReporterTest {
     }
 
     @Test
-    public void metrics_are_emitted_for_different_node_state_counts() {
+    void metrics_are_emitted_for_different_node_state_counts() {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
                 ClusterState.stateFromString("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:d"),
@@ -90,28 +90,28 @@ public class MetricReporterTest {
     }
 
     @Test
-    public void metrics_are_emitted_for_partial_node_availability_ratio() {
+    void metrics_are_emitted_for_partial_node_availability_ratio() {
         // Only Up, Init, Retired and Maintenance are counted as available states
         doTestRatiosInState("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:r .5.s:i .6.s:s", 0.9, 0.7);
     }
 
     @Test
-    public void metrics_are_emitted_for_full_node_availability_ratio() {
+    void metrics_are_emitted_for_full_node_availability_ratio() {
         doTestRatiosInState("distributor:10 storage:10", 1.0, 1.0);
     }
 
     @Test
-    public void metrics_are_emitted_for_zero_node_availability_ratio() {
+    void metrics_are_emitted_for_zero_node_availability_ratio() {
         doTestRatiosInState("cluster:d", 0.0, 0.0);
     }
 
     @Test
-    public void maintenance_mode_is_counted_as_available() {
+    void maintenance_mode_is_counted_as_available() {
         doTestRatiosInState("distributor:10 storage:10 .0.s:m", 1.0, 1.0);
     }
 
     @Test
-    public void metrics_are_emitted_for_resource_usage() {
+    void metrics_are_emitted_for_resource_usage() {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
                 ClusterState.stateFromString("distributor:10 storage:10"),
