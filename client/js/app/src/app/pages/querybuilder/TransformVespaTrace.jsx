@@ -14,17 +14,17 @@ const genRanHex = (size) =>
 export default function transform(trace) {
   traceID = genRanHex(32);
   output = { data: [{ traceID: traceID, spans: [], processes: {} }] };
-  //let data = output['data'][0]['spans'];
+  let data = output['data'][0]['spans'];
   processes = output['data'][0]['processes'];
   processes.p0 = { serviceName: 'Query', tags: [] };
   let temp = trace['trace']['children'];
   let spans = findChildren(temp);
   traceStartTimestamp = findTraceStartTime(spans);
   topSpanId = genRanHex(16);
-  //let topSpanFirstHalf = createNewSpan(traceStartTimestamp);
-  //data.push(topSpanFirstHalf);
+  let topSpanFirstHalf = createNewSpan(traceStartTimestamp)[0];
+  data.push(topSpanFirstHalf);
 
-  const retrieved = findLogsAndChildren(spans);
+  const retrieved = findLogsAndChildren(spans, topSpanFirstHalf);
   const logs = retrieved['logs'];
   const children = retrieved['children'];
   traverseLogs(logs);
@@ -33,7 +33,7 @@ export default function transform(trace) {
   return output;
 }
 
-function findLogsAndChildren(spans) {
+function findLogsAndChildren(spans, topSpanFirstHalf) {
   let logs = [];
   let children = [];
   let data = output['data'][0]['spans'];
@@ -44,6 +44,8 @@ function findLogsAndChildren(spans) {
   //let firstHitSecondHalf = true;
   for (let i = 0; i < spans.length - 1; i++) {
     if (spans[i].hasOwnProperty('children')) {
+      let a = spans[i]['timestamp'];
+      topSpanFirstHalf = createNewSpan(traceStartTimestamp + a);
       //firstHitSecondHalf = true;
       //topSpanSecondHalf = createNewSpan();
       //output['data'][0]['spans'].push(topSpanSecondHalf);
@@ -70,16 +72,23 @@ function findLogsAndChildren(spans) {
       spans[i].hasOwnProperty('message') &&
       spans[i].hasOwnProperty('timestamp')
     ) {
-      let span = createNewSpan(0, 0, 'p0', spans[i]['message'])[0];
+      let span = createNewSpan(0, 0, 'p0', spans[i]['message'], [
+        {
+          refType: 'CHILD_OF',
+          traceID: traceID,
+          spanID: topSpanFirstHalf['spanID'],
+        },
+      ])[0];
       data.push(span);
-      span['startTime'] = traceStartTimestamp + spans[i]['timestamp'];
+      span['startTime'] = traceStartTimestamp + spans[i]['timestamp'] * 1000;
       let duration;
       if (i === spans.length - 1) {
         duration = 1;
       } else {
-        duration = spans[i + 1]['timestamp'] - spans[i]['timestamp'];
+        duration = (spans[i + 1]['timestamp'] - spans[i]['timestamp']) * 1000;
         duration = duration === 0 ? 1 : duration;
       }
+      topSpanFirstHalf['duration'] = topSpanFirstHalf['duration'] + duration;
       span['duration'] = duration;
       // if (hitQuery) {
       //   if (firstHitSecondHalf) {
