@@ -1,22 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -29,11 +25,9 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,27 +42,15 @@ class AutoscalingTester {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    /** Creates an autoscaling tester with a single host type ready */
-    public AutoscalingTester(NodeResources hostResources) {
-        this(Environment.prod, hostResources);
-    }
-
-    public AutoscalingTester(Environment environment, NodeResources hostResources) {
-        this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
-    }
-
-    public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<NodeResources> hostResources) {
         this(zone, hostResources, resourcesCalculator, 20);
     }
 
-    private AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
-        this(zone, List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
-        provisioningTester.makeReadyNodes(hostCount, "hostFlavor", NodeType.host, 8);
+    private AutoscalingTester(Zone zone, List<NodeResources> hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
+        this(zone, toFlavors(hostResources), resourcesCalculator);
+        for (Flavor flavor : toFlavors(hostResources))
+            provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
-    }
-
-    public AutoscalingTester(Zone zone, List<Flavor> flavors) {
-        this(zone, flavors, new MockHostResourcesCalculator(zone, 3));
     }
 
     private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator) {
@@ -81,6 +63,13 @@ class AutoscalingTester {
         hostResourcesCalculator = resourcesCalculator;
         autoscaler = new Autoscaler(nodeRepository());
         capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
+    }
+
+    private static List<Flavor> toFlavors(List<NodeResources> resources) {
+        List<Flavor> flavors = new ArrayList<>();
+        for (int i = 0; i < resources.size(); i++)
+            flavors.add(new Flavor("flavor" + i, resources.get(i)));
+        return flavors;
     }
 
     public static Fixture.Builder fixture() { return new Fixture.Builder(); }
@@ -121,10 +110,6 @@ class AutoscalingTester {
             nodeRepository().nodes().setReady(List.of(host), Agent.system, getClass().getSimpleName());
     }
 
-    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        deactivateRetired(application, cluster, Capacity.from(resources));
-    }
-
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
         try (Mutex lock = nodeRepository().nodes().lock(application)) {
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
@@ -133,145 +118,6 @@ class AutoscalingTester {
             }
         }
         deploy(application, cluster, capacity);
-    }
-
-    public ClusterModel clusterModel(ApplicationId applicationId, ClusterSpec clusterSpec) {
-        var application = nodeRepository().applications().get(applicationId).get();
-        return new ClusterModel(application,
-                                clusterSpec,
-                                application.cluster(clusterSpec.id()).get(),
-                                nodeRepository().nodes().list(Node.State.active).cluster(clusterSpec.id()),
-                                nodeRepository().metricsDb(),
-                                nodeRepository().clock());
-    }
-
-    /**
-     * Adds measurements with the given resource value and ideal values for the other resources,
-     * scaled to take one node redundancy into account.
-     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
-     * wanting to see the ideal load with one node missing.)
-     *
-     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
-     * @param count the number of measurements
-     * @param applicationId the application we're adding measurements for all nodes of
-     */
-    public Duration addCpuMeasurements(float value, float otherResourcesLoad,
-                                       int count, ApplicationId applicationId) {
-        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
-        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
-        Instant initialTime = clock().instant();
-        for (int i = 0; i < count; i++) {
-            clock().advance(Duration.ofSeconds(150));
-            for (Node node : nodes) {
-                Load load = new Load(value,
-                                     ClusterModel.idealMemoryLoad * otherResourcesLoad,
-                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
-                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
-                                                                  new NodeMetricSnapshot(clock().instant(),
-                                                                                         load,
-                                                                                         0,
-                                                                                         true,
-                                                                                         true,
-                                                                                         0.0))));
-            }
-        }
-        return Duration.between(initialTime, clock().instant());
-    }
-
-    /**
-     * Adds measurements with the given resource value and ideal values for the other resources,
-     * scaled to take one node redundancy into account.
-     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
-     * wanting to see the ideal load with one node missing.)
-     *
-     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
-     * @param count the number of measurements
-     * @param applicationId the application we're adding measurements for all nodes of
-     * @return the duration added to the current time by this
-     */
-    public Duration addDiskMeasurements(float value, float otherResourcesLoad,
-                                        int count, ApplicationId applicationId) {
-        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
-        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
-        Instant initialTime = clock().instant();
-        for (int i = 0; i < count; i++) {
-            clock().advance(Duration.ofSeconds(150));
-            for (Node node : nodes) {
-                Load load = new Load(ClusterModel.idealQueryCpuLoad * otherResourcesLoad,
-                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad,
-                                     value).multiply(oneExtraNodeFactor);
-                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
-                                                                  new NodeMetricSnapshot(clock().instant(),
-                                                                                         load,
-                                                                                         0,
-                                                                                         true,
-                                                                                         true,
-                                                                                         0.0))));
-            }
-        }
-        return Duration.between(initialTime, clock().instant());
-    }
-
-    /**
-     * Adds measurements with the given resource value and ideal values for the other resources,
-     * scaled to take one node redundancy into account.
-     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
-     * wanting to see the ideal load with one node missing.)
-     *
-     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
-     * @param count the number of measurements
-     * @param applicationId the application we're adding measurements for all nodes of
-     */
-    public void addMemMeasurements(float value, float otherResourcesLoad,
-                                   int count, ApplicationId applicationId) {
-        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
-        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
-        for (int i = 0; i < count; i++) {
-            clock().advance(Duration.ofMinutes(1));
-            for (Node node : nodes) {
-                float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
-                float memory = value * oneExtraNodeFactor;
-                float disk = (float) ClusterModel.idealContentDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
-                Load load = new Load(0.2 * otherResourcesLoad,
-                                     value,
-                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
-                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
-                                                                  new NodeMetricSnapshot(clock().instant(),
-                                                                                         load,
-                                                                                         0,
-                                                                                         true,
-                                                                                         true,
-                                                                                         0.0))));
-            }
-        }
-    }
-
-    public void addMeasurements(float cpu, float memory, float disk, int count, ApplicationId applicationId)  {
-        addMeasurements(cpu, memory, disk, 0, true, true, count, applicationId);
-    }
-
-    public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
-                                int count, ApplicationId applicationId) {
-        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
-        for (int i = 0; i < count; i++) {
-            clock().advance(Duration.ofMinutes(1));
-            for (Node node : nodes) {
-                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
-                                                                  new NodeMetricSnapshot(clock().instant(),
-                                                                                         new Load(cpu, memory, disk),
-                                                                                         generation,
-                                                                                         inService,
-                                                                                         stable,
-                                                                                         0.0))));
-            }
-        }
-    }
-
-    public void storeReadShare(double currentReadShare, double maxReadShare, ApplicationId applicationId) {
-        Application application = nodeRepository().applications().require(applicationId);
-        application = application.with(application.status().withCurrentReadShare(currentReadShare)
-                                                           .withMaxReadShare(maxReadShare));
-        nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
     }
 
     /** Creates a single redeployment event with bogus data except for the given duration */
@@ -292,47 +138,6 @@ class AutoscalingTester {
                                                    clock().instant().minus(Duration.ofDays(1).minus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
         application = application.with(cluster);
         nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
-    }
-
-    /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
-    public Duration addLoadMeasurements(ApplicationId application,
-                                    ClusterSpec.Id cluster,
-                                    int measurements,
-                                    IntFunction<Double> queryRate,
-                                    IntFunction<Double> writeRate) {
-        Instant initialTime = clock().instant();
-        for (int i = 0; i < measurements; i++) {
-            nodeMetricsDb().addClusterMetrics(application,
-                                              Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
-                                                                                        queryRate.apply(i),
-                                                                                        writeRate.apply(i))));
-            clock().advance(Duration.ofMinutes(5));
-        }
-        return Duration.between(initialTime, clock().instant());
-    }
-
-    /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
-    public Duration addQueryRateMeasurements(ApplicationId application,
-                                             ClusterSpec.Id cluster,
-                                             int measurements,
-                                             IntFunction<Double> queryRate) {
-        return addQueryRateMeasurements(application, cluster, measurements, Duration.ofMinutes(5), queryRate);
-    }
-
-    public Duration addQueryRateMeasurements(ApplicationId application,
-                                             ClusterSpec.Id cluster,
-                                             int measurements,
-                                             Duration samplingInterval,
-                                             IntFunction<Double> queryRate) {
-        Instant initialTime = clock().instant();
-        for (int i = 0; i < measurements; i++) {
-            nodeMetricsDb().addClusterMetrics(application,
-                                              Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
-                                                                                        queryRate.apply(i),
-                                                                                        0.0)));
-            clock().advance(samplingInterval);
-        }
-        return Duration.between(initialTime, clock().instant());
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
