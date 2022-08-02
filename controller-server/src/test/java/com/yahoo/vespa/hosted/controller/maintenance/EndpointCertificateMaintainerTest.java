@@ -1,19 +1,32 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
@@ -118,6 +131,21 @@ public class EndpointCertificateMaintainerTest {
         deploymentContext.assertNotRunning(productionUsWest1);
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertRunning(productionUsWest1);
+    }
+
+    @Test
+    void testEligibleSorting() {
+        EndpointCertificateMaintainer.EligibleJob oldestDeployment = makeDeploymentAtAge(5);
+        assertEquals(
+                oldestDeployment,
+                Stream.of(makeDeploymentAtAge(2), oldestDeployment, makeDeploymentAtAge(4)).min(maintainer.oldestFirst).get());
+    }
+
+    @NotNull
+    private EndpointCertificateMaintainer.EligibleJob makeDeploymentAtAge(int ageInDays) {
+        var deployment = new Deployment(ZoneId.defaultId(), RevisionId.forProduction(1), Version.emptyVersion,
+                Instant.now().minus(ageInDays, ChronoUnit.DAYS), DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty());
+        return new EndpointCertificateMaintainer.EligibleJob(deployment, ApplicationId.defaultId(), JobType.prod("somewhere"));
     }
 
     @Test
