@@ -340,6 +340,12 @@
                                         <delete dir="target/application-test/src" />
 
                                         <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/components/" />
+
+                                        <!-- Copy any additional application bundles to the test package -->
+                                        <copy todir="target/application-test/components">
+                                            <fileset dir="target/application/components" includes="*.jar" excludes="${project.artifactId}-deploy.jar" />
+                                        </copy>
+
                                         <zip destfile="target/application-test.zip" basedir="target/application-test/" />
                                     </tasks>
                                 </configuration>
