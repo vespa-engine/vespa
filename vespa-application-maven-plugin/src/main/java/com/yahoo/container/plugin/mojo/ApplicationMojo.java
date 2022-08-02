@@ -76,17 +76,18 @@ public class ApplicationMojo extends AbstractMojo {
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
 
-        String metaData = String.format("{\n" +
-                                        "  \"compileVersion\": \"%s\",\n" +
-                                        "  \"buildTime\": %d,\n" +
-                                        "  \"parentVersion\": %s\n" +
-                                        "}",
+        String metaData = String.format("""
+                                        {
+                                          "compileVersion": "%s",
+                                          "buildTime": %d,
+                                          "parentVersion": %s
+                                        }
+                                        """,
                                         compileVersion,
                                         System.currentTimeMillis(),
                                         parentVersion == null ? null : "\"" + parentVersion + "\"");
         try {
-            Files.write(applicationDestination.toPath().resolve("build-meta.json"),
-                        metaData.getBytes(StandardCharsets.UTF_8));
+            Files.writeString(applicationDestination.toPath().resolve("build-meta.json"), metaData);
         }
         catch (IOException e) {
             throw new MojoExecutionException("Failed writing compile version and build time.", e);

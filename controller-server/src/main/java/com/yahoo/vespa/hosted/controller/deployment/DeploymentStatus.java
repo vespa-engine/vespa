@@ -544,7 +544,9 @@ public class DeploymentStatus {
                 if (job.type().isProduction() && job.type().isDeployment()) {
                     declaredTest(job.application(), testType).ifPresent(testJob -> {
                         for (Job productionJob : versionsList)
-                            if (allJobs.successOn(testType, productionJob.versions()).asList().isEmpty())
+                            if (allJobs.successOn(testType, productionJob.versions())
+                                       .instance(testJob.application().instance())
+                                       .asList().isEmpty())
                                 testJobs.merge(testJob, List.of(new Job(testJob.type(),
                                                                         productionJob.versions(),
                                                                         jobSteps().get(testJob).readyAt(productionJob.change),

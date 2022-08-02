@@ -3,7 +3,6 @@ package com.yahoo.container.plugin.mojo;
 import java.util.Comparator;
 import java.util.Objects;
 
-import static java.lang.Integer.min;
 import static java.lang.Integer.parseInt;
 
 /**
