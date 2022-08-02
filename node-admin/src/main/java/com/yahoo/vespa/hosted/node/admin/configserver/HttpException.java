@@ -14,18 +14,13 @@ public class HttpException extends ConvergenceException {
     private final boolean isRetryable;
 
     private HttpException(int statusCode, String message, boolean isRetryable) {
-        super("HTTP status code " + statusCode + ": " + message);
+        super("HTTP status code " + statusCode + ": " + message, null, !isRetryable);
         this.isRetryable = isRetryable;
     }
 
     private HttpException(Response.Status status, String message, boolean isRetryable) {
-        super(status.toString() + " (" + status.getStatusCode() + "): " + message);
+        super(status.toString() + " (" + status.getStatusCode() + "): " + message, null, !isRetryable);
         this.isRetryable = isRetryable;
-    }
-
-    private HttpException(String message) {
-        super(message);
-        this.isRetryable = false;
     }
 
     boolean isRetryable() {

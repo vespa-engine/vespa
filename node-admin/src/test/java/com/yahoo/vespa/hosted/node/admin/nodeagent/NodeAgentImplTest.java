@@ -334,7 +334,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
         when(containerOperations.pullImageAsyncIfNeeded(any(), eq(dockerImage), any())).thenReturn(false);
-        doThrow(new ConvergenceException("Connection refused")).doNothing()
+        doThrow(ConvergenceException.ofTransient("Connection refused")).doNothing()
                 .when(healthChecker).verifyHealth(eq(context));
 
         try {
@@ -640,7 +640,7 @@ public class NodeAgentImplTest {
 
         InOrder inOrder = inOrder(orchestrator, containerOperations);
 
-        ConvergenceException healthCheckException = new ConvergenceException("Not yet up");
+        ConvergenceException healthCheckException = ConvergenceException.ofTransient("Not yet up");
         doThrow(healthCheckException).when(healthChecker).verifyHealth(any());
         for (int i = 0; i < 3; i++) {
             try {

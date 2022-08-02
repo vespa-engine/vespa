@@ -51,7 +51,7 @@ public class CoreCollector {
 
         Matcher matcher = CORE_GENERATOR_PATH_PATTERN.matcher(result.getOutput());
         if (! matcher.find()) {
-            throw new ConvergenceException(String.format("Failed to extract binary path from GDB, result: %s, command: %s",
+            throw ConvergenceException.ofError(String.format("Failed to extract binary path from GDB, result: %s, command: %s",
                     asString(result), Arrays.toString(wrappedCommand)));
         }
         return matcher.group("path").split(" ")[0];
@@ -62,7 +62,7 @@ public class CoreCollector {
         try {
             CommandResult result = container.executeCommandInContainer(context, context.users().root(), command);
             if (result.getExitCode() != 0) {
-                throw new ConvergenceException("file command failed with " + asString(result));
+                throw ConvergenceException.ofError("file command failed with " + asString(result));
             }
 
             Matcher execfnMatcher = EXECFN_PATH_PATTERN.matcher(result.getOutput());
@@ -89,7 +89,7 @@ public class CoreCollector {
 
         CommandResult result = container.executeCommandInContainer(context, context.users().root(), command);
         if (result.getExitCode() != 0)
-            throw new ConvergenceException("Failed to read backtrace " + asString(result) + ", Command: " + Arrays.toString(command));
+            throw ConvergenceException.ofError("Failed to read backtrace " + asString(result) + ", Command: " + Arrays.toString(command));
 
         return List.of(result.getOutput().split("\n"));
     }
@@ -99,7 +99,7 @@ public class CoreCollector {
 
         CommandResult result = container.executeCommandInContainer(context, context.users().root(), command);
         if (result.getExitCode() != 0)
-            throw new ConvergenceException("Failed to read jstack " + asString(result) + ", Command: " + Arrays.toString(command));
+            throw ConvergenceException.ofError("Failed to read jstack " + asString(result) + ", Command: " + Arrays.toString(command));
 
         return List.of(result.getOutput().split("\n"));
     }

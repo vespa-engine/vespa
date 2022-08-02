@@ -15,7 +15,7 @@ import java.net.SocketTimeoutException;
 public class ConnectionException extends ConvergenceException {
 
     private ConnectionException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, true);
     }
 
     /**
