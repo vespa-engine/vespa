@@ -119,7 +119,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2022-08-01",
+            List.of("vekterli"), "2020-12-02", "2022-08-15",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -245,7 +245,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2022-08-01",
+            List.of("vekterli"), "2021-02-19", "2022-08-15",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -253,14 +253,14 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 16,
-            List.of("balder", "vekterli"), "2021-06-06", "2022-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2022-08-15",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
             "max-merge-queue-size", 100,
-            List.of("balder", "vekterli"), "2021-06-06", "2022-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2022-08-15",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
@@ -339,7 +339,7 @@ public class Flags {
 
     public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
             "merge-throttling-policy", "STATIC",
-            List.of("vekterli"), "2022-01-25", "2022-08-01",
+            List.of("vekterli"), "2022-01-25", "2022-08-15",
             "Sets the policy used for merge throttling on the content nodes. " +
             "Valid values: STATIC, DYNAMIC",
             "Takes effect at redeployment",
@@ -347,7 +347,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR = defineDoubleFlag(
             "persistence-throttling-ws-decrement-factor", 1.2,
-            List.of("vekterli"), "2022-01-27", "2022-08-01",
+            List.of("vekterli"), "2022-01-27", "2022-08-15",
             "Sets the dynamic throttle policy window size decrement factor for persistence " +
             "async throttling. Only applies if DYNAMIC policy is used.",
             "Takes effect on redeployment",
@@ -355,7 +355,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_BACKOFF = defineDoubleFlag(
             "persistence-throttling-ws-backoff", 0.95,
-            List.of("vekterli"), "2022-01-27", "2022-08-01",
+            List.of("vekterli"), "2022-01-27", "2022-08-15",
             "Sets the dynamic throttle policy window size backoff for persistence " +
             "async throttling. Only applies if DYNAMIC policy is used. Valid range [0, 1]",
             "Takes effect on redeployment",
