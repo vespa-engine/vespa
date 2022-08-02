@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
@@ -15,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -23,6 +23,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
+    final Comparator<EligibleJob> oldestFirst = Comparator.comparing(e -> e.deployment.at());
 
     @Inject
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
@@ -92,11 +95,14 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         }));
     }
 
+    record EligibleJob(Deployment deployment, ApplicationId applicationId, JobType job) {}
     /**
-     * If it's been four days since the cert has been refreshed, re-trigger all prod deployment jobs.
+     * If it's been four days since the cert has been refreshed, re-trigger prod deployment jobs (one at a time).
      */
     private void deployRefreshedCertificates() {
         var now = clock.instant();
+        var eligibleJobs = new ArrayList<EligibleJob>();
+
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
                 endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
                     Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
@@ -105,13 +111,19 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                                 .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
                                     if (deployment.at().isBefore(refreshTime)) {
                                         JobType job = JobType.deploymentTo(zone);
-                                        deploymentTrigger.reTrigger(applicationId, job, "re-triggered by EndpointCertificateMaintainer");
-                                        log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
-                                                applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                                        eligibleJobs.add(new EligibleJob(deployment, applicationId, job));
                                     }
                                 }));
                     }
                 }));
+
+        eligibleJobs.stream()
+                .min(oldestFirst)
+                .ifPresent(e -> {
+                    deploymentTrigger.reTrigger(e.applicationId, e.job, "re-triggered by EndpointCertificateMaintainer");
+                    log.info("Re-triggering deployment job " + e.job.jobName() + " for instance " +
+                             e.applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                });
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
@@ -156,8 +168,8 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
         Map<ApplicationId, EndpointCertificateMetadata> storedEndpointCertificateMetadata = curator.readAllEndpointCertificateMetadata();
 
-        List<String> leafRequestIds = storedEndpointCertificateMetadata.values().stream().flatMap(m -> m.leafRequestId().stream()).collect(Collectors.toList());
-        List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).collect(Collectors.toList());
+        List<String> leafRequestIds = storedEndpointCertificateMetadata.values().stream().flatMap(m -> m.leafRequestId().stream()).toList();
+        List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).toList();
 
         for (var providerCertificateMetadata : endpointCertificateMetadata) {
             if (!rootRequestIds.contains(providerCertificateMetadata.requestId()) && !leafRequestIds.contains(providerCertificateMetadata.requestId())) {
