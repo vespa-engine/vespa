@@ -2,7 +2,6 @@ let traceID = '';
 let processes = {};
 let output = {};
 let traceStartTimestamp = 0;
-//let topSpanId = '';
 
 // Generates a random hex string of size "size"
 const genRanHex = (size) =>
@@ -19,7 +18,6 @@ export default function transform(trace) {
   let temp = trace['trace']['children'];
   let spans = findChildren(temp);
   traceStartTimestamp = findTraceStartTime(spans);
-  //topSpanId = genRanHex(16);
   let topSpanFirstHalf = createNewSpan(traceStartTimestamp)[0];
   data.push(topSpanFirstHalf);
 
@@ -37,9 +35,14 @@ function traverseChildren(span, logs, children, indexes, parent) {
   let spanTimestamp = span['timestamp'];
   if (span.hasOwnProperty('children')) {
     // Create a new parent span so that the timeline for the logs are correct
+    let duration =
+      (span['children'][span['children'].length - 1]['timestamp'] -
+        span['children'][0]['timestamp']) *
+      1000;
+    parent['duration'] = duration;
     logSpan = createNewSpan(
       traceStartTimestamp + spanTimestamp,
-      0,
+      duration,
       'p0',
       parent['operationName'],
       [{ refType: 'CHILD_OF', traceID: traceID, spanID: parent['spanID'] }]
@@ -57,7 +60,6 @@ function traverseChildren(span, logs, children, indexes, parent) {
           indexes.push(data.indexOf(parent));
           log = [];
         }
-        console.log(x);
         createChildren(x['message'], parent['spanID']);
       } else {
         // only add logs with a timestamp
@@ -76,9 +78,17 @@ function findLogsAndChildren(spans, topSpanFirstHalf) {
   let children = [];
   let indexes = [];
   let data = output['data'][0]['spans'];
+  let totalDuration = findDuration(spans);
+  topSpanFirstHalf['duration'] = totalDuration;
   for (let i = 0; i < spans.length; i++) {
     if (spans[i].hasOwnProperty('children')) {
-      traverseChildren(spans[i], logs, children, indexes, topSpanFirstHalf);
+      traverseChildren(
+        spans[i],
+        logs,
+        children,
+        indexes,
+        data[data.length - 1]
+      );
     } else if (
       spans[i].hasOwnProperty('message') &&
       spans[i].hasOwnProperty('timestamp')
@@ -99,7 +109,6 @@ function findLogsAndChildren(spans, topSpanFirstHalf) {
         duration = (spans[i + 1]['timestamp'] - spans[i]['timestamp']) * 1000;
         duration = duration === 0 ? 1 : duration;
       }
-      topSpanFirstHalf['duration'] = topSpanFirstHalf['duration'] + duration;
       span['duration'] = duration;
     }
   }
@@ -149,7 +158,6 @@ function traverseLogs(logs, indexes) {
 }
 
 function createChildren(children, parentID) {
-  console.log(parentID);
   let child = children[0];
   let processKey = genRanHex(5);
   processes[processKey] = { serviceName: genRanHex(3), tags: [] };
@@ -283,7 +291,6 @@ function findTraceStartTime(spans) {
   return startTime;
 }
 
-//TODO: remove if not needed later
 function findDuration(spans) {
   let notFound = true;
   let duration = 0;
@@ -292,16 +299,15 @@ function findDuration(spans) {
     if (spans[i].hasOwnProperty('timestamp')) {
       duration = spans[i]['timestamp'];
       notFound = false;
-    } else {
-      i--;
     }
+    i--;
   }
-  return duration;
+  return duration * 1000;
 }
 
 function createNewSpan(
   startTime = 0,
-  duration = 0,
+  duration = 1,
   processID = 'p0',
   operationName = 'Complete',
   references = []
