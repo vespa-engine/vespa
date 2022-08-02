@@ -110,7 +110,7 @@ public class NodeAdminStateUpdater {
 
             if (hostIsActiveInNR) orchestrator.resume(hostHostname);
 
-            throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
+            throw ConvergenceException.ofTransient("Timed out trying to freeze all nodes: will force an unfrozen tick");
         }
 
         boolean wantFrozen = wantedState != RESUMED;
@@ -118,7 +118,7 @@ public class NodeAdminStateUpdater {
         currentState = TRANSITIONING;
 
         if (!nodeAdmin.setFrozen(wantFrozen))
-            throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
+            throw ConvergenceException.ofTransient("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
 
         switch (wantedState) {
             case RESUMED:

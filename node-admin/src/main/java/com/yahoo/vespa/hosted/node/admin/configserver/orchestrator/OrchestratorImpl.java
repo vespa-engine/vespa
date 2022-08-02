@@ -59,7 +59,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
         } catch (ConnectionException e) {
-            throw new ConvergenceException("Failed to suspend " + hostName + ": " + e.getMessage());
+            throw ConvergenceException.ofTransient("Failed to suspend " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on suspend", e);
         }
@@ -105,7 +105,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
         } catch (ConnectionException e) {
-            throw new ConvergenceException("Failed to batch suspend for " + parentHostName + ": " + e.getMessage());
+            throw ConvergenceException.ofTransient("Failed to batch suspend for " + parentHostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
         }
@@ -126,7 +126,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to resume " + hostName + ": " + e.toString());
         } catch (ConnectionException e) {
-            throw new ConvergenceException("Failed to resume " + hostName + ": " + e.getMessage());
+            throw ConvergenceException.ofTransient("Failed to resume " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on resume", e);
         }

@@ -244,7 +244,7 @@ public class NodeAgentImpl implements NodeAgent {
         hasResumedNode = false;
         context.log(logger, "Container successfully started, new containerState is " + containerState);
         return containerOperations.getContainer(context).orElseThrow(() ->
-                new ConvergenceException("Did not find container that was just started"));
+                ConvergenceException.ofError("Did not find container that was just started"));
     }
 
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
@@ -399,7 +399,7 @@ public class NodeAgentImpl implements NodeAgent {
         // Only update CPU resources
         containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources().memoryBytes()));
         return containerOperations.getContainer(context).orElseThrow(() ->
-                new ConvergenceException("Did not find container that was just updated"));
+                ConvergenceException.ofError("Did not find container that was just updated"));
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
@@ -435,6 +435,8 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, Level.INFO, "Converged");
         } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
+            if (e.isError())
+                numberOfUnhandledException++;
         } catch (Throwable e) {
             numberOfUnhandledException++;
             context.log(logger, Level.SEVERE, "Unhandled exception, ignoring", e);
@@ -501,7 +503,7 @@ public class NodeAgentImpl implements NodeAgent {
 
                     Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
                     if (!container.get().resources().equalsCpu(getContainerResources(context)))
-                        throw new ConvergenceException("Refusing to resume until warm up period ends (" +
+                        throw ConvergenceException.ofTransient("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
                 serviceDumper.processServiceDumpRequest(context);
@@ -536,7 +538,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:
-                throw new ConvergenceException("UNKNOWN STATE " + node.state().name());
+                throw ConvergenceException.ofError("UNKNOWN STATE " + node.state().name());
         }
     }
 

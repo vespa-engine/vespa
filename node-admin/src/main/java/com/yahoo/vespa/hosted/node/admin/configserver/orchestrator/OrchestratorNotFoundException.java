@@ -4,6 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.orchestrator;
 @SuppressWarnings("serial")
 public class OrchestratorNotFoundException extends OrchestratorException {
     public OrchestratorNotFoundException(String message) {
-        super(message);
+        super(message, true);
     }
 }

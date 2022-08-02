@@ -5,10 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 public class NodeRepositoryException extends ConvergenceException {
     public NodeRepositoryException(String message) {
-        super(message);
-    }
-
-    public NodeRepositoryException(String message, Exception exception) {
-        super(message, exception);
+        super(message, null, true);
     }
 }
