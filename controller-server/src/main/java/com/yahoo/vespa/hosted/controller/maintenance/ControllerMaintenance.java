@@ -156,7 +156,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.containerImageExpirer = duration(12, HOURS);
             this.hostInfoUpdater = duration(12, HOURS);
             this.reindexingTriggerer = duration(1, HOURS);
-            this.endpointCertificateMaintainer = duration(12, HOURS);
+            this.endpointCertificateMaintainer = duration(1, HOURS);
             this.trafficFractionUpdater = duration(5, MINUTES);
             this.archiveUriUpdater = duration(5, MINUTES);
             this.archiveAccessMaintainer = duration(10, MINUTES);

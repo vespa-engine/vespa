@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -93,17 +94,18 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     /**
-     * If it's been four days since the cert has been refreshed, re-trigger all prod deployment jobs.
+     * If it's been four days since the cert has been refreshed, re-trigger prod deployment jobs (one at a time).
      */
     private void deployRefreshedCertificates() {
         var now = clock.instant();
+        var jobsTriggered = new AtomicInteger(0);
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
                 endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
                     Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
                     if (now.isAfter(refreshTime.plus(4, ChronoUnit.DAYS))) {
                         controller().applications().getInstance(applicationId)
                                 .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
-                                    if (deployment.at().isBefore(refreshTime)) {
+                                    if (deployment.at().isBefore(refreshTime) && jobsTriggered.compareAndSet(0, 1)) {
                                         JobType job = JobType.deploymentTo(zone);
                                         deploymentTrigger.reTrigger(applicationId, job, "re-triggered by EndpointCertificateMaintainer");
                                         log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
