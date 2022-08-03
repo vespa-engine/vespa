@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ public class ClusterNodesTimeseries {
 
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
+        if (clusterNodes.size() == 0) return 0;
         int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
         return measurementCount / clusterNodes.size();
     }
@@ -82,6 +84,27 @@ public class ClusterNodesTimeseries {
             count++;
         }
         return total.divide(count);
+    }
+
+    /**
+     * Returns the "peak load" in this: Which is for each load dimension,
+     * the average of the highest reading for that dimension on each node.
+     */
+    public Load peakLoad() {
+        return new Load(peakLoad(Load.Dimension.cpu), peakLoad(Load.Dimension.memory), peakLoad(Load.Dimension.disk));
+    }
+
+    private double peakLoad(Load.Dimension dimension) {
+        double total = 0;
+        int count = 0;
+        for (var nodeTimeseries : timeseries) {
+            OptionalDouble value = nodeTimeseries.peak(dimension);
+            if (value.isEmpty()) continue;
+            total += value.getAsDouble();
+            count++;
+        }
+        if (count == 0) return 0;
+        return total / count;
     }
 
     private static List<NodeTimeseries> keep(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {

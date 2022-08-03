@@ -10,43 +10,37 @@ import java.util.OptionalDouble;
 
 /**
  * A resource target to hit for the allocation optimizer.
- * The target is measured in cpu, memory and disk per node in the allocation given by current.
+ * The target is measured in cpu, memory and disk per node in the current allocation.
  *
  * @author bratseth
  */
 public class ResourceTarget {
 
-    private final boolean adjustForRedundancy;
-
     /** The target real resources per node, assuming the node assignment where this was decided */
     private final NodeResources resources;
 
-    private ResourceTarget(NodeResources resources, boolean adjustForRedundancy) {
+    private ResourceTarget(NodeResources resources) {
         this.resources = resources;
-        this.adjustForRedundancy = adjustForRedundancy;
     }
 
-    /** Are the target resources given by this including redundancy or not */
-    public boolean adjustForRedundancy() { return adjustForRedundancy; }
-    
     /** Returns the target resources per node in terms of the current allocation */
     public NodeResources resources() { return resources; }
 
     @Override
     public String toString() {
-        return "target " + resources + (adjustForRedundancy ? "(with redundancy adjustment) " : "");
+        return "target " + resources;
     }
 
     /** Create a target of achieving ideal load given a current load */
     public static ResourceTarget idealLoad(ClusterModel clusterModel,
                                            AllocatableClusterResources current) {
-        var loadAdjustment = clusterModel.averageLoad().divide(clusterModel.idealLoad());
-        return new ResourceTarget(loadAdjustment.scaled(current.realResources().nodeResources()), true);
+        return new ResourceTarget(clusterModel.loadAdjustment().scaled(current.realResources().nodeResources()));
     }
 
     /** Crete a target of preserving a current allocation */
-    public static ResourceTarget preserve(AllocatableClusterResources current) {
-        return new ResourceTarget(current.realResources().nodeResources(), false);
+    public static ResourceTarget preserve(ClusterModel clusterModel,
+                                          AllocatableClusterResources current) {
+        return new ResourceTarget(current.realResources().nodeResources());
     }
 
 }
