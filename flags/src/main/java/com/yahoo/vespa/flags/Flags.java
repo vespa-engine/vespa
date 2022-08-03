@@ -46,8 +46,8 @@ public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundBooleanFlag MAIN_CHAIN_GRAPH = defineFeatureFlag(
-            "main-chain-graph", false,
-            List.of("hakonhall"), "2022-07-06", "2022-09-05",
+            "main-chain-graph", true,
+            List.of("hakonhall"), "2022-07-06", "2022-10-05",
             "Whether to run all tasks in the main task chain up to the one failing to converge (false), or " +
             "run all tasks in the main task chain whose dependencies have converged (true).  And when suspending, " +
             "whether to run the tasks in sequence (false) or in reverse sequence (true).",
