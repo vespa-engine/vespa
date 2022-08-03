@@ -26,13 +26,13 @@ public class AllocationOptimizer {
     }
 
     /**
-     * Searches the space of possible allocations given a target
+     * Searches the space of possible allocations given a target relative load
      * and (optionally) cluster limits and returns the best alternative.
      *
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableClusterResources> findBestAllocation(NodeResources target,
+    public Optional<AllocatableClusterResources> findBestAllocation(Load targetLoad,
                                                                     AllocatableClusterResources current,
                                                                     ClusterModel clusterModel,
                                                                     Limits limits) {
@@ -51,7 +51,7 @@ public class AllocationOptimizer {
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
                                                              nodeResourcesWith(nodes, groups,
-                                                                               limits, target, current, clusterModel));
+                                                                               limits, targetLoad, current, clusterModel));
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits,
                                                                             hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
@@ -64,16 +64,19 @@ public class AllocationOptimizer {
 
     /**
      * For the observed load this instance is initialized with, returns the resources needed per node to be at
-     * ideal load given a target node count
+     * the target relative load, given a target node and group count.
      */
     private NodeResources nodeResourcesWith(int nodes,
                                             int groups,
                                             Limits limits,
-                                            NodeResources target,
+                                            Load targetLoad,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        var scaled = clusterModel.loadWith(nodes, groups)
-                                 .scaled(Load.one().divide(clusterModel.redundancyAdjustment()).scaled(target));
+        var scaled = targetLoad                                      // redundancy aware target relative to current load
+                     .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
+                     .divide(clusterModel.redundancyAdjustment())    // correct for double redundancy adjustment
+                     .scaled(current.realResources().nodeResources());
+
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
