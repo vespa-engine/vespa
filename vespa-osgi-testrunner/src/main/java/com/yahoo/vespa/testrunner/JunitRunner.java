@@ -104,32 +104,22 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     private TestReport launchJunit(Suite suite, byte[] testConfig) {
         List<Class<?>> testClasses = classLoader.apply(suite);
         if (testClasses == null)
-            return null;
+            return  null;
 
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            testRuntimeProvider.initialize(testConfig);
-            TestReportGeneratingListener testReportListener = new TestReportGeneratingListener(suite,
-                                                                                               record -> logRecords.put(record.getSequenceNumber(), record),
-                                                                                               stdoutTee,
-                                                                                               stderrTee,
-                                                                                               clock);
+        testRuntimeProvider.initialize(testConfig);
+        TestReportGeneratingListener testReportListener = new TestReportGeneratingListener(suite,
+                                                                                           record -> logRecords.put(record.getSequenceNumber(), record),
+                                                                                           stdoutTee,
+                                                                                           stderrTee,
+                                                                                           clock);
+        LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
+                                                                                   .selectors(testClasses.stream()
+                                                                                                         .map(DiscoverySelectors::selectClass)
+                                                                                                         .collect(toList()))
+                                                                                   .build();
+        testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
 
-            if ( ! testClasses.isEmpty())
-                Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
-
-            LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
-                                                                                       .selectors(testClasses.stream()
-                                                                                                             .map(DiscoverySelectors::selectClass)
-                                                                                                             .collect(toList()))
-                                                                                       .build();
-            testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
-
-            return testReportListener.report();
-        }
-        finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
+        return testReportListener.report();
     }
 
     @Override
