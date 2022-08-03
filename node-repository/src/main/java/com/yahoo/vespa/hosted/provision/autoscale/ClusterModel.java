@@ -94,14 +94,17 @@ public class ClusterModel {
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
         if (nodeTimeseries().measurementsPerNode() == 0) return Load.one(); // No info, no change
-        /*
+
         // Should we scale up?
+        /*
         Load relativePeak = nodeTimeseries().peakLoad().divide(idealLoad());
+        System.out.println("Relative peak " + relativePeak);
         if (relativePeak.any(v -> v > 1))
             return relativePeak.max(Load.one()); // Don't downscale any dimension if we upscale
-
         // Should we scale down?
-        */
+        // TODO
+         */
+
         return averageLoad().divide(idealLoad());
     }
 

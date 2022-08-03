@@ -19,6 +19,7 @@ import java.util.function.IntFunction;
 public class Loader {
 
     private final Fixture fixture;
+    private final Duration samplingInterval = Duration.ofSeconds(150L);
 
     public Loader(Fixture fixture) {
         this.fixture = fixture;
@@ -38,7 +39,7 @@ public class Loader {
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofSeconds(150));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
                 Load load = new Load(value,
                                      ClusterModel.idealMemoryLoad,
@@ -63,23 +64,21 @@ public class Loader {
                                                                Map.of(fixture.clusterId(), new ClusterMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                                      queryRate.apply(i),
                                                                                                                      writeRate.apply(i))));
-            fixture.tester().clock().advance(Duration.ofMinutes(5));
+            fixture.tester().clock().advance(samplingInterval);
         }
         return Duration.between(initialTime, fixture.tester().clock().instant());
     }
 
     public void applyCpuLoad(double cpuLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
         addCpuMeasurements((float)cpuLoad, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
     public void applyMemLoad(double memLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addMemMeasurements
         addMemMeasurements(memLoad, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
     /**
@@ -93,7 +92,7 @@ public class Loader {
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofMinutes(1));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
                 Load load = new Load(0.2,
                                      value,
@@ -117,7 +116,7 @@ public class Loader {
                                     int count) {
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofMinutes(1));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : fixture.nodes()) {
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                         new NodeMetricSnapshot(fixture.tester().clock().instant(),
@@ -132,20 +131,18 @@ public class Loader {
     }
 
     public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
         addMeasurements(cpuLoad, memoryLoad, diskLoad, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
     public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int generation, boolean inService, boolean stable, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
         addMeasurements(cpuLoad, memoryLoad, diskLoad, generation, inService, stable, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
-    public Duration addQueryRateMeasurements(int measurements, Duration samplingInterval, IntFunction<Double> queryRate) {
+    public Duration addQueryRateMeasurements(int measurements, IntFunction<Double> queryRate) {
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < measurements; i++) {
             fixture.tester().nodeMetricsDb().addClusterMetrics(fixture.applicationId(),

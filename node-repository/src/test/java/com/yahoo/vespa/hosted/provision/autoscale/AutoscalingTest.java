@@ -78,10 +78,10 @@ public class AutoscalingTest {
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
-    @Ignore // TODO
+    @Ignore
     public void test_autoscaling_up_is_fast() {
         var fixture = AutoscalingTester.fixture().build();
-        fixture.loader().applyLoad(1.0, 1.0, 1.0, 1);
+        fixture.loader().applyLoad(1.0, 1.0, 1.0, 6);
         fixture.tester().assertResources("Scaling up since resource usage is too high",
                                          10, 1, 9.4, 8.5, 92.6,
                                          fixture.autoscale());
@@ -559,7 +559,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Query only -> largest possible",
-                                         8, 1, 4.9,  5.7, 57.1,
+                                         8, 1, 4.6,  5.7, 57.1,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
