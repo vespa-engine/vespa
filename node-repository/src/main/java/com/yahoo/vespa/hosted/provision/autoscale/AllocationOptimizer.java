@@ -47,17 +47,10 @@ public class AllocationOptimizer {
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
-                int groupSize = nodes / groups;
-
-                // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
-                // TODO: Make the best choice between those two based on size and redundancy setting instead
-                int nodesAdjustedForRedundancy   = clusterModel.nodesAdjustedForRedundancy(nodes, groups);
-                int groupsAdjustedForRedundancy  = clusterModel.groupsAdjustedForRedundancy(nodes, groups);
 
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
-                                                             nodeResourcesWith(nodesAdjustedForRedundancy,
-                                                                               groupsAdjustedForRedundancy,
+                                                             nodeResourcesWith(nodes, groups,
                                                                                limits, target, current, clusterModel));
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits,
                                                                             hosts, nodeRepository);
@@ -79,11 +72,8 @@ public class AllocationOptimizer {
                                             ResourceTarget target,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        int currentNodes = clusterModel.nodesAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
-        int currentGroups = clusterModel.groupsAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
-
         var scaled = clusterModel.loadWith(nodes, groups)
-                                 .scaled(Load.one().divide(clusterModel.loadWith(currentNodes, currentGroups)).scaled(target.resources()));
+                                 .scaled(Load.one().divide(clusterModel.redundancyAdjustment()).scaled(target.resources()));
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()

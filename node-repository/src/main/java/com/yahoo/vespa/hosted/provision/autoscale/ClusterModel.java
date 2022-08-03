@@ -152,8 +152,18 @@ public class ClusterModel {
         return (int)Math.ceil((double)nodeCount() / groupCount());
     }
 
-    /** Returns the relative load adjustment given these nodes+groups relative to node nodes+groups in this. */
-    public Load loadWith(int nodes, int groups) {
+    /** Returns the relative load adjustment accounting for redundancy in this. */
+    public Load redundancyAdjustment() {
+        return loadWith(nodeCount(), groupCount());
+    }
+
+    /**
+     * Returns the relative load adjustment accounting for redundancy given these nodes+groups
+     * relative to node nodes+groups in this.
+     */
+    public Load loadWith(int trueNodes, int trueGroups) {
+        int nodes = nodesAdjustedForRedundancy(trueNodes, trueGroups);
+        int groups = groupsAdjustedForRedundancy(trueNodes, trueGroups);
         if (clusterSpec().type() == ClusterSpec.Type.content) { // load scales with node share of content
             int groupSize = nodes / groups;
 
@@ -179,11 +189,7 @@ public class ClusterModel {
      * if one of  the nodes go down.
      */
     public Load idealLoad() {
-        int nodes = nodeCount();
-        int groups = groupCount();
-        return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad())
-                .divide(loadWith(nodesAdjustedForRedundancy(nodes, groups),
-                                 groupsAdjustedForRedundancy(nodes, groups)));
+        return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad()).divide(redundancyAdjustment());
     }
 
     public int nodesAdjustedForRedundancy(int nodes, int groups) {
