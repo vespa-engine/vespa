@@ -30,11 +30,7 @@ public class ClusterModelTest {
     public void unit_adjustment_should_cause_no_change() {
         var model = clusterModelWithNoData(); // 5 nodes, 1 group
         assertEquals(Load.one(), model.loadAdjustment());
-        System.out.println("Ideal load:              " + model.idealLoad());
-        System.out.println("Load without redundancy: " + model.loadWith(5, 1));
-        System.out.println("Load with    redundancy: " + model.loadWith(4, 1));
         var target = model.loadAdjustment().scaled(resources());
-        System.out.println("Target:                  " + target);
         int testingNodes = 5 - 1;
         int currentNodes = 5 - 1;
         assertEquals(resources(), model.loadWith(testingNodes, 1).scaled(Load.one().divide(model.loadWith(currentNodes, 1)).scaled(target)));
