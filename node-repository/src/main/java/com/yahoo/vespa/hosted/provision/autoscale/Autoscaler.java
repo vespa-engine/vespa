@@ -95,6 +95,8 @@ public class Autoscaler {
                 allocationOptimizer.findBestAllocation(target, currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
             return Advice.dontScale(Status.insufficient, "No allocations are possible within configured limits");
+        System.out.println("Current: " + currentAllocation);
+        System.out.println("Best:    " + bestAllocation.get());
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
             if (bestAllocation.get().fulfilment() < 1)

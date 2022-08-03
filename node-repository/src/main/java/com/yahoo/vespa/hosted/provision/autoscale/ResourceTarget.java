@@ -10,7 +10,7 @@ import java.util.OptionalDouble;
 
 /**
  * A resource target to hit for the allocation optimizer.
- * The target is measured in cpu, memory and disk per node in the allocation given by current.
+ * The target is measured in cpu, memory and disk per node in the current allocation.
  *
  * @author bratseth
  */
@@ -40,8 +40,9 @@ public class ResourceTarget {
     /** Create a target of achieving ideal load given a current load */
     public static ResourceTarget idealLoad(ClusterModel clusterModel,
                                            AllocatableClusterResources current) {
-        var loadAdjustment = clusterModel.averageLoad().divide(clusterModel.idealLoad());
-        return new ResourceTarget(loadAdjustment.scaled(current.realResources().nodeResources()), true);
+        System.out.println("Adjustment: " + clusterModel.loadAdjustment());
+        System.out.println("Target:     " + new ResourceTarget(clusterModel.loadAdjustment().scaled(current.realResources().nodeResources()), false));
+        return new ResourceTarget(clusterModel.loadAdjustment().scaled(current.realResources().nodeResources()), true);
     }
 
     /** Crete a target of preserving a current allocation */

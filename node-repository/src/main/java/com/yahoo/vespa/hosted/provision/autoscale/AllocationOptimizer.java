@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -19,11 +18,6 @@ public class AllocationOptimizer {
     // The min and max nodes to consider when not using application supplied limits
     private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
-
-    // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
-    // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
-    // TODO: Measure this, and only take it into account with queries
-    private static final double fixedCpuCostFraction = 0.1;
 
     private final NodeRepository nodeRepository;
 
@@ -56,9 +50,9 @@ public class AllocationOptimizer {
                 int groupSize = nodes / groups;
 
                 // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
-                // TODO: Make the best choice based on size and redundancy setting instead
-                int nodesAdjustedForRedundancy =  target.adjustForRedundancy() && nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
-                int groupsAdjustedForRedundancy = target.adjustForRedundancy() && nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
+                // TODO: Make the best choice between those two based on size and redundancy setting instead
+                int nodesAdjustedForRedundancy   = target.adjustForRedundancy() ? clusterModel.nodesAdjustedForRedundancy(nodes, groups) : nodes;
+                int groupsAdjustedForRedundancy  = target.adjustForRedundancy() ? clusterModel.groupsAdjustedForRedundancy(nodes, groups) : groups;
 
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
@@ -85,34 +79,21 @@ public class AllocationOptimizer {
                                             ResourceTarget target,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        double cpu, memory, disk;
-        int groupSize = nodes / groups;
-
-        if (current.clusterSpec().type() == ClusterSpec.Type.content) { // load scales with node share of content
-            // Cpu: Query cpu scales with cluster size, write cpu scales with group size
-            // Memory and disk: Scales with group size
-
-            // The fixed cost portion of cpu does not scale with changes to the node count
-            double queryCpuPerGroup = fixedCpuCostFraction * target.resources().vcpu() +
-                                      (1 - fixedCpuCostFraction) * target.resources().vcpu() * current.groupSize() / groupSize;
-
-            double queryCpu = queryCpuPerGroup * current.groups() / groups;
-            double writeCpu = target.resources().vcpu() * current.groupSize() / groupSize;
-            cpu = clusterModel.queryCpuFraction() * queryCpu + (1 - clusterModel.queryCpuFraction()) * writeCpu;
-            memory = target.resources().memoryGb() * current.groupSize() / groupSize;
-            disk = target.resources().diskGb() * current.groupSize() / groupSize;
+        int currentNodes = clusterModel.nodeCount();
+        int currentGroups = clusterModel.groupCount();
+        if (target.adjustForRedundancy()) {
+            currentNodes = clusterModel.nodesAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
+            currentGroups = clusterModel.groupsAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
         }
-        else {
-            cpu = target.resources().vcpu() * current.nodes() / nodes;
-            memory = target.resources().memoryGb();
-            disk = target.resources().diskGb();
-        }
+
+        var scaled = clusterModel.loadWith(nodes, groups)
+                                 .scaled(Load.one().divide(clusterModel.loadWith(currentNodes, currentGroups)).scaled(target.resources()));
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
-        NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
-                                  ? current.advertisedResources().nodeResources()
-                                  : limits.min().nodeResources(); // min=max for non-scaled
-        return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+        var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
+                        ? current.advertisedResources().nodeResources()
+                        : limits.min().nodeResources(); // min=max for non-scaled
+        return nonScaled.withVcpu(scaled.vcpu()).withMemoryGb(scaled.memoryGb()).withDiskGb(scaled.diskGb());
     }
 
     /** Returns a copy of the given limits where the minimum nodes are at least the given value when allowed */

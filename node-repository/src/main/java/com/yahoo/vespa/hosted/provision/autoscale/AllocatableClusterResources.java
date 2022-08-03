@@ -64,6 +64,33 @@ public class AllocatableClusterResources {
         this.fulfilment = fulfilment(realResources, idealResources);
     }
 
+    private AllocatableClusterResources(int nodes,
+                                        int groups,
+                                        NodeResources realResources,
+                                        NodeResources advertisedResources,
+                                        ClusterSpec clusterSpec,
+                                        double fulfilment) {
+        this.nodes = nodes;
+        this.groups = groups;
+        this.realResources = realResources;
+        this.advertisedResources = advertisedResources;
+        this.clusterSpec = clusterSpec;
+        this.fulfilment = fulfilment;
+    }
+
+    /** Returns this with the redundant node or group removed from counts. */
+    public AllocatableClusterResources withoutRedundancy() {
+        int groupSize = nodes / groups;
+        int nodesAdjustedForRedundancy   = nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
+        int groupsAdjustedForRedundancy  = nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
+        return new AllocatableClusterResources(nodesAdjustedForRedundancy,
+                                               groupsAdjustedForRedundancy,
+                                               realResources,
+                                               advertisedResources,
+                                               clusterSpec,
+                                               fulfilment);
+    }
+
     /**
      * Returns the resources which will actually be available per node in this cluster with this allocation.
      * These should be used for reasoning about allocation to meet measured demand.
@@ -82,11 +109,6 @@ public class AllocatableClusterResources {
 
     public int nodes() { return nodes; }
     public int groups() { return groups; }
-
-    public int groupSize() {
-        // ceil: If the division does not produce a whole number we assume some node is missing
-        return (int)Math.ceil((double)nodes / groups);
-    }
 
     public ClusterSpec clusterSpec() { return clusterSpec; }
 
