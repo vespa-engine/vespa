@@ -51,8 +51,8 @@ public class AllocationOptimizer {
 
                 // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
                 // TODO: Make the best choice between those two based on size and redundancy setting instead
-                int nodesAdjustedForRedundancy   = target.adjustForRedundancy() ? clusterModel.nodesAdjustedForRedundancy(nodes, groups) : nodes;
-                int groupsAdjustedForRedundancy  = target.adjustForRedundancy() ? clusterModel.groupsAdjustedForRedundancy(nodes, groups) : groups;
+                int nodesAdjustedForRedundancy   = clusterModel.nodesAdjustedForRedundancy(nodes, groups);
+                int groupsAdjustedForRedundancy  = clusterModel.groupsAdjustedForRedundancy(nodes, groups);
 
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
@@ -79,12 +79,8 @@ public class AllocationOptimizer {
                                             ResourceTarget target,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        int currentNodes = clusterModel.nodeCount();
-        int currentGroups = clusterModel.groupCount();
-        if (target.adjustForRedundancy()) {
-            currentNodes = clusterModel.nodesAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
-            currentGroups = clusterModel.groupsAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
-        }
+        int currentNodes = clusterModel.nodesAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
+        int currentGroups = clusterModel.groupsAdjustedForRedundancy(clusterModel.nodeCount(), clusterModel.groupCount());
 
         var scaled = clusterModel.loadWith(nodes, groups)
                                  .scaled(Load.one().divide(clusterModel.loadWith(currentNodes, currentGroups)).scaled(target.resources()));

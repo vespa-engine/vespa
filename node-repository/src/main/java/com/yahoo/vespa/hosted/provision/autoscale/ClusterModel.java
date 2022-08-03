@@ -152,7 +152,7 @@ public class ClusterModel {
         return (int)Math.ceil((double)nodeCount() / groupCount());
     }
 
-    /** Returns the load with the given nodes+groups relative to achieving the target with the allocation in this. */
+    /** Returns the relative load adjustment given these nodes+groups relative to node nodes+groups in this. */
     public Load loadWith(int nodes, int groups) {
         if (clusterSpec().type() == ClusterSpec.Type.content) { // load scales with node share of content
             int groupSize = nodes / groups;

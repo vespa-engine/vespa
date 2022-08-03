@@ -196,7 +196,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current),
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(clusterModel, current),
                                                       current,
                                                       clusterModel,
                                                       limits)

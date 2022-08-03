@@ -37,24 +37,23 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         var initialResources = new NodeResources(20, 16, 50, 1);
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, initialResources),
-                                                      new ClusterResources(2, 1, initialResources)));
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, initialResources)));
         tester.assertNodes("Initial allocation",
                            2, 1, 20, 16, 50, 1.0,
                            app1, cluster1);
 
         var newMinResources = new NodeResources( 5,  4, 11, 1);
         var newMaxResources = new NodeResources(20, 10, 30, 1);
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
-                                                      new ClusterResources(7, 1, newMaxResources)));
-        tester.assertNodes("New allocation preserves total resources",
-                           7, 1, 7, 4.6, 14.3, 1.0,
-                           app1, cluster1);
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
+        tester.assertNodes("New allocation preserves (redundancy adjusted) total resources",
+                           7, 1, 5, 4.0, 11, 1.0,
+                           app1, cluster1);
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
+                                                      new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("Redeploying the same ranges does not cause changes",
-                           7, 1, 7, 4.6, 14.3, 1.0,
+                           7, 1, 5, 4.0, 11, 1.0,
                            app1, cluster1);
     }
 
