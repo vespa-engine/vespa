@@ -32,7 +32,7 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
+    public Optional<AllocatableClusterResources> findBestAllocation(NodeResources target,
                                                                     AllocatableClusterResources current,
                                                                     ClusterModel clusterModel,
                                                                     Limits limits) {
@@ -69,11 +69,11 @@ public class AllocationOptimizer {
     private NodeResources nodeResourcesWith(int nodes,
                                             int groups,
                                             Limits limits,
-                                            ResourceTarget target,
+                                            NodeResources target,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
         var scaled = clusterModel.loadWith(nodes, groups)
-                                 .scaled(Load.one().divide(clusterModel.redundancyAdjustment()).scaled(target.resources()));
+                                 .scaled(Load.one().divide(clusterModel.redundancyAdjustment()).scaled(target));
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()

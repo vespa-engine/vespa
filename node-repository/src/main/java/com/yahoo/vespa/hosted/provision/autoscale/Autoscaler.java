@@ -89,7 +89,7 @@ public class Autoscaler {
                                " nodes, but require from " + clusterNodes.size());
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository);
-        var target = ResourceTarget.idealLoad(clusterModel, currentAllocation);
+        var target = clusterModel.loadAdjustment().scaled(currentAllocation.realResources().nodeResources());
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, clusterModel, limits);
