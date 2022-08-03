@@ -95,7 +95,7 @@ public class CoredumpHandler {
                     .map(FileFinder.FileAttributes::filename)
                     .toList();
             if (!pendingCores.isEmpty())
-                throw new ConvergenceException(String.format("Cannot process %s coredumps: Still being written",
+                throw ConvergenceException.ofError(String.format("Cannot process %s coredumps: Still being written",
                         pendingCores.size() < 5 ? pendingCores : pendingCores.size()));
         }
 

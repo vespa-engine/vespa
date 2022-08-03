@@ -120,7 +120,7 @@ public class StorageMaintainer {
 
         String[] results = output.split("\t");
         if (results.length != 2) {
-            throw new ConvergenceException("Result from disk usage command not as expected: " + output);
+            throw ConvergenceException.ofError("Result from disk usage command not as expected: " + output);
         }
 
         return DiskSize.of(Long.parseLong(results[0]), DiskSize.Unit.kiB);
@@ -226,11 +226,11 @@ public class StorageMaintainer {
         String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
                 .filter(line -> line.startsWith("microcode"))
                 .findFirst()
-                .orElseThrow(() -> new ConvergenceException("No microcode information found in /proc/cpuinfo")));
+                .orElseThrow(() -> ConvergenceException.ofError("No microcode information found in /proc/cpuinfo")));
 
         String[] results = output.split(":");
         if (results.length != 2) {
-            throw new ConvergenceException("Result from detect microcode command not as expected: " + output);
+            throw ConvergenceException.ofError("Result from detect microcode command not as expected: " + output);
         }
 
         return results[1].trim();

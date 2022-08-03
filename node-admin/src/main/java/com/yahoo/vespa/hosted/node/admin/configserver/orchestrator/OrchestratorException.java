@@ -5,7 +5,12 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 @SuppressWarnings("serial")
 public class OrchestratorException extends ConvergenceException {
+    /** Creates a transient convergence exception. */
     public OrchestratorException(String message) {
-        super(message);
+        this(message, true);
+    }
+
+    protected OrchestratorException(String message, boolean isError) {
+        super(message, null, isError);
     }
 }
