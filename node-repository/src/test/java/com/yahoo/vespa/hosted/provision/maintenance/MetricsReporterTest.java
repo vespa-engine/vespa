@@ -43,7 +43,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -162,11 +161,6 @@ public class MetricsReporterTest {
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = metricsReporter(metric, tester);
         metricsReporter.maintain();
-
-        // Only verify metrics that are set for hosts
-        TreeMap<String, Number> metrics = new TreeMap<>(metric.values);
-        assertTrue(metrics.containsKey("wantToEncrypt"));
-        assertTrue(metrics.containsKey("diskEncrypted"));
     }
 
     private void verifyAndRemoveIntegerMetricSum(TestMetric metric, String key, int expected) {
