@@ -104,7 +104,8 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void updateMetrics(boolean isSuspended) {
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            if (!isSuspended) numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
+            int count = nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
+            if (!isSuspended) numberOfUnhandledExceptions.add(count);
             nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
         }
 
