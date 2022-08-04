@@ -311,10 +311,10 @@ public class TestReport {
 
     public enum Status {
 
-        // Must be kept in order of increasing severity.
-        successful,
+        // Must be kept in order of increasing importance.
         skipped,
         aborted,
+        successful,
         inconclusive,
         failed,
         error;
@@ -322,7 +322,7 @@ public class TestReport {
     }
 
     static Level levelOf(Status status) {
-        return status.compareTo(Status.failed) >= 0 ? Level.SEVERE : status.compareTo(Status.skipped) >= 0 ? Level.WARNING : Level.INFO;
+        return status.compareTo(Status.failed) >= 0 ? Level.SEVERE : status == Status.successful ? Level.INFO : Level.WARNING;
     }
 
     /**
