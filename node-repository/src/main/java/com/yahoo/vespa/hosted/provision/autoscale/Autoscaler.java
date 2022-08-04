@@ -69,7 +69,7 @@ public class Autoscaler {
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
             return Advice.none(Status.waiting, "Cluster change in progress");
-
+/*
         if (scaledIn(clusterModel.scalingDuration(), cluster))
             return Advice.dontScale(Status.waiting,
                                     "Won't autoscale now: Less than " + clusterModel.scalingDuration() +
@@ -87,7 +87,7 @@ public class Autoscaler {
                                "Collecting more data before making new scaling decisions:" +
                                " Have measurements from " + clusterModel.nodeTimeseries().nodesMeasured() +
                                " nodes, but require from " + clusterNodes.size());
-
+*/
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
@@ -134,7 +134,7 @@ public class Autoscaler {
         return ! similar(from.cost(), to.cost(), costDifferenceWorthReallocation);
     }
 
-    private static boolean meaningfulIncrease(double from, double to) {
+    public static boolean meaningfulIncrease(double from, double to) {
         return from < to && ! similar(from, to, resourceDifferenceWorthReallocation);
     }
 

@@ -97,7 +97,7 @@ public class ScalingSuggestionsMaintainerTest {
         var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources();
         tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
         tester.clock().advance(Duration.ofDays(2));
-        addMeasurements(0.2f, 0.7f, 0.6f,
+        addMeasurements(0.2f, 0.65f, 0.6f,
                         0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion is to keep the current allocation",
