@@ -150,7 +150,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
-        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(member.getFullName(), true, role.roleName(), null);
+        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(member.getFullName(), true, role.roleName(), null, true);
 
 
         RequestBuilder requestBuilder = RequestBuilder.put(uri)
@@ -176,7 +176,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             MembershipEntity membership = readEntity(response, MembershipEntity.GroupMembershipEntity.class);
-            return membership.isMember;
+            return membership.isMember && membership.approved;
         });
     }
 

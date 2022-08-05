@@ -17,14 +17,17 @@ public class MembershipEntity {
     public final String memberName;
     public final boolean isMember;
     public final String expiration;
+    public final boolean approved;
 
     @JsonCreator
     public MembershipEntity(@JsonProperty("memberName") String memberName,
                             @JsonProperty("isMember") boolean isMember,
-                            @JsonProperty("expiration") String expiration) {
+                            @JsonProperty("expiration") String expiration,
+                            @JsonProperty("approved") boolean approved) {
         this.memberName = memberName;
         this.isMember = isMember;
         this.expiration = expiration;
+        this.approved = approved;
     }
 
     @JsonGetter("memberName")
@@ -49,8 +52,9 @@ public class MembershipEntity {
         public RoleMembershipEntity(@JsonProperty("memberName") String memberName,
                                     @JsonProperty("isMember") boolean isMember,
                                     @JsonProperty("roleName") String roleName,
-                                    @JsonProperty("expiration") String expiration) {
-            super(memberName, isMember, expiration);
+                                    @JsonProperty("expiration") String expiration,
+                                    @JsonProperty("approved") boolean approved) {
+            super(memberName, isMember, expiration, approved);
             this.roleName = roleName;
         }
 
@@ -62,16 +66,13 @@ public class MembershipEntity {
     }
 
     public static class RoleMembershipDecisionEntity extends RoleMembershipEntity {
-        public final boolean approved;
-
         @JsonCreator
         public RoleMembershipDecisionEntity(@JsonProperty("memberName") String memberName,
                                             @JsonProperty("isMember") boolean isMember,
                                             @JsonProperty("roleName") String roleName,
                                             @JsonProperty("expiration") String expiration,
                                             @JsonProperty("approved") boolean approved) {
-            super(memberName, isMember, roleName, expiration);
-            this.approved = approved;
+            super(memberName, isMember, roleName, expiration, approved);
         }
 
     }
@@ -83,8 +84,9 @@ public class MembershipEntity {
         public GroupMembershipEntity(@JsonProperty("memberName") String memberName,
                                      @JsonProperty("isMember") boolean isMember,
                                      @JsonProperty("groupName") String groupName,
-                                     @JsonProperty("expiration") String expiration) {
-            super(memberName, isMember, expiration);
+                                     @JsonProperty("expiration") String expiration,
+                                     @JsonProperty("approved") boolean approved) {
+            super(memberName, isMember, expiration, approved);
             this.groupName = groupName;
         }
 
