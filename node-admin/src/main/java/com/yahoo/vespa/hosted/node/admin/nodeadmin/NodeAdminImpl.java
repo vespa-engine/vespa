@@ -115,19 +115,14 @@ public class NodeAdminImpl implements NodeAdmin {
     public void updateMetrics(boolean isSuspended) {
         long numContainers = 0;
         long totalContainerMemoryBytes = 0;
-        final long invalidTotalContainerMemoryBytes = -1;
 
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            ++numContainers;
             int count = nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
             if (!isSuspended) numberOfUnhandledExceptions.add(count);
             Optional<ContainerStats> containerStats = nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
-            if (totalContainerMemoryBytes != invalidTotalContainerMemoryBytes) {
-                if (containerStats.isPresent()) {
-                    totalContainerMemoryBytes += containerStats.get().getMemoryStats().getUsage();
-                } else {
-                    totalContainerMemoryBytes = invalidTotalContainerMemoryBytes;
-                }
+            if (containerStats.isPresent()) {
+                ++numContainers;
+                totalContainerMemoryBytes += containerStats.get().getMemoryStats().getUsage();
             }
         }
 
@@ -139,8 +134,10 @@ public class NodeAdminImpl implements NodeAdmin {
         jvmHeapFree.sample(freeMemory);
         jvmHeapUsed.sample(usedMemory);
         jvmHeapTotal.sample(totalMemory);
-        containerCount.sample(numContainers);
-        if (totalContainerMemoryBytes != invalidTotalContainerMemoryBytes) {
+
+        // No container stats are found while suspended, so skip setting these if so.
+        if (!isSuspended) {
+            containerCount.sample(numContainers);
             ProcMeminfo meminfo = procMeminfoReader.read();
             memoryOverhead.sample(meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
         }
