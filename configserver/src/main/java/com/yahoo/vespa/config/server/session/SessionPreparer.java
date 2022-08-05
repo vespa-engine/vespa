@@ -6,6 +6,9 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.ValidationProcessor;
+import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -26,6 +29,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -47,9 +51,14 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.model.application.validation.BundleValidator;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
@@ -58,6 +67,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -238,12 +248,77 @@ public class SessionPreparer {
 
         void preprocess() {
             try {
+                validateXmlFeatures(applicationPackage, logger);
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(zone, logger);
             } catch (IOException | RuntimeException e) {
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
                                                            ", session " + sessionZooKeeperClient.sessionId(), e);
             }
             checkTimeout("preprocess");
+        }
+
+        /**
+         * Warn on use of deprecated XML features
+         */
+        private void validateXmlFeatures(ApplicationPackage applicationPackage, DeployLogger logger) {
+            // TODO: Validate no use of XInclude, datatype definitions or external entities
+            //       in any xml file we parse, such as services.xml, deployment.xml, hosts.xml,
+            //       validation-overrides.xml and any pom.xml files in OSGi bundles
+            //       services.xml and hosts.xml will need to be preprocessed by our own processors first
+
+            File applicationPackageDir = applicationPackage.getFileReference(Path.fromString("."));
+            File servicesXml = applicationPackage.getFileReference(Path.fromString("services.xml"));
+            File hostsXml = applicationPackage.getFileReference(Path.fromString("hosts.xml"));
+
+            // Validate after doing our own preprocessing on these two files
+            if(servicesXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, applicationPackage.getMetaData());
+            }
+            if(hostsXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, applicationPackage.getMetaData());
+            }
+
+            // Validate all other XML files
+            try (var paths = Files.find(applicationPackageDir.getAbsoluteFile().toPath(), Integer.MAX_VALUE,
+                    (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Xx][Mm][Ll]"))) {
+                paths.filter(p -> !(p.equals(servicesXml.getAbsoluteFile().toPath()) || p.equals(hostsXml.getAbsoluteFile().toPath())))
+                        .forEach(xmlPath -> {
+                            try {
+                                new ValidationProcessor().process(XML.getDocument(xmlPath.toFile()));
+                            } catch (IOException | TransformerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            // Validate pom.xml files in OSGi bundles
+            try (var paths = Files.find(applicationPackageDir.getAbsoluteFile().toPath(), Integer.MAX_VALUE,
+                    (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Jj][Aa][Rr]"))) {
+                        paths.forEach(jarPath -> {
+                            try {
+                                new BundleValidator().getPomXmlContent(logger, new JarFile(jarPath.toFile()));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData) {
+            try {
+                new XmlPreProcessor(appDir,
+                        inputXml,
+                        metaData.getApplicationId().instance(),
+                        zone.environment(),
+                        zone.region())
+                        .run();
+            } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         AllocatedHosts buildModels(Instant now) {
