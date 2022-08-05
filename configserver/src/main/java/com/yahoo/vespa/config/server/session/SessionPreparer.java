@@ -71,6 +71,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.zip.ZipException;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 
@@ -299,6 +300,8 @@ public class SessionPreparer {
                         paths.forEach(jarPath -> {
                             try {
                                 new BundleValidator().getPomXmlContent(logger, new JarFile(jarPath.toFile()));
+                            } catch (ZipException e) {
+                                // ignore for tests
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
