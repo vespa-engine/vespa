@@ -452,7 +452,7 @@ public class XML {
      * @throws RuntimeException if we fail to create one
      */
     public static DocumentBuilder getDocumentBuilder() {
-        return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null);
+        return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null, true);
     }
 
     /**
@@ -464,9 +464,33 @@ public class XML {
      * @return a DocumentBuilder
      */
     public static DocumentBuilder getDocumentBuilder(String implementation, ClassLoader classLoader) {
+        return getDocumentBuilder(true);
+    }
+
+        /**
+         * Creates a new XML DocumentBuilder
+         *
+         * @return a DocumentBuilder
+         * @throws RuntimeException if we fail to create one
+         * @param namespaceAware Whether the parser should be aware of xml namespaces
+         */
+    public static DocumentBuilder getDocumentBuilder(boolean namespaceAware) {
+        return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null, namespaceAware);
+    }
+
+    /**
+     * Creates a new XML DocumentBuilder
+     *
+     * @param implementation which jaxp implementation should be used
+     * @param classLoader which class loader should be used when getting a new DocumentBuilder
+     * @param namespaceAware Whether the parser should be aware of xml namespaces
+     * @throws RuntimeException if we fail to create one
+     * @return a DocumentBuilder
+     */
+    public static DocumentBuilder getDocumentBuilder(String implementation, ClassLoader classLoader, boolean namespaceAware) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(implementation, classLoader);
-            factory.setNamespaceAware(true);
+            factory.setNamespaceAware(namespaceAware);
             // Disable include directives. If enabled this allows inclusion of any resource, such as file:/// and
             // http:///, and these are read even if the document eventually fails to parse
             factory.setXIncludeAware(false);
