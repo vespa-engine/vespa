@@ -102,7 +102,7 @@ public abstract class AbstractBundleValidator extends Validator {
                 .map(f -> {
                     try {
                         String text = new String(jar.getInputStream(f).readAllBytes());
-                        return XML.getDocumentBuilder()
+                        return XML.getDocumentBuilder(false)
                                 .parse(new InputSource(new StringReader(text)));
                     } catch (SAXException e) {
                         String message = String.format("Unable to parse pom.xml from %s", filename(jar));
