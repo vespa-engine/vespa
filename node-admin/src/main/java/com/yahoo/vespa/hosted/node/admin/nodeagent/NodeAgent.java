@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.hosted.node.admin.container.ContainerStats;
+
+import java.util.Optional;
+
 /**
  * Responsible for management of a single node over its lifecycle.
  * May own its own resources, threads etc. Runs independently, but receives signals
@@ -28,9 +32,9 @@ public interface NodeAgent {
     void stopForRemoval(NodeAgentContext context);
 
     /**
-     * Updates metric receiver with the latest node-agent stats
+     * Updates metric receiver with the latest node-agent stats, and returns the container stats if available.
      */
-    default void updateContainerNodeMetrics(NodeAgentContext context, boolean isSuspended) {}
+    default Optional<ContainerStats> updateContainerNodeMetrics(NodeAgentContext context, boolean isSuspended) { return Optional.empty(); }
 
     /**
      * Returns and resets number of unhandled exceptions

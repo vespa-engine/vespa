@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.vespa.hosted.node.admin.container.ContainerStats;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Counter;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Gauge;
@@ -11,12 +12,14 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentScheduler;
 
+import java.nio.file.FileSystem;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -42,24 +45,28 @@ public class NodeAdminImpl implements NodeAdmin {
     private Instant startOfFreezeConvergence;
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
+    private final ProcMeminfoReader procMeminfoReader;
     private final Gauge jvmHeapUsed;
     private final Gauge jvmHeapFree;
     private final Gauge jvmHeapTotal;
+    private final Gauge memoryOverhead;
+    private final Gauge containerCount;
     private final Counter numberOfUnhandledExceptions;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock, FileSystem fileSystem) {
         this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD, new ProcMeminfoReader(fileSystem));
     }
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
-                         Clock clock, Duration freezeTimeout, Duration spread) {
+                         Clock clock, Duration freezeTimeout, Duration spread, ProcMeminfoReader procMeminfoReader) {
         this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, freezeTimeout, spread);
+                metrics, clock, freezeTimeout, spread, procMeminfoReader);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread) {
+                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread,
+                  ProcMeminfoReader procMeminfoReader) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
         this.clock = clock;
         this.freezeTimeout = freezeTimeout;
@@ -71,9 +78,12 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfUnhandledExceptions = metrics.declareCounter("unhandled_exceptions",
                 new Dimensions(Map.of("src", "node-agents")));
 
+        this.procMeminfoReader = procMeminfoReader;
         this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
         this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
         this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
+        this.memoryOverhead = metrics.declareGauge("mem.system.overhead");
+        this.containerCount = metrics.declareGauge("container.count");
     }
 
     @Override
@@ -103,21 +113,36 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void updateMetrics(boolean isSuspended) {
+        long numContainers = 0;
+        long totalContainerMemoryBytes = 0;
+        final long invalidTotalContainerMemoryBytes = -1;
+
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
+            ++numContainers;
             int count = nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
             if (!isSuspended) numberOfUnhandledExceptions.add(count);
-            nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
+            Optional<ContainerStats> containerStats = nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
+            if (totalContainerMemoryBytes != invalidTotalContainerMemoryBytes) {
+                if (containerStats.isPresent()) {
+                    totalContainerMemoryBytes += containerStats.get().getMemoryStats().getUsage();
+                } else {
+                    totalContainerMemoryBytes = invalidTotalContainerMemoryBytes;
+                }
+            }
         }
 
-        if (!isSuspended) {
-            Runtime runtime = Runtime.getRuntime();
-            runtime.gc();
-            long freeMemory = runtime.freeMemory();
-            long totalMemory = runtime.totalMemory();
-            long usedMemory = totalMemory - freeMemory;
-            jvmHeapFree.sample(freeMemory);
-            jvmHeapUsed.sample(usedMemory);
-            jvmHeapTotal.sample(totalMemory);
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
+        long freeMemory = runtime.freeMemory();
+        long totalMemory = runtime.totalMemory();
+        long usedMemory = totalMemory - freeMemory;
+        jvmHeapFree.sample(freeMemory);
+        jvmHeapUsed.sample(usedMemory);
+        jvmHeapTotal.sample(totalMemory);
+        containerCount.sample(numContainers);
+        if (totalContainerMemoryBytes != invalidTotalContainerMemoryBytes) {
+            ProcMeminfo meminfo = procMeminfoReader.read();
+            memoryOverhead.sample(meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
         }
     }
 
@@ -206,7 +231,7 @@ public class NodeAdminImpl implements NodeAdmin {
         void start() { nodeAgent.start(currentContext()); }
         void stopForHostSuspension() { nodeAgent.stopForHostSuspension(currentContext()); }
         void stopForRemoval() { nodeAgent.stopForRemoval(currentContext()); }
-        void updateContainerNodeMetrics(boolean isSuspended) { nodeAgent.updateContainerNodeMetrics(currentContext(), isSuspended); }
+        Optional<ContainerStats> updateContainerNodeMetrics(boolean isSuspended) { return nodeAgent.updateContainerNodeMetrics(currentContext(), isSuspended); }
         int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }

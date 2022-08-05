@@ -35,9 +35,9 @@ public class NodeAdminImplTest {
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory = mock(NodeAgentWithSchedulerFactory.class);
     private final ManualClock clock = new ManualClock();
-
+    private final ProcMeminfoReader procMeminfoReader = mock(ProcMeminfoReader.class);
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory,
-            new Metrics(), clock, Duration.ZERO, Duration.ZERO);
+            new Metrics(), clock, Duration.ZERO, Duration.ZERO, procMeminfoReader);
 
     @Test
     void nodeAgentsAreProperlyLifeCycleManaged() {
