@@ -17,6 +17,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ProcMeminfo;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ProcMeminfoReader;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
@@ -36,7 +38,6 @@ import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -87,6 +88,8 @@ public class ContainerTester implements AutoCloseable {
         Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
         FileSystem fileSystem = TestFileSystem.create();
+        ProcMeminfoReader procMeminfoReader = mock(ProcMeminfoReader.class);
+        when(procMeminfoReader.read()).thenReturn(new ProcMeminfo(1, 2));
 
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) ->
                 new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
@@ -106,7 +109,7 @@ public class ContainerTester implements AutoCloseable {
                         phaser.arriveAndDeregister();
                     }
              };
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO, procMeminfoReader);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 NodeAgentContextImpl.builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,
