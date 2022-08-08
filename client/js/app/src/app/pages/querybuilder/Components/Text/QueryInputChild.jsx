@@ -1,13 +1,14 @@
 import React, { useContext } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AddPropertyButton from '../Buttons/AddPropertyButton';
+import SimpleButton from '../Buttons/SimpleButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownForm from './QueryDropDownForm';
 import SimpleForm from './SimpleForm';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import SimpleButton from '../Buttons/SimpleButton';
+import { childMap } from 'app/pages/querybuilder/parameters';
 
 export default function QueryInputChild({ id }) {
-  const { inputs, setInputs, childMap } = useContext(QueryInputContext);
+  const { inputs, setInputs } = useContext(QueryInputContext);
 
   let index = inputs.findIndex((element) => element.id === id);
   let childArray = inputs[index].children;
@@ -126,8 +127,9 @@ export default function QueryInputChild({ id }) {
               id={`b${child.id}`}
               className="removeRow"
               onClick={() => removeRow(child.id)}
-              children="-"
-            ></SimpleButton>
+            >
+              -
+            </SimpleButton>
           </span>
         </OverlayTrigger>
         <br />
@@ -146,8 +148,6 @@ export default function QueryInputChild({ id }) {
 }
 
 function Child({ child, type, onChange, placeholder, removeRow }) {
-  const { childMap } = useContext(QueryInputContext);
-
   const nestedChildren = (child.children || []).map((child) => {
     return (
       <div key={child.id}>
@@ -180,8 +180,9 @@ function Child({ child, type, onChange, placeholder, removeRow }) {
               id={`b${child.id}`}
               className="removeRow"
               onClick={() => removeRow(child.id)}
-              children="-"
-            ></SimpleButton>
+            >
+              -
+            </SimpleButton>
           </span>
         </OverlayTrigger>
         <br />

@@ -1,11 +1,14 @@
 import React, { useContext, useState } from 'react';
-import ImageButton from './ImageButton';
 import pasteImage from '../../assets/img/paste.svg';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
+import ImageButton from './ImageButton';
+import {
+  childMap,
+  levelZeroParameters,
+} from 'app/pages/querybuilder/parameters';
 
 export default function PasteJSONButton() {
-  const { setInputs, setId, levelZeroParameters, childMap } =
-    useContext(QueryInputContext);
+  const { setInputs, setId } = useContext(QueryInputContext);
   const [paste, setPaste] = useState(false);
 
   //TODO: fix that the second-level dropdowns do not get set properly when pasting a JSON query

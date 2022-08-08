@@ -1,15 +1,15 @@
 import React, { useContext } from 'react';
-import SimpleButton from '../Buttons/SimpleButton';
-import SimpleForm from './SimpleForm';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import AddPropertyButton from '../Buttons/AddPropertyButton';
+import SimpleButton from '../Buttons/SimpleButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownForm from './QueryDropDownForm';
-import AddPropertyButton from '../Buttons/AddPropertyButton';
 import QueryInputChild from './QueryInputChild';
+import SimpleForm from './SimpleForm';
+import { levelZeroParameters } from 'app/pages/querybuilder/parameters';
 
 export default function QueryInput() {
-  const { inputs, setInputs, levelZeroParameters } =
-    useContext(QueryInputContext);
+  const { inputs, setInputs } = useContext(QueryInputContext);
 
   function removeRow(id) {
     const newList = inputs.filter((item) => item.id !== id);
@@ -66,8 +66,9 @@ export default function QueryInput() {
               id={`b${value.id}`}
               className="removeRow"
               onClick={() => removeRow(value.id)}
-              children="-"
-            ></SimpleButton>
+            >
+              -
+            </SimpleButton>
           </span>
         </OverlayTrigger>
         <br />

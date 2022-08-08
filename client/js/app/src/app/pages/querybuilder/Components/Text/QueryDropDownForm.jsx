@@ -1,6 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import SimpleDropDownForm from './SimpleDropDownForm';
+import {
+  childMap,
+  levelZeroParameters,
+} from 'app/pages/querybuilder/parameters';
 
 export default function QueryDropdownForm({
   choices,
@@ -8,14 +12,8 @@ export default function QueryDropdownForm({
   child = false,
   initial,
 }) {
-  const {
-    inputs,
-    setInputs,
-    levelZeroParameters,
-    childMap,
-    selectedItems,
-    setSelectedItems,
-  } = useContext(QueryInputContext);
+  const { inputs, setInputs, selectedItems, setSelectedItems } =
+    useContext(QueryInputContext);
   const [choice, setChoice] = useState();
 
   /**
@@ -51,8 +49,7 @@ export default function QueryDropdownForm({
       setSelectedItems([...selectedItems, newType]);
     } else {
       newInputs[index].type = newType;
-      let hasChildren = levelZeroParameters[newType].hasChildren;
-      newInputs[index].hasChildren = hasChildren;
+      newInputs[index].hasChildren = levelZeroParameters[newType].hasChildren;
       newInputs[index].children = [];
       newInputs[index].typeof = levelZeroParameters[newType].type;
       setSelectedItems([...selectedItems, newType]);

@@ -1,9 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import SimpleButton from './SimpleButton';
+import { childMap } from 'app/pages/querybuilder/parameters';
 
 export default function AddPropertyButton({ id }) {
-  const { inputs, setInputs, childMap } = useContext(QueryInputContext);
+  const { inputs, setInputs } = useContext(QueryInputContext);
   const [childId, setChildId] = useState(1);
 
   /**
