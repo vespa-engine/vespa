@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.NodeSlice;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
@@ -39,12 +40,12 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
     }
 
     @Override
-    protected boolean convergedOn(VespaVersionTarget target, SystemApplication application, ZoneApi zone) {
-        Optional<Version> minVersion = minVersion(zone, application, Node::currentVersion);
+    protected boolean convergedOn(VespaVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
+        Optional<Version> currentVersion = versionOf(nodeSlice, zone, application, Node::currentVersion);
         // Skip application convergence check if there are no nodes belonging to the application in the zone
-        if (minVersion.isEmpty()) return true;
+        if (currentVersion.isEmpty()) return true;
 
-        return minVersion.get().equals(target.version()) &&
+        return currentVersion.get().equals(target.version()) &&
                application.configConvergedIn(zone.getId(), controller(), Optional.of(target.version()));
     }
 
@@ -73,13 +74,13 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
     }
 
     @Override
-    protected boolean changeTargetTo(VespaVersionTarget target, SystemApplication application, ZoneApi zone) {
+    protected boolean changeTargetTo(VespaVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
             boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethods(zone.getId()).stream()
                                                        .anyMatch(RoutingMethod::isShared);
-            return minVersion(zone, application, Node::wantedVersion)
+            return versionOf(nodeSlice, zone, application, Node::wantedVersion)
                     .map(wantedVersion -> !wantedVersion.equals(target.version()))
                     .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet
 

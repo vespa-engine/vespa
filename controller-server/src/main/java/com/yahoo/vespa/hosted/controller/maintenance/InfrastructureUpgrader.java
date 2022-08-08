@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.NodeSlice;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Base class for maintainers that upgrade zone infrastructure.
@@ -57,22 +59,22 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
         int failures = 0;
         // Invert zone order if we're downgrading
         UpgradePolicy policy = target.downgrade() ? upgradePolicy.inverted() : upgradePolicy;
-        for (Set<ZoneApi> step : policy.steps()) {
+        for (UpgradePolicy.Step step : policy.steps()) {
             boolean converged = true;
-            for (ZoneApi zone : step) {
+            for (ZoneApi zone : step.zones()) {
                 try {
                     attempts++;
-                    converged &= upgradeAll(target, applications, zone);
+                    converged &= upgradeAll(target, applications, zone, step.nodeSlice());
                 } catch (UnreachableNodeRepositoryException e) {
                     failures++;
                     converged = false;
                     log.warning(Text.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s",
-                                              this, zone, Exceptions.toMessageString(e)));
+                                            this, zone, Exceptions.toMessageString(e)));
                 } catch (Exception e) {
                     failures++;
                     converged = false;
                     log.warning(Text.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s",
-                                              this, zone, Exceptions.toMessageString(e)));
+                                            this, zone, Exceptions.toMessageString(e)));
                 }
             }
             if (!converged) {
@@ -83,7 +85,7 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
     }
 
     /** Returns whether all applications have converged to the target version in zone */
-    private boolean upgradeAll(TARGET target, List<SystemApplication> applications, ZoneApi zone) {
+    private boolean upgradeAll(TARGET target, List<SystemApplication> applications, ZoneApi zone, NodeSlice nodeSlice) {
         Map<SystemApplication, Set<SystemApplication>> dependenciesByApplication = new HashMap<>();
         if (target.downgrade()) { // Invert dependencies when we're downgrading
             for (var application : applications) {
@@ -100,28 +102,25 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
         for (var kv : dependenciesByApplication.entrySet()) {
             SystemApplication application = kv.getKey();
             Set<SystemApplication> dependencies = kv.getValue();
-            if (convergedOn(target, dependencies, zone)) {
-                if (changeTargetTo(target, application, zone)) {
+            boolean allConverged = dependencies.stream().allMatch(app -> convergedOn(target, app, zone, nodeSlice));
+            if (allConverged) {
+                if (changeTargetTo(target, application, zone, nodeSlice)) {
                     upgrade(target, application, zone);
                 }
-                converged &= convergedOn(target, application, zone);
+                converged &= convergedOn(target, application, zone, nodeSlice);
             }
         }
         return converged;
     }
 
-    private boolean convergedOn(TARGET target, Set<SystemApplication> applications, ZoneApi zone) {
-        return applications.stream().allMatch(application -> convergedOn(target, application, zone));
-    }
-
     /** Returns whether target version for application in zone should be changed */
-    protected abstract boolean changeTargetTo(TARGET target, SystemApplication application, ZoneApi zone);
+    protected abstract boolean changeTargetTo(TARGET target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice);
 
     /** Upgrade component to target version. Implementation should be idempotent */
     protected abstract void upgrade(TARGET target, SystemApplication application, ZoneApi zone);
 
     /** Returns whether application has converged to target version in zone */
-    protected abstract boolean convergedOn(TARGET target, SystemApplication application, ZoneApi zone);
+    protected abstract boolean convergedOn(TARGET target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice);
 
     /** Returns the version target for the component upgraded by this, if any */
     protected abstract Optional<TARGET> target();
@@ -129,19 +128,34 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
     /** Returns whether the upgrader should expect given node to upgrade */
     protected abstract boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
 
-    /** Find the minimum value of a version field in a zone by comparing all nodes */
-    protected final Optional<Version> minVersion(ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
+    /** Find the highest version used by nodes satisfying nodeSlice in zone. If no such slice exists, the lowest known version is returned */
+    protected final Optional<Version> versionOf(NodeSlice nodeSlice, ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
         try {
-            return controller().serviceRegistry().configServer()
-                               .nodeRepository()
-                               .list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
-                               .stream()
-                               .filter(node -> expectUpgradeOf(node, application, zone))
-                               .map(versionField)
-                               .min(Comparator.naturalOrder());
+            Map<Version, Long> nodeCountByVersion = controller().serviceRegistry().configServer()
+                                                                .nodeRepository()
+                                                                .list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
+                                                                .stream()
+                                                                .filter(node -> expectUpgradeOf(node, application, zone))
+                                                                .collect(Collectors.groupingBy(versionField,
+                                                                                               Collectors.counting()));
+            long totalNodes = nodeCountByVersion.values().stream().reduce(Long::sum).orElse(0L);
+            Set<Version> versionsOfMatchingSlices = new HashSet<>();
+            for (var kv : nodeCountByVersion.entrySet()) {
+                long nodesOnVersion = kv.getValue();
+                if (nodeSlice.satisfiedBy(nodesOnVersion, totalNodes)) {
+                    versionsOfMatchingSlices.add(kv.getKey());
+                }
+            }
+            if (!versionsOfMatchingSlices.isEmpty()) {
+                // Choose the highest version in case we have several matching slices
+                return versionsOfMatchingSlices.stream().max(Comparator.naturalOrder());
+            }
+            // No matching slices found, fall back to the lowest known version
+            return nodeCountByVersion.keySet().stream().min(Comparator.naturalOrder());
         } catch (Exception e) {
             throw new UnreachableNodeRepositoryException(Text.format("Failed to get version for %s in %s: %s",
-                                                                       application.id(), zone, Exceptions.toMessageString(e)));
+                                                                     application.id(), zone,
+                                                                     Exceptions.toMessageString(e)));
         }
     }
 

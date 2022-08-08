@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.NodeSlice;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.UpgradePolicy.Step;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -45,12 +47,12 @@ public class OsUpgraderTest {
         ZoneApi zone4 = zone("prod.us-east-3", cloud1);
         ZoneApi zone5 = zone("prod.us-north-1", cloud2);
         UpgradePolicy upgradePolicy = UpgradePolicy.builder()
-                .upgrade(zone0)
-                .upgrade(zone1)
-                .upgradeInParallel(zone2, zone3)
-                .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
-                .upgrade(zone4)
-                .build();
+                                                   .upgrade(zone0)
+                                                   .upgrade(zone1)
+                                                   .upgrade(Step.of(zone2, zone3).require(NodeSlice.minCount(1)))
+                                                   .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
+                                                   .upgrade(zone4)
+                                                   .build();
         OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud1, false);
 
         // Bootstrap system
@@ -103,13 +105,14 @@ public class OsUpgraderTest {
         // zone 4: still on previous version
         assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4);
 
-        // zone 2 and 3: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone2, zone3);
+        // zone 2 and 3: enough nodes upgrade to satisfy node slice of this step
+        completeUpgrade(1, version1, SystemApplication.tenantHost, zone2);
+        completeUpgrade(1, version1, SystemApplication.tenantHost, zone3);
         assertEquals(Version.emptyVersion,
-                nodeRepository().list(zone2.getVirtualId(), NodeFilter.all().hostnames(nodeDeferringOsUpgrade.hostname()))
-                        .get(0)
-                        .currentOsVersion(),
-                "Current version is unchanged for node deferring OS upgrade");
+                     nodeRepository().list(zone2.getVirtualId(), NodeFilter.all().hostnames(nodeDeferringOsUpgrade.hostname()))
+                                     .get(0)
+                                     .currentOsVersion(),
+                     "Current version is unchanged for node deferring OS upgrade");
 
         // zone 4: begins upgrading
         osUpgrader.maintain();
@@ -117,6 +120,9 @@ public class OsUpgraderTest {
 
         // zone 4: completes upgrade
         completeUpgrade(version1, SystemApplication.tenantHost, zone4);
+
+        // zone 2 and 3: stragglers complete upgrade
+        completeUpgrade(version1, SystemApplication.tenantHost, zone2, zone3);
 
         // Next run does nothing as all zones are upgraded
         osUpgrader.maintain();
@@ -223,14 +229,14 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
         assertWanted(version, SystemApplication.tenantHost, zone1);
         Version chosenVersion = Version.fromString("7.1.1"); // Upgrade mechanism chooses a slightly newer version
-        completeUpgrade(version, chosenVersion, SystemApplication.tenantHost, zone1);
+        completeUpgrade(Integer.MAX_VALUE, version, chosenVersion, SystemApplication.tenantHost, zone1);
         statusUpdater.maintain();
         assertEquals(3, nodesOn(chosenVersion).size());
 
         // zone 2 upgrades
         osUpgrader.maintain();
         assertWanted(version, SystemApplication.tenantHost, zone2);
-        completeUpgrade(version, chosenVersion, SystemApplication.tenantHost, zone2);
+        completeUpgrade(Integer.MAX_VALUE, version, chosenVersion, SystemApplication.tenantHost, zone2);
         statusUpdater.maintain();
         assertEquals(6, nodesOn(chosenVersion).size());
 
@@ -272,7 +278,7 @@ public class OsUpgraderTest {
                                ZoneApi... zones) {
         for (ZoneApi zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
-                assertEquals(version, versionField.apply(node), application + " version in " + zone);
+                assertEquals(version, versionField.apply(node), application + " version in " + zone.getId());
             }
         }
     }
@@ -305,18 +311,30 @@ public class OsUpgraderTest {
 
     /** Simulate OS upgrade of nodes allocated to application. In a real system this is done by the node itself */
     private void completeUpgrade(Version version, SystemApplication application, ZoneApi... zones) {
-        completeUpgrade(version, version, application, zones);
+        completeUpgrade(-1, version, application, zones);
     }
 
-    private void completeUpgrade(Version wantedVersion, Version version, SystemApplication application, ZoneApi... zones) {
+    private void completeUpgrade(int nodeCount, Version version, SystemApplication application, ZoneApi... zones) {
+        completeUpgrade(nodeCount, version, version, application, zones);
+    }
+
+    private void completeUpgrade(int nodeCount, Version wantedVersion, Version version, SystemApplication application, ZoneApi... zones) {
         assertWanted(wantedVersion, application, zones);
         for (ZoneApi zone : zones) {
-            for (Node node : nodesRequiredToUpgrade(zone, application)) {
+            int nodesUpgraded = 0;
+            List<Node> nodes = nodesRequiredToUpgrade(zone, application);
+            for (Node node : nodes) {
+                if (node.currentVersion().equals(wantedVersion)) continue;
                 nodeRepository().putNodes(zone.getVirtualId(), Node.builder(node).wantedOsVersion(version)
                                                                    .currentOsVersion(version)
                                                                    .build());
+                if (++nodesUpgraded == nodeCount) {
+                    break;
+                }
             }
-            assertCurrent(version, application, zone);
+            if (nodesUpgraded == nodes.size()) {
+                assertCurrent(version, application, zone);
+            }
         }
     }
 
@@ -325,7 +343,7 @@ public class OsUpgraderTest {
     }
 
     private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean reprovisionToUpgradeOs) {
-        var zones = upgradePolicy.steps().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        var zones = upgradePolicy.steps().stream().map(Step::zones).flatMap(Collection::stream).collect(Collectors.toList());
         tester.zoneRegistry()
               .setZones(zones)
               .setOsUpgradePolicy(cloud, upgradePolicy);
