@@ -24,7 +24,7 @@ export default function transform(trace) {
   const retrieved = findLogsAndChildren(spans, topSpanFirstHalf);
   const logs = retrieved['logs'];
   const indexes = retrieved['indexes'];
-  traverseLogs(logs, indexes);
+  //traverseLogs(logs, indexes);
 
   return output;
 }
@@ -43,17 +43,19 @@ function traverseChildren(span, logs, children, indexes, parent) {
       duration = 1;
     }
     parent['duration'] = duration;
-    logSpan = createNewSpan(
-      traceStartTimestamp + spanTimestamp,
-      duration,
-      'p0',
-      parent['operationName'],
-      [{ refType: 'CHILD_OF', traceID: traceID, spanID: parent['spanID'] }]
-    );
-    data.push(logSpan);
     let log = [];
-    for (let x of span['children']) {
+    for (let i = 0; i < span['children'].length - 1; i++) {
+      //for (let x of span['children']) {
+      let x = span['children'][i];
       if (x.hasOwnProperty('children')) {
+        logSpan = createNewSpan(
+          traceStartTimestamp + spanTimestamp,
+          duration,
+          'p0',
+          parent['operationName'],
+          [{ refType: 'CHILD_OF', traceID: traceID, spanID: parent['spanID'] }]
+        );
+        data.push(logSpan);
         traverseChildren(x, logs, children, indexes, logSpan);
       } else if (Array.isArray(x['message'])) {
         if (log.length > 0) {
@@ -67,6 +69,27 @@ function traverseChildren(span, logs, children, indexes, parent) {
       } else {
         // only add logs with a timestamp
         if (x.hasOwnProperty('timestamp')) {
+          let logPointStart = traceStartTimestamp + x['timestamp'] * 1000;
+          let logPointDuration;
+          logPointDuration =
+            (span['children'][i + 1]['timestamp'] - x['timestamp']) * 1000;
+          if (isNaN(logPointDuration) || logPointDuration === 0) {
+            logPointDuration = 1;
+          }
+          let logSpan = createNewSpan(
+            logPointStart,
+            logPointDuration,
+            'p0',
+            x['message'],
+            [
+              {
+                refType: 'CHILD_OF',
+                traceID: traceID,
+                spanID: parent['spanID'],
+              },
+            ]
+          );
+          data.push(logSpan);
           log.push(x);
         }
       }
@@ -121,58 +144,49 @@ function findLogsAndChildren(spans, topSpanFirstHalf) {
   return { logs: logs, indexes: indexes };
 }
 
-function traverseLogs(logs, indexes) {
-  let data = output['data'][0]['spans'];
-  let previous;
-  for (let i = 0; i < logs.length; i++) {
-    previous = data[indexes[i]];
-    let log = logs[i];
-    let logStartTimestamp = traceStartTimestamp + log[0]['timestamp'] * 1000;
-    let logDuration =
-      (log[log.length - 1]['timestamp'] - log[0]['timestamp']) * 1000;
-    if (logDuration === 0) {
-      logDuration = 1;
-    }
-    let childSpan = createNewSpan(
-      logStartTimestamp,
-      logDuration,
-      'p0',
-      'test',
-      [{ refType: 'CHILD_OF', traceID: traceID, spanID: previous['spanID'] }]
-    );
-    data.push(childSpan);
-    for (let k = 0; k < log.length - 1; k++) {
-      if (
-        log[k].hasOwnProperty('message') &&
-        log[k].hasOwnProperty('timestamp')
-      ) {
-        let logPointStart = traceStartTimestamp + log[k]['timestamp'] * 1000;
-        let logPointDuration;
-        if (k >= log.length - 1) {
-          logPointDuration = 1;
-        } else {
-          logPointDuration =
-            (log[k + 1]['timestamp'] - log[k]['timestamp']) * 1000;
-          logPointDuration = logPointDuration === 0 ? 1 : logPointDuration;
-        }
-        let logSpan = createNewSpan(
-          logPointStart,
-          logPointDuration,
-          'p0',
-          log[k]['message'],
-          [
-            {
-              refType: 'CHILD_OF',
-              traceID: traceID,
-              spanID: childSpan['spanID'],
-            },
-          ]
-        );
-        data.push(logSpan);
-      }
-    }
-  }
-}
+// function traverseLogs(logs, indexes) {
+//   let data = output['data'][0]['spans'];
+//   let previous;
+//   for (let i = 0; i < logs.length; i++) {
+//     previous = data[indexes[i]];
+//     let log = logs[i];
+//     let logDuration =
+//       (log[log.length - 1]['timestamp'] - log[0]['timestamp']) * 1000;
+//     if (logDuration === 0) {
+//       logDuration = 1;
+//     }
+//     for (let k = 0; k < log.length - 1; k++) {
+//       if (
+//         log[k].hasOwnProperty('message') &&
+//         log[k].hasOwnProperty('timestamp')
+//       ) {
+//         let logPointStart = traceStartTimestamp + log[k]['timestamp'] * 1000;
+//         let logPointDuration;
+//         if (k >= log.length - 1) {
+//           logPointDuration = 1;
+//         } else {
+//           logPointDuration =
+//             (log[k + 1]['timestamp'] - log[k]['timestamp']) * 1000;
+//           logPointDuration = logPointDuration === 0 ? 1 : logPointDuration;
+//         }
+//         let logSpan = createNewSpan(
+//           logPointStart,
+//           logPointDuration,
+//           'p0',
+//           log[k]['message'],
+//           [
+//             {
+//               refType: 'CHILD_OF',
+//               traceID: traceID,
+//               spanID: previous['spanID'],
+//             },
+//           ]
+//         );
+//         data.push(logSpan);
+//       }
+//     }
+//   }
+// }
 
 function createChildren(children, parentID) {
   let child = children[0];
