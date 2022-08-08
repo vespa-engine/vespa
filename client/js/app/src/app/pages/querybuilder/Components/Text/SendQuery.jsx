@@ -69,7 +69,7 @@ export default function SendQuery() {
         return parseFloat(input);
 
       case 'Boolean':
-        return input.toLowerCase() === 'true' ? true : false;
+        return input.toLowerCase() === 'true';
 
       default:
         return input;

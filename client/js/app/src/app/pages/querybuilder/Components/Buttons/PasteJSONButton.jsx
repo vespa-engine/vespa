@@ -83,7 +83,6 @@ export default function PasteJSONButton() {
   return (
     <>
       <ImageButton
-        id="pasteJSON"
         className="pasteJSON"
         image={pasteImage}
         //style={{ marginTop: '-2px', marginRight: '3px' }}

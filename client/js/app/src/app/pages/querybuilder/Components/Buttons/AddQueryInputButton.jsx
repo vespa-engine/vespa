@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
-import { QueryInputContext } from '../Contexts/QueryInputContext';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
+import { QueryInputContext } from '../Contexts/QueryInputContext';
 
 export default function AddQueryInput() {
-  const { inputs, setInputs, id, setId } = useContext(QueryInputContext);
+  const { setInputs, id, setId } = useContext(QueryInputContext);
 
   /**
    * Adds a new element to inputs.
@@ -33,13 +33,7 @@ export default function AddQueryInput() {
       overlay={<Tooltip id="button-tooltip">Add row</Tooltip>}
     >
       <span>
-        <button
-          id="addRow"
-          className="addRow"
-          height="0"
-          width="0"
-          onClick={updateInputs}
-        >
+        <button id="addRow" className="addRow" onClick={updateInputs}>
           +
         </button>
       </span>

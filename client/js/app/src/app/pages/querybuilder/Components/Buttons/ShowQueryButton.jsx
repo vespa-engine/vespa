@@ -15,7 +15,6 @@ export default function ShowQueryButton() {
       </button>
       {showQuery && (
         <textarea
-          id="jsonquery"
           className="responsebox"
           readOnly
           cols="70"

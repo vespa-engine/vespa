@@ -1,9 +1,8 @@
 import React, { useContext, useState } from 'react';
-import OverlayImageButton from './OverlayImageButton';
-
-import copyImage from '../../assets/img/copy.svg';
-import { ResponseContext } from '../Contexts/ResponseContext';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { ResponseContext } from '../Contexts/ResponseContext';
+import ImageButton from './ImageButton';
+import copyImage from 'app/pages/querybuilder/assets/img/copy.svg';
 
 export default function CopyResponseButton() {
   const { response } = useContext(ResponseContext);
@@ -20,18 +19,16 @@ export default function CopyResponseButton() {
   return (
     <OverlayTrigger
       placement="left-end"
-      show={show}
       overlay={
-        <Tooltip id="copy-tooltip">Response copied to clipboard</Tooltip>
+        <Tooltip>{show ? 'Response copied to clipboard' : 'Copy'}</Tooltip>
       }
     >
       <span>
-        <OverlayImageButton
+        <ImageButton
           className="intro-copy"
           image={copyImage}
-          height="30"
-          width="30"
-          tooltip="Copy"
+          height={30}
+          width={30}
           onClick={handleCopy}
         />
       </span>

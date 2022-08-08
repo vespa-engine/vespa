@@ -62,11 +62,10 @@ export default function QueryDropdownForm({
 
   return (
     <SimpleDropDownForm
-      id={id}
       onChange={updateType}
       choices={choices}
       value={choice}
       initial={initial}
-    ></SimpleDropDownForm>
+    />
   );
 }
