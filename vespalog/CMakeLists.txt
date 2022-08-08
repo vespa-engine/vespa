@@ -17,7 +17,7 @@ vespa_define_module(
     src/test/threads
 )
 
-set(GODIR ${CMAKE_CURRENT_SOURCE_DIR}/go)
+set(GODIR ${CMAKE_CURRENT_SOURCE_DIR}/../client/go)
 
 file(GLOB_RECURSE GOSRCFILES ${GODIR}/*.go)
 
