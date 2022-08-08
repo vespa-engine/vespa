@@ -26,14 +26,14 @@ type Tail struct {
 	reader  *bufio.Reader
 }
 
-func FollowFile(fn string) (res Tail, err error) {
+func FollowFile(fn string) (res Tail) {
 	res.fn = fn
 	res.lineBuf = make([]byte, lastLinesSize)
 	res.openTail()
 	res.Lines = make(chan Line, 20)
 	res.lineBuf = res.lineBuf[:0]
 	go runTailWith(&res)
-	return res, nil
+	return res
 }
 
 func (t *Tail) setFile(f *os.File) {
