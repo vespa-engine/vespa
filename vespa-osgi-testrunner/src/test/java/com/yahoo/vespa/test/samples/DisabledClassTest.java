@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @Disabled("because")
-@Expect(skipped = 2, status = 1)
+@Expect(skipped = 2, status = 2)
 public class DisabledClassTest {
 
     @Test

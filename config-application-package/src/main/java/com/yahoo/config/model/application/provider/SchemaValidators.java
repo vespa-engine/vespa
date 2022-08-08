@@ -63,8 +63,6 @@ public class SchemaValidators {
             routingStandaloneXmlValidator = createValidator(schemaDir, routingStandaloneXmlSchemaName);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } catch (Exception e) {
-            throw e;
         } finally {
             if (schemaDir != null)
                 IOUtils.recursiveDeleteDir(schemaDir);
@@ -96,7 +94,7 @@ public class SchemaValidators {
     }
 
     /**
-     * Look for the schema files in config-model.jar and saves them on temp dir. Uses schema files
+     * Looks for schema files in config-model.jar and saves them in a temp dir. Uses schema files
      * in $VESPA_HOME/share/vespa/schema/[major-version].x/ otherwise
      *
      * @return the directory the schema files are stored in
@@ -104,30 +102,29 @@ public class SchemaValidators {
      */
     private File saveSchemasFromJar(File tmpBase, Version vespaVersion) throws IOException {
         Class<? extends SchemaValidators> schemaValidatorClass = this.getClass();
-        ClassLoader classLoader = schemaValidatorClass.getClassLoader();
-        Enumeration<URL> uris = classLoader.getResources("schema");
+        Enumeration<URL> uris = schemaValidatorClass.getClassLoader().getResources("schema");
         if (uris == null) throw new IllegalArgumentException("Could not find XML schemas ");
 
         File tmpDir = createTempDirectory(tmpBase.toPath(), "vespa").toFile();
         log.log(Level.FINE, () -> "Will save all XML schemas for " + vespaVersion + " to " + tmpDir);
+        boolean schemasFound = false;
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
-            log.log(Level.FINE, () -> "uri for resource 'schema'=" + u.toString());
-            // TODO: When is this the case? Remove?
+            // Used when building standalone-container
             if ("jar".equals(u.getProtocol())) {
                 JarURLConnection jarConnection = (JarURLConnection) u.openConnection();
                 JarFile jarFile = jarConnection.getJarFile();
                 for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
                     JarEntry je = entries.nextElement();
                     if (je.getName().startsWith("schema/") && je.getName().endsWith(".rnc")) {
+                        schemasFound = true;
                         writeContentsToFile(tmpDir, je.getName(), jarFile.getInputStream(je));
                     }
                 }
                 jarFile.close();
             } else if ("bundle".equals(u.getProtocol())) {
                 Bundle bundle = getBundle(schemaValidatorClass);
-                log.log(Level.FINE, () -> "bundle=" + bundle);
-                // TODO: Hack to handle cases where bundle=null (which seems to always be the case with config-model-fat-amended.jar)
+                // Use schemas on disk when bundle is null (which is the case when using config-model-fat-amended.jar)
                 if (bundle == null) {
                     String pathPrefix = getDefaults().underVespaHome("share/vespa/schema/");
                     File schemaPath = new File(pathPrefix + "version/" + vespaVersion.getMajor() + ".x/schema/");
@@ -137,22 +134,28 @@ public class SchemaValidators {
                         schemaPath = new File(pathPrefix);
                     }
                     log.log(Level.FINE, "Using schemas found in " + schemaPath);
+                    schemasFound = true;
                     copySchemas(schemaPath, tmpDir);
                 } else {
                     log.log(Level.FINE, () -> String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));
-                    for (Enumeration<URL> entries = bundle.findEntries("schema", "*.rnc", true);
-                         entries.hasMoreElements(); ) {
-
+                    for (Enumeration<URL> entries = bundle.findEntries("schema", "*.rnc", true); entries.hasMoreElements(); ) {
                         URL url = entries.nextElement();
                         writeContentsToFile(tmpDir, url.getFile(), url.openStream());
+                        schemasFound = true;
                     }
                 }
-            // TODO: When is this the case? Remove?
-            } else if ("file".equals(u.getProtocol())) {
+            } else if ("file".equals(u.getProtocol())) { // Used when running unit tests
                 File schemaPath = new File(u.getPath());
                 copySchemas(schemaPath, tmpDir);
+                schemasFound = true;
             }
         }
+
+        if ( ! schemasFound) {
+            IOUtils.recursiveDeleteDir(tmpDir);
+            throw new IllegalArgumentException("Could not find schemas for version " + vespaVersion);
+        }
+
         return tmpDir;
     }
 

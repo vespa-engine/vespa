@@ -89,10 +89,8 @@ public class Autoscaler {
                                " nodes, but require from " + clusterNodes.size());
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository);
-        var target = ResourceTarget.idealLoad(clusterModel, currentAllocation);
-
         Optional<AllocatableClusterResources> bestAllocation =
-                allocationOptimizer.findBestAllocation(target, currentAllocation, clusterModel, limits);
+                allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
             return Advice.dontScale(Status.insufficient, "No allocations are possible within configured limits");
 

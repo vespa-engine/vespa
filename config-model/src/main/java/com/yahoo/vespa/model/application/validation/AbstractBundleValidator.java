@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -16,8 +17,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
@@ -96,20 +95,19 @@ public abstract class AbstractBundleValidator extends Validator {
     }
 
     private static final Pattern POM_FILE_LOCATION = Pattern.compile("META-INF/maven/.+?/.+?/pom.xml");
-    private Optional<Document> getPomXmlContent(DeployLogger deployLogger, JarFile jar) {
+    public Optional<Document> getPomXmlContent(DeployLogger deployLogger, JarFile jar) {
         return jar.stream()
                 .filter(f -> POM_FILE_LOCATION.matcher(f.getName()).matches())
                 .findFirst()
                 .map(f -> {
                     try {
                         String text = new String(jar.getInputStream(f).readAllBytes());
-                        return DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
+                        return XML.getDocumentBuilder(false)
                                 .parse(new InputSource(new StringReader(text)));
-                    } catch (ParserConfigurationException e) {
-                        throw new RuntimeException(e);
                     } catch (SAXException e) {
-                        deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", filename(jar)));
-                        return null;
+                        String message = String.format("Unable to parse pom.xml from %s", filename(jar));
+                        deployLogger.log(Level.SEVERE, message);
+                        throw new RuntimeException(message, e);
                     } catch (IOException e) {
                         deployLogger.log(Level.INFO,
                                 String.format("Unable to read '%s' from '%s'", f.getName(), jar.getName()));

@@ -5,6 +5,7 @@ import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -57,7 +58,7 @@ public class XmlPreProcessor {
     }
 
     public Document run() throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
+        DocumentBuilder docBuilder = XML.getDocumentBuilder();
         Document document = docBuilder.parse(new InputSource(xmlInput));
         return execute(document);
     }
@@ -74,6 +75,7 @@ public class XmlPreProcessor {
         chain.add(new IncludeProcessor(applicationDir));
         chain.add(new OverrideProcessor(instance, environment, region));
         chain.add(new PropertiesProcessor());
+        chain.add(new ValidationProcessor()); // must be last in chain
         return chain;
     }
 

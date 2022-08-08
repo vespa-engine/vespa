@@ -3358,6 +3358,8 @@
       "public static org.w3c.dom.Document getDocument(java.lang.String)",
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder()",
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(java.lang.String, java.lang.ClassLoader)",
+      "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(boolean)",
+      "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(java.lang.String, java.lang.ClassLoader, boolean)",
       "public static java.util.List getChildren(org.w3c.dom.Element)",
       "public static java.util.List getChildren(org.w3c.dom.Element, java.lang.String)",
       "public static java.lang.String getValue(org.w3c.dom.Element)",

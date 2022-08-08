@@ -4,7 +4,7 @@ import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Expect(skipped = 1, status = 1)
+@Expect(skipped = 1, status = 2)
 public class DisabledTest {
 
     @Test

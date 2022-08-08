@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -69,10 +70,18 @@ public class AutoscalingTest {
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
-    public void test_autoscaling_up_is_fast_TODO() {
+    public void test_no_autoscaling_with_no_measurements() {
         var fixture = AutoscalingTester.fixture().build();
-        fixture.tester().clock().advance(Duration.ofDays(1)); // TODO: Remove the need for this
-        fixture.loader().applyLoad(1.0, 1.0, 1.0, 120); // TODO: Make this low
+        System.out.println(fixture.autoscale());
+        assertTrue(fixture.autoscale().target().isEmpty());
+    }
+
+    /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
+    @Test
+    @Ignore // TODO
+    public void test_autoscaling_up_is_fast() {
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.loader().applyLoad(1.0, 1.0, 1.0, 1);
         fixture.tester().assertResources("Scaling up since resource usage is too high",
                                          10, 1, 9.4, 8.5, 92.6,
                                          fixture.autoscale());

@@ -546,14 +546,14 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  10),
                                                       resources(9, 3, 12, 35, 15)));
         tester.assertNodes("Groups changed",
-                           9, 3, 8, 35, 15,
+                           9, 3, 8, 30, 13,
                            app1, cluster1);
 
         // Stop specifying node resources
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified()),
                                                       new ClusterResources(9, 3, NodeResources.unspecified())));
         tester.assertNodes("No change",
-                           9, 3, 8, 35, 15,
+                           9, 3, 8, 30, 13,
                            app1, cluster1);
     }
 

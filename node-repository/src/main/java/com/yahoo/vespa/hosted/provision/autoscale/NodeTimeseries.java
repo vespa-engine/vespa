@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,10 @@ public class NodeTimeseries {
     public Optional<NodeMetricSnapshot> last() {
         if (snapshots.isEmpty()) return Optional.empty();
         return Optional.of(snapshots.get(snapshots.size() - 1));
+    }
+
+    public OptionalDouble peak(Load.Dimension dimension) {
+        return snapshots.stream().mapToDouble(snapshot -> snapshot.load().get(dimension)).max();
     }
 
     public List<NodeMetricSnapshot> asList() { return snapshots; }

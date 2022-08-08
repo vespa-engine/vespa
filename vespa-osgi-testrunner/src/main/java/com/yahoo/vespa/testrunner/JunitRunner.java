@@ -4,28 +4,23 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
-import ai.vespa.hosted.cd.InconclusiveTestException;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.testrunner.TestReport.ContainerNode;
-import com.yahoo.vespa.testrunner.TestReport.FailureNode;
-import com.yahoo.vespa.testrunner.TestReport.Status;
 import org.junit.jupiter.engine.JupiterTestEngine;
+import org.junit.platform.engine.discovery.ClassSelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.core.LauncherConfig;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
-import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -64,9 +59,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         this(Clock.systemUTC(),
              testRuntimeProvider,
              new TestBundleLoader(osgiFramework)::loadTestClasses,
-             (discoveryRequest, listeners) -> LauncherFactory.create(LauncherConfig.builder()
-                                                                                   .addTestEngines(new JupiterTestEngine())
-                                                                                   .build()).execute(discoveryRequest, listeners));
+             JunitRunner::executeTests);
 
         uglyHackSetCredentialsRootSystemProperty(config, systemInfo.zone());
 
@@ -80,6 +73,24 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         this.classLoader = classLoader;
         this.testExecutor = testExecutor;
         this.testRuntimeProvider = testRuntimeProvider;
+    }
+
+    private static void executeTests(LauncherDiscoveryRequest discoveryRequest, TestExecutionListener[] listeners) {
+        var launcher = LauncherFactory.create(LauncherConfig.builder()
+                                                            .addTestEngines(new JupiterTestEngine())
+                                                            .build());
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+        try {
+            // Pick the bundle class loader of the first user test class, from the test class selector.
+            discoveryRequest.getSelectorsByType(ClassSelector.class).stream()
+                            .map(selector -> selector.getJavaClass().getClassLoader())
+                            .findAny().ifPresent(Thread.currentThread()::setContextClassLoader);
+
+            launcher.execute(discoveryRequest, listeners);
+        }
+        finally {
+            Thread.currentThread().setContextClassLoader(context);
+        }
     }
 
     @Override

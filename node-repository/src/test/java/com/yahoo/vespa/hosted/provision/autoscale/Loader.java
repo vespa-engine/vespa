@@ -33,6 +33,7 @@ public class Loader {
      * @param count the number of measurements
      */
     public Duration addCpuMeasurements(double value, int count) {
+        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         Instant initialTime = fixture.tester().clock().instant();
@@ -88,6 +89,7 @@ public class Loader {
      * wanting to see the ideal load with one node missing.)
      */
     public void addMemMeasurements(double value, int count) {
+        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
