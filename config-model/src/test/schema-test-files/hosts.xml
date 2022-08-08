@@ -6,13 +6,13 @@
     <alias>host1</alias>
     <alias>configserver</alias>
     <alias>logserver</alias>
-    <alias>qrserver</alias>
+    <alias>container</alias>
     <alias>distributor</alias>
     <alias>feeder</alias>
     <alias>rtx</alias>
     <alias>tld</alias>
-    <alias>rtc-1</alias>
-    <alias>rtc-2</alias>
+    <alias>searchnode-1</alias>
+    <alias>searchnode-2</alias>
   </host>
 
   <host name="example.yahoo.com">

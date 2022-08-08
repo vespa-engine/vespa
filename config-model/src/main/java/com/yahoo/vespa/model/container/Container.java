@@ -207,7 +207,7 @@ public abstract class Container extends AbstractService implements
     }
 
     /**
-     * First Qrserver or container must run on ports familiar to the user.
+     * First container must run on ports familiar to the user.
      */
     @Override
     public boolean requiresWantedPort() {
