@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -28,7 +29,7 @@ public class CompileVersionMojo extends AbstractVespaMojo {
     @Override
     protected void doExecute() throws IOException {
         Path output = Paths.get(outputFile).toAbsolutePath();
-        OptionalInt allowMajor = majorVersion(Paths.get("src/main/application/deployment.xml"));
+        OptionalInt allowMajor = majorVersion(new File(project.getBasedir(), "src/main/application/deployment.xml").toPath());
         String compileVersion = controller.compileVersion(id, allowMajor);
         if (allowMajor.isPresent()) {
             getLog().info("Allowing major version " + allowMajor.getAsInt() + ".");
