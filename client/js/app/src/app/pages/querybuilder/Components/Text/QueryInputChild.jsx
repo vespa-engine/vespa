@@ -109,7 +109,6 @@ export default function QueryInputChild({ id }) {
           </>
         ) : (
           <SimpleForm
-            id={`v${child.id}`}
             size="30"
             onChange={updateInput}
             placeholder={setPlaceHolder(child.id)}
@@ -158,7 +157,6 @@ function Child({ child, type, onChange, placeholder, removeRow }) {
           </>
         ) : (
           <SimpleForm
-            id={`v${child.id}`}
             size="30"
             onChange={onChange}
             placeholder={placeholder(child.id)}

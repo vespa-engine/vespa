@@ -85,12 +85,10 @@ export default function SendQuery() {
     <>
       <SimpleDropDownForm
         choices={messageMethods}
-        id="method"
         className="methodselector"
         onChange={updateMethod}
       />
       <SimpleForm
-        id="url"
         className="textbox"
         initial={url}
         size="30"

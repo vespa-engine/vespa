@@ -1,6 +1,5 @@
 import React from 'react';
 import QueryInput from './Components/Text/QueryInput';
-import TextBox from './Components/Text/TextBox';
 import AddQueryInput from './Components/Buttons/AddQueryInputButton';
 import { QueryInputProvider } from './Components/Contexts/QueryInputContext';
 import SendQuery from './Components/Text/SendQuery';
@@ -20,10 +19,10 @@ export function QueryBuilder() {
     <>
       <header>
         <div className="intro container">
-          <TextBox className={'intro-lead-in'}>Vespa Search Engine</TextBox>
-          <TextBox className={'intro-long'}>
+          <p className="intro-lead-in">Vespa Search Engine</p>
+          <p className="intro-long">
             Select the method for sending a request and construct a query.
-          </TextBox>
+          </p>
           <ResponseProvider>
             <QueryProvider>
               <QueryInputProvider>
@@ -39,7 +38,7 @@ export function QueryBuilder() {
               </QueryInputProvider>
               <ShowQueryButton />
             </QueryProvider>
-            <TextBox className="response">Response</TextBox>
+            <p className="response">Response</p>
             <ResponseBox />
             <CopyResponseButton />
             <DownloadJSONButton>Download response as JSON</DownloadJSONButton>
