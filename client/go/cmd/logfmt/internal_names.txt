@@ -1,3 +1,5 @@
+sentinel.sentinel.config
+searchnode.eval.Test
 Container.ai.vespa.client.dsl.Test
 Container.ai.vespa.cloud.Test
 Container.ai.vespa.embedding.Test
