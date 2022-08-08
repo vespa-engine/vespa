@@ -224,6 +224,9 @@ public class InternalStepRunner implements StepRunner {
             // Retry certain failures for up to one hour.
             Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                                          ? Optional.of(deploymentFailed) : Optional.empty();
+            if (result.isPresent())
+                logger.log(WARNING, "Deployment failed for one hour; giving up now!");
+
             switch (e.code()) {
                 case CERTIFICATE_NOT_READY:
                     logger.log("No valid CA signed certificate for app available to config server");
@@ -424,10 +427,14 @@ public class InternalStepRunner implements StepRunner {
         Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
                                                                                                                Optional.of(platform));
         if (services.isEmpty()) {
-            logger.log("Config status not currently available -- will retry.");
-            return run.stepInfo(installTester).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(5)))
-                   ? Optional.of(error)
-                   : Optional.empty();
+            if (run.stepInfo(installTester).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(30)))) {
+                logger.log(WARNING, "Config status not available after 30 minutes; giving up!");
+                return Optional.of(error);
+            }
+            else {
+                logger.log("Config status not currently available -- will retry.");
+                return Optional.empty();
+            }
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
                                                                                              NodeFilter.all()
