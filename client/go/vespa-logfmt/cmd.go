@@ -4,8 +4,6 @@
 
 package main
 
-// var VespaVersion string = "0.0.0-devel"
-
 import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"

@@ -28,8 +28,7 @@ func TestLevelFlags(t *testing.T) {
 		for _, text := range texts {
 			err := target.Set(text)
 			if err != nil {
-				t.Logf("unexpected error with level flags Set('%s'): %v", text, err)
-				t.FailNow()
+				t.Fatalf("unexpected error with level flags Set('%s'): %v", text, err)
 			}
 		}
 		got := target.String()
@@ -59,8 +58,7 @@ func TestLevelFlags(t *testing.T) {
 				if err.Error() == expectErr {
 					return
 				}
-				t.Logf("expected error [%s] with level flags Set('%s'), but got [%v]", expectErr, text, err)
-				t.FailNow()
+				t.Fatalf("expected error [%s] with level flags Set('%s'), but got [%v]", expectErr, text, err)
 			}
 		}
 		t.Logf("Did not get expected error '%s' from %s", expectErr, strings.Join(texts, ","))

@@ -46,6 +46,7 @@ func RunLogfmt(opts *Options, args []string) {
 			fmt.Fprintf(os.Stderr, "Cannot open '%s': %v\n", arg, err)
 		} else {
 			formatFile(opts, file)
+			file.Close()
 		}
 	}
 }
