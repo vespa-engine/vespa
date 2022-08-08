@@ -1,6 +1,5 @@
 import React, { useContext, useState } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import SimpleButton from './SimpleButton';
 import { childMap } from 'app/pages/querybuilder/parameters';
 
 export default function AddPropertyButton({ id }) {
@@ -36,12 +35,8 @@ export default function AddPropertyButton({ id }) {
   };
 
   return (
-    <SimpleButton
-      id={`propb${id}`}
-      className={'addpropsbutton'}
-      onClick={addChildProperty}
-    >
+    <button className="addpropsbutton" onClick={addChildProperty}>
       + Add property
-    </SimpleButton>
+    </button>
   );
 }

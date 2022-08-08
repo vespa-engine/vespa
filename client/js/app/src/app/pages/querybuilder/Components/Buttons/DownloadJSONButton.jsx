@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { ResponseContext } from '../Contexts/ResponseContext';
 import transform from '../../TransformVespaTrace';
-import SimpleButton from './SimpleButton';
 
 export default function DownloadJSONButton({ children }) {
   const { response } = useContext(ResponseContext);
@@ -40,5 +39,5 @@ export default function DownloadJSONButton({ children }) {
     }
   };
 
-  return <SimpleButton onClick={handleClick}>{children}</SimpleButton>;
+  return <button onClick={handleClick}>{children}</button>;
 }

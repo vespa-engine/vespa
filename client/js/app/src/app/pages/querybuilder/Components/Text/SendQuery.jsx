@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useState } from 'react';
-import SimpleButton from '../Buttons/SimpleButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import { ResponseContext } from '../Contexts/ResponseContext';
 import { QueryContext } from '../Contexts/QueryContext';
@@ -97,9 +96,9 @@ export default function SendQuery() {
         size="30"
         onChange={updateUrl}
       />
-      <SimpleButton id="send" className="button" onClick={handleClick}>
+      <button className="button" onClick={handleClick}>
         Send
-      </SimpleButton>
+      </button>
     </>
   );
 }

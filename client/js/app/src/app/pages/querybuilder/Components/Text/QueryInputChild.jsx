@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AddPropertyButton from '../Buttons/AddPropertyButton';
-import SimpleButton from '../Buttons/SimpleButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownForm from './QueryDropDownForm';
 import SimpleForm from './SimpleForm';
@@ -123,13 +122,9 @@ export default function QueryInputChild({ id }) {
           overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
         >
           <span>
-            <SimpleButton
-              id={`b${child.id}`}
-              className="removeRow"
-              onClick={() => removeRow(child.id)}
-            >
+            <button className="removeRow" onClick={() => removeRow(child.id)}>
               -
-            </SimpleButton>
+            </button>
           </span>
         </OverlayTrigger>
         <br />
@@ -176,13 +171,9 @@ function Child({ child, type, onChange, placeholder, removeRow }) {
           overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
         >
           <span>
-            <SimpleButton
-              id={`b${child.id}`}
-              className="removeRow"
-              onClick={() => removeRow(child.id)}
-            >
+            <button className="removeRow" onClick={() => removeRow(child.id)}>
               -
-            </SimpleButton>
+            </button>
           </span>
         </OverlayTrigger>
         <br />

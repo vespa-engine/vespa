@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AddPropertyButton from '../Buttons/AddPropertyButton';
-import SimpleButton from '../Buttons/SimpleButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownForm from './QueryDropDownForm';
 import QueryInputChild from './QueryInputChild';
@@ -36,7 +35,7 @@ export default function QueryInput() {
 
   const inputList = inputs.map((value) => {
     return (
-      <div key={value.id + value.typeof} id={value.id} className="queryinput">
+      <div key={value.id + value.typeof} className="queryinput">
         <QueryDropdownForm
           choices={levelZeroParameters}
           id={value.id}
@@ -49,7 +48,6 @@ export default function QueryInput() {
           </>
         ) : (
           <SimpleForm
-            id={`v${value.id}`}
             size="30"
             onChange={updateInput}
             placeholder={setPlaceholder(value.id)}
@@ -62,13 +60,9 @@ export default function QueryInput() {
           overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
         >
           <span>
-            <SimpleButton
-              id={`b${value.id}`}
-              className="removeRow"
-              onClick={() => removeRow(value.id)}
-            >
+            <button className="removeRow" onClick={() => removeRow(value.id)}>
               -
-            </SimpleButton>
+            </button>
           </span>
         </OverlayTrigger>
         <br />

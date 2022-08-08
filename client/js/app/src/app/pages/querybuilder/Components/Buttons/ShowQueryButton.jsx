@@ -1,6 +1,5 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { QueryContext } from '../Contexts/QueryContext';
-import SimpleButton from './SimpleButton';
 
 export default function ShowQueryButton() {
   const { query, showQuery, setShowQuery } = useContext(QueryContext);
@@ -11,9 +10,9 @@ export default function ShowQueryButton() {
 
   return (
     <>
-      <SimpleButton className="showJSON" onClick={handleClick}>
+      <button className="showJSON" onClick={handleClick}>
         Show query JSON
-      </SimpleButton>
+      </button>
       {showQuery && (
         <textarea
           id="jsonquery"
