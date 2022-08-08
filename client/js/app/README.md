@@ -28,16 +28,16 @@ To use the visualizer you paste the Vespa trace into the text box and press the 
 to a format supported by Jaeger and download it.  
 Only Vespa traces using _trace.timestampa=true_ **and** _traceLevel_ between 3 and 5 (inclusive) will work correctly.
 
-![Trace Converter](/img/TraceConverter.png)
+![Trace Converter](img/TraceConverter.png)
 
 When downloading the trace a new tab with Jeager will open up.  
 Press the _JSON File_ button as shown in the image, and drag and drop the trace you just downloaded.
 
-![Jager Image](/img/JaegerExample.png)
+![Jager Image](img/JaegerExample.png)
 
 You can then click on the newly added trace and see it displayed as a flame graph.
 
-![Example Image](/img/result.png)
+![Example Image](img/result.png)
 
 # Client install and start
 
