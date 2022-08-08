@@ -121,21 +121,8 @@ class ReindexerTest {
         assertEquals(reindexing, database.readReindexing("cluster"));
         assertTrue(shutDown.get(), "Session was shut down");
         assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "successful"),
-                                                          1.0,
-                                                          Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "pending"),
-                                                          -1.0,
-                                                          Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "failed"),
-                                                          -1.0,
-                                                          Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "running"),
-                                                          -1.0)),
+                                                                 "clusterid", "cluster"),
+                                                          1.0)),
                      metric.metrics());
 
         // One more reindexing, this time shut down before visit completes, but after progress is reported.
@@ -159,8 +146,7 @@ class ReindexerTest {
         assertEquals(1.0, // new ProgressToken() is 100% done.
                      metric.metrics().get("reindexing.progress")
                            .get(Map.of("documenttype", "music",
-                                       "clusterid", "cluster",
-                                       "state", "pending")));
+                                       "clusterid", "cluster")));
 
         // Reindexer is created without any ready document types, which means nothing should run.
         new Reindexer(cluster, triggers(), database, ReindexerTest::failIfCalled, metric, clock).reindex();
