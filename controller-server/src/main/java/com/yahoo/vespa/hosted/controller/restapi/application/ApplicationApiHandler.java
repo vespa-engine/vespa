@@ -2558,12 +2558,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         cloudTenant.tenantSecretStores());
 
                 try {
-                    var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
                     var usedQuota = applications.stream()
                             .map(Application::quotaUsage)
                             .reduce(QuotaUsage.none, QuotaUsage::add);
 
-                    toSlime(tenantQuota, usedQuota, object.setObject("quota"));
+                    toSlime(object.setObject("quota"), usedQuota);
                 } catch (Exception e) {
                     log.warning(String.format("Failed to get quota for tenant %s: %s", tenant.name(), Exceptions.toMessageString(e)));
                 }
@@ -2606,15 +2605,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         archiveAccess.gcpMember().ifPresent(member -> object.setString("gcpMember", member));
     }
 
-    private void toSlime(Quota quota, QuotaUsage usage, Cursor object) {
-        quota.budget().ifPresentOrElse(
-                budget -> object.setDouble("budget", budget.doubleValue()),
-                () -> object.setNix("budget")
-        );
+    private void toSlime(Cursor object, QuotaUsage usage) {
         object.setDouble("budgetUsed", usage.rate());
-
-        // TODO: Retire when we no longer use maxClusterSize as a meaningful limit
-        quota.maxClusterSize().ifPresent(maxClusterSize -> object.setLong("clusterSize", maxClusterSize));
     }
 
     private void toSlime(ClusterResources resources, Cursor object) {

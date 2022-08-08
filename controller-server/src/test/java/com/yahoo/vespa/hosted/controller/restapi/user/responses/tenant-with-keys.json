@@ -20,9 +20,7 @@
     }
   },
   "quota": {
-    "budget": null,
-    "budgetUsed": 0.0,
-    "clusterSize": 5
+    "budgetUsed": 0.0
   },
   "archiveAccess": { },
   "applications": [
