@@ -28,7 +28,7 @@ public record NodeSlice(OptionalDouble fraction, OptionalLong minCount) {
     /** Returns whether this slice is satisfied by given node count, out of totalCount */
     public boolean satisfiedBy(long count, long totalCount) {
         if (fraction.isPresent()) {
-            return count >= totalCount * fraction.getAsDouble();
+            return count + 1e-9 >= totalCount * fraction.getAsDouble();
         }
         return count >= Math.min(minCount.orElse(0), totalCount);
     }
