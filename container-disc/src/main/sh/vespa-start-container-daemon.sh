@@ -31,10 +31,6 @@ if [[ "$VESPA_SERVICE_NAME" = "container" || "$VESPA_SERVICE_NAME" = "container-
     ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
     rm -f $ZOOKEEPER_LOG_FILE_PREFIX*lck
     zookeeper_log_file_property="-Dzookeeper_log_file_prefix=${ZOOKEEPER_LOG_FILE_PREFIX}"
-# TODO: Temporary, remove else clause after 2022-05-20
-else
-    ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
-    rm -f $ZOOKEEPER_LOG_FILE_PREFIX*
 fi
 
 # common setup
