@@ -107,7 +107,7 @@ public class VespaModelTestCase {
 
     @Test
     void testHostsConfig() {
-        VespaModel model = getVespaModel(TESTDIR + "app_qrserverandgw");
+        VespaModel model = getVespaModel(TESTDIR + "app_nohosts");
         LogdConfig config = getLogdConfig(model, "");
         assertEquals(config.logserver().host(), HostName.getLocalhost());
         assertNotNull(config);

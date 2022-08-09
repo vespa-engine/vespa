@@ -38,7 +38,7 @@ public class IntegrationTester implements  AutoCloseable {
 
     static final String MONITORING_SYSTEM = "test-system";
     static final ConsumerId CUSTOM_CONSUMER_ID = toConsumerId("custom-consumer");
-    static final String SERVICE_1_CONFIG_ID = "container/qrserver.0";
+    static final String SERVICE_1_CONFIG_ID = "container/default.0";
     static final String SERVICE_2_CONFIG_ID = "storage/cluster.storage/storage/0";
 
     private final RpcConnector connector;
@@ -104,7 +104,7 @@ public class IntegrationTester implements  AutoCloseable {
 
     private VespaServicesConfig servicesConfig() {
         return new VespaServicesConfig.Builder()
-                .service(createService(toServiceId("qrserver"), SERVICE_1_CONFIG_ID, httpPort()))
+                .service(createService(toServiceId("container"), SERVICE_1_CONFIG_ID, httpPort()))
                 .service(createService(toServiceId("storagenode"), SERVICE_2_CONFIG_ID, httpPort()))
                 .build();
     }

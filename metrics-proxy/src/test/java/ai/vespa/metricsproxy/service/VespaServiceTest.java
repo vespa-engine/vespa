@@ -36,18 +36,18 @@ public class VespaServiceTest {
 
     @Test
     public void testService() {
-        VespaService service = new VespaService("qrserver", "container/qrserver.0");
-        assertEquals("qrserver", service.getServiceName());
-        assertEquals("qrserver", service.getInstanceName());
+        VespaService service = new VespaService("container", "container/container.0");
+        assertEquals("container", service.getServiceName());
+        assertEquals("container", service.getInstanceName());
         assertEquals(-1, service.getPid());
-        assertEquals("container/qrserver.0", service.getConfigId());
+        assertEquals("container/container.0", service.getConfigId());
 
 
-        service = VespaService.create("qrserver2", "container/qrserver.0", -1);
-        assertEquals("qrserver", service.getServiceName());
-        assertEquals("qrserver2", service.getInstanceName());
+        service = VespaService.create("container2", "container/container.0", -1);
+        assertEquals("container", service.getServiceName());
+        assertEquals("container2", service.getInstanceName());
         assertEquals(-1, service.getPid());
-        assertEquals("container/qrserver.0", service.getConfigId());
+        assertEquals("container/container.0", service.getConfigId());
     }
 
     @Test

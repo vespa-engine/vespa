@@ -25,7 +25,7 @@ public class MultiOverrideProcessorTest {
     private static final String input =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<services version=\"1.0\" xmlns:deploy=\"vespa\">\n" +
-            "    <container id='qrserver' version='1.0'>\n" +
+            "    <container id='default' version='1.0'>\n" +
             "        <component id=\"comp-B\" class=\"com.yahoo.ls.MyComponent\" bundle=\"lsbe-hv\">\n" +
             "            <config name=\"ls.config.resource-pool\">\n" +
             "                <resource>\n" +
@@ -50,7 +50,7 @@ public class MultiOverrideProcessorTest {
     private static final String inputWithIds =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<services version=\"1.0\" xmlns:deploy=\"vespa\">\n" +
-            "    <container id='qrserver' version='1.0'>\n" +
+            "    <container id='default' version='1.0'>\n" +
             "        <component id=\"comp-B\" class=\"com.yahoo.ls.MyComponent\" bundle=\"lsbe-hv\">\n" +
             "            <config name=\"ls.config.resource-pool\">\n" +
             "                <resource>\n" +
@@ -77,7 +77,7 @@ public class MultiOverrideProcessorTest {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<services version=\"1.0\" xmlns:deploy=\"vespa\">\n" +
-                "    <container id='qrserver' version='1.0'>\n" +
+                "    <container id='default' version='1.0'>\n" +
                 "        <component id=\"comp-B\" class=\"com.yahoo.ls.MyComponent\" bundle=\"lsbe-hv\">\n" +
                 "            <config name=\"ls.config.resource-pool\">\n" +
                 "                <resource>\n" +
@@ -98,7 +98,7 @@ public class MultiOverrideProcessorTest {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<services version=\"1.0\" xmlns:deploy=\"vespa\">\n" +
-                "    <container id='qrserver' version='1.0'>\n" +
+                "    <container id='default' version='1.0'>\n" +
                 "        <component id=\"comp-B\" class=\"com.yahoo.ls.MyComponent\" bundle=\"lsbe-hv\">\n" +
                 "            <config name=\"ls.config.resource-pool\">\n" +
                 "                <resource>\n" +
