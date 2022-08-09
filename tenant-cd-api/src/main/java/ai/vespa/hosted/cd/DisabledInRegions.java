@@ -22,7 +22,7 @@ import java.util.function.Function;
 @ExtendWith(DisabledInRegionsCondition.class)
 public @interface DisabledInRegions {
 
-    /** One or more regions that this should be enabled in. */
+    /** One or more regions that this should be disabled in. */
     String[] value();
 
 }
