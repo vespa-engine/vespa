@@ -74,16 +74,15 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
     }
 
     @Override
-    protected boolean changeTargetTo(VespaVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
+    protected boolean changeTargetTo(VespaVersionTarget target, SystemApplication application, ZoneApi zone) {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
             boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethods(zone.getId()).stream()
                                                        .anyMatch(RoutingMethod::isShared);
-            return versionOf(nodeSlice, zone, application, Node::wantedVersion)
+            return versionOf(NodeSlice.ALL, zone, application, Node::wantedVersion)
                     .map(wantedVersion -> !wantedVersion.equals(target.version()))
                     .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet
-
         }
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
