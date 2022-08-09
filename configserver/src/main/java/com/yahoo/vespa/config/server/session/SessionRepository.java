@@ -691,15 +691,19 @@ public class SessionRepository {
             String flag = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource)
                                                                         .with(APPLICATION_ID, applicationId.serializedForm())
                                                                         .value();
-            switch (flag) {
-                case "FAIL":
-                    throw e;
-                case "LOG":
-                    deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
-                    break;
-                case "NOOP":
-                default:
-                    break;
+            if (configserverConfig.hostedVespa()) {
+                switch (flag) {
+                    case "FAIL":
+                        throw e;
+                    case "LOG":
+                        deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
+                        break;
+                    case "NOOP":
+                    default:
+                        break;
+                }
+            } else {
+                deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
             }
         }
 
