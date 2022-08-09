@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -45,32 +44,37 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     }
 
     private boolean moveInactiveTenantsToNonePlan() {
-        var predicate = tenantReadersNotLoggedIn(nonePlanAfter)
-                .and(this::tenantHasTrialPlan);
+        var idleTrialTenants = controller().tenants().asList().stream()
+                .filter(this::tenantIsCloudTenant)
+                .filter(this::tenantIsNotExemptFromExpiry)
+                .filter(this::tenantHasNoDeployments)
+                .filter(this::tenantHasTrialPlan)
+                .filter(tenantReadersNotLoggedIn(nonePlanAfter))
+                .toList();
 
-        return forTenant("'none' plan", predicate, this::setPlanNone);
+        if (! idleTrialTenants.isEmpty()) {
+            var tenants = idleTrialTenants.stream().map(Tenant::name).map(TenantName::value).collect(Collectors.joining(", "));
+            log.info("Setting tenants to 'none' plan: " + tenants);
+        }
+
+        return setPlanNone(idleTrialTenants);
     }
 
     private boolean tombstoneNonePlanTenants() {
-        var predicate = tenantReadersNotLoggedIn(tombstoneAfter).and(this::tenantHasNonePlan);
-        return forTenant("tombstoned", predicate, this::tombstoneTenants);
-    }
+        var idleOldPlanTenants = controller().tenants().asList().stream()
+                .filter(this::tenantIsCloudTenant)
+                .filter(this::tenantIsNotExemptFromExpiry)
+                .filter(this::tenantHasNoDeployments)
+                .filter(this::tenantHasNonePlan)
+                .filter(tenantReadersNotLoggedIn(tombstoneAfter))
+                .toList();
 
-    private boolean forTenant(String name, Predicate<Tenant> p, Function<List<Tenant>, Boolean> c) {
-        var predicate = p.and(this::tenantIsCloudTenant)
-                .and(this::tenantIsNotExemptFromExpiry)
-                .and(this::tenantHasNoDeployments);
-
-        var tenants = controller().tenants().asList().stream()
-                .filter(predicate)
-                .collect(Collectors.toList());
-
-        if (!tenants.isEmpty()) {
-            var tenantNames = tenants.stream().map(Tenant::name).map(TenantName::value).collect(Collectors.joining(", "));
-            log.info("Setting tenants as " + name + ": " + tenantNames);
+        if (! idleOldPlanTenants.isEmpty()) {
+            var tenants = idleOldPlanTenants.stream().map(Tenant::name).map(TenantName::value).collect(Collectors.joining(", "));
+            log.info("Setting tenants as tombstoned: " + tenants);
         }
 
-        return c.apply(tenants);
+        return tombstoneTenants(idleOldPlanTenants);
     }
 
     private boolean tenantIsCloudTenant(Tenant tenant) {
