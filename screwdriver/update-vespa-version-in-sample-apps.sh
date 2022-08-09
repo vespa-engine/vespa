@@ -17,9 +17,9 @@ function is_published {
     echo $TMP_MVN_REPO
     mkdir -p $TMP_MVN_REPO
     rm -rf $TMP_MVN_REPO/com/yahoo/vespa
-    # Because the transfer of artifacts to Maven Central is not atomic we can't just check a simple pom or jar to be available. Because of this we 
+    # Because the transfer of artifacts to Maven Central is not atomic we can't just check a simple pom or jar to be available. Because of this we
     # check that the publication is complete enough to compile a Java sample app
-    if mvn -V -B -pl ai.vespa.example:albums -Dmaven.repo.local=$TMP_MVN_REPO -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
+    if mvn -V -B -pl ai.vespa.example:album-recommendation-java -Dmaven.repo.local=$TMP_MVN_REPO -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
         return 0
     else
         return 1
