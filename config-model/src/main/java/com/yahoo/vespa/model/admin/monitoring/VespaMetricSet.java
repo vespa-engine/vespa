@@ -28,7 +28,7 @@ public class VespaMetricSet {
         metrics.addAll(getDistributorMetrics());
         metrics.addAll(getDocprocMetrics());
         metrics.addAll(getClusterControllerMetrics());
-        metrics.addAll(getQrserverMetrics());
+        metrics.addAll(getSearchMetrics());
         metrics.addAll(getContainerMetrics());
         metrics.addAll(getConfigServerMetrics());
         metrics.addAll(getSentinelMetrics());
@@ -297,7 +297,7 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static Set<Metric> getQrserverMetrics() {
+    private static Set<Metric> getSearchMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("peak_qps.max"));
@@ -351,7 +351,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("relevance.at_10.sum"));
         metrics.add(new Metric("relevance.at_10.count"));
 
-        // Errors from qrserver
+        // Errors from search container
         metrics.add(new Metric("error.timeout.rate"));
         metrics.add(new Metric("error.backends_oos.rate"));
         metrics.add(new Metric("error.plugin_failure.rate"));

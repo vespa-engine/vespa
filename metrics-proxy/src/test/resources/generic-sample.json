@@ -36,7 +36,7 @@
             "applicationId": "music.default",
             "clustertype": "container",
             "clusterid": "default",
-            "instance": "qrserver0",
+            "instance": "default0",
             "zone": "us-west",
             "api": "search/",
             "documenttype": "music",

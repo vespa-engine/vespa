@@ -211,12 +211,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertServices(h, expectedServices);
 
         assertEquals(musicClusterId + "/storage/0", h.getService("storagenode").getConfigId());
-
-        /* Not yet
-        assertNotNull(h.getService("qrserver"));
-        assertNotNull(h.getService("docproc"));
-        */
-
     }
 
     @Test

@@ -188,7 +188,7 @@ public class ApplicationMetricsHandlerTest {
         assertEquals("us-west", dimensions.get(PublicDimensions.ZONE));
         assertEquals("search/", dimensions.get(PublicDimensions.API));
         assertEquals("music", dimensions.get(PublicDimensions.DOCUMENT_TYPE));
-        assertEquals("qrserver0", dimensions.get(PublicDimensions.SERVICE_ID));
+        assertEquals("default0", dimensions.get(PublicDimensions.SERVICE_ID));
         assertFalse(dimensions.containsKey("non-public"));
     }
 

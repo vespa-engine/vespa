@@ -45,7 +45,7 @@ public class VespaDomBuilderTest {
             "  <container version=\"1.0\">" +
             "      <config name=\"a.standard\">" +
             "        <basicStruct>" +
-            "          <stringVal>qrservers</stringVal>" +
+            "          <stringVal>foo</stringVal>" +
             "        </basicStruct>" +
             "      </config> " +
             "    <nodes>\n" +

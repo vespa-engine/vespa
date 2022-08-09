@@ -248,10 +248,10 @@ public class TenantApplicationsTest {
     @Test
     public void testAppendIdsInNonRecursiveListing() {
         TenantApplications applications = createTenantApplications(tenantName, curator, configserverConfig, new MockConfigActivationListener(), new InMemoryFlagSource());
-        assertEquals(applications.appendOneLevelOfId("search/music", "search/music/qrservers/default/qr.0"), "search/music/qrservers");
-        assertEquals(applications.appendOneLevelOfId("search", "search/music/qrservers/default/qr.0"), "search/music");
-        assertEquals(applications.appendOneLevelOfId("search/music/qrservers/default/qr.0", "search/music/qrservers/default/qr.0"), "search/music/qrservers/default/qr.0");
-        assertEquals(applications.appendOneLevelOfId("", "search/music/qrservers/default/qr.0"), "search");
+        assertEquals(applications.appendOneLevelOfId("search/music", "search/music/container/default/qr.0"), "search/music/container");
+        assertEquals(applications.appendOneLevelOfId("search", "search/music/container/default/qr.0"), "search/music");
+        assertEquals(applications.appendOneLevelOfId("search/music/container/default/qr.0", "search/music/container/default/qr.0"), "search/music/container/default/qr.0");
+        assertEquals(applications.appendOneLevelOfId("", "search/music/container/default/qr.0"), "search");
     }
 
     @Test
