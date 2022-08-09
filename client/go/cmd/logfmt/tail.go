@@ -10,6 +10,8 @@ import (
 	"io"
 	"os"
 	"time"
+
+	"golang.org/x/sys/unix"
 )
 
 const lastLinesSize = 4 * 1024
@@ -26,6 +28,7 @@ type Tail struct {
 	curFile *os.File
 	fn      string
 	reader  *bufio.Reader
+	curStat unix.Stat_t
 }
 
 // API for starting to follow a log file
@@ -46,6 +49,12 @@ func (t *Tail) setFile(f *os.File) {
 	}
 	t.curFile = f
 	if f != nil {
+		err := unix.Fstat(int(f.Fd()), &t.curStat)
+		if err != nil {
+			f.Close()
+			fmt.Fprintf(os.Stderr, "unexpected failure: %v\n", err)
+			return
+		}
 		t.reader = bufio.NewReaderSize(f, 1024*1024)
 	} else {
 		t.reader = nil
@@ -86,28 +95,32 @@ func (t *Tail) openTail() {
 	}
 }
 
-func (t *Tail) reopen(oldSize int64) {
+func (t *Tail) reopen(cur *unix.Stat_t) {
 	for cnt := 0; cnt < 100; cnt++ {
-		file, r := os.Open(t.fn)
-		if r != nil {
+		file, err := os.Open(t.fn)
+		if err != nil {
 			t.setFile(nil)
 			if cnt == 0 {
-				fmt.Fprintf(os.Stderr, "%v (waiting for log file to appear)\n", r)
+				fmt.Fprintf(os.Stderr, "%v (waiting for log file to appear)\n", err)
 			}
 			time.Sleep(1000 * time.Millisecond)
 			continue
 		}
-		sz, _ := file.Seek(0, os.SEEK_END)
-		if sz != oldSize {
-			file.Seek(0, os.SEEK_SET)
-			if t.curFile != nil {
-				t.curFile.Close()
-			}
-			t.setFile(file)
-		} else {
-			// same size, same file (probably), continue following it
+		var stat unix.Stat_t
+		err = unix.Fstat(int(file.Fd()), &stat)
+		if err != nil {
 			file.Close()
+			fmt.Fprintf(os.Stderr, "unexpected failure: %v\n", err)
+			time.Sleep(5000 * time.Millisecond)
+			continue
 		}
+		if cur != nil && cur.Dev == stat.Dev && cur.Ino == stat.Ino {
+			// same file, continue following it
+			file.Close()
+			return
+		}
+		// new file, start following it
+		t.setFile(file)
 		return
 	}
 }
@@ -118,7 +131,7 @@ func runTailWith(t *Tail) {
 loop:
 	for {
 		for t.curFile == nil {
-			t.reopen(-1)
+			t.reopen(nil)
 		}
 		bytes, err := t.reader.ReadSlice('\n')
 		t.lineBuf = append(t.lineBuf, bytes...)
@@ -146,7 +159,7 @@ loop:
 				}
 			}
 			// no change in file size, try reopening
-			t.reopen(pos)
+			t.reopen(&t.curStat)
 		} else {
 			fmt.Fprintf(os.Stderr, "error tailing '%s': %v\n", t.fn, err)
 			close(t.Lines)
