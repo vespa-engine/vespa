@@ -54,11 +54,6 @@ public class Load {
         return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
     }
 
-    /** Returns the load having the max value of this and the given load in each dimension. */
-    public Load max(Load other) {
-        return join(other, (a, b) -> Math.max(a, b));
-    }
-
     /** Returns the load where the given function is applied to each dimension of this. */
     public Load map(DoubleUnaryOperator f) {
         return new Load(f.applyAsDouble(cpu),

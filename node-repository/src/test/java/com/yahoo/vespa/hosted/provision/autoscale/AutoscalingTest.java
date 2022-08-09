@@ -247,6 +247,7 @@ public class AutoscalingTest {
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(0.01, 0.01, 0.01, 120);
+        System.out.println("Asking for suggestion ...");
         Autoscaler.Advice suggestion = fixture.suggest();
         fixture.tester().assertResources("Choosing the remote disk flavor as it has less disk",
                                          2, 1, 3.0,  100.0, 10.0,
@@ -464,19 +465,22 @@ public class AutoscalingTest {
         var fixture = AutoscalingTester.fixture()
                                        .capacity(Capacity.from(min, max))
                                        .build();
+
         fixture.tester.clock().advance(Duration.ofDays(1));
         fixture.loader().applyCpuLoad(0.25, 120);
-
         // (no read share stored)
         fixture.tester().assertResources("Advice to scale up since we set aside for bcp by default",
                                          7, 1, 3,  100, 100,
                                          fixture.autoscale());
 
+        fixture.loader().applyCpuLoad(0.25, 120);
         fixture.storeReadShare(0.25, 0.5);
         fixture.tester().assertResources("Half of global share is the same as the default assumption used above",
                                          7, 1, 3,  100, 100,
                                          fixture.autoscale());
 
+        fixture.tester.clock().advance(Duration.ofDays(1));
+        fixture.loader().applyCpuLoad(0.25, 120);
         fixture.storeReadShare(0.5, 0.5);
         fixture.tester().assertResources("Advice to scale down since we don't need room for bcp",
                                          6, 1, 3,  100, 100,

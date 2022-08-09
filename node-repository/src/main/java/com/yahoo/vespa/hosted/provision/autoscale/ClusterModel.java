@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.logging.Level;
@@ -94,15 +95,31 @@ public class ClusterModel {
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
         if (nodeTimeseries().measurementsPerNode() == 0) return Load.one(); // No info, no change
+
+        Load peak = nodeTimeseries().peakLoad().divide(idealLoad()); // Peak relative to ideal
+
         // Should we scale up?
-        Load relativePeak = nodeTimeseries().peakLoad().divide(idealLoad());
-        if (relativePeak.any(v -> v > 1.01)) // "meaningful growth": 1% over status quo.
-            return relativePeak.max(Load.one()); // Don't downscale any dimension if we upscale
+        if (peak.any(v -> v > 1.01)) // "meaningful growth": 1% over status quo.
+            return peak.map(v -> v < 1 ? 1 : v); // Don't downscale any dimension if we upscale
 
         // Should we scale down?
-        // TODO
+        if (canScaleDown())
+            return averageLoad().divide(idealLoad());
 
-        return averageLoad().divide(idealLoad());
+        return Load.one();
+    }
+
+    /** Are we in a position to make decisions to scale down at this point? */
+    private boolean canScaleDown() {
+        if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
+        if (nodeTimeseries().measurementsPerNode() < 4) return false;
+        if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
+        return true;
+    }
+
+    private boolean hasScaledIn(Duration period) {
+        return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
+                      .isAfter(clock.instant().minus(period));
     }
 
     /** Returns the predicted duration of a rescaling of this cluster */
