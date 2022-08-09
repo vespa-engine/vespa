@@ -36,7 +36,7 @@ class DisabledInInstancesCondition implements ExecutionCondition {
 
         List<String> disablingInstances = List.of(annotation.get().value());
         String thisInstance = TestRuntime.get().application().instance();
-        String reason = "Disabled in: %s. Current instance: %s.".formatted(disablingInstances.isEmpty() ? "no instances" : " instances " + String.join(", ", disablingInstances), thisInstance);
+        String reason = "Disabled in: %s. Current instance: %s.".formatted(disablingInstances.isEmpty() ? "no instances" : "instances " + String.join(", ", disablingInstances), thisInstance);
         return disablingInstances.contains(thisInstance) ? ConditionEvaluationResult.disabled(reason) : ConditionEvaluationResult.enabled(reason);
     }
 
