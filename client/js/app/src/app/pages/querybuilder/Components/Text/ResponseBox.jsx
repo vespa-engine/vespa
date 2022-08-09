@@ -1,8 +1,8 @@
-import React, { useContext } from 'react';
-import { ResponseContext } from '../Contexts/ResponseContext';
+import React from 'react';
+import { useQueryBuilderContext } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 export default function ResponseBox() {
-  const { response } = useContext(ResponseContext);
+  const response = useQueryBuilderContext((ctx) => ctx.http.response);
 
   return (
     <textarea

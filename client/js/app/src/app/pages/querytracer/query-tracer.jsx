@@ -1,10 +1,9 @@
-import React, { useContext } from 'react';
+import React, { useState } from 'react';
 import DownloadJSONButton from '../querybuilder/Components/Buttons/DownloadJSONButton';
-import { ResponseContext } from '../querybuilder/Components/Contexts/ResponseContext';
 import { Container } from 'app/components';
 
 export function QueryTracer() {
-  const { response, setResponse } = useContext(ResponseContext);
+  const { response, setResponse } = useState('');
 
   const updateResponse = (e) => {
     setResponse(e.target.value);

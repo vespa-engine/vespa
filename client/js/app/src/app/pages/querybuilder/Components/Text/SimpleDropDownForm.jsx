@@ -1,44 +1,19 @@
-import React, { useContext, useEffect } from 'react';
-import { QueryInputContext } from '../Contexts/QueryInputContext';
+import React from 'react';
 
 export default function SimpleDropDownForm({
-  choices,
-  id,
-  className = 'input',
-  onChange,
+  options,
   value,
-  initial,
+  className = 'input',
+  ...props
 }) {
-  const { selectedItems } = useContext(QueryInputContext);
-
-  //TODO: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
-  let filtered = Object.keys(choices).filter(
-    (choice) => !selectedItems.includes(choice)
-  );
-  useEffect(() => {
-    filtered = Object.keys(choices).filter(
-      (choice) => !selectedItems.includes(choice)
-    );
-  }, [selectedItems]);
-
-  const options = Object.keys(choices).map((choice) => {
-    return (
-      <option className="options" key={choice} value={choices[choice].name}>
-        {choices[choice].name}
-      </option>
-    );
-  });
-
+  // TODO: Filter selected
   return (
-    <form id={id}>
-      <select
-        className={className}
-        id={id}
-        defaultValue={initial}
-        onChange={onChange}
-      >
-        {options}
-      </select>
-    </form>
+    <select className={className} {...props} value={value}>
+      {Object.values(options).map(({ name }) => (
+        <option className="options" key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </select>
   );
 }

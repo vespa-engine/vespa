@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
-import { ResponseContext } from '../Contexts/ResponseContext';
+import React from 'react';
 import transform from '../../TransformVespaTrace';
+import { useQueryBuilderContext } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 export default function DownloadJSONButton({ children }) {
-  const { response } = useContext(ResponseContext);
+  const response = useQueryBuilderContext((ctx) => ctx.http.response);
 
   const transformResponse = (response) => {
     return transform(response);

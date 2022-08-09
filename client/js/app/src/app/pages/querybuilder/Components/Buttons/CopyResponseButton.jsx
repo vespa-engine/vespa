@@ -1,11 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { ResponseContext } from '../Contexts/ResponseContext';
 import ImageButton from './ImageButton';
+import { useQueryBuilderContext } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 import copyImage from 'app/pages/querybuilder/assets/img/copy.svg';
 
 export default function CopyResponseButton() {
-  const { response } = useContext(ResponseContext);
+  const response = useQueryBuilderContext((ctx) => ctx.http.response);
   const [show, setShow] = useState(false);
 
   const handleCopy = () => {

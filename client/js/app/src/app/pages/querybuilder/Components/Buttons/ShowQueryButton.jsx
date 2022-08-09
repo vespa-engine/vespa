@@ -1,16 +1,16 @@
-import React, { useContext } from 'react';
-import { QueryContext } from '../Contexts/QueryContext';
+import React, { useState } from 'react';
+import { useQueryBuilderContext } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 export default function ShowQueryButton() {
-  const { query, showQuery, setShowQuery } = useContext(QueryContext);
-
-  const handleClick = () => {
-    setShowQuery(!showQuery);
-  };
+  const [showQuery, setShowQuery] = useState(false);
+  const query = useQueryBuilderContext((ctx) => ctx.query.input);
 
   return (
     <>
-      <button className="showJSON" onClick={handleClick}>
+      <button
+        className="showJSON"
+        onClick={() => setShowQuery((prev) => !prev)}
+      >
         Show query JSON
       </button>
       {showQuery && (
