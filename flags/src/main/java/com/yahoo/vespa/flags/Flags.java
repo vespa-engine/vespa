@@ -457,13 +457,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FIX_IPV6_GATEWAY = defineFeatureFlag(
-            "fix-ipv6-gateway", true,
-            List.of("mpolden"), "2022-07-04", "2022-09-01",
-            "Fix a misconfigured IPv6 gateway automatically",
-            "Takes effect on first host admin resume",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
             List.of("olaa"), "2022-07-04", "2022-09-01",
