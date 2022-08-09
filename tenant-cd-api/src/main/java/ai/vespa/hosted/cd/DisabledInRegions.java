@@ -37,7 +37,7 @@ class DisabledInRegionsCondition implements ExecutionCondition {
 
         List<String> disablingRegions = List.of(annotation.get().value());
         String thisRegion = TestRuntime.get().application().instance();
-        String reason = "Disabled in: %s. Current region: %s.".formatted(disablingRegions.isEmpty() ? "no instances" : " instances " + String.join(", ", disablingRegions), thisRegion);
+        String reason = "Disabled in: %s. Current region: %s.".formatted(disablingRegions.isEmpty() ? "no regions" : "regions " + String.join(", ", disablingRegions), thisRegion);
         return disablingRegions.contains(thisRegion) ? ConditionEvaluationResult.disabled(reason) : ConditionEvaluationResult.enabled(reason);
     }
 
