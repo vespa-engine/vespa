@@ -33,7 +33,7 @@ public class DefaultMetrics {
         return ImmutableSet.<Metric>builder()
                 .addAll(getContentMetrics())
                 .addAll(getContainerMetrics())
-                .addAll(getSearchMetrics())
+                .addAll(getSearchChainMetrics())
                 .build();
     }
 
@@ -51,7 +51,7 @@ public class DefaultMetrics {
         return metrics;
     }
 
-    private static Set<Metric> getSearchMetrics() {
+    private static Set<Metric> getSearchChainMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("queries.rate"));

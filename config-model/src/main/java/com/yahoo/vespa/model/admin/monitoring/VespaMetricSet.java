@@ -28,7 +28,7 @@ public class VespaMetricSet {
         metrics.addAll(getDistributorMetrics());
         metrics.addAll(getDocprocMetrics());
         metrics.addAll(getClusterControllerMetrics());
-        metrics.addAll(getSearchMetrics());
+        metrics.addAll(getSearchChainMetrics());
         metrics.addAll(getContainerMetrics());
         metrics.addAll(getConfigServerMetrics());
         metrics.addAll(getSentinelMetrics());
@@ -297,7 +297,7 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static Set<Metric> getSearchMetrics() {
+    private static Set<Metric> getSearchChainMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("peak_qps.max"));
