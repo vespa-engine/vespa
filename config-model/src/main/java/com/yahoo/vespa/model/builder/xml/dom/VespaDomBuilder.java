@@ -193,7 +193,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     /**
-     * The SimpleConfigProducer is the producer for elements such as qrservers, gateways.
+     * The SimpleConfigProducer is the producer for elements such as container.
      * Must support overrides for that too, hence this builder
      *
      * @author vegardh

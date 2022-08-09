@@ -54,12 +54,12 @@ public class MetricsFormatter {
         return name;
     }
 
-    // E.g. container/qrserver.1 ->  'container.qrserver.1'
+    // E.g. container/default.1 ->  'container.default.1'
     private static String toServiceId(String configId) {
         return "'" + configId.replace("/", ".") + "'";
     }
 
-    // E.g. container/qrserver.1 ->  container.'qrserver.1'
+    // E.g. container/default.1 ->  container.'default.1'
     private static String toSystemServiceId(String configId) {
         String name = configId.replace("/", ".");
         name = name.replaceFirst("\\.", ".'") + "'";

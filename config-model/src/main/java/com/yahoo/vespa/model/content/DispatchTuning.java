@@ -11,7 +11,7 @@ public class DispatchTuning {
 
     public static final DispatchTuning empty = new DispatchTuning.Builder().build();
 
-    public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE}
+    public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE }
 
     private final Integer maxHitsPerPartition;
     private DispatchPolicy dispatchPolicy;
@@ -69,7 +69,7 @@ public class DispatchTuning {
 
         private DispatchPolicy toDispatchPolicy(String policy) {
             switch (policy.toLowerCase()) {
-                case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Java 8
+                case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Vespa 9
                 case "round-robin": return DispatchPolicy.ROUNDROBIN;
                 default: throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
             }

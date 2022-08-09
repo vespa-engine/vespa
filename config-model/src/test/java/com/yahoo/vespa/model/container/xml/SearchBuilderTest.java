@@ -8,7 +8,6 @@ import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
@@ -17,12 +16,15 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -103,14 +105,6 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
         assertEquals(SearchHandler.DEFAULT_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
         assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASS));
-    }
-
-    // TODO: remove test when all containers are named 'container'
-    @Test
-    void cluster_with_only_search_gets_qrserver_as_service_name() {
-        createClusterWithOnlyDefaultChains();
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
-        assertEquals(CONTAINER.serviceName, cluster.getContainers().get(0).getServiceName());
     }
 
     @Test

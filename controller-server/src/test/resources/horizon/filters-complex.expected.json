@@ -7,7 +7,7 @@
    "type": "TimeSeriesDataSource",
    "metric": {
     "type": "MetricLiteral",
-    "metric": "Vespa.vespa.qrserver.documents_covered.count"
+    "metric": "Vespa.vespa.container.documents_covered.count"
    },
    "sourceId": null,
    "fetchLast": false,

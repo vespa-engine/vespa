@@ -49,19 +49,19 @@ public class RpcHealthMetricsTest {
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
             assertEquals(1, services.size());
-            VespaService qrserver = services.get(0);
-            HealthMetric h = qrserver.getHealth();
+            VespaService container = services.get(0);
+            HealthMetric h = container.getHealth();
             assertNotNull("Health metric should never be null", h);
             assertTrue("Status failed, reason = " + h.getMessage(), h.isOk());
             assertEquals("WORKING", h.getMessage());
 
             mockHttpServer.setResponse(HEALTH_FAILED_RESPONSE);
-            h = qrserver.getHealth();
+            h = container.getHealth();
             assertNotNull("Health metric should never be null", h);
             assertFalse("Status should be failed" + h.getMessage(), h.isOk());
             assertEquals("SOMETHING FAILED", h.getMessage());
 
-            String jsonRPCMessage = getHealthMetrics(tester, qrserver.getMonitoringName().id);
+            String jsonRPCMessage = getHealthMetrics(tester, container.getMonitoringName().id);
             assertEquals(WANTED_RPC_RESPONSE, jsonRPCMessage);
         }
     }

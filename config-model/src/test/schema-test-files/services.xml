@@ -11,8 +11,8 @@
     <logserver hostalias="logserver" />
     <slobroks>
       <slobrok hostalias="configserver" />
-      <slobrok hostalias="qrserver" />
-      <slobrok hostalias="rtc-1" />
+      <slobrok hostalias="container" />
+      <slobrok hostalias="searchnode-1" />
     </slobroks>
     <metrics>
 

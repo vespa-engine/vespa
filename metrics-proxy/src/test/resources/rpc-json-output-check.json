@@ -1,1 +1,1 @@
-{"metrics":[{"status_code":1,"application":"test-system.qrserver","dimensions":{"metrictype":"health","instance":"qrserver"},"status_msg":"SOMETHING FAILED"}]}
+{"metrics":[{"status_code":1,"application":"test-system.container","dimensions":{"metrictype":"health","instance":"container"},"status_msg":"SOMETHING FAILED"}]}

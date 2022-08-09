@@ -41,8 +41,8 @@ usage(const char *name)
             "are controlled:\n"
             " x.              : Matches only component x\n"
             " x               : Matches component x and all its sub-components\n\n"
-            "Example: %s qrserver:log all=on,spam=off,debug=off  : For service\n"
-            "qrserver, set log and all sub-components of log to enable all\n"
+            "Example: %s container:log all=on,spam=off,debug=off  : For service\n"
+            "container, set log and all sub-components of log to enable all\n"
             "except spam and debug.\n\n", name, name, name);
 }
 

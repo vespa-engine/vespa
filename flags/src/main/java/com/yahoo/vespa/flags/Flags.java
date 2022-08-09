@@ -409,7 +409,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
-            "fail-deployment-for-files-with-unknown-extension", "LOG",
+            "fail-deployment-for-files-with-unknown-extension", "FAIL",
             List.of("hmusum"), "2022-04-27", "2022-09-01",
             "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values LOG, FAIL, NOOP)",
             "Takes effect at redeployment",
@@ -456,13 +456,6 @@ public class Flags {
             "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag FIX_IPV6_GATEWAY = defineFeatureFlag(
-            "fix-ipv6-gateway", true,
-            List.of("mpolden"), "2022-07-04", "2022-09-01",
-            "Fix a misconfigured IPv6 gateway automatically",
-            "Takes effect on first host admin resume",
-            HOSTNAME);
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,

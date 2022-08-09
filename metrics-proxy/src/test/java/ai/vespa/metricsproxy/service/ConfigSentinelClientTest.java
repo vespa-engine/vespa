@@ -10,7 +10,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-
 /**
  * @author Unknown
  */
@@ -22,18 +21,18 @@ public class ConfigSentinelClientTest {
         List<VespaService> services = new ArrayList<>();
         VespaService docproc = new VespaService("docprocservice", "docproc/cluster.x.indexing/0");
         VespaService searchnode4 = new VespaService("searchnode4", "search/cluster.x/g0/c1/r1");
-        VespaService qrserver = new VespaService("qrserver", "container/qrserver.0");
+        VespaService container = new VespaService("container", "container/default.0");
 
         services.add(searchnode4);
-        services.add(qrserver);
+        services.add(container);
         services.add(docproc);
 
         try (MockConfigSentinelClient client = new MockConfigSentinelClient(configsentinel)) {
             client.updateServiceStatuses(services);
 
-            assertEquals(6520, qrserver.getPid());
-            assertEquals("RUNNING", qrserver.getState());
-            assertTrue(qrserver.isAlive());
+            assertEquals(6520, container.getPid());
+            assertEquals("RUNNING", container.getState());
+            assertTrue(container.isAlive());
             assertEquals(6534, searchnode4.getPid());
             assertEquals("RUNNING", searchnode4.getState());
             assertTrue(searchnode4.isAlive());
@@ -50,16 +49,16 @@ public class ConfigSentinelClientTest {
             assertEquals("RUNNING", docproc.getState());
             assertTrue(docproc.isAlive());
 
-            //qrserver has yet not been checked
-            assertTrue(qrserver.isAlive());
+            // container has yet not been checked
+            assertTrue(container.isAlive());
 
             client.updateServiceStatuses(services);
 
             assertEquals(100, docproc.getPid());
             assertEquals("RUNNING", docproc.getState());
             assertTrue(docproc.isAlive());
-            //qrserver is no longer running on this node - so should be false
-            assertFalse(qrserver.isAlive());
+            // container is no longer running on this node - so should be false
+            assertFalse(container.isAlive());
         }
     }
 
@@ -81,8 +80,7 @@ public class ConfigSentinelClientTest {
 
         VespaService container = VespaService.create("container", "get/container.0", -1);
 
-        VespaService containerClusterController =
-                VespaService.create("container-clustercontroller", "get/container.0", -1);
+        VespaService containerClusterController = VespaService.create("container-clustercontroller", "get/container.0", -1);
 
         VespaService notPresent = VespaService.create("dummy","fake", -1);
 

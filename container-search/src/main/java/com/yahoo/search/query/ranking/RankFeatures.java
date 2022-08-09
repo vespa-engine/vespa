@@ -75,7 +75,9 @@ public class RankFeatures implements Cloneable {
         Object feature = features.get(name);
         if (feature == null) return OptionalDouble.empty();
         if (feature instanceof Double) return OptionalDouble.of((Double)feature);
-        throw new IllegalArgumentException("Expected a double value of '" + name + "' but has " + feature);
+        throw new IllegalArgumentException("Expected '" + name + "' to be a double, but it is " +
+                                           (feature instanceof Tensor ? "the tensor " + ((Tensor)feature).toAbbreviatedString() :
+                                            "the string '" + feature + "'"));
     }
 
     /**
@@ -88,7 +90,7 @@ public class RankFeatures implements Cloneable {
         if (feature == null) return Optional.empty();
         if (feature instanceof Tensor) return Optional.of((Tensor)feature);
         if (feature instanceof Double) return Optional.of(Tensor.from((Double)feature));
-        throw new IllegalArgumentException("Expected a tensor value of '" + name + "' but has " + feature);
+        throw new IllegalArgumentException("Expected '" + name + "' to be a tensor, but it is the string '" + feature + "'");
     }
 
     /**
@@ -100,9 +102,9 @@ public class RankFeatures implements Cloneable {
         Object feature = features.get(name);
         if (feature == null) return Optional.empty();
         if (feature instanceof String) return Optional.of((String)feature);
-        // TODO: Use toShortString for tensors below
-        throw new IllegalArgumentException("Expected a string value of '" + name + "' but has " +
-                                           (feature instanceof Tensor ? ((Tensor)feature).toString() : feature));
+        throw new IllegalArgumentException("Expected '" + name + "' to be a string, but it is " +
+                                           (feature instanceof Tensor ? "the tensor " + ((Tensor)feature).toAbbreviatedString() :
+                                                                        "the double " + feature));
     }
 
 
