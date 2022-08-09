@@ -16,21 +16,19 @@ export default function transform(trace) {
   processes = output['data'][0]['processes'];
   processes.p0 = { serviceName: 'Query', tags: [] };
   let temp = trace['trace']['children'];
-  let spans = digDownInSpan(temp);
+  let spans = digDownInTrace(temp);
   traceStartTimestamp = findTraceStartTime(spans);
-  let topSpanFirstHalf = createNewSpan(traceStartTimestamp);
-  data.push(topSpanFirstHalf);
+  let firstSpan = createNewSpan(traceStartTimestamp);
+  data.push(firstSpan);
 
-  traverseSpans(spans, topSpanFirstHalf);
+  traverseSpans(spans, firstSpan);
   return output;
 }
 
 function traverseChildren(span, parent) {
   let data = output['data'][0]['spans'];
   let logSpan;
-  let spanTimestamp = span['timestamp'];
   if (span.hasOwnProperty('children')) {
-    // Create a new parent span so that the timeline for the logs are correct
     let duration =
       (span['children'][span['children'].length - 1]['timestamp'] -
         span['children'][0]['timestamp']) *
@@ -39,11 +37,12 @@ function traverseChildren(span, parent) {
       duration = 1;
     }
     parent['duration'] = duration;
-    for (let i = 0; i < span['children'].length - 1; i++) {
+    for (let i = 0; i < span['children'].length; i++) {
       let x = span['children'][i];
       if (x.hasOwnProperty('children')) {
+        // Create a new parent span so that the timeline for the spans are correct
         logSpan = createNewSpan(
-          traceStartTimestamp + spanTimestamp,
+          traceStartTimestamp + x['timestamp'] * 1000,
           duration,
           'p0',
           parent['operationName'],
@@ -58,8 +57,12 @@ function traverseChildren(span, parent) {
         if (x.hasOwnProperty('timestamp')) {
           let logPointStart = traceStartTimestamp + x['timestamp'] * 1000;
           let logPointDuration;
-          logPointDuration =
-            (span['children'][i + 1]['timestamp'] - x['timestamp']) * 1000;
+          if (i >= span['children'].length - 1) {
+            logPointDuration = 1;
+          } else {
+            logPointDuration =
+              findDuration(span['children'], i) - x['timestamp'] * 1000;
+          }
           if (isNaN(logPointDuration) || logPointDuration === 0) {
             logPointDuration = 1;
           }
@@ -83,10 +86,10 @@ function traverseChildren(span, parent) {
   }
 }
 
-function traverseSpans(spans, topSpanFirstHalf) {
+function traverseSpans(spans, firstSpan) {
   let data = output['data'][0]['spans'];
-  let totalDuration = findDuration(spans);
-  topSpanFirstHalf['duration'] = totalDuration;
+  let totalDuration = findTotalDuration(spans);
+  firstSpan['duration'] = totalDuration;
   for (let i = 0; i < spans.length; i++) {
     if (spans[i].hasOwnProperty('children')) {
       traverseChildren(spans[i], data[data.length - 1]);
@@ -98,7 +101,7 @@ function traverseSpans(spans, topSpanFirstHalf) {
         {
           refType: 'CHILD_OF',
           traceID: traceID,
-          spanID: topSpanFirstHalf['spanID'],
+          spanID: firstSpan['spanID'],
         },
       ]);
       data.push(span);
@@ -107,10 +110,9 @@ function traverseSpans(spans, topSpanFirstHalf) {
       if (i >= spans.length - 1) {
         duration = 1;
       } else {
-        duration = (spans[i + 1]['timestamp'] - spans[i]['timestamp']) * 1000;
-        duration = duration === 0 ? 1 : duration;
+        duration = findDuration(spans, i) - spans[i]['timestamp'] * 1000;
       }
-      if (isNaN(duration)) {
+      if (isNaN(duration) || duration === 0) {
         duration = 1;
       }
       span['duration'] = duration;
@@ -218,7 +220,7 @@ function createChildren(children, parentID) {
   }
 }
 
-function digDownInSpan(traces) {
+function digDownInTrace(traces) {
   for (let trace of traces) {
     if (trace.hasOwnProperty('children')) {
       return trace['children'];
@@ -252,18 +254,28 @@ function findTraceStartTime(spans) {
   return startTime;
 }
 
-function findDuration(spans) {
-  let notFound = true;
-  let duration = 0;
+// Finds the total duration of the entire trace
+function findTotalDuration(spans) {
   let i = spans.length - 1;
-  while (notFound && i >= 0) {
+  while (i >= 0) {
     if (spans[i].hasOwnProperty('timestamp')) {
-      duration = spans[i]['timestamp'];
-      notFound = false;
+      return spans[i]['timestamp'] * 1000;
     }
     i--;
   }
-  return duration * 1000;
+  return 0;
+}
+
+// Finds the duration of a single span
+function findDuration(span, i) {
+  i = i + 1;
+  while (i < span.length) {
+    if (span[i].hasOwnProperty('timestamp')) {
+      return span[i]['timestamp'] * 1000;
+    }
+    i++;
+  }
+  return 0;
 }
 
 function createNewSpan(
