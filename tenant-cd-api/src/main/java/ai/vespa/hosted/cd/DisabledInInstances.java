@@ -21,7 +21,7 @@ import java.util.Optional;
 @ExtendWith(DisabledInInstancesCondition.class)
 public @interface DisabledInInstances {
 
-    /** One or more instances that this should be enabled in. */
+    /** One or more instances that this should be disabled in. */
     String[] value();
 
 }
