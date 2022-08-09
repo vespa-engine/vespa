@@ -11,7 +11,7 @@ public class ConfigSentinelDummy {
                     + "fleetcontroller state=RUNNING mode=AUTO pid=6543 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"storage/cluster.storage/fleetcontroller/0\"\n"
                     + "storagenode state=RUNNING mode=AUTO pid=6539 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"storage/cluster.storage/storage/0\"\n"
                     + "searchnode4 state=RUNNING mode=AUTO pid=6534 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c1/r1\"\n"
-                    + "qrserver2 state=RUNNING mode=AUTO pid=6521 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"container/qrserver.1\"\n"
+                    + "container2 state=RUNNING mode=AUTO pid=6521 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"container/default.1\"\n"
                     + "logserver state=RUNNING mode=AUTO pid=6518 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/logserver\"\n"
                     + "logd state=RUNNING mode=AUTO pid=6517 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/dell-bl5s7.trondheim.corp.yahoo.com/logd\"\n"
                     + "searchnode2 state=RUNNING mode=AUTO pid=6527 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c0/r1\"\n"

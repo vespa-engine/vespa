@@ -27,7 +27,7 @@ else
 fi
 CONTAINER_HOME="${VESPA_HOME}/var/jdisc_container/${DISCRIMINATOR}/"
 
-if [[ "$VESPA_SERVICE_NAME" = "container" || "$VESPA_SERVICE_NAME" = "container-clustercontroller" || "$VESPA_SERVICE_NAME" = "qrserver" ]]; then
+if [[ "$VESPA_SERVICE_NAME" = "container" || "$VESPA_SERVICE_NAME" = "container-clustercontroller" ]]; then
     ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
     rm -f $ZOOKEEPER_LOG_FILE_PREFIX*lck
     zookeeper_log_file_property="-Dzookeeper_log_file_prefix=${ZOOKEEPER_LOG_FILE_PREFIX}"

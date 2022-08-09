@@ -93,7 +93,7 @@ public class SingleNodeProvisionerTest {
         return createAliases(new ArrayList<String>());
     }
 
-    // Admin services on node1, qrserver on node2 + additional specs
+    // Admin services on node1, container on node2 + additional specs
     private List<String> createAliases(Collection<String> additionalAliases) {
         List<String> aliases = new ArrayList<>();
         aliases.add("node1");

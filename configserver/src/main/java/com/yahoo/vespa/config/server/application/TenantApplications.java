@@ -334,7 +334,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     /**
-     * Given baseIdSegment search/ and id search/qrservers/default.0, return search/qrservers
+     * Given baseIdSegment search/ and id search/container/default.0, return search/container
      * @return id segment with one extra level from the id appended
      */
     String appendOneLevelOfId(String baseIdSegment, String id) {

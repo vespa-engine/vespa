@@ -98,7 +98,7 @@ public class HostsXmlProvisionerTest {
         return createAliases(new ArrayList<>());
     }
 
-    // Admin services on node1, qrserver on node2 + additional specs
+    // Admin services on node1, container on node2 + additional specs
     private List<String> createAliases(Collection<String> additionalAliases) {
         ArrayList<String> aliases = new ArrayList<>();
         aliases.add("node1");
