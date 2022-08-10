@@ -11,10 +11,9 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Values;
-import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
-import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.Communicator;
@@ -23,7 +22,7 @@ import com.yahoo.vespa.clustercontroller.core.GetNodeStateRequest;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -71,7 +70,7 @@ public class RPCCommunicator implements Communicator {
         checkArgument(nodeStateRequestTimeoutIntervalStartPercentage >= 0);
         checkArgument(nodeStateRequestTimeoutIntervalStartPercentage <= 100);
         checkArgument(nodeStateRequestTimeoutIntervalStopPercentage >= nodeStateRequestTimeoutIntervalStartPercentage);
-        checkArgument(nodeStateRequestTimeoutIntervalStartPercentage <= 100);
+        checkArgument(nodeStateRequestTimeoutIntervalStopPercentage <= 100);
         checkArgument(nodeStateRequestRoundTripTimeMaxSeconds >= 0);
         this.nodeStateRequestTimeoutIntervalMaxSeconds = nodeStateRequestTimeoutIntervalMaxMs / 1000D;
         this.nodeStateRequestTimeoutIntervalStartPercentage = nodeStateRequestTimeoutIntervalStartPercentage;
