@@ -436,6 +436,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         return QuotaUsage.calculateUsage(usageEntity, quotaEntity);
     }
 
+    @Override
+    public void deleteSubdomain(AthenzDomain parent, String name) {
+        URI uri = zmsUrl.resolve(String.format("subdomain/%s/%s", parent.getName(), name));
+        HttpUriRequest request = RequestBuilder.delete(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
         var uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true&auditLog=true", role.domain().getName(), role.roleName()));
         var request = RequestBuilder.get(uri).build();
