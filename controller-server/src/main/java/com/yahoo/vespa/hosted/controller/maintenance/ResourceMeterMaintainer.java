@@ -100,7 +100,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         }
 
         if (systemName.isPublic()) reportResourceSnapshots(resourceSnapshots);
-        if (systemName.isPublic() && systemName.isCd()) reportAllScalingEvents();
+        if (systemName.isPublic()) reportAllScalingEvents();
         updateDeploymentCost(resourceSnapshots);
         return 1.0;
     }

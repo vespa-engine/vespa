@@ -33,21 +33,15 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
                 .map(Tenant::name)
                 .collect(Collectors.toList());
         roleService.maintainRoles(tenantsWithRoles);
+
+        var deletedTenants = controller().tenants().asList(true).stream()
+                .filter(tenant -> tenant.type() == Tenant.Type.deleted)
+                .map(Tenant::name)
+                .toList();
+        roleService.cleanupRoles(deletedTenants);
+
         return 1.0;
     }
 
-    private boolean hasProductionDeployment(TenantName tenant) {
-        return controller().applications().asList(tenant).stream()
-                .map(Application::productionInstances)
-                .anyMatch(Predicate.not(Map::isEmpty));
-    }
 
-    private boolean hasPerfDeployment(TenantName tenant) {
-        List<ZoneId> perfZones = controller().zoneRegistry().zones().controllerUpgraded().in(Environment.perf).ids();
-        return controller().applications().asList(tenant).stream()
-                .map(Application::instances)
-                .flatMap(instances -> instances.values().stream())
-                .flatMap(instance -> instance.deployments().values().stream())
-                .anyMatch(x -> perfZones.contains(x.zone()));
-    }
 }

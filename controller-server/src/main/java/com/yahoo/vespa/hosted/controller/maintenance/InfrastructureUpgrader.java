@@ -104,7 +104,7 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
             Set<SystemApplication> dependencies = kv.getValue();
             boolean allConverged = dependencies.stream().allMatch(app -> convergedOn(target, app, zone, nodeSlice));
             if (allConverged) {
-                if (changeTargetTo(target, application, zone, nodeSlice)) {
+                if (changeTargetTo(target, application, zone)) {
                     upgrade(target, application, zone);
                 }
                 converged &= convergedOn(target, application, zone, nodeSlice);
@@ -114,7 +114,7 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
     }
 
     /** Returns whether target version for application in zone should be changed */
-    protected abstract boolean changeTargetTo(TARGET target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice);
+    protected abstract boolean changeTargetTo(TARGET target, SystemApplication application, ZoneApi zone);
 
     /** Upgrade component to target version. Implementation should be idempotent */
     protected abstract void upgrade(TARGET target, SystemApplication application, ZoneApi zone);

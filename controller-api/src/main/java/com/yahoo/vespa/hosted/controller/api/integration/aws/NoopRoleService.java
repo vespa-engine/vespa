@@ -35,4 +35,9 @@ public class NoopRoleService implements RoleService {
 
     @Override
     public void maintainRoles(List<TenantName> tenants) { }
+
+    @Override
+    public void cleanupRoles(List<TenantName> tenants) {
+
+    }
 }

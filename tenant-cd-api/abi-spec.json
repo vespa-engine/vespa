@@ -15,6 +15,70 @@
     ],
     "fields": []
   },
+  "ai.vespa.hosted.cd.DisabledInInstances": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [
+      "public abstract java.lang.String[] value()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.DisabledInRegions": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [
+      "public abstract java.lang.String[] value()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.EnabledInInstances": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [
+      "public abstract java.lang.String[] value()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.EnabledInRegions": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [
+      "public abstract java.lang.String[] value()"
+    ],
+    "fields": []
+  },
   "ai.vespa.hosted.cd.Endpoint": {
     "superClass": "java.lang.Object",
     "interfaces": [],

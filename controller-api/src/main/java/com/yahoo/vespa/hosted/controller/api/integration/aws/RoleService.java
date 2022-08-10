@@ -27,4 +27,6 @@ public interface RoleService {
      * Maintain roles for the tenants in the system. Create missing roles, update trust.
      */
     void maintainRoles(List<TenantName> tenants);
+
+    void cleanupRoles(List<TenantName> deletedTenants);
 }

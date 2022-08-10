@@ -4,14 +4,13 @@ export default function ImageButton({
   onClick,
   children,
   className,
-  id,
   image,
-  height = '15',
-  width = '15',
+  height = 15,
+  width = 15,
   style,
 }) {
   return (
-    <button id={id} className={className} onClick={onClick}>
+    <button className={className} onClick={onClick}>
       <img
         src={image}
         height={height}
