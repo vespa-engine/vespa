@@ -126,13 +126,13 @@ function preReducer(state, { action, data }) {
 }
 
 export function QueryBuilderProvider({ children }) {
-  const [value, dispatch] = useReducer(reducer, {
-    http: {},
-    query: { ...root, input: '', children: [] },
-  });
+  const [value, dispatch] = useReducer(
+    reducer,
+    { http: {}, query: { ...root, input: '', children: [] } },
+    (s) => reducer(s, { action: ACTION.SET_QUERY, data: '{"yql":""}' })
+  );
   _dispatch = dispatch;
 
-  console.log('value', value);
   return <context.Provider value={value}>{children}</context.Provider>;
 }
 
