@@ -45,11 +45,11 @@ function traverseChildren(span, parent) {
       if (x.hasOwnProperty('children')) {
         // Create a new parent span so that the timeline for the spans are correct
         let message = findProcessName(parent['operationName']);
-        let processID = message === '' ? 'p0' : getProcess(message);
+        let processKey = message === '' ? 'p0' : getProcess(message);
         logSpan = createNewSpan(
           traceStartTimestamp + x['timestamp'] * 1000,
           duration,
-          processID,
+          processKey,
           parent['operationName'],
           [{ refType: 'CHILD_OF', traceID: traceID, spanID: parent['spanID'] }]
         );
@@ -72,11 +72,11 @@ function traverseChildren(span, parent) {
             logPointDuration = 1;
           }
           let message = findProcessName(x['message']);
-          let processID = message === '' ? 'p0' : getProcess(message);
-          let logSpan = createNewSpan(
+          let processKey = message === '' ? 'p0' : getProcess(message);
+          logSpan = createNewSpan(
             logPointStart,
             logPointDuration,
-            processID,
+            processKey,
             x['message'],
             [
               {
@@ -105,8 +105,8 @@ function traverseSpans(spans, firstSpan) {
       spans[i].hasOwnProperty('timestamp')
     ) {
       let message = findProcessName(spans[i]['message']);
-      let processID = message === '' ? 'p0' : getProcess(message);
-      let span = createNewSpan(0, 0, processID, spans[i]['message'], [
+      let processKey = message === '' ? 'p0' : getProcess(message);
+      let span = createNewSpan(0, 0, processKey, spans[i]['message'], [
         {
           refType: 'CHILD_OF',
           traceID: traceID,
@@ -150,8 +150,7 @@ function createChildren(children, parentID) {
     let events;
     let firstEvent;
     let duration;
-    processKey = processID;
-    processID += 1;
+    processKey = getProcessID();
     processes[processKey] = { serviceName: trace['tag'], tags: [] };
     if (trace['tag'] === 'query_execution') {
       events = trace['threads'][0]['traces'];
@@ -305,14 +304,19 @@ function getProcess(key) {
   if (processMap.has(key)) {
     return processMap.get(key);
   } else {
-    let id = 'p' + processID;
+    let id = 'p' + getProcessID();
     processes[id] = { serviceName: key, tags: [] };
     processMap.set(key, id);
-    processID += 1;
     return id;
   }
 }
 
+function getProcessID() {
+  processID += 1;
+  return processID;
+}
+
+// find a name to use for a process using the operationName from a span
 function findProcessName(string) {
   let regex = /(?:[a-z]+\.)+[a-zA-Z]+/gm;
   let match = string.match(regex);
