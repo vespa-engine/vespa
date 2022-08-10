@@ -15,12 +15,13 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@emotion/react": "^11",
     "@fortawesome/fontawesome-svg-core": "^6",
     "@fortawesome/free-regular-svg-icons": "^6",
     "@fortawesome/free-solid-svg-icons": "^6",
     "@fortawesome/react-fontawesome": "^0",
-    "@mantine/core": "^4",
-    "@mantine/hooks": "^4",
+    "@mantine/core": "^5",
+    "@mantine/hooks": "^5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^1",
