@@ -809,6 +809,7 @@ public class InternalStepRunner implements StepRunner {
         Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
         switch (run.status()) {
             case aborted: return; // wait and see how the next run goes.
+            case noTests:
             case running:
             case success:
                 controller.notificationsDb().removeNotification(source, Notification.Type.deployment);
@@ -824,10 +825,6 @@ public class InternalStepRunner implements StepRunner {
                 return;
             case testFailure:
                 updater.accept("one or more verification tests against the deployment failed. Please review test output in the deployment job log.");
-                return;
-            case noTests:
-                controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.warning,
-                                                             "no tests were found for this job type. Please review test output in the deployment job log.");
                 return;
             case error:
             case endpointCertificateTimeout:
