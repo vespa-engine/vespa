@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,9 +80,9 @@ public class RpcServer {
     }
 
     public void setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs, int port) throws ListenFailedException, UnknownHostException {
-        if (this.slobrokConnectionSpecs == null || !this.slobrokConnectionSpecs.equals(slobrokConnectionSpecs) // TODO: <-- probably a bug
-            || this.port != port)
-        {
+        if (this.slobrokConnectionSpecs == null
+                || !Arrays.equals(this.slobrokConnectionSpecs, slobrokConnectionSpecs)
+                || this.port != port) {
             this.slobrokConnectionSpecs = slobrokConnectionSpecs;
             this.port = port;
             disconnect();
