@@ -358,7 +358,8 @@ public class InternalStepRunnerTest {
         // Test sleeps for a while.
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
-        tester.clock().advance(Duration.ofSeconds(899));
+        Instant nextAttemptAt = tester.clock().instant().plusSeconds(1800);
+        tester.clock().advance(Duration.ofSeconds(1799));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
 
@@ -380,8 +381,8 @@ public class InternalStepRunnerTest {
 
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId1 + 1, Instant.ofEpochMilli(123), info, "Not enough data!"),
-                             new LogEntry(lastId1 + 2, instant1, info, "Tests were inconclusive, and will run again in 15 minutes."),
-                             new LogEntry(lastId1 + 15, instant1, info, "### Run will reset, and start over at " + instant1.plusSeconds(900).truncatedTo(SECONDS)),
+                             new LogEntry(lastId1 + 2, instant1, info, "Tests were inconclusive, and will run again at " + nextAttemptAt + "."),
+                             new LogEntry(lastId1 + 15, instant1, info, "### Run will reset, and start over at " + nextAttemptAt),
                              new LogEntry(lastId1 + 16, instant1, info, ""),
                              new LogEntry(lastId2 + 1, tester.clock().instant(), info, "Tests completed successfully."));
 

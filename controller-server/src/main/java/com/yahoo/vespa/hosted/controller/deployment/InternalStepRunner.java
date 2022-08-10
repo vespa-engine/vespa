@@ -656,10 +656,13 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(testFailure);
             case INCONCLUSIVE:
-                long sleepMinutes = Math.max(15, Math.min(120, Duration.between(deployment.get().at(), controller.clock().instant()).toMinutes() / 20));
-                logger.log("Tests were inconclusive, and will run again in " + sleepMinutes + " minutes.");
                 controller.jobController().updateTestReport(id);
-                controller.jobController().locked(id, run -> run.sleepingUntil(controller.clock().instant().plusSeconds(60 * sleepMinutes)));
+                controller.jobController().locked(id, run -> {
+                    Instant nextAttemptAt = run.start();
+                    while ( ! nextAttemptAt.isAfter(controller.clock().instant())) nextAttemptAt = nextAttemptAt.plusSeconds(1800);
+                    logger.log("Tests were inconclusive, and will run again at " + nextAttemptAt + ".");
+                    return run.sleepingUntil(nextAttemptAt);
+                });
                 return Optional.of(reset);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
