@@ -1,79 +1,91 @@
-import React, { useContext } from 'react';
-import SimpleButton from '../Buttons/SimpleButton';
-import SimpleForm from './SimpleForm';
+import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { QueryInputContext } from '../Contexts/QueryInputContext';
-import QueryDropdownForm from './QueryDropDownForm';
-import AddPropertyButton from '../Buttons/AddPropertyButton';
-import QueryInputChild from './QueryInputChild';
+import SimpleDropDownForm from 'app/pages/querybuilder/Components/Text/SimpleDropDownForm';
+import {
+  ACTION,
+  dispatch,
+  useQueryBuilderContext,
+} from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 export default function QueryInput() {
-  const { inputs, setInputs, levelZeroParameters } =
-    useContext(QueryInputContext);
+  const { children, type } = useQueryBuilderContext('query');
+  return <Inputs type={type.children} inputs={children} />;
+}
 
-  function removeRow(id) {
-    const newList = inputs.filter((item) => item.id !== id);
-    setInputs(newList);
-  }
-
-  const updateInput = (e) => {
-    e.preventDefault();
-    const fid = e.target.id.replace('v', '');
-    const newInputs = inputs.slice();
-    const index = newInputs.findIndex((element) => element.id === fid);
-    newInputs[index].input = e.target.value;
-    setInputs(newInputs);
-  };
-
-  const setPlaceholder = (id) => {
-    try {
-      const index = inputs.findIndex((element) => element.id === id);
-      return inputs[index].typeof;
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const inputList = inputs.map((value) => {
-    return (
-      <div key={value.id + value.typeof} id={value.id} className="queryinput">
-        <QueryDropdownForm
-          choices={levelZeroParameters}
-          id={value.id}
-          initial={value.type}
+function Inputs({ id, type, inputs }) {
+  const usedTypes = inputs.map(({ type }) => type.name);
+  const remainingTypes = Object.fromEntries(
+    Object.entries(type).filter(([name]) => !usedTypes.includes(name))
+  );
+  const firstRemaining = Object.keys(remainingTypes)[0];
+  return (
+    <>
+      {inputs.map(({ id, input, type, children }) => (
+        <Input
+          key={id}
+          types={remainingTypes}
+          {...{ id, input, type, children }}
         />
-        {value.hasChildren ? (
-          <>
-            <AddPropertyButton id={value.id} />
-            <QueryInputChild id={value.id} />
-          </>
-        ) : (
-          <SimpleForm
-            id={`v${value.id}`}
-            size="30"
-            onChange={updateInput}
-            placeholder={setPlaceholder(value.id)}
-            initial={value.input}
-          />
-        )}
-        <OverlayTrigger
-          placement="right"
-          delay={{ show: 250, hide: 400 }}
-          overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
-        >
-          <span>
-            <SimpleButton
-              id={`b${value.id}`}
-              className="removeRow"
-              onClick={() => removeRow(value.id)}
-              children="-"
-            ></SimpleButton>
-          </span>
-        </OverlayTrigger>
-        <br />
-      </div>
-    );
-  });
+      ))}
+      {firstRemaining && <AddPropertyButton id={id} type={firstRemaining} />}
+    </>
+  );
+}
 
-  return <>{inputList}</>;
+function Input({ id, input, types, type, children }) {
+  return (
+    <div className="queryinput">
+      <SimpleDropDownForm
+        onChange={({ target }) =>
+          dispatch(ACTION.INPUT_UPDATE, {
+            id,
+            type: types[target.value],
+          })
+        }
+        options={{ [type.name]: type, ...types }}
+        value={type.name}
+      />
+      {children ? (
+        <Inputs id={id} type={type.children} inputs={children} />
+      ) : (
+        <input
+          size="30"
+          onChange={({ target }) =>
+            dispatch(ACTION.INPUT_UPDATE, {
+              id,
+              input: target.value,
+            })
+          }
+          placeholder={type.type}
+          value={input}
+        />
+      )}
+      <OverlayTrigger
+        placement="right"
+        delay={{ show: 250, hide: 400 }}
+        overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
+      >
+        <span>
+          <button
+            className="removeRow"
+            onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}
+          >
+            -
+          </button>
+        </span>
+      </OverlayTrigger>
+      <br />
+    </div>
+  );
+}
+
+function AddPropertyButton({ id, type }) {
+  return (
+    <button
+      className="addpropsbutton"
+      onClick={() => dispatch(ACTION.INPUT_ADD, { id, type })}
+    >
+      + Add property
+    </button>
+  );
 }
