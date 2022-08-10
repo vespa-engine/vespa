@@ -6,7 +6,6 @@ export default function SimpleDropDownForm({
   className = 'input',
   ...props
 }) {
-  // TODO: Filter selected
   return (
     <select className={className} {...props} value={value}>
       {Object.values(options).map(({ name }) => (

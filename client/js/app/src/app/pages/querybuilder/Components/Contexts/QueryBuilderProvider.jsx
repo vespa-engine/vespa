@@ -47,17 +47,14 @@ function parseInput(input, type) {
   return input;
 }
 
-function inputAdd(query, parentId) {
+function inputAdd(query, { id: parentId, type: typeName }) {
   const inputs = cloneDeep(query.children);
   const parent = parentId ? findInput(inputs, parentId) : query;
 
-  const nextId = parseInt(last(parent.children)?.id ?? -1) + 1;
+  const nextId =
+    parseInt(last(last(parent.children)?.id?.split('.')) ?? -1) + 1;
   const id = parentId ? `${parentId}.${nextId}` : nextId.toString();
-
-  const usedTypes = parent.children.map(({ type }) => type.name);
-  const type = Object.values(parent.type.children).find(
-    ({ name }) => !usedTypes.includes(name)
-  );
+  const type = parent.type.children[typeName];
 
   parent.children.push(
     Object.assign(

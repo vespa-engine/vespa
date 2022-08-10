@@ -6,7 +6,6 @@ import ShowQueryButton from './Components/Buttons/ShowQueryButton';
 import PasteJSONButton from './Components/Buttons/PasteJSONButton';
 import CopyResponseButton from './Components/Buttons/CopyResponseButton';
 import DownloadJSONButton from './Components/Buttons/DownloadJSONButton';
-import AddPropertyButton from 'app/pages/querybuilder/Components/Buttons/AddPropertyButton';
 import { QueryBuilderProvider } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 import '../../styles/agency.css';
@@ -26,8 +25,6 @@ export function QueryBuilder() {
           <div id="request">
             <QueryInput />
           </div>
-          <br />
-          <AddPropertyButton />
           <br />
           <PasteJSONButton />
           <ShowQueryButton />
