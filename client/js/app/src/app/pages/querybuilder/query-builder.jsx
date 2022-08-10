@@ -1,15 +1,26 @@
 import React from 'react';
 import QueryInput from './Components/Text/QueryInput';
 import SendQuery from './Components/Text/SendQuery';
-import ResponseBox from './Components/Text/ResponseBox';
-import ShowQueryButton from './Components/Buttons/ShowQueryButton';
 import PasteJSONButton from './Components/Buttons/PasteJSONButton';
 import CopyResponseButton from './Components/Buttons/CopyResponseButton';
 import DownloadJSONButton from './Components/Buttons/DownloadJSONButton';
-import { QueryBuilderProvider } from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
+import {
+  QueryBuilderProvider,
+  useQueryBuilderContext,
+} from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
 
 import '../../styles/agency.css';
 import '../../styles/vespa.css';
+
+function QueryBox() {
+  const query = useQueryBuilderContext((ctx) => ctx.query.input);
+  return <textarea readOnly cols="70" rows="15" value={query}></textarea>;
+}
+
+function ResponseBox() {
+  const response = useQueryBuilderContext((ctx) => ctx.http.response);
+  return <textarea readOnly cols="70" rows="25" value={response} />;
+}
 
 export function QueryBuilder() {
   return (
@@ -27,7 +38,7 @@ export function QueryBuilder() {
           </div>
           <br />
           <PasteJSONButton />
-          <ShowQueryButton />
+          <QueryBox />
           <p className="response">Response</p>
           <ResponseBox />
           <CopyResponseButton />
