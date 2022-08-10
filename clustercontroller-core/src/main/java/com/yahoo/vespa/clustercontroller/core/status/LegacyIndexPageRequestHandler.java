@@ -1,14 +1,31 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
-import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.distribution.Distribution;
+import com.yahoo.vdslib.distribution.Group;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateHistoryEntry;
+import com.yahoo.vespa.clustercontroller.core.ClusterStatsAggregator;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.EventLog;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
+import com.yahoo.vespa.clustercontroller.core.LeafGroups;
+import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.RealTimer;
+import com.yahoo.vespa.clustercontroller.core.StateVersionTracker;
 import com.yahoo.vespa.clustercontroller.core.Timer;
+import com.yahoo.vespa.clustercontroller.core.status.statuspage.HtmlTable;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
-
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.TreeMap;
 
 /**
 * @author Haakon Humberset
@@ -27,8 +44,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     public LegacyIndexPageRequestHandler(Timer timer, boolean showLocalSystemStatesInLog, ContentCluster cluster,
                                          MasterElectionHandler masterElectionHandler,
                                          StateVersionTracker stateVersionTracker,
-                                         EventLog eventLog, long startedTime, RunDataExtractor data)
-    {
+                                         EventLog eventLog, long startedTime, RunDataExtractor data) {
         this.timer = timer;
         this.showLocalSystemStatesInLog = showLocalSystemStatesInLog;
         this.cluster = cluster;
@@ -59,16 +75,15 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         content.append("<tr><td>Cluster controller uptime:</td><td align=\"right\">" + RealTimer.printDuration(currentTime - startedTime) + "</td></tr></table>");
         if (masterElectionHandler.isAmongNthFirst(data.getOptions().stateGatherCount)) {
             // Table overview of all the nodes
-            cluster.writeHtmlState(
-                    new VdsClusterHtmlRenderer(),
-                    content,
-                    timer,
-                    stateVersionTracker.getVersionedClusterStateBundle(),
-                    stateVersionTracker.getAggregatedClusterStats(),
-                    data.getOptions().storageDistribution,
-                    data.getOptions(),
-                    eventLog
-            );
+            writeHtmlState(cluster,
+                           new VdsClusterHtmlRenderer(),
+                           content,
+                           timer,
+                           stateVersionTracker.getVersionedClusterStateBundle(),
+                           stateVersionTracker.getAggregatedClusterStats(),
+                           data.getOptions().storageDistribution,
+                           data.getOptions(),
+                           eventLog);
             // Current cluster state and cluster state history
             writeHtmlState(stateVersionTracker, content, request);
         } else {
@@ -151,6 +166,58 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             }
         }
         sb.append("</td></tr>\n");
+    }
+
+    private void writeHtmlState(ContentCluster cluster,
+                                VdsClusterHtmlRenderer vdsClusterHtmlRenderer,
+                                StringBuilder sb,
+                                Timer timer,
+                                ClusterStateBundle state,
+                                ClusterStatsAggregator statsAggregator,
+                                Distribution distribution,
+                                FleetControllerOptions options,
+                                EventLog eventLog) {
+
+        VdsClusterHtmlRenderer.Table table = vdsClusterHtmlRenderer.createNewClusterHtmlTable(cluster.getName(), cluster.getSlobrokGenerationCount());
+
+        if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
+            table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
+            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
+                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
+        }
+
+        final List<Group> groups = LeafGroups.enumerateFrom(distribution.getRootGroup());
+
+        for (final Group group : groups) {
+            assert (group != null);
+            String localName = group.getUnixStylePath();
+            assert (localName != null);
+            TreeMap<Integer, NodeInfo> storageNodeInfoByIndex = new TreeMap<>();
+            TreeMap<Integer, NodeInfo> distributorNodeInfoByIndex = new TreeMap<>();
+            for (ConfiguredNode configuredNode : group.getNodes()) {
+                storeNodeInfo(cluster, configuredNode.index(), NodeType.STORAGE, storageNodeInfoByIndex);
+                storeNodeInfo(cluster, configuredNode.index(), NodeType.DISTRIBUTOR, distributorNodeInfoByIndex);
+            }
+            table.renderNodes(
+                    storageNodeInfoByIndex,
+                    distributorNodeInfoByIndex,
+                    timer,
+                    state,
+                    statsAggregator,
+                    options.minMergeCompletionRatio,
+                    options.maxPrematureCrashes,
+                    options.clusterFeedBlockLimit,
+                    eventLog,
+                    cluster.getName(),
+                    localName);
+        }
+        table.addTable(sb, options.stableStateTimePeriod);
+    }
+
+    private void storeNodeInfo(ContentCluster cluster, int nodeIndex, NodeType nodeType, Map<Integer, NodeInfo> nodeInfoByIndex) {
+        NodeInfo nodeInfo = cluster.getNodeInfo(new Node(nodeType, nodeIndex));
+        if (nodeInfo == null) return;
+        nodeInfoByIndex.put(nodeIndex, nodeInfo);
     }
 
 }

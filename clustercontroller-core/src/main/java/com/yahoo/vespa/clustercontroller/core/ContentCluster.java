@@ -1,20 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
-import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.HtmlTable;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -44,61 +38,6 @@ public class ContentCluster {
         this.clusterName = clusterName;
         this.distribution = distribution;
         setNodes(configuredNodes, new NodeListener() {});
-    }
-
-    // TODO move out, this doesn't belong in a domain model class
-    public void writeHtmlState(
-            final VdsClusterHtmlRenderer vdsClusterHtmlRenderer,
-            final StringBuilder sb,
-            final Timer timer,
-            final ClusterStateBundle state,
-            final ClusterStatsAggregator statsAggregator,
-            final Distribution distribution,
-            final FleetControllerOptions options,
-            final EventLog eventLog) {
-
-        final VdsClusterHtmlRenderer.Table table =
-                vdsClusterHtmlRenderer.createNewClusterHtmlTable(clusterName, slobrokGenerationCount);
-
-        if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
-            table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
-            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
-                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
-        }
-
-        final List<Group> groups = LeafGroups.enumerateFrom(distribution.getRootGroup());
-
-        for (int j=0; j<groups.size(); ++j) {
-            final Group group = groups.get(j);
-            assert(group != null);
-            final String localName = group.getUnixStylePath();
-            assert(localName != null);
-            final TreeMap<Integer, NodeInfo> storageNodeInfoByIndex = new TreeMap<>();
-            final TreeMap<Integer, NodeInfo> distributorNodeInfoByIndex = new TreeMap<>();
-            for (ConfiguredNode configuredNode : group.getNodes()) {
-                storeNodeInfo(configuredNode.index(), NodeType.STORAGE, storageNodeInfoByIndex);
-                storeNodeInfo(configuredNode.index(), NodeType.DISTRIBUTOR, distributorNodeInfoByIndex);
-            }
-            table.renderNodes(
-                    storageNodeInfoByIndex,
-                    distributorNodeInfoByIndex,
-                    timer,
-                    state,
-                    statsAggregator,
-                    options.minMergeCompletionRatio,
-                    options.maxPrematureCrashes,
-                    options.clusterFeedBlockLimit,
-                    eventLog,
-                    clusterName,
-                    localName);
-        }
-        table.addTable(sb, options.stableStateTimePeriod);
-    }
-
-    private void storeNodeInfo(int nodeIndex, NodeType nodeType, Map<Integer, NodeInfo> nodeInfoByIndex) {
-        NodeInfo nodeInfo = getNodeInfo(new Node(nodeType, nodeIndex));
-        if (nodeInfo == null) return;
-        nodeInfoByIndex.put(nodeIndex, nodeInfo);
     }
 
     public Distribution getDistribution() { return distribution; }
