@@ -12,8 +12,8 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
@@ -27,7 +27,6 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageRespon
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
-
 import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -45,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class FleetController implements NodeListener, SlobrokListener, SystemStateListener,
                                         Runnable, RemoteClusterControllerTaskScheduler {
@@ -155,10 +153,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 new ClusterStateRequestHandler(stateVersionTracker));
         this.statusRequestRouter.addHandler(
                 "^/$",
-                new LegacyIndexPageRequestHandler(
-                    timer, options.showLocalSystemStatesInEventLog, cluster,
-                    masterElectionHandler, stateVersionTracker,
-                    eventLog, timer.getCurrentTimeInMillis(), dataExtractor));
+                new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog,
+                                                  timer.getCurrentTimeInMillis(), dataExtractor));
 
         propagateOptions();
     }
@@ -505,9 +501,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             cluster.setSlobrokGenerationCount(0);
         }
 
-        configuredBucketSpaces = Collections.unmodifiableSet(
-                Stream.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace())
-                        .collect(Collectors.toSet()));
+        configuredBucketSpaces = Set.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace());
         stateVersionTracker.setMinMergeCompletionRatio(options.minMergeCompletionRatio);
 
         communicator.propagateOptions(options);
@@ -634,7 +628,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             didWork |= metricUpdater.forWork("processAnyPendingStatusPageRequest", this::processAnyPendingStatusPageRequest);
             if ( ! isRunning()) { return; }
             if (rpcServer != null) {
-                didWork |= metricUpdater.forWork("handleRpcRequests", () -> rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this));
+                didWork |= metricUpdater.forWork("handleRpcRequests", () -> rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this));
             }
 
             if ( ! isRunning()) { return; }

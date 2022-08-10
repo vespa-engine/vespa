@@ -21,7 +21,6 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCUtil;
-
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +38,7 @@ import java.util.stream.Collectors;
  */
 public class DummyVdsNode {
 
-    public static Logger log = Logger.getLogger(DummyVdsNode.class.getName());
+    private static final Logger log = Logger.getLogger(DummyVdsNode.class.getName());
 
     private final String[] slobrokConnectionSpecs;
     private final String clusterName;
@@ -55,7 +54,7 @@ public class DummyVdsNode {
     private final Timer timer;
     private boolean failSetSystemStateRequests = false;
     private boolean resetTimestampOnReconnect = false;
-    private final Map<Node, Long> highestStartTimestamps = new TreeMap<Node, Long>();
+    private final Map<Node, Long> highestStartTimestamps = new TreeMap<>();
     int timedOutStateReplies = 0;
     int outdatedStateReplies = 0;
     int immediateStateReplies = 0;
@@ -88,7 +87,7 @@ public class DummyVdsNode {
 
     private final Thread messageResponder = new Thread() {
         public void run() {
-            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": starting message reponder thread");
+            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": starting message responder thread");
             while (true) {
                 synchronized (timer) {
                     if (isInterrupted()) break;
@@ -96,7 +95,7 @@ public class DummyVdsNode {
                     for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
                         Req r = it.next();
                         if (r.timeout <= currentTime) {
-                            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state request at time " + currentTime);
+                            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
                                 r.request.returnValues().add(new StringValue("No host info in dummy implementation"));
@@ -113,7 +112,7 @@ public class DummyVdsNode {
                     }
                 }
             }
-            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": shut down message reponder thread");
+            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": shut down message responder thread");
         }
     };
 
@@ -170,31 +169,16 @@ public class DummyVdsNode {
         registeredInSlobrok = false;
     }
 
-    void disconnect() { disconnectImmediately(); }
-    void disconnectImmediately() { disconnect(false, 0, false);  }
-    void disconnectBreakConnection() { disconnect(true, FleetControllerTest.timeoutMS, false); }
-    void disconnectAsShutdown() { disconnect(true, FleetControllerTest.timeoutMS, true); }
-    private void disconnect(boolean waitForPendingNodeStateRequest, long timeoutms, boolean setStoppingStateFirst) {
-        log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": Breaking connection." + (waitForPendingNodeStateRequest ? " Waiting for pending state first." : ""));
-        if (waitForPendingNodeStateRequest) {
-            this.waitForPendingGetNodeStateRequest(timeoutms);
-        }
-        if (setStoppingStateFirst) {
-            NodeState newState = nodeState.clone();
-            newState.setState(State.STOPPING);
-            // newState.setDescription("Received signal 15 (SIGTERM - Termination signal)");
-            // Altered in storageserver implementation. Updating now to fit
-            newState.setDescription("controlled shutdown");
-            setNodeState(newState);
-            // Sleep a bit in hopes of answer being written before shutting down socket
-            try{ Thread.sleep(10); } catch (InterruptedException e) { /* ignore */ }
-        }
+    void disconnectImmediately() { disconnect();  }
+
+    void disconnect() {
+        log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Breaking connection.");
         if (supervisor == null) return;
         register.shutdown();
         acceptor.shutdown().join();
         supervisor.transport().shutdown().join();
         supervisor = null;
-        log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": Done breaking connection.");
+        log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Done breaking connection.");
     }
 
     public String toString() {
@@ -210,11 +194,11 @@ public class DummyVdsNode {
 
     public int getStateCommunicationVersion() { return stateCommunicationVersion; }
 
-    void waitForSystemStateVersion(int version, long timeout) {
+    void waitForSystemStateVersion(int version) {
         try {
             long startTime = System.currentTimeMillis();
             while (getLatestSystemStateVersion().orElse(-1) < version) {
-                if ( (System.currentTimeMillis() - startTime) > timeout)
+                if ( (System.currentTimeMillis() - startTime) > (long) FleetControllerTest.timeoutMS)
                     throw new RuntimeException("Timed out waiting for state version " + version + " in " + this);
                 Thread.sleep(10);
             }
@@ -234,33 +218,6 @@ public class DummyVdsNode {
     public boolean hasPendingGetNodeStateRequest() {
         synchronized (timer) {
             return !waitingRequests.isEmpty();
-        }
-    }
-
-    private void waitForPendingGetNodeStateRequest(long timeout) {
-        long startTime = System.currentTimeMillis();
-        long endTime = startTime + timeout;
-        log.log(Level.FINE, () -> "Dummy node " + this + " waiting for pending node state request.");
-        while (true) {
-            synchronized(timer) {
-                if (!waitingRequests.isEmpty()) {
-                    log.log(Level.FINE, () -> "Dummy node " + this + " has pending request, returning.");
-                    return;
-                }
-                try {
-                    log.log(Level.FINE, "Dummy node " + this + " waiting " + (endTime - startTime) + " ms for pending request.");
-                    timer.wait(endTime - startTime);
-                } catch (InterruptedException e) { /* ignore */ }
-                log.log(Level.FINE, () -> "Dummy node " + this + " woke up to recheck.");
-            }
-            startTime = System.currentTimeMillis();
-            if (startTime >= endTime) {
-                log.log(Level.FINE, () -> "Dummy node " + this + " timeout passed. Don't have pending request.");
-                if (!waitingRequests.isEmpty()) {
-                    log.log(Level.FINE, () -> "Dummy node " + this + ". Non-empty set of waiting requests");
-                }
-                throw new IllegalStateException("Timeout. No pending get node state request pending after waiting " + timeout + " milliseconds.");
-            }
         }
     }
 
@@ -422,7 +379,7 @@ public class DummyVdsNode {
         for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
              Req r = it.next();
              if (r.request.parameters().size() > 2 && r.request.parameters().get(2).asInt32() == index) {
-                 log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this.toString() + ": Responding to node state reply from controller " + index + " as we received new one");
+                 log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state reply from controller " + index + " as we received new one");
                  r.request.returnValues().add(new StringValue(nodeState.serialize()));
                  r.request.returnValues().add(new StringValue("No host info from dummy implementation"));
                  r.request.returnRequest();
@@ -448,9 +405,9 @@ public class DummyVdsNode {
                 NodeState givenState = (oldState.equals("unknown") ? null : NodeState.deserialize(type, oldState));
                 if (givenState != null && (givenState.equals(nodeState) || sentReply)) {
                     log.log(Level.FINE, () -> "Dummy node " + this + ": Has same state as reported " + givenState + ". Queing request. Timeout is " + timeout + " ms. "
-                            + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800l / 1000));
+                            + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
                     req.detach();
-                    waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800l / 1000));
+                    waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
                     log.log(Level.FINE, () -> "Dummy node " + this + " has now " + waitingRequests.size() + " entries and is " + (waitingRequests.isEmpty() ? "empty" : "not empty"));
                     timer.notifyAll();
                 } else {
