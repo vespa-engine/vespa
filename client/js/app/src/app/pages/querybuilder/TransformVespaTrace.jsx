@@ -2,6 +2,8 @@ let traceID = '';
 let processes = {};
 let output = {};
 let traceStartTimestamp = 0;
+const processMap = new Map();
+let processID = 1;
 
 // Generates a random hex string of size "size"
 const genRanHex = (size) =>
@@ -13,12 +15,13 @@ export default function transform(trace) {
   traceID = genRanHex(32);
   output = { data: [{ traceID: traceID, spans: [], processes: {} }] };
   let data = output['data'][0]['spans'];
-  processes = output['data'][0]['processes'];
-  processes.p0 = { serviceName: 'Query', tags: [] };
   let temp = trace['trace']['children'];
+  let message = temp[0]['message'].split(' ');
+  processes = output['data'][0]['processes'];
+  processes.p0 = { serviceName: message[3], tags: [] };
   let spans = digDownInTrace(temp);
   traceStartTimestamp = findTraceStartTime(spans);
-  let firstSpan = createNewSpan(traceStartTimestamp);
+  let firstSpan = createNewSpan(traceStartTimestamp, 0, 'p0', message[6]);
   data.push(firstSpan);
 
   traverseSpans(spans, firstSpan);
@@ -33,7 +36,7 @@ function traverseChildren(span, parent) {
       (span['children'][span['children'].length - 1]['timestamp'] -
         span['children'][0]['timestamp']) *
       1000;
-    if (isNaN(duration) || duration === 0) {
+    if (isNaN(duration) || duration <= 0) {
       duration = 1;
     }
     parent['duration'] = duration;
@@ -41,10 +44,12 @@ function traverseChildren(span, parent) {
       let x = span['children'][i];
       if (x.hasOwnProperty('children')) {
         // Create a new parent span so that the timeline for the spans are correct
+        let message = findProcessName(parent['operationName']);
+        let processID = message === '' ? 'p0' : getProcess(message);
         logSpan = createNewSpan(
           traceStartTimestamp + x['timestamp'] * 1000,
           duration,
-          'p0',
+          processID,
           parent['operationName'],
           [{ refType: 'CHILD_OF', traceID: traceID, spanID: parent['spanID'] }]
         );
@@ -54,7 +59,7 @@ function traverseChildren(span, parent) {
         createChildren(x['message'], parent['spanID']);
       } else {
         // only add logs with a timestamp
-        if (x.hasOwnProperty('timestamp')) {
+        if (x.hasOwnProperty('message') && x.hasOwnProperty('timestamp')) {
           let logPointStart = traceStartTimestamp + x['timestamp'] * 1000;
           let logPointDuration;
           if (i >= span['children'].length - 1) {
@@ -63,13 +68,15 @@ function traverseChildren(span, parent) {
             logPointDuration =
               findDuration(span['children'], i) - x['timestamp'] * 1000;
           }
-          if (isNaN(logPointDuration) || logPointDuration === 0) {
+          if (isNaN(logPointDuration) || logPointDuration <= 0) {
             logPointDuration = 1;
           }
+          let message = findProcessName(x['message']);
+          let processID = message === '' ? 'p0' : getProcess(message);
           let logSpan = createNewSpan(
             logPointStart,
             logPointDuration,
-            'p0',
+            processID,
             x['message'],
             [
               {
@@ -97,7 +104,9 @@ function traverseSpans(spans, firstSpan) {
       spans[i].hasOwnProperty('message') &&
       spans[i].hasOwnProperty('timestamp')
     ) {
-      let span = createNewSpan(0, 0, 'p0', spans[i]['message'], [
+      let message = findProcessName(spans[i]['message']);
+      let processID = message === '' ? 'p0' : getProcess(message);
+      let span = createNewSpan(0, 0, processID, spans[i]['message'], [
         {
           refType: 'CHILD_OF',
           traceID: traceID,
@@ -112,7 +121,7 @@ function traverseSpans(spans, firstSpan) {
       } else {
         duration = findDuration(spans, i) - spans[i]['timestamp'] * 1000;
       }
-      if (isNaN(duration) || duration === 0) {
+      if (isNaN(duration) || duration <= 0) {
         duration = 1;
       }
       span['duration'] = duration;
@@ -123,21 +132,16 @@ function traverseSpans(spans, firstSpan) {
 function createChildren(children, parentID) {
   let child = children[0];
   let processKey = genRanHex(5);
-  processes[processKey] = { serviceName: genRanHex(3), tags: [] };
-  let spanID = genRanHex(16);
+  processes[processKey] = { serviceName: 'Proton:' + genRanHex(3), tags: [] };
   let data = output['data'][0]['spans'];
   let startTimestamp = Date.parse(child['start_time']) * 1000;
-  let newSpan = {
-    traceID: traceID,
-    spanID: spanID,
-    operationName: 'something',
-    startTime: startTimestamp,
-    duration: child['duration_ms'] * 1000,
-    references: [{ refType: 'CHILD_OF', traceID: traceID, spanID: parentID }],
-    tags: [],
-    logs: [],
-    processID: processKey,
-  };
+  let newSpan = createNewSpan(
+    startTimestamp,
+    child['duration_ms'] * 1000,
+    processKey,
+    'Search Dispatch',
+    [{ refType: 'CHILD_OF', traceID: traceID, spanID: parentID }]
+  );
   data.push(newSpan);
   let traces = child['traces'];
   for (let k = 0; k < traces.length; k++) {
@@ -146,6 +150,9 @@ function createChildren(children, parentID) {
     let events;
     let firstEvent;
     let duration;
+    processKey = processID;
+    processID += 1;
+    processes[processKey] = { serviceName: trace['tag'], tags: [] };
     if (trace['tag'] === 'query_execution') {
       events = trace['threads'][0]['traces'];
       firstEvent = events[0];
@@ -168,23 +175,17 @@ function createChildren(children, parentID) {
       firstEvent = events[0];
       duration = (traceTimestamp - firstEvent['timestamp_ms']) * 1000;
     }
-    let childSpanID = genRanHex(16);
-    let childSpan = {
-      traceID: traceID,
-      spanID: childSpanID,
-      operationName: trace['tag'],
-      startTime: startTimestamp + firstEvent['timestamp_ms'] * 1000,
-      duration: duration,
-      references: [{ refType: 'CHILD_OF', traceID: traceID, spanID: spanID }],
-      tags: [],
-      logs: [],
-      processID: processKey,
-    };
+    let childSpan = createNewSpan(
+      startTimestamp + firstEvent['timestamp_ms'] * 1000,
+      duration,
+      processKey,
+      trace['tag'],
+      [{ refType: 'CHILD_OF', traceID: traceID, spanID: newSpan['spanID'] }]
+    );
     data.push(childSpan);
     if (events.length > 0) {
       for (let j = 0; j < events.length; j++) {
         let event = events[j];
-        let eventID = genRanHex(16);
         let eventStart = event['timestamp_ms'];
         let operationName;
         if (event.hasOwnProperty('event')) {
@@ -201,19 +202,19 @@ function createChildren(children, parentID) {
           operationName = event['tag'];
           duration = (events[j + 1]['timestamp_ms'] - eventStart) * 1000;
         }
-        let eventSpan = {
-          traceID: traceID,
-          spanID: eventID,
-          operationName: operationName,
-          startTime: startTimestamp + eventStart * 1000,
-          duration: duration,
-          references: [
-            { refType: 'CHILD_OF', traceID: traceID, spanID: childSpanID },
-          ],
-          tags: [],
-          logs: [],
-          processID: processKey,
-        };
+        let eventSpan = createNewSpan(
+          startTimestamp + eventStart * 1000,
+          duration,
+          processKey,
+          operationName,
+          [
+            {
+              refType: 'CHILD_OF',
+              traceID: traceID,
+              spanID: childSpan['spanID'],
+            },
+          ]
+        );
         data.push(eventSpan);
       }
     }
@@ -298,4 +299,28 @@ function createNewSpan(
     processID: processID,
   };
   return newSpan;
+}
+
+function getProcess(key) {
+  if (processMap.has(key)) {
+    return processMap.get(key);
+  } else {
+    let id = 'p' + processID;
+    processes[id] = { serviceName: key, tags: [] };
+    processMap.set(key, id);
+    processID += 1;
+    return id;
+  }
+}
+
+function findProcessName(string) {
+  let regex = /(?:[a-z]+\.)+[a-zA-Z]+/gm;
+  let match = string.match(regex);
+  if (match != null && match.length > 0) {
+    let temp = match[0];
+    temp = temp.split('.');
+    return temp[temp.length - 1];
+  } else {
+    return '';
+  }
 }
