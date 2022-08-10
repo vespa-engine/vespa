@@ -36,16 +36,9 @@ public class AutoscalingTest {
     public void test_autoscaling_single_content_group() {
         var fixture = AutoscalingTester.fixture().build();
 
-        fixture.tester().clock().advance(Duration.ofDays(1));
-        assertTrue("No measurements -> No change", fixture.autoscale().target().isEmpty());
-
-        fixture.loader().applyCpuLoad(0.7f, 59);
-        assertTrue("Too few measurements -> No change", fixture.autoscale().target().isEmpty());
-
-        fixture.tester().clock().advance(Duration.ofDays(1));
-        fixture.loader().applyCpuLoad(0.7f, 120);
+        fixture.loader().applyCpuLoad(0.7f, 10);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
-                                                                            9, 1, 2.8,  5.0, 50.0,
+                                                                            8, 1, 6,  5.7, 57.1,
                                                                             fixture.autoscale());
 
         fixture.deploy(Capacity.from(scaledResources));
@@ -53,13 +46,16 @@ public class AutoscalingTest {
 
         fixture.deactivateRetired(Capacity.from(scaledResources));
 
-        fixture.loader().applyCpuLoad(0.19f, 100);
+        fixture.loader().applyCpuLoad(0.19f, 10);
         assertEquals("Load change is small -> No change", Optional.empty(), fixture.autoscale().target());
 
+        fixture.loader().applyCpuLoad(0.1f, 10);
+        assertEquals("Too little time passed for downscaling -> No change", Optional.empty(), fixture.autoscale().target());
+
         fixture.tester().clock().advance(Duration.ofDays(2));
-        fixture.loader().applyCpuLoad(0.1f, 120);
+        fixture.loader().applyCpuLoad(0.1f, 10);
         fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
-                                         6, 1, 1.1, 8, 80.0,
+                                         11, 1, 1.1, 4, 40.0,
                                          fixture.autoscale());
     }
 
