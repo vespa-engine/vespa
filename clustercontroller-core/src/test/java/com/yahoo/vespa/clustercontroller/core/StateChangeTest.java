@@ -1128,7 +1128,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         // At this time, node taken down should have cluster states with all starting timestamps set. Others node should not.
         for (DummyVdsNode node : nodes) {
-            node.waitForSystemStateVersion(waiter.getCurrentSystemState().getVersion(), timeoutMS);
+            node.waitForSystemStateVersion(waiter.getCurrentSystemState().getVersion());
             List<ClusterState> states = node.getSystemStatesReceived();
             ClusterState lastState = states.get(0);
             StringBuilder stateHistory = new StringBuilder();
