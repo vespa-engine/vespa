@@ -3,11 +3,7 @@ import DownloadJSONButton from '../querybuilder/Components/Buttons/DownloadJSONB
 import { Container } from 'app/components';
 
 export function QueryTracer() {
-  const { response, setResponse } = useState('');
-
-  const updateResponse = (e) => {
-    setResponse(e.target.value);
-  };
+  const [response, setResponse] = useState('');
 
   return (
     <Container>
@@ -15,10 +11,10 @@ export function QueryTracer() {
         cols="70"
         rows="25"
         value={response}
-        onChange={updateResponse}
+        onChange={({ target }) => setResponse(target.value)}
       ></textarea>
-      <DownloadJSONButton>
-        Convert to Jeager format and download trace
+      <DownloadJSONButton response={response}>
+        Download in Jeager format
       </DownloadJSONButton>
     </Container>
   );

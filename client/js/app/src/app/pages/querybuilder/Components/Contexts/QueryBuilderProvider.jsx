@@ -103,7 +103,7 @@ function preReducer(state, { action, data }) {
         const children = jsonToInputs(JSON.parse(data), root);
         return { ...state, query: { ...root, children } };
       } catch (error) {
-        // TODO: Display error somehow
+        alert(`Failed to parse query: ${error}`); // TODO: Change to toast
         return state;
       }
     }

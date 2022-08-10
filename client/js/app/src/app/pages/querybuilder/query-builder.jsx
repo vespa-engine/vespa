@@ -19,7 +19,15 @@ function QueryBox() {
 
 function ResponseBox() {
   const response = useQueryBuilderContext((ctx) => ctx.http.response);
-  return <textarea readOnly cols="70" rows="25" value={response} />;
+  return (
+    <>
+      <textarea readOnly cols="70" rows="25" value={response} />
+      <CopyResponseButton />
+      <DownloadJSONButton response={response}>
+        Download in Jeager format
+      </DownloadJSONButton>
+    </>
+  );
 }
 
 export function QueryBuilder() {
@@ -41,8 +49,6 @@ export function QueryBuilder() {
           <QueryBox />
           <p className="response">Response</p>
           <ResponseBox />
-          <CopyResponseButton />
-          <DownloadJSONButton>Download response as JSON</DownloadJSONButton>
         </QueryBuilderProvider>
         <br />
         <br />
