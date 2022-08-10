@@ -76,7 +76,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     }
 
     @Override
-    protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
+    protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
         if (!application.shouldUpgradeOs()) return false;
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getVirtualId())
