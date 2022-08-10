@@ -153,10 +153,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 new ClusterStateRequestHandler(stateVersionTracker));
         this.statusRequestRouter.addHandler(
                 "^/$",
-                new LegacyIndexPageRequestHandler(
-                    timer, options.showLocalSystemStatesInEventLog, cluster,
-                    masterElectionHandler, stateVersionTracker,
-                    eventLog, timer.getCurrentTimeInMillis(), dataExtractor));
+                new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog,
+                                                  timer.getCurrentTimeInMillis(), dataExtractor));
 
         propagateOptions();
     }
