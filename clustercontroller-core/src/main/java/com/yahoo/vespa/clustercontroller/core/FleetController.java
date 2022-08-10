@@ -628,7 +628,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             didWork |= metricUpdater.forWork("processAnyPendingStatusPageRequest", this::processAnyPendingStatusPageRequest);
             if ( ! isRunning()) { return; }
             if (rpcServer != null) {
-                didWork |= metricUpdater.forWork("handleRpcRequests", () -> rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this));
+                didWork |= metricUpdater.forWork("handleRpcRequests", () -> rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this));
             }
 
             if ( ! isRunning()) { return; }

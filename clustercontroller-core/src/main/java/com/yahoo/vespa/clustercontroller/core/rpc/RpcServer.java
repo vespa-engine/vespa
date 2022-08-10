@@ -15,8 +15,6 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import java.util.logging.Level;
-
 import com.yahoo.net.HostName;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -27,9 +25,7 @@ import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.UnknownHostException;
@@ -37,24 +33,25 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RpcServer {
 
-    private static Logger log = Logger.getLogger(RpcServer.class.getName());
+    private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 
     private final Timer timer;
     private final Object monitor;
     private final String clusterName;
     private final int fleetControllerIndex;
-    private String slobrokConnectionSpecs[];
+    private String[] slobrokConnectionSpecs;
     private int port = 0;
     private Supervisor supervisor;
     private Acceptor acceptor;
     private Register register;
     private final List<Request> rpcRequests = new LinkedList<>();
     private MasterElectionHandler masterHandler;
-    private BackOffPolicy slobrokBackOffPolicy;
+    private final BackOffPolicy slobrokBackOffPolicy;
     private long lastConnectErrorTime = 0;
     private String lastConnectError = "";
 
@@ -81,7 +78,7 @@ public class RpcServer {
         return "storage/cluster." + clusterName + "/fleetcontroller/" + fleetControllerIndex;
     }
 
-    public void setSlobrokConnectionSpecs(String slobrokConnectionSpecs[], int port) throws ListenFailedException, UnknownHostException {
+    public void setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs, int port) throws ListenFailedException, UnknownHostException {
         if (this.slobrokConnectionSpecs == null || !this.slobrokConnectionSpecs.equals(slobrokConnectionSpecs) // TODO: <-- probably a bug
             || this.port != port)
         {
@@ -105,7 +102,7 @@ public class RpcServer {
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
         acceptor = supervisor.listen(new Spec(port));
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
-        StringBuffer slobroks = new StringBuffer("(");
+        StringBuilder slobroks = new StringBuilder("(");
         for (String s : slobrokConnectionSpecs) {
             slobroks.append(" ").append(s);
         }
@@ -185,10 +182,7 @@ public class RpcServer {
         }
     }
 
-    public boolean handleRpcRequests(ContentCluster cluster, ClusterState systemState,
-                                     NodeListener changeListener,
-                                     SlobrokListener addedListener)
-    {
+    public boolean handleRpcRequests(ContentCluster cluster, ClusterState systemState, NodeListener changeListener) {
         boolean handledAnyRequests = false;
         if (!isConnected()) {
             long time = timer.getCurrentTimeInMillis();
@@ -255,8 +249,6 @@ public class RpcServer {
                     NodeType nodeType = NodeType.get(req.parameters().get(0).asString());
                     int nodeIndex = req.parameters().get(1).asInt32();
                     Node node = new Node(nodeType, nodeIndex);
-                    // First parameter is current state in system state
-                    NodeState ns = systemState.getNodeState(node);
                     req.returnValues().add(new StringValue(systemState.getNodeState(node).serialize()));
                     // Second parameter is state node is reporting
                     NodeInfo nodeInfo = cluster.getNodeInfo(node);
@@ -276,7 +268,7 @@ public class RpcServer {
                         throw new IllegalStateException("Invalid slobrok address '" + slobrokAddress + "'.");
                     }
                     NodeType nodeType = NodeType.get(slobrokAddress.substring(nextButLastSlash + 1, lastSlash));
-                    Integer nodeIndex = Integer.valueOf(slobrokAddress.substring(lastSlash + 1));
+                    int nodeIndex = Integer.parseInt(slobrokAddress.substring(lastSlash + 1));
                     NodeInfo node = cluster.getNodeInfo(new Node(nodeType, nodeIndex));
                     if (node == null)
                         throw new IllegalStateException("Cannot set wanted state of node " + new Node(nodeType, nodeIndex) + ". Index does not correspond to a configured node.");
