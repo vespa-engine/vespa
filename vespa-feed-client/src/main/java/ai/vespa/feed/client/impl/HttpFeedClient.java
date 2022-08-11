@@ -41,6 +41,7 @@ class HttpFeedClient implements FeedClient {
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
         this(builder, new HttpRequestStrategy(builder));
@@ -49,6 +50,7 @@ class HttpFeedClient implements FeedClient {
     HttpFeedClient(FeedClientBuilderImpl builder, RequestStrategy requestStrategy) {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
+        this.speedTest = builder.speedTest;
     }
 
     @Override
@@ -90,7 +92,7 @@ class HttpFeedClient implements FeedClient {
             throw new IllegalStateException("Client is closed");
 
         HttpRequest request = new HttpRequest(method,
-                                              getPath(documentId) + getQuery(params),
+                                              getPath(documentId) + getQuery(params, speedTest),
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
                                               params.timeout().orElse(null));
@@ -217,13 +219,14 @@ class HttpFeedClient implements FeedClient {
         }
     }
 
-    static String getQuery(OperationParameters params) {
+    static String getQuery(OperationParameters params, boolean speedTest) {
         StringJoiner query = new StringJoiner("&", "?", "").setEmptyValue("");
         if (params.createIfNonExistent()) query.add("create=true");
         params.testAndSetCondition().ifPresent(condition -> query.add("condition=" + encode(condition)));
         params.timeout().ifPresent(timeout -> query.add("timeout=" + timeout.toMillis() + "ms"));
         params.route().ifPresent(route -> query.add("route=" + encode(route)));
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
+        if (speedTest) query.add("dryRun=true");
         return query.toString();
     }
 

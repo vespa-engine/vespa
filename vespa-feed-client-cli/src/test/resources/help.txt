@@ -10,8 +10,9 @@ Vespa feed client
                                           connections
     --disable-ssl-hostname-verification   Disable SSL hostname
                                           verification
-    --dryrun                              Enable dryrun mode where each
-                                          operation succeeds after 1ms
+    --dryrun                              Let each operation succeed after
+                                          1ms, instead of sending it
+                                          across the network
     --endpoint <arg>                      URI to feed endpoint
     --file <arg>                          Path to feed file in JSON format
     --header <arg>                        HTTP header on the form 'Name:
@@ -34,8 +35,19 @@ Vespa feed client
                                           failure
     --silent                              Disable periodic status printing
                                           to stderr
+    --speed-test                          Perform a network speed test,
+                                          where the server immediately
+                                          responds to each feed operation
+                                          with a successful response.
+                                          Requires Vespa version ≥ 8.35 on
+                                          the server
     --stdin                               Read JSON input from standard
                                           input
+    --test-payload-size <arg>             Document JSON test payload size
+                                          in bytes, for use with
+                                          --speed-test; requires --file
+                                          and -stdin to not be set;
+                                          default is 1024
     --timeout <arg>                       Feed operation timeout (in
                                           seconds)
     --trace <arg>                         The trace level of network

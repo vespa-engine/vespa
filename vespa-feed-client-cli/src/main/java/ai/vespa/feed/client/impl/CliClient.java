@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
+import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
 import ai.vespa.feed.client.FeedException;
@@ -9,22 +10,35 @@ import ai.vespa.feed.client.JsonFeeder.ResultCallback;
 import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
+import ai.vespa.feed.client.impl.CliArguments.CliArgumentsException;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Enumeration;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Main method for CLI interface
@@ -76,7 +90,7 @@ public class CliClient {
                 if (cliArgs.showProgress()) {
                     Thread progressPrinter = new Thread(() -> {
                         try {
-                            while ( ! latch.await(10, TimeUnit.SECONDS)) {
+                            while (!latch.await(10, TimeUnit.SECONDS)) {
                                 synchronized (printMonitor) {
                                     printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), systemError);
                                 }
@@ -89,9 +103,17 @@ public class CliClient {
                 }
 
                 feeder.feedMany(in, new ResultCallback() {
-                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, successes, failures, cliArgs); }
-                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
-                    @Override public void onComplete() { latch.countDown(); }
+                    @Override
+                    public void onNextResult(Result result, FeedException error) { handleResult(result, error, successes, failures, cliArgs); }
+
+                    @Override
+                    public void onError(FeedException error) {
+                        fatal.set(error);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onComplete() { latch.countDown(); }
                 });
                 latch.await();
 
@@ -99,9 +121,11 @@ public class CliClient {
                 if (fatal.get() != null) throw fatal.get();
             }
             return 0;
-        } catch (CliArguments.CliArgumentsException | IOException | FeedException e) {
+        }
+        catch (CliArguments.CliArgumentsException | IOException | FeedException e) {
             return handleException(verbose, e);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return handleException(verbose, "Unknown failure: " + e.getMessage(), e);
         }
     }
@@ -111,7 +135,8 @@ public class CliClient {
             failures.incrementAndGet();
             if (args.showErrors()) synchronized (printMonitor) {
                 systemError.println(error.getMessage());
-                if (error instanceof ResultException) ((ResultException) error).getTrace().ifPresent(systemError::println);
+                if (error instanceof ResultException)
+                    ((ResultException) error).getTrace().ifPresent(systemError::println);
                 if (args.verboseSpecified()) error.printStackTrace(systemError);
             }
         }
@@ -136,6 +161,7 @@ public class CliClient {
         cliArgs.caCertificates().ifPresent(builder::setCaCertificatesFile);
         cliArgs.headers().forEach(builder::addRequestHeader);
         builder.setDryrun(cliArgs.dryrunEnabled());
+        builder.setSpeedTest(cliArgs.speedTest());
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));
         cliArgs.proxy().ifPresent(builder::setProxy);
@@ -151,7 +177,9 @@ public class CliClient {
     }
 
     private InputStream createFeedInputStream(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
-        return cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get());
+        return cliArgs.readFeedFromStandardInput() ? systemIn
+                                                   : cliArgs.inputFile().isPresent() ? Files.newInputStream(cliArgs.inputFile().get())
+                                                                                     : createDummyInputStream(cliArgs.testPayloadSize().orElse(1024));
     }
 
     private int handleException(boolean verbose, Exception e) { return handleException(verbose, e.getMessage(), e); }
@@ -165,8 +193,12 @@ public class CliClient {
     }
 
     private static class AcceptAllHostnameVerifier implements HostnameVerifier {
+
         static final AcceptAllHostnameVerifier INSTANCE = new AcceptAllHostnameVerifier();
-        @Override public boolean verify(String hostname, SSLSession session) { return true; }
+
+        @Override
+        public boolean verify(String hostname, SSLSession session) { return true; }
+
     }
 
     static void printBenchmarkResult(long durationNanos, long successes, long failures,
@@ -204,6 +236,33 @@ public class CliClient {
     private static void writeFloatField(JsonGenerator generator, String name, double value, int precision) throws IOException {
         generator.writeFieldName(name);
         generator.writeNumber(String.format("%." + precision + "f", value));
+    }
+
+    /** Creates an input stream that spits out random documents (id and data) for one minute. */
+    static InputStream createDummyInputStream(int payloadSize) {
+        Instant end = Instant.now().plusSeconds(60);
+        return createDummyInputStream(payloadSize, new Random(), () -> Instant.now().isBefore(end));
+    }
+
+    static InputStream createDummyInputStream(int payloadSize, Random random, BooleanSupplier hasNext) {
+        int idSize = 8;
+        String template = String.format("{ \"put\": \"id:test:test::%s\", \"fields\": { \"test\": \"%s\" } }\n",
+                                        IntStream.range(0, idSize).mapToObj(__ -> "*").collect(joining()),
+                                        IntStream.range(0, payloadSize).mapToObj(__ -> "#").collect(joining()));
+        byte[] buffer = template.getBytes(StandardCharsets.UTF_8);
+        int idIndex = template.indexOf('*');
+        int dataIndex = template.indexOf('#');
+
+        return new SequenceInputStream(new Enumeration<InputStream>() {
+            @Override public boolean hasMoreElements() {
+                return hasNext.getAsBoolean();
+            }
+            @Override public InputStream nextElement() {
+                for (int i = 0; i <      idSize; i++) buffer[  idIndex + i] = (byte) ('a' + (random.nextInt(26)));
+                for (int i = 0; i < payloadSize; i++) buffer[dataIndex + i] = (byte) ('a' + (random.nextInt(26)));
+                return new ByteArrayInputStream(buffer);
+            }
+        });
     }
 
 }

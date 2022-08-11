@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
+import ai.vespa.feed.client.impl.CliArguments.CliArgumentsException;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -63,16 +64,23 @@ class CliArgumentsTest {
     }
 
     @Test
-    void fails_on_conflicting_parameters() {
-        CliArguments.CliArgumentsException exception = assertThrows(
-                CliArguments.CliArgumentsException.class,
-                () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--file=/path/to/file", "--stdin"}));
-        assertEquals("Either option 'file' or 'stdin' must be specified", exception.getMessage());
+    void fails_on_conflicting_parameters() throws CliArgumentsException {
+        assertEquals("Exactly one of 'file' and 'stdin' must be specified",
+                     assertThrows(CliArgumentsException.class,
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--file=/path/to/file", "--stdin"}))
+                             .getMessage());
 
-        exception = assertThrows(
-                CliArguments.CliArgumentsException.class,
-                () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint"}));
-        assertEquals("Either option 'file' or 'stdin' must be specified", exception.getMessage());
+        assertEquals("Exactly one of 'file' and 'stdin' must be specified",
+                     assertThrows(CliArgumentsException.class,
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint"}))
+                             .getMessage());
+
+        assertEquals("At most one of 'file', 'stdin' and 'test-payload-size' may be specified",
+                     assertThrows(CliArgumentsException.class,
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--speed-test", "--test-payload-size=123", "--file=file"}))
+                             .getMessage());
+
+        CliArguments.fromRawArgs(new String[] {"--endpoint=foo", "--speed-test"});
     }
 
     @Test

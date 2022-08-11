@@ -95,7 +95,11 @@ public interface FeedClientBuilder {
     /** Sets client SSL certificate/key */
     FeedClientBuilder setCertificate(X509Certificate certificate, PrivateKey privateKey);
 
+    /** Turns on dryrun mode, where each operation succeeds after a given delay, rather than being sent across the network. */
     FeedClientBuilder setDryrun(boolean enabled);
+
+    /** Turns on speed test mode, where all feed operations are immediately acknowledged by the server. */
+    FeedClientBuilder setSpeedTest(boolean enabled);
 
     /**
      * Overrides JVM default SSL truststore
