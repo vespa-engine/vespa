@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import DownloadJSONButton from '../querybuilder/Components/Buttons/DownloadJSONButton';
-import { Container } from 'app/components';
+import { Container, DownloadJson } from 'app/components';
 
 export function QueryTracer() {
   const [response, setResponse] = useState('');
@@ -13,9 +12,7 @@ export function QueryTracer() {
         value={response}
         onChange={({ target }) => setResponse(target.value)}
       ></textarea>
-      <DownloadJSONButton response={response}>
-        Download in Jeager format
-      </DownloadJSONButton>
+      <DownloadJson response={response}>Download in Jeager format</DownloadJson>
     </Container>
   );
 }

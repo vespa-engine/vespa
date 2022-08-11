@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import pasteImage from '../../assets/img/paste.svg';
-import ImageButton from './ImageButton';
+import pasteImage from 'app/pages/querybuilder/assets/img/paste.svg';
+import ImageButton from 'app/pages/querybuilder/Components/Buttons/ImageButton';
 import {
   ACTION,
   dispatch,

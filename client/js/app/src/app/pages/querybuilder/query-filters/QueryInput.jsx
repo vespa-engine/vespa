@@ -1,6 +1,6 @@
 import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import SimpleDropDownForm from 'app/pages/querybuilder/Components/Text/SimpleDropDownForm';
+import SimpleDropDownForm from 'app/pages/querybuilder/query-filters/SimpleDropDownForm';
 import {
   ACTION,
   dispatch,

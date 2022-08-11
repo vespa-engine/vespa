@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import ImageButton from './ImageButton';
+import ImageButton from 'app/pages/querybuilder/Components/Buttons/ImageButton';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import copyImage from 'app/pages/querybuilder/assets/img/copy.svg';
 

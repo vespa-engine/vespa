@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SimpleDropDownForm from './SimpleDropDownForm';
+import SimpleDropDownForm from 'app/pages/querybuilder/query-filters/SimpleDropDownForm';
 import {
   ACTION,
   dispatch,
