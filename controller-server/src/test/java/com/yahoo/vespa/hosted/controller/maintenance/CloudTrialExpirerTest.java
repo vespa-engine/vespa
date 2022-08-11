@@ -37,7 +37,7 @@ public class CloudTrialExpirerTest {
 
     @Test
     void tombstone_inactive_none() {
-        registerTenant("none-tenant", "none", Duration.ofDays(365).plusMillis(1));
+        registerTenant("none-tenant", "none", Duration.ofDays(183).plusMillis(1));
         assertEquals(1.0, expirer.maintain());
         assertEquals(Tenant.Type.deleted, tester.controller().tenants().get(TenantName.from("none-tenant"), true).get().type());
     }
@@ -74,7 +74,7 @@ public class CloudTrialExpirerTest {
 
     @Test
     void delete_tenants_with_applications_with_no_deployments() {
-        registerTenant("with-apps", "trial", Duration.ofDays(366));
+        registerTenant("with-apps", "trial", Duration.ofDays(184));
         tester.createApplication("with-apps", "app1", "instance1");
         assertEquals(1.0, expirer.maintain());
         assertPlan("with-apps", "none");
@@ -84,7 +84,7 @@ public class CloudTrialExpirerTest {
 
     @Test
     void keep_tenants_without_applications_that_are_idle() {
-        registerTenant("active", "none", Duration.ofDays(364));
+        registerTenant("active", "none", Duration.ofDays(182));
         assertEquals(1.0, expirer.maintain());
         assertPlan("active", "none");
     }
