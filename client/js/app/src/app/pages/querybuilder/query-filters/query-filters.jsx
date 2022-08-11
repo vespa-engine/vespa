@@ -1,14 +1,13 @@
 import React from 'react';
-import SendQuery from 'app/pages/querybuilder/query-filters/SendQuery';
 import QueryInput from 'app/pages/querybuilder/query-filters/QueryInput';
 import PasteJSONButton from 'app/pages/querybuilder/query-filters/PasteJSONButton';
+import { Container } from 'app/components';
 
 export function QueryFilters() {
   return (
-    <>
-      <SendQuery />
+    <Container>
       <QueryInput />
       <PasteJSONButton />
-    </>
+    </Container>
   );
 }

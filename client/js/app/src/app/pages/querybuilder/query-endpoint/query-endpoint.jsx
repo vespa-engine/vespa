@@ -22,7 +22,7 @@ function send(method, url, query) {
     .catch((error) => dispatch(ACTION.SET_HTTP, { error }));
 }
 
-export default function SendQuery() {
+export default function QueryEndpoint() {
   const messageMethods = { post: { name: 'POST' }, get: { name: 'GET' } };
   const [method, setMethod] = useState(messageMethods.post.name);
   const [url, setUrl] = useState('http://localhost:8080/search/');
