@@ -28,7 +28,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(CloudTrialExpirer.class.getName());
 
     private static final Duration nonePlanAfter = Duration.ofDays(14);
-    private static final Duration tombstoneAfter = Duration.ofDays(365);
+    private static final Duration tombstoneAfter = Duration.ofDays(183);
     private final ListFlag<String> extendedTrialTenants;
 
     public CloudTrialExpirer(Controller controller, Duration interval) {
