@@ -524,7 +524,19 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(404, response.getStatus());
 
-        // POST with speedTest=true returns an immediate OK response
+        // GET with dryRun=true is an error
+        access.session.expect((__, ___) -> {
+            fail("Should not cause an actual feed operation");
+            return null;
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?dryRun=true");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"message\": \"May not specify 'dryRun' at '/document/v1/space/music/number/1/two'\"\n" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // POST with dryRun=true returns an immediate OK response
         access.session.expect((__, ___) -> {
             fail("Should not cause an actual feed operation");
             return null;
@@ -537,7 +549,7 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
-        // PUT with speedTest=true returns an immediate OK response
+        // PUT with dryRun=true returns an immediate OK response
         access.session.expect((__, ___) -> {
             fail("Should not cause an actual feed operation");
             return null;
@@ -550,7 +562,7 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
-        // DELETE with speedTest=true returns an immediate OK response
+        // DELETE with dryRun=true returns an immediate OK response
         access.session.expect((__, ___) -> {
             fail("Should not cause an actual feed operation");
             return null;

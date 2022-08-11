@@ -362,6 +362,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+        disallow(request, DRY_RUN);
         enqueueAndDispatch(request, handler, () -> {
             boolean streamed = getProperty(request, STREAM, booleanParser).orElse(false);
             VisitorParameters parameters = parseGetParameters(request, path, streamed);
@@ -374,6 +375,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel postDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+        disallow(request, DRY_RUN);
         enqueueAndDispatch(request, handler, () -> {
             StorageCluster destination = resolveCluster(Optional.of(requireProperty(request, DESTINATION_CLUSTER)), clusters);
             VisitorParameters parameters = parseParameters(request, path);
@@ -388,6 +390,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel putDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+        disallow(request, DRY_RUN);
         return new ForwardingContentChannel(in -> {
             enqueueAndDispatch(request, handler, () -> {
                 StorageCluster cluster = resolveCluster(Optional.of(requireProperty(request, CLUSTER)), clusters);
@@ -406,6 +409,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel deleteDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+        disallow(request, DRY_RUN);
         enqueueAndDispatch(request, handler, () -> {
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setFieldSet(DocIdOnly.NAME);
@@ -420,6 +424,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+        disallow(request, DRY_RUN);
         enqueueAndDispatch(request, handler, () -> {
             DocumentOperationParameters rawParameters = parametersFromRequest(request, CLUSTER, FIELD_SET);
             if (rawParameters.fieldSet().isEmpty())
