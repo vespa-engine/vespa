@@ -62,7 +62,11 @@ public class OsUpgradeSchedulerTest {
         assertEquals(version0,
                      tester.controller().osVersionTarget(cloud).get().osVersion().version(),
                      "Target is unchanged because we're outside trigger period");
-        tester.clock().advance(Duration.ofHours(7).plusMinutes(5)); // Put us inside the trigger period
+        tester.clock().advance(Duration.ofHours(9).plusMinutes(5)); // Put us inside the trigger period
+        assertEquals("2022-03-17T09:05:00", formatInstant(tester.clock().instant()));
+        Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud);
+        assertTrue(change.isPresent());
+        assertEquals("2022-03-17T07:00:00", formatInstant(change.get().scheduleAt()));
         scheduler.maintain();
         assertEquals(version1,
                 tester.controller().osVersionTarget(cloud).get().osVersion().version(),
@@ -77,8 +81,7 @@ public class OsUpgradeSchedulerTest {
         Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud);
         assertTrue(nextChange.isPresent());
         assertEquals("7.0.0.20220425", nextChange.get().version().toFullString());
-        assertEquals("2022-05-02T07:00:00", LocalDateTime.ofInstant(nextChange.get().scheduleAt(), ZoneOffset.UTC)
-                                                         .format(DateTimeFormatter.ISO_DATE_TIME));
+        assertEquals("2022-05-02T07:00:00", formatInstant(nextChange.get().scheduleAt()));
     }
 
     @Test
@@ -161,6 +164,10 @@ public class OsUpgradeSchedulerTest {
 
     private static ZoneApi zone(String id, CloudName cloud) {
         return ZoneApiMock.newBuilder().withId(id).with(cloud).build();
+    }
+
+    private static String formatInstant(Instant instant) {
+        return LocalDateTime.ofInstant(instant, ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME);
     }
 
 }
