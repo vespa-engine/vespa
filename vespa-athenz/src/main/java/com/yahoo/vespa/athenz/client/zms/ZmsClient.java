@@ -89,5 +89,7 @@ public interface ZmsClient extends Closeable {
 
     QuotaUsage getQuotaUsage();
 
+    void deleteSubdomain(AthenzDomain parent, String name);
+
     void close();
 }

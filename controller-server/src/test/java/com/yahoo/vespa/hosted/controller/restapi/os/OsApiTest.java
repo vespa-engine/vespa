@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
@@ -11,10 +12,10 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -57,10 +58,13 @@ public class OsApiTest extends ControllerContainerTest {
         tester = new ContainerTester(container, responses);
         tester.serviceRegistry().clock().setInstant(Instant.ofEpochMilli(1234));
         addUserToHostedOperatorRole(operator);
-        zoneRegistryMock().setZones(zone1, zone2, zone3)
-                          .reprovisionToUpgradeOsIn(zone3)
-                          .setOsUpgradePolicy(cloud1, UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build())
-                          .setOsUpgradePolicy(cloud2, UpgradePolicy.builder().upgrade(zone3).build());
+        tester.serviceRegistry().zoneRegistry().setZones(zone1, zone2, zone3)
+              .reprovisionToUpgradeOsIn(zone3)
+              .setOsUpgradePolicy(cloud1, UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build())
+              .setOsUpgradePolicy(cloud2, UpgradePolicy.builder().upgrade(zone3).build());
+        tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(Version.fromString("7.0"),
+                                                                               OsRelease.Tag.latest,
+                                                                               Instant.EPOCH));
         osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
                                cloud1),
@@ -158,10 +162,6 @@ public class OsApiTest extends ControllerContainerTest {
             }
         }
         updateVersionStatus();
-    }
-
-    private ZoneRegistryMock zoneRegistryMock() {
-        return tester.serviceRegistry().zoneRegistry();
     }
 
     private NodeRepositoryMock nodeRepository() {

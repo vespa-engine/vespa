@@ -27,6 +27,8 @@ To use the visualizer, a [Jaeger](https://www.jaegertracing.io/) instance must b
       -e SPAN_STORAGE_TYPE=memory \
       jaegertracing/jaeger-query:latest
 
+The Jaeger UI can then be reached at **localhost:16686/search**
+
 To use the visualizer,
 paste the Vespa trace into the text box
 and press the button to convert the trace to a format supported by Jaeger and download it.
@@ -35,7 +37,7 @@ see [query tracing](https://docs.vespa.ai/en/query-api.html#query-tracing):
 
 ![Trace Converter](img/TraceConverter.png)
 
-When downloading the trace a new tab with Jaeger will open up.
+After downloading the converted trace, it can be used with the Jaeger UI. 
 Press the _JSON File_ button as shown in the image, and drag and drop the trace you just downloaded:
 
 ![Jaeger Image](img/JaegerExample.png)

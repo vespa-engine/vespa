@@ -472,6 +472,13 @@ public class Flags {
             APPLICATION_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
+    public static final UnboundBooleanFlag CLEANUP_TENANT_ROLES = defineFeatureFlag(
+            "cleanup-tenant-roles", false,
+            List.of("olaa"), "2022-08-10", "2022-10-01",
+            "Determines whether old tenant roles should be deleted",
+            "Takes effect next maintenance run"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

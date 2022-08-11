@@ -150,59 +150,8 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         json.writeFieldName("report");
         render(json, (Node) report.root());
 
-        // TODO jonmv: remove
-        json.writeObjectFieldStart("summary");
-
-        renderSummary(json, report);
-
-        json.writeArrayFieldStart("failures");
-        renderFailures(json, report.root());
-        json.writeEndArray();
-
-        json.writeEndObject();
-
-        // TODO jonmv: remove
-        json.writeArrayFieldStart("output");
-        renderOutput(json, report.root());
-        json.writeEndArray();
-
         json.writeEndObject();
         json.close();
-    }
-
-    private static void renderSummary(JsonGenerator json, TestReport report) throws IOException {
-        Map<TestReport.Status, Long> tally =  report.root().tally();
-        json.writeNumberField("success", tally.getOrDefault(TestReport.Status.successful, 0L));
-        json.writeNumberField("failed", tally.getOrDefault(TestReport.Status.failed, 0L) + tally.getOrDefault(TestReport.Status.error, 0L));
-        json.writeNumberField("ignored", tally.getOrDefault(TestReport.Status.skipped, 0L));
-        json.writeNumberField("aborted", tally.getOrDefault(TestReport.Status.aborted, 0L));
-        json.writeNumberField("inconclusive", tally.getOrDefault(TestReport.Status.inconclusive, 0L));
-    }
-
-    private static void renderFailures(JsonGenerator json, Node node) throws IOException {
-        if (node instanceof FailureNode) {
-            json.writeStartObject();
-            json.writeStringField("testName", node.parent.name());
-            json.writeStringField("testError", ((FailureNode) node).thrown().getMessage());
-            json.writeStringField("exception", ExceptionUtils.getStackTraceAsString(((FailureNode) node).thrown()));
-            json.writeEndObject();
-        }
-        else {
-            for (Node child : node.children())
-                renderFailures(json, child);
-        }
-    }
-
-    private static void renderOutput(JsonGenerator json, Node node) throws IOException {
-        if (node instanceof OutputNode) {
-            for (LogRecord record : ((OutputNode) node).log())
-                if (record.getMessage() != null)
-                    json.writeString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
-        }
-        else {
-            for (Node child : node.children())
-                renderOutput(json, child);
-        }
     }
 
     private static void render(JsonGenerator json, Node node) throws IOException {
