@@ -21,6 +21,8 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCUtil;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -194,11 +196,11 @@ public class DummyVdsNode {
 
     public int getStateCommunicationVersion() { return stateCommunicationVersion; }
 
-    void waitForSystemStateVersion(int version) {
+    void waitForSystemStateVersion(int version, Duration timeout) {
         try {
-            long startTime = System.currentTimeMillis();
+            Instant endTime = Instant.now().plus(timeout);
             while (getLatestSystemStateVersion().orElse(-1) < version) {
-                if ( (System.currentTimeMillis() - startTime) > (long) FleetControllerTest.timeoutMS)
+                if (Instant.now().isAfter(endTime))
                     throw new RuntimeException("Timed out waiting for state version " + version + " in " + this);
                 Thread.sleep(10);
             }

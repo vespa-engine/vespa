@@ -28,6 +28,8 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import java.io.FileNotFoundException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1156,16 +1158,18 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         public NodeListener getNodeStateUpdateListener() { return FleetController.this; }
     };
 
-    public void waitForCompleteCycle(long timeoutMS) {
-        long endTime = System.currentTimeMillis() + timeoutMS;
+    public void waitForCompleteCycle(Duration timeout) {
+        Instant endTime = Instant.now().plus(timeout);
         synchronized (monitor) {
             // To wait at least one complete cycle, if a cycle is already running we need to wait for the next one beyond.
             long wantedCycle = cycleCount + (processingCycle ? 2 : 1);
             waitingForCycle = true;
             try{
                 while (cycleCount < wantedCycle) {
-                    if (System.currentTimeMillis() > endTime) throw new IllegalStateException("Timed out waiting for cycle to complete. Not completed after " + timeoutMS + " ms.");
-                    if ( !isRunning() ) throw new IllegalStateException("Fleetcontroller not running. Will never complete cycles");
+                    if (Instant.now().isAfter(endTime))
+                        throw new IllegalStateException("Timed out waiting for cycle to complete. Not completed after " + timeout);
+                    if ( !isRunning() )
+                        throw new IllegalStateException("Fleetcontroller not running. Will never complete cycles");
                     try{ monitor.wait(100); } catch (InterruptedException e) {}
                 }
             } finally {
@@ -1179,8 +1183,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
      * But it is only used in unit tests that should not trigger any thread issues. Don't want to add locks that reduce
      * live performance to remove a non-problem.
      */
-    public void waitForNodesHavingSystemStateVersionEqualToOrAbove(int version, int nodeCount, int timeout) throws InterruptedException {
-        long maxTime = System.currentTimeMillis() + timeout;
+    public void waitForNodesHavingSystemStateVersionEqualToOrAbove(int version, int nodeCount, Duration timeout) throws InterruptedException {
+        Instant endTime = Instant.now().plus(timeout);
         synchronized (monitor) {
             while (true) {
                 int ackedNodes = 0;
@@ -1193,17 +1197,17 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                     context.log(logger, Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
                     return;
                 }
-                long remainingTime = maxTime - System.currentTimeMillis();
-                if (remainingTime <= 0) {
-                    throw new IllegalStateException("Did not get " + nodeCount + " nodes to system state " + version + " within timeout of " + timeout + " milliseconds.");
+                Duration remainingTime = Duration.between(Instant.now(), endTime);
+                if (remainingTime.isNegative()) {
+                    throw new IllegalStateException("Did not get " + nodeCount + " nodes to system state " + version + " within timeout of " + timeout);
                 }
                 monitor.wait(10);
             }
         }
     }
 
-    public void waitForNodesInSlobrok(int distNodeCount, int storNodeCount, int timeoutMillis) throws InterruptedException {
-        long maxTime = System.currentTimeMillis() + timeoutMillis;
+    public void waitForNodesInSlobrok(int distNodeCount, int storNodeCount, Duration timeout) throws InterruptedException {
+        Instant endTime = Instant.now().plus(timeout);
         synchronized (monitor) {
             while (true) {
                 int distCount = 0, storCount = 0;
@@ -1215,10 +1219,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 }
                 if (distCount == distNodeCount && storCount == storNodeCount) return;
 
-                long remainingTime = maxTime - System.currentTimeMillis();
-                if (remainingTime <= 0) {
+                Duration remainingTime = Duration.between(Instant.now(), endTime);
+                if (remainingTime.isNegative()) {
                     throw new IllegalStateException("Did not get all " + distNodeCount + " distributors and " + storNodeCount
-                            + " storage nodes registered in slobrok within timeout of " + timeoutMillis + " ms. (Got "
+                            + " storage nodes registered in slobrok within timeout of " + timeout + ". (Got "
                             + distCount + " distributors and " + storCount + " storage nodes)");
                 }
                 monitor.wait(10);

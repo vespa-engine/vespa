@@ -1,16 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.testutils;
 
-import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
-
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public interface Waiter {
@@ -19,18 +20,18 @@ public interface Waiter {
         Object getMonitor();
         FleetController getFleetController();
         List<DummyVdsNode> getDummyNodes();
-        int getTimeoutMS();
+        Duration getTimeout();
     }
 
     ClusterState waitForState(String state) throws Exception;
     ClusterState waitForStateInSpace(String space, String state) throws Exception;
     ClusterState waitForStateInAllSpaces(String state) throws Exception;
-    ClusterState waitForState(String state, int timeoutMS) throws Exception;
+    ClusterState waitForState(String state, Duration timeoutMS) throws Exception;
     ClusterState waitForStableSystem() throws Exception;
     ClusterState waitForStableSystem(int nodeCount) throws Exception;
     ClusterState waitForInitProgressPassed(Node n, double progress);
     ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount);
-    void wait(WaitCondition c, WaitTask wt, int timeoutMS);
+    void wait(WaitCondition c, WaitTask wt, Duration timeout);
 
     class Impl implements Waiter {
 
@@ -42,7 +43,7 @@ public interface Waiter {
         }
 
         // TODO refactor
-        private ClusterState waitForState(String state, int timeoutMS, boolean checkAllSpaces, Set<String> checkSpaces) {
+        private ClusterState waitForState(String state, Duration timeoutMS, boolean checkAllSpaces, Set<String> checkSpaces) {
             LinkedList<DummyVdsNode> nodesToCheck = new LinkedList<>();
             for(DummyVdsNode node : data.getDummyNodes()) {
                 if (node.isConnected()) nodesToCheck.add(node);
@@ -57,15 +58,15 @@ public interface Waiter {
         }
 
         public ClusterState waitForState(String state) {
-            return waitForState(state, data.getTimeoutMS());
+            return waitForState(state, data.getTimeout());
         }
         public ClusterState waitForStateInAllSpaces(String state) {
-            return waitForState(state, data.getTimeoutMS(), true, Collections.emptySet());
+            return waitForState(state, data.getTimeout(), true, Collections.emptySet());
         }
         public ClusterState waitForStateInSpace(String space, String state) {
-            return waitForState(state, data.getTimeoutMS(), false, Collections.singleton(space));
+            return waitForState(state, data.getTimeout(), false, Collections.singleton(space));
         }
-        public ClusterState waitForState(String state, int timeoutMS) {
+        public ClusterState waitForState(String state, Duration timeoutMS) {
             return waitForState(state, timeoutMS, false, Collections.emptySet());
         }
         public ClusterState waitForStableSystem() {
@@ -73,24 +74,23 @@ public interface Waiter {
         }
         public ClusterState waitForStableSystem(int nodeCount) {
             WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher("version:\\d+ distributor:"+nodeCount+" storage:"+nodeCount, data.getFleetController(), data.getMonitor()).includeNotifyingNodes(data.getDummyNodes());
-            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeoutMS());
+            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeout());
             return swc.getCurrentState();
         }
         public ClusterState waitForInitProgressPassed(Node n, double progress) {
             WaitCondition.StateWait swc = new WaitCondition.InitProgressPassedMatcher(n, progress, data.getFleetController(), data.getMonitor());
-            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeoutMS());
+            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeout());
             return swc.getCurrentState();
         }
         public ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount) {
             WaitCondition.StateWait swc = new WaitCondition.MinUsedBitsMatcher(bitcount, nodecount, data.getFleetController(), data.getMonitor());
-            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeoutMS());
+            wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeout());
             return swc.getCurrentState();
         }
 
-        public final void wait(WaitCondition c, WaitTask wt, int timeoutMS) {
+        public final void wait(WaitCondition c, WaitTask wt, Duration timeout) {
             log.log(Level.INFO, "Waiting for " + c + (wt == null ? "" : " with wait task " + wt));
-            final long startTime = System.currentTimeMillis();
-            final long endTime = startTime + timeoutMS;
+            Instant endTime = Instant.now().plus(timeout);
             String lastReason = null;
             while (true) {
                 synchronized (data.getMonitor()) {
@@ -111,11 +111,11 @@ public interface Waiter {
                                 allowWait = false;
                             }
                         }
-                        final long timeLeft = endTime - System.currentTimeMillis();
-                        if (timeLeft <= 0) {
-                            throw new IllegalStateException("Timed out waiting max " + timeoutMS + " ms for " + c + (wt == null ? "" : "\n  with wait task " + wt) + ",\n  reason: " + reason);
-                        }
-                        if (allowWait) data.getMonitor().wait(wt == null ? WaitTask.defaultTaskFrequencyMillis : Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft));
+                        Duration timeLeft = Duration.between(Instant.now(), endTime);
+                        if (timeLeft.isNegative())
+                            throw new IllegalStateException("Timed out waiting max " + timeout + " ms for " + c + (wt == null ? "" : "\n  with wait task " + wt) + ",\n  reason: " + reason);
+                        if (allowWait)
+                            data.getMonitor().wait(wt == null ? WaitTask.defaultTaskFrequencyMillis : Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
                     } catch (InterruptedException e) {
                     }
                 }

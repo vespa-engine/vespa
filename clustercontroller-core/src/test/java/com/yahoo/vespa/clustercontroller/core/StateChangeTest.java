@@ -967,7 +967,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         // Ensure all nodes have been seen by fleetcontroller and that it has had enough time to possibly have sent a cluster state
         // Note: this is a candidate state and therefore NOT versioned yet
-        waiter.waitForState("^distributor:10 (\\.\\d+\\.t:\\d+ )*storage:10 (\\.\\d+\\.t:\\d+ )*.1.s:d( \\.\\d+\\.t:\\d+)*", timeoutMS);
+        waiter.waitForState("^distributor:10 (\\.\\d+\\.t:\\d+ )*storage:10 (\\.\\d+\\.t:\\d+ )*.1.s:d( \\.\\d+\\.t:\\d+)*", timeout);
         waitForCompleteCycle();
         new StateMessageChecker(nodes) {
             @Override
@@ -978,10 +978,10 @@ public class StateChangeTest extends FleetControllerTest {
 
         // Pass time and see that the nodes get state
         timer.advanceTime(3 * 60 * 1000);
-        waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:d", timeoutMS);
+        waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:d", timeout);
 
         int version = waiter.getCurrentSystemState().getVersion();
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 19, timeoutMS);
+        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 19, timeout);
 
         new StateMessageChecker(nodes) {
             @Override
@@ -1014,11 +1014,11 @@ public class StateChangeTest extends FleetControllerTest {
         final StateWaiter waiter = new StateWaiter(timer);
 
         fleetController.addSystemStateListener(waiter);
-        waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:i .1.i:1.0", timeoutMS);
+        waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:i .1.i:1.0", timeout);
         waitForCompleteCycle();
 
         final int version = waiter.getCurrentSystemState().getVersion();
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 20, timeoutMS);
+        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 20, timeout);
 
         // The last two versions of the cluster state should be seen (all nodes up,
         // zero out timestate)
@@ -1044,10 +1044,10 @@ public class StateChangeTest extends FleetControllerTest {
         nodes.get(1).failSetSystemState(true);
         int versionBeforeChange = nodes.get(1).getSystemStatesReceived().get(0).getVersion();
         nodes.get(2).disconnect(); // cause a new state
-        waiter.waitForState("version:\\d+ distributor:10 .1.s:d storage:10", timeoutMS);
+        waiter.waitForState("version:\\d+ distributor:10 .1.s:d storage:10", timeout);
         int versionAfterChange = waiter.getCurrentSystemState().getVersion();
         assertTrue(versionAfterChange > versionBeforeChange);
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(versionAfterChange, 18, timeoutMS);
+        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(versionAfterChange, 18, timeout);
 
         // Assert that the failed node has not acknowledged the latest version.
         // (The version may still be larger than versionBeforeChange if the fleet controller sends a
@@ -1122,7 +1122,7 @@ public class StateChangeTest extends FleetControllerTest {
         // Simulate netsplit. Take node down without node booting
         assertTrue(nodes.get(0).isDistributor());
         nodes.get(0).disconnectImmediately();
-        waiter.waitForState("version:\\d+ distributor:10 .0.s:d storage:10", timeoutMS);
+        waiter.waitForState("version:\\d+ distributor:10 .0.s:d storage:10", timeout);
 
         // Add node back.
         nodes.get(0).connect();
@@ -1130,7 +1130,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         // At this time, node taken down should have cluster states with all starting timestamps set. Others node should not.
         for (DummyVdsNode node : nodes) {
-            node.waitForSystemStateVersion(waiter.getCurrentSystemState().getVersion());
+            node.waitForSystemStateVersion(waiter.getCurrentSystemState().getVersion(), timeout);
             List<ClusterState> states = node.getSystemStatesReceived();
             ClusterState lastState = states.get(0);
             StringBuilder stateHistory = new StringBuilder();

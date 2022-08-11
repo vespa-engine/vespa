@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,6 +57,7 @@ public abstract class FleetControllerTest implements Waiter {
     private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     private static final int DEFAULT_NODE_COUNT = 10;
 
+    final Duration timeout = Duration.ofSeconds(30);
     Supervisor supervisor;
     protected final FakeTimer timer = new FakeTimer();
     protected Slobrok slobrok;
@@ -65,8 +67,6 @@ public abstract class FleetControllerTest implements Waiter {
     protected List<DummyVdsNode> nodes = new ArrayList<>();
     private String testName;
 
-    final static int timeoutS;
-    final static int timeoutMS;
     private final Waiter waiter = new Waiter.Impl(new DataRetriever() {
         @Override
         public Object getMonitor() { return timer; }
@@ -75,13 +75,11 @@ public abstract class FleetControllerTest implements Waiter {
         @Override
         public List<DummyVdsNode> getDummyNodes() { return nodes; }
         @Override
-        public int getTimeoutMS() { return timeoutMS; }
+        public Duration getTimeout() { return timeout; }
     });
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-        timeoutS = 30;
-        timeoutMS = timeoutS * 1000;
     }
 
     static class BackOff implements BackOffPolicy {
@@ -278,7 +276,7 @@ public abstract class FleetControllerTest implements Waiter {
                         .collect(Collectors.toList());
             }
             @Override
-            public int getTimeoutMS() { return timeoutMS; }
+            public Duration getTimeout() { return timeout; }
         });
         subsetWaiter.waitForState(expectedState);
     }
@@ -323,16 +321,16 @@ public abstract class FleetControllerTest implements Waiter {
     public ClusterState waitForState(String state) throws Exception { return waiter.waitForState(state); }
     public ClusterState waitForStateInAllSpaces(String state) throws Exception { return waiter.waitForStateInAllSpaces(state); }
     public ClusterState waitForStateInSpace(String space, String state) throws Exception { return waiter.waitForStateInSpace(space, state); }
-    public ClusterState waitForState(String state, int timeoutMS) throws Exception { return waiter.waitForState(state, timeoutMS); }
+    public ClusterState waitForState(String state, Duration timeout) throws Exception { return waiter.waitForState(state, timeout); }
     public ClusterState waitForInitProgressPassed(Node n, double progress) { return waiter.waitForInitProgressPassed(n, progress); }
     public ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount) { return waiter.waitForClusterStateIncludingNodesWithMinUsedBits(bitcount, nodecount); }
 
-    public void wait(WaitCondition c, WaitTask wt, int timeoutMS) {
-        waiter.wait(c, wt, timeoutMS);
+    public void wait(WaitCondition condition, WaitTask task, Duration timeout) {
+        waiter.wait(condition, task, timeout);
     }
 
     void waitForCompleteCycle() {
-        fleetController.waitForCompleteCycle(timeoutMS);
+        fleetController.waitForCompleteCycle(timeout);
     }
 
     private static class ExpectLine {
@@ -461,7 +459,7 @@ public abstract class FleetControllerTest implements Waiter {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node.getSlobrokName()));
         req.parameters().add(new StringValue(ns.serialize()));
-        connection.invokeSync(req, timeoutS);
+        connection.invokeSync(req, timeout.getSeconds());
         if (req.isError()) {
             fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());
         }

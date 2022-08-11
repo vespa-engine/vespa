@@ -2,13 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import org.junit.jupiter.api.Test;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.logging.Logger;
 
 public class SlobrokTest extends FleetControllerTest {
 
@@ -50,10 +49,10 @@ public class SlobrokTest extends FleetControllerTest {
             }
             //fleetController.setFreshSlobrokMirror();
             waitForCompleteCycle();
-            fleetController.waitForNodesInSlobrok(10, 10, timeoutMS);
+            fleetController.waitForNodesInSlobrok(10, 10, timeout);
 
             log.log(Level.INFO, "Waiting for cluster to be up and available again");
-            for (int i = 0; i < timeoutMS; i += 10) {
+            for (int i = 0; i < timeout.toMillis(); i += 10) {
                 if (clusterAvailable()) break;
                 timer.advanceTime(1000);
                 waitForCompleteCycle();
@@ -81,7 +80,7 @@ public class SlobrokTest extends FleetControllerTest {
         int version = fleetController.getSystemState().getVersion();
         nodes.get(0).disconnectSlobrok();
         log.log(Level.INFO, "DISCONNECTED NODE FROM SLOBROK. SHOULD BE IN COOLDOWN PERIOD");
-        fleetController.waitForNodesInSlobrok(9, 10, timeoutMS);
+        fleetController.waitForNodesInSlobrok(9, 10, timeout);
         synchronized(timer) {
             nodes.get(0).sendGetNodeStateReply(0);
         }
