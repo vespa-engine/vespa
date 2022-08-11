@@ -1,11 +1,11 @@
 import React from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import SimpleDropDownForm from 'app/pages/querybuilder/query-filters/SimpleDropDownForm';
+import { Select, TextInput, ActionIcon, Button } from '@mantine/core';
 import {
   ACTION,
   dispatch,
   useQueryBuilderContext,
 } from 'app/pages/querybuilder/context/query-builder-provider';
+import { Container, Icon } from 'app/components';
 
 export default function QueryInput() {
   const { children, type } = useQueryBuilderContext('query');
@@ -19,7 +19,7 @@ function Inputs({ id, type, inputs }) {
   );
   const firstRemaining = Object.keys(remainingTypes)[0];
   return (
-    <>
+    <Container sx={{ backgroundColor: 'gold', rowGap: '5px' }}>
       {inputs.map(({ id, input, type, children }) => (
         <Input
           key={id}
@@ -27,65 +27,69 @@ function Inputs({ id, type, inputs }) {
           {...{ id, input, type, children }}
         />
       ))}
-      {firstRemaining && <AddPropertyButton id={id} type={firstRemaining} />}
-    </>
+      {firstRemaining && (
+        <Button
+          leftIcon={<Icon name="plus" />}
+          onClick={() =>
+            dispatch(ACTION.INPUT_ADD, { id, type: firstRemaining })
+          }
+        >
+          Add property
+        </Button>
+      )}
+    </Container>
   );
 }
 
 function Input({ id, input, types, type, children }) {
+  const options = { [type.name]: type, ...types };
   return (
-    <div className="queryinput">
-      <SimpleDropDownForm
-        onChange={({ target }) =>
-          dispatch(ACTION.INPUT_UPDATE, {
-            id,
-            type: types[target.value],
-          })
-        }
-        options={{ [type.name]: type, ...types }}
-        value={type.name}
-      />
-      {children ? (
-        <Inputs id={id} type={type.children} inputs={children} />
-      ) : (
-        <input
-          size="30"
-          onChange={({ target }) =>
+    <Container
+      sx={{
+        display: 'flex',
+        // gridTemplateColumns: children
+        //   ? 'minmax(0, 1fr) max-content'
+        //   : 'minmax(0, 1fr) minmax(0, 1fr) max-content',
+        alignItems: 'center',
+        gap: '5px',
+        backgroundColor: 'aqua',
+      }}
+    >
+      <Container sx={{ display: 'flex' }}>
+        <Select
+          sx={{ flex: 1.4 }}
+          data={Object.values(options).map(({ name }) => name)}
+          onChange={(value) =>
             dispatch(ACTION.INPUT_UPDATE, {
               id,
-              input: target.value,
+              type: types[value],
             })
           }
-          placeholder={type.type}
-          value={input}
+          value={type.name}
+          searchable
         />
+        {!children && (
+          <TextInput
+            sx={{ flex: 1.4 }}
+            onChange={(event) =>
+              dispatch(ACTION.INPUT_UPDATE, {
+                id,
+                input: event.currentTarget.value,
+              })
+            }
+            placeholder={type.type}
+            value={input}
+          />
+        )}
+        <ActionIcon onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}>
+          <Icon name="circle-minus" />
+        </ActionIcon>
+      </Container>
+      {children && (
+        <Container sx={{ backgroundColor: 'green' }}>
+          <Inputs id={id} type={type.children} inputs={children} />
+        </Container>
       )}
-      <OverlayTrigger
-        placement="right"
-        delay={{ show: 250, hide: 400 }}
-        overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
-      >
-        <span>
-          <button
-            className="removeRow"
-            onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}
-          >
-            -
-          </button>
-        </span>
-      </OverlayTrigger>
-      <br />
-    </div>
-  );
-}
-
-function AddPropertyButton({ id, type }) {
-  return (
-    <button
-      className="addpropsbutton"
-      onClick={() => dispatch(ACTION.INPUT_ADD, { id, type })}
-    >
-      + Add property
-    </button>
+    </Container>
   );
 }

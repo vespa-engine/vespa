@@ -1,13 +1,28 @@
 import React from 'react';
 import { library } from '@fortawesome/fontawesome-svg-core';
+import { Box } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsToDot, faChartGantt } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowsToDot,
+  faChartGantt,
+  faCircleMinus,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons';
 
 // TODO: use dynamic import
 
-library.add(faArrowsToDot, faChartGantt);
+library.add(faArrowsToDot, faChartGantt, faCircleMinus, faPlus);
 
-export function Icon({ name, type = 'solid', ...rest }) {
+export function Icon({ name, type = 'solid', color, ...rest }) {
   const icon = `fa-${type} fa-${name}`;
-  return <FontAwesomeIcon icon={icon} {...rest} />;
+  return (
+    <Box
+      sx={(theme) => ({
+        ...(color && { color: theme.cr.getSolidBackground(color) }),
+      })}
+      component={FontAwesomeIcon}
+      icon={icon}
+      {...rest}
+    />
+  );
 }

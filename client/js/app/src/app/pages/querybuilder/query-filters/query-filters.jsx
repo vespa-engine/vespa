@@ -5,7 +5,7 @@ import { Container } from 'app/components';
 
 export function QueryFilters() {
   return (
-    <Container>
+    <Container sx={{ alignContent: 'start' }}>
       <QueryInput />
       <PasteJSONButton />
     </Container>
