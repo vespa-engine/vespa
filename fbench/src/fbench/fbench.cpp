@@ -372,13 +372,18 @@ FBench::Main(int argc, char *argv[])
     bool        optError;
 
     optError = false;
+    std::string content_type = "Content-type:application/json";
     while((opt = getopt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP")) != -1) {
         switch(opt) {
         case 'A':
             authority = optarg;
             break;
         case 'H':
-            extraHeaders += std::string(optarg) + "\r\n";
+            if (strncmp(optarg, "Content-type:", 13) == 0) {
+                content_type = optarg;
+            } else {
+                extraHeaders += std::string(optarg) + "\r\n";
+            }
             if (strncmp(optarg, "Host:", 5) == 0) {
                 fprintf(stderr, "Do not override 'Host:' header, use -A option instead\n");
                 return -1;
@@ -458,6 +463,9 @@ FBench::Main(int argc, char *argv[])
             break;
         }
     }
+    if (usePostMode) {
+        extraHeaders += content_type + "\r\n";
+    }
 
     if ( argc < (optind + 2) || optError) {
         Usage();
@@ -477,8 +485,7 @@ FBench::Main(int argc, char *argv[])
 
     short hosts = args / 2;
 
-    for (int i=0; i<hosts; ++i)
-    {
+    for (int i=0; i<hosts; ++i) {
         _hostnames.push_back(std::string(argv[optind+2*i]));
         int port = atoi(argv[optind+2*i+1]);
         if (port == 0) {
@@ -490,9 +497,9 @@ FBench::Main(int argc, char *argv[])
 
     // Find offset for each client if shared query file
     _queryfileOffset.push_back(0);
+    char filename[1024];
     if (singleQueryFile) {
         // Open file to find offsets, with pattern as if client 0
-        char filename[1024];
         snprintf(filename, 1024, queryFilePattern, 0);
         queryFilePattern = filename;
         FileReader reader;
