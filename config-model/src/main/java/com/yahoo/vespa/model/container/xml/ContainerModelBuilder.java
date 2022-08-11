@@ -551,7 +551,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setSearch(buildSearch(deployState, cluster, searchElement));
 
         addSearchHandler(cluster, searchElement);
-        addGUIHandler(cluster);
+
+        // Set up GUI handler only on self hosted
+        if (!deployState.isHosted())
+            addGUIHandler(cluster);
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
