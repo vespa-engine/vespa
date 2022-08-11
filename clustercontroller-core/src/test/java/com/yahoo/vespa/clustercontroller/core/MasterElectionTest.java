@@ -42,7 +42,6 @@ public class MasterElectionTest extends FleetControllerTest {
             zooKeeperServer = new ZooKeeperTestServer();
         }
         slobrok = new Slobrok();
-        usingFakeTimer = useFakeTimer;
         this.options = options;
         this.options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
@@ -51,7 +50,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
             nodeOptions.fleetControllerIndex = i;
-            fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true));
+            fleetControllers.add(createFleetController(useFakeTimer, nodeOptions, true));
         }
     }
 
@@ -112,7 +111,8 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 100;
-        setUpFleetController(5, false, options);
+        boolean usingFakeTimer = false;
+        setUpFleetController(5, usingFakeTimer, options);
         waitForMaster(0);
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
@@ -491,7 +491,8 @@ public class MasterElectionTest extends FleetControllerTest {
         options.clusterHasGlobalDocumentTypes = true;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;
-        setUpFleetController(3, false, options);
+        boolean useFakeTimer = false;
+        setUpFleetController(3, useFakeTimer, options);
         setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForMaster(0);
@@ -517,7 +518,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
         waitForCompleteCycle(1);
 
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true));
+        fleetControllers.set(0, createFleetController(useFakeTimer, fleetControllers.get(0).getOptions(), true));
         waitForMaster(0);
         waitForCompleteCycle(0);
 

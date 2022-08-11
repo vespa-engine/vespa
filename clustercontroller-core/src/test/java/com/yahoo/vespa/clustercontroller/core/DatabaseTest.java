@@ -60,7 +60,7 @@ public class DatabaseTest extends FleetControllerTest {
 
         log.info("CHECK THAT WANTED STATES PERSIST FLEETCONTROLLER RESTART");
         stopFleetController();
-        startFleetController();
+        startFleetController(false);
 
         waitForState("version:\\d+ distributor:10 .2.s:d storage:10 .3.s:m .7.s:r");
         assertWantedStates(wantedStates);
@@ -124,7 +124,7 @@ public class DatabaseTest extends FleetControllerTest {
 
         stopFleetController();
         for (int i = 6; i < nodes.size(); ++i) nodes.get(i).disconnect();
-        startFleetController();
+        startFleetController(false);
 
         waitForState("version:\\d+ distributor:3 storage:7 .1.s:m .3.s:d .4.s:d .5.s:d .6.s:m");
 

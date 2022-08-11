@@ -58,7 +58,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     Supervisor supervisor;
     protected final FakeTimer timer = new FakeTimer();
-    boolean usingFakeTimer = false;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
@@ -139,7 +138,7 @@ public abstract class FleetControllerTest implements Waiter {
         return opts;
     }
 
-    void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
+    void setUpSystem(FleetControllerOptions options) throws Exception {
         log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
@@ -149,7 +148,6 @@ public abstract class FleetControllerTest implements Waiter {
             log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
         }
         this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
-        this.usingFakeTimer = useFakeTimer;
     }
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
@@ -198,7 +196,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
-        if (slobrok == null) setUpSystem(useFakeTimer, options);
+        if (slobrok == null) setUpSystem(options);
         if (fleetController == null) {
             fleetController = createFleetController(useFakeTimer, options, startThread);
         } else {
@@ -213,9 +211,9 @@ public abstract class FleetControllerTest implements Waiter {
         }
     }
 
-    void startFleetController() throws Exception {
+    void startFleetController(boolean useFakeTimer) throws Exception {
         if (fleetController == null) {
-            fleetController = createFleetController(usingFakeTimer, options, true);
+            fleetController = createFleetController(useFakeTimer, options, true);
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }

@@ -951,15 +951,16 @@ public class StateChangeTest extends FleetControllerTest {
         startingTest("StateChangeTest::testNoSystemStateBeforeInitialTimePeriod()");
         FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.minTimeBeforeFirstSystemStateBroadcast = 3 * 60 * 1000;
-        setUpSystem(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), true);
+        setUpSystem(options);
+        boolean useFakeTimer = true;
+        setUpVdsNodes(useFakeTimer, new DummyVdsNodeOptions(), true);
         // Leave one node down to avoid sending cluster state due to having seen all node states.
         for (int i = 0; i < nodes.size(); ++i) {
             if (i != 3) {
                 nodes.get(i).connect();
             }
         }
-        setUpFleetController(true, options);
+        setUpFleetController(useFakeTimer, options);
 
         StateWaiter waiter = new StateWaiter(timer);
         fleetController.addSystemStateListener(waiter);
@@ -997,9 +998,10 @@ public class StateChangeTest extends FleetControllerTest {
         final FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.minTimeBeforeFirstSystemStateBroadcast = 300 * 60 * 1000;
 
-        setUpSystem(true, options);
+        boolean useFakeTimer = true;
+        setUpSystem(options);
 
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), true);
+        setUpVdsNodes(useFakeTimer, new DummyVdsNodeOptions(), true);
 
         for (DummyVdsNode node : nodes) {
             node.connect();
@@ -1007,7 +1009,7 @@ public class StateChangeTest extends FleetControllerTest {
         // Marking one node as 'initializing' improves testing of state later on.
         nodes.get(3).setNodeState(State.INITIALIZING);
 
-        setUpFleetController(true, options);
+        setUpFleetController(useFakeTimer, options);
 
         final StateWaiter waiter = new StateWaiter(timer);
 
