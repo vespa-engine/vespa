@@ -9,24 +9,14 @@ export function QueryDerived() {
     <Stack>
       <Group position="apart">
         <Badge variant="filled">Query</Badge>
-        <Group spacing="xs">
-          <Button
-            leftIcon={<Icon name="paste" />}
-            variant="outline"
-            size="xs"
-            compact
-          >
-            Paste JSON
-          </Button>
-          <Button
-            leftIcon={<Icon name="download" />}
-            variant="outline"
-            size="xs"
-            compact
-          >
-            Jeager Format
-          </Button>
-        </Group>
+        <Button
+          leftIcon={<Icon name="paste" />}
+          variant="outline"
+          size="xs"
+          compact
+        >
+          Paste JSON
+        </Button>
       </Group>
       <JsonInput
         styles={{

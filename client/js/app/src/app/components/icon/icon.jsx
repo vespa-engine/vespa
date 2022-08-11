@@ -6,6 +6,7 @@ import {
   faArrowsToDot,
   faChartGantt,
   faCircleMinus,
+  faCopy,
   faDownload,
   faPaste,
   faPlus,
@@ -19,7 +20,8 @@ library.add(
   faCircleMinus,
   faPlus,
   faPaste,
-  faDownload
+  faDownload,
+  faCopy
 );
 
 export function Icon({ name, type = 'solid', color, ...rest }) {
