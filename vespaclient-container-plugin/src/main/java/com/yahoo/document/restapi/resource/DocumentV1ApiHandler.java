@@ -20,7 +20,6 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.idstring.IdIdString;
@@ -169,6 +168,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String STREAM = "stream";
     private static final String SLICES = "slices";
     private static final String SLICE_ID = "sliceId";
+    private static final String DRY_RUN = "dryRun";
 
     private final Clock clock;
     private final Duration handlerTimeout;
@@ -442,6 +442,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel postDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
+        if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
+            handleFeedOperation(path, handler, new com.yahoo.documentapi.Response(-1));
+            return ignoredContent;
+        }
+
         return new ForwardingContentChannel(in -> {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentPut put = parser.parsePut(in, path.id().toString());
@@ -459,6 +464,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel putDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
+        if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
+            handleFeedOperation(path, handler, new com.yahoo.documentapi.Response(-1));
+            return ignoredContent;
+        }
+
         return new ForwardingContentChannel(in -> {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentUpdate update = parser.parseUpdate(in, path.id().toString());
@@ -477,6 +487,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel deleteDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
+        if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
+            handleFeedOperation(path, handler, new com.yahoo.documentapi.Response(-1));
+            return ignoredContent;
+        }
+
         enqueueAndDispatch(request, handler, () -> {
             DocumentRemove remove = new DocumentRemove(path.id());
             getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(remove::setCondition);
@@ -1062,19 +1077,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void updatePutMetrics(Outcome outcome) {
         switch (outcome) {
-            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
-            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
-            default: metric.add(MetricNames.FAILED, 1, null); break;
+            case SUCCESS -> metric.add(MetricNames.SUCCEEDED, 1, null);
+            case CONDITION_FAILED -> metric.add(MetricNames.CONDITION_NOT_MET, 1, null);
+            default -> metric.add(MetricNames.FAILED, 1, null);
         }
     }
 
     private void updateUpdateMetrics(Outcome outcome, boolean create) {
         if (create && outcome == Outcome.NOT_FOUND) outcome = Outcome.SUCCESS; // >_<
         switch (outcome) {
-            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
-            case NOT_FOUND: metric.add(MetricNames.NOT_FOUND, 1, null); break;
-            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
-            default: metric.add(MetricNames.FAILED, 1, null); break;
+            case SUCCESS -> metric.add(MetricNames.SUCCEEDED, 1, null);
+            case NOT_FOUND -> metric.add(MetricNames.NOT_FOUND, 1, null);
+            case CONDITION_FAILED -> metric.add(MetricNames.CONDITION_NOT_MET, 1, null);
+            default -> metric.add(MetricNames.FAILED, 1, null);
         }
     }
 

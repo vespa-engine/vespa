@@ -49,6 +49,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Collection<X509Certificate> caCertificates;
     boolean benchmark = true;
     boolean dryrun = false;
+    boolean speedTest = false;
     URI proxy;
 
 
@@ -167,6 +168,12 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setDryrun(boolean enabled) {
         this.dryrun = enabled;
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder setSpeedTest(boolean enabled) {
+        this.speedTest = enabled;
         return this;
     }
 

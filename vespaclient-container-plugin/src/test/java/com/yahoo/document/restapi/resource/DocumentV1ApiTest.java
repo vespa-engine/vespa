@@ -524,6 +524,67 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(404, response.getStatus());
 
+        // POST with speedTest=true returns an immediate OK response
+        access.session.expect((__, ___) -> {
+            fail("Should not cause an actual feed operation");
+            return null;
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?dryRun=true", POST,
+                                      "NOT JSON, NOT PARSED");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"id\": \"id:space:music:n=1:two\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        // PUT with speedTest=true returns an immediate OK response
+        access.session.expect((__, ___) -> {
+            fail("Should not cause an actual feed operation");
+            return null;
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?dryRun=true", PUT,
+                                      "NOT JSON, NOT PARSED");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"id\": \"id:space:music:n=1:two\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        // DELETE with speedTest=true returns an immediate OK response
+        access.session.expect((__, ___) -> {
+            fail("Should not cause an actual feed operation");
+            return null;
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?dryRun=true", DELETE,
+                                      "NOT JSON, NOT PARSED");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"id\": \"id:space:music:n=1:two\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        // PUT with a document update payload is a document update operation.
+        access.session.expect((update, parameters) -> {
+            DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
+            expectedUpdate.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
+            expectedUpdate.setCreateIfNonExistent(true);
+            assertEquals(expectedUpdate, update);
+            assertEquals(parameters(), parameters);
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
+            return new Result();
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s&dryRun=false", PUT,
+                                      "{" +
+                                      "  \"fields\": {" +
+                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
+                                      "  }" +
+                                      "}");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/group/a/three\"," +
+                       "  \"id\": \"id:space:music:g=a:three\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
         // POST with a document payload is a document put operation.
         access.session.expect((put, parameters) -> {
             DocumentPut expectedPut = new DocumentPut(doc2);
@@ -563,28 +624,6 @@ public class DocumentV1ApiTest {
                        "      ]" +
                        "    }" +
                        "  ]" +
-                       "}", response.readAll());
-        assertEquals(200, response.getStatus());
-
-        // PUT with a document update payload is a document update operation.
-        access.session.expect((update, parameters) -> {
-            DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
-            expectedUpdate.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
-            expectedUpdate.setCreateIfNonExistent(true);
-            assertEquals(expectedUpdate, update);
-            assertEquals(parameters(), parameters);
-            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
-            return new Result();
-        });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s", PUT,
-                                      "{" +
-                                      "  \"fields\": {" +
-                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
-                                      "  }" +
-                                      "}");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/group/a/three\"," +
-                       "  \"id\": \"id:space:music:g=a:three\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 

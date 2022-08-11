@@ -39,6 +39,8 @@ class CliArguments {
     private static final String CONNECTIONS_OPTION = "connections";
     private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
     private static final String DRYRUN_OPTION = "dryrun";
+    private static final String SPEED_TEST_OPTION = "speed-test";
+    private static final String TEST_PAYLOAD_SIZE_OPTION = "test-payload-size";
     private static final String ENDPOINT_OPTION = "endpoint";
     private static final String FILE_OPTION = "file";
     private static final String HEADER_OPTION = "header";
@@ -78,8 +80,19 @@ class CliArguments {
             if (!args.hasOption(ENDPOINT_OPTION)) {
                 throw new CliArgumentsException("Endpoint must be specified");
             }
-            if (args.hasOption(FILE_OPTION) == args.hasOption(STDIN_OPTION)) {
-                throw new CliArgumentsException(String.format("Either option '%s' or '%s' must be specified", FILE_OPTION, STDIN_OPTION));
+            if (args.hasOption(SPEED_TEST_OPTION)) {
+                if (   args.hasOption(FILE_OPTION) && (args.hasOption(STDIN_OPTION) || args.hasOption(TEST_PAYLOAD_SIZE_OPTION))
+                    || args.hasOption(STDIN_OPTION) && args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
+                    throw new CliArgumentsException(String.format("At most one of '%s', '%s' and '%s' may be specified", FILE_OPTION, STDIN_OPTION, TEST_PAYLOAD_SIZE_OPTION));
+                }
+            }
+            else {
+                if (args.hasOption(FILE_OPTION) == args.hasOption(STDIN_OPTION)) {
+                    throw new CliArgumentsException(String.format("Exactly one of '%s' and '%s' must be specified", FILE_OPTION, STDIN_OPTION));
+                }
+                if (args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
+                    throw new CliArgumentsException(String.format("Option '%s' can only be specified together with '%s'", TEST_PAYLOAD_SIZE_OPTION, SPEED_TEST_OPTION));
+                }
             }
             if (args.hasOption(CERTIFICATE_OPTION) != args.hasOption(PRIVATE_KEY_OPTION)) {
                 throw new CliArgumentsException(
@@ -165,6 +178,10 @@ class CliArguments {
     boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
 
     boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
+
+    boolean speedTest() { return has(SPEED_TEST_OPTION); }
+
+    OptionalInt testPayloadSize() throws CliArgumentsException { return intValue(TEST_PAYLOAD_SIZE_OPTION); }
 
     Optional<URI> proxy() throws CliArgumentsException {
         try {
@@ -304,7 +321,17 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(DRYRUN_OPTION)
-                        .desc("Enable dryrun mode where each operation succeeds after " + DryrunCluster.DELAY.toMillis() + "ms")
+                        .desc("Let each operation succeed after " + DryrunCluster.DELAY.toMillis() + "ms, instead of sending it across the network ")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(SPEED_TEST_OPTION)
+                        .desc("Perform a network speed test, where the server immediately responds to each feed operation with a successful response")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(TEST_PAYLOAD_SIZE_OPTION)
+                        .desc("Document JSON test payload size in bytes, for use with --speed-test; requires --file and -stdin to not be set; default is 1024")
+                        .hasArg()
+                        .type(Number.class)
                         .build())
                 .addOption(Option.builder()
                         .longOpt(VERBOSE_OPTION)
