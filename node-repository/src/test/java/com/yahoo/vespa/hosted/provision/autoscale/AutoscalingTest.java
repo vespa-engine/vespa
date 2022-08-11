@@ -77,6 +77,17 @@ public class AutoscalingTest {
                                          fixture.autoscale());
     }
 
+    @Test
+    public void test_autoscaling_uses_peak() {
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.loader().applyCpuLoad(0.01, 100);
+        fixture.loader().applyCpuLoad(0.70, 1);
+        fixture.loader().applyCpuLoad(0.01, 100);
+        fixture.tester().assertResources("Scaling up since peak resource usage is too high",
+                                         8, 1, 6.5, 5.7, 57.1,
+                                         fixture.autoscale());
+    }
+
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
     @Test
     public void test_autoscaling_single_container_group() {
