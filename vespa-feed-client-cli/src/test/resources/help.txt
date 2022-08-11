@@ -38,7 +38,9 @@ Vespa feed client
     --speed-test                          Perform a network speed test,
                                           where the server immediately
                                           responds to each feed operation
-                                          with a successful response
+                                          with a successful response.
+                                          Requires Vespa version ≥ 8.35 on
+                                          the server
     --stdin                               Read JSON input from standard
                                           input
     --test-payload-size <arg>             Document JSON test payload size

@@ -325,7 +325,7 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(SPEED_TEST_OPTION)
-                        .desc("Perform a network speed test, where the server immediately responds to each feed operation with a successful response")
+                        .desc("Perform a network speed test, where the server immediately responds to each feed operation with a successful response. Requires Vespa version ≥ 8.35 on the server")
                         .build())
                 .addOption(Option.builder()
                         .longOpt(TEST_PAYLOAD_SIZE_OPTION)

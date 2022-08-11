@@ -226,7 +226,7 @@ class HttpFeedClient implements FeedClient {
         params.timeout().ifPresent(timeout -> query.add("timeout=" + timeout.toMillis() + "ms"));
         params.route().ifPresent(route -> query.add("route=" + encode(route)));
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
-        if (speedTest) query.add("speedTest=true");
+        if (speedTest) query.add("dryRun=true");
         return query.toString();
     }
 
