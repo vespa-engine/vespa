@@ -7,7 +7,7 @@ import DownloadJSONButton from './Components/Buttons/DownloadJSONButton';
 import {
   QueryBuilderProvider,
   useQueryBuilderContext,
-} from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
+} from 'app/pages/querybuilder/context/query-builder-provider';
 
 function QueryBox() {
   const query = useQueryBuilderContext((ctx) => ctx.query.input);
