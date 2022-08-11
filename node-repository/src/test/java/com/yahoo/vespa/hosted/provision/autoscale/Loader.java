@@ -34,16 +34,14 @@ public class Loader {
      * @param count the number of measurements
      */
     public Duration addCpuMeasurements(double value, int count) {
-        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
+        var idealLoad = fixture.clusterModel().idealLoad();
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Load load = new Load(value, idealLoad.memory(), idealLoad.disk()).multiply(oneExtraNodeFactor);
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
             fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
-                Load load = new Load(value,
-                                     ClusterModel.idealMemoryLoad,
-                                     ClusterModel.idealContentDiskLoad).multiply(oneExtraNodeFactor);
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                          new NodeMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                 load,
@@ -88,15 +86,16 @@ public class Loader {
      * wanting to see the ideal load with one node missing.)
      */
     public void addMemMeasurements(double value, int count) {
-        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
+        var idealLoad = fixture.clusterModel().idealLoad();
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Load load = new Load(idealLoad.cpu(), value, idealLoad.disk()).multiply(oneExtraNodeFactor);
+        System.out.println("Applying " + load);
+        System.out.println("   ideal " + idealLoad);
+        System.out.println("");
         for (int i = 0; i < count; i++) {
             fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
-                Load load = new Load(0.2,
-                                     value,
-                                     ClusterModel.idealContentDiskLoad).multiply(oneExtraNodeFactor);
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                         new NodeMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                load,

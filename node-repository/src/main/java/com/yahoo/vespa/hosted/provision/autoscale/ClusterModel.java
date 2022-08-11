@@ -96,10 +96,14 @@ public class ClusterModel {
     public Load loadAdjustment() {
         if (nodeTimeseries().measurementsPerNode() == 0) return Load.one(); // No info, no change
 
+        System.out.println("Peak  " + nodeTimeseries().peakLoad());
+        System.out.println("ideal " + idealLoad());
         Load peak = nodeTimeseries().peakLoad().divide(idealLoad()); // Peak relative to ideal
-
-        if (! safeToScaleDown())
+        System.out.println("Relative peak " + peak);
+        if (! safeToScaleDown()) {
             peak = peak.map(v -> v < 1 ? 1 : v);
+            System.out.println("       capped " + peak);
+        }
         return peak;
     }
 
