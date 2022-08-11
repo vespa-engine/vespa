@@ -128,7 +128,7 @@ export function QueryFilters() {
         <Badge variant="filled">Query filters</Badge>
       </Group>
       <Container sx={{ alignContent: 'start' }}>
-        <Content>
+        <Content padding={0}>
           <Inputs type={type.children} inputs={children} />
         </Content>
       </Container>
