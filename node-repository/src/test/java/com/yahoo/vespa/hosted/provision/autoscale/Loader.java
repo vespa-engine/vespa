@@ -90,9 +90,6 @@ public class Loader {
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         Load load = new Load(idealLoad.cpu(), value, idealLoad.disk()).multiply(oneExtraNodeFactor);
-        System.out.println("Applying " + load);
-        System.out.println("   ideal " + idealLoad);
-        System.out.println("");
         for (int i = 0; i < count; i++) {
             fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
@@ -107,19 +104,18 @@ public class Loader {
         }
     }
 
-    public Duration addMeasurements(double cpu, double memory, double disk, int count)  {
-        return addMeasurements(cpu, memory, disk, 0, true, true, count);
+    public Duration addMeasurements(Load load, int count)  {
+        return addMeasurements(load, 0, true, true, count);
     }
 
-    public Duration addMeasurements(double cpu, double memory, double disk, int generation, boolean inService, boolean stable,
-                                    int count) {
+    public Duration addMeasurements(Load load, int generation, boolean inService, boolean stable, int count) {
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
             fixture.tester().clock().advance(samplingInterval);
             for (Node node : fixture.nodes()) {
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                         new NodeMetricSnapshot(fixture.tester().clock().instant(),
-                                                                                               new Load(cpu, memory, disk),
+                                                                                               load,
                                                                                                generation,
                                                                                                inService,
                                                                                                stable,
@@ -129,14 +125,14 @@ public class Loader {
         return Duration.between(initialTime, fixture.tester().clock().instant());
     }
 
-    public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int measurements) {
-        addMeasurements(cpuLoad, memoryLoad, diskLoad, measurements);
+    public void applyLoad(Load load, int measurements) {
+        addMeasurements(load, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
         addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
-    public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int generation, boolean inService, boolean stable, int measurements) {
-        addMeasurements(cpuLoad, memoryLoad, diskLoad, generation, inService, stable, measurements);
+    public void applyLoad(Load load, int generation, boolean inService, boolean stable, int measurements) {
+        addMeasurements(load, generation, inService, stable, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
         addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
