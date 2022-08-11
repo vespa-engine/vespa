@@ -589,35 +589,31 @@ public class RpcServerTest extends FleetControllerTest {
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
-        // Possibly do request multiple times if we haven't lost slobrok contact first times yet.
-        for (int j = 0; j <= nodeCount; ++j) {
-            Request req = new Request("getNodeList");
-            connection.invokeSync(req, timeoutS);
-            assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
-            assertTrue(req.checkReturnTypes("SS"), req.toString());
-            String[] slobrok = req.returnValues().get(0).asStringArray().clone();
-            String[] rpc = req.returnValues().get(1).asStringArray().clone();
+        Request req = new Request("getNodeList");
+        connection.invokeSync(req, timeoutS);
+        assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
+        assertTrue(req.checkReturnTypes("SS"), req.toString());
+        String[] slobrok = req.returnValues().get(0).asStringArray().clone();
+        String[] rpc = req.returnValues().get(1).asStringArray().clone();
 
-            assertEquals(2 * nodeCount, slobrok.length);
-            assertEquals(2 * nodeCount, rpc.length);
+        assertEquals(2 * nodeCount, slobrok.length);
+        assertEquals(2 * nodeCount, rpc.length);
 
-            // Verify that we can connect to all addresses returned.
-            for (int i = 0; i < 2 * nodeCount; ++i) {
-                if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
-                    if (i < nodeCount && !"".equals(rpc[i])) {
-                        continue;
-                    }
-                    assertEquals("", rpc[i], slobrok[i]);
+        // Verify that we can connect to all addresses returned.
+        for (int i = 0; i < 2 * nodeCount; ++i) {
+            if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
+                if (i < nodeCount && !"".equals(rpc[i])) {
                     continue;
                 }
-                assertNotEquals("", rpc[i]);
-                Request req2 = new Request("getnodestate2");
-                req2.parameters().add(new StringValue("unknown"));
-                Target connection2 = supervisor.connect(new Spec(rpc[i]));
-                connection2.invokeSync(req2, timeoutS);
-                assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
+                assertEquals("", rpc[i], slobrok[i]);
+                continue;
             }
-            break;
+            assertNotEquals("", rpc[i]);
+            Request req2 = new Request("getnodestate2");
+            req2.parameters().add(new StringValue("unknown"));
+            Target connection2 = supervisor.connect(new Spec(rpc[i]));
+            connection2.invokeSync(req2, timeoutS);
+            assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
         }
     }
 
