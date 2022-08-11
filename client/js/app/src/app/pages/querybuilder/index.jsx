@@ -10,7 +10,7 @@ import QueryEndpoint from 'app/pages/querybuilder/query-endpoint/query-endpoint'
 export function QueryBuilder() {
   return (
     <QueryBuilderProvider>
-      <Container>
+      <Container sx={{ rowGap: '21px' }}>
         <QueryEndpoint />
         <SimpleGrid cols={3}>
           <QueryFilters />

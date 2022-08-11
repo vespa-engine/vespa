@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import SimpleDropDownForm from 'app/pages/querybuilder/query-filters/SimpleDropDownForm';
+import { Select, TextInput, Button } from '@mantine/core';
 import {
   ACTION,
   dispatch,
   useQueryBuilderContext,
 } from 'app/pages/querybuilder/context/query-builder-provider';
+import { Container, Content } from 'app/components';
 
+// TODO: notify when error
 function send(method, url, query) {
   dispatch(ACTION.SET_HTTP, { loading: true });
   fetch(url, {
@@ -23,34 +25,28 @@ function send(method, url, query) {
 }
 
 export default function QueryEndpoint() {
-  const messageMethods = { post: { name: 'POST' }, get: { name: 'GET' } };
-  const [method, setMethod] = useState(messageMethods.post.name);
+  const httpMethods = ['POST', 'GET'];
+  const [method, setMethod] = useState('POST');
   const [url, setUrl] = useState('http://localhost:8080/search/');
   const query = useQueryBuilderContext((ctx) => ctx.query.input);
-
-  const updateMethod = (e) => {
-    e.preventDefault();
-    const newMethod = e.target.value;
-    setMethod(newMethod);
-  };
-
   return (
-    <>
-      <SimpleDropDownForm
-        options={messageMethods}
-        value={method}
-        className="methodselector"
-        onChange={updateMethod}
-      />
-      <input
-        size="30"
-        className="textbox"
-        value={url}
-        onChange={({ target }) => setUrl(target.value)}
-      />
-      <button className="button" onClick={() => send(method, url, query)}>
-        Send
-      </button>
-    </>
+    <Content>
+      <Container sx={{ gridTemplateColumns: 'max-content auto max-content' }}>
+        <Select
+          data={httpMethods}
+          onChange={setMethod}
+          value={method}
+          radius={0}
+        />
+        <TextInput
+          onChange={(event) => setUrl(event.currentTarget.value)}
+          value={url}
+          radius={0}
+        />
+        <Button radius={0} onClick={() => send(method, url, query)}>
+          Send
+        </Button>
+      </Container>
+    </Content>
   );
 }
