@@ -1,7 +1,7 @@
 import React from 'react';
 import transform from 'app/pages/querybuilder/TransformVespaTrace';
 
-export default function DownloadJSONButton({ children, response }) {
+export function DownloadJson({ children, response }) {
   const handleClick = () => {
     let content;
     try {
