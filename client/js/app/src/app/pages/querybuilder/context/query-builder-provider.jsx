@@ -1,7 +1,7 @@
 import React, { useReducer } from 'react';
 import { createContext, useContextSelector } from 'use-context-selector';
 import { cloneDeep, last } from 'lodash';
-import parameters from 'app/pages/querybuilder/parameters';
+import parameters from 'app/pages/querybuilder/context/parameters';
 
 let _dispatch;
 const root = { type: { children: parameters } };
@@ -93,9 +93,9 @@ function reducer(state, action) {
     const json = inputsToJson(result.query.children);
     result.query.input = JSON.stringify(json, null, 4);
   }
-
   return result;
 }
+
 function preReducer(state, { action, data }) {
   switch (action) {
     case ACTION.SET_QUERY: {
@@ -132,7 +132,6 @@ export function QueryBuilderProvider({ children }) {
     (s) => reducer(s, { action: ACTION.SET_QUERY, data: '{"yql":""}' })
   );
   _dispatch = dispatch;
-
   return <context.Provider value={value}>{children}</context.Provider>;
 }
 

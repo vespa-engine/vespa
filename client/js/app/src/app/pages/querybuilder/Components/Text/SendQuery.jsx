@@ -4,7 +4,7 @@ import {
   ACTION,
   dispatch,
   useQueryBuilderContext,
-} from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
+} from 'app/pages/querybuilder/context/query-builder-provider';
 
 function send(method, url, query) {
   dispatch(ACTION.SET_HTTP, { loading: true });

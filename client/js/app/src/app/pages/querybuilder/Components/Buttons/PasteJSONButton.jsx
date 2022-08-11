@@ -4,7 +4,7 @@ import ImageButton from './ImageButton';
 import {
   ACTION,
   dispatch,
-} from 'app/pages/querybuilder/Components/Contexts/QueryBuilderProvider';
+} from 'app/pages/querybuilder/context/query-builder-provider';
 
 export default function PasteJSONButton() {
   const [paste, setPaste] = useState(false);
