@@ -550,10 +550,9 @@ public class ApplicationController {
         controller.jobController().deploymentStatus(application.get());
 
         for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id()), true)) {
-            if ( ! notification.source().instance().map(declaredInstances::contains).orElse(true))
-                controller.notificationsDb().removeNotifications(notification.source());
-            if (notification.source().instance().isPresent() &&
-                    ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false))
+            if (   notification.source().instance().isPresent()
+                && (   ! declaredInstances.contains(notification.source().instance().get())
+                    || ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false)))
                 controller.notificationsDb().removeNotifications(notification.source());
         }
 
@@ -647,7 +646,7 @@ public class ApplicationController {
                                                       .filter(zone ->      deploymentSpec.instance(instance).isEmpty()
                                                                       || ! deploymentSpec.requireInstance(instance).deploysTo(zone.environment(),
                                                                                                                               zone.region()))
-                                                      .collect(toList());
+                                                      .toList();
 
         if (deploymentsToRemove.isEmpty())
             return application;
