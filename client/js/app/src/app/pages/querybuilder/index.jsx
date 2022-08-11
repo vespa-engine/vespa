@@ -12,7 +12,11 @@ export function QueryBuilder() {
     <QueryBuilderProvider>
       <Container sx={{ rowGap: '21px' }}>
         <QueryEndpoint />
-        <SimpleGrid cols={3}>
+        <SimpleGrid
+          breakpoints={[{ maxWidth: 'sm', cols: 1 }]}
+          cols={3}
+          spacing="xl"
+        >
           <QueryFilters />
           <QueryDerived />
           <QueryResponse />

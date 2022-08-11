@@ -7,6 +7,7 @@ import {
   Box,
   Stack,
   Badge,
+  Group,
 } from '@mantine/core';
 import { Container, Content, Icon } from 'app/components';
 import {
@@ -122,8 +123,10 @@ function Inputs({ id, type, inputs }) {
 export function QueryFilters() {
   const { children, type } = useQueryBuilderContext('query');
   return (
-    <Stack align="flex-start">
-      <Badge variant="filled">Query filters</Badge>
+    <Stack>
+      <Group>
+        <Badge variant="filled">Query filters</Badge>
+      </Group>
       <Container sx={{ alignContent: 'start' }}>
         <Content>
           <Inputs type={type.children} inputs={children} />
