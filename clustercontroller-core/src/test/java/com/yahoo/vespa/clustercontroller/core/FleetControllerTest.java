@@ -151,8 +151,7 @@ public abstract class FleetControllerTest implements Waiter {
             this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
             log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
         }
-        this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
         this.usingFakeTimer = useFakeTimer;
     }
 
@@ -239,8 +238,7 @@ public abstract class FleetControllerTest implements Waiter {
         setUpVdsNodes(useFakeTimer, options, startDisconnected, nodeIndexes);
     }
     protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         for (int nodeIndex : nodeIndexes) {
             nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, true, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
@@ -256,8 +254,7 @@ public abstract class FleetControllerTest implements Waiter {
      * the returned list is twice as large as configuredNodes.
      */
     protected List<DummyVdsNode> setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, List<ConfiguredNode> configuredNodes) throws Exception {
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         nodes = new ArrayList<>();
         final boolean distributor = true;
         for (ConfiguredNode configuredNode : configuredNodes) {
@@ -486,6 +483,12 @@ public abstract class FleetControllerTest implements Waiter {
         if (!req.checkReturnTypes("s")) {
             fail("Failed to invoke setNodeState(): Invalid return types.");
         }
+    }
+
+    static String[] getSlobrokConnectionSpecs(Slobrok slobrok) {
+        String[] connectionSpecs = new String[1];
+        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        return connectionSpecs;
     }
 
 }

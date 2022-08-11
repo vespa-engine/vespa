@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import java.util.logging.Level;
 import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,8 +32,7 @@ public class StateGatherTest extends FleetControllerTest {
         options.nodeStateRequestTimeoutEarliestPercentage = 80;
         options.nodeStateRequestTimeoutLatestPercentage = 80;
         setUpFleetController(true, options);
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
         DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, false, 0);

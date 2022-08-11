@@ -48,8 +48,7 @@ public class MasterElectionTest extends FleetControllerTest {
         this.options = options;
         this.options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-        this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
         this.options.fleetControllerCount = count;
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
@@ -58,13 +57,11 @@ public class MasterElectionTest extends FleetControllerTest {
         }
     }
 
-    private FleetControllerOptions adjustConfig(FleetControllerOptions o,
-                                                int fleetControllerIndex, int fleetControllerCount) {
+    private FleetControllerOptions adjustConfig(FleetControllerOptions o, int fleetControllerIndex, int fleetControllerCount) {
         FleetControllerOptions options = o.clone();
         options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-        options.slobrokConnectionSpecs = new String[1];
-        options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port(); // Spec.fromLocalHostName(slobrok.port()).toString();
+        options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
         options.fleetControllerIndex = fleetControllerIndex;
         options.fleetControllerCount = fleetControllerCount;
         return options;
