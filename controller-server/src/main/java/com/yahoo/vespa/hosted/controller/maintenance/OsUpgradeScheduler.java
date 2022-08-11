@@ -62,9 +62,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         } else if (!wantedVersion.isAfter(currentVersion)) {
             return Optional.empty(); // No change right now, and we cannot predict the next change for this kind of release
         }
-        // Find trigger time
+        // Find the earliest possible trigger time on this day
+        instant = instant.truncatedTo(ChronoUnit.DAYS);
         while (!canTriggerAt(instant)) {
-            instant = instant.truncatedTo(ChronoUnit.HOURS).plus(Duration.ofHours(1));
+            instant = instant.plus(Duration.ofHours(1));
         }
         return Optional.of(new Change(wantedVersion, release.upgradeBudget(), instant));
     }
