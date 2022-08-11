@@ -12,6 +12,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -290,6 +291,7 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
+    @Disabled("Unstable, disable test, as functionality is not deemed critical")
     void testMasterZooKeeperCooldown() throws Exception {
         startingTest("MasterElectionTest::testMasterZooKeeperCooldown");
         FleetControllerOptions options = defaultOptions("mycluster");
