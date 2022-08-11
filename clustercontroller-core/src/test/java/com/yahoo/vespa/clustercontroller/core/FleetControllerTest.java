@@ -22,7 +22,6 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
@@ -31,14 +30,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -155,8 +152,7 @@ public abstract class FleetControllerTest implements Waiter {
         this.usingFakeTimer = useFakeTimer;
     }
 
-    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
-        Objects.requireNonNull(status, "status server cannot be null");
+    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
         var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
@@ -187,7 +183,10 @@ public abstract class FleetControllerTest implements Waiter {
         var stateGenerator = new StateChangeHandler(context, timer, log);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
-        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+
+        var status = new StatusHandler.ContainerStatusPageServer();
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp,
+                                             database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         if (startThread) {
             controller.start();
         }
@@ -199,12 +198,9 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
-        setUpFleetController(useFakeTimer, options, startThread, new StatusHandler.ContainerStatusPageServer());
-    }
-    protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         if (slobrok == null) setUpSystem(useFakeTimer, options);
         if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options, startThread, status);
+            fleetController = createFleetController(useFakeTimer, options, startThread);
         } else {
             throw new Exception("called setUpFleetcontroller but it was already setup");
         }
@@ -219,7 +215,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     void startFleetController() throws Exception {
         if (fleetController == null) {
-            fleetController = createFleetController(usingFakeTimer, options, true, new StatusHandler.ContainerStatusPageServer());
+            fleetController = createFleetController(usingFakeTimer, options, true);
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
