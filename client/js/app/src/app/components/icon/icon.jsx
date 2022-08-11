@@ -6,12 +6,21 @@ import {
   faArrowsToDot,
   faChartGantt,
   faCircleMinus,
+  faDownload,
+  faPaste,
   faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 
 // TODO: use dynamic import
 
-library.add(faArrowsToDot, faChartGantt, faCircleMinus, faPlus);
+library.add(
+  faArrowsToDot,
+  faChartGantt,
+  faCircleMinus,
+  faPlus,
+  faPaste,
+  faDownload
+);
 
 export function Icon({ name, type = 'solid', color, ...rest }) {
   const icon = `fa-${type} fa-${name}`;
