@@ -98,19 +98,13 @@ public class ClusterModel {
 
         Load peak = nodeTimeseries().peakLoad().divide(idealLoad()); // Peak relative to ideal
 
-        // Should we scale up?
-        if (peak.any(v -> v > 1.01)) // "meaningful growth": 1% over status quo.
-            return peak.map(v -> v < 1 ? 1 : v); // Don't downscale any dimension if we upscale
-
-        // Should we scale down?
-        if (canScaleDown())
-            return averageLoad().divide(idealLoad());
-
-        return Load.one();
+        if (! safeToScaleDown())
+            peak = peak.map(v -> v < 1 ? 1 : v);
+        return peak;
     }
 
     /** Are we in a position to make decisions to scale down at this point? */
-    private boolean canScaleDown() {
+    private boolean safeToScaleDown() {
         if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
         if (nodeTimeseries().measurementsPerNode() < 4) return false;
         if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
