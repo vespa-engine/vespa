@@ -44,20 +44,10 @@ function Inputs({ id, type, inputs }) {
 function Input({ id, input, types, type, children }) {
   const options = { [type.name]: type, ...types };
   return (
-    <Container
-      sx={{
-        display: 'flex',
-        // gridTemplateColumns: children
-        //   ? 'minmax(0, 1fr) max-content'
-        //   : 'minmax(0, 1fr) minmax(0, 1fr) max-content',
-        alignItems: 'center',
-        gap: '5px',
-        backgroundColor: 'aqua',
-      }}
-    >
+    <>
       <Container sx={{ display: 'flex' }}>
         <Select
-          sx={{ flex: 1.4 }}
+          sx={{ flex: 1 }}
           data={Object.values(options).map(({ name }) => name)}
           onChange={(value) =>
             dispatch(ACTION.INPUT_UPDATE, {
@@ -70,7 +60,7 @@ function Input({ id, input, types, type, children }) {
         />
         {!children && (
           <TextInput
-            sx={{ flex: 1.4 }}
+            sx={{ flex: 1 }}
             onChange={(event) =>
               dispatch(ACTION.INPUT_UPDATE, {
                 id,
@@ -86,10 +76,10 @@ function Input({ id, input, types, type, children }) {
         </ActionIcon>
       </Container>
       {children && (
-        <Container sx={{ backgroundColor: 'green' }}>
+        <div style={{ marginLeft: '10%' }}>
           <Inputs id={id} type={type.children} inputs={children} />
-        </Container>
+        </div>
       )}
-    </Container>
+    </>
   );
 }
