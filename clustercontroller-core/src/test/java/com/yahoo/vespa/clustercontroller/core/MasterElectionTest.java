@@ -50,7 +50,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
             nodeOptions.fleetControllerIndex = i;
-            fleetControllers.add(createFleetController(useFakeTimer, nodeOptions, true));
+            fleetControllers.add(createFleetController(useFakeTimer, nodeOptions));
         }
     }
 
@@ -130,13 +130,13 @@ public class MasterElectionTest extends FleetControllerTest {
         }
 
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 2");
-        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions(), true));
+        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions()));
         waitForMaster(2);
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 0");
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true));
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions()));
         waitForMaster(0);
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 1");
-        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions(), true));
+        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions()));
         waitForMaster(0);
 
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 4");
@@ -518,7 +518,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
         waitForCompleteCycle(1);
 
-        fleetControllers.set(0, createFleetController(useFakeTimer, fleetControllers.get(0).getOptions(), true));
+        fleetControllers.set(0, createFleetController(useFakeTimer, fleetControllers.get(0).getOptions()));
         waitForMaster(0);
         waitForCompleteCycle(0);
 

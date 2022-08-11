@@ -150,15 +150,12 @@ public abstract class FleetControllerTest implements Waiter {
         this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
     }
 
-    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
+    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
         var log = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(
-                options.clusterName,
-                options.nodes,
-                options.storageDistribution);
+        var cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
         var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
@@ -185,20 +182,14 @@ public abstract class FleetControllerTest implements Waiter {
         var status = new StatusHandler.ContainerStatusPageServer();
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp,
                                              database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
-        if (startThread) {
-            controller.start();
-        }
+        controller.start();
         return controller;
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        setUpFleetController(useFakeTimer, options, true);
-    }
-
-    protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
         if (slobrok == null) setUpSystem(options);
         if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options, startThread);
+            fleetController = createFleetController(useFakeTimer, options);
         } else {
             throw new Exception("called setUpFleetcontroller but it was already setup");
         }
@@ -213,7 +204,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     void startFleetController(boolean useFakeTimer) throws Exception {
         if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options, true);
+            fleetController = createFleetController(useFakeTimer, options);
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
