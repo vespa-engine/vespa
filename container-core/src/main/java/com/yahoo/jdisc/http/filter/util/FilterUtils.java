@@ -64,12 +64,13 @@ public class FilterUtils {
         return response;
     }
 
-    public static URI createUriFromRequest(DiscFilterRequest request, String path) {
+    public static URI createUriFromRequest(DiscFilterRequest request, String path, Optional<String> hostOverride) {
         try {
             // Prefer local port as observed by client over local listen port
             int port = Optional.ofNullable((Integer)request.getAttribute(RequestUtils.JDICS_REQUEST_PORT))
                     .orElse(request.getUri().getPort());
-            return new URI(request.getScheme(), null, request.getServerName(), port, path, null, null);
+            String host = hostOverride.orElse(request.getServerName());
+            return new URI(request.getScheme(), null, host, port, path, null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
