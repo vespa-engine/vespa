@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
@@ -33,24 +32,6 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
     private ChainsConfig chainsConfig() {
         return root.getConfig(ChainsConfig.class, "default/component/com.yahoo.search.handler.SearchHandler");
-    }
-
-    @Test
-    void gui_search_handler_is_always_included_when_search_is_specified() {
-        createBasicSearchModel();
-
-        String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertTrue(discBindingsConfig.contains(GUIHandler.BINDING_PATH));
-
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
-
-        GUIHandler guiHandler = null;
-        for (Handler handler : cluster.getHandlers()) {
-            if (handler instanceof GUIHandler) {
-                guiHandler = (GUIHandler) handler;
-            }
-        }
-        assertNotNull(guiHandler);
     }
 
     @Test
