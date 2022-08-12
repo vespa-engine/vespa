@@ -66,19 +66,19 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     private void waitForZookeeperDisconnected() throws TimeoutException {
-        Instant maxTime = Instant.now().plus(timeout);
+        Instant maxTime = Instant.now().plus(timeout());
         for (FleetController f : fleetControllers) {
             while (f.hasZookeeperConnection()) {
                 try { Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
                 if (Instant.now().isAfter(maxTime))
-                    throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeout);
+                    throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeout());
             }
         }
         waitForCompleteCycles();
     }
 
     private void waitForCompleteCycle(int findex) {
-        fleetControllers.get(findex).waitForCompleteCycle(timeout);
+        fleetControllers.get(findex).waitForCompleteCycle(timeout());
     }
 
     private void waitForCompleteCycles() {
@@ -159,7 +159,7 @@ public class MasterElectionTest extends FleetControllerTest {
     private void waitForMaster(int master) {
         log.log(Level.INFO, "Entering waitForMaster");
         boolean isOnlyMaster = false;
-        for (int i = 0; i < timeout.toMillis(); i += 100) {
+        for (int i = 0; i < timeout().toMillis(); i += 100) {
             if (!fleetControllers.get(master).isMaster()) {
                 log.log(Level.INFO, "Node " + master + " is not master yet, sleeping more");
                 timer.advanceTime(100);
@@ -308,12 +308,12 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     private void waitForMasterReason(String reason, Integer master, List<Target> connections, int[] nodes) {
-        Instant endTime = Instant.now().plus(timeout);
+        Instant endTime = Instant.now().plus(timeout());
         while (Instant.now().isBefore(endTime)) {
             boolean allOk = true;
             for (int node : nodes) {
                 Request req = new Request("getMaster");
-                connections.get(node).invokeSync(req, timeout.getSeconds());
+                connections.get(node).invokeSync(req, timeout().getSeconds());
                 if (req.isError()) {
                     allOk = false;
                     break;
@@ -330,7 +330,7 @@ public class MasterElectionTest extends FleetControllerTest {
             if (allOk) return;
             try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
-        throw new IllegalStateException("Did not get master reason '" + reason + "' within timeout of " + timeout);
+        throw new IllegalStateException("Did not get master reason '" + reason + "' within timeout of " + timeout());
     }
 
     @Test
@@ -356,9 +356,9 @@ public class MasterElectionTest extends FleetControllerTest {
         Request req = new Request("getMaster");
 
         for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
-            for (int retry = 0; retry < timeout.getSeconds() * 10; ++retry) {
+            for (int retry = 0; retry < timeout().getSeconds() * 10; ++retry) {
                 req = new Request("getMaster");
-                connections.get(nodeIndex).invokeSync(req, timeout.getSeconds());
+                connections.get(nodeIndex).invokeSync(req, timeoutInSeconds());
                 assertFalse(req.isError(), req.errorMessage());
                 if (req.returnValues().get(0).asInt32() == 0 &&
                         req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
@@ -389,13 +389,13 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
 
         req = new Request("getMaster");
-        connections.get(0).invokeSync(req, timeout.getSeconds());
+        connections.get(0).invokeSync(req, timeoutInSeconds());
         assertEquals(104, req.errorCode(), req.toString());
         assertEquals("Connection error", req.errorMessage(), req.toString());
 
-        for (int i = 0; i < timeout.getSeconds() * 10; ++i) {
+        for (int i = 0; i < timeout().getSeconds() * 10; ++i) {
             req = new Request("getMaster");
-            connections.get(1).invokeSync(req, timeout.getSeconds());
+            connections.get(1).invokeSync(req, timeoutInSeconds());
             assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
             // We may have bad timing causing node not to have realized it is master yet
@@ -403,9 +403,9 @@ public class MasterElectionTest extends FleetControllerTest {
         assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
         assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
 
-        for (int i = 0; i < timeout.getSeconds() * 10; ++i) {
+        for (int i = 0; i < timeout().getSeconds() * 10; ++i) {
             req = new Request("getMaster");
-            connections.get(2).invokeSync(req, timeout.getSeconds());
+            connections.get(2).invokeSync(req, timeoutInSeconds());
             assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
         }

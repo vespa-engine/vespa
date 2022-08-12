@@ -57,9 +57,10 @@ public abstract class FleetControllerTest implements Waiter {
     private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     private static final int DEFAULT_NODE_COUNT = 10;
 
-    final Duration timeout = Duration.ofSeconds(30);
-    Supervisor supervisor;
+    private final Duration timeout = Duration.ofSeconds(30);
     protected final FakeTimer timer = new FakeTimer();
+
+    Supervisor supervisor;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
@@ -473,5 +474,9 @@ public abstract class FleetControllerTest implements Waiter {
         connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         return connectionSpecs;
     }
+
+    Duration timeout() { return timeout; }
+
+    double timeoutInSeconds() { return (double) timeout.toMillis() / 1000; }
 
 }

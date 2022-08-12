@@ -57,11 +57,11 @@ public class StateGatherTest extends FleetControllerTest {
     }
 
     private void waitUntilTimedOutGetNodeState(DummyVdsNode dnode, DummyVdsNode snode) throws TimeoutException {
-        Instant endTime = Instant.now().plus(timeout);
+        Instant endTime = Instant.now().plus(timeout());
         synchronized (timer) {
             while (dnode.timedOutStateReplies != 1 || snode.timedOutStateReplies != 1) {
                 if (Instant.now().isAfter(endTime)) {
-                    throw new TimeoutException("Did not get to have one timed out within timeout of " + timeout
+                    throw new TimeoutException("Did not get to have one timed out within timeout of " + timeout()
                             + ", " + getGetNodeStateReplyCounts(dnode) + ", " + getGetNodeStateReplyCounts(snode));
                 }
                 try{ timer.wait(1); } catch (InterruptedException e) { /* ignore */ }
@@ -70,9 +70,9 @@ public class StateGatherTest extends FleetControllerTest {
     }
 
     private void waitUntilPendingGetNodeState(DummyVdsNode dnode, DummyVdsNode snode) throws TimeoutException {
-        Instant endTime = Instant.now().plus(timeout);
+        Instant endTime = Instant.now().plus(timeout());
         while (dnode.getPendingNodeStateCount() != 1 || snode.getPendingNodeStateCount() != 1) {
-            if (Instant.now().isAfter(endTime)) throw new TimeoutException("Did not get to have one pending within timeout of " + timeout);
+            if (Instant.now().isAfter(endTime)) throw new TimeoutException("Did not get to have one pending within timeout of " + timeout());
             try{ Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
         }
     }

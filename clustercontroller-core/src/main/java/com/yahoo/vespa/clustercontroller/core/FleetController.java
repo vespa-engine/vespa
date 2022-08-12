@@ -1197,8 +1197,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                     context.log(logger, Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
                     return;
                 }
-                Duration remainingTime = Duration.between(Instant.now(), endTime);
-                if (remainingTime.isNegative()) {
+                if (Instant.now().isAfter(endTime)) {
                     throw new IllegalStateException("Did not get " + nodeCount + " nodes to system state " + version + " within timeout of " + timeout);
                 }
                 monitor.wait(10);
@@ -1219,8 +1218,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 }
                 if (distCount == distNodeCount && storCount == storNodeCount) return;
 
-                Duration remainingTime = Duration.between(Instant.now(), endTime);
-                if (remainingTime.isNegative()) {
+                if (Instant.now().isAfter(endTime)) {
                     throw new IllegalStateException("Did not get all " + distNodeCount + " distributors and " + storNodeCount
                             + " storage nodes registered in slobrok within timeout of " + timeout + ". (Got "
                             + distCount + " distributors and " + storCount + " storage nodes)");

@@ -100,7 +100,7 @@ public class RpcServerTest extends FleetControllerTest {
         log.log(Level.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
         nodes.get(0).disconnect();
         nodes.get(19).disconnect();
-        fleetController.waitForNodesInSlobrok(9, 9, timeout);
+        fleetController.waitForNodesInSlobrok(9, 9, timeout());
         timer.advanceTime(options.nodeStateRequestTimeoutMS + options.maxSlobrokDisconnectGracePeriod);
 
         wait(new WaitCondition.StateWait(fleetController, fleetController.getMonitor()) {
@@ -119,7 +119,7 @@ public class RpcServerTest extends FleetControllerTest {
                 }
                 return null;
             }
-        }, null, timeout);
+        }, null, timeout());
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
@@ -127,7 +127,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getSystemState");
-        connection.invokeSync(req, timeout.getSeconds());
+        connection.invokeSync(req, timeout().getSeconds());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ss"), req.toString());
         String systemState = req.returnValues().get(1).asString();
@@ -523,7 +523,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getMaster");
-        connection.invokeSync(req, timeout.getSeconds());
+        connection.invokeSync(req, timeoutInSeconds());
         assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
         assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
 
@@ -548,7 +548,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getNodeList");
-        connection.invokeSync(req, timeout.getSeconds());
+        connection.invokeSync(req, timeoutInSeconds());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
         assertTrue(req.checkReturnTypes("SS"), req.toString());
         String[] slobrok = req.returnValues().get(0).asStringArray().clone();
@@ -570,7 +570,7 @@ public class RpcServerTest extends FleetControllerTest {
             Request req2 = new Request("getnodestate2");
             req2.parameters().add(new StringValue("unknown"));
             Target connection2 = supervisor.connect(new Spec(rpc[i]));
-            connection2.invokeSync(req2, timeout.getSeconds());
+            connection2.invokeSync(req2, timeoutInSeconds());
             assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
         }
     }
@@ -583,7 +583,7 @@ public class RpcServerTest extends FleetControllerTest {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node));
         req.parameters().add(new StringValue(newNodeState));
-        connection.invokeSync(req, timeout.getSeconds());
+        connection.invokeSync(req, timeoutInSeconds());
         return req;
     }
 
@@ -591,7 +591,7 @@ public class RpcServerTest extends FleetControllerTest {
         Request req = new Request("getNodeState");
         req.parameters().add(new StringValue(nodeType));
         req.parameters().add(new Int32Value(nodeIndex));
-        connection.invokeSync(req, timeout.getSeconds());
+        connection.invokeSync(req, timeoutInSeconds());
         return req;
     }
 
