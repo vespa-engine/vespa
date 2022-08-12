@@ -313,7 +313,7 @@ public class MasterElectionTest extends FleetControllerTest {
             boolean allOk = true;
             for (int node : nodes) {
                 Request req = new Request("getMaster");
-                connections.get(node).invokeSync(req, timeout().getSeconds());
+                connections.get(node).invokeSync(req, timeoutInSeconds());
                 if (req.isError()) {
                     allOk = false;
                     break;
@@ -356,7 +356,7 @@ public class MasterElectionTest extends FleetControllerTest {
         Request req = new Request("getMaster");
 
         for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
-            for (int retry = 0; retry < timeout().getSeconds() * 10; ++retry) {
+            for (int retry = 0; retry < timeoutInSeconds() * 10; ++retry) {
                 req = new Request("getMaster");
                 connections.get(nodeIndex).invokeSync(req, timeoutInSeconds());
                 assertFalse(req.isError(), req.errorMessage());
@@ -393,7 +393,7 @@ public class MasterElectionTest extends FleetControllerTest {
         assertEquals(104, req.errorCode(), req.toString());
         assertEquals("Connection error", req.errorMessage(), req.toString());
 
-        for (int i = 0; i < timeout().getSeconds() * 10; ++i) {
+        for (int i = 0; i < timeoutInSeconds() * 10; ++i) {
             req = new Request("getMaster");
             connections.get(1).invokeSync(req, timeoutInSeconds());
             assertFalse(req.isError(), req.errorMessage());
@@ -403,7 +403,7 @@ public class MasterElectionTest extends FleetControllerTest {
         assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
         assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
 
-        for (int i = 0; i < timeout().getSeconds() * 10; ++i) {
+        for (int i = 0; i < timeoutInSeconds() * 10; ++i) {
             req = new Request("getMaster");
             connections.get(2).invokeSync(req, timeoutInSeconds());
             assertFalse(req.isError(), req.errorMessage());

@@ -127,7 +127,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getSystemState");
-        connection.invokeSync(req, timeout().getSeconds());
+        connection.invokeSync(req, timeoutInSeconds());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ss"), req.toString());
         String systemState = req.returnValues().get(1).asString();
