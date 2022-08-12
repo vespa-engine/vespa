@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import java.util.logging.Level;
 import org.junit.jupiter.api.Test;
-
+import java.time.Instant;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,8 +33,7 @@ public class StateGatherTest extends FleetControllerTest {
         options.nodeStateRequestTimeoutEarliestPercentage = 80;
         options.nodeStateRequestTimeoutLatestPercentage = 80;
         setUpFleetController(true, options);
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
         DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, false, 0);
@@ -58,11 +57,11 @@ public class StateGatherTest extends FleetControllerTest {
     }
 
     private void waitUntilTimedOutGetNodeState(DummyVdsNode dnode, DummyVdsNode snode) throws TimeoutException {
-        long timeout = System.currentTimeMillis() + timeoutMS;
+        Instant endTime = Instant.now().plus(timeout());
         synchronized (timer) {
             while (dnode.timedOutStateReplies != 1 || snode.timedOutStateReplies != 1) {
-                if (System.currentTimeMillis() > timeout) {
-                    throw new TimeoutException("Did not get to have one timed out within timeout of " + timeoutMS + " ms"
+                if (Instant.now().isAfter(endTime)) {
+                    throw new TimeoutException("Did not get to have one timed out within timeout of " + timeout()
                             + ", " + getGetNodeStateReplyCounts(dnode) + ", " + getGetNodeStateReplyCounts(snode));
                 }
                 try{ timer.wait(1); } catch (InterruptedException e) { /* ignore */ }
@@ -71,9 +70,9 @@ public class StateGatherTest extends FleetControllerTest {
     }
 
     private void waitUntilPendingGetNodeState(DummyVdsNode dnode, DummyVdsNode snode) throws TimeoutException {
-        long timeout = System.currentTimeMillis() + timeoutMS;
+        Instant endTime = Instant.now().plus(timeout());
         while (dnode.getPendingNodeStateCount() != 1 || snode.getPendingNodeStateCount() != 1) {
-            if (System.currentTimeMillis() > timeout) throw new TimeoutException("Did not get to have one pending within timeout of " + timeoutMS + " ms");
+            if (Instant.now().isAfter(endTime)) throw new TimeoutException("Did not get to have one pending within timeout of " + timeout());
             try{ Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
         }
     }

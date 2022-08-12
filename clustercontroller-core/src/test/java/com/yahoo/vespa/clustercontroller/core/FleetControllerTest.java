@@ -22,7 +22,6 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
@@ -31,14 +30,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
-
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -59,9 +57,10 @@ public abstract class FleetControllerTest implements Waiter {
     private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     private static final int DEFAULT_NODE_COUNT = 10;
 
-    Supervisor supervisor;
+    private final Duration timeout = Duration.ofSeconds(30);
     protected final FakeTimer timer = new FakeTimer();
-    boolean usingFakeTimer = false;
+
+    Supervisor supervisor;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
@@ -69,8 +68,6 @@ public abstract class FleetControllerTest implements Waiter {
     protected List<DummyVdsNode> nodes = new ArrayList<>();
     private String testName;
 
-    final static int timeoutS;
-    final static int timeoutMS;
     private final Waiter waiter = new Waiter.Impl(new DataRetriever() {
         @Override
         public Object getMonitor() { return timer; }
@@ -79,13 +76,11 @@ public abstract class FleetControllerTest implements Waiter {
         @Override
         public List<DummyVdsNode> getDummyNodes() { return nodes; }
         @Override
-        public int getTimeoutMS() { return timeoutMS; }
+        public Duration getTimeout() { return timeout; }
     });
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-        timeoutS = 30;
-        timeoutMS = timeoutS * 1000;
     }
 
     static class BackOff implements BackOffPolicy {
@@ -142,7 +137,7 @@ public abstract class FleetControllerTest implements Waiter {
         return opts;
     }
 
-    void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
+    void setUpSystem(FleetControllerOptions options) throws Exception {
         log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
@@ -151,21 +146,15 @@ public abstract class FleetControllerTest implements Waiter {
             this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
             log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
         }
-        this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
-        this.usingFakeTimer = useFakeTimer;
+        this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
     }
 
-    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
-        Objects.requireNonNull(status, "status server cannot be null");
+    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
         var log = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(
-                options.clusterName,
-                options.nodes,
-                options.storageDistribution);
+        var cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
         var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
@@ -188,24 +177,18 @@ public abstract class FleetControllerTest implements Waiter {
         var stateGenerator = new StateChangeHandler(context, timer, log);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
-        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
-        if (startThread) {
-            controller.start();
-        }
+
+        var status = new StatusHandler.ContainerStatusPageServer();
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp,
+                                             database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+        controller.start();
         return controller;
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        setUpFleetController(useFakeTimer, options, true);
-    }
-
-    protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
-        setUpFleetController(useFakeTimer, options, startThread, new StatusHandler.ContainerStatusPageServer());
-    }
-    protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
-        if (slobrok == null) setUpSystem(useFakeTimer, options);
+        if (slobrok == null) setUpSystem(options);
         if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options, startThread, status);
+            fleetController = createFleetController(useFakeTimer, options);
         } else {
             throw new Exception("called setUpFleetcontroller but it was already setup");
         }
@@ -218,9 +201,9 @@ public abstract class FleetControllerTest implements Waiter {
         }
     }
 
-    void startFleetController() throws Exception {
+    void startFleetController(boolean useFakeTimer) throws Exception {
         if (fleetController == null) {
-            fleetController = createFleetController(usingFakeTimer, options, true, new StatusHandler.ContainerStatusPageServer());
+            fleetController = createFleetController(useFakeTimer, options);
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
@@ -239,8 +222,7 @@ public abstract class FleetControllerTest implements Waiter {
         setUpVdsNodes(useFakeTimer, options, startDisconnected, nodeIndexes);
     }
     protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         for (int nodeIndex : nodeIndexes) {
             nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, true, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
@@ -256,8 +238,7 @@ public abstract class FleetControllerTest implements Waiter {
      * the returned list is twice as large as configuredNodes.
      */
     protected List<DummyVdsNode> setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, List<ConfiguredNode> configuredNodes) throws Exception {
-        String[] connectionSpecs = new String[1];
-        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         nodes = new ArrayList<>();
         final boolean distributor = true;
         for (ConfiguredNode configuredNode : configuredNodes) {
@@ -296,7 +277,7 @@ public abstract class FleetControllerTest implements Waiter {
                         .collect(Collectors.toList());
             }
             @Override
-            public int getTimeoutMS() { return timeoutMS; }
+            public Duration getTimeout() { return timeout; }
         });
         subsetWaiter.waitForState(expectedState);
     }
@@ -341,16 +322,16 @@ public abstract class FleetControllerTest implements Waiter {
     public ClusterState waitForState(String state) throws Exception { return waiter.waitForState(state); }
     public ClusterState waitForStateInAllSpaces(String state) throws Exception { return waiter.waitForStateInAllSpaces(state); }
     public ClusterState waitForStateInSpace(String space, String state) throws Exception { return waiter.waitForStateInSpace(space, state); }
-    public ClusterState waitForState(String state, int timeoutMS) throws Exception { return waiter.waitForState(state, timeoutMS); }
+    public ClusterState waitForState(String state, Duration timeout) throws Exception { return waiter.waitForState(state, timeout); }
     public ClusterState waitForInitProgressPassed(Node n, double progress) { return waiter.waitForInitProgressPassed(n, progress); }
     public ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount) { return waiter.waitForClusterStateIncludingNodesWithMinUsedBits(bitcount, nodecount); }
 
-    public void wait(WaitCondition c, WaitTask wt, int timeoutMS) {
-        waiter.wait(c, wt, timeoutMS);
+    public void wait(WaitCondition condition, WaitTask task, Duration timeout) {
+        waiter.wait(condition, task, timeout);
     }
 
     void waitForCompleteCycle() {
-        fleetController.waitForCompleteCycle(timeoutMS);
+        fleetController.waitForCompleteCycle(timeout);
     }
 
     private static class ExpectLine {
@@ -479,7 +460,7 @@ public abstract class FleetControllerTest implements Waiter {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node.getSlobrokName()));
         req.parameters().add(new StringValue(ns.serialize()));
-        connection.invokeSync(req, timeoutS);
+        connection.invokeSync(req, timeoutInSeconds());
         if (req.isError()) {
             fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());
         }
@@ -487,5 +468,15 @@ public abstract class FleetControllerTest implements Waiter {
             fail("Failed to invoke setNodeState(): Invalid return types.");
         }
     }
+
+    static String[] getSlobrokConnectionSpecs(Slobrok slobrok) {
+        String[] connectionSpecs = new String[1];
+        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        return connectionSpecs;
+    }
+
+    Duration timeout() { return timeout; }
+
+    double timeoutInSeconds() { return (double) timeout.toMillis() / 1000; }
 
 }

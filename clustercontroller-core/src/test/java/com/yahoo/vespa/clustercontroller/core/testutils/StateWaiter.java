@@ -5,7 +5,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.FakeTimer;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
-
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,8 +57,8 @@ public class StateWaiter implements SystemStateListener {
         }
     }
 
-    public void waitForState(String stateRegex, long timeout) {
-        waitForState(stateRegex, timeout, 0);
+    public void waitForState(String stateRegex, Duration timeout) {
+        waitForState(stateRegex, timeout.toMillis(), 0);
     }
 
     /**

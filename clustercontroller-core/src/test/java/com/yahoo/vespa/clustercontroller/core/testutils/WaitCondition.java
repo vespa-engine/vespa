@@ -156,9 +156,10 @@ public interface WaitCondition {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("RegexStateMatcher(\n  wanted:  '").append(pattern.pattern())
-              .append("'\n  last checked: '").append(lastCheckedState).append("'")
-              .append("'\n  current: '").append(currentState).append(")");
+            sb.append("RegexStateMatcher:")
+              .append("\n  wanted:       '").append(pattern.pattern()).append("'")
+              .append("\n  last checked: '").append(lastCheckedState).append("'")
+              .append("\n  current:      '").append(currentState).append("'");
             return sb.toString();
         }
     }
