@@ -275,6 +275,11 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         removeDeveloperKey(tenant, user, roles);
         users.removeFromRoles(user, roles);
 
+        controller.tenants().lockIfPresent(tenant, LockedTenant.class, lockedTenant -> {
+            if (lockedTenant instanceof LockedTenant.Cloud cloudTenant)
+                controller.tenants().store(cloudTenant.withInvalidateUserSessionsBefore(controller.clock().instant()));
+        });
+
         return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
