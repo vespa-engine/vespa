@@ -1,32 +1,45 @@
 import { Button } from '@mantine/core';
 import React from 'react';
+import { errorMessage } from 'app/libs/notification';
 import { Icon } from 'app/components';
 import transform from 'app/pages/querybuilder/TransformVespaTrace';
 
+// copied from safakeskin´s answer on SO, link: https://stackoverflow.com/questions/55613438/reactwrite-to-json-file-or-export-download-no-server
+function downloadFile(filename, blob) {
+  const href = URL.createObjectURL(blob);
+
+  // create "a" HTML element with href to file
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+
+  // clean up "a" element & remove ObjectURL
+  document.body.removeChild(link);
+  URL.revokeObjectURL(href);
+}
+
 export function DownloadJeager({ response, ...props }) {
   const handleClick = () => {
-    let content;
     try {
-      content = JSON.stringify(transform(JSON.parse(response), null, 4));
+      const json = JSON.parse(response);
+
+      try {
+        const content = JSON.stringify(transform(json), null, 4);
+        downloadFile(
+          'vespa-response.json',
+          new Blob([content], { type: 'application/json' })
+        );
+      } catch (error) {
+        errorMessage(
+          'Request must be made with tracelevel ≥ 4',
+          'Failed to transform response to Jaeger format'
+        );
+      }
     } catch (error) {
-      alert(`Failed to transform response to Jaeger format: ${error}`); // TODO: Change to toast
-      return;
+      errorMessage(error.message);
     }
-
-    // copied from safakeskin´s answer on SO, link: https://stackoverflow.com/questions/55613438/reactwrite-to-json-file-or-export-download-no-server
-    const blob = new Blob([content], { type: 'application/json' });
-    const href = URL.createObjectURL(blob);
-
-    // create "a" HTML element with href to file
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = 'vespa-response.json';
-    document.body.appendChild(link);
-    link.click();
-
-    // clean up "a" element & remove ObjectURL
-    document.body.removeChild(link);
-    URL.revokeObjectURL(href);
   };
 
   return (
@@ -34,6 +47,7 @@ export function DownloadJeager({ response, ...props }) {
       {...props}
       leftIcon={<Icon name="download" />}
       onClick={handleClick}
+      disabled={!(response?.length > 0)}
     >
       Jaeger Format
     </Button>
