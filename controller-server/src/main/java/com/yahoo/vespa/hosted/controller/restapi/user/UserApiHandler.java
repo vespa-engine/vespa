@@ -111,7 +111,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
-        if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return addApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
         return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
@@ -119,7 +118,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return removeTenantRoleMember(path.get("tenant"), request);
-        if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return removeApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
         return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
@@ -280,15 +278,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
-    private HttpResponse addApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
-        Inspector requestObject = bodyInspector(request);
-        String roleName = require("roleName", Inspector::asString, requestObject);
-        UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = Roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
-        users.addUsers(role, List.of(user));
-        return new MessageResponse(user + " is now a member of " + role);
-    }
-
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         if (requestObject.field("roles").valid()) {
@@ -346,15 +335,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
                 break;
             }
         }
-    }
-
-    private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
-        Inspector requestObject = bodyInspector(request);
-        String roleName = require("roleName", Inspector::asString, requestObject);
-        UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = Roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
-        users.removeUsers(role, List.of(user));
-        return new MessageResponse(user + " is no longer a member of " + role);
     }
 
     private boolean hasTrialCapacity() {

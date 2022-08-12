@@ -99,12 +99,6 @@ public class UserApiTest extends ControllerContainerCloudTest {
                         .data("{\"user\":\"developer@tenant\",\"roleName\":\"administrator\"}"),
                 accessDenied, 403);
 
-        // POST a headless for a non-existent application fails.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                        .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
-                        .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
-
         // POST an application is allowed for a tenant developer.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", POST)
                         .principal("developer@tenant")
@@ -116,21 +110,10 @@ public class UserApiTest extends ControllerContainerCloudTest {
                         .roles(Set.of(Role.administrator(id.tenant()))),
                 accessDenied, 403);
 
-        // POST a tenant role is not allowed to an application.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                        .roles(Set.of(Role.hostedOperator()))
-                        .data("{\"user\":\"developer@app\",\"roleName\":\"developer\"}"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'developer'.\"}", 400);
-
         // GET tenant role information is available to readers.
         tester.assertResponse(request("/user/v1/tenant/my-tenant")
                         .roles(Set.of(Role.reader(id.tenant()))),
                 new File("tenant-roles.json"));
-
-        // GET application role information is available to tenant administrators.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app")
-                        .roles(Set.of(Role.administrator(id.tenant()))),
-                new File("application-roles.json"));
 
         // POST a pem deploy key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app/key", POST)
