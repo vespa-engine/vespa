@@ -48,7 +48,7 @@ protected:
 
 class DynamicTeaserDFW : public JuniperTeaserDFW
 {
-    JuniperInput getJuniperInput(GeneralResult *gres);
+    JuniperInput getJuniperInput(GeneralResult *gres) __attribute__((noinline));
     vespalib::string makeDynamicTeaser(uint32_t docid,
                                        vespalib::stringref input,
                                        GetDocsumsState *state);
