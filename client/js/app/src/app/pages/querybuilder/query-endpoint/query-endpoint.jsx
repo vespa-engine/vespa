@@ -13,7 +13,7 @@ function send(method, url, query) {
   fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json;charset=utf-8' },
-    body: query,
+    body: method === 'POST' ? query : null,
   })
     .then((response) => response.json())
     .then((result) =>
