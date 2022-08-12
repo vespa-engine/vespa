@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
+import { NotificationsProvider as MantineNotificationsProvider } from '@mantine/notifications';
 import { Layout } from 'app/components';
 import { Home } from 'app/pages/home/home';
 import { QueryBuilder } from 'app/pages/querybuilder';
@@ -11,13 +12,15 @@ export function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <Layout>
-          <Router>
-            <Route path="/" element={<Home />} />
-            <Route path="querybuilder" element={<QueryBuilder />} />
-            <Route path="querytracer" element={<QueryTracer />} />
-          </Router>
-        </Layout>
+        <MantineNotificationsProvider>
+          <Layout>
+            <Router>
+              <Route path="/" element={<Home />} />
+              <Route path="querybuilder" element={<QueryBuilder />} />
+              <Route path="querytracer" element={<QueryTracer />} />
+            </Router>
+          </Layout>
+        </MantineNotificationsProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

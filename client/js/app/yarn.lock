@@ -229,7 +229,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.12.5", "@babel/runtime@^7.18.3":
+"@babel/runtime@^7.12.5", "@babel/runtime@^7.18.3", "@babel/runtime@^7.5.5", "@babel/runtime@^7.8.7":
   version "7.18.9"
   resolved "https://registry.npm.ouryahoo.com:4443/npm-registry/api/npm/npm-registry/@babel/runtime/-/runtime-7.18.9.tgz#b4fcfce55db3d2e5e080d2490f608a3b9f407f4a"
   integrity sha512-lkqXDcvlFT5rvEjiu6+QYO+1GXrEHRo2LOtS7E4GtX5ESIZOgepqsZBVIj6Pv+a6zqsya9VCgiK1KAK4BvJDAw==
@@ -499,6 +499,14 @@
   resolved "https://registry.yarnpkg.com/@mantine/hooks/-/hooks-5.1.1.tgz#a15d006951c65e1cc02577c9be021a02a7265acd"
   integrity sha512-paixen37qs9a8g/hYMIAMXCl+WUK2DdGqSPahGpza1BdNqtYEIfbu12LcuZkfswufIY8DaagdabG0yL6Swh+bg==
 
+"@mantine/notifications@^5":
+  version "5.1.4"
+  resolved "https://registry.npm.ouryahoo.com:4443/npm-registry/api/npm/npm-registry/@mantine/notifications/-/notifications-5.1.4.tgz#9e1cb683b9c2337a71400a353837308b042ef375"
+  integrity sha512-wNH+nYH7X/5lWVpR2f+qx29Du6cvq0oy6M9GOJE1twuMTy8EfBILUWatRslFcvIH8EYC03zEVYPVY4N1yHaLLQ==
+  dependencies:
+    "@mantine/utils" "5.1.4"
+    react-transition-group "4.4.2"
+
 "@mantine/styles@5.1.1":
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/@mantine/styles/-/styles-5.1.1.tgz#8a2253747fc1817fc06ab7ac3633c1059369ca06"
@@ -511,6 +519,11 @@
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/@mantine/utils/-/utils-5.1.1.tgz#2fa9ecaac4fe61cc3e07c4953ca23a1bc9ac765c"
   integrity sha512-2FiSrD1lYuDHSGVi1QL5iskO8/Bnd6eDrwdpEWS/PJfg6iEz80HnmBxf/xzkDBaNdK3/n8g2kOaOcw5Ff1OFkA==
+
+"@mantine/utils@5.1.4":
+  version "5.1.4"
+  resolved "https://registry.npm.ouryahoo.com:4443/npm-registry/api/npm/npm-registry/@mantine/utils/-/utils-5.1.4.tgz#3da8459f77fb98f09c3f9a1939449e0c0a9fe58d"
+  integrity sha512-f2lnKjvGkQrWXSqTRg5uNh2PZpeow1enjX8OFwlOn0B6bJDdKYiHl+YidWe2DObOi36WSvtLbaRS7yKQOG+1XQ==
 
 "@radix-ui/number@1.0.0":
   version "1.0.0"
@@ -937,6 +950,14 @@ doctrine@^3.0.0:
   integrity sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==
   dependencies:
     esutils "^2.0.2"
+
+dom-helpers@^5.0.1:
+  version "5.2.1"
+  resolved "https://registry.npm.ouryahoo.com:4443/npm-registry/api/npm/npm-registry/dom-helpers/-/dom-helpers-5.2.1.tgz#d9400536b2bf8225ad98fe052e029451ac40e902"
+  integrity sha512-nRCa7CK3VTrM2NmGkIy4cbK7IZlgBE/PYMn55rrXefr5xXDP0LdtfPnblFDoVdcAfslJ7or6iqAUnx0CCGIWQA==
+  dependencies:
+    "@babel/runtime" "^7.8.7"
+    csstype "^3.0.2"
 
 electron-to-chromium@^1.4.147:
   version "1.4.158"
@@ -1976,7 +1997,7 @@ prettier@2:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.7.1.tgz#e235806850d057f97bb08368a4f7d899f7760c64"
   integrity sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==
 
-prop-types@^15.8.1:
+prop-types@^15.6.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -2031,6 +2052,16 @@ react-textarea-autosize@8.3.4:
     "@babel/runtime" "^7.10.2"
     use-composed-ref "^1.3.0"
     use-latest "^1.2.1"
+
+react-transition-group@4.4.2:
+  version "4.4.2"
+  resolved "https://registry.npm.ouryahoo.com:4443/npm-registry/api/npm/npm-registry/react-transition-group/-/react-transition-group-4.4.2.tgz#8b59a56f09ced7b55cbd53c36768b922890d5470"
+  integrity sha512-/RNYfRAMlZwDSr6z4zNKV6xu53/e2BuaBbGhbyYIXTrmgu/bGHzmqOs7mJSJBHy9Ud+ApHx3QjrkKSp1pxvlFg==
+  dependencies:
+    "@babel/runtime" "^7.5.5"
+    dom-helpers "^5.0.1"
+    loose-envify "^1.4.0"
+    prop-types "^15.6.2"
 
 react@^18:
   version "18.2.0"

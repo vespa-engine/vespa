@@ -11,6 +11,9 @@ import {
   faDownload,
   faPaste,
   faPlus,
+  faXmark,
+  faInfo,
+  faExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 
 // TODO: use dynamic import
@@ -23,7 +26,10 @@ library.add(
   faPaste,
   faDownload,
   faCopy,
-  faCheck
+  faCheck,
+  faXmark,
+  faInfo,
+  faExclamation
 );
 
 export function Icon({ name, type = 'solid', color, ...rest }) {
