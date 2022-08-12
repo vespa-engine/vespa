@@ -9,6 +9,7 @@ import {
 } from '@mantine/core';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
+import { PasteModal } from 'app/pages/querybuilder/query-derived/paste-modal';
 
 export function QueryDerived() {
   const query = useQueryBuilderContext((ctx) => ctx.query.input);
@@ -31,14 +32,7 @@ export function QueryDerived() {
               </Button>
             )}
           </CopyButton>
-          <Button
-            leftIcon={<Icon name="paste" />}
-            variant="outline"
-            size="xs"
-            compact
-          >
-            Paste JSON
-          </Button>
+          <PasteModal />
         </Group>
       </Group>
       <JsonInput
