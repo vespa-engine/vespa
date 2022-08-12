@@ -3,19 +3,20 @@ import {
   Badge,
   Button,
   Group,
-  JsonInput,
   Stack,
   CopyButton,
+  Textarea,
 } from '@mantine/core';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
 
 export function QueryResponse() {
   const response = useQueryBuilderContext((ctx) => ctx.http.response);
+
   return (
     <Stack>
       <Group position="apart">
-        <Badge variant="filled">Query reponse</Badge>
+        <Badge variant="filled">Query response</Badge>
         <Group spacing="xs">
           <CopyButton value={response}>
             {({ copied, copy }) => (
@@ -41,14 +42,14 @@ export function QueryResponse() {
           </Button>
         </Group>
       </Group>
-      <JsonInput
+      <Textarea
         styles={{
           root: { height: '100%' },
           wrapper: { height: '100%' },
           input: { height: '100%' },
         }}
-        value={response}
-        variant={'unstyled'}
+        value={response ?? ''}
+        variant="unstyled"
         minRows={21}
         autosize
       />

@@ -2,10 +2,10 @@ import React from 'react';
 import {
   Badge,
   Group,
-  JsonInput,
   Stack,
   Button,
   CopyButton,
+  Textarea,
 } from '@mantine/core';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
@@ -13,6 +13,7 @@ import { PasteModal } from 'app/pages/querybuilder/query-derived/paste-modal';
 
 export function QueryDerived() {
   const query = useQueryBuilderContext((ctx) => ctx.query.input);
+
   return (
     <Stack>
       <Group position="apart">
@@ -35,17 +36,15 @@ export function QueryDerived() {
           <PasteModal />
         </Group>
       </Group>
-      <JsonInput
+      <Textarea
         styles={{
           root: { height: '100%' },
           wrapper: { height: '100%' },
           input: { height: '100%' },
         }}
         value={query}
-        validationError="Invalid json"
-        variant={'unstyled'}
+        variant="unstyled"
         minRows={21}
-        formatOnBlur
         autosize
       />
     </Stack>
