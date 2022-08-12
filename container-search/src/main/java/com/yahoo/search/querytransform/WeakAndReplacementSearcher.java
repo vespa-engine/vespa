@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -15,7 +18,8 @@ import com.yahoo.search.searchchain.Execution;
  * @author karowan
  */
 public class WeakAndReplacementSearcher extends Searcher {
-    private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
+    static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
+    static final CompoundName WAND_HITS = new CompoundName("wand.hits");
 
     @Override public Result search(Query query, Execution execution) {
         if (!query.properties().getBoolean(WEAKAND_REPLACE)) {
@@ -31,7 +35,7 @@ public class WeakAndReplacementSearcher extends Searcher {
      */
     private void replaceOrItems(Query query) {
         Item root = query.getModel().getQueryTree().getRoot();
-        int hits = query.properties().getInteger("wand.hits", WeakAndItem.defaultN);
+        int hits = query.properties().getInteger(WAND_HITS, WeakAndItem.defaultN);
         query.getModel().getQueryTree().setRoot(replaceOrItems(root, hits));
         if (root != query.getModel().getQueryTree().getRoot())
             query.trace("Replaced OR by WeakAnd", true, 2);
@@ -45,10 +49,9 @@ public class WeakAndReplacementSearcher extends Searcher {
      * @return the original item or a WeakAndItem replacement of an OrItem
      */
     private Item replaceOrItems(Item item, int hits) {
-        if (!(item instanceof CompositeItem)) {
+        if (!(item instanceof CompositeItem compositeItem)) {
             return item;
         }
-        CompositeItem compositeItem = (CompositeItem) item;
         if (compositeItem instanceof OrItem) {
             WeakAndItem newItem = new WeakAndItem(hits);
             newItem.setWeight(compositeItem.getWeight());
