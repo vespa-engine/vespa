@@ -10,6 +10,8 @@ import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
 
+import java.time.Duration;
+
 /**
  * For unit testing
  *
@@ -37,14 +39,14 @@ public class MockConnection implements ConnectionPool, Connection {
     }
 
     @Override
-    public void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter) {
+    public void invokeAsync(Request request, Duration jrtTimeout, RequestWaiter requestWaiter) {
         numberOfRequests++;
         lastRequest = request;
         responseHandler.handle(request, requestWaiter);
     }
 
     @Override
-    public void invokeSync(Request request, double jrtTimeout) {
+    public void invokeSync(Request request, Duration jrtTimeout) {
         numberOfRequests++;
         lastRequest = request;
     }

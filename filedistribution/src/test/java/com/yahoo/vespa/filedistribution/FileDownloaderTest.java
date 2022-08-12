@@ -334,12 +334,12 @@ public class FileDownloaderTest {
         }
 
         @Override
-        public void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter) {
+        public void invokeAsync(Request request, Duration jrtTimeout, RequestWaiter requestWaiter) {
             responseHandler.request(request);
         }
 
         @Override
-        public void invokeSync(Request request, double jrtTimeout) {
+        public void invokeSync(Request request, Duration jrtTimeout) {
             responseHandler.request(request);
         }
 

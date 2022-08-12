@@ -10,6 +10,7 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,7 +68,7 @@ public class InvokeSyncTest {
         req.parameters().add(new StringValue("abc"));
         req.parameters().add(new StringValue("def"));
 
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
 
         assertTrue(!req.isError());
         assertEquals(1, req.returnValues().size());
@@ -94,7 +95,7 @@ public class InvokeSyncTest {
         req.parameters().add(new StringValue("abc"));
         req.parameters().add(new StringValue("def"));
         assertFalse(filter.invoked);
-        target.invokeSync(req, 10);
+        target.invokeSync(req, Duration.ofSeconds(10));
         assertFalse(req.isError());
         assertEquals("abcdef", req.returnValues().get(0).asString());
         assertTrue(filter.invoked);

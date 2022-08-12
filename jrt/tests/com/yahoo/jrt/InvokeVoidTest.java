@@ -5,6 +5,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -56,7 +58,7 @@ public class InvokeVoidTest {
     public void testInvokeVoid() {
         Request req = new Request("set");
         req.parameters().add(new Int32Value(40));
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
         assertTrue(!req.isError());
         assertEquals(0, req.returnValues().size());
 
@@ -64,7 +66,7 @@ public class InvokeVoidTest {
         target.invokeVoid(new Request("inc"));
 
         req = new Request("get");
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
         assertTrue(!req.isError());
         assertEquals(42, req.returnValues().get(0).asInt32());
 

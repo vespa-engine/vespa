@@ -65,7 +65,7 @@ public class FileDistributionStatus extends AbstractComponent {
     HostStatus getHostStatus(String hostname, int port, Duration timeout) {
         Target target = supervisor.connect(new Spec(hostname, port));
         Request request = new Request("filedistribution.getActiveFileReferencesStatus");
-        target.invokeSync(request, timeout.toMillis() / 1000);
+        target.invokeSync(request, timeout);
         HostStatus hostStatus = createHostStatusFromResponse(hostname, request);
         target.close();
         return hostStatus;

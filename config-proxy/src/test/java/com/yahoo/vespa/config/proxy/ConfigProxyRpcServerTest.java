@@ -309,7 +309,7 @@ public class ConfigProxyRpcServerTest {
         }
 
         void invoke(Request request) {
-            target.invokeSync(request, Duration.ofMinutes(10).getSeconds());
+            target.invokeSync(request, Duration.ofMinutes(10));
         }
 
         @Override

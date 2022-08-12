@@ -5,6 +5,7 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,7 @@ public class MandatoryMethodsTest {
     @org.junit.Test
     public void testPing() {
         Request req = new Request("frt.rpc.ping");
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
 
         assertFalse(req.isError());
         assertEquals(0, req.returnValues().size());
@@ -47,7 +48,7 @@ public class MandatoryMethodsTest {
     @org.junit.Test
     public void testGetMethodList() {
         Request req = new Request("frt.rpc.getMethodList");
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
 
         assertFalse(req.isError());
         assertTrue(req.checkReturnTypes("SSS"));
@@ -81,7 +82,7 @@ public class MandatoryMethodsTest {
     public void testGetMethodInfo() {
         Request req = new Request("frt.rpc.getMethodInfo");
         req.parameters().add(new StringValue("frt.rpc.getMethodInfo"));
-        target.invokeSync(req, 5.0);
+        target.invokeSync(req, Duration.ofSeconds(5));
 
         assertFalse(req.isError());
         assertTrue(req.checkReturnTypes("sssSSSS"));

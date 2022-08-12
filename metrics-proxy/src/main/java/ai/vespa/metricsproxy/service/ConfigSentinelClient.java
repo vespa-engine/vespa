@@ -3,6 +3,8 @@ package ai.vespa.metricsproxy.service;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+
+import java.time.Duration;
 import java.util.logging.Level;
 
 import com.yahoo.jrt.ErrorCode;
@@ -170,7 +172,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         }
         if (connection.isValid()) {
             Request req = new Request("sentinel.ls");
-            connection.invokeSync(req, 5.0);
+            connection.invokeSync(req, Duration.ofSeconds(5));
             if (req.errorCode() == ErrorCode.NONE &&
                 req.checkReturnTypes("s"))
             {

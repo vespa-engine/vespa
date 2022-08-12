@@ -32,6 +32,7 @@ import com.yahoo.messagebus.routing.RoutingNode;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -240,7 +241,7 @@ public class RPCNetwork implements Network, MethodHandler {
     @Override
     public void send(Message msg, List<RoutingNode> recipients) {
         SendContext ctx = new SendContext(this, msg, recipients);
-        double timeout = ctx.msg.getTimeRemainingNow() / 1000.0;
+        Duration timeout = Duration.ofMillis(ctx.msg.getTimeRemainingNow());
         for (RoutingNode recipient : ctx.recipients) {
             RPCServiceAddress address = (RPCServiceAddress)recipient.getServiceAddress();
             address.getTarget().resolveVersion(timeout, ctx);

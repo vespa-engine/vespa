@@ -28,6 +28,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,7 +147,7 @@ public class VespaSummaryBenchmark {
             r.parameters().add(new Int8Value(CompressionType.NONE.getCode()));
             r.parameters().add(new Int32Value(blob.length));
             r.parameters().add(new DataValue(blob));
-            target.invokeAsync(r, 100.0, waiter);
+            target.invokeAsync(r, Duration.ofSeconds(100), waiter);
         }
         try {
             waiter.waitForReplies();

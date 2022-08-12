@@ -5,6 +5,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -52,11 +54,11 @@ public class TimeoutTest {
         req.parameters().add(new StringValue("abc"));
         req.parameters().add(new StringValue("def"));
 
-        target.invokeSync(req, 0.1);
+        target.invokeSync(req, Duration.ofMillis(100));
         barrier.breakIt();
 
         Request flush = new Request("frt.rpc.ping");
-        target.invokeSync(flush, 5.0);
+        target.invokeSync(flush, Duration.ofSeconds(5));
         assertTrue(!flush.isError());
 
         assertTrue(req.isError());
@@ -72,7 +74,7 @@ public class TimeoutTest {
         req.parameters().add(new StringValue("def"));
 
         Test.Waiter w = new Test.Waiter();
-        target.invokeAsync(req, 30.0, w);
+        target.invokeAsync(req, Duration.ofSeconds(30), w);
         try { Thread.sleep(2500); } catch (InterruptedException e) {}
         barrier.breakIt();
         w.waitDone();

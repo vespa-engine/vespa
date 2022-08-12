@@ -24,15 +24,14 @@ import com.yahoo.vespa.clustercontroller.core.Timer;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -60,18 +59,18 @@ public class RPCCommunicatorTest {
                 NODE_STATE_REQUEST_TIMEOUT_INTERVAL_START_PERCENTAGE,
                 NODE_STATE_REQUEST_TIMEOUT_INTERVAL_STOP_PERCENTAGE,
                 0);
-        int max = -1;
-        int min = 100000;
-        final Set<Integer> uniqueTimeoutValues = new HashSet<>();
+        long max = -1;
+        long min = 100000;
+        final Set<Long> uniqueTimeoutValues = new HashSet<>();
         for (int x = 0; x < TEST_ITERATIONS; x++) {
-            int timeOutMs = communicator.generateNodeStateRequestTimeoutMs();
+            long timeOutMs = communicator.generateNodeStateRequestTimeout().toMillis();
             min = Math.min(min, timeOutMs);
             max = Math.max(max, timeOutMs);
             uniqueTimeoutValues.add(timeOutMs);
         }
         assertTrue(max <=  NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS *
                 NODE_STATE_REQUEST_TIMEOUT_INTERVAL_STOP_PERCENTAGE / 100.);
-        assertThat(min, is(not(max)));
+        assertNotEquals(min, max);
         assertTrue(min >= NODE_STATE_REQUEST_TIMEOUT_INTERVAL_START_PERCENTAGE *
                 NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS / 100);
         assertTrue(uniqueTimeoutValues.size() > TEST_ITERATIONS / 2);
@@ -85,8 +84,8 @@ public class RPCCommunicatorTest {
         fleetControllerOptions.nodeStateRequestTimeoutLatestPercentage = 100;
         fleetControllerOptions.nodeStateRequestTimeoutMS = NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS;
         communicator.propagateOptions(fleetControllerOptions);
-        int timeOutMs = communicator.generateNodeStateRequestTimeoutMs();
-        assertThat(timeOutMs, is(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS));
+        long timeOutMs = communicator.generateNodeStateRequestTimeout().toMillis();
+        assertEquals(timeOutMs, NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS);
     }
 
     @Test
@@ -111,7 +110,7 @@ public class RPCCommunicatorTest {
         communicator.getNodeState(nodeInfo, null);
         Mockito.verify(target).invokeAsync(
                 any(),
-                eq(ROUNDTRIP_LATENCY_SECONDS + NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS / 1000.0),
+                eq(Duration.ofSeconds(ROUNDTRIP_LATENCY_SECONDS).plusMillis(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS)),
                 any());
     }
 
@@ -141,7 +140,7 @@ public class RPCCommunicatorTest {
                 receivedRequest.set((Request) invocation.getArguments()[0]);
                 receivedWaiter.set((RequestWaiter) invocation.getArguments()[2]);
                 return null;
-            }).when(mockTarget).invokeAsync(any(), anyDouble(), any());
+            }).when(mockTarget).invokeAsync(any(), any(Duration.class), any());
         }
     }
 
@@ -153,12 +152,12 @@ public class RPCCommunicatorTest {
         f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
 
         Request req = f.receivedRequest.get();
-        assertThat(req, notNullValue());
-        assertThat(req.methodName(), equalTo(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME));
+        assertNotNull(req);
+        assertEquals(req.methodName(), RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME);
         assertTrue(req.parameters().satisfies("bix")); // <compression type>, <uncompressed size>, <payload>
 
         ClusterStateBundle receivedBundle = RPCUtil.decodeStateBundleFromSetDistributionStatesRequest(req);
-        assertThat(receivedBundle, equalTo(sentBundle));
+        assertEquals(receivedBundle, sentBundle);
     }
 
     @Test
@@ -169,9 +168,9 @@ public class RPCCommunicatorTest {
         f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
 
         RequestWaiter waiter = f.receivedWaiter.get();
-        assertThat(waiter, notNullValue());
+        assertNotNull(waiter);
         Request req = f.receivedRequest.get();
-        assertThat(req, notNullValue());
+        assertNotNull(req);
 
         req.setError(ErrorCode.NO_SUCH_METHOD, "que?");
         waiter.handleRequestDone(req);
@@ -183,8 +182,8 @@ public class RPCCommunicatorTest {
         // Now when we try again, we should have been downgraded to the legacy setsystemstate2 RPC
         f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
         req = f.receivedRequest.get();
-        assertThat(req, notNullValue());
-        assertThat(req.methodName(), equalTo(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME));
+        assertNotNull(req);
+        assertEquals(req.methodName(), RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME);
     }
 
     @Test
@@ -194,10 +193,10 @@ public class RPCCommunicatorTest {
         f.communicator.activateClusterStateVersion(12345, cf.cluster().getNodeInfo(Node.ofDistributor(1)), f.mockWaiter);
 
         Request req = f.receivedRequest.get();
-        assertThat(req, notNullValue());
-        assertThat(req.methodName(), equalTo(RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME));
+        assertNotNull(req);
+        assertEquals(req.methodName(), RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME);
         assertTrue(req.parameters().satisfies("i")); // <cluster state version>
-        assertThat(req.parameters().get(0).asInt32(), equalTo(12345));
+        assertEquals(req.parameters().get(0).asInt32(), 12345);
     }
 
 }

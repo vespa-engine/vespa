@@ -15,6 +15,7 @@ import com.yahoo.jrt.Task;
 import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -279,7 +280,7 @@ public class Register {
         req.parameters().add(new StringValue(name));
         req.parameters().add(new StringValue(mySpec));
         log.log(Level.FINE, logMessagePrefix() + " now");
-        target.invokeAsync(req, 35.0, reqWait);
+        target.invokeAsync(req, Duration.ofSeconds(35), reqWait);
     }
 
     private String logMessagePrefix() {

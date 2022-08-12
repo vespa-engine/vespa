@@ -14,6 +14,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 
+import java.time.Duration;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
@@ -35,7 +36,7 @@ public class RpcHealthMetricsTest {
             getFileContents("health-check-failed.response.json");
     private static final String WANTED_RPC_RESPONSE =
             getFileContents("rpc-json-output-check.json").trim();
-    private static final double RPC_INVOKE_TIMEOUT = 60.0;
+    private static final Duration RPC_INVOKE_TIMEOUT = Duration.ofSeconds(60);
 
 
     @Rule

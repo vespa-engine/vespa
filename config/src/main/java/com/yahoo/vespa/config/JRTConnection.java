@@ -7,6 +7,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,12 +31,12 @@ public class JRTConnection implements Connection {
     }
 
     @Override
-    public void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter) {
+    public void invokeAsync(Request request, Duration jrtTimeout, RequestWaiter requestWaiter) {
         getTarget().invokeAsync(request, jrtTimeout, requestWaiter);
     }
 
     @Override
-    public void invokeSync(Request request, double jrtTimeout) {
+    public void invokeSync(Request request, Duration jrtTimeout) {
         getTarget().invokeSync(request, jrtTimeout);
     }
 

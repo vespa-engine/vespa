@@ -4,14 +4,16 @@ package com.yahoo.vespa.config;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
 
+import java.time.Duration;
+
 /**
  * @author hmusum
  */
 public interface Connection {
 
-    void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter);
+    void invokeAsync(Request request, Duration jrtTimeout, RequestWaiter requestWaiter);
 
-    void invokeSync(Request request, double jrtTimeout);
+    void invokeSync(Request request, Duration jrtTimeout);
 
     String getAddress();
 

@@ -4,6 +4,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -81,24 +83,24 @@ public class BackTargetTest {
     @org.junit.Test
     public void testBackTarget() {
         checkTargets(false, false);
-        target.invokeSync(new Request("sample_target"), 5.0);
+        target.invokeSync(new Request("sample_target"), Duration.ofSeconds(5));
         checkTargets(true, false);
-        serverBackTarget.invokeSync(new Request("sample_target"), 5.0);
+        serverBackTarget.invokeSync(new Request("sample_target"), Duration.ofSeconds(5));
         checkTargets(true, true);
 
         checkValues(0, 0);
-        target.invokeSync(new Request("inc"), 5.0);
+        target.invokeSync(new Request("inc"), Duration.ofSeconds(5));
         checkValues(1, 0);
-        serverBackTarget.invokeSync(new Request("inc"), 5.0);
+        serverBackTarget.invokeSync(new Request("inc"), Duration.ofSeconds(5));
         checkValues(1, 1);
-        clientBackTarget.invokeSync(new Request("inc"), 5.0);
+        clientBackTarget.invokeSync(new Request("inc"), Duration.ofSeconds(5));
         checkValues(2, 1);
 
-        target.invokeSync(new Request("back_inc"), 5.0);
+        target.invokeSync(new Request("back_inc"), Duration.ofSeconds(5));
         checkValues(2, 2);
-        serverBackTarget.invokeSync(new Request("back_inc"), 5.0);
+        serverBackTarget.invokeSync(new Request("back_inc"), Duration.ofSeconds(5));
         checkValues(3, 2);
-        clientBackTarget.invokeSync(new Request("back_inc"), 5.0);
+        clientBackTarget.invokeSync(new Request("back_inc"), Duration.ofSeconds(5));
         checkValues(3, 3);
     }
 

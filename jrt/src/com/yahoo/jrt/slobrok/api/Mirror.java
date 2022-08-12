@@ -13,6 +13,7 @@ import com.yahoo.jrt.Task;
 import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -206,7 +207,7 @@ public class Mirror implements IMirror {
         req = new Request("slobrok.incremental.fetch");
         req.parameters().add(new Int32Value(specsGeneration)); // gencnt
         req.parameters().add(new Int32Value(5000));     // mstimeout
-        target.invokeAsync(req, 40.0, reqWait);
+        target.invokeAsync(req, Duration.ofSeconds(40), reqWait);
     }
 
     private void handleUpdate() {

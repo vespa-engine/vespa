@@ -5,13 +5,15 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class InvokeErrorTest {
 
-    final double timeout=60.0;
+    final Duration timeout = Duration.ofSeconds(60);
     Supervisor   server;
     Acceptor     acceptor;
     Supervisor   client;

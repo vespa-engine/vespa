@@ -127,7 +127,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getSystemState");
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ss"), req.toString());
         String systemState = req.returnValues().get(1).asString();
@@ -523,7 +523,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getMaster");
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
         assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
 
@@ -548,7 +548,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         Request req = new Request("getNodeList");
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
         assertTrue(req.checkReturnTypes("SS"), req.toString());
         String[] slobrok = req.returnValues().get(0).asStringArray().clone();
@@ -570,7 +570,7 @@ public class RpcServerTest extends FleetControllerTest {
             Request req2 = new Request("getnodestate2");
             req2.parameters().add(new StringValue("unknown"));
             Target connection2 = supervisor.connect(new Spec(rpc[i]));
-            connection2.invokeSync(req2, timeoutInSeconds());
+            connection2.invokeSync(req2, timeout());
             assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
         }
     }
@@ -583,7 +583,7 @@ public class RpcServerTest extends FleetControllerTest {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node));
         req.parameters().add(new StringValue(newNodeState));
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         return req;
     }
 
@@ -591,7 +591,7 @@ public class RpcServerTest extends FleetControllerTest {
         Request req = new Request("getNodeState");
         req.parameters().add(new StringValue(nodeType));
         req.parameters().add(new Int32Value(nodeIndex));
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         return req;
     }
 

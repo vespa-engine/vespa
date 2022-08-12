@@ -11,6 +11,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -47,7 +48,7 @@ public class UrlDownloader {
                 target = supervisor.connect(spec);
                 // ping to check if connection is working
                 Request request = new Request("frt.rpc.ping");
-                target.invokeSync(request, 5.0);
+                target.invokeSync(request, Duration.ofSeconds(5));
                 if (! request.isError()) {
                     log.log(FINE, () -> "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     return;

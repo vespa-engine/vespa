@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -239,7 +240,7 @@ public class LoadTester {
                     System.out.println("# Requesting: " + reqKey);
 
                 long start = System.nanoTime();
-                target.invokeSync(request.getRequest(), 10.0);
+                target.invokeSync(request.getRequest(), Duration.ofSeconds(10));
                 long durationInMillis = (System.nanoTime() - start) / 1_000_000;
 
                 if (request.isError()) {

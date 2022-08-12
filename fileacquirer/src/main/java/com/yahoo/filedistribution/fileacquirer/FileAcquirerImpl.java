@@ -5,6 +5,8 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.*;
+
+import java.time.Duration;
 import java.util.logging.Level;
 
 import java.util.logging.Logger;
@@ -56,7 +58,7 @@ class FileAcquirerImpl implements FileAcquirer {
                 target = supervisor.connect(spec);
                 // ping to check if connection is working
                 Request request = new Request("frt.rpc.ping");
-                target.invokeSync(request, 5.0);
+                target.invokeSync(request, Duration.ofSeconds(5));
                 if (request.isError()) {
                     logWarning();
                     target.close();

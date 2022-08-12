@@ -113,7 +113,7 @@ public class FileReferenceDownloader {
     private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection) {
         Request request = createRequest(fileReferenceDownload);
         Duration rpcTimeout = rpcTimeout(retryCount);
-        connection.invokeSync(request, rpcTimeout.getSeconds());
+        connection.invokeSync(request, rpcTimeout);
 
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         FileReference fileReference = fileReferenceDownload.fileReference();

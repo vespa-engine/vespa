@@ -7,6 +7,8 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
+
+import java.time.Duration;
 import java.util.logging.Level;
 import com.yahoo.text.Utf8Array;
 
@@ -95,7 +97,7 @@ public class RPCTarget implements RequestWaiter {
      * @param timeout The timeout for the request in seconds.
      * @param handler The handler to be called once the version is available.
      */
-    void resolveVersion(double timeout, VersionHandler handler) {
+    void resolveVersion(Duration timeout, VersionHandler handler) {
         boolean hasVersion = false;
         boolean shouldInvoke = false;
         boolean shouldLog = log.isLoggable(Level.FINE);
@@ -158,8 +160,7 @@ public class RPCTarget implements RequestWaiter {
     /**
      * <p>Declares a version handler used when resolving the version of a
      * target. An instance of this is passed to {@link
-     * RPCTarget#resolveVersion(double,
-     * com.yahoo.messagebus.network.rpc.RPCTarget.VersionHandler)}, and invoked
+     * RPCTarget#resolveVersion(Duration, RPCTarget.VersionHandler)}, and invoked
      * either synchronously or asynchronously, depending on whether or not the
      * version is already available.</p>
      */
