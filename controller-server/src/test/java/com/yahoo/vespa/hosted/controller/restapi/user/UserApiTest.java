@@ -84,7 +84,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // POST a hosted operator role is not allowed.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", POST)
                         .roles(Set.of(Role.administrator(id.tenant())))
-                        .data("{\"user\":\"evil@evil\",\"roleName\":\"hostedOperator\"}"),
+                        .data("{\"user\":\"evil@evil\",\"roles\":[\"hostedOperator\"]}"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'hostedOperator'.\"}", 400);
 
         // POST a tenant developer is available to the tenant owner.
@@ -96,14 +96,8 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // POST a tenant admin is not available to a tenant developer.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", POST)
                         .roles(Set.of(Role.developer(id.tenant())))
-                        .data("{\"user\":\"developer@tenant\",\"roleName\":\"administrator\"}"),
+                        .data("{\"user\":\"developer@tenant\",\"roles\":[\"administrator\"]}"),
                 accessDenied, 403);
-
-        // POST a headless for a non-existent application fails.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                        .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
-                        .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
 
         // POST an application is allowed for a tenant developer.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", POST)
@@ -116,21 +110,10 @@ public class UserApiTest extends ControllerContainerCloudTest {
                         .roles(Set.of(Role.administrator(id.tenant()))),
                 accessDenied, 403);
 
-        // POST a tenant role is not allowed to an application.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
-                        .roles(Set.of(Role.hostedOperator()))
-                        .data("{\"user\":\"developer@app\",\"roleName\":\"developer\"}"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Malformed or illegal role name 'developer'.\"}", 400);
-
         // GET tenant role information is available to readers.
         tester.assertResponse(request("/user/v1/tenant/my-tenant")
                         .roles(Set.of(Role.reader(id.tenant()))),
                 new File("tenant-roles.json"));
-
-        // GET application role information is available to tenant administrators.
-        tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app")
-                        .roles(Set.of(Role.administrator(id.tenant()))),
-                new File("application-roles.json"));
 
         // POST a pem deploy key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app/key", POST)
@@ -200,7 +183,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // DELETE the last tenant owner is not allowed.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
                         .roles(operator)
-                        .data("{\"user\":\"administrator@tenant\",\"roleName\":\"administrator\"}"),
+                        .data("{\"user\":\"administrator@tenant\",\"roles\":[\"administrator\"]}"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can't remove the last administrator of a tenant.\"}", 400);
 
         // DELETE the tenant is not allowed

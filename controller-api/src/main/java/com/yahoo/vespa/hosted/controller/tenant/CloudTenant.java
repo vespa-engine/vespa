@@ -25,17 +25,19 @@ public class CloudTenant extends Tenant {
     private final TenantInfo info;
     private final List<TenantSecretStore> tenantSecretStores;
     private final ArchiveAccess archiveAccess;
+    private final Optional<Instant> invalidateUserSessionsBefore;
 
     /** Public for the serialization layer — do not use! */
     public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator,
                        BiMap<PublicKey, Principal> developerKeys, TenantInfo info,
-                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess) {
+                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore) {
         super(name, createdAt, lastLoginInfo, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
         this.info = Objects.requireNonNull(info);
         this.tenantSecretStores = tenantSecretStores;
         this.archiveAccess = Objects.requireNonNull(archiveAccess);
+        this.invalidateUserSessionsBefore = invalidateUserSessionsBefore;
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
@@ -44,7 +46,7 @@ public class CloudTenant extends Tenant {
                                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator),
-                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess());
+                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty());
     }
 
     /** The user that created the tenant */
@@ -73,6 +75,11 @@ public class CloudTenant extends Tenant {
      */
     public ArchiveAccess archiveAccess() {
         return archiveAccess;
+    }
+
+    /** Returns instant before which all user sessions that have access to this tenant must be refreshed */
+    public Optional<Instant> invalidateUserSessionsBefore() {
+        return invalidateUserSessionsBefore;
     }
 
     @Override

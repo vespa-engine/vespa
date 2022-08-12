@@ -103,8 +103,8 @@ public class TenantSerializerTest {
                         otherPublicKey, new SimplePrincipal("jane")),
                 TenantInfo.empty(),
                 List.of(),
-                new ArchiveAccess()
-        );
+                new ArchiveAccess(),
+                Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -125,11 +125,12 @@ public class TenantSerializerTest {
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
                 ),
-                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role")
-        );
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role"),
+                Optional.of(Instant.ofEpochMilli(1234567)));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
         assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
+        assertEquals(tenant.invalidateUserSessionsBefore(), serialized.invalidateUserSessionsBefore());
     }
 
     @Test
@@ -174,8 +175,8 @@ public class TenantSerializerTest {
                         otherPublicKey, new SimplePrincipal("jane")),
                 TenantInfo.empty(),
                 List.of(),
-                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com")
-        );
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
+                Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
         assertEquals(serialized.archiveAccess().gcpMember().get(), "user:foo@example.com");

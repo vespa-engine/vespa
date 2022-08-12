@@ -41,7 +41,8 @@ public class NotifierTest {
                                     List.of(TenantContacts.Audience.NOTIFICATIONS),
                                     email)))),
             List.of(),
-            new ArchiveAccess());
+            new ArchiveAccess(),
+            Optional.empty());
 
 
     MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
