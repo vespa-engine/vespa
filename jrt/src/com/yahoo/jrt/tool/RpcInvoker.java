@@ -16,6 +16,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Value;
 import com.yahoo.jrt.Values;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class RpcInvoker {
             supervisor = new Supervisor(new Transport("invoker"));
             target = supervisor.connect(new Spec(connectspec));
             Request request = createRequest(method,arguments);
-            target.invokeSync(request,10.0);
+            target.invokeSync(request, Duration.ofSeconds(10));
             if (request.isError()) {
                 System.err.println("error(" + request.errorCode() + "): " + request.errorMessage());
                 return;

@@ -10,6 +10,7 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 public class FileDistributionImpl implements FileDistribution, RequestWaiter {
 
     private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
-    private final static double rpcTimeout = 1.0;
+    private final static Duration rpcTimeout = Duration.ofSeconds(1);
 
     private final Supervisor supervisor;
 

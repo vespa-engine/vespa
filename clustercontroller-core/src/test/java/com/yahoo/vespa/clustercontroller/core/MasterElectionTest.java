@@ -313,7 +313,7 @@ public class MasterElectionTest extends FleetControllerTest {
             boolean allOk = true;
             for (int node : nodes) {
                 Request req = new Request("getMaster");
-                connections.get(node).invokeSync(req, timeoutInSeconds());
+                connections.get(node).invokeSync(req, timeout());
                 if (req.isError()) {
                     allOk = false;
                     break;
@@ -355,10 +355,11 @@ public class MasterElectionTest extends FleetControllerTest {
 
         Request req = new Request("getMaster");
 
+        long maxRetries = timeout().toMillis() / 100;
         for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
-            for (int retry = 0; retry < timeoutInSeconds() * 10; ++retry) {
+            for (int retry = 0; retry < maxRetries; ++retry) {
                 req = new Request("getMaster");
-                connections.get(nodeIndex).invokeSync(req, timeoutInSeconds());
+                connections.get(nodeIndex).invokeSync(req, timeout());
                 assertFalse(req.isError(), req.errorMessage());
                 if (req.returnValues().get(0).asInt32() == 0 &&
                         req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
@@ -389,13 +390,13 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
 
         req = new Request("getMaster");
-        connections.get(0).invokeSync(req, timeoutInSeconds());
+        connections.get(0).invokeSync(req, timeout());
         assertEquals(104, req.errorCode(), req.toString());
         assertEquals("Connection error", req.errorMessage(), req.toString());
 
-        for (int i = 0; i < timeoutInSeconds() * 10; ++i) {
+        for (int i = 0; i < maxRetries; ++i) {
             req = new Request("getMaster");
-            connections.get(1).invokeSync(req, timeoutInSeconds());
+            connections.get(1).invokeSync(req, timeout());
             assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
             // We may have bad timing causing node not to have realized it is master yet
@@ -403,9 +404,9 @@ public class MasterElectionTest extends FleetControllerTest {
         assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
         assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
 
-        for (int i = 0; i < timeoutInSeconds() * 10; ++i) {
+        for (int i = 0; i < maxRetries; ++i) {
             req = new Request("getMaster");
-            connections.get(2).invokeSync(req, timeoutInSeconds());
+            connections.get(2).invokeSync(req, timeout());
             assertFalse(req.isError(), req.errorMessage());
             if (req.returnValues().get(0).asInt32() != -1) break;
         }

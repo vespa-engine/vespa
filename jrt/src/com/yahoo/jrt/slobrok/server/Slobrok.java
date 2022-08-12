@@ -17,6 +17,7 @@ import com.yahoo.jrt.TargetWatcher;
 import com.yahoo.jrt.Task;
 import com.yahoo.jrt.Transport;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -225,7 +226,7 @@ public class Slobrok {
             this.spec = spec;
             target = orb.connect(new Spec(spec));
             Request cbReq = new Request("slobrok.callback.listNamesServed");
-            target.invokeAsync(cbReq, 5.0, this);
+            target.invokeAsync(cbReq, Duration.ofSeconds(5), this);
         }
 
         @Override

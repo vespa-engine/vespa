@@ -5,6 +5,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +59,7 @@ public class InvokeAsyncTest {
         req.parameters().add(new StringValue("def"));
 
         Test.Waiter w = new Test.Waiter();
-        target.invokeAsync(req, 5.0, w);
+        target.invokeAsync(req, Duration.ofSeconds(5), w);
         assertFalse(w.isDone());
         barrier.breakIt();
         w.waitDone();
@@ -75,7 +77,7 @@ public class InvokeAsyncTest {
         req.parameters().add(new StringValue("def"));
         assertFalse(filter.invoked);
         Test.Waiter w = new Test.Waiter();
-        target.invokeAsync(req, 10, w);
+        target.invokeAsync(req, Duration.ofSeconds(10), w);
         assertFalse(w.isDone());
         barrier.breakIt();
         w.waitDone();

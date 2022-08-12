@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
@@ -45,7 +46,7 @@ public class RpcMetricsTest {
 
     private static final String METRICS_RESPONSE = getFileContents("metrics-storage-simple.json").trim();
     private static final String EXTRA_APP = "extra";
-    private static final double RPC_INVOKE_TIMEOUT = 60.0;
+    private static final Duration RPC_INVOKE_TIMEOUT = Duration.ofSeconds(60);
 
     private static class RpcClient implements AutoCloseable {
         private final Supervisor supervisor;

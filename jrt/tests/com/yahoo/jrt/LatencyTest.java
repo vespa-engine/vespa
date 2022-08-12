@@ -2,6 +2,7 @@
 
 package com.yahoo.jrt;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Logger;
@@ -116,7 +117,7 @@ public class LatencyTest {
                     }
                     Request req = new Request("inc");
                     req.parameters().add(new Int32Value(value));
-                    target.invokeSync(req, 60.0);
+                    target.invokeSync(req, Duration.ofSeconds(60));
                     long duration = System.nanoTime() - t;
                     assertTrue(req.checkReturnTypes("i"));
                     assertEquals(value + 1, req.returnValues().get(0).asInt32());

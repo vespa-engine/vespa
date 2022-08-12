@@ -15,6 +15,7 @@ import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.LogDispatcher;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class ArchiveLogMessagesMethodTest {
             request.parameters().add(new Int8Value((byte)0));
             request.parameters().add(new Int32Value(requestPayload.length));
             request.parameters().add(new DataValue(requestPayload));
-            target.invokeSync(request, 30/*seconds*/);
+            target.invokeSync(request, Duration.ofSeconds(30));
             Values returnValues = request.returnValues();
             assertEquals(3, returnValues.size());
             assertEquals(0, returnValues.get(0).asInt8());

@@ -154,7 +154,7 @@ public class DatabaseTest extends FleetControllerTest {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue("storage/cluster.mycluster/" + n.getType().toString() + "/" + n.getIndex()));
         req.parameters().add(new StringValue(ns.serialize(true)));
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("s"), req.toString());
         wantedStates.put(n, ns);

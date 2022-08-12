@@ -45,7 +45,7 @@ public class JRTConfigRequester implements RequestWaiter {
     private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
     static final float randomFraction = 0.2f;
     /* Time to be added to server timeout to create client timeout. This is the time allowed for the server to respond after serverTimeout has elapsed. */
-    private static final Double additionalTimeForClientTimeout = 10.0;
+    private static final Duration additionalTimeForClientTimeout = Duration.ofSeconds(10);
 
     private final TimingValues timingValues;
     private final ScheduledThreadPoolExecutor scheduler;
@@ -100,7 +100,7 @@ public class JRTConfigRequester implements RequestWaiter {
         request.setContext(new RequestContext(sub, req, connection));
         if (!req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
-        double jrtClientTimeout = getClientTimeout(req);
+        Duration jrtClientTimeout = getClientTimeout(req);
         log.log(FINE, () -> "Requesting config for " + sub + " on connection " + connection
                 + " with client timeout " + jrtClientTimeout +
                 (log.isLoggable(FINEST) ? (",defcontent=" + req.getDefContent().asString()) : ""));
@@ -271,7 +271,7 @@ public class JRTConfigRequester implements RequestWaiter {
         return connectionPool;
     }
 
-    private Double getClientTimeout(JRTClientConfigRequest request) {
-        return (request.getTimeout() / 1000.0) + additionalTimeForClientTimeout;
+    private Duration getClientTimeout(JRTClientConfigRequest request) {
+        return Duration.ofMillis(request.getTimeout()).plus(additionalTimeForClientTimeout);
     }
 }

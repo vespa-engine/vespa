@@ -460,7 +460,7 @@ public abstract class FleetControllerTest implements Waiter {
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node.getSlobrokName()));
         req.parameters().add(new StringValue(ns.serialize()));
-        connection.invokeSync(req, timeoutInSeconds());
+        connection.invokeSync(req, timeout());
         if (req.isError()) {
             fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());
         }
@@ -476,7 +476,5 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     Duration timeout() { return timeout; }
-
-    double timeoutInSeconds() { return (double) timeout.toMillis() / 1000; }
 
 }

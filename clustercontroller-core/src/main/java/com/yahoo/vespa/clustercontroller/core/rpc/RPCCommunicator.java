@@ -22,6 +22,8 @@ import com.yahoo.vespa.clustercontroller.core.GetNodeStateRequest;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
 import com.yahoo.vespa.clustercontroller.core.Timer;
+
+import java.time.Duration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,10 +48,10 @@ public class RPCCommunicator implements Communicator {
 
     private final Timer timer;
     private final Supervisor supervisor;
-    private double nodeStateRequestTimeoutIntervalMaxSeconds;
+    private Duration nodeStateRequestTimeoutIntervalMax;
     private int nodeStateRequestTimeoutIntervalStartPercentage;
     private int nodeStateRequestTimeoutIntervalStopPercentage;
-    private int nodeStateRequestRoundTripTimeMaxSeconds;
+    private Duration nodeStateRequestRoundTripTimeMax;
     private final int fleetControllerIndex;
 
     public static Supervisor createRealSupervisor() {
@@ -72,10 +74,10 @@ public class RPCCommunicator implements Communicator {
         checkArgument(nodeStateRequestTimeoutIntervalStopPercentage >= nodeStateRequestTimeoutIntervalStartPercentage);
         checkArgument(nodeStateRequestTimeoutIntervalStopPercentage <= 100);
         checkArgument(nodeStateRequestRoundTripTimeMaxSeconds >= 0);
-        this.nodeStateRequestTimeoutIntervalMaxSeconds = nodeStateRequestTimeoutIntervalMaxMs / 1000D;
+        this.nodeStateRequestTimeoutIntervalMax = Duration.ofMillis(nodeStateRequestTimeoutIntervalMaxMs);
         this.nodeStateRequestTimeoutIntervalStartPercentage = nodeStateRequestTimeoutIntervalStartPercentage;
         this.nodeStateRequestTimeoutIntervalStopPercentage = nodeStateRequestTimeoutIntervalStopPercentage;
-        this.nodeStateRequestRoundTripTimeMaxSeconds = nodeStateRequestRoundTripTimeMaxSeconds;
+        this.nodeStateRequestRoundTripTimeMax = Duration.ofSeconds(nodeStateRequestRoundTripTimeMaxSeconds);
         this.supervisor = supervisor;
     }
 
@@ -100,10 +102,10 @@ public class RPCCommunicator implements Communicator {
                       >= options.nodeStateRequestTimeoutEarliestPercentage);
         checkArgument(options.nodeStateRequestTimeoutLatestPercentage <= 100);
         checkArgument(options.nodeStateRequestRoundTripTimeMaxSeconds >= 0);
-        this.nodeStateRequestTimeoutIntervalMaxSeconds = options.nodeStateRequestTimeoutMS / 1000.0;
+        this.nodeStateRequestTimeoutIntervalMax = Duration.ofMillis(options.nodeStateRequestTimeoutMS);
         this.nodeStateRequestTimeoutIntervalStartPercentage = options.nodeStateRequestTimeoutEarliestPercentage;
         this.nodeStateRequestTimeoutIntervalStopPercentage = options.nodeStateRequestTimeoutLatestPercentage;
-        this.nodeStateRequestRoundTripTimeMaxSeconds = options.nodeStateRequestRoundTripTimeMaxSeconds;
+        this.nodeStateRequestRoundTripTimeMax = Duration.ofSeconds(options.nodeStateRequestRoundTripTimeMaxSeconds);
     }
 
     @Override
@@ -117,16 +119,15 @@ public class RPCCommunicator implements Communicator {
         req.parameters().add(new StringValue(
                 currentState.getState().equals(State.DOWN) || node.getConnectionAttemptCount() > 0
                    ? "unknown" : currentState.serialize()));
-        req.parameters().add(new Int32Value(generateNodeStateRequestTimeoutMs()));
+        req.parameters().add(new Int32Value((int)generateNodeStateRequestTimeout().toMillis()));
         req.parameters().add(new Int32Value(fleetControllerIndex));
 
         RPCGetNodeStateRequest stateRequest = new RPCGetNodeStateRequest(node, req);
         RPCGetNodeStateWaiter waiter = new RPCGetNodeStateWaiter(stateRequest, externalWaiter, timer);
 
-        double requestTimeoutSeconds =
-            nodeStateRequestTimeoutIntervalMaxSeconds + nodeStateRequestRoundTripTimeMaxSeconds;
+        Duration requestTimeout = nodeStateRequestTimeoutIntervalMax.plus(nodeStateRequestRoundTripTimeMax);
 
-        connection.invokeAsync(req, requestTimeoutSeconds, waiter);
+        connection.invokeAsync(req, requestTimeout, waiter);
         node.setCurrentNodeStateRequest(stateRequest, timer.getCurrentTimeInMillis());
         node.lastRequestInfoConnection = connection;
     }
@@ -161,7 +162,7 @@ public class RPCCommunicator implements Communicator {
         RPCSetClusterStateRequest stateRequest = new RPCSetClusterStateRequest(node, req, baselineState.getVersion());
         waiter.setRequest(stateRequest);
 
-        connection.invokeAsync(req, 60, waiter);
+        connection.invokeAsync(req, Duration.ofSeconds(60), waiter);
         node.setClusterStateVersionBundleSent(stateBundle);
     }
 
@@ -183,20 +184,20 @@ public class RPCCommunicator implements Communicator {
         var activationRequest = new RPCActivateClusterStateVersionRequest(node, req, clusterStateVersion);
         waiter.setRequest(activationRequest);
 
-        connection.invokeAsync(req, 60, waiter);
+        connection.invokeAsync(req, Duration.ofSeconds(60), waiter);
         node.setClusterStateVersionActivationSent(clusterStateVersion);
     }
 
     // protected for testing.
-    protected int generateNodeStateRequestTimeoutMs() {
+    protected Duration generateNodeStateRequestTimeout() {
         double intervalFraction = Math.random();
-        double earliestTimeoutSeconds =
-                nodeStateRequestTimeoutIntervalMaxSeconds * nodeStateRequestTimeoutIntervalStartPercentage / 100.0;
-        double latestTimeoutSeconds =
-                nodeStateRequestTimeoutIntervalMaxSeconds * nodeStateRequestTimeoutIntervalStopPercentage / 100.0;
-        double interval = latestTimeoutSeconds - earliestTimeoutSeconds;
-        double timeoutSeconds = earliestTimeoutSeconds + intervalFraction * interval;
-        return (int) (timeoutSeconds * 1000);
+        long earliestTimeoutNanos =
+                nodeStateRequestTimeoutIntervalMax.toNanos() * nodeStateRequestTimeoutIntervalStartPercentage / 100;
+        long latestTimeoutNanos =
+                nodeStateRequestTimeoutIntervalMax.toNanos() * nodeStateRequestTimeoutIntervalStopPercentage / 100;
+        long interval = latestTimeoutNanos - earliestTimeoutNanos;
+        long timeoutNanos = earliestTimeoutNanos + (long)(intervalFraction * interval);
+        return Duration.ofNanos(timeoutNanos);
     }
 
 }

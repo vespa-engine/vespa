@@ -4,6 +4,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -66,11 +68,11 @@ public class DetachTest {
         Test.Waiter w1 = new Test.Waiter();
         Request req1 = new Request("d_inc");
         req1.parameters().add(new Int32Value(50));
-        target.invokeAsync(req1, 5.0, w1);
+        target.invokeAsync(req1, Duration.ofSeconds(5), w1);
 
         Request req2 = new Request("d_inc_r");
         req2.parameters().add(new Int32Value(60));
-        target.invokeSync(req2, 5.0);
+        target.invokeSync(req2, Duration.ofSeconds(5));
 
         assertTrue(!req2.isError());
         assertEquals(1, req2.returnValues().size());
@@ -123,7 +125,7 @@ public class DetachTest {
         Test.Waiter w = new Test.Waiter();
         Request req3 = new Request("inc_b");
         req3.parameters().add(new Int32Value(100));
-        target.invokeAsync(req3, 5.0, w);
+        target.invokeAsync(req3, Duration.ofSeconds(5), w);
         Request blocked = (Request) receptor.get();
         try {
             blocked.returnRequest();

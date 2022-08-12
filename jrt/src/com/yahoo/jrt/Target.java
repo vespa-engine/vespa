@@ -3,6 +3,8 @@ package com.yahoo.jrt;
 
 import com.yahoo.security.tls.ConnectionAuthContext;
 
+import java.time.Duration;
+
 /**
  * A Target represents a connection endpoint with RPC
  * capabilities. Each such connection has a client and a server
@@ -101,6 +103,10 @@ public abstract class Target {
      */
     public abstract void invokeSync(Request req, double timeout);
 
+    public void invokeSync(Request req, Duration timeout) {
+        invokeSync(req, toSeconds(timeout));
+    }
+
     /**
      * Invoke a request on this target and let the completion be
      * signalled with a callback.
@@ -109,8 +115,15 @@ public abstract class Target {
      * @param timeout timeout in seconds
      * @param waiter callback handler
      */
-    public abstract void invokeAsync(Request req, double timeout,
-                                     RequestWaiter waiter);
+    public abstract void invokeAsync(Request req, double timeout, RequestWaiter waiter);
+
+    public void invokeAsync(Request req, Duration timeout, RequestWaiter waiter) {
+        invokeAsync(req, toSeconds(timeout), waiter);
+    }
+
+    private static double toSeconds(Duration duration) {
+        return ((double)duration.toMillis())/1000.0;
+    }
 
     /**
      * Invoke a request on this target, but ignore the return

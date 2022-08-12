@@ -13,6 +13,8 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+
+import java.time.Duration;
 import java.util.logging.Level;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -91,7 +93,7 @@ public class RpcTester {
             fileBlob.parameters().add(new Int32Value(0));
             fileBlob.parameters().add(new StringValue("OK"));
             log.log(Level.INFO, "Doing invokeSync");
-            target.invokeSync(fileBlob, 5);
+            target.invokeSync(fileBlob, Duration.ofSeconds(5));
             log.log(Level.INFO, "Done with invokeSync");
         }
     }

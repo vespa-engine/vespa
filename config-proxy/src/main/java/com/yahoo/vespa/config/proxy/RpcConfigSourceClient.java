@@ -84,7 +84,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         for (String configSource : configSourceSet.getSources()) {
             Spec spec = new Spec(configSource);
             Target target = supervisor.connect(spec);
-            target.invokeSync(req, 30.0);
+            target.invokeSync(req, Duration.ofSeconds(30));
             if (target.isValid())
                 return;
 

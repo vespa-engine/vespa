@@ -4,6 +4,8 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -44,7 +46,7 @@ public class AbortTest {
         Test.Waiter w = new Test.Waiter();
         Request req = new Request("test");
         req.parameters().add(new Int32Value(20));
-        target.invokeAsync(req, 5.0, w);
+        target.invokeAsync(req, Duration.ofSeconds(5), w);
         req.abort();
         barrier.breakIt();
         w.waitDone();
@@ -54,7 +56,7 @@ public class AbortTest {
 
         Request req2 = new Request("test");
         req2.parameters().add(new Int32Value(30));
-        target.invokeSync(req2, 5.0);
+        target.invokeSync(req2, Duration.ofSeconds(5));
         assertTrue(!req2.isError());
         assertEquals(1, req2.returnValues().size());
         assertEquals(30, req2.returnValues().get(0).asInt32());

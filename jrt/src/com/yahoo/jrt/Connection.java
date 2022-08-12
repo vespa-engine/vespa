@@ -464,8 +464,7 @@ class Connection extends Target {
         waiter.waitDone();
     }
 
-    public void invokeAsync(Request req, double timeout,
-                            RequestWaiter waiter) {
+    public void invokeAsync(Request req, double timeout, RequestWaiter waiter) {
         if (timeout < 0.0) {
             timeout = 0.0;
         }

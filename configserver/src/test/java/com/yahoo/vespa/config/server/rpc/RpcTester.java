@@ -166,7 +166,7 @@ public class RpcTester implements AutoCloseable {
 
     void performRequest(Request req) {
         clock.advance(Duration.ofMillis(10));
-        sup.connect(spec).invokeSync(req, 10.0);
+        sup.connect(spec).invokeSync(req, Duration.ofSeconds(10));
         if (req.methodName().equals(RpcServer.getConfigMethodName))
             assertEquals(clock.instant(), hostLivenessTracker.lastRequestFrom(myHostname).get());
     }

@@ -45,6 +45,7 @@ import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -571,7 +572,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
 
         private void invokeRpcIfValidConnection(Request request) {
             if (target.isValid()) {
-                target.invokeSync(request, 600);
+                target.invokeSync(request, Duration.ofMinutes(10));
             } else {
                 throw new RuntimeException("Connection to " + target + " is invalid", target.getConnectionLostReason());
             }
