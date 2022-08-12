@@ -44,6 +44,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.UnboundStringFlag;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -688,19 +689,13 @@ public class SessionRepository {
         try {
             app.validateFileExtensions();
         } catch (IllegalArgumentException e) {
-            String flag = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource)
-                                                                        .with(APPLICATION_ID, applicationId.serializedForm())
-                                                                        .value();
             if (configserverConfig.hostedVespa()) {
-                switch (flag) {
-                    case "FAIL":
-                        throw e;
-                    case "LOG":
-                        deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
-                        break;
-                    case "NOOP":
-                    default:
-                        break;
+                UnboundStringFlag flag = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
+                String value = flag.bindTo(flagSource).with(APPLICATION_ID, applicationId.serializedForm()).value();
+                switch (value) {
+                    case "FAIL" -> throw e;
+                    case "LOG" -> deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
+                    default -> log.log(Level.WARNING, "Unknown value for flag " + flag.id() + ": " + value);
                 }
             } else {
                 deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
