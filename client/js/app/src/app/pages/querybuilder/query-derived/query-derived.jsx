@@ -1,5 +1,12 @@
 import React from 'react';
-import { Badge, Group, JsonInput, Stack, Button } from '@mantine/core';
+import {
+  Badge,
+  Group,
+  JsonInput,
+  Stack,
+  Button,
+  CopyButton,
+} from '@mantine/core';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
 
@@ -9,14 +16,30 @@ export function QueryDerived() {
     <Stack>
       <Group position="apart">
         <Badge variant="filled">Query</Badge>
-        <Button
-          leftIcon={<Icon name="paste" />}
-          variant="outline"
-          size="xs"
-          compact
-        >
-          Paste JSON
-        </Button>
+        <Group spacing="xs">
+          <CopyButton value={query}>
+            {({ copied, copy }) => (
+              <Button
+                leftIcon={<Icon name={copied ? 'check' : 'copy'} />}
+                color={copied ? 'teal' : 'blue'}
+                variant="outline"
+                onClick={copy}
+                size="xs"
+                compact
+              >
+                Copy
+              </Button>
+            )}
+          </CopyButton>
+          <Button
+            leftIcon={<Icon name="paste" />}
+            variant="outline"
+            size="xs"
+            compact
+          >
+            Paste JSON
+          </Button>
+        </Group>
       </Group>
       <JsonInput
         styles={{
