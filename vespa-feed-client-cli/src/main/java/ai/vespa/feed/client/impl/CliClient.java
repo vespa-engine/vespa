@@ -214,11 +214,13 @@ public class CliClient {
 
             generator.writeNumberField("http.request.count", stats.requests());
             generator.writeNumberField("http.request.bytes", stats.bytesSent());
+            writeFloatField(generator, "http.request.MBps", stats.bytesSent() * 1e3 / durationNanos, 3);
 
             generator.writeNumberField("http.exception.count", stats.exceptions());
 
             generator.writeNumberField("http.response.count", stats.responses());
             generator.writeNumberField("http.response.bytes", stats.bytesReceived());
+            writeFloatField(generator, "http.response.MBps", stats.bytesReceived() * 1e3 / durationNanos, 3);
             generator.writeNumberField("http.response.error.count", stats.responses() - stats.successes());
             writeFloatField(generator, "http.response.latency.millis.min", stats.minLatencyMillis(), 3);
             writeFloatField(generator, "http.response.latency.millis.avg", stats.averageLatencyMillis(), 3);
