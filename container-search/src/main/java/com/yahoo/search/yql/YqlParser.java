@@ -106,7 +106,7 @@ public class YqlParser implements Parser {
     public static final String ASCENDING_HITS_ORDER = "ascending";
 
     private enum SegmentWhen {
-        NEVER, POSSIBLY, ALWAYS;
+        NEVER, POSSIBLY, ALWAYS
     }
 
     private static class IndexNameExpander {
@@ -290,7 +290,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(filterPart.getArguments().length == 2,
                                     "Expected 2 arguments to filter, got %s.",
                                     filterPart.getArguments().length);
-        populateYqlSources(filterPart.<OperatorNode<?>> getArgument(0));
+        populateYqlSources(filterPart.getArgument(0));
         OperatorNode<ExpressionOperator> filterExpression = filterPart.getArgument(1);
         Item root = convertExpression(filterExpression);
         connectItems();
@@ -617,6 +617,8 @@ public class YqlParser implements Parser {
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+            // TODO getIndex that is called once every term is rather expensive as it does sanity checking
+            // that is not necessary. This is an issue when having many elements
             sameElement.addItem(convertExpression(term));
         }
         swapIndexCreator(prev);
@@ -838,7 +840,7 @@ public class YqlParser implements Parser {
         OperatorNode<?> ast = toScan;
         while (ast.getOperator() == SequenceOperator.PIPE) {
             OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.<String> getArgument(0));
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.getArgument(0));
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             List<Object> continuations = getAnnotation(groupingAst, "continuations", List.class,
                                                        Collections.emptyList(), "grouping continuations");
@@ -854,8 +856,7 @@ public class YqlParser implements Parser {
     }
 
     private String dereference(Object constantOrVarref) {
-        if (constantOrVarref instanceof OperatorNode) {
-            OperatorNode<?> varref = (OperatorNode<?>)constantOrVarref;
+        if (constantOrVarref instanceof OperatorNode<?> varref) {
             Preconditions.checkState(userQuery != null,
                                      "properties must be available when trying to fetch user input");
             return userQuery.properties().getString(varref.getArgument(0, String.class));
@@ -871,7 +872,7 @@ public class YqlParser implements Parser {
         List<FieldOrder> sortingInit = new ArrayList<>();
         List<OperatorNode<?>> sortArguments = ast.getArgument(1);
         for (OperatorNode<?> op : sortArguments) {
-            OperatorNode<ExpressionOperator> fieldNode = op.<OperatorNode<ExpressionOperator>> getArgument(0);
+            OperatorNode<ExpressionOperator> fieldNode = op.getArgument(0);
             String field = fetchFieldRead(fieldNode);
             String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null,
                                           "locale used by sorting function");
@@ -963,7 +964,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(ast.getArguments().length == 2,
                                    "Expected 2 arguments to PROJECT, got %s.",
                                    ast.getArguments().length);
-        populateYqlSummaryFields(ast.<List<OperatorNode<ProjectOperator>>> getArgument(1));
+        populateYqlSummaryFields(ast.getArgument(1));
         return ast.getArgument(0);
     }
 
@@ -1127,7 +1128,6 @@ public class YqlParser implements Parser {
         return convertVarArgs(spec, 0, new OrItem());
     }
 
-    @SuppressWarnings("deprecation")
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
         Integer targetNumHits = getAnnotation(spec, TARGET_HITS,
@@ -1175,7 +1175,7 @@ public class YqlParser implements Parser {
         if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
             userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly (unless fuzzy is used)", 2);
         }
-        return instantiateLeafItem(field, ast.<OperatorNode<ExpressionOperator>> getArgument(1));
+        return instantiateLeafItem(field, ast.getArgument(1));
     }
 
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
@@ -1468,7 +1468,7 @@ public class YqlParser implements Parser {
                     wordItem = new WordItem(wordData, fromQuery);
                     break;
                 case POSSIBLY:
-                    if (shouldSegment(field, ast, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
+                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
                         wordItem = segment(field, ast, wordData, fromQuery, parent, language);
                     } else {
                         wordItem = new WordItem(wordData, fromQuery);
@@ -1489,7 +1489,7 @@ public class YqlParser implements Parser {
         return (Item) leafStyleSettings(ast, wordItem);
     }
 
-    private boolean shouldSegment(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery) {
+    private boolean shouldSegment(String field, boolean fromQuery) {
         return fromQuery && ! indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute();
     }
 
@@ -1584,8 +1584,7 @@ public class YqlParser implements Parser {
                 leaf.setWeight(weight);
             }
         }
-        if (out instanceof IntItem) {
-            IntItem number = (IntItem) out;
+        if (out instanceof IntItem number) {
             Integer hitLimit = getCappedRangeSearchParameter(ast);
             if (hitLimit != null) {
                 number.setHitLimit(hitLimit);
@@ -1822,7 +1821,7 @@ public class YqlParser implements Parser {
         Object value = ast.getAnnotation(key);
         for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null
                                                                        && considerParents && i.hasNext();) {
-            OperatorNode node = i.next();
+            OperatorNode<?> node = i.next();
             if (node.getOperator() == ExpressionOperator.VARREF) {
                 Preconditions.checkState(userQuery != null,
                                          "properties must be available when trying to fetch user input");
@@ -1886,8 +1885,7 @@ public class YqlParser implements Parser {
 
         @Override
         public boolean visit(Item item) {
-            if (item instanceof WordItem) {
-                WordItem w = (WordItem) item;
+            if (item instanceof WordItem w) {
                 if (usePositionData != null) {
                     w.setPositionData(usePositionData);
                 }
