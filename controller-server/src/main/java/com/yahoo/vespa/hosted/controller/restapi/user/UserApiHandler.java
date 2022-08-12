@@ -253,21 +253,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
-        if (requestObject.field("roles").valid()) {
-            return addMultipleTenantRoleMembers(tenantName, requestObject);
-        }
-        return addTenantRoleMember(tenantName, requestObject);
-    }
-
-    private HttpResponse addTenantRoleMember(String tenantName, Inspector requestObject) {
-        String roleName = require("roleName", Inspector::asString, requestObject);
-        UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = Roles.toRole(TenantName.from(tenantName), roleName);
-        users.addUsers(role, List.of(user));
-        return new MessageResponse(user + " is now a member of " + role);
-    }
-
-    private HttpResponse addMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
         var tenant = TenantName.from(tenantName);
         var user = new UserId(require("user", Inspector::asString, requestObject));
         var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
@@ -280,26 +265,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
-        if (requestObject.field("roles").valid()) {
-            return removeMultipleTenantRoleMembers(tenantName, requestObject);
-        }
-        return removeTenantRoleMember(tenantName, requestObject);
-    }
-
-    private HttpResponse removeTenantRoleMember(String tenantName, Inspector requestObject) {
-        TenantName tenant = TenantName.from(tenantName);
-        String roleName = require("roleName", Inspector::asString, requestObject);
-        UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        List<Role> roles = Collections.singletonList(Roles.toRole(tenant, roleName));
-
-        enforceLastAdminOfTenant(tenant, user, roles);
-        removeDeveloperKey(tenant, user, roles);
-        users.removeFromRoles(user, roles);
-
-        return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
-    }
-
-    private HttpResponse removeMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
         var tenant = TenantName.from(tenantName);
         var user = new UserId(require("user", Inspector::asString, requestObject));
         var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
