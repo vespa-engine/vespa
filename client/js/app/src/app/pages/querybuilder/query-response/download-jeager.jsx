@@ -1,7 +1,9 @@
+import { Button } from '@mantine/core';
 import React from 'react';
+import { Icon } from 'app/components';
 import transform from 'app/pages/querybuilder/TransformVespaTrace';
 
-export function DownloadJson({ children, response }) {
+export function DownloadJeager({ response, ...props }) {
   const handleClick = () => {
     let content;
     try {
@@ -27,5 +29,13 @@ export function DownloadJson({ children, response }) {
     URL.revokeObjectURL(href);
   };
 
-  return <button onClick={handleClick}>{children}</button>;
+  return (
+    <Button
+      {...props}
+      leftIcon={<Icon name="download" />}
+      onClick={handleClick}
+    >
+      Jaeger Format
+    </Button>
+  );
 }

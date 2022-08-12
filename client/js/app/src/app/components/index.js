@@ -7,4 +7,3 @@ export { Section } from 'app/components/containers/section';
 export { Link } from 'app/components/link/link';
 export { CardLink } from 'app/components/card-link/card-link';
 export { Icon } from 'app/components/icon/icon';
-export { DownloadJson } from 'app/components/download-json/download-json';

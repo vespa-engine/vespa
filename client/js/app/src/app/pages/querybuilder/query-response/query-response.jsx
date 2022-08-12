@@ -7,6 +7,7 @@ import {
   CopyButton,
   Textarea,
 } from '@mantine/core';
+import { DownloadJeager } from 'app/pages/querybuilder/query-response/download-jeager';
 import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
 
@@ -32,14 +33,12 @@ export function QueryResponse() {
               </Button>
             )}
           </CopyButton>
-          <Button
-            leftIcon={<Icon name="download" />}
+          <DownloadJeager
             variant="outline"
             size="xs"
             compact
-          >
-            Jaeger Format
-          </Button>
+            response={response}
+          />
         </Group>
       </Group>
       <Textarea
