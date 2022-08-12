@@ -443,6 +443,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         execute(request, response -> readEntity(response, Void.class));
     }
 
+    @Override
+    public void deletePolicy(AthenzDomain domain, String athenzPolicy) {
+        var uri = zmsUrl.resolve(String.format("domain/%s/policy/%s", domain.getName(), athenzPolicy));
+        var request = RequestBuilder.delete(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
         var uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true&auditLog=true", role.domain().getName(), role.roleName()));
         var request = RequestBuilder.get(uri).build();
