@@ -151,7 +151,6 @@
                                         <include>com.yahoo.vespa:config-model:*:jar:test</include>
                                         <include>com.yahoo.vespa:config-provisioning:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-apache-http-client-bundle:*:jar:test</include>
-                                        <include>com.yahoo.vespa:container-search-gui:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-test:*:jar:test</include>
                                         <include>com.yahoo.vespa:hosted-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:indexinglanguage:*:jar:test</include>

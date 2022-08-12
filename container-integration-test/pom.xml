@@ -16,12 +16,6 @@
     <version>8-SNAPSHOT</version>
     <dependencies>
         <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-search-gui</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${apache.httpclient.version}</version>

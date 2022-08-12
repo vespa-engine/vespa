@@ -929,7 +929,6 @@ fi
 %{_prefix}/lib/jars/container-apache-http-client-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
-%{_prefix}/lib/jars/container-search-gui-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-spifly.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
 %{_prefix}/lib/jars/flags-jar-with-dependencies.jar
