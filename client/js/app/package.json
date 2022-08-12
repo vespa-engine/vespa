@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "react": "^18",
-    "react-bootstrap": "^2.4.0",
     "react-dom": "^18"
   },
   "devDependencies": {
@@ -35,7 +34,6 @@
     "husky": "^7",
     "lodash": "^4",
     "prettier": "2",
-    "pretty-quick": "^3",
     "react-router-dom": "^6",
     "use-context-selector": "^1",
     "vite": "^2"
