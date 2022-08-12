@@ -26,8 +26,10 @@ export function QueryDerived() {
         }}
         value={query}
         validationError="Invalid json"
+        variant={'unstyled'}
         minRows={21}
         formatOnBlur
+        autosize
       />
     </Stack>
   );

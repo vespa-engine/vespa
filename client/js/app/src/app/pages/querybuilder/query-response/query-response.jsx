@@ -20,14 +20,14 @@ export function QueryResponse() {
           <CopyButton value={response}>
             {({ copied, copy }) => (
               <Button
-                leftIcon={<Icon name="copy" />}
+                leftIcon={<Icon name={copied ? 'check' : 'copy'} />}
                 color={copied ? 'teal' : 'blue'}
                 variant="outline"
                 onClick={copy}
                 size="xs"
                 compact
               >
-                {copied ? 'Copied' : 'Copy'}
+                Copy
               </Button>
             )}
           </CopyButton>
@@ -37,7 +37,7 @@ export function QueryResponse() {
             size="xs"
             compact
           >
-            Jeager Format
+            Jaeger Format
           </Button>
         </Group>
       </Group>
@@ -48,7 +48,9 @@ export function QueryResponse() {
           input: { height: '100%' },
         }}
         value={response}
+        variant={'unstyled'}
         minRows={21}
+        autosize
       />
     </Stack>
   );

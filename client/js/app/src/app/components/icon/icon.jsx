@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowsToDot,
   faChartGantt,
+  faCheck,
   faCircleMinus,
   faCopy,
   faDownload,
@@ -21,7 +22,8 @@ library.add(
   faPlus,
   faPaste,
   faDownload,
-  faCopy
+  faCopy,
+  faCheck
 );
 
 export function Icon({ name, type = 'solid', color, ...rest }) {
