@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Select, TextInput, Button } from '@mantine/core';
+import { errorMessage } from 'app/libs/notification';
 import {
   ACTION,
   dispatch,
@@ -7,7 +8,6 @@ import {
 } from 'app/pages/querybuilder/context/query-builder-provider';
 import { Container, Content } from 'app/components';
 
-// TODO: notify when error
 function send(method, url, query) {
   dispatch(ACTION.SET_HTTP, { loading: true });
   fetch(url, {
@@ -21,7 +21,10 @@ function send(method, url, query) {
         response: JSON.stringify(result, null, 4),
       })
     )
-    .catch((error) => dispatch(ACTION.SET_HTTP, { error }));
+    .catch((error) => {
+      errorMessage(error.message);
+      dispatch(ACTION.SET_HTTP, {});
+    });
 }
 
 export default function QueryEndpoint() {
@@ -29,6 +32,8 @@ export default function QueryEndpoint() {
   const [method, setMethod] = useState('POST');
   const [url, setUrl] = useState('http://localhost:8080/search/');
   const query = useQueryBuilderContext((ctx) => ctx.query.input);
+  const loading = useQueryBuilderContext((ctx) => ctx.http.loading);
+
   return (
     <Content>
       <Container sx={{ gridTemplateColumns: 'max-content auto max-content' }}>
@@ -43,7 +48,11 @@ export default function QueryEndpoint() {
           value={url}
           radius={0}
         />
-        <Button radius={0} onClick={() => send(method, url, query)}>
+        <Button
+          radius={0}
+          onClick={() => send(method, url, query)}
+          loading={loading}
+        >
           Send
         </Button>
       </Container>
