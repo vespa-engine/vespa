@@ -1,6 +1,6 @@
+import { cloneDeep, last } from 'lodash';
 import React, { useReducer } from 'react';
 import { createContext, useContextSelector } from 'use-context-selector';
-import { cloneDeep, last } from 'lodash';
 import parameters from 'app/pages/querybuilder/context/parameters';
 
 let _dispatch;
@@ -25,13 +25,19 @@ function inputsToJson(inputs) {
   );
 }
 
-function jsonToInputs(json, parent) {
+export function jsonToInputs(json, parent = root) {
   return Object.entries(json).map(([key, value], i) => {
     const node = {
       id: parent.id ? `${parent.id}.${i}` : i.toString(),
       type: parent.type.children[key],
       parent,
     };
+    if (!node.type) {
+      const location = parent.type.name
+        ? `under ${parent.type.name}`
+        : 'on root level';
+      throw new Error(`Unknown property '${key}' ${location}`);
+    }
     if (typeof value === 'object') {
       node.input = '';
       node.children = jsonToInputs(value, node);
@@ -100,7 +106,7 @@ function preReducer(state, { action, data }) {
   switch (action) {
     case ACTION.SET_QUERY: {
       try {
-        const children = jsonToInputs(JSON.parse(data), root);
+        const children = jsonToInputs(JSON.parse(data));
         return { ...state, query: { ...root, children } };
       } catch (error) {
         alert(`Failed to parse query: ${error}`); // TODO: Change to toast
