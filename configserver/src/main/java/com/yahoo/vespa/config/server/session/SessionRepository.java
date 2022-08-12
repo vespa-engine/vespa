@@ -686,6 +686,12 @@ public class SessionRepository {
         DeployData deployData = new DeployData(userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy,
                                                sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
+        validateFileExtensions(applicationId, deployLogger, app);
+
+        return app;
+    }
+
+    private void validateFileExtensions(ApplicationId applicationId, Optional<DeployLogger> deployLogger, FilesApplicationPackage app) {
         try {
             app.validateFileExtensions();
         } catch (IllegalArgumentException e) {
@@ -701,8 +707,6 @@ public class SessionRepository {
                 deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
             }
         }
-
-        return app;
     }
 
     private LocalSession createSessionFromApplication(File applicationDirectory,
