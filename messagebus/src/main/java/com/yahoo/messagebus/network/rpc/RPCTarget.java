@@ -160,8 +160,7 @@ public class RPCTarget implements RequestWaiter {
     /**
      * <p>Declares a version handler used when resolving the version of a
      * target. An instance of this is passed to {@link
-     * RPCTarget#resolveVersion(double,
-     * com.yahoo.messagebus.network.rpc.RPCTarget.VersionHandler)}, and invoked
+     * RPCTarget#resolveVersion(Duration, RPCTarget.VersionHandler)}, and invoked
      * either synchronously or asynchronously, depending on whether or not the
      * version is already available.</p>
      */
