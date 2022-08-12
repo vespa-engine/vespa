@@ -411,7 +411,7 @@ public class Flags {
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "FAIL",
             List.of("hmusum"), "2022-04-27", "2022-09-01",
-            "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values LOG, FAIL, NOOP)",
+            "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
