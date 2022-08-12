@@ -5,12 +5,17 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
+import java.util.Collection;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -21,10 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class SchemaChainsTest extends SchemaChainsTestBase {
 
+    private ChainsConfig chainsConfig;
     private ClusterConfig clusterConfig;
 
     @BeforeEach
     public void subscribe() {
+        ChainsConfig.Builder chainsBuilder = new ChainsConfig.Builder();
+        chainsBuilder = (ChainsConfig.Builder)root.getConfig(chainsBuilder, "searchchains");
+        chainsConfig = new ChainsConfig(chainsBuilder);
+
         ClusterConfig.Builder clusterBuilder = new ClusterConfig.Builder();
         clusterBuilder = (ClusterConfig.Builder)root.getConfig(clusterBuilder, "searchchains/chain/cluster2/component/" + ClusterSearcher.class.getName());
         clusterConfig = new ClusterConfig(clusterBuilder);
@@ -81,4 +91,79 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
         assertEquals("cluster2", clusterConfig.clusterName());
     }
 
+    private ChainsConfig.Chains findChain(String name) {
+        for (ChainsConfig.Chains chain : chainsConfig.chains()) {
+            if (name.equals(chain.id())) {
+                return chain;
+            }
+        }
+        return null;
+    }
+
+    private static boolean contains(Collection<ChainsConfig.Chains.Phases> phases, String name) {
+        for (var phase : phases) {
+            if (name.equals(phase.id())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void validateVespaPhasesChain(ChainsConfig.Chains chain) {
+        assertNotNull(chain);
+        assertEquals("vespaPhases", chain.id());
+        assertEquals(5, chain.phases().size());
+        assertTrue(contains(chain.phases(), PhaseNames.BACKEND));
+        assertTrue(contains(chain.phases(), PhaseNames.BLENDED_RESULT));
+        assertTrue(contains(chain.phases(), PhaseNames.RAW_QUERY));
+        assertTrue(contains(chain.phases(), PhaseNames.TRANSFORMED_QUERY));
+        assertTrue(contains(chain.phases(), PhaseNames.UNBLENDED_RESULT));
+        assertTrue(chain.inherits().isEmpty());
+        assertTrue(chain.components().isEmpty());
+        assertTrue(chain.excludes().isEmpty());
+        assertEquals(ChainsConfig.Chains.Type.SEARCH, chain.type());
+    }
+
+    private static void validateNativeChain(ChainsConfig.Chains chain) {
+        assertNotNull(chain);
+        assertEquals("native", chain.id());
+        assertTrue(chain.phases().isEmpty());
+        assertEquals(1, chain.inherits().size());
+        assertEquals("vespaPhases", chain.inherits(0));
+        assertEquals(2, chain.components().size());
+        assertEquals("federation@native", chain.components(0));
+        assertEquals("com.yahoo.prelude.statistics.StatisticsSearcher@native", chain.components(1));
+        assertTrue(chain.excludes().isEmpty());
+        assertEquals(ChainsConfig.Chains.Type.SEARCH, chain.type());
+    }
+
+    private static void validateVespaChain(ChainsConfig.Chains chain) {
+        assertNotNull(chain);
+        assertEquals("vespa", chain.id());
+        assertTrue(chain.phases().isEmpty());
+        assertEquals(1, chain.inherits().size());
+        assertEquals("native", chain.inherits(0));
+        assertEquals(10, chain.components().size());
+        assertEquals("com.yahoo.prelude.querytransform.PhrasingSearcher@vespa", chain.components(0));
+        assertEquals("com.yahoo.prelude.searcher.FieldCollapsingSearcher@vespa", chain.components(1));
+        assertEquals("com.yahoo.search.yql.MinimalQueryInserter@vespa", chain.components(2));
+        assertEquals("com.yahoo.search.yql.FieldFilter@vespa", chain.components(3));
+        assertEquals("com.yahoo.prelude.searcher.JuniperSearcher@vespa", chain.components(4));
+        assertEquals("com.yahoo.prelude.searcher.BlendingSearcher@vespa", chain.components(5));
+        assertEquals("com.yahoo.prelude.searcher.PosSearcher@vespa", chain.components(6));
+        assertEquals("com.yahoo.prelude.semantics.SemanticSearcher@vespa", chain.components(7));
+        assertEquals("com.yahoo.search.grouping.GroupingQueryParser@vespa", chain.components(8));
+        assertEquals("com.yahoo.search.querytransform.WeakAndReplacementSearcher@vespa", chain.components(9));
+        assertTrue(chain.excludes().isEmpty());
+        assertEquals(ChainsConfig.Chains.Type.SEARCH, chain.type());
+    }
+
+    @Test
+    public void require_all_default_chains_are_correct() {
+        assertEquals(61, chainsConfig.components().size());
+        assertEquals(10, chainsConfig.chains().size());
+        validateVespaPhasesChain(findChain("vespaPhases"));
+        validateNativeChain(findChain("native"));
+        validateVespaChain(findChain("vespa"));
+    }
 }
