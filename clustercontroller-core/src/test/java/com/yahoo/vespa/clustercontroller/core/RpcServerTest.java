@@ -147,10 +147,7 @@ public class RpcServerTest extends FleetControllerTest {
         Node node = new Node(nodeType, nodeIndex);
         NodeState newNodeState = new NodeState(nodeType, newState);
 
-        Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/" + node.getType().toString() + "/" + node.getIndex()));
-        req.parameters().add(new StringValue(newNodeState.serialize(true)));
-        connection.invokeSync(req, timeout.getSeconds());
+        Request req = setNodeState("storage/cluster.mycluster/" + node.getType().toString() + "/" + node.getIndex(), newNodeState, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("s"), req.toString());
     }
@@ -192,10 +189,7 @@ public class RpcServerTest extends FleetControllerTest {
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
-        Request req = new Request("getNodeState");
-        req.parameters().add(new StringValue("distributor"));
-        req.parameters().add(new Int32Value(0));
-        connection.invokeSync(req, timeout.getSeconds());
+        Request req = getNodeState("distributor", 0, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(0).asString()).getState());
@@ -203,48 +197,33 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(reported.getState().oneOf("d-"), req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("distributor"));
-        req.parameters().add(new Int32Value(2));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("distributor",2, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(0).asString()).getState());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.DISTRIBUTOR, req.returnValues().get(2).asString()).getState());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("distributor"));
-        req.parameters().add(new Int32Value(4));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("distributor", 4, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("", req.returnValues().get(0).asString());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("distributor"));
-        req.parameters().add(new Int32Value(15));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("distributor", 15, connection);
         assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
         assertEquals("No node distributor.15 exists in cluster mycluster", req.errorMessage());
         assertFalse(req.checkReturnTypes("ssss"), req.toString());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("storage"));
-        req.parameters().add(new Int32Value(1));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("storage", 1, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("s:i i:0.2", req.returnValues().get(0).asString());
         assertEquals("s:i i:0.2", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("storage"));
-        req.parameters().add(new Int32Value(2));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("storage", 2, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.DOWN, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(0).asString()).getState());
@@ -252,20 +231,14 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(reported.getState().oneOf("d-"), req.returnValues().get(1).asString());
         assertEquals(State.RETIRED, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(2).asString()).getState());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("storage"));
-        req.parameters().add(new Int32Value(5));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("storage", 5, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals("", req.returnValues().get(0).asString());
         assertEquals("t:946080000", req.returnValues().get(1).asString());
         assertEquals("", req.returnValues().get(2).asString());
 
-        req = new Request("getNodeState");
-        req.parameters().add(new StringValue("storage"));
-        req.parameters().add(new Int32Value(7));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = getNodeState("storage", 7, connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("ssss"), req.toString());
         assertEquals(State.MAINTENANCE, NodeState.deserialize(NodeType.STORAGE, req.returnValues().get(0).asString()).getState());
@@ -482,19 +455,13 @@ public class RpcServerTest extends FleetControllerTest {
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
-        Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/storage/14"));
-        req.parameters().add(new StringValue("s:r"));
-        connection.invokeSync(req, timeout.getSeconds());
+        Request req = setNodeState("storage/cluster.mycluster/storage/14", "s:r", connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("s"), req.toString());
 
         waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:r .*");
 
-        req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/storage/16"));
-        req.parameters().add(new StringValue("s:m"));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = setNodeState("storage/cluster.mycluster/storage/16", "s:m", connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
         assertTrue(req.checkReturnTypes("s"), req.toString());
 
@@ -527,24 +494,15 @@ public class RpcServerTest extends FleetControllerTest {
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
-        Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/storage/10"));
-        req.parameters().add(new StringValue("s:m"));
-        connection.invokeSync(req, timeout.getSeconds());
+        Request req = setNodeState("storage/cluster.mycluster/storage/10", "s:m", connection);
         assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
         assertEquals("Cannot set wanted state of node storage.10. Index does not correspond to a configured node.", req.errorMessage(), req.toString());
 
-        req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/distributor/10"));
-        req.parameters().add(new StringValue("s:m"));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = setNodeState("storage/cluster.mycluster/distributor/10", "s:m", connection);
         assertEquals(ErrorCode.METHOD_FAILED, req.errorCode(), req.toString());
         assertEquals("Cannot set wanted state of node distributor.10. Index does not correspond to a configured node.", req.errorMessage(), req.toString());
 
-        req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/storage/9"));
-        req.parameters().add(new StringValue("s:m"));
-        connection.invokeSync(req, timeout.getSeconds());
+        req = setNodeState("storage/cluster.mycluster/storage/9", "s:m", connection);
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
 
         waitForState("version:\\d+ distributor:10 storage:10 .9.s:m");
@@ -615,6 +573,26 @@ public class RpcServerTest extends FleetControllerTest {
             connection2.invokeSync(req2, timeout.getSeconds());
             assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
         }
+    }
+
+    private Request setNodeState(String node, NodeState newNodeState, Target connection) {
+        return setNodeState(node, newNodeState.serialize(true), connection);
+    }
+
+    private Request setNodeState(String node, String newNodeState, Target connection) {
+        Request req = new Request("setNodeState");
+        req.parameters().add(new StringValue(node));
+        req.parameters().add(new StringValue(newNodeState));
+        connection.invokeSync(req, timeout.getSeconds());
+        return req;
+    }
+
+    private Request getNodeState(String nodeType, int nodeIndex, Target connection) {
+        Request req = new Request("getNodeState");
+        req.parameters().add(new StringValue(nodeType));
+        req.parameters().add(new Int32Value(nodeIndex));
+        connection.invokeSync(req, timeout.getSeconds());
+        return req;
     }
 
 }
