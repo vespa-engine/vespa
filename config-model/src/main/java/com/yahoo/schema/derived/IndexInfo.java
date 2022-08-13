@@ -178,13 +178,11 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         PrimitiveDataType primitive = dataType.getPrimitiveType();
         if (primitive == PrimitiveDataType.STRING) return true;
         if (primitive != null) return false;
-        if (dataType instanceof StructuredDataType) {
-            StructuredDataType structured = (StructuredDataType) dataType;
+        if (dataType instanceof StructuredDataType structured) {
             for (Field field : structured.getFields()) {
                 if (isAnyChildString(field.getDataType())) return true;
             }
-        } else if (dataType instanceof MapDataType) {
-            MapDataType mapType = (MapDataType) dataType;
+        } else if (dataType instanceof MapDataType mapType) {
             return isAnyChildString(mapType.getKeyType()) || isAnyChildString(mapType.getValueType());
         }
         return false;
@@ -494,9 +492,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
      */
     public static class IndexCommand {
 
-        private String index;
+        private final String index;
 
-        private String command;
+        private final String command;
 
         public IndexCommand(String index, String command) {
             this.index = index;
@@ -523,14 +521,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
 
         public boolean equals(Object object) {
-            if (!(object instanceof IndexCommand)) {
+            if (!(object instanceof IndexCommand other)) {
                 return false;
             }
 
-            IndexCommand other = (IndexCommand)object;
-            return
-                    other.index.equals(this.index) &&
-                    other.command.equals(this.command);
+            return other.index.equals(this.index) &&
+                   other.command.equals(this.command);
         }
 
         public String toString() {
@@ -544,7 +540,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
      */
     private static abstract class IndexOverrider {
 
-        protected IndexInfo owner;
+        protected final IndexInfo owner;
 
         public IndexOverrider(IndexInfo owner) {
             this.owner = owner;
@@ -560,7 +556,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private static class StemmingOverrider extends IndexOverrider {
 
-        private Schema schema;
+        private final Schema schema;
 
         public StemmingOverrider(IndexInfo owner, Schema schema) {
             super(owner);
