@@ -2,28 +2,29 @@
 
 #include "verify_feature.h"
 #include "blueprintresolver.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.verify_feature");
+using vespalib::make_string_short::fmt;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 bool verifyFeature(const BlueprintFactory &factory,
                    const IIndexEnvironment &indexEnv,
                    const std::string &featureName,
-                   const std::string &desc)
+                   const std::string &desc,
+                   std::vector<vespalib::string> & errors)
 {
     indexEnv.hintFeatureMotivation(IIndexEnvironment::VERIFY_SETUP);
     BlueprintResolver resolver(factory, indexEnv);
     resolver.addSeed(featureName);
     bool result = resolver.compile();
     if (!result) {
-        LOG(error, "verification failed: %s (%s)",
-            BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
+        const BlueprintResolver::Errors & compileErrors(resolver.getCompileErrors());
+        errors.insert(errors.end(), compileErrors.begin(), compileErrors.end());
+        vespalib::string msg = fmt("verification failed: %s (%s)",BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
+        errors.emplace_back(msg);
     }
     return result;
 }
 
-} // namespace fef
-} // namespace search
+}

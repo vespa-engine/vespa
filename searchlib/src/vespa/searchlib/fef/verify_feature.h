@@ -4,10 +4,8 @@
 
 #include "blueprintfactory.h"
 #include "iindexenvironment.h"
-#include <string>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Verify whether a specific feature can be computed. If the feature
@@ -23,8 +21,7 @@ namespace fef {
 bool verifyFeature(const BlueprintFactory &factory,
                    const IIndexEnvironment &indexEnv,
                    const std::string &featureName,
-                   const std::string &desc);
+                   const std::string &desc,
+                   std::vector<vespalib::string> & errors);
 
-} // namespace fef
-} // namespace search
-
+}

@@ -102,7 +102,8 @@ struct Fixture {
     }
 
     bool verify(const vespalib::string &feature) {
-        return verifyFeature(factory, indexEnv, feature, "unit test");
+        std::vector<vespalib::string> errors;
+        return verifyFeature(factory, indexEnv, feature, "unit test", errors);
     }
 };
 

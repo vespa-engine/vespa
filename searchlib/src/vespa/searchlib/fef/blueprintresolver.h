@@ -24,7 +24,8 @@ class FeatureNameParser;
 class BlueprintResolver
 {
 public:
-    typedef std::shared_ptr<BlueprintResolver> SP;
+    using SP = std::shared_ptr<BlueprintResolver>;
+    using Errors = std::vector<vespalib::string>;
 
     /**
      * Low-level reference to a single output from a feature
@@ -44,7 +45,7 @@ public:
             : executor(executor_in), output(output_in) {}
         bool valid() { return (executor != undef); }
     };
-    typedef std::map<vespalib::string, FeatureRef> FeatureMap;
+    using FeatureMap = std::map<vespalib::string, FeatureRef>;
 
     /**
      * Thin blueprint wrapper with additional information about how
@@ -59,7 +60,7 @@ public:
         ExecutorSpec(Blueprint::SP blueprint_in);
         ~ExecutorSpec();
     };
-    typedef std::vector<ExecutorSpec> ExecutorSpecList;
+    using ExecutorSpecList = std::vector<ExecutorSpec>;
 
     /**
      * The maximum dependency depth. This value is defined to protect
@@ -84,6 +85,7 @@ private:
     ExecutorSpecList              _executorSpecs;
     FeatureMap                    _featureMap;
     FeatureMap                    _seedMap;
+    Errors                        _compileErrors;
 
 public:
     BlueprintResolver(const BlueprintResolver &) = delete;
@@ -134,7 +136,7 @@ public:
      *
      * @return feature executor assembly directions
      **/
-    const ExecutorSpecList &getExecutorSpecs() const;
+    const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
 
     /**
      * Obtain the location of all named features known to this
@@ -145,7 +147,7 @@ public:
      *
      * @return feature locations
      **/
-    const FeatureMap &getFeatureMap() const;
+    const FeatureMap &getFeatureMap() const { return _featureMap; }
 
     /**
      * Obtain the location of all seeds used by this resolver. This
@@ -156,7 +158,13 @@ public:
      *
      * @return seed locations
      **/
-    const FeatureMap &getSeedMap() const;
+    const FeatureMap &getSeedMap() const { return _seedMap; }
+
+    /**
+     * Will return any accumulated errors during compile
+     * @return list of errors
+     **/
+    const Errors & getCompileErrors() const { return _compileErrors; }
 };
 
 }

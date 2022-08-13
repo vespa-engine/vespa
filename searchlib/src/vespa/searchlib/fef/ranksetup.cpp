@@ -3,9 +3,9 @@
 #include "ranksetup.h"
 #include "indexproperties.h"
 #include "featurenameparser.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.ranksetup");
+using vespalib::make_string_short::fmt;
 
 namespace {
 class VisitorAdapter : public search::fef::IDumpFeatureVisitor
@@ -53,6 +53,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
+      _compileErrors(),
       _feature_rename_map(),
       _ignoreDefaultRankFeatures(false),
       _compiled(false),
@@ -134,50 +135,59 @@ RankSetup::configure()
 void
 RankSetup::setFirstPhaseRank(const vespalib::string &featureName)
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     _firstPhaseRankFeature = featureName;
 }
 
 void
 RankSetup::setSecondPhaseRank(const vespalib::string &featureName)
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     _secondPhaseRankFeature = featureName;
 }
 
 void
 RankSetup::add_match_feature(const vespalib::string &match_feature)
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     _match_features.push_back(match_feature);
 }
 
 void
 RankSetup::addSummaryFeature(const vespalib::string &summaryFeature)
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     _summaryFeatures.push_back(summaryFeature);
 }
 
 void
 RankSetup::addDumpFeature(const vespalib::string &dumpFeature)
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     _dumpFeatures.push_back(dumpFeature);
 }
 
+void
+RankSetup::compileAndCheckForErrors(BlueprintResolver &bpr) {
+    bool ok = bpr.compile();
+    if ( ! ok ) {
+        _compileError = true;
+        const Errors & errors = bpr.getCompileErrors();
+        _compileErrors.insert(_compileErrors.end(), errors.begin(), errors.end());
+    }
+}
 bool
 RankSetup::compile()
 {
-    LOG_ASSERT(!_compiled);
+    assert(!_compiled);
     if (!_firstPhaseRankFeature.empty()) {
         FeatureNameParser parser(_firstPhaseRankFeature);
         if (parser.valid()) {
             _firstPhaseRankFeature = parser.featureName();
             _first_phase_resolver->addSeed(_firstPhaseRankFeature);
         } else {
-            LOG(warning, "invalid feature name for initial rank: '%s'",
-                _firstPhaseRankFeature.c_str());
+            vespalib::string e = fmt("invalid feature name for initial rank: '%s'", _firstPhaseRankFeature.c_str());
+            _compileErrors.emplace_back(e);
             _compileError = true;
         }
     }
@@ -187,8 +197,8 @@ RankSetup::compile()
             _secondPhaseRankFeature = parser.featureName();
             _second_phase_resolver->addSeed(_secondPhaseRankFeature);
         } else {
-            LOG(warning, "invalid feature name for final rank: '%s'",
-                _secondPhaseRankFeature.c_str());
+            vespalib::string e = fmt("invalid feature name for final rank: '%s'", _secondPhaseRankFeature.c_str());
+            _compileErrors.emplace_back(e);
             _compileError = true;
         }
     }
@@ -206,12 +216,12 @@ RankSetup::compile()
         _dumpResolver->addSeed(feature);
     }
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::RANK);
-    _compileError |= !_first_phase_resolver->compile();
-    _compileError |= !_second_phase_resolver->compile();
-    _compileError |= !_match_resolver->compile();
-    _compileError |= !_summary_resolver->compile();
+    compileAndCheckForErrors(*_first_phase_resolver);
+    compileAndCheckForErrors(*_second_phase_resolver);
+    compileAndCheckForErrors(*_match_resolver);
+    compileAndCheckForErrors(*_summary_resolver);
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::DUMP);
-    _compileError |= !_dumpResolver->compile();
+    compileAndCheckForErrors(*_dumpResolver);
     _compiled = true;
     return !_compileError;
 }
@@ -219,7 +229,7 @@ RankSetup::compile()
 void
 RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const
 {
-    LOG_ASSERT(_compiled && !_compileError);
+    assert(_compiled && !_compileError);
     for (const auto &spec : _first_phase_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }

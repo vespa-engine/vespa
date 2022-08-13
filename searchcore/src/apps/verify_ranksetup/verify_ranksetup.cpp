@@ -21,11 +21,12 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
-#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <optional>
 
 #include <vespa/log/log.h>
-LOG_SETUP("vespa-verify-ranksetup");
+LOG_SETUP(".verify-ranksetup");
 
 using config::ConfigContext;
 using config::ConfigHandle;
@@ -50,8 +51,10 @@ using vespalib::eval::SimpleConstantValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::make_string_short::fmt;
 
-std::optional<vespalib::string> get_file(const vespalib::string &ref, const VerifyRanksetupConfig &myCfg) {
+std::optional<vespalib::string>
+get_file(const vespalib::string &ref, const VerifyRanksetupConfig &myCfg) {
     for (const auto &entry: myCfg.file) {
         if (ref == entry.ref) {
             return entry.path;
@@ -60,7 +63,8 @@ std::optional<vespalib::string> get_file(const vespalib::string &ref, const Veri
     return std::nullopt;
 }
 
-RankingExpressions make_expressions(const RankingExpressionsConfig &expressionsCfg, const VerifyRanksetupConfig &myCfg) {
+RankingExpressions
+make_expressions(const RankingExpressionsConfig &expressionsCfg, const VerifyRanksetupConfig &myCfg) {
     RankingExpressions expressions;
     for (const auto &entry: expressionsCfg.expression) {
         if (auto file = get_file(entry.fileref, myCfg)) {
@@ -74,7 +78,8 @@ RankingExpressions make_expressions(const RankingExpressionsConfig &expressionsC
     return expressions;
 }
 
-OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupConfig &myCfg) {
+OnnxModels
+make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupConfig &myCfg) {
     OnnxModels::Vector model_list;
     for (const auto &entry: modelsCfg.model) {
         if (auto file = get_file(entry.fileref, myCfg)) {
@@ -88,9 +93,10 @@ OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupC
     return OnnxModels(model_list);
 }
 
-class App
+class VerifyRankSetup
 {
-public:
+private:
+    std::vector<vespalib::string> _errors;
     bool verify(const search::index::Schema &schema,
                 const search::fef::Properties &props,
                 const IConstantValueRepo &repo,
@@ -105,30 +111,42 @@ public:
                       const RankingExpressionsConfig &expressionsCfg,
                       const OnnxModelsConfig &modelsCfg);
 
-    int usage();
-    int main(int argc, char **argv);
+public:
+    VerifyRankSetup();
+    ~VerifyRankSetup();
+    const std::vector<vespalib::string> & getMessages() const { return _errors; }
+    bool verify(const std::string & configId);
 };
 
 struct DummyConstantValueRepo : IConstantValueRepo {
     const RankingConstantsConfig &cfg;
     DummyConstantValueRepo(const RankingConstantsConfig &cfg_in) : cfg(cfg_in) {}
-    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override {
-        for (const auto &entry: cfg.constant) {
-            if (entry.name == name) {
-                try {
-                    auto tensor = vespalib::eval::value_from_spec(TensorSpec(entry.type), FastValueBuilderFactory::get());
-                    return std::make_unique<SimpleConstantValue>(std::move(tensor));
-                } catch (std::exception &) {
-                    return std::make_unique<BadConstantValue>();
-                }
-            }
-        }
-        return vespalib::eval::ConstantValue::UP(nullptr);
-    }
+    vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
 };
 
+vespalib::eval::ConstantValue::UP
+DummyConstantValueRepo::getConstant(const vespalib::string &name) const {
+    for (const auto &entry: cfg.constant) {
+        if (entry.name == name) {
+            try {
+                auto tensor = vespalib::eval::value_from_spec(TensorSpec(entry.type), FastValueBuilderFactory::get());
+                return std::make_unique<SimpleConstantValue>(std::move(tensor));
+            } catch (std::exception &) {
+                return std::make_unique<BadConstantValue>();
+            }
+        }
+    }
+    return vespalib::eval::ConstantValue::UP(nullptr);
+}
+
+VerifyRankSetup::VerifyRankSetup()
+    : _errors()
+{ }
+
+VerifyRankSetup::~VerifyRankSetup() = default;
+
 bool
-App::verify(const search::index::Schema &schema,
+VerifyRankSetup::verify(const search::index::Schema &schema,
             const search::fef::Properties &props,
             const IConstantValueRepo &repo,
             const RankingExpressions &expressions,
@@ -143,25 +161,25 @@ App::verify(const search::index::Schema &schema,
     rankSetup.configure(); // reads config values from the property map
     bool ok = true;
     if (!rankSetup.getFirstPhaseRank().empty()) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getFirstPhaseRank(), "first phase ranking") && ok;
+        ok = verifyFeature(factory, indexEnv, rankSetup.getFirstPhaseRank(), "first phase ranking", _errors) && ok;
     }
     if (!rankSetup.getSecondPhaseRank().empty()) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getSecondPhaseRank(), "second phase ranking") && ok;
+        ok = verifyFeature(factory, indexEnv, rankSetup.getSecondPhaseRank(), "second phase ranking", _errors) && ok;
     }
     for (size_t i = 0; i < rankSetup.getSummaryFeatures().size(); ++i) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getSummaryFeatures()[i], "summary features") && ok;
+        ok = verifyFeature(factory, indexEnv, rankSetup.getSummaryFeatures()[i], "summary features", _errors) && ok;
     }
     for (const auto & feature : rankSetup.get_match_features()) {
-        ok = verifyFeature(factory, indexEnv, feature, "match features") && ok;
+        ok = verifyFeature(factory, indexEnv, feature, "match features", _errors) && ok;
     }
     for (size_t i = 0; i < rankSetup.getDumpFeatures().size(); ++i) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getDumpFeatures()[i], "dump features") && ok;
+        ok = verifyFeature(factory, indexEnv, rankSetup.getDumpFeatures()[i], "dump features", _errors) && ok;
     }
     return ok;
 }
 
 bool
-App::verifyConfig(const VerifyRanksetupConfig &myCfg,
+VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
                   const RankProfilesConfig &rankCfg,
                   const IndexschemaConfig &schemaCfg,
                   const AttributesConfig &attributeCfg,
@@ -183,31 +201,22 @@ App::verifyConfig(const VerifyRanksetupConfig &myCfg,
             properties.add(profile.fef.property[j].name,
                            profile.fef.property[j].value);
         }
+        vespalib::string msg;
         if (verify(schema, properties, repo, expressions, models)) {
-            LOG(info, "rank profile '%s': pass", profile.name.c_str());
+            msg = fmt("rank profile '%s': pass", profile.name.c_str());
+            LOG(info, "%s", msg.c_str());
         } else {
-            LOG(error, "rank profile '%s': FAIL", profile.name.c_str());
+            LOG(error, "%s", msg.c_str());
             ok = false;
         }
+        _errors.emplace_back(msg);
     }
     return ok;
 }
 
-int
-App::usage()
+bool
+VerifyRankSetup::verify(const std::string & configid)
 {
-    fprintf(stderr, "Usage: vespa-verify-ranksetup <config-id>\n");
-    return 1;
-}
-
-int
-App::main(int argc, char **argv)
-{
-    if (argc != 2) {
-        return usage();
-    }
-
-    const std::string configid = argv[1];
     LOG(debug, "verifying rank setup for config id '%s' ...",
         configid.c_str());
 
@@ -233,18 +242,25 @@ App::main(int argc, char **argv)
                           *expressionsHandle->getConfig(),
                           *modelsHandle->getConfig());
     } catch (ConfigRuntimeException & e) {
-        LOG(error, "Unable to subscribe to config: %s", e.getMessage().c_str());
+        vespalib::string msg = fmt("Unable to subscribe to config: %s", e.getMessage().c_str());
+        LOG(error, "%s", msg.c_str());
+        _errors.emplace_back(msg);
     } catch (InvalidConfigException & e) {
-        LOG(error, "Error getting config: %s", e.getMessage().c_str());
+        vespalib::string msg = fmt("Error getting config: %s", e.getMessage().c_str());
+        LOG(error, "%s", msg.c_str());
+        _errors.emplace_back(msg);
     }
-    if (!ok) {
-        return 1;
-    }
-    return 0;
+    return ok;
 }
 
-int main(int argc, char **argv) {
-    vespalib::SignalHandler::PIPE.ignore();
-    App app;
-    return app.main(argc, argv);
+bool
+verifyRankSetup(const char * configId, std::string & messages) {
+    VerifyRankSetup verifier;
+    bool ok = verifier.verify(configId);
+    vespalib::asciistream os;
+    for (const auto & m : verifier.getMessages()) {
+        os << m << "\n";
+    }
+    messages = os.str();
+    return ok;
 }
