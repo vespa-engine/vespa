@@ -17,7 +17,7 @@ export function QueryResponse() {
   return (
     <Stack>
       <Group position="apart">
-        <Badge variant="filled">Query response</Badge>
+        <Badge variant="filled">Response</Badge>
         <Group spacing="xs">
           <CopyButton value={response}>
             {({ copied, copy }) => (

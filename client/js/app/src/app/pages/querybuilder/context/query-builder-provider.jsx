@@ -10,11 +10,23 @@ const context = createContext(null);
 export const ACTION = Object.freeze({
   SET_QUERY: 0,
   SET_HTTP: 1,
+  SET_METHOD: 2,
+  SET_URL: 3,
 
   INPUT_ADD: 10,
   INPUT_UPDATE: 11,
   INPUT_REMOVE: 12,
 });
+
+function inputsToSearchParams(inputs, parent) {
+  return inputs.reduce((acc, { input, type: { name }, children }) => {
+    const key = parent ? `${parent}.${name}` : name;
+    return Object.assign(
+      acc,
+      children ? inputsToSearchParams(children, key) : { [key]: input }
+    );
+  }, {});
+}
 
 function inputsToJson(inputs) {
   return Object.fromEntries(
@@ -53,9 +65,9 @@ function parseInput(input, type) {
   return input;
 }
 
-function inputAdd(query, { id: parentId, type: typeName }) {
-  const inputs = cloneDeep(query.children);
-  const parent = parentId ? findInput(inputs, parentId) : query;
+function inputAdd(params, { id: parentId, type: typeName }) {
+  const inputs = cloneDeep(params.children);
+  const parent = parentId ? findInput(inputs, parentId) : params;
 
   const nextId =
     parseInt(last(last(parent.children)?.id?.split('.')) ?? -1) + 1;
@@ -68,21 +80,21 @@ function inputAdd(query, { id: parentId, type: typeName }) {
       type.children && { children: [] }
     )
   );
-  return { ...query, children: inputs };
+  return { ...params, children: inputs };
 }
 
-function inputUpdate(query, { id, ...props }) {
+function inputUpdate(params, { id, ...props }) {
   const keys = Object.keys(props);
   if (keys.length !== 1)
     throw new Error(`Expected to update exactly 1 input prop, got: ${keys}`);
   if (!['input', 'type'].includes(keys[0]))
     throw new Error(`Cannot update key ${keys[0]}`);
 
-  const inputs = cloneDeep(query.children);
+  const inputs = cloneDeep(params.children);
   const node = Object.assign(findInput(inputs, id), props);
   if (node.type.children) node.children = [];
   else delete node.children;
-  return { ...query, children: inputs };
+  return { ...params, children: inputs };
 }
 
 function findInput(inputs, id, Delete = false) {
@@ -95,9 +107,25 @@ function findInput(inputs, id, Delete = false) {
 
 function reducer(state, action) {
   const result = preReducer(state, action);
-  if (state.query.children !== result.query.children) {
-    const json = inputsToJson(result.query.children);
-    result.query.input = JSON.stringify(json, null, 4);
+  const { request: sr, params: sp } = state;
+  const { request: rr, params: rp } = result;
+  if (sp.children !== rp.children || sr.method !== rr.method) {
+    result.query =
+      rr.method === 'POST'
+        ? JSON.stringify(inputsToJson(rp.children), null, 4)
+        : new URLSearchParams(inputsToSearchParams(rp.children)).toString();
+  }
+
+  if (sr.url !== rr.url || state.query !== result.query) {
+    if (rr.method === 'POST') {
+      rr.fullUrl = rr.url;
+      rr.body = result.query;
+    } else {
+      const url = new URL(rr.url);
+      url.search = result.query;
+      rr.fullUrl = url.toString();
+      rr.body = null;
+    }
   }
   return result;
 }
@@ -107,22 +135,26 @@ function preReducer(state, { action, data }) {
     case ACTION.SET_QUERY: {
       try {
         const children = jsonToInputs(JSON.parse(data));
-        return { ...state, query: { ...root, children } };
+        return { ...state, params: { ...root, children } };
       } catch (error) {
         return state;
       }
     }
     case ACTION.SET_HTTP:
       return { ...state, http: data };
+    case ACTION.SET_METHOD:
+      return { ...state, request: { ...state.request, method: data } };
+    case ACTION.SET_URL:
+      return { ...state, request: { ...state.request, url: data } };
 
     case ACTION.INPUT_ADD:
-      return { ...state, query: inputAdd(state.query, data) };
+      return { ...state, params: inputAdd(state.params, data) };
     case ACTION.INPUT_UPDATE:
-      return { ...state, query: inputUpdate(state.query, data) };
+      return { ...state, params: inputUpdate(state.params, data) };
     case ACTION.INPUT_REMOVE: {
-      const inputs = cloneDeep(state.query.children);
+      const inputs = cloneDeep(state.params.children);
       findInput(inputs, data, true);
-      return { ...state, query: { ...state.query, children: inputs } };
+      return { ...state, params: { ...state.params, children: inputs } };
     }
 
     default:
@@ -133,7 +165,11 @@ function preReducer(state, { action, data }) {
 export function QueryBuilderProvider({ children }) {
   const [value, dispatch] = useReducer(
     reducer,
-    { http: {}, query: { ...root, input: '', children: [] } },
+    {
+      request: { url: 'http://localhost:8080/search/', method: 'POST' },
+      http: {},
+      params: { ...root, children: [] },
+    },
     (s) => reducer(s, { action: ACTION.SET_QUERY, data: '{"yql":""}' })
   );
   _dispatch = dispatch;

@@ -121,11 +121,11 @@ function Inputs({ id, type, inputs }) {
 }
 
 export function QueryFilters() {
-  const { children, type } = useQueryBuilderContext('query');
+  const { children, type } = useQueryBuilderContext('params');
   return (
     <Stack>
       <Group>
-        <Badge variant="filled">Query filters</Badge>
+        <Badge variant="filled">Parameters</Badge>
       </Group>
       <Container sx={{ alignContent: 'start' }}>
         <Content padding={0}>

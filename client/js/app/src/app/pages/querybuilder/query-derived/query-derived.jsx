@@ -12,7 +12,7 @@ import { Icon } from 'app/components';
 import { PasteModal } from 'app/pages/querybuilder/query-derived/paste-modal';
 
 export function QueryDerived() {
-  const query = useQueryBuilderContext((ctx) => ctx.query.input);
+  const query = useQueryBuilderContext('query');
 
   return (
     <Stack>
