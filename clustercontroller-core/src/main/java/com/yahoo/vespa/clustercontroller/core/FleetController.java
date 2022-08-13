@@ -22,7 +22,6 @@ import com.yahoo.vespa.clustercontroller.core.status.ClusterStateRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.LegacyIndexPageRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.LegacyNodePageRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.NodeHealthRequestHandler;
-import com.yahoo.vespa.clustercontroller.core.status.RunDataExtractor;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
@@ -101,13 +100,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     // deriving is done.
     private Set<String> configuredBucketSpaces = Collections.emptySet();
 
-    private final RunDataExtractor dataExtractor = new RunDataExtractor() {
-        @Override
-        public FleetControllerOptions getOptions() { return options; }
-        @Override
-        public ContentCluster getCluster() { return cluster; }
-    };
-
     public FleetController(FleetControllerContext context,
                            Timer timer,
                            EventLog eventLog,
@@ -155,8 +147,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 new ClusterStateRequestHandler(stateVersionTracker));
         this.statusRequestRouter.addHandler(
                 "^/$",
-                new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog,
-                                                  timer.getCurrentTimeInMillis(), dataExtractor));
+                new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog, options));
 
         propagateOptions();
     }
@@ -1240,4 +1231,5 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public EventLog getEventLog() {
         return eventLog;
     }
+
 }
