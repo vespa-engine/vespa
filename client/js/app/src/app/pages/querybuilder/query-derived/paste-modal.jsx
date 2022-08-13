@@ -29,9 +29,15 @@ function PasteForm({ close }) {
   return (
     <Stack>
       <Textarea
+        styles={(theme) => ({
+          input: {
+            fontFamily: theme.fontFamilyMonospace,
+            fontSize: theme.fontSizes.xs,
+          },
+        })}
         placeholder="Your Vespa query JSON"
         error={error}
-        minRows={34}
+        minRows={21}
         value={query}
         onChange={({ target }) => setQuery(target.value)}
         autosize

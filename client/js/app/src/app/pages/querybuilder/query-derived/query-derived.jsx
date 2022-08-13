@@ -37,11 +37,12 @@ export function QueryDerived() {
         </Group>
       </Group>
       <Textarea
-        styles={{
-          root: { height: '100%' },
-          wrapper: { height: '100%' },
-          input: { height: '100%' },
-        }}
+        styles={(theme) => ({
+          input: {
+            fontFamily: theme.fontFamilyMonospace,
+            fontSize: theme.fontSizes.xs,
+          },
+        })}
         value={query}
         variant="unstyled"
         minRows={21}
