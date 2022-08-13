@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class SearchChainTestCase {
 
     @Test
@@ -87,7 +86,7 @@ public class SearchChainTestCase {
     private List<Searcher> createSearchers(int count) {
         List<Searcher> searchers=new ArrayList<>(count);
         for (int i=0; i<count; i++)
-            searchers.add(new TestSearcher("s" + String.valueOf(i+1)));
+            searchers.add(new TestSearcher("s" + (i+1)));
         return searchers;
     }
 
