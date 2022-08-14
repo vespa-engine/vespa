@@ -1,4 +1,4 @@
-import { cloneDeep, last } from 'lodash';
+import { last, set } from 'lodash';
 import React, { useReducer } from 'react';
 import { createContext, useContextSelector } from 'use-context-selector';
 import parameters from 'app/pages/querybuilder/context/parameters';
@@ -18,6 +18,11 @@ export const ACTION = Object.freeze({
   INPUT_REMOVE: 12,
 });
 
+function cloneParams(params) {
+  if (!params.children) return { ...params };
+  return { ...params, children: params.children.map(cloneParams) };
+}
+
 function inputsToSearchParams(inputs, parent) {
   return inputs.reduce((acc, { input, type: { name }, children }) => {
     const key = parent ? `${parent}.${name}` : name;
@@ -26,6 +31,14 @@ function inputsToSearchParams(inputs, parent) {
       children ? inputsToSearchParams(children, key) : { [key]: input }
     );
   }, {});
+}
+
+function searchParamsToInputs(search) {
+  const json = [...new URLSearchParams(search).entries()].reduce(
+    (acc, [key, value]) => set(acc, key, value),
+    {}
+  );
+  return jsonToInputs(json);
 }
 
 function inputsToJson(inputs) {
@@ -37,23 +50,32 @@ function inputsToJson(inputs) {
   );
 }
 
-export function jsonToInputs(json, parent = root) {
+function jsonToInputs(json, parent = root) {
   return Object.entries(json).map(([key, value], i) => {
     const node = {
       id: parent.id ? `${parent.id}.${i}` : i.toString(),
       type: parent.type.children[key],
-      parent,
     };
     if (!node.type) {
       const location = parent.type.name
-        ? `under ${parent.type.name}`
+        ? `under '${parent.type.name}'`
         : 'on root level';
       throw new Error(`Unknown property '${key}' ${location}`);
     }
-    if (typeof value === 'object') {
+    if (value != null && typeof value === 'object') {
+      if (!node.type.children)
+        throw new Error(`Expected property '${key}' to be ${node.type.type}`);
       node.input = '';
       node.children = jsonToInputs(value, node);
-    } else node.input = value.toString();
+    } else {
+      if (node.type.children)
+        throw new Error(
+          `Property '${key}' cannot have value, supported children: ${Object.keys(
+            node.type.children
+          ).sort()}`
+        );
+      node.input = value?.toString();
+    }
     return node;
   });
 }
@@ -66,8 +88,8 @@ function parseInput(input, type) {
 }
 
 function inputAdd(params, { id: parentId, type: typeName }) {
-  const inputs = cloneDeep(params.children);
-  const parent = parentId ? findInput(inputs, parentId) : params;
+  const cloned = cloneParams(params);
+  const parent = findInput(cloned, parentId);
 
   const nextId =
     parseInt(last(last(parent.children)?.id?.split('.')) ?? -1) + 1;
@@ -75,58 +97,73 @@ function inputAdd(params, { id: parentId, type: typeName }) {
   const type = parent.type.children[typeName];
 
   parent.children.push(
-    Object.assign(
-      { id, input: '', type, parent },
-      type.children && { children: [] }
-    )
+    Object.assign({ id, input: '', type }, type.children && { children: [] })
   );
-  return { ...params, children: inputs };
+
+  return cloned;
 }
 
-function inputUpdate(params, { id, ...props }) {
-  const keys = Object.keys(props);
-  if (keys.length !== 1)
-    throw new Error(`Expected to update exactly 1 input prop, got: ${keys}`);
-  if (!['input', 'type'].includes(keys[0]))
-    throw new Error(`Cannot update key ${keys[0]}`);
+function inputUpdate(params, { id, type, input }) {
+  const cloned = cloneParams(params);
+  const node = findInput(cloned, id);
+  if (type) {
+    const parent = findInput(cloned, id.substring(0, id.lastIndexOf('.')));
+    node.type = parent.type.children[type];
+  }
+  if (input) node.input = input;
 
-  const inputs = cloneDeep(params.children);
-  const node = Object.assign(findInput(inputs, id), props);
   if (node.type.children) node.children = [];
   else delete node.children;
-  return { ...params, children: inputs };
+  return cloned;
 }
 
-function findInput(inputs, id, Delete = false) {
+function findInput(params, id, Delete = false) {
+  if (!id) return params;
   let end = -1;
   while ((end = id.indexOf('.', end + 1)) > 0)
-    inputs = inputs.find((input) => input.id === id.substring(0, end)).children;
-  const index = inputs.findIndex((input) => input.id === id);
-  return Delete ? inputs.splice(index, 1)[0] : inputs[index];
+    params = params.children.find((input) => input.id === id.substring(0, end));
+  const index = params.children.findIndex((input) => input.id === id);
+  return Delete ? params.children.splice(index, 1)[0] : params.children[index];
 }
 
-function reducer(state, action) {
-  const result = preReducer(state, action);
-  const { request: sr, params: sp } = state;
-  const { request: rr, params: rp } = result;
-  if (sp.children !== rp.children || sr.method !== rr.method) {
-    result.query =
-      rr.method === 'POST'
-        ? JSON.stringify(inputsToJson(rp.children), null, 4)
-        : new URLSearchParams(inputsToSearchParams(rp.children)).toString();
+export function reducer(state, action) {
+  if (state == null) {
+    state = { http: {}, params: {}, query: {}, request: {} };
+
+    return [
+      [ACTION.SET_URL, 'http://localhost:8080/search/'],
+      [ACTION.SET_QUERY, 'yql='],
+      [ACTION.SET_METHOD, 'POST'],
+    ].reduce((s, [action, data]) => reducer(s, { action, data }), state);
   }
 
-  if (sr.url !== rr.url || state.query !== result.query) {
+  const result = preReducer(state, action);
+  const { request: sr, params: sp, query: sq } = state;
+  const { request: rr, params: rp, query: rq } = result;
+
+  if ((sp.children !== rp.children && sq === rq) || sr.method !== rr.method)
+    result.query = {
+      input:
+        rr.method === 'POST'
+          ? JSON.stringify(inputsToJson(rp.children), null, 4)
+          : new URLSearchParams(inputsToSearchParams(rp.children)).toString(),
+    };
+
+  const input = result.query.input;
+  if (sr.url !== rr.url || sq.input !== input || sr.method !== rr.method) {
     if (rr.method === 'POST') {
-      rr.fullUrl = rr.url;
-      rr.body = result.query;
+      result.request = { ...result.request, fullUrl: rr.url, body: input };
     } else {
       const url = new URL(rr.url);
-      url.search = result.query;
-      rr.fullUrl = url.toString();
-      rr.body = null;
+      url.search = input;
+      result.request = {
+        ...result.request,
+        fullUrl: url.toString(),
+        body: null,
+      };
     }
   }
+
   return result;
 }
 
@@ -134,10 +171,17 @@ function preReducer(state, { action, data }) {
   switch (action) {
     case ACTION.SET_QUERY: {
       try {
-        const children = jsonToInputs(JSON.parse(data));
-        return { ...state, params: { ...root, children } };
+        const children =
+          state.request.method === 'POST'
+            ? jsonToInputs(JSON.parse(data))
+            : searchParamsToInputs(data);
+        return {
+          ...state,
+          params: { ...root, children },
+          query: { input: data },
+        };
       } catch (error) {
-        return state;
+        return { ...state, query: { input: data, error: error.message } };
       }
     }
     case ACTION.SET_HTTP:
@@ -152,9 +196,9 @@ function preReducer(state, { action, data }) {
     case ACTION.INPUT_UPDATE:
       return { ...state, params: inputUpdate(state.params, data) };
     case ACTION.INPUT_REMOVE: {
-      const inputs = cloneDeep(state.params.children);
-      findInput(inputs, data, true);
-      return { ...state, params: { ...state.params, children: inputs } };
+      const cloned = cloneParams(state.params);
+      findInput(cloned, data, true);
+      return { ...state, params: cloned };
     }
 
     default:
@@ -163,15 +207,7 @@ function preReducer(state, { action, data }) {
 }
 
 export function QueryBuilderProvider({ children }) {
-  const [value, dispatch] = useReducer(
-    reducer,
-    {
-      request: { url: 'http://localhost:8080/search/', method: 'POST' },
-      http: {},
-      params: { ...root, children: [] },
-    },
-    (s) => reducer(s, { action: ACTION.SET_QUERY, data: '{"yql":""}' })
-  );
+  const [value, dispatch] = useReducer(reducer, null, reducer);
   _dispatch = dispatch;
   return <context.Provider value={value}>{children}</context.Provider>;
 }

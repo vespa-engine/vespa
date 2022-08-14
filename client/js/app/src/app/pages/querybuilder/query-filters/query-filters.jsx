@@ -33,12 +33,7 @@ function Input({ id, input, types, type, children }) {
         <Select
           sx={{ flex: 1 }}
           data={Object.values(options).map(({ name }) => name)}
-          onChange={(value) =>
-            dispatch(ACTION.INPUT_UPDATE, {
-              id,
-              type: types[value],
-            })
-          }
+          onChange={(type) => dispatch(ACTION.INPUT_UPDATE, { id, type })}
           value={type.name}
           searchable
         />
@@ -52,7 +47,7 @@ function Input({ id, input, types, type, children }) {
               })
             }
             placeholder={type.type}
-            value={input}
+            value={input ?? ''}
           />
         )}
         <ActionIcon onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}>

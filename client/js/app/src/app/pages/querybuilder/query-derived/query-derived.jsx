@@ -7,19 +7,22 @@ import {
   CopyButton,
   Textarea,
 } from '@mantine/core';
-import { useQueryBuilderContext } from 'app/pages/querybuilder/context/query-builder-provider';
+import {
+  ACTION,
+  dispatch,
+  useQueryBuilderContext,
+} from 'app/pages/querybuilder/context/query-builder-provider';
 import { Icon } from 'app/components';
-import { PasteModal } from 'app/pages/querybuilder/query-derived/paste-modal';
 
 export function QueryDerived() {
-  const query = useQueryBuilderContext('query');
+  const { input, error } = useQueryBuilderContext('query');
 
   return (
     <Stack>
       <Group position="apart">
         <Badge variant="filled">Query</Badge>
         <Group spacing="xs">
-          <CopyButton value={query}>
+          <CopyButton value={input}>
             {({ copied, copy }) => (
               <Button
                 leftIcon={<Icon name={copied ? 'check' : 'copy'} />}
@@ -33,7 +36,6 @@ export function QueryDerived() {
               </Button>
             )}
           </CopyButton>
-          <PasteModal />
         </Group>
       </Group>
       <Textarea
@@ -43,7 +45,9 @@ export function QueryDerived() {
             fontSize: theme.fontSizes.xs,
           },
         })}
-        value={query}
+        value={input}
+        error={error}
+        onChange={({ target }) => dispatch(ACTION.SET_QUERY, target.value)}
         variant="unstyled"
         minRows={21}
         autosize
