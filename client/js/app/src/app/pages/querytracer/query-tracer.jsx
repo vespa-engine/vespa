@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import DownloadJSONButton from '../querybuilder/Components/Buttons/DownloadJSONButton';
+import { Textarea } from '@mantine/core';
 import { Container } from 'app/components';
+import { DownloadJeager } from 'app/pages/querybuilder/query-response/download-jeager';
 
 export function QueryTracer() {
   const [response, setResponse] = useState('');
 
   return (
     <Container>
-      <textarea
-        cols="70"
-        rows="25"
+      <Textarea
+        styles={{
+          root: { height: '100%' },
+          wrapper: { height: '100%' },
+          input: { height: '100%' },
+        }}
+        minRows={21}
+        autosize
         value={response}
         onChange={({ target }) => setResponse(target.value)}
-      ></textarea>
-      <DownloadJSONButton response={response}>
-        Download in Jeager format
-      </DownloadJSONButton>
+      ></Textarea>
+      <DownloadJeager fullWidth response={response} />
     </Container>
   );
 }

@@ -89,16 +89,6 @@ export default {
       timing: { name: 'timing', type: 'Boolean' },
     },
   },
-  pos: {
-    name: 'pos',
-    type: 'Parent',
-    children: {
-      ll: { name: 'll', type: 'String' },
-      radius: { name: 'radius', type: 'String' },
-      bb: { name: 'bb', type: 'List' },
-      attribute: { name: 'attribute', type: 'String' },
-    },
-  },
   streaming: {
     name: 'streaming',
     type: 'Parent',
