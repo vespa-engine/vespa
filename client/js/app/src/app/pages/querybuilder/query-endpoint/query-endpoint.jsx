@@ -30,6 +30,7 @@ function send(event, method, url, body) {
 
 export default function QueryEndpoint() {
   const { method, url, fullUrl, body } = useQueryBuilderContext('request');
+  const hasError = useQueryBuilderContext((ctx) => ctx.query.error != null);
   const loading = useQueryBuilderContext((ctx) => ctx.http.loading);
 
   return (
@@ -47,7 +48,12 @@ export default function QueryEndpoint() {
             value={url}
             radius={0}
           />
-          <Button radius={0} type="submit" loading={loading}>
+          <Button
+            radius={0}
+            type="submit"
+            loading={loading}
+            disabled={hasError}
+          >
             Send
           </Button>
         </Container>
