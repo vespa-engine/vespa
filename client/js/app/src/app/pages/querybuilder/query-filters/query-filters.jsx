@@ -25,7 +25,7 @@ function AddProperty(props) {
   );
 }
 
-function Input({ id, input, types, type, children }) {
+function Input({ id, value, types, type }) {
   const options = { [type.name]: type, ...types };
   return (
     <>
@@ -37,24 +37,24 @@ function Input({ id, input, types, type, children }) {
           value={type.name}
           searchable
         />
-        {!children && (
+        {!type.children && (
           <TextInput
             sx={{ flex: 1 }}
             onChange={(event) =>
               dispatch(ACTION.INPUT_UPDATE, {
                 id,
-                input: event.currentTarget.value,
+                value: event.currentTarget.value,
               })
             }
             placeholder={type.type}
-            value={input ?? ''}
+            value={value}
           />
         )}
         <ActionIcon onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}>
           <Icon name="circle-minus" />
         </ActionIcon>
       </Box>
-      {children && (
+      {type.children && (
         <Box
           py={8}
           sx={(theme) => ({
@@ -66,7 +66,7 @@ function Input({ id, input, types, type, children }) {
             paddingLeft: '13px',
           })}
         >
-          <Inputs id={id} type={type.children} inputs={children} />
+          <Inputs id={id} type={type.children} inputs={value} />
         </Box>
       )}
     </>
@@ -81,12 +81,8 @@ function Inputs({ id, type, inputs }) {
   const firstRemaining = Object.keys(remainingTypes)[0];
   return (
     <Container sx={{ rowGap: '5px' }}>
-      {inputs.map(({ id, input, type, children }) => (
-        <Input
-          key={id}
-          types={remainingTypes}
-          {...{ id, input, type, children }}
-        />
+      {inputs.map(({ id, value, type }) => (
+        <Input key={id} types={remainingTypes} {...{ id, value, type }} />
       ))}
       {firstRemaining && (
         <>
@@ -116,7 +112,7 @@ function Inputs({ id, type, inputs }) {
 }
 
 export function QueryFilters() {
-  const { children, type } = useQueryBuilderContext('params');
+  const { value, type } = useQueryBuilderContext('params');
   return (
     <Stack>
       <Group>
@@ -124,7 +120,7 @@ export function QueryFilters() {
       </Group>
       <Container sx={{ alignContent: 'start' }}>
         <Content padding={0}>
-          <Inputs type={type.children} inputs={children} />
+          <Inputs type={type.children} inputs={value} />
         </Content>
       </Container>
     </Stack>

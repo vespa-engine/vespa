@@ -19,35 +19,41 @@ export const ACTION = Object.freeze({
 });
 
 function cloneParams(params) {
-  if (!params.children) return { ...params };
-  return { ...params, children: params.children.map(cloneParams) };
+  if (!Array.isArray(params.value)) return { ...params };
+  return { ...params, value: params.value.map(cloneParams) };
 }
 
-function inputsToSearchParams(inputs, parent) {
-  return inputs.reduce((acc, { input, type: { name }, children }) => {
-    const key = parent ? `${parent}.${name}` : name;
-    return Object.assign(
-      acc,
-      children ? inputsToSearchParams(children, key) : { [key]: input }
-    );
-  }, {});
+function inputsToQuery(method, inputs) {
+  if (method === 'POST') {
+    const inputsToJson = (inputs, parent) =>
+      Object.fromEntries(
+        inputs.map(({ value, type: { name, type, children } }) => [
+          name,
+          children ? inputsToJson(value) : parseInput(value, type),
+        ])
+      );
+    return JSON.stringify(inputsToJson(inputs), null, 4);
+  }
+
+  const inputsToSearchParams = (inputs, parent) =>
+    inputs.reduce((acc, { value, type: { name, children } }) => {
+      const key = parent ? `${parent}.${name}` : name;
+      return Object.assign(
+        acc,
+        children ? inputsToSearchParams(value, key) : { [key]: value }
+      );
+    }, {});
+  return new URLSearchParams(inputsToSearchParams(inputs)).toString();
 }
 
-function searchParamsToInputs(search) {
-  const json = [...new URLSearchParams(search).entries()].reduce(
+function queryToInputs(method, query) {
+  if (method === 'POST') return jsonToInputs(JSON.parse(query));
+
+  const json = [...new URLSearchParams(query).entries()].reduce(
     (acc, [key, value]) => set(acc, key, value),
     {}
   );
   return jsonToInputs(json);
-}
-
-function inputsToJson(inputs) {
-  return Object.fromEntries(
-    inputs.map(({ children, input, type: { name, type } }) => [
-      name,
-      children ? inputsToJson(children) : parseInput(input, type),
-    ])
-  );
 }
 
 function jsonToInputs(json, parent = root) {
@@ -65,55 +71,52 @@ function jsonToInputs(json, parent = root) {
     if (value != null && typeof value === 'object') {
       if (!node.type.children)
         throw new Error(`Expected property '${key}' to be ${node.type.type}`);
-      node.input = '';
-      node.children = jsonToInputs(value, node);
+      node.value = jsonToInputs(value, node);
     } else {
       if (node.type.children)
         throw new Error(
-          `Property '${key}' cannot have value, supported children: ${Object.keys(
+          `Property '${key}' cannot have a value, supported children: ${Object.keys(
             node.type.children
           ).sort()}`
         );
-      node.input = value?.toString();
+      node.value = value?.toString();
     }
     return node;
   });
 }
 
-function parseInput(input, type) {
-  if (type === 'Integer' || type === 'Long') return parseInt(input);
-  if (type === 'Float') return parseFloat(input);
-  if (type === 'Boolean') return input.toLowerCase() === 'true';
-  return input;
+function parseInput(value, type) {
+  if (type === 'Integer' || type === 'Long') return parseInt(value);
+  if (type === 'Float') return parseFloat(value);
+  if (type === 'Boolean') return value.toLowerCase() === 'true';
+  return value;
 }
 
 function inputAdd(params, { id: parentId, type: typeName }) {
   const cloned = cloneParams(params);
   const parent = findInput(cloned, parentId);
 
-  const nextId =
-    parseInt(last(last(parent.children)?.id?.split('.')) ?? -1) + 1;
+  const nextId = parseInt(last(last(parent.value)?.id?.split('.')) ?? -1) + 1;
   const id = parentId ? `${parentId}.${nextId}` : nextId.toString();
   const type = parent.type.children[typeName];
 
-  parent.children.push(
-    Object.assign({ id, input: '', type }, type.children && { children: [] })
-  );
+  parent.value.push({ id, value: type.children ? [] : '', type });
 
   return cloned;
 }
 
-function inputUpdate(params, { id, type, input }) {
+function inputUpdate(params, { id, type, value }) {
   const cloned = cloneParams(params);
   const node = findInput(cloned, id);
   if (type) {
     const parent = findInput(cloned, id.substring(0, id.lastIndexOf('.')));
-    node.type = parent.type.children[type];
+    const newType = parent.type.children[type];
+    if ((node.type.children != null) !== (newType.children != null))
+      node.value = newType.children ? [] : '';
+    node.type = newType;
   }
-  if (input) node.input = input;
+  if (value) node.value = value;
 
-  if (node.type.children) node.children = [];
-  else delete node.children;
   return cloned;
 }
 
@@ -121,9 +124,9 @@ function findInput(params, id, Delete = false) {
   if (!id) return params;
   let end = -1;
   while ((end = id.indexOf('.', end + 1)) > 0)
-    params = params.children.find((input) => input.id === id.substring(0, end));
-  const index = params.children.findIndex((input) => input.id === id);
-  return Delete ? params.children.splice(index, 1)[0] : params.children[index];
+    params = params.value.find((input) => input.id === id.substring(0, end));
+  const index = params.value.findIndex((input) => input.id === id);
+  return Delete ? params.value.splice(index, 1)[0] : params.value[index];
 }
 
 export function reducer(state, action) {
@@ -141,13 +144,8 @@ export function reducer(state, action) {
   const { request: sr, params: sp, query: sq } = state;
   const { request: rr, params: rp, query: rq } = result;
 
-  if ((sp.children !== rp.children && sq === rq) || sr.method !== rr.method)
-    result.query = {
-      input:
-        rr.method === 'POST'
-          ? JSON.stringify(inputsToJson(rp.children), null, 4)
-          : new URLSearchParams(inputsToSearchParams(rp.children)).toString(),
-    };
+  if ((sp.value !== rp.value && sq === rq) || sr.method !== rr.method)
+    result.query = { input: inputsToQuery(rr.method, rp.value) };
 
   const input = result.query.input;
   if (sr.url !== rr.url || sq.input !== input || sr.method !== rr.method) {
@@ -171,13 +169,10 @@ function preReducer(state, { action, data }) {
   switch (action) {
     case ACTION.SET_QUERY: {
       try {
-        const children =
-          state.request.method === 'POST'
-            ? jsonToInputs(JSON.parse(data))
-            : searchParamsToInputs(data);
+        const value = queryToInputs(state.request.method, data);
         return {
           ...state,
-          params: { ...root, children },
+          params: { ...root, value },
           query: { input: data },
         };
       } catch (error) {
