@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "cd ../../../ && husky install client/js/app/.husky",
+    "test": "jest",
     "lint": "eslint '{**/*,*}.{js,jsx}'"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^1",
+    "esbuild-jest": "^0",
     "eslint": "^8",
     "eslint-plugin-import": "^2",
     "eslint-plugin-prettier": "^4",
@@ -33,10 +35,30 @@
     "eslint-plugin-react-perf": "^3",
     "eslint-plugin-unused-imports": "^2",
     "husky": "^7",
+    "jest": "^28",
     "lodash": "^4",
     "prettier": "2",
     "react-router-dom": "^6",
     "use-context-selector": "^1",
     "vite": "^2"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/src/**/*.test.{js,jsx,ts,tsx}"
+    ],
+    "transform": {
+      "^.+\\.(js|jsx|mjs|cjs|ts|tsx)$": [
+        "esbuild-jest"
+      ]
+    },
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|cjs|ts|tsx)$"
+    ],
+    "moduleNameMapper": {
+      "^app/(.*)$": [
+        "<rootDir>/src/app/$1"
+      ]
+    },
+    "resetMocks": true
   }
 }
