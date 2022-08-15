@@ -7,7 +7,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -81,14 +80,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-    }
-
-    static class BackOff implements BackOffPolicy {
-        private int counter = 0;
-        public void reset() { counter = 0; }
-        public double get() { ++counter; return 0.01; }
-        public boolean shouldWarn(double v) { return ((counter % 1000) == 10); }
-        public boolean shouldInform(double v) { return false; }
     }
 
     public static class CleanupZookeeperLogsOnSuccess implements TestWatcher {
@@ -335,7 +326,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     private static class ExpectLine {
-        Pattern regex;
+        final Pattern regex;
         int matchedCount = 0;
         int minCount = 1;
         int maxCount = 1;
@@ -439,7 +430,7 @@ public abstract class FleetControllerTest implements Waiter {
                 eventsGotten.append(eventLine).append("\n");
             }
             errors.append("\nExpected events matching:\n" + exp + "\n");
-            errors.append("but got the following events:\n" + eventsGotten.toString());
+            errors.append("but got the following events:\n" + eventsGotten);
             fail(errors.toString());
         }
     }
