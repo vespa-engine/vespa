@@ -21,6 +21,8 @@ public class ClusterUtilizationData {
     public Double idealCpu;
     @JsonProperty("currentCpu")
     public Double currentCpu;
+    @JsonProperty("peakCpu")
+    public Double peakCpu;
 
     @JsonProperty("memory")
     public Double memory;
@@ -28,6 +30,8 @@ public class ClusterUtilizationData {
     public Double idealMemory;
     @JsonProperty("currentMemory")
     public Double currentMemory;
+    @JsonProperty("peakMemory")
+    public Double peakMemory;
 
     @JsonProperty("disk")
     public Double disk;
@@ -35,9 +39,13 @@ public class ClusterUtilizationData {
     public Double idealDisk;
     @JsonProperty("currentDisk")
     public Double currentDisk;
+    @JsonProperty("peakDisk")
+    public Double peakDisk;
 
     public Cluster.Utilization toClusterUtilization() {
-        return new Cluster.Utilization(cpu, idealCpu, currentCpu, memory, idealMemory, currentMemory, disk, idealDisk, currentDisk);
+        return new Cluster.Utilization(cpu, idealCpu, currentCpu, peakCpu,
+                                       memory, idealMemory, currentMemory, peakMemory,
+                                       disk, idealDisk, currentDisk, peakDisk);
     }
 
 }
