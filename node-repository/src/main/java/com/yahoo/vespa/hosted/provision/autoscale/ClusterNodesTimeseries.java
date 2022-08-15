@@ -48,6 +48,10 @@ public class ClusterNodesTimeseries {
         this.timeseries = timeseries;
     }
 
+    public boolean isEmpty() {
+        return measurementsPerNode() == 0;
+    }
+
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
         if (clusterNodes.size() == 0) return 0;
