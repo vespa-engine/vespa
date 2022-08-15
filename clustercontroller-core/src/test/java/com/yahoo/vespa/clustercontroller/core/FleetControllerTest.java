@@ -41,7 +41,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -323,116 +322,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     void waitForCompleteCycle() {
         fleetController.waitForCompleteCycle(timeout);
-    }
-
-    private static class ExpectLine {
-        final Pattern regex;
-        int matchedCount = 0;
-        int minCount = 1;
-        int maxCount = 1;
-        boolean repeatable() { return (maxCount == 0 || maxCount > matchedCount); }
-        boolean optional()   { return (matchedCount >= minCount); }
-
-        boolean matches(String event) {
-            if (event == null) return false;
-            boolean m = regex.matcher(event).matches();
-            if (m) ++matchedCount;
-            return m;
-        }
-
-        ExpectLine(String pattern) {
-            if (pattern.charAt(0) == '?') {
-                pattern = pattern.substring(1);
-                minCount = 0;
-            } else if (pattern.charAt(0) == '*') {
-                pattern = pattern.substring(1);
-                minCount = 0;
-                maxCount = 0;
-            } else if (pattern.charAt(0) == '+') {
-                pattern = pattern.substring(1);
-                maxCount = 0;
-            }
-            regex = Pattern.compile(pattern);
-	}
-
-        public String toString() {
-            return "{"+minCount+","+maxCount+"}("+matchedCount+") " + regex;
-        }
-    }
-
-    /**
-     * Verifies that node event list is equal to some expected value.
-     * The format of the expected values is as follows:
-     *   <ul>
-     *   <li>Each line in the exp string specifies a pattern to match one or more events.
-     *   <li>A line starting with ? * or + means that the line can match 0 or 1, 0 or more or 1 or more respectively.
-     *   <li>The rest of the line is a regular expression.
-     *   </ul>
-     */
-    protected void verifyNodeEvents(Node n, String exp) {
-        List<NodeEvent> events = fleetController.getNodeEvents(n);
-        String[] expectLines = exp.split("\n");
-        List<ExpectLine> expected = new ArrayList<>();
-        for (String line : expectLines) {
-            expected.add(new ExpectLine(line));
-        }
-
-        boolean mismatch = false;
-        StringBuilder errors = new StringBuilder();
-
-        int gotno = 0;
-        int expno = 0;
-
-        while (gotno < events.size() || expno < expected.size()) {
-            String eventLine = null;
-            if (gotno < events.size()) {
-                NodeEvent e = events.get(gotno);
-                eventLine = e.toString();
-            }
-
-            ExpectLine pattern = null;
-            if (expno < expected.size()) {
-                pattern = expected.get(expno);
-            }
-
-            if (pattern == null) {
-                errors.append("Exhausted expected list before matching event " + gotno
-                              + ": '" + eventLine + "'.");
-                mismatch = true;
-                break;
-            }
-
-            if (pattern.matches(eventLine)) {
-                if (! pattern.repeatable()) {
-                    ++expno;
-                }
-                ++gotno;
-            } else {
-                if (pattern.optional()) {
-                    ++expno;
-                } else {
-                    errors.append("Event " + gotno + ": '" + eventLine
-                                  + "' did not match regex " + expno + ": " + pattern);
-                    mismatch = true;
-                    break;
-                }
-            }
-        }
-        if (!mismatch && expno < expected.size()) {
-            errors.append("Too few entries in event log (only matched "
-                          + expno + " of " + expected.size() + ")");
-            mismatch = true;
-        }
-        if (mismatch) {
-            StringBuilder eventsGotten = new StringBuilder();
-            for (Event e : events) {
-                String eventLine = e.toString();
-                eventsGotten.append(eventLine).append("\n");
-            }
-            errors.append("\nExpected events matching:\n" + exp + "\n");
-            errors.append("but got the following events:\n" + eventsGotten);
-            fail(errors.toString());
-        }
     }
 
     public static Set<ConfiguredNode> toNodes(Integer ... indexes) {
