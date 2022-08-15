@@ -119,6 +119,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             Objects.requireNonNull(artifactRepository);
         }
 
+        @Override
         public Optional<Change> change(Version currentVersion, Instant instant) {
             OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
             if (!release.version().isAfter(currentVersion)) return Optional.empty();
@@ -162,8 +163,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         public Optional<Change> change(Version currentVersion, Instant instant) {
             Version wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
             while (!wantedVersion.isAfter(currentVersion)) {
-                wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
                 instant = instant.plus(Duration.ofDays(1));
+                wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
             }
             return Optional.of(new Change(wantedVersion, upgradeBudget(), schedulingInstant(instant, system)));
         }
