@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.io.InputStream;
 import java.util.Optional;
 
 /**
@@ -28,5 +29,11 @@ public interface RunDataStore {
 
     /** Deletes all data associated with the given application. */
     void delete(ApplicationId id);
+
+    /** Stores Vespa logs for the run. */
+    void putLogs(RunId id, boolean tester, InputStream logs);
+
+    /** Fetches Vespa logs for the run. */
+    InputStream getLogs(RunId id, boolean tester);
 
 }

@@ -39,5 +39,6 @@
       "status": "succeeded",
       "startMillis": 0
     }
-  }
+  },
+  "vespaLogsActive": false
 }

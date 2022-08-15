@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -16,16 +15,15 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -39,11 +37,13 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +53,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
@@ -154,7 +155,25 @@ class JobControllerApiHandlerHelper {
                   .map(Slime::get)
                   .ifPresent(reportArrayCursor -> SlimeUtils.copyArray(reportArrayCursor, detailsObject.setArray("testReports")));
 
+        boolean logsStored = run.stepStatus(copyVespaLogs).map(succeeded::equals).orElse(false);
+        if (run.hasStep(copyVespaLogs) && ! runId.type().isProduction() && JobController.deploymentCompletedAt(run, false).isPresent())
+            detailsObject.setBool("vespaLogsActive", ! logsStored);
+
+        if (runId.type().isTest() && JobController.deploymentCompletedAt(run, true).isPresent())
+            detailsObject.setBool("testerLogsActive", ! logsStored);
+
         return new SlimeJsonResponse(slime);
+    }
+
+    /** Proxies a Vespa log request for a run to S3 once logs have been copied, or to logserver before this. */
+    static HttpResponse vespaLogsResponse(JobController jobController, RunId runId, long fromMillis, boolean tester) {
+        return new HttpResponse(200) {
+            @Override public void render(OutputStream out) throws IOException {
+                try (InputStream logs = jobController.getVespaLogs(runId, fromMillis, tester)) {
+                    logs.transferTo(out);
+                }
+            }
+        };
     }
 
     private static void toSlime(Cursor summaryObject, ConvergenceSummary summary) {

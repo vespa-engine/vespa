@@ -401,5 +401,7 @@
       "status": "succeeded",
       "startMillis": 1600000000000
     }
-  }
+  },
+  "vespaLogsActive": false,
+  "testerLogsActive": false
 }

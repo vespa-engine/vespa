@@ -967,6 +967,10 @@
               "status": "succeeded"
             },
             {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
               "name": "deactivateTester",
               "status": "succeeded"
             },
@@ -1013,6 +1017,10 @@
             },
             {
               "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
               "status": "succeeded"
             },
             {

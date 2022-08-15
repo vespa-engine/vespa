@@ -82,5 +82,6 @@
     "copyVespaLogs": {
       "status": "unfinished"
     }
-  }
+  },
+  "vespaLogsActive": true
 }
