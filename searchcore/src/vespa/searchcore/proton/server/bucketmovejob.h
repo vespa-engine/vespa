@@ -8,9 +8,9 @@
 #include "ibucketstatechangedhandler.h"
 #include "iclusterstatechangedhandler.h"
 #include "maintenancedocumentsubdb.h"
-#include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/vespalib/util/retain_guard.h>
+#include <map>
 
 
 namespace storage::spi { struct BucketExecutor; }
@@ -49,7 +49,6 @@ private:
     using IDestructorCallbackSP = std::shared_ptr<IDestructorCallback>;
     using IThreadService = searchcorespi::index::IThreadService;
     using BucketId = document::BucketId;
-    using ScanIterator = bucketdb::ScanIterator;
     using BucketMoveSet = std::map<BucketId, bool>;
     using NeedResult = std::pair<bool, bool>;
     using ActiveState = storage::spi::BucketInfo::ActiveState;
@@ -79,6 +78,17 @@ private:
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
+    class BucketStateWrapper {
+    private:
+        const bucketdb::BucketState & _state;
+
+    public:
+        BucketStateWrapper(const bucketdb::BucketState & state) noexcept : _state(state) {}
+
+        bool                isActive() const noexcept { return _state.isActive(); }
+        bool      hasReadyBucketDocs() const noexcept { return _state.getReadyCount() != 0; }
+        bool   hasNotReadyBucketDocs() const noexcept { return _state.getNotReadyCount() != 0; }
+    };
     BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
                   vespalib::RetainGuard dbRetainer,
                   IDocumentMoveHandler &moveHandler,
@@ -103,7 +113,7 @@ private:
     void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
     void updatePending();
     void cancelBucket(BucketId bucket); // True if something to cancel
-    NeedResult needMove(const ScanIterator &itr) const;
+    NeedResult needMove(BucketId bucketId, const BucketStateWrapper &itr) const;
     BucketMoveSet computeBuckets2Move(const bucketdb::Guard & guard);
     BucketMoverSP createMover(BucketId bucket, bool wantReady);
     BucketMoverSP greedyCreateMover();
