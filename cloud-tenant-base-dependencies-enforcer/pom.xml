@@ -189,6 +189,7 @@
                                         <include>org.apache.commons:commons-compress:1.21:jar:test</include>
                                         <include>org.apache.commons:commons-math3:3.6.1:jar:test</include>
                                         <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:test</include>
+                                        <include>org.apache.felix:org.apache.felix.log:1.0.1:jar:test</include>
                                         <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpclient5.version}:jar:test</include>
@@ -227,6 +228,8 @@
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
+                                        <include>org.osgi:org.osgi.compendium:4.1.0:jar:test</include>
+                                        <include>org.osgi:org.osgi.core:4.1.0:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
                                     </allowed>
                                 </enforceDependencies>
