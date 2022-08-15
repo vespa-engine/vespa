@@ -47,7 +47,6 @@ public:
     const SubDocument &getComplexField(FieldIdT fId) const;
     const document::FieldValue *getField(FieldIdT fId) const override;
     bool setField(FieldIdT fId, document::FieldValue::UP fv) override ;
-    void saveCachedFields() const;
 private:
     document::Document::UP _doc;
     SharedFieldPathMap     _fieldMap;

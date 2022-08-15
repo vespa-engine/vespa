@@ -17,28 +17,31 @@ StorageDocument::StorageDocument(document::Document::UP doc, const SharedFieldPa
     _fieldMap(fim),
     _cachedFields(getFieldCount()),
     _backedFields()
-{ }
+{
+    _backedFields.reserve(getFieldCount());
+}
 
-StorageDocument::~StorageDocument() { }
+StorageDocument::~StorageDocument() = default;
 
 namespace {
     FieldPath _emptyFieldPath;
-    StorageDocument::SubDocument _empySubDocument(NULL, _emptyFieldPath.getFullRange());
+    StorageDocument::SubDocument _empySubDocument(nullptr, _emptyFieldPath.getFullRange());
 }
 
 const StorageDocument::SubDocument &
 StorageDocument::getComplexField(FieldIdT fId) const
 {
-    if (_cachedFields[fId].getFieldValue() == NULL) {
+    if (_cachedFields[fId].getFieldValue() == nullptr) {
         const FieldPath & fp = (*_fieldMap)[fId];
         if ( ! fp.empty() ) {
             const document::StructuredFieldValue * sfv = _doc.get();
             NestedIterator nested = fp.getFullRange();
             const document::FieldPathEntry& fvInfo = nested.cur();
-            bool ok = sfv->getValue(fvInfo.getFieldRef(), fvInfo.getFieldValueToSet());
-            if (ok) {
-                SubDocument tmp(&fvInfo.getFieldValueToSet(), nested.next());
+            document::FieldValue::UP fv = sfv->getValue(fvInfo.getFieldRef());
+            if (fv) {
+                SubDocument tmp(fv.get(), nested.next());
                 _cachedFields[fId].swap(tmp);
+                _backedFields.push_back(std::move(fv));
             }
         } else {
           LOG(debug, "Failed getting field fId %d.", fId);
@@ -46,18 +49,6 @@ StorageDocument::getComplexField(FieldIdT fId) const
         }
     }
     return _cachedFields[fId];
-}
-
-void StorageDocument::saveCachedFields() const
-{
-    size_t m(_cachedFields.size());
-    _backedFields.reserve(m);
-    for (size_t i(0); i < m; i++) {
-        if (_cachedFields[i].getFieldValue() != 0) {
-            _backedFields.emplace_back(document::FieldValue::UP(_cachedFields[i].getFieldValue()->clone()));
-            _cachedFields[i].setFieldValue(_backedFields.back().get());
-        }
-    }
 }
 
 const document::FieldValue *
