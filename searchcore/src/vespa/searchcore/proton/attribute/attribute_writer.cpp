@@ -764,9 +764,9 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
 
     for (const auto &fupd : upd.getUpdates()) {
         LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().data());
-        auto found = _attrMap.find(fupd.getField().getName());
-        AttributeVector * attrp = (found != _attrMap.end()) ? found->second.attribute : nullptr;
-        onUpdate.onUpdateField(fupd.getField(), attrp);
+        auto itr = _attrMap.find(fupd.getField().getName());
+        AttributeVector * attrp = (itr != _attrMap.end()) ? itr->second.attribute : nullptr;
+        onUpdate.onUpdateField(fupd.getField().getName(), attrp);
         if (__builtin_expect(attrp == nullptr, false)) {
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().data());
             continue;
@@ -776,15 +776,16 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         if (__builtin_expect(attrp->getStatus().getLastSyncToken() >= serialNum, false)) {
             continue;
         }
-        if (found->second.use_two_phase_put_for_assign_updates && is_single_assign_update(fupd)) {
+        if (itr->second.use_two_phase_put_for_assign_updates &&
+                is_single_assign_update(fupd)) {
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, *attrp, get_single_assign_update_field_value(fupd));
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);
             LOG(debug, "About to handle assign update as two phase put for docid %u in attribute vector '%s'",
                 lid, attrp->getName().c_str());
             _shared_executor.execute(CpuUsage::wrap(std::move(prepare_task), CpuUsage::Category::WRITE));
-            _attributeFieldWriter.executeTask(found->second.executor_id, std::move(complete_task));
+            _attributeFieldWriter.executeTask(itr->second.executor_id, std::move(complete_task));
         } else {
-            args[found->second.executor_id.getId()]->_updates.emplace_back(attrp, &fupd);
+            args[itr->second.executor_id.getId()]->_updates.emplace_back(attrp, &fupd);
             LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
         }
     }

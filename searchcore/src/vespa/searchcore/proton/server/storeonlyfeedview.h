@@ -9,6 +9,7 @@
 #include "searchcontext.h"
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -17,10 +18,9 @@
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <future>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 
 namespace vespalib { class IDestructorCallback; }
 
@@ -118,6 +118,22 @@ public:
         {}
     };
 
+protected:
+    class UpdateScope : public IFieldUpdateCallback
+    {
+    private:
+        const search::index::Schema *_schema;
+    public:
+        bool _indexedFields;
+        bool _nonAttributeFields;
+
+        UpdateScope(const search::index::Schema & schema, const DocumentUpdate & upd);
+        bool hasIndexOrNonAttributeFields() const {
+            return _indexedFields || _nonAttributeFields;
+        }
+        void onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) override;
+    };
+
 private:
     const ISummaryAdapter::SP                                _summaryAdapter;
     const IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
@@ -126,9 +142,9 @@ private:
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
     std::shared_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
-    const search::index::Schema::SP                          _schema;
-    vespalib::hash_set<int32_t>                              _indexedFields;
+
 protected:
+    const search::index::Schema::SP          _schema;
     searchcorespi::index::IThreadingService &_writeService;
     PersistentParams                         _params;
     IDocumentMetaStore                      &_metaStore;
