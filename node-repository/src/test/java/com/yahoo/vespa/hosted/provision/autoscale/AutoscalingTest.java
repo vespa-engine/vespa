@@ -76,6 +76,27 @@ public class AutoscalingTest {
                                          fixture.autoscale());
     }
 
+    /** When scaling up, disregard underutilized dimensions (memory here) */
+    @Test
+    public void test_only_autoscaling_up_quickly() {
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.loader().applyLoad(new Load(1.0, 0.1, 1.0), 10);
+        fixture.tester().assertResources("Scaling up (only) since resource usage is too high",
+                                         10, 1, 8.6, 4.4, 92.6,
+                                         fixture.autoscale());
+    }
+
+    /** When ok to scale down, scale in both directions simultaneously (compare to test_only_autoscaling_up_quickly) */
+    @Test
+    public void test_scale_in_both_directions_when_ok_to_scale_down() {
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.tester.clock().advance(Duration.ofDays(2));
+        fixture.loader().applyLoad(new Load(1.0, 0.1, 1.0), 10);
+        fixture.tester().assertResources("Scaling up (only) since resource usage is too high",
+                                         10, 1, 8.6, 4.0, 92.6,
+                                         fixture.autoscale());
+    }
+
     @Test
     public void test_autoscaling_uses_peak() {
         var fixture = AutoscalingTester.fixture().build();
