@@ -93,11 +93,10 @@ public class AutoscalingMaintainerTester {
                                          ClusterSpec.Id cluster,
                                          int measurements,
                                          IntFunction<Double> queryRate) {
-        Instant time = clock().instant();
         for (int i = 0; i < measurements; i++) {
             nodeRepository().metricsDb().addClusterMetrics(application,
-                                                           Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), 0.0)));
-            time = time.plus(Duration.ofMinutes(5));
+                                                           Map.of(cluster, new ClusterMetricSnapshot(clock().instant(), queryRate.apply(i), 0.0)));
+            clock().advance(Duration.ofSeconds(150));
         }
     }
 

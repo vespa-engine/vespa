@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.logging.Level;
@@ -93,16 +94,25 @@ public class ClusterModel {
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
-        if (nodeTimeseries().measurementsPerNode() == 0) return Load.one(); // No info, no change
-        /*
-        // Should we scale up?
-        Load relativePeak = nodeTimeseries().peakLoad().divide(idealLoad());
-        if (relativePeak.any(v -> v > 1))
-            return relativePeak.max(Load.one()); // Don't downscale any dimension if we upscale
+        if (nodeTimeseries().isEmpty()) return Load.one();
 
-        // Should we scale down?
-        */
-        return averageLoad().divide(idealLoad());
+        Load adjustment = peakLoad().divide(idealLoad());
+        if (! safeToScaleDown())
+            adjustment = adjustment.map(v -> v < 1 ? 1 : v);
+        return adjustment;
+    }
+
+    /** Are we in a position to make decisions to scale down at this point? */
+    private boolean safeToScaleDown() {
+        if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
+        if (nodeTimeseries().measurementsPerNode() < 4) return false;
+        if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
+        return true;
+    }
+
+    private boolean hasScaledIn(Duration period) {
+        return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
+                      .isAfter(clock.instant().minus(period));
     }
 
     /** Returns the predicted duration of a rescaling of this cluster */
@@ -127,11 +137,14 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    /** Returns average of the last load reading from each node. */
+    /** Returns the average of the last load measurement from each node. */
     public Load currentLoad() { return nodeTimeseries().currentLoad(); }
 
-    /** Returns average load during the last {@link #scalingDuration()} */
-    public Load averageLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(scalingDuration())); }
+    /** Returns the average of all load measurements from all nodes*/
+    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
+
+    /** Returns the average of the peak load measurement in each dimension, from each node. */
+    public Load peakLoad() { return nodeTimeseries().peakLoad(); }
 
     /** The number of nodes this cluster has, or will have if not deployed yet. */
     // TODO: Make this the deployed, not current count

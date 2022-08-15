@@ -90,16 +90,22 @@ public class ApplicationSerializer {
         Load idealLoad = clusterModel.idealLoad();
         Load averageLoad = clusterModel.averageLoad();
         Load currentLoad = clusterModel.currentLoad();
+        Load peakLoad = clusterModel.peakLoad();
 
         utilizationObject.setDouble("cpu", averageLoad.cpu());
         utilizationObject.setDouble("idealCpu", idealLoad.cpu());
         utilizationObject.setDouble("currentCpu", currentLoad.cpu());
+        utilizationObject.setDouble("peakCpu", peakLoad.cpu());
+
         utilizationObject.setDouble("memory", averageLoad.memory());
         utilizationObject.setDouble("idealMemory", idealLoad.memory());
         utilizationObject.setDouble("currentMemory", currentLoad.memory());
+        utilizationObject.setDouble("peakMemory", peakLoad.memory());
+
         utilizationObject.setDouble("disk", averageLoad.disk());
         utilizationObject.setDouble("idealDisk", idealLoad.disk());
         utilizationObject.setDouble("currentDisk", currentLoad.disk());
+        utilizationObject.setDouble("peakDisk", peakLoad.disk());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

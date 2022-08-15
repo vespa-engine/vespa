@@ -19,6 +19,7 @@ import java.util.function.IntFunction;
 public class Loader {
 
     private final Fixture fixture;
+    private final Duration samplingInterval = Duration.ofSeconds(150L);
 
     public Loader(Fixture fixture) {
         this.fixture = fixture;
@@ -33,16 +34,14 @@ public class Loader {
      * @param count the number of measurements
      */
     public Duration addCpuMeasurements(double value, int count) {
-        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
+        var idealLoad = fixture.clusterModel().idealLoad();
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Load load = new Load(value, idealLoad.memory(), idealLoad.disk()).multiply(oneExtraNodeFactor);
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofSeconds(150));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
-                Load load = new Load(value,
-                                     ClusterModel.idealMemoryLoad,
-                                     ClusterModel.idealContentDiskLoad).multiply(oneExtraNodeFactor);
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                          new NodeMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                 load,
@@ -63,23 +62,21 @@ public class Loader {
                                                                Map.of(fixture.clusterId(), new ClusterMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                                      queryRate.apply(i),
                                                                                                                      writeRate.apply(i))));
-            fixture.tester().clock().advance(Duration.ofMinutes(5));
+            fixture.tester().clock().advance(samplingInterval);
         }
         return Duration.between(initialTime, fixture.tester().clock().instant());
     }
 
     public void applyCpuLoad(double cpuLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
         addCpuMeasurements((float)cpuLoad, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
     public void applyMemLoad(double memLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addMemMeasurements
         addMemMeasurements(memLoad, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
     /**
@@ -89,15 +86,13 @@ public class Loader {
      * wanting to see the ideal load with one node missing.)
      */
     public void addMemMeasurements(double value, int count) {
-        var idealLoad = fixture.clusterModel().idealLoad(); // TODO: Use this
+        var idealLoad = fixture.clusterModel().idealLoad();
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Load load = new Load(idealLoad.cpu(), value, idealLoad.disk()).multiply(oneExtraNodeFactor);
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofMinutes(1));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
-                Load load = new Load(0.2,
-                                     value,
-                                     ClusterModel.idealContentDiskLoad).multiply(oneExtraNodeFactor);
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                         new NodeMetricSnapshot(fixture.tester().clock().instant(),
                                                                                                load,
@@ -109,19 +104,18 @@ public class Loader {
         }
     }
 
-    public Duration addMeasurements(double cpu, double memory, double disk, int count)  {
-        return addMeasurements(cpu, memory, disk, 0, true, true, count);
+    public Duration addMeasurements(Load load, int count)  {
+        return addMeasurements(load, 0, true, true, count);
     }
 
-    public Duration addMeasurements(double cpu, double memory, double disk, int generation, boolean inService, boolean stable,
-                                    int count) {
+    public Duration addMeasurements(Load load, int generation, boolean inService, boolean stable, int count) {
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < count; i++) {
-            fixture.tester().clock().advance(Duration.ofMinutes(1));
+            fixture.tester().clock().advance(samplingInterval);
             for (Node node : fixture.nodes()) {
                 fixture.tester().nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                         new NodeMetricSnapshot(fixture.tester().clock().instant(),
-                                                                                               new Load(cpu, memory, disk),
+                                                                                               load,
                                                                                                generation,
                                                                                                inService,
                                                                                                stable,
@@ -131,21 +125,19 @@ public class Loader {
         return Duration.between(initialTime, fixture.tester().clock().instant());
     }
 
-    public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
-        addMeasurements(cpuLoad, memoryLoad, diskLoad, measurements);
+    public void applyLoad(Load load, int measurements) {
+        addMeasurements(load, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
-    public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int generation, boolean inService, boolean stable, int measurements) {
-        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
-        addMeasurements(cpuLoad, memoryLoad, diskLoad, generation, inService, stable, measurements);
+    public void applyLoad(Load load, int generation, boolean inService, boolean stable, int measurements) {
+        addMeasurements(load, generation, inService, stable, measurements);
         fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        addQueryRateMeasurements(measurements, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
-    public Duration addQueryRateMeasurements(int measurements, Duration samplingInterval, IntFunction<Double> queryRate) {
+    public Duration addQueryRateMeasurements(int measurements, IntFunction<Double> queryRate) {
         Instant initialTime = fixture.tester().clock().instant();
         for (int i = 0; i < measurements; i++) {
             fixture.tester().nodeMetricsDb().addClusterMetrics(fixture.applicationId(),

@@ -48,6 +48,10 @@ public class ClusterNodesTimeseries {
         this.timeseries = timeseries;
     }
 
+    public boolean isEmpty() {
+        return measurementsPerNode() == 0;
+    }
+
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
         if (clusterNodes.size() == 0) return 0;
@@ -59,12 +63,11 @@ public class ClusterNodesTimeseries {
     public int nodesMeasured() { return timeseries.size(); }
 
     /** Returns the average load after the given instant */
-    public Load averageLoad(Instant start) {
+    public Load averageLoad() {
         Load total = Load.zero();
         int count = 0;
         for (var nodeTimeseries : timeseries) {
             for (var snapshot : nodeTimeseries.asList()) {
-                if (snapshot.at().isBefore(start)) continue;
                 total = total.add(snapshot.load());
                 count++;
             }

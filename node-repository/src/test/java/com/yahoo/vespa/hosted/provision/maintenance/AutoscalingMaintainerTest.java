@@ -152,8 +152,9 @@ public class AutoscalingMaintainerTest {
 
         // deploy
         tester.deploy(app1, cluster1, app1Capacity);
-        tester.addQueryRateMeasurements(app1, cluster1.id(), 12, t -> t == 0 ? 20.0 : 10.0);
 
+        int measurements = 5;
+        Duration samplePeriod = Duration.ofSeconds(150);
         for (int i = 0; i < 20; i++) {
             // Record completion to keep scaling window at minimum
             tester.addMeasurements(0.1f, 0.1f, 0.1f, i, 1, app1);
@@ -162,25 +163,20 @@ public class AutoscalingMaintainerTest {
             tester.clock().advance(Duration.ofDays(1));
 
             if (i % 2 == 0) { // high load
-                for (int j = 0; j < 200; j++ ) {
-                    tester.addMeasurements(0.99f, 0.99f, 0.99f, i, 1, app1);
-                    tester.clock().advance(Duration.ofMinutes(1));
-                }
+                tester.addMeasurements(0.99f, 0.99f, 0.99f, i, measurements, app1);
             }
             else { // low load
-                for (int j = 0; j < 200; j++ ) {
-                    tester.addMeasurements(0.2f, 0.2f, 0.2f, i, 1, app1);
-                    tester.clock().advance(Duration.ofMinutes(1));
-                }
+                tester.addMeasurements(0.2f, 0.2f, 0.2f, i, measurements, app1);
             }
-            tester.addQueryRateMeasurements(app1, cluster1.id(), 2, t -> (t == 0 ? 20.0 : 10.0 ));
+            tester.clock().advance(samplePeriod.negated().multipliedBy(measurements));
+            tester.addQueryRateMeasurements(app1, cluster1.id(), measurements, t -> (t == 0 ? 20.0 : 10.0 ));
             tester.maintainer().maintain();
         }
 
         assertEquals(Cluster.maxScalingEvents, tester.cluster(app1, cluster1).scalingEvents().size());
         assertEquals("The latest rescaling is the last event stored",
                      tester.clock().instant(),
-                     tester.cluster(app1, cluster1).scalingEvents().get(Cluster.maxScalingEvents - 1).at());
+                     tester.cluster(app1, cluster1).scalingEvents().get(Cluster.maxScalingEvents - 1).completion().get());
     }
 
     @Test
