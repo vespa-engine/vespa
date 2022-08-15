@@ -1144,8 +1144,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         @Override
         public FleetController getFleetController() { return FleetController.this; }
         @Override
-        public SlobrokListener getNodeAddedOrRemovedListener() { return FleetController.this; }
-        @Override
         public NodeListener getNodeStateUpdateListener() { return FleetController.this; }
     };
 
