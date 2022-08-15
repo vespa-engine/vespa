@@ -41,16 +41,16 @@ public class AllParser extends SimpleParser {
     }
 
     @Override
-    protected Item parseItems(String defaultIndexName) {
+    protected Item parseItems() {
         int position = tokens.getPosition();
         try {
-            return parseItemsBody(defaultIndexName);
+            return parseItemsBody();
         } finally {
             tokens.setPosition(position);
         }
     }
 
-    protected Item parseItemsBody(String defaultIndexName) {
+    protected Item parseItemsBody() {
         // Algorithm: Collect positive, negative, and and'ed items, then combine.
         CompositeItem and = null;
         NotItem not = null; // Store negatives here as we go
@@ -65,7 +65,7 @@ public class AllParser extends SimpleParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem(defaultIndexName);
+                current = indexableItem();
             if (current == null)
                 current = compositeItem();
 

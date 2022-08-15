@@ -20,7 +20,7 @@ public class AdvancedParser extends StructuredParser {
         super(environment);
     }
 
-    protected Item parseItems(String defaultIndexName) {
+    protected Item parseItems() {
         return advancedItems(true);
     }
 
