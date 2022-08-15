@@ -82,7 +82,7 @@ public class StateChangeTest extends FleetControllerTest {
         super.tearDown();
     }
 
-    public void verifyNodeEvents(Node n, String correct) {
+    private void verifyNodeEvents(Node n, String correct) {
         String actual = "";
         for (NodeEvent e : eventLog.getNodeEvents(n)) {
             actual += e.toString() + "\n";

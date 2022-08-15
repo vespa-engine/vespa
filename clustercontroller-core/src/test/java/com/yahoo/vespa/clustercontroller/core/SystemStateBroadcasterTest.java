@@ -6,11 +6,9 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,11 +64,6 @@ public class SystemStateBroadcasterTest {
             @Override
             public FleetController getFleetController() {
                 return null; // We assume the broadcaster doesn't use this for our test purposes
-            }
-
-            @Override
-            public SlobrokListener getNodeAddedOrRemovedListener() {
-                return null;
             }
 
             @Override
