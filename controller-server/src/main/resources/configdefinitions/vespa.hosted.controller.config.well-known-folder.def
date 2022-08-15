@@ -1,0 +1,5 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Config for serving content from .well-known directory
+namespace=vespa.hosted.controller.config
+
+securityTxt string
