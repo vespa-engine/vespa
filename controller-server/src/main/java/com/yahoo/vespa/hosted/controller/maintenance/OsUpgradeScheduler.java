@@ -50,24 +50,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
         Release release = releaseIn(cloud);
-        Instant instant = controller().clock().instant();
-        Version wantedVersion = release.version(currentTarget.get(), instant);
-        Version currentVersion = currentTarget.get().version();
-        if (release instanceof CalendarVersionedRelease) {
-            // Estimate the next change
-            while (!wantedVersion.isAfter(currentVersion)) {
-                instant = instant.plus(Duration.ofDays(1));
-                wantedVersion = release.version(currentTarget.get(), instant);
-            }
-        } else if (!wantedVersion.isAfter(currentVersion)) {
-            return Optional.empty(); // No change right now, and we cannot predict the next change for this kind of release
-        }
-        // Find the earliest possible trigger time on this day
-        instant = instant.truncatedTo(ChronoUnit.DAYS);
-        while (!canTriggerAt(instant)) {
-            instant = instant.plus(Duration.ofHours(1));
-        }
-        return Optional.of(new Change(wantedVersion, release.upgradeBudget(), instant));
+        Instant now = controller().clock().instant();
+        return release.change(currentTarget.get().version(), now);
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
@@ -86,22 +70,28 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return new CalendarVersionedRelease(controller().system());
     }
 
-    private boolean canTriggerAt(Instant instant) {
+    private static boolean canTriggerAt(Instant instant, boolean isCd) {
         ZonedDateTime dateTime = instant.atZone(ZoneOffset.UTC);
         int hourOfDay = dateTime.getHour();
         int dayOfWeek = dateTime.getDayOfWeek().getValue();
         // Upgrade can only be scheduled between 07:00 (02:00 in CD systems) and 12:59 UTC, Monday-Thursday
-        int startHour = controller().system().isCd() ? 2 : 7;
+        int startHour = isCd ? 2 : 7;
         return hourOfDay >= startHour && hourOfDay <= 12 && dayOfWeek < 5;
+    }
+
+    /** Returns the earliest time an upgrade can be scheduled on the day of instant, in given system */
+    private static Instant schedulingInstant(Instant instant, SystemName system) {
+        instant = instant.truncatedTo(ChronoUnit.DAYS);
+        while (!canTriggerAt(instant, system.isCd())) {
+            instant = instant.plus(Duration.ofHours(1));
+        }
+        return instant;
     }
 
     private interface Release {
 
-        /** The version number of this */
-        Version version(OsVersionTarget currentTarget, Instant now);
-
-        /** The budget to use when upgrading to this */
-        Duration upgradeBudget();
+        /** The pending change for this release at given instant, if any */
+        Optional<Change> change(Version currentVersion, Instant instant);
 
     }
 
@@ -129,16 +119,11 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             Objects.requireNonNull(artifactRepository);
         }
 
-        @Override
-        public Version version(OsVersionTarget currentTarget, Instant now) {
-            OsRelease release = artifactRepository.osRelease(currentTarget.osVersion().version().getMajor(), tag());
-            boolean cooldownPassed = !release.taggedAt().plus(cooldown()).isAfter(now);
-            return cooldownPassed ? release.version() : currentTarget.osVersion().version();
-        }
-
-        @Override
-        public Duration upgradeBudget() {
-            return Duration.ZERO; // Upgrades to tagged releases happen in-place so no budget is required
+        public Optional<Change> change(Version currentVersion, Instant instant) {
+            OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
+            if (!release.version().isAfter(currentVersion)) return Optional.empty();
+            Instant scheduleAt = schedulingInstant(release.taggedAt().plus(cooldown()), system);
+            return Optional.of(new Change(release.version(), Duration.ZERO, scheduleAt));
         }
 
         /** Returns the release tag tracked by this system */
@@ -174,14 +159,16 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         }
 
         @Override
-        public Version version(OsVersionTarget currentTarget, Instant now) {
-            Version currentVersion = currentTarget.osVersion().version();
-            Version wantedVersion = asVersion(dateOfWantedVersion(now), currentVersion);
-            return wantedVersion.isAfter(currentVersion) ? wantedVersion : currentVersion;
+        public Optional<Change> change(Version currentVersion, Instant instant) {
+            Version wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
+            while (!wantedVersion.isAfter(currentVersion)) {
+                wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
+                instant = instant.plus(Duration.ofDays(1));
+            }
+            return Optional.of(new Change(wantedVersion, upgradeBudget(), schedulingInstant(instant, system)));
         }
 
-        @Override
-        public Duration upgradeBudget() {
+        private Duration upgradeBudget() {
             return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
         }
 

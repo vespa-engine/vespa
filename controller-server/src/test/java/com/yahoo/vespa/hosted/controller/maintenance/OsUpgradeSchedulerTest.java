@@ -88,7 +88,7 @@ public class OsUpgradeSchedulerTest {
     void schedule_stable_release() {
         ControllerTester tester = new ControllerTester();
         OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
-        Instant t0 = Instant.parse("2021-06-21T07:00:00.00Z"); // Inside trigger period
+        Instant t0 = Instant.parse("2021-06-21T06:00:00.00Z"); // Outside trigger period
         tester.clock().setInstant(t0);
 
         // Set initial target
@@ -96,11 +96,13 @@ public class OsUpgradeSchedulerTest {
         Version version0 = Version.fromString("8.0");
         tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
 
-        // Stable release is scheduled immediately
+        // Stable release is scheduled once trigger period opens
         Version version1 = Version.fromString("8.1");
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.stable,
                 tester.clock().instant()));
-        scheduleUpgradeAfter(Duration.ZERO, version1, scheduler, tester);
+        scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
+        assertEquals(version1, scheduler.changeIn(cloud).get().version(), "Change available");
+        scheduleUpgradeAfter(Duration.ofHours(1), version1, scheduler, tester); // Inside trigger period
 
         // A newer version is triggered manually
         Version version3 = Version.fromString("8.3");
@@ -108,9 +110,7 @@ public class OsUpgradeSchedulerTest {
 
         // Nothing happens in next iteration as tagged release is older than manually triggered version
         scheduleUpgradeAfter(Duration.ofDays(7), version3, scheduler, tester);
-
-        // Next change cannot be estimated for tagged releases
-        assertTrue(scheduler.changeIn(cloud).isEmpty(), "Next change is unknown");
+        assertTrue(scheduler.changeIn(cloud).isEmpty());
     }
 
     @Test
@@ -129,6 +129,7 @@ public class OsUpgradeSchedulerTest {
         Version version1 = Version.fromString("8.1");
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.latest,
                 tester.clock().instant()));
+        assertEquals(version1, scheduler.changeIn(cloud).get().version(), "Change available");
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
 
         // Cooldown period passes and latest release is scheduled
