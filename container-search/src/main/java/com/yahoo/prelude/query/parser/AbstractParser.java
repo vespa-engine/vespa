@@ -244,9 +244,7 @@ public abstract class AbstractParser implements CustomParser {
     private static void assignDefaultIndex(String defaultIndex, Item item) {
         if (defaultIndex == null || item == null) return;
 
-        if (item instanceof IndexedItem) {
-            IndexedItem indexName = (IndexedItem) item;
-
+        if (item instanceof IndexedItem indexName) {
             if ("".equals(indexName.getIndexName()))
                 indexName.setIndexName(defaultIndex);
         } 
@@ -299,8 +297,7 @@ public abstract class AbstractParser implements CustomParser {
             return unwashed;
         } else if (unwashed instanceof PhraseItem) {
             return collapsePhrase((PhraseItem) unwashed);
-        } else if (unwashed instanceof CompositeItem) {
-            CompositeItem composite = (CompositeItem) unwashed;
+        } else if (unwashed instanceof CompositeItem composite) {
             ListIterator<Item> i = composite.getItemIterator();
 
             while (i.hasNext()) {
@@ -318,9 +315,8 @@ public abstract class AbstractParser implements CustomParser {
     }
 
     private static Item collapsePhrase(PhraseItem phrase) {
-        if (phrase.getItemCount() == 1 && phrase.getItem(0) instanceof WordItem) {
+        if (phrase.getItemCount() == 1 && phrase.getItem(0) instanceof WordItem word) {
             // TODO: Other stuff which needs propagation?
-            WordItem word = (WordItem) phrase.getItem(0);
             word.setWeight(phrase.getWeight());
             return word;
         } else {
