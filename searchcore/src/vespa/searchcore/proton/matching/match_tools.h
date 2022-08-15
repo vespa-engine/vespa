@@ -30,19 +30,25 @@ class MatchTools
 {
 private:
     using IRequestContext = search::queryeval::IRequestContext;
-    QueryLimiter                          &_queryLimiter;
-    const vespalib::Doom                  &_doom;
-    const Query                           &_query;
-    MaybeMatchPhaseLimiter                &_match_limiter;
-    const QueryEnvironment                &_queryEnv;
-    const search::fef::RankSetup          &_rankSetup;
-    const search::fef::Properties         &_featureOverrides;
-    std::unique_ptr<search::fef::MatchData>     _match_data;
-    std::unique_ptr<search::fef::RankProgram>   _rank_program;
-    search::queryeval::SearchIterator::UP  _search;
-    HandleRecorder::HandleMap              _used_handles;
-    bool                                   _search_has_changed;
-    void setup(std::unique_ptr<search::fef::RankProgram>, double termwise_limit = 1.0);
+    using SearchIterator = search::queryeval::SearchIterator;
+    using MatchData = search::fef::MatchData;
+    using MatchDataLayout = search::fef::MatchDataLayout;
+    using Properties = search::fef::Properties;
+    using RankProgram = search::fef::RankProgram;
+    using RankSetup = search::fef::RankSetup;
+    QueryLimiter                    &_queryLimiter;
+    const vespalib::Doom            &_doom;
+    const Query                     &_query;
+    MaybeMatchPhaseLimiter          &_match_limiter;
+    const QueryEnvironment          &_queryEnv;
+    const RankSetup                 &_rankSetup;
+    const Properties                &_featureOverrides;
+    std::unique_ptr<MatchData>       _match_data;
+    std::unique_ptr<RankProgram>     _rank_program;
+    std::unique_ptr<SearchIterator>  _search;
+    HandleRecorder::HandleMap        _used_handles;
+    bool                             _search_has_changed;
+    void setup(std::unique_ptr<RankProgram>, double termwise_limit = 1.0);
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(const MatchTools &) = delete;
@@ -52,19 +58,19 @@ public:
                const Query &query,
                MaybeMatchPhaseLimiter &match_limiter_in,
                const QueryEnvironment &queryEnv,
-               const search::fef::MatchDataLayout &mdl,
-               const search::fef::RankSetup &rankSetup,
-               const search::fef::Properties &featureOverrides);
+               const MatchDataLayout &mdl,
+               const RankSetup &rankSetup,
+               const Properties &featureOverrides);
     ~MatchTools();
     const vespalib::Doom &getDoom() const { return _doom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
     bool has_second_phase_rank() const;
-    const search::fef::MatchData &match_data() const { return *_match_data; }
-    search::fef::RankProgram &rank_program() { return *_rank_program; }
-    search::queryeval::SearchIterator &search() { return *_search; }
-    search::queryeval::SearchIterator::UP borrow_search() { return std::move(_search); }
-    void give_back_search(search::queryeval::SearchIterator::UP search_in) { _search = std::move(search_in); }
+    const MatchData &match_data() const { return *_match_data; }
+    RankProgram &rank_program() { return *_rank_program; }
+    SearchIterator &search() { return *_search; }
+    std::unique_ptr<SearchIterator> borrow_search() { return std::move(_search); }
+    void give_back_search(std::unique_ptr<SearchIterator> search_in) { _search = std::move(search_in); }
     void tag_search_as_changed() { _search_has_changed = true; }
     void setup_first_phase();
     void setup_second_phase();
@@ -92,17 +98,25 @@ class MatchToolsFactory
 {
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
-    QueryLimiter                    & _queryLimiter;
-    search::attribute::AttributeBlueprintParams _global_filter_params;
-    Query                             _query;
-    MaybeMatchPhaseLimiter::UP        _match_limiter;
-    QueryEnvironment                  _queryEnv;
-    RequestContext                    _requestContext;
-    search::fef::MatchDataLayout      _mdl;
-    const search::fef::RankSetup    & _rankSetup;
-    const search::fef::Properties   & _featureOverrides;
-    DiversityParams                   _diversityParams;
-    bool                              _valid;
+    using IAttributeContext = search::attribute::IAttributeContext;
+    using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
+    using MatchDataLayout = search::fef::MatchDataLayout;
+    using Properties = search::fef::Properties;
+    using RankProgram = search::fef::RankProgram;
+    using RankSetup = search::fef::RankSetup;
+    using IIndexEnvironment = search::fef::IIndexEnvironment;
+    using IDiversifier = search::queryeval::IDiversifier;
+    QueryLimiter              & _queryLimiter;
+    AttributeBlueprintParams    _global_filter_params;
+    Query                       _query;
+    MaybeMatchPhaseLimiter::UP  _match_limiter;
+    QueryEnvironment            _queryEnv;
+    RequestContext              _requestContext;
+    MatchDataLayout             _mdl;
+    const RankSetup           & _rankSetup;
+    const Properties          & _featureOverrides;
+    DiversityParams             _diversityParams;
+    bool                        _valid;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
@@ -114,23 +128,23 @@ public:
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
-                      search::attribute::IAttributeContext &attributeContext,
+                      IAttributeContext &attributeContext,
                       search::engine::Trace & root_trace,
                       vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,
-                      const search::fef::IIndexEnvironment &indexEnv,
-                      const search::fef::RankSetup &rankSetup,
-                      const search::fef::Properties &rankProperties,
-                      const search::fef::Properties &featureOverrides,
+                      const IIndexEnvironment &indexEnv,
+                      const RankSetup &rankSetup,
+                      const Properties &rankProperties,
+                      const Properties &featureOverrides,
                       bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
     bool should_diversify() const { return _diversityParams.enabled(); }
-    std::unique_ptr<search::queryeval::IDiversifier> createDiversifier(uint32_t heapSize) const;
+    std::unique_ptr<IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const;
     bool has_match_features() const;
@@ -151,11 +165,9 @@ public:
      * When searchable-copies > 1, we must scale the parameters to match the effective range of the estimated hit ratio.
      * This is done by multiplying with the active hit ratio (active docids / docid limit).
      */
-    static search::attribute::AttributeBlueprintParams
-    extract_global_filter_params(const search::fef::RankSetup& rank_setup,
-                                       const search::fef::Properties& rank_properties,
-                                       uint32_t active_docids,
-                                       uint32_t docid_limit);
+    static AttributeBlueprintParams
+    extract_global_filter_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                 uint32_t active_docids, uint32_t docid_limit);
 };
 
 }

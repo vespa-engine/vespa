@@ -14,15 +14,12 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
 
-using search::attribute::IAttributeContext;
-using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
 using search::attribute::AttributeBlueprintParams;
 using vespalib::Issue;
 
-using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
 using namespace search::fef::indexproperties;
@@ -32,6 +29,9 @@ using search::StringStringMap;
 namespace proton::matching {
 
 namespace {
+
+using search::fef::Properties;
+using search::fef::RankSetup;
 
 bool contains_all(const HandleRecorder::HandleMap &old_map,
                   const HandleRecorder::HandleMap &new_map)
@@ -70,7 +70,7 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
 } // namespace proton::matching::<unnamed>
 
 void
-MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_limit)
+MatchTools::setup(std::unique_ptr<RankProgram> rank_program, double termwise_limit)
 {
     if (_search) {
         _match_data->soft_reset();
@@ -240,12 +240,12 @@ std::unique_ptr<IDiversifier>
 MatchToolsFactory::createDiversifier(uint32_t heapSize) const
 {
     if ( !_diversityParams.enabled() ) {
-        return std::unique_ptr<IDiversifier>();
+        return {};
     }
     auto attr = _requestContext.getAttribute(_diversityParams.attribute);
     if ( !attr) {
         Issue::report("Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
-        return std::unique_ptr<IDiversifier>();
+        return {};
     }
     size_t max_per_group = heapSize/_diversityParams.min_groups;
     return DiversityFilter::create(*attr, heapSize, max_per_group, _diversityParams.min_groups,
@@ -302,10 +302,8 @@ MatchToolsFactory::get_feature_rename_map() const
 }
 
 AttributeBlueprintParams
-MatchToolsFactory::extract_global_filter_params(const search::fef::RankSetup& rank_setup,
-                                                const search::fef::Properties& rank_properties,
-                                                uint32_t active_docids,
-                                                uint32_t docid_limit)
+MatchToolsFactory::extract_global_filter_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                                uint32_t active_docids, uint32_t docid_limit)
 {
     double lower_limit = GlobalFilterLowerLimit::lookup(rank_properties, rank_setup.get_global_filter_lower_limit());
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
