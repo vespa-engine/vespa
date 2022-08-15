@@ -96,15 +96,10 @@ public class ClusterModel {
     public Load loadAdjustment() {
         if (nodeTimeseries().measurementsPerNode() == 0) return Load.one(); // No info, no change
 
-        System.out.println("Peak  " + nodeTimeseries().peakLoad());
-        System.out.println("ideal " + idealLoad());
-        Load peak = nodeTimeseries().peakLoad().divide(idealLoad()); // Peak relative to ideal
-        System.out.println("Relative peak " + peak);
-        if (! safeToScaleDown()) {
-            peak = peak.map(v -> v < 1 ? 1 : v);
-            System.out.println("       capped " + peak);
-        }
-        return peak;
+        Load relativePeak = nodeTimeseries().peakLoad().divide(idealLoad()); // Peak relative to ideal
+        if (! safeToScaleDown())
+            relativePeak = relativePeak.map(v -> v < 1 ? 1 : v);
+        return relativePeak;
     }
 
     /** Are we in a position to make decisions to scale down at this point? */
@@ -142,11 +137,14 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    /** Returns average of the last load reading from each node. */
+    /** Returns the average of the last load measurement from each node. */
     public Load currentLoad() { return nodeTimeseries().currentLoad(); }
 
-    /** Returns average load during the last {@link #scalingDuration()} */
-    public Load averageLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(scalingDuration())); }
+    /** Returns the average of all load measurements from all nodes*/
+    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
+
+    /** Returns the average of the peak load measurement in each dimension, from each node. */
+    public Load peakLoad() { return nodeTimeseries().peakLoad(); }
 
     /** The number of nodes this cluster has, or will have if not deployed yet. */
     // TODO: Make this the deployed, not current count
