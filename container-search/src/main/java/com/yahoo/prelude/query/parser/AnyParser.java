@@ -31,8 +31,8 @@ public class AnyParser extends SimpleParser {
         super(environment);
     }
 
-    protected Item parseItems() {
-        return anyItems(true);
+    protected Item parseItems(String defaultIndexName) {
+        return anyItems(true, defaultIndexName);
     }
 
     Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
