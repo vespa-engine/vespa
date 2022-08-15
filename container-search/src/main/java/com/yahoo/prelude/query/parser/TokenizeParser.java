@@ -22,7 +22,7 @@ public final class TokenizeParser extends AbstractParser {
     }
 
     @Override
-    protected Item parseItems(String defaultIndex) {
+    protected Item parseItems() {
         WeakAndItem weakAnd = new WeakAndItem();
         Token token;
         while (null != (token = tokens.next())) {

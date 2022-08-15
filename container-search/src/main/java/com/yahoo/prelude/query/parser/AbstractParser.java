@@ -143,7 +143,7 @@ public abstract class AbstractParser implements CustomParser {
         }
         setState(parsingLanguage, indexFacts);
 
-        Item root = parseItems(defaultIndexName);
+        Item root = parseItems();
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
             if (root == null) {
@@ -222,8 +222,8 @@ public abstract class AbstractParser implements CustomParser {
         if (tokenOrNull == null) return false;
         return kind.equals(tokenOrNull.kind);
     }
-
-    protected abstract  Item parseItems(String defaultIndexName);
+    
+    protected abstract Item parseItems();
 
     /**
      * Assigns the default index to query terms having no default index. The
