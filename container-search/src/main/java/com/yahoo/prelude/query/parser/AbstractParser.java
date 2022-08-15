@@ -5,12 +5,21 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * The Vespa query parser.

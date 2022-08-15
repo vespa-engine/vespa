@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-
 import com.yahoo.prelude.query.Substring;
 
 /**
@@ -11,7 +10,7 @@ import com.yahoo.prelude.query.Substring;
  */
 public class Token {
 
-    public static enum Kind {
+    public enum Kind {
         EOF("<EOF>"),
         NUMBER("<NUMBER>"),
         WORD("<WORD>"),
@@ -77,31 +76,6 @@ public class Token {
     /** Returns whether this is a <i>special token</i> */
     public boolean isSpecial() { return special; }
 
-    public String toString() { return image; }
-
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null) {
-            return false;
-        }
-        if (object.getClass() != this.getClass()) {
-            return false;
-        }
-
-        Token other = (Token) object;
-
-        if (this.kind != other.kind) {
-            return false;
-        }
-        if (!(this.image.equals(other.image))) {
-            return false;
-        }
-
-        return true;
-    }
-
     /**
      * Returns the substring containing the image ins original form (including casing),
      * as well as all the text surrounding the token
@@ -110,6 +84,22 @@ public class Token {
      */
     public Substring getSubstring() { return substring; }
 
+    @Override
+    public String toString() { return image; }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null) return false;
+        if (object.getClass() != this.getClass()) return false;
+
+        Token other = (Token) object;
+        if (this.kind != other.kind) return false;
+        if (!(this.image.equals(other.image))) return false;
+        return true;
+    }
+
+    @Override
     public int hashCode() {
         return image.hashCode() ^ kind.hashCode();
     }

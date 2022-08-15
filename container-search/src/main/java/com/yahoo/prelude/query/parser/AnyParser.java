@@ -14,9 +14,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -148,9 +146,7 @@ public class AnyParser extends SimpleParser {
 
     private Item filterItems(Item root) {
         while (tokens.hasNext()) {
-            Item item = null;
-
-            item = positiveItem();
+            Item item = positiveItem();
             root = addAndFilter(root, item);
             if (item == null) {
                 item = negativeItem();

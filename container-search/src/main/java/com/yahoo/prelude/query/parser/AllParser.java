@@ -204,8 +204,7 @@ public class AllParser extends SimpleParser {
                 rank.addItem(topLevelItem);
             }
             return rank;
-        } else if ((item instanceof RankItem) && (((RankItem)item).getItem(0) instanceof OrItem)) {
-            RankItem itemAsRank = (RankItem) item;
+        } else if ((item instanceof RankItem itemAsRank) && (((RankItem)item).getItem(0) instanceof OrItem)) {
             OrItem or = (OrItem) itemAsRank.getItem(0);
 
             ((RankItem) topLevelItem).addItem(0, or);

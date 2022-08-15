@@ -26,13 +26,13 @@ class UnicodePropertyDump {
         boolean debug = false;
 
         if (arg.length > 0) {
-            start = Integer.valueOf(arg[0]).intValue();
+            start = Integer.parseInt(arg[0]);
         }
         if (arg.length > 1) {
-            end = Integer.valueOf(arg[1]).intValue();
+            end = Integer.parseInt(arg[1]);
         }
         if (arg.length > 2) {
-            debug = Boolean.valueOf(arg[2]).booleanValue();
+            debug = Boolean.parseBoolean(arg[2]);
         }
         dumpProperties(start, end, debug, System.out);
     }
@@ -109,4 +109,5 @@ class UnicodePropertyDump {
             out.println();
         }
     }
+
 }
