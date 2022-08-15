@@ -2,6 +2,7 @@
 
 #pragma once
 
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
-bool verifyRankSetup(const char * configId, std::string & messages);
+std::pair<bool, std::vector<vespalib::string>> verifyRankSetup(const char * configId);

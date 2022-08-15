@@ -253,14 +253,10 @@ VerifyRankSetup::verify(const std::string & configid)
     return ok;
 }
 
-bool
-verifyRankSetup(const char * configId, std::string & messages) {
+std::pair<bool, std::vector<vespalib::string>>
+verifyRankSetup(const char * configId) {
     VerifyRankSetup verifier;
     bool ok = verifier.verify(configId);
-    vespalib::asciistream os;
-    for (const auto & m : verifier.getMessages()) {
-        os << m << "\n";
-    }
-    messages = os.str();
-    return ok;
+
+    return {ok, verifier.getMessages()};
 }

@@ -27,16 +27,12 @@ App::main(int argc, char **argv)
         return usage();
     }
 
-    std::string messages;
-    bool ok = verifyRankSetup(argv[1], messages);
+    auto [ok, messages] = verifyRankSetup(argv[1]);
 
-    if ( ! messages.empty() ) {
-        LOG(info, "%s", messages.c_str());
+    for (const auto & msg : messages) {
+        LOG(warning, "%s", msg.c_str());
     }
-    if (!ok) {
-        return 1;
-    }
-    return 0;
+    return ok ? 0 : 1;
 }
 
 int main(int argc, char **argv) {
