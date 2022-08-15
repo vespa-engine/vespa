@@ -169,9 +169,9 @@ DotProductSearch::create(const std::vector<SearchIterator*> &children,
                                                              *childMatch[0], weights[0], std::move(md));
     }
     if (childMatch.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, SearchIteratorPack(children, childMatch, std::move(md))));
+        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, SearchIteratorPack(children, childMatch, std::move(md)));
     }
-    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights,  SearchIteratorPack(children, childMatch, std::move(md))));
+    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights,  SearchIteratorPack(children, childMatch, std::move(md)));
 }
 
 //-----------------------------------------------------------------------------
@@ -186,9 +186,9 @@ DotProductSearch::create(TermFieldMatchData &tmd,
     typedef DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack> HeapImpl;
 
     if (iterators.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
+        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators)));
     }
-    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
+    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators)));
 }
 
 //-----------------------------------------------------------------------------
