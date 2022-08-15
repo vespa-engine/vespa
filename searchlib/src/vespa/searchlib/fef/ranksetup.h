@@ -447,6 +447,7 @@ public:
      * @return list of errors
      */
     const Errors & getCompileErrors() const { return _compileErrors; }
+    vespalib::string getJoinedErrors() const;
 
     // These functions create rank programs for different tasks. Note
     // that the setup function must be called on rank programs for

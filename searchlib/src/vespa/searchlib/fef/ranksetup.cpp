@@ -4,6 +4,7 @@
 #include "indexproperties.h"
 #include "featurenameparser.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using vespalib::make_string_short::fmt;
 
@@ -242,6 +243,15 @@ RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &o
     for (const auto &spec : _summary_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
+}
+
+vespalib::string
+RankSetup::getJoinedErrors() const {
+    vespalib::asciistream os;
+    for (const auto & m : _compileErrors) {
+        os << m << "\n";
+    }
+    return os.str();
 }
 
 }
