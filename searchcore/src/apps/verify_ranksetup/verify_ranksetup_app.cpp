@@ -20,6 +20,20 @@ App::usage()
     return 1;
 }
 
+namespace {
+ns_log::Logger::LogLevel
+toLogLevel(search::fef::Level level) {
+    switch (level) {
+        case search::fef::Level::INFO:
+            return ns_log::Logger::LogLevel::info;
+        case search::fef::Level::WARNING:
+            return ns_log::Logger::LogLevel::warning;
+        case search::fef::Level::ERROR:
+            return ns_log::Logger::LogLevel::error;
+    }
+    abort();
+}
+}
 int
 App::main(int argc, char **argv)
 {
@@ -30,7 +44,7 @@ App::main(int argc, char **argv)
     auto [ok, messages] = verifyRankSetup(argv[1]);
 
     for (const auto & msg : messages) {
-        LOG(warning, "%s", msg.c_str());
+        VLOG(toLogLevel(msg.first), "%s", msg.second.c_str());
     }
     return ok ? 0 : 1;
 }

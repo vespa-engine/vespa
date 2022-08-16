@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include <vespa/searchlib/fef/verify_feature.h>
 
-std::pair<bool, std::vector<vespalib::string>> verifyRankSetup(const char * configId);
+std::pair<bool, std::vector<search::fef::Message>> verifyRankSetup(const char * configId);

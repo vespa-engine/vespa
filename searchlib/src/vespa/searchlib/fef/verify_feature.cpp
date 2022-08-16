@@ -12,7 +12,7 @@ bool verifyFeature(const BlueprintFactory &factory,
                    const IIndexEnvironment &indexEnv,
                    const std::string &featureName,
                    const std::string &desc,
-                   std::vector<vespalib::string> & errors)
+                   std::vector<Message> & errors)
 {
     indexEnv.hintFeatureMotivation(IIndexEnvironment::VERIFY_SETUP);
     BlueprintResolver resolver(factory, indexEnv);
@@ -20,9 +20,11 @@ bool verifyFeature(const BlueprintFactory &factory,
     bool result = resolver.compile();
     if (!result) {
         const BlueprintResolver::Errors & compileErrors(resolver.getCompileErrors());
-        errors.insert(errors.end(), compileErrors.begin(), compileErrors.end());
+        for (const auto & msg : compileErrors) {
+            errors.emplace_back(Level::WARNING, msg);
+        }
         vespalib::string msg = fmt("verification failed: %s (%s)",BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
-        errors.emplace_back(msg);
+        errors.emplace_back(Level::ERROR, msg);
     }
     return result;
 }

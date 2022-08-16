@@ -7,6 +7,9 @@
 
 namespace search::fef {
 
+enum class Level {INFO, WARNING, ERROR};
+using Message = std::pair<Level, vespalib::string>;
+
 /**
  * Verify whether a specific feature can be computed. If the feature
  * can not be computed, log a reason why, including feature
@@ -22,6 +25,6 @@ bool verifyFeature(const BlueprintFactory &factory,
                    const IIndexEnvironment &indexEnv,
                    const std::string &featureName,
                    const std::string &desc,
-                   std::vector<vespalib::string> & errors);
+                   std::vector<Message> & errors);
 
 }
