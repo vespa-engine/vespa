@@ -10,7 +10,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <ostream>
+#include <iostream>
 #include <sstream>
 #include <limits>
 
