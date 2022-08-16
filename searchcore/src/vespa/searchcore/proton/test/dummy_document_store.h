@@ -11,7 +11,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     vespalib::string _baseDir;
 
     DummyDocumentStore() = default;
-    DummyDocumentStore(const vespalib::string &baseDir)
+    DummyDocumentStore(const vespalib::string &baseDir) noexcept
         : _baseDir(baseDir)
     {}
     ~DummyDocumentStore() = default;
