@@ -7,7 +7,6 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -17,7 +16,6 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -28,6 +26,7 @@ import java.util.ListIterator;
  * @author Steinar Knutsen
  */
 public abstract class AbstractParser implements CustomParser {
+
 
     /** The current submodes of this parser */
     protected Submodes submodes = new Submodes();
@@ -40,6 +39,8 @@ public abstract class AbstractParser implements CustomParser {
 
     /** The IndexFacts.Session of this query */
     protected IndexFacts.Session indexFacts;
+
+    protected String defaultIndex;
 
     /**
      * The counter for braces in URLs, braces in URLs are accepted so long as
@@ -134,38 +135,34 @@ public abstract class AbstractParser implements CustomParser {
 
     @Override
     public final Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
-                            IndexFacts.Session indexFacts, String defaultIndexName) {
-        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts, defaultIndexName, null);
+                            IndexFacts.Session indexFacts, String defaultIndex) {
+        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts, defaultIndex, null);
     }
 
     private Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
-                       IndexFacts.Session indexFacts, String defaultIndexName, Parsable parsable) {
+                       IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
         if (queryToParse == null) return null;
-
-        tokenize(queryToParse, defaultIndexName, indexFacts, parsingLanguage);
+        tokenize(queryToParse, defaultIndex, indexFacts, parsingLanguage);
 
         if (parsingLanguage == null && parsable != null) {
-            String detectionText = generateLanguageDetectionTextFrom(tokens, indexFacts, defaultIndexName);
+            String detectionText = generateLanguageDetectionTextFrom(tokens, indexFacts, defaultIndex);
             if (detectionText.isEmpty()) // heuristic detection text extraction is fallible
                 detectionText = queryToParse;
             parsingLanguage = parsable.getOrDetectLanguage(detectionText);
         }
-        setState(parsingLanguage, indexFacts);
 
-        Item root = parseItems(defaultIndexName);
+        setState(parsingLanguage, indexFacts, defaultIndex);
+        Item root = parseItems();
+
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
             if (root == null) {
-                root = filterParser.parseFilter(filterToParse, parsingLanguage, indexFacts);
+                root = filterParser.parseFilter(filterToParse, parsingLanguage, indexFacts, defaultIndex);
             } else {
-                root = filterParser.applyFilter(root, filterToParse, parsingLanguage, indexFacts);
+                root = filterParser.applyFilter(root, filterToParse, parsingLanguage, indexFacts, defaultIndex);
             }
         }
-        root = simplifyPhrases(root);
-        if (defaultIndexName != null) {
-            assignDefaultIndex(indexFacts.getCanonicName(defaultIndexName), root);
-        }
-        return root;
+        return simplifyPhrases(root);
     }
 
     /**
@@ -232,28 +229,7 @@ public abstract class AbstractParser implements CustomParser {
         return kind.equals(tokenOrNull.kind);
     }
 
-    protected abstract  Item parseItems(String defaultIndexName);
-
-    /**
-     * Assigns the default index to query terms having no default index. The
-     * parser _should_ have done this, for some reason it doesn't.
-     *
-     * @param defaultIndex the default index to assign
-     * @param item         the item to check
-     */
-    private static void assignDefaultIndex(String defaultIndex, Item item) {
-        if (defaultIndex == null || item == null) return;
-
-        if (item instanceof IndexedItem indexName) {
-            if ("".equals(indexName.getIndexName()))
-                indexName.setIndexName(defaultIndex);
-        } 
-        else if (item instanceof CompositeItem) {
-            Iterator<Item> items = ((CompositeItem)item).getItemIterator();
-            while (items.hasNext())
-                assignDefaultIndex(defaultIndex, items.next());
-        }
-    }
+    protected abstract Item parseItems();
 
     /**
      * Unicode normalizes some piece of natural language text. The chosen form
@@ -265,10 +241,11 @@ public abstract class AbstractParser implements CustomParser {
         return environment.getLinguistics().getNormalizer().normalize(input);
     }
 
-    protected void setState(Language queryLanguage, IndexFacts.Session indexFacts) {
+    protected void setState(Language queryLanguage, IndexFacts.Session indexFacts, String defaultIndex) {
         this.indexFacts = indexFacts;
-        language = queryLanguage;
-        submodes.reset();
+        this.defaultIndex = defaultIndex;
+        this.language = queryLanguage;
+        this.submodes.reset();
     }
 
     /**

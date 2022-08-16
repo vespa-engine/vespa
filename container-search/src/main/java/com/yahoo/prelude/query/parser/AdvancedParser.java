@@ -31,7 +31,8 @@ public class AdvancedParser extends StructuredParser {
         super(environment);
     }
 
-    protected Item parseItems(String defaultIndexName) {
+    @Override
+    protected Item parseItems() {
         return advancedItems(true);
     }
 
@@ -64,45 +65,40 @@ public class AdvancedParser extends StructuredParser {
         boolean expectingOperator = false;
 
         do {
-            item = null;
-
+            item = indexableItem().getFirst();
             if (item == null) {
-                item = indexableItem();
-                if (item == null) {
-                    item = compositeItem();
-                    itemIsComposite = true;
-                } else {
-                    itemIsComposite = false;
+                item = compositeItem();
+                itemIsComposite = true;
+            } else {
+                itemIsComposite = false;
+            }
+            if (item != null) {
+                Item newTop = null;
+
+                if (expectingOperator) {
+                    newTop = handleAdvancedOperator(topLevelItem, item, topLevelIsClosed);
                 }
-                if (item != null) {
-                    Item newTop = null;
-
-                    if (expectingOperator) {
-                        newTop = handleAdvancedOperator(topLevelItem, item,
-                                topLevelIsClosed);
+                if (newTop != null) { // Operator found
+                    topLevelIsClosed = false;
+                    expectingOperator = false;
+                    topLevelItem = newTop;
+                } else if (topLevelItem == null) {
+                    topLevelItem = item;
+                    if (itemIsComposite) {
+                        topLevelIsClosed = true;
                     }
-                    if (newTop != null) { // Operator found
-                        topLevelIsClosed = false;
-                        expectingOperator = false;
-                        topLevelItem = newTop;
-                    } else if (topLevelItem == null) {
-                        topLevelItem = item;
-                        if (itemIsComposite) {
-                            topLevelIsClosed = true;
-                        }
-                        expectingOperator = true;
-                    } else if (topLevelItem instanceof CompositeItem && !(topLevelItem instanceof SegmentItem)) {
-                        ((CompositeItem) topLevelItem).addItem(item);
-                        expectingOperator = true;
-                    } else {
-                        AndItem and = new AndItem();
+                    expectingOperator = true;
+                } else if (topLevelItem instanceof CompositeItem && !(topLevelItem instanceof SegmentItem)) {
+                    ((CompositeItem) topLevelItem).addItem(item);
+                    expectingOperator = true;
+                } else {
+                    AndItem and = new AndItem();
 
-                        and.addItem(topLevelItem);
-                        and.addItem(item);
-                        topLevelItem = and;
-                        topLevelIsClosed = false;
-                        expectingOperator = true;
-                    }
+                    and.addItem(topLevelItem);
+                    and.addItem(item);
+                    topLevelItem = and;
+                    topLevelIsClosed = false;
+                    expectingOperator = true;
                 }
             }
 
