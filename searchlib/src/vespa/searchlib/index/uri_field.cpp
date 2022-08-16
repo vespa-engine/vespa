@@ -18,9 +18,7 @@ UriField::UriField()
 }
 
 bool
-UriField::valid(const Schema &schema,
-                uint32_t fieldId,
-                const Schema::CollectionType &collectionType)
+UriField::valid(const Schema &schema, uint32_t fieldId, const Schema::CollectionType &collectionType)
 {
     if (fieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
@@ -36,9 +34,7 @@ UriField::valid(const Schema &schema,
 }
 
 bool
-UriField::broken(const Schema &schema,
-                 const Schema::CollectionType &
-                 collectionType) const
+UriField::broken(const Schema &schema, const Schema::CollectionType & collectionType) const
 {
     return !valid(schema, _all, collectionType) &&
         valid(schema, _scheme, collectionType) &&
@@ -50,9 +46,7 @@ UriField::broken(const Schema &schema,
 }
 
 bool
-UriField::valid(const Schema &schema,
-                const Schema::CollectionType &
-                collectionType) const
+UriField::valid(const Schema &schema, const Schema::CollectionType & collectionType) const
 {
     return valid(schema, _all, collectionType) &&
         valid(schema, _scheme, collectionType) &&
@@ -64,8 +58,7 @@ UriField::valid(const Schema &schema,
 }
 
 void
-UriField::setup(const Schema &schema,
-                const vespalib::string &field)
+UriField::setup(const Schema &schema, const vespalib::string &field)
 {
     _all = schema.getIndexFieldId(field);
     _scheme = schema.getIndexFieldId(field + ".scheme");
@@ -75,6 +68,17 @@ UriField::setup(const Schema &schema,
     _query = schema.getIndexFieldId(field + ".query");
     _fragment = schema.getIndexFieldId(field + ".fragment");
     _hostname = schema.getIndexFieldId(field + ".hostname");
+}
+
+bool
+UriField::mightBePartofUri(vespalib::stringref name) {
+    size_t dotPos = name.find('.');
+    if ((dotPos != 0) && (dotPos != vespalib::string::npos)) {
+        vespalib::stringref suffix = name.substr(dotPos + 1);
+        return ((suffix == "all") || (suffix == "scheme") || (suffix == "host") || (suffix == "port") ||
+                (suffix == "path") || (suffix == "query") || (suffix == "fragment") || (suffix == "hostname"));
+    }
+    return false;
 }
 
 void

@@ -13,8 +13,7 @@ LOG_SETUP("docbuilder_test");
 using namespace document;
 using search::index::schema::CollectionType;
 
-namespace search {
-namespace index {
+namespace search::index {
 
 namespace
 {
@@ -26,15 +25,8 @@ namespace linguistics
 const vespalib::string SPANTREE_NAME("linguistics");
 }
 
-class Test : public vespalib::TestApp {
-private:
-    void testBuilder();
-public:
-    int Main() override;
-};
 
-void
-Test::testBuilder()
+TEST("test docBuilder")
 {
     Schema s;
     s.addIndexField(Schema::IndexField("ia", schema::DataType::STRING));
@@ -415,7 +407,7 @@ Test::testBuilder()
         EXPECT_EQUAL("</af>", *itr++);
         EXPECT_EQUAL("</document>", *itr++);
         EXPECT_TRUE(itr == lines.end());
-#if 1
+#if 0
         std::cout << "onedoc xml start -----" << std::endl <<
             xml << std::endl <<
             "-------" << std::endl;
@@ -479,7 +471,7 @@ Test::testBuilder()
         expSpans.push_back(Span(15, 9));
         expSpans.push_back(Span(15, 9));
         ASSERT_TRUE(expSpans == spans);
-#if 1
+#if 0
         std::cout << "onedoc xml start -----" << std::endl <<
             xml << std::endl <<
             "-------" << std::endl;
@@ -490,18 +482,21 @@ Test::testBuilder()
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("docbuilder_test");
-
-    testBuilder();
-
-    TEST_DONE();
+TEST("test if index names are valid uri parts") {
+    EXPECT_FALSE(UriField::mightBePartofUri("all"));
+    EXPECT_FALSE(UriField::mightBePartofUri("fragment"));
+    EXPECT_FALSE(UriField::mightBePartofUri(".all"));
+    EXPECT_FALSE(UriField::mightBePartofUri("all.b"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.all"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.scheme"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.host"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.port"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.hostname"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.path"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.query"));
+    EXPECT_TRUE(UriField::mightBePartofUri("b.fragment"));
 }
 
 }
-}
 
-TEST_APPHOOK(search::index::Test);
-
+TEST_MAIN() { TEST_RUN_ALL(); }
