@@ -24,7 +24,7 @@ using vespalib::Issue;
 
 namespace {
 
-struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
+struct TimedMatchLoopCommunicator final : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     vespalib::Timer timer;
     vespalib::duration elapsed;
