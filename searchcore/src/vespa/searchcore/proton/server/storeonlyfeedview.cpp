@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
+#include <vespa/searchlib/index/uri_field.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -38,7 +39,7 @@ using vespalib::CpuUsage;
 using vespalib::IDestructorCallback;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 
 namespace proton {
 
@@ -110,10 +111,9 @@ putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
             meta_store.put(doc_id.getGlobalId(), op.getBucketId(), op.getTimestamp(),
                            op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
     if (!putRes.ok()) {
-        throw IllegalStateException(
-                make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            doc_id.getGlobalId().toString().c_str()));
+        throw IllegalStateException(fmt("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                                        is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
+                                        doc_id.getGlobalId().toString().c_str()));
     }
     assert(op.getLid() == putRes._lid);
 }
@@ -129,9 +129,8 @@ removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, cons
     (void) meta;
     if (!meta_store.remove(op.getPrevLid(), op.get_prepare_serial_num())) {
         throw IllegalStateException(
-                make_string("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            gid.toString().c_str()));
+                fmt("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                    is_removed_doc ? "removed " : "", doc_id.toString().c_str(), gid.toString().c_str()));
     }
 }
 
@@ -202,9 +201,15 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
     if (_schema && _docType) {
         for (const auto &indexField : _schema->getIndexFields()) {
-            document::FieldPath fieldPath;
-            _docType->buildFieldPath(fieldPath, indexField.getName());
-            _indexedFields.insert(fieldPath.back().getFieldRef().getId());
+            size_t dotPos = indexField.getName().find('.');
+            if ((dotPos == vespalib::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
+                document::FieldPath fieldPath;
+                _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
+                _indexedFields.insert(fieldPath.back().getFieldRef().getId());
+            } else {
+                throw IllegalStateException("Field '%s' is not a valid index name", indexField.getName().c_str());
+            }
+
         }
     }
 }
