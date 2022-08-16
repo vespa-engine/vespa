@@ -78,8 +78,7 @@ UriField::setup(const Schema &schema,
 }
 
 void
-UriField::markUsed(UsedFieldsMap &usedFields,
-                   uint32_t field)
+UriField::markUsed(UsedFieldsMap &usedFields, uint32_t field)
 {
     if (field == Schema::UNKNOWN_FIELD_ID) {
         return;
