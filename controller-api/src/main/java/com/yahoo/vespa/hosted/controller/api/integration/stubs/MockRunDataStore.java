@@ -5,9 +5,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author jonmv
@@ -16,6 +20,8 @@ public class MockRunDataStore implements RunDataStore {
 
     private final Map<RunId, byte[]> logs = new ConcurrentHashMap<>();
     private final Map<RunId, byte[]> reports = new ConcurrentHashMap<>();
+    private final Map<RunId, byte[]> vespaLogs = new ConcurrentHashMap<>();
+    private final Map<RunId, byte[]> testerLogs = new ConcurrentHashMap<>();
 
     @Override
     public Optional<byte[]> get(RunId id) {
@@ -47,6 +53,16 @@ public class MockRunDataStore implements RunDataStore {
     public void delete(ApplicationId id) {
         logs.keySet().removeIf(runId -> runId.application().equals(id));
         reports.keySet().removeIf(runId -> runId.application().equals(id));
+    }
+
+    @Override
+    public void putLogs(RunId id, boolean tester, InputStream logs) {
+        (tester ? testerLogs : vespaLogs).put(id, uncheck(logs::readAllBytes));
+    }
+
+    @Override
+    public InputStream getLogs(RunId id, boolean tester) {
+        return new ByteArrayInputStream((tester ? testerLogs : vespaLogs).get(id));
     }
 
 }

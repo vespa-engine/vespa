@@ -470,28 +470,24 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 4, tester.clock().instant().minusSeconds(4), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             /*
                              new LogEntry(lastId + 5, tester.clock().instant().minusSeconds(4), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
                              new LogEntry(lastId + 6, tester.clock().instant().minusSeconds(4), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                              */
-                             new LogEntry(lastId + 5, tester.clock().instant().minusSeconds(3), info,
+                             new LogEntry(lastId + 7, tester.clock().instant().minusSeconds(3), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 6, tester.clock().instant().minusSeconds(3), warning,
+                             new LogEntry(lastId + 8, tester.clock().instant().minusSeconds(3), warning,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstderr\n" +
-                                          "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"));
-                             /*
+                                          "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"),
                              new LogEntry(lastId + 9, tester.clock().instant().minusSeconds(3), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
                              new LogEntry(lastId + 10, tester.clock().instant().minusSeconds(3), warning,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstderr\n" +
                                           "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"));
-                             */
     }
 
     @Test
