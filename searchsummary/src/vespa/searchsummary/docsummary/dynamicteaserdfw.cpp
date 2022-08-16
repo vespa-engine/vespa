@@ -375,40 +375,35 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
         state->_dynteaser._query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
-    if (docid != state->_dynteaser._docid ||
-        _inputFieldEnumValue != state->_dynteaser._input ||
-        _langFieldEnumValue != state->_dynteaser._lang ||
-        !juniper::AnalyseCompatible(_juniperConfig.get(), state->_dynteaser._config)) {
-        LOG(debug, "makeDynamicTeaser: docid (%d,%d), fieldenum (%d,%d), lang (%d,%d) analyse %s",
-                docid, state->_dynteaser._docid,
-                _inputFieldEnumValue, state->_dynteaser._input,
-                _langFieldEnumValue, state->_dynteaser._lang,
-                (juniper::AnalyseCompatible(_juniperConfig.get(), state->_dynteaser._config) ? "no" : "yes"));
+    LOG(debug, "makeDynamicTeaser: docid (%d,%d), fieldenum (%d,%d), lang (%d,%d) analyse %s",
+        docid, state->_dynteaser._docid,
+        _inputFieldEnumValue, state->_dynteaser._input,
+        _langFieldEnumValue, state->_dynteaser._lang,
+        (juniper::AnalyseCompatible(_juniperConfig.get(), state->_dynteaser._config) ? "no" : "yes"));
 
-        if (state->_dynteaser._result != nullptr)
-            juniper::ReleaseResult(state->_dynteaser._result);
+    if (state->_dynteaser._result != nullptr)
+        juniper::ReleaseResult(state->_dynteaser._result);
 
-        state->_dynteaser._docid  = docid;
-        state->_dynteaser._input  = _inputFieldEnumValue;
-        state->_dynteaser._lang   = _langFieldEnumValue;
-        state->_dynteaser._config = _juniperConfig.get();
-        state->_dynteaser._result = nullptr;
+    state->_dynteaser._docid  = docid;
+    state->_dynteaser._input  = _inputFieldEnumValue;
+    state->_dynteaser._lang   = _langFieldEnumValue;
+    state->_dynteaser._config = _juniperConfig.get();
+    state->_dynteaser._result = nullptr;
 
-        if (state->_dynteaser._query != nullptr) {
+    if (state->_dynteaser._query != nullptr) {
 
-            if (LOG_WOULD_LOG(spam)) {
-                std::ostringstream hexDump;
-                hexDump << vespalib::HexDump(input.data(), input.length());
-                LOG(spam, "makeDynamicTeaser: docid=%d, input='%s', hexdump:\n%s",
-                        docid, std::string(input.data(), input.length()).c_str(), hexDump.str().c_str());
-            }
-
-            auto langid = static_cast<uint32_t>(-1);
-
-            state->_dynteaser._result =
-                juniper::Analyse(_juniperConfig.get(), state->_dynteaser._query,
-                                 input.data(), input.length(), docid, _inputFieldEnumValue,  langid);
+        if (LOG_WOULD_LOG(spam)) {
+            std::ostringstream hexDump;
+            hexDump << vespalib::HexDump(input.data(), input.length());
+            LOG(spam, "makeDynamicTeaser: docid=%d, input='%s', hexdump:\n%s",
+                docid, std::string(input.data(), input.length()).c_str(), hexDump.str().c_str());
         }
+
+        auto langid = static_cast<uint32_t>(-1);
+
+        state->_dynteaser._result =
+            juniper::Analyse(_juniperConfig.get(), state->_dynteaser._query,
+                             input.data(), input.length(), docid, _inputFieldEnumValue,  langid);
     }
 
     juniper::Summary *teaser = (state->_dynteaser._result != nullptr)
