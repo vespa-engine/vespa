@@ -28,7 +28,7 @@ public class WebParser extends AllParser {
     }
 
     @Override
-    protected Item parseItemsBody() {
+    protected Item parseItemsBody(String defaultIndexName) {
         // Algorithm: Collect positive, negative, and'ed and or'ed elements, then combine.
         CompositeItem and = null;
         OrItem or = null;
@@ -45,7 +45,7 @@ public class WebParser extends AllParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem();
+                current = indexableItem(defaultIndexName);
 
             if (current != null) {
                 if (and != null && (current instanceof WordItem) && "OR".equals(((WordItem)current).getRawWord())) {

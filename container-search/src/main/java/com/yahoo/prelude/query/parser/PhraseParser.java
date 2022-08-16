@@ -16,7 +16,7 @@ public class PhraseParser extends AbstractParser {
         super(environment);
     }
 
-    protected Item parseItems() {
+    protected Item parseItems(String defaultIndex) {
         return forcedPhrase();
     }
 

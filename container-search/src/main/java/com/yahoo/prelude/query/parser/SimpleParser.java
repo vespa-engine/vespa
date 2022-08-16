@@ -33,12 +33,12 @@ abstract class SimpleParser extends StructuredParser {
      * If there's a explicit composite and some other terms,
      * a rank terms combines them
      */
-    protected Item anyItems(boolean topLevel) {
+    protected Item anyItems(boolean topLevel, String defaultIndexName) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            item = anyItemsBody(topLevel);
+            item = anyItemsBody(topLevel, defaultIndexName);
             return item;
         } finally {
             if (item == null) {
@@ -47,7 +47,11 @@ abstract class SimpleParser extends StructuredParser {
         }
     }
 
-    private Item anyItemsBody(boolean topLevel) {
+    protected Item anyItems(boolean topLevel) {
+        return anyItems(topLevel, null);
+    }
+
+    private Item anyItemsBody(boolean topLevel, String defaultIndexName) {
         Item topLevelItem = null;
         NotItem not = null;
         Item item = null;
@@ -88,7 +92,7 @@ abstract class SimpleParser extends StructuredParser {
             }
 
             if (item == null) {
-                item = indexableItem();
+                item = indexableItem(defaultIndexName);
                 if (item != null) {
                     if (topLevelItem == null) {
                         topLevelItem = item;
