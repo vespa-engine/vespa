@@ -3,7 +3,10 @@ package com.yahoo.search.yql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.yahoo.search.query.QueryTree;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -365,6 +368,34 @@ public class UserInputTestCase {
         builder.setParameter("yql", "select * from sources * where ([{\"defaultIndex\": \"text_field\",\"grammar\": \"any\"}]userInput(@wql))");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where text_field contains \"boom\"", query.yqlRepresentation());
+    }
+
+    @Test
+    void testUserInputWithPhraseSegmentingIndex() {
+        execution = new Execution(searchChain, Execution.Context.createContextStub(createIndexFacts(true)));
+        URIBuilder builder = searchUri();
+        builder.setParameter("wql", "foo&bar");
+        builder.setParameter("yql", "select * from sources * where ([{\"defaultIndex\": \"text_field\",\"grammar\": \"any\"}]userInput(@wql))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where text_field contains phrase(\"foo\", \"bar\")", query.yqlRepresentation());
+    }
+
+    @Test
+    void testUserInputWithNonPhraseSegmentingIndex() {
+        execution = new Execution(searchChain, Execution.Context.createContextStub(createIndexFacts(false)));
+        URIBuilder builder = searchUri();
+        builder.setParameter("wql", "foo&bar");
+        builder.setParameter("yql", "select * from sources * where ([{\"defaultIndex\": \"text_field\",\"grammar\": \"any\"}]userInput(@wql))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (text_field contains \"foo\" AND text_field contains \"bar\")", query.yqlRepresentation());
+    }
+
+    private IndexFacts createIndexFacts(boolean phraseSegmenting) {
+        SearchDefinition sd = new SearchDefinition("sources");
+        Index test = new Index("text_field");
+        test.setPhraseSegmenting(phraseSegmenting);
+        sd.addIndex(test);
+        return new IndexFacts(new IndexModel(sd));
     }
 
 }

@@ -7,6 +7,7 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -52,11 +53,18 @@ abstract class StructuredParser extends AbstractParser {
     }
 
     protected Item indexableItem() {
+        return indexableItem(null);
+    }
+
+    protected Item indexableItem(String defaultIndexName) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
             String indexName = indexPrefix();
+            if (Objects.isNull(indexName)) {
+                indexName = defaultIndexName;
+            }
             setSubmodeFromIndex(indexName, indexFacts);
 
             item = number();

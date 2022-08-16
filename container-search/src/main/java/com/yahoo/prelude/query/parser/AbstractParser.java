@@ -133,6 +133,9 @@ public abstract class AbstractParser implements CustomParser {
                        IndexFacts.Session indexFacts, String defaultIndexName, Parsable parsable) {
         if (queryToParse == null) return null;
 
+        if (defaultIndexName != null)
+            defaultIndexName = indexFacts.getCanonicName(defaultIndexName);
+
         tokenize(queryToParse, defaultIndexName, indexFacts, parsingLanguage);
 
         if (parsingLanguage == null && parsable != null) {
@@ -143,7 +146,7 @@ public abstract class AbstractParser implements CustomParser {
         }
         setState(parsingLanguage, indexFacts);
 
-        Item root = parseItems();
+        Item root = parseItems(defaultIndexName);
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
             if (root == null) {
@@ -222,8 +225,8 @@ public abstract class AbstractParser implements CustomParser {
         if (tokenOrNull == null) return false;
         return kind.equals(tokenOrNull.kind);
     }
-    
-    protected abstract Item parseItems();
+
+    protected abstract  Item parseItems(String defaultIndexName);
 
     /**
      * Assigns the default index to query terms having no default index. The

@@ -452,10 +452,34 @@ public class QueryTestCase {
 
     @Test
     void testDefaultIndex() {
-        Query q = new Query("?query=hi%20hello%20keyword:kanoo%20" +
-                "default:munkz%20%22phrases+too%22&default-index=def");
+        Query q = new Query("?query=hi%20hello%20keyword:kanoo%20default:munkz%20%22phrases+too%22&default-index=def");
         assertEquals("WEAKAND(100) def:hi def:hello keyword:kanoo default:munkz def:\"phrases too\"",
-                q.getModel().getQueryTree().toString());
+                     q.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testDefaultIndexAlias() {
+        SearchDefinition test = new SearchDefinition("test");
+        Index year = new Index("year");
+        year.setNumerical(true);
+        year.addAlias("yearalias");
+        test.addIndex(year);
+        test.addAlias("yearalias", "year");
+        IndexModel indexModel = new IndexModel(test);
+
+        {
+            Query q = new Query("?default-index=year&type=all");
+            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+            q.getModel().setQueryString("2000");
+            assertEquals("select * from sources * where year = 2000", q.yqlRepresentation());
+        }
+
+        {
+            Query q = new Query("?default-index=yearalias&type=all");
+            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+            q.getModel().setQueryString("2000");
+            assertEquals("select * from sources * where year = 2000", q.yqlRepresentation());
+        }
     }
 
     @Test
