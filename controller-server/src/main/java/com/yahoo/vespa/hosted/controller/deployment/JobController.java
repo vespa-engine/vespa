@@ -249,7 +249,7 @@ public class JobController {
                 controller.serviceRegistry().runDataStore().putLogs(id, false, logs);
             }
             catch (IOException e) {
-                throw new UncheckedTimeoutException(e);
+                throw new UncheckedIOException(e);
             }
         }
         if (id.type().isTest()) {
