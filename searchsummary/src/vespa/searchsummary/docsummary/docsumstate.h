@@ -57,12 +57,7 @@ public:
     GetDocsumsStateCallback    &_callback;
 
     struct DynTeaserState {
-        uint32_t              _docid;  // document id ('cache key')
-        uint32_t              _input;  // input field ('cache key')
-        uint32_t              _lang;   // lang field  ('cache key')
-        juniper::Config      *_config; // juniper config ('cache key')
-        juniper::QueryHandle *_query;  // juniper query representation
-        juniper::Result      *_result; // juniper analyze result
+        std::unique_ptr<juniper::QueryHandle> _query;  // juniper query representation
     } _dynteaser;
 
 

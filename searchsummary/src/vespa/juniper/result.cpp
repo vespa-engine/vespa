@@ -27,14 +27,14 @@ public:
 };
 
 
-Result::Result(Config* config, QueryHandle* qhandle,
+Result::Result(const Config& config, QueryHandle& qhandle,
                const char* docsum, size_t docsum_len, uint32_t langid) :
-    _qhandle(qhandle),
-    _mo(qhandle->MatchObj(langid)),
+    _qhandle(&qhandle),
+    _mo(qhandle.MatchObj(langid)),
     _docsum(docsum),
     _docsum_len(docsum_len),
     _langid(langid),
-    _config(config),
+    _config(&config),
     _matcher(),
     _tokenizer(),
     _summaries(),
@@ -50,8 +50,8 @@ Result::Result(Config* config, QueryHandle* qhandle,
 {
     if (!_mo) return; // The empty result..
 
-    MatcherParams& mp = _config->_matcherparams;
-    Fast_WordFolder* wordfolder = mp.WordFolder();
+    const MatcherParams& mp = _config->_matcherparams;
+    const Fast_WordFolder* wordfolder = mp.WordFolder();
 
     if (_qhandle->_stem_min < 0)
         _stem_min = mp.StemMinLength();
@@ -87,8 +87,8 @@ Result::Result(Config* config, QueryHandle* qhandle,
 
     _registry = std::make_unique<SpecialTokenRegistry>(_matcher->getQuery());
 
-    if (qhandle->_log_mask)
-        _matcher->set_log(qhandle->_log_mask);
+    if (qhandle._log_mask)
+        _matcher->set_log(qhandle._log_mask);
 
     _tokenizer->SetSuccessor(_matcher.get());
     if (!_registry->getSpecialTokens().empty()) {
@@ -157,7 +157,7 @@ Summary* Result::GetTeaser(const Config* alt_config)
         const char      *src_end  = _docsum + _docsum_len;
         ucs4_t          *dst      = buf;
         ucs4_t          *dst_end  = dst + TOKEN_DSTLEN;
-        Fast_WordFolder *folder   = _config->_matcherparams.WordFolder();
+        const Fast_WordFolder *folder   = _config->_matcherparams.WordFolder();
 
         text.reserve(_dynsum_len*2);
         if (src_end - src <= _dynsum_len) {

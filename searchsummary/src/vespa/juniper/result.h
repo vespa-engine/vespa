@@ -14,7 +14,7 @@ namespace juniper
 class Result
 {
 public:
-    Result(Config* config, QueryHandle* qhandle,
+    Result(const Config& config, QueryHandle& qhandle,
 	   const char* docsum, size_t docsum_len, uint32_t langid);
     ~Result();
 
@@ -42,7 +42,7 @@ public:
     const char* _docsum;
     size_t _docsum_len;
     uint32_t _langid;
-    Config* _config;
+    const Config* _config;
     std::unique_ptr<Matcher> _matcher;
     std::unique_ptr<SpecialTokenRegistry> _registry;
     std::unique_ptr<JuniperTokenizer> _tokenizer;

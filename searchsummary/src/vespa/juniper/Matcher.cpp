@@ -38,7 +38,7 @@ Matcher::Matcher(Result* result) :
     _log_text("")
 {
     _occ.reserve(KEY_OCC_RESERVED);
-    DocsumParams& dsp = _result->_config->_docsumparams;
+    const DocsumParams& dsp = _result->_config->_docsumparams;
     _winsize = _result->WinSize();
     _winsizeFallback = static_cast<size_t>(_result->WinSizeFallbackMultiplier() * _winsize);
     _max_match_candidates = _result->MaxMatchCandidates();
