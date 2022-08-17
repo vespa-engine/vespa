@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -144,6 +145,10 @@ public class JobControllerApiHandlerHelperTest {
         assertResponse(JobControllerApiHandlerHelper.runResponse(app.application(), tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), Optional.empty(), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
         assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
+
+        tester.configServer().setLogStream(() -> "no more logs");
+        assertResponse(JobControllerApiHandlerHelper.vespaLogsResponse(tester.jobs(), new RunId(app.instanceId(), stagingTest, 1), 0, false), "vespa.log");
+        assertResponse(JobControllerApiHandlerHelper.vespaLogsResponse(tester.jobs(), new RunId(app.instanceId(), stagingTest, 1), 0, true), "vespa.log");
     }
 
     @Test
@@ -197,11 +202,17 @@ public class JobControllerApiHandlerHelperTest {
             Path path = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/").resolve(fileName);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             response.render(baos);
-            byte[] actualJson = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(baos.toByteArray()).get(), false);
-            // Files.write(path, actualJson);
-            byte[] expected = Files.readAllBytes(path);
-            assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expected).get(), false), UTF_8),
-                         new String(actualJson, UTF_8));
+            if (fileName.endsWith(".json")) {
+                byte[] actualJson = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(baos.toByteArray()).get(), false);
+                // Files.write(path, actualJson);
+                byte[] expected = Files.readAllBytes(path);
+                assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expected).get(), false), UTF_8),
+                             new String(actualJson, UTF_8));
+            }
+            else {
+                assertEquals(Files.readString(path),
+                             baos.toString(UTF_8));
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

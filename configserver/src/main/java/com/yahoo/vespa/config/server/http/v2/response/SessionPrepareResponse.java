@@ -31,6 +31,7 @@ public class SessionPrepareResponse extends SlimeJsonResponse {
 
         Cursor root = deployLog.get().type() != Type.NIX ? deployLog.get() : deployLog.setObject();
         root.setString("tenant", tenantName.value());
+        root.setString("session-id", Long.toString(sessionId));
         root.setString("activate", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName.value() + "/session/" + sessionId + "/active");
         root.setString("message", "Session " + sessionId + " for tenant '" + tenantName.value() + "' prepared.");

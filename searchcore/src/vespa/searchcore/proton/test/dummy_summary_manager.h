@@ -9,7 +9,7 @@ namespace test {
 
 struct DummySummaryManager : public ISummaryManager
 {
-    virtual ISummarySetup::SP
+    ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &,
                        const vespa::config::search::SummarymapConfig &,
                        const vespa::config::search::summary::JuniperrcConfig &,

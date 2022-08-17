@@ -6,14 +6,12 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
-import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.apache.zookeeper.KeeperException;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
@@ -32,7 +30,6 @@ public class DatabaseHandler {
     public interface DatabaseContext {
         ContentCluster getCluster();
         FleetController getFleetController();
-        SlobrokListener getNodeAddedOrRemovedListener();
         NodeListener getNodeStateUpdateListener();
     }
 
@@ -179,7 +176,7 @@ public class DatabaseHandler {
 
     private boolean usingZooKeeper() { return (zooKeeperAddress != null); }
 
-    private void connect(ContentCluster cluster, long currentTime) {
+    private void connect(long currentTime) {
         try {
             lastZooKeeperConnectionAttempt = currentTime;
             synchronized (databaseMonitor) {
@@ -251,7 +248,7 @@ public class DatabaseHandler {
                 return false; // Not time to attempt connection yet.
             }
             didWork = true;
-            connect(databaseContext.getCluster(), currentTime);
+            connect(currentTime);
         }
         try {
             synchronized (databaseMonitor) {
@@ -344,7 +341,7 @@ public class DatabaseHandler {
         return didWork;
     }
 
-    public void setMasterVote(DatabaseContext databaseContext, int wantedMasterCandidate) throws InterruptedException {
+    public void setMasterVote(DatabaseContext databaseContext, int wantedMasterCandidate) {
         fleetControllerContext.log(logger, Level.FINE, () -> "Checking if master vote has been updated and need to be stored.");
         // Schedule a write if one of the following is true:
         //   - There is already a pending vote to be written, that may have been written already without our knowledge

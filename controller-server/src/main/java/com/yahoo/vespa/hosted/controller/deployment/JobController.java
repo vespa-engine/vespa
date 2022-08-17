@@ -38,6 +38,9 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -181,20 +184,30 @@ public class JobController {
             if ( ! run.hasStep(copyVespaLogs))
                 return run;
 
+            storeVespaLogs(id);
+
+            // TODO jonmv: remove all the below around start of 2023.
             ZoneId zone = id.type().zone();
             Optional<Deployment> deployment = Optional.ofNullable(controller.applications().requireInstance(id.application())
                                                                             .deployments().get(zone));
             if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
                 return run;
 
-            Instant deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime).orElseThrow();
-            Instant from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
-            List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
-                                                                  .getLogs(new DeploymentId(id.application(), zone),
-                                                                           Map.of("from", Long.toString(from.toEpochMilli()))),
-                                                        from);
+            List<LogEntry> log;
+            Instant deployedAt;
+            Instant from;
+            if ( ! run.id().type().isProduction()) {
+                deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime).orElseThrow();
+                from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
+                log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
+                                                       .getLogs(new DeploymentId(id.application(), zone),
+                                                                Map.of("from", Long.toString(from.toEpochMilli()))),
+                                             from);
+            }
+            else
+                log = List.of();
 
-            if (run.hasStep(installTester) && run.versions().targetPlatform().isAfter(new Version("7.590"))) { // todo jonmv: remove
+            if (id.type().isTest()) {
                 deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime).orElseThrow();
                 from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
                 List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
@@ -214,6 +227,47 @@ public class JobController {
             logs.append(id.application(), id.type(), Step.copyVespaLogs, log, false);
             return run.with(log.get(log.size() - 1).at());
         });
+    }
+
+    public InputStream getVespaLogs(RunId id, long fromMillis, boolean tester) {
+        Run run = run(id);
+        return run.stepStatus(copyVespaLogs).map(succeeded::equals).orElse(false)
+               ? controller.serviceRegistry().runDataStore().getLogs(id, tester)
+               : getVespaLogsFromLogserver(run, fromMillis, tester);
+    }
+
+    public static Optional<Instant> deploymentCompletedAt(Run run, boolean tester) {
+        return (tester ? run.stepInfo(installTester)
+                       : run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)))
+                .flatMap(StepInfo::startTime);
+    }
+
+    public void storeVespaLogs(RunId id) {
+        Run run = run(id);
+        if ( ! id.type().isProduction()) {
+            try (InputStream logs = getVespaLogsFromLogserver(run, 0, false)) {
+                controller.serviceRegistry().runDataStore().putLogs(id, false, logs);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        if (id.type().isTest()) {
+            try (InputStream logs = getVespaLogsFromLogserver(run, 0, true)) {
+                controller.serviceRegistry().runDataStore().putLogs(id, true, logs);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private InputStream getVespaLogsFromLogserver(Run run, long fromMillis, boolean tester) {
+        long deploymentCompletedAtMillis = deploymentCompletedAt(run, tester).orElse(Instant.EPOCH).toEpochMilli();
+        return controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
+                                                                                    run.id().type().zone()),
+                                                                   Map.of("from", Long.toString(Math.max(fromMillis, deploymentCompletedAtMillis)),
+                                                                          "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli())));
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */

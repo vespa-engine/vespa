@@ -142,6 +142,10 @@ public abstract class AbstractParser implements CustomParser {
     private Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                        IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
         if (queryToParse == null) return null;
+
+        if (defaultIndexName != null)
+            defaultIndexName = indexFacts.getCanonicName(defaultIndex);
+
         tokenize(queryToParse, defaultIndex, indexFacts, parsingLanguage);
 
         if (parsingLanguage == null && parsable != null) {

@@ -155,7 +155,10 @@ public class SessionActiveHandlerTest {
     private void assertActivationMessageOK(ActivateRequest activateRequest, String message) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         new JsonFormat(true).encode(byteArrayOutputStream, activateRequest.getMetaData().getSlime());
-        assertTrue(message.contains("\"tenant\":\"" + tenantName + "\",\"message\":\"Session " + activateRequest.getSessionId() + activatedMessage));
+        long sessionId = activateRequest.getSessionId();
+        assertTrue(message.contains("\"tenant\":\"" + tenantName));
+        assertTrue(message.contains("\"session-id\":\"" + sessionId));
+        assertTrue(message.contains("\"message\":\"Session " + sessionId + activatedMessage));
         assertTrue(message.contains("/application/v2/tenant/" + tenantName +
                 "/application/" + appName +
                 "/environment/" + "prod" +

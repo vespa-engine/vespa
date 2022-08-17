@@ -263,8 +263,11 @@ TEST_F("test Eager Matching Children", MockFixture(5)) {
 
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
 private:
-    SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
-        std::vector<fef::TermFieldMatchData*> no_child_match;
+    SearchIterator::UP
+    create(const std::vector<SearchIterator*> &children) const override {
+        // This is a pragmatic and dirty workaround to make IteratorVerifier test
+        // not fail on unpack when accessing child match weights
+        std::vector<fef::TermFieldMatchData*> no_child_match(children.size(), &_tfmd);
         MatchData::UP no_match_data;
         return DotProductSearch::create(children, _tfmd, false, no_child_match, _weights, std::move(no_match_data));
     }
@@ -272,8 +275,9 @@ private:
 
 class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
 private:
-    SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
-        return SearchIterator::UP(DotProductSearch::create(_tfmd, false, _weights, std::move(children)));
+    SearchIterator::UP
+    create(std::vector<DocumentWeightIterator> && children) const override {
+        return DotProductSearch::create(_tfmd, false, _weights, std::move(children));
     }
 };
 

@@ -9,14 +9,12 @@ import com.yahoo.vespa.clustercontroller.core.database.Database;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
-
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -68,11 +66,6 @@ public class DatabaseHandlerTest {
                 @Override
                 public FleetController getFleetController() {
                     return mockController;
-                }
-
-                @Override
-                public SlobrokListener getNodeAddedOrRemovedListener() {
-                    return null;
                 }
 
                 @Override

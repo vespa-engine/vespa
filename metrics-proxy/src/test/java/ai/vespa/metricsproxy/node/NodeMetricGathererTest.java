@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.node;
 
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,6 +11,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,6 +35,7 @@ public class NodeMetricGathererTest {
         assertEquals(123, packet.timestamp);
         assertEquals(12l, packet.metrics().get(MetricId.toMetricId("uptime")));
         assertEquals(1l, packet.metrics().get(MetricId.toMetricId("alive")));
+        assertEquals(Set.of(ConsumerId.toConsumerId("Vespa")), packet.consumers());
     }
 
     private JsonNode generateHostLifePacket() {

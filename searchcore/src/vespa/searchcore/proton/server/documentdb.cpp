@@ -1025,11 +1025,12 @@ notifyBucketsChanged(const documentmetastore::IBucketHandler &metaStore,
                      IBucketModifiedHandler &handler,
                      const vespalib::string &name)
 {
-    bucketdb::Guard buckets = metaStore.getBucketDB().takeGuard();
-    for (const auto &kv : *buckets) {
-        handler.notifyBucketModified(kv.first);
+    bucketdb::Guard guard = metaStore.getBucketDB().takeGuard();
+    document::BucketId::List buckets = guard->getBuckets();
+    for (document::BucketId bucketId : buckets) {
+        handler.notifyBucketModified(bucketId);
     }
-    LOG(debug, "notifyBucketsChanged(%s, %zu)", name.c_str(), buckets->size());
+    LOG(debug, "notifyBucketsChanged(%s, %zu)", name.c_str(), buckets.size());
 }
 
 }

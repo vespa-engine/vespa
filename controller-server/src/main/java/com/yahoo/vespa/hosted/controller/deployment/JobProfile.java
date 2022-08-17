@@ -63,6 +63,7 @@ public enum JobProfile {
                               installTester,
                               startTests,
                               endTests,
+                              copyVespaLogs,
                               deactivateTester,
                               report)),
 

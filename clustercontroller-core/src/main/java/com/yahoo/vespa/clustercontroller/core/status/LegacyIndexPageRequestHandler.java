@@ -36,22 +36,21 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     private final StateVersionTracker stateVersionTracker;
     private final EventLog eventLog;
     private final long startedTime;
-    private final RunDataExtractor data;
+    private final FleetControllerOptions options;
 
     public LegacyIndexPageRequestHandler(Timer timer,
                                          ContentCluster cluster,
                                          MasterElectionHandler masterElectionHandler,
                                          StateVersionTracker stateVersionTracker,
                                          EventLog eventLog,
-                                         long startedTime,
-                                         RunDataExtractor data) {
+                                         FleetControllerOptions options) {
         this.timer = timer;
         this.cluster = cluster;
         this.masterElectionHandler = masterElectionHandler;
         this.stateVersionTracker = stateVersionTracker;
         this.eventLog = eventLog;
-        this.startedTime = startedTime;
-        this.data = data;
+        this.startedTime = timer.getCurrentTimeInMillis();
+        this.options = options;
     }
 
     @Override
@@ -63,7 +62,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         response.setContentType("text/html");
         StringBuilder content = new StringBuilder();
         content.append("<!-- Answer to request " + request + " -->\n");
-        response.writeHtmlHeader(content, cluster.getName() + " Cluster Controller " + data.getOptions().fleetControllerIndex + " Status Page");
+        response.writeHtmlHeader(content, cluster.getName() + " Cluster Controller " + options.fleetControllerIndex + " Status Page");
         content.append("<p><font size=\"-1\">")
                 .append(" [ <a href=\"#config\">Current config</a>")
                 .append(" | <a href=\"#clusterstates\">Cluster states</a>")
@@ -72,19 +71,19 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         content.append("<table><tr><td>UTC time when creating this page:</td><td align=\"right\">").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</td></tr>");
         //content.append("<tr><td>Fleetcontroller version:</td><td align=\"right\">" + Vtag.V_TAG_PKG + "</td></tr/>");
         content.append("<tr><td>Cluster controller uptime:</td><td align=\"right\">" + RealTimer.printDuration(currentTime - startedTime) + "</td></tr></table>");
-        if (masterElectionHandler.isAmongNthFirst(data.getOptions().stateGatherCount)) {
+        if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount)) {
             // Table overview of all the nodes
-            writeHtmlState(cluster, content, timer, stateVersionTracker, data.getOptions(), eventLog);
+            writeHtmlState(cluster, content, timer, stateVersionTracker, options, eventLog);
             // Current cluster state and cluster state history
             writeHtmlState(stateVersionTracker, content);
         } else {
             // Overview of current config
-            data.getOptions().writeHtmlState(content);
+            options.writeHtmlState(content);
         }
         // State of master election
-        masterElectionHandler.writeHtmlState(content, data.getOptions().stateGatherCount);
+        masterElectionHandler.writeHtmlState(content, options.stateGatherCount);
         // Overview of current config
-        data.getOptions().writeHtmlState(content);
+        options.writeHtmlState(content);
         // Event log
         eventLog.writeHtmlState(content, null);
         response.writeHtmlFooter(content, "");

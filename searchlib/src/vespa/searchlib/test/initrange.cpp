@@ -72,7 +72,7 @@ InitRangeVerifier::InitRangeVerifier() :
     }
 }
 
-InitRangeVerifier::~InitRangeVerifier() { }
+InitRangeVerifier::~InitRangeVerifier() = default;
 
 InitRangeVerifier::DocIds
 InitRangeVerifier::invert(const DocIds & docIds, uint32_t docIdlimit)
@@ -173,6 +173,7 @@ InitRangeVerifier::searchRelaxed(SearchIterator & it, Range range)
     for (uint32_t docid = range.first; docid < range.second; ++docid) {
         if (it.seek(docid)) {
             result.emplace_back(docid);
+            it.unpack(docid);
         }
     }
     return result;
@@ -185,6 +186,7 @@ InitRangeVerifier::searchStrict(SearchIterator & it, Range range)
     it.initRange(range.first, range.second);
     for (uint32_t docId = it.seekFirst(range.first); docId < range.second; docId = it.seekNext(docId + 1)) {
         result.push_back(docId);
+        it.unpack(docId);
     }
     return result;
 }

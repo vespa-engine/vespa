@@ -143,7 +143,7 @@ struct MyIndexWriter : public test::MockIndexWriter
     uint32_t _wantedLidLimit;
     MyTracer &_tracer;
     MyIndexWriter(MyTracer &tracer)
-        : test::MockIndexWriter(IIndexManager::SP(new test::MockIndexManager())),
+        : test::MockIndexWriter(std::make_shared<test::MockIndexManager>()),
           _removes(),
           _heartBeatCount(0),
           _commitCount(0),
@@ -224,7 +224,7 @@ struct MyDocumentStore : public test::DummyDocumentStore
     DocMap           _docs;
     uint64_t         _lastSyncToken;
     uint32_t         _compactLidSpaceLidLimit;
-    MyDocumentStore(const document::DocumentTypeRepo & repo)
+    MyDocumentStore(const document::DocumentTypeRepo & repo) noexcept
         : test::DummyDocumentStore("."),
           _repo(repo),
           _docs(),
@@ -266,9 +266,12 @@ MyDocumentStore::~MyDocumentStore() = default;
 struct MySummaryManager : public test::DummySummaryManager
 {
     MyDocumentStore _store;
-    MySummaryManager(const document::DocumentTypeRepo & repo) : _store(repo) {}
-    virtual search::IDocumentStore &getBackingStore() override { return _store; }
+    MySummaryManager(const document::DocumentTypeRepo & repo) noexcept : _store(repo) {}
+    ~MySummaryManager() override;
+    search::IDocumentStore &getBackingStore() override { return _store; }
 };
+
+MySummaryManager::~MySummaryManager() = default;
 
 struct MySummaryAdapter : public test::MockSummaryAdapter
 {
@@ -276,32 +279,34 @@ struct MySummaryAdapter : public test::MockSummaryAdapter
     MyDocumentStore    &_store;
     MyLidVector         _removes;
 
-    MySummaryAdapter(const document::DocumentTypeRepo & repo)
-        : _sumMgr(new MySummaryManager(repo)),
+    MySummaryAdapter(const document::DocumentTypeRepo & repo) noexcept
+        : _sumMgr(std::make_shared<MySummaryManager>(repo)),
           _store(static_cast<MyDocumentStore &>(_sumMgr->getBackingStore())),
           _removes()
     {}
-    virtual void put(SerialNum serialNum, DocumentIdT lid, const Document &doc) override {
+    ~MySummaryAdapter() override;
+    void put(SerialNum serialNum, DocumentIdT lid, const Document &doc) override {
         _store.write(serialNum, lid, doc);
     }
-    virtual void put(SerialNum serialNum, DocumentIdT lid, const vespalib::nbostream & os) override {
+    void put(SerialNum serialNum, DocumentIdT lid, const vespalib::nbostream & os) override {
         _store.write(serialNum, lid, os);
     }
-    virtual void remove(SerialNum serialNum, const DocumentIdT lid) override {
+    void remove(SerialNum serialNum, const DocumentIdT lid) override {
         LOG(info, "MySummaryAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _store.remove(serialNum, lid);
         _removes.push_back(lid);
     }
-    virtual const search::IDocumentStore &getDocumentStore() const override {
+    const search::IDocumentStore &getDocumentStore() const override {
         return _store;
     }
-    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo &repo) override {
+    std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo &repo) override {
         return _store.read(lid, repo);
     }
-    virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
+    void compactLidSpace(uint32_t wantedDocIdLimit) override {
         _store.compactLidSpace(wantedDocIdLimit);
     }
 };
+MySummaryAdapter::~MySummaryAdapter() = default;
 
 struct MyAttributeWriter : public IAttributeWriter
 {
@@ -362,7 +367,7 @@ struct MyAttributeWriter : public IAttributeWriter
         _updateLid = lid;
         for (const auto & fieldUpdate : upd.getUpdates()) {
             search::AttributeVector * attr = getWritableAttribute(fieldUpdate.getField().getName());
-            onUpdate.onUpdateField(fieldUpdate.getField().getName(), attr);
+            onUpdate.onUpdateField(fieldUpdate.getField(), attr);
         }
     }
     void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {
@@ -434,7 +439,7 @@ struct SchemaContext
 };
 
 SchemaContext::SchemaContext() :
-    _schema(new Schema()),
+    _schema(std::make_shared<Schema>()),
     _builder()
 {
     _schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
@@ -442,7 +447,7 @@ SchemaContext::SchemaContext() :
     _schema->addAttributeField(Schema::AttributeField("a2", DataType::BOOLEANTREE, CollectionType::SINGLE));
     _schema->addAttributeField(Schema::AttributeField("a3", DataType::TENSOR, CollectionType::SINGLE));
     _schema->addSummaryField(Schema::SummaryField("s1", DataType::STRING, CollectionType::SINGLE));
-    _builder.reset(new DocBuilder(*_schema));
+    _builder = std::make_unique<DocBuilder>(*_schema);
 }
 SchemaContext::~SchemaContext() = default;
 
@@ -464,7 +469,7 @@ struct DocumentContext
 
 DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
     : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
-      upd(new DocumentUpdate(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
+      upd(std::make_shared<DocumentUpdate>(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
       ts(timestamp)
 {}

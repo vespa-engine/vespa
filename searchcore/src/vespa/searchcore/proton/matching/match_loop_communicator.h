@@ -8,7 +8,7 @@
 
 namespace proton::matching {
 
-class MatchLoopCommunicator : public IMatchLoopCommunicator
+class MatchLoopCommunicator final : public IMatchLoopCommunicator
 {
 private:
     using IDiversifier = search::queryeval::IDiversifier;

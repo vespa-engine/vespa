@@ -7,14 +7,15 @@
 #include "putdonecontext.h"
 #include "removedonecontext.h"
 #include "updatedonecontext.h"
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
+#include <vespa/searchlib/index/uri_field.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -38,7 +39,7 @@ using vespalib::CpuUsage;
 using vespalib::IDestructorCallback;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 
 namespace proton {
 
@@ -88,8 +89,8 @@ SummaryPutDoneContext::SummaryPutDoneContext(FeedToken token, IPendingLidTracker
 
 SummaryPutDoneContext::~SummaryPutDoneContext() = default;
 
-std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaStore,
-                                                const LidVectorContext::LidVector &lidsToRemove)
+std::vector<document::GlobalId>
+getGidsToRemove(const IDocumentMetaStore &metaStore, const LidVectorContext::LidVector &lidsToRemove)
 {
     std::vector<document::GlobalId> gids;
     gids.reserve(lidsToRemove.size());
@@ -102,23 +103,24 @@ std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaSt
     return gids;
 }
 
-void putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
-                 const DocumentOperation &op, bool is_removed_doc)
+void
+putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
+            const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
             meta_store.put(doc_id.getGlobalId(), op.getBucketId(), op.getTimestamp(),
                            op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
     if (!putRes.ok()) {
-        throw IllegalStateException(
-                make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            doc_id.getGlobalId().toString().c_str()));
+        throw IllegalStateException(fmt("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                                        is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
+                                        doc_id.getGlobalId().toString().c_str()));
     }
     assert(op.getLid() == putRes._lid);
 }
 
-void removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId &doc_id,
-                    const DocumentOperation &op, bool is_removed_doc)
+void
+removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId &doc_id,
+               const DocumentOperation &op, bool is_removed_doc)
 {
     assert(meta_store.validLid(op.getPrevLid()));
     assert(is_removed_doc == op.getPrevMarkedAsRemoved());
@@ -127,9 +129,8 @@ void removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid,
     (void) meta;
     if (!meta_store.remove(op.getPrevLid(), op.get_prepare_serial_num())) {
         throw IllegalStateException(
-                make_string("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            gid.toString().c_str()));
+                fmt("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                    is_removed_doc ? "removed " : "", doc_id.toString().c_str(), gid.toString().c_str()));
     }
 }
 
@@ -147,6 +148,37 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     meta_store.move(op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
 }
 
+class UpdateScope final : public IFieldUpdateCallback
+{
+private:
+    const vespalib::hash_set<int32_t> & _indexedFields;
+    bool _nonAttributeFields;
+public:
+    bool _hasIndexedFields;
+
+    UpdateScope(const vespalib::hash_set<int32_t> & indexedFields, const DocumentUpdate & upd);
+    bool hasIndexOrNonAttributeFields() const {
+        return _hasIndexedFields || _nonAttributeFields;
+    }
+    void onUpdateField(const document::Field & field, const search::AttributeVector * attr) override;
+};
+
+UpdateScope::UpdateScope(const vespalib::hash_set<int32_t> & indexedFields, const DocumentUpdate & upd)
+    : _indexedFields(indexedFields),
+      _nonAttributeFields(!upd.getFieldPathUpdates().empty()),
+      _hasIndexedFields(false)
+{}
+
+void
+UpdateScope::onUpdateField(const document::Field & field, const search::AttributeVector * attr) {
+    if (!_nonAttributeFields && (attr == nullptr || !attr->isUpdateableInMemoryOnly())) {
+        _nonAttributeFields = true;
+    }
+    if (!_hasIndexedFields && (_indexedFields.find(field.getId()) != _indexedFields.end())) {
+        _hasIndexedFields = true;
+    }
+}
+
 }  // namespace
 
 StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params)
@@ -160,12 +192,26 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params
       _pendingLidsForDocStore(),
       _pendingLidsForCommit(std::move(ctx._pendingLidsForCommit)),
       _schema(std::move(ctx._schema)),
+      _indexedFields(),
       _writeService(ctx._writeService),
       _params(params),
       _metaStore(_documentMetaStoreContext->get()),
       _gidToLidChangeHandler(ctx._gidToLidChangeHandler)
 {
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
+    if (_schema && _docType) {
+        for (const auto &indexField : _schema->getIndexFields()) {
+            size_t dotPos = indexField.getName().find('.');
+            if ((dotPos == vespalib::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
+                document::FieldPath fieldPath;
+                _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
+                _indexedFields.insert(fieldPath.back().getFieldRef().getId());
+            } else {
+                throw IllegalStateException("Field '%s' is not a valid index name", indexField.getName().c_str());
+            }
+
+        }
+    }
 }
 
 StoreOnlyFeedView::~StoreOnlyFeedView() = default;
@@ -207,7 +253,7 @@ void
 StoreOnlyFeedView::putAttributes(SerialNum, Lid, const Document &, OnPutDoneType) {}
 
 void
-StoreOnlyFeedView::putIndexedFields(SerialNum, Lid, const Document::SP &, OnOperationDoneType) {}
+StoreOnlyFeedView::putIndexedFields(SerialNum, Lid, const std::shared_ptr<Document> &, OnOperationDoneType) {}
 
 void
 StoreOnlyFeedView::preparePut(PutOperation &putOp)
@@ -285,7 +331,7 @@ StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd,
                                     OnOperationDoneType, IFieldUpdateCallback & onUpdate)
 {
     for (const auto & fieldUpdate : upd.getUpdates()) {
-        onUpdate.onUpdateField(fieldUpdate.getField().getName(), nullptr);
+        onUpdate.onUpdateField(fieldUpdate.getField(), nullptr);
     }
 }
 
@@ -387,22 +433,6 @@ StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum, DoneCallback onDone) {
             }));
 }
 
-StoreOnlyFeedView::UpdateScope::UpdateScope(const search::index::Schema & schema, const DocumentUpdate & upd)
-    : _schema(&schema),
-      _indexedFields(false),
-      _nonAttributeFields(!upd.getFieldPathUpdates().empty())
-{}
-
-void
-StoreOnlyFeedView::UpdateScope::onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) {
-    if (!_nonAttributeFields && (attr == nullptr || !attr->isUpdateableInMemoryOnly())) {
-        _nonAttributeFields = true;
-    }
-    if (!_indexedFields && _schema->isIndexField(fieldName)) {
-        _indexedFields = true;
-    }
-}
-
 void
 StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp) {
     if ( ! updOp.getUpdate()) {
@@ -432,7 +462,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     }
 
     auto onWriteDone = createUpdateDoneContext(std::move(token), get_pending_lid_token(updOp), updOp.getUpdate());
-    UpdateScope updateScope(*_schema, upd);
+    UpdateScope updateScope(_indexedFields, upd);
     updateAttributes(serialNum, lid, upd, onWriteDone, updateScope);
 
     if (updateScope.hasIndexOrNonAttributeFields()) {
@@ -440,7 +470,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
         _pendingLidsForDocStore.waitComplete(lid);
-        if (updateScope._indexedFields) {
+        if (updateScope._hasIndexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, onWriteDone);
         }
         PromisedStream promisedStream;
