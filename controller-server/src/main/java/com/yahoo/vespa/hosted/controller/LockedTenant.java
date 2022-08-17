@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -154,8 +155,11 @@ public abstract class LockedTenant {
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
+            principal = new SimplePrincipal(principal.getName());
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
+            if (keys.inverse().containsKey(principal))
+                throw new IllegalArgumentException(principal + " is already associated with key " + KeyUtils.toPem(keys.inverse().get(principal)));
             keys.put(key, principal);
             return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }

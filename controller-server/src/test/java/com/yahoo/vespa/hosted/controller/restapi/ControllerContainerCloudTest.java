@@ -80,7 +80,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         }
         public RequestBuilder data(byte[] data) { this.data = data; return this; }
         public RequestBuilder data(String data) { this.data = data.getBytes(StandardCharsets.UTF_8); return this; }
-        public RequestBuilder principal(String principal) { this.principal = new SimplePrincipal(principal); return this; }
+        public RequestBuilder principal(String principal) { this.principal = new SimplePrincipal(principal){ }; return this; }
         public RequestBuilder user(User user) { this.user = user; return this; }
         public RequestBuilder roles(Set<Role> roles) { this.roles = roles; return this; }
         public RequestBuilder roles(Role... roles) { return roles(Set.of(roles)); }
