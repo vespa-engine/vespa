@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -307,7 +308,8 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
     }
 
-    private void waitForMasterReason(String reason, Integer master, List<Target> connections, int[] nodes) {
+    private void waitForNoMasterWithExpectedReason(String reason, List<Target> connections, int[] nodes) {
+        Objects.requireNonNull(reason, "reason cannot be null");
         Instant endTime = Instant.now().plus(timeout());
         while (Instant.now().isBefore(endTime)) {
             boolean allOk = true;
@@ -318,17 +320,17 @@ public class MasterElectionTest extends FleetControllerTest {
                     allOk = false;
                     break;
                 }
-                if (master != null && master != req.returnValues().get(0).asInt32()) {
+                if (req.returnValues().get(0).asInt32() != -1) {  // -1 means no master, which we are waiting for
                     allOk = false;
                     break;
                 }
-                if (reason != null && ! reason.equals(req.returnValues().get(1).asString())) {
+                if ( ! reason.equals(req.returnValues().get(1).asString())) {
                     allOk = false;
                     break;
                 }
             }
             if (allOk) return;
-            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
+            try { Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
         throw new IllegalStateException("Did not get master reason '" + reason + "' within timeout of " + timeout());
     }
@@ -379,9 +381,10 @@ public class MasterElectionTest extends FleetControllerTest {
         timer.advanceTime(300 * 1000); // 5 minutes
 
         int[] remainingNodes = {1, 2};
-        waitForMasterReason(
+        waitForNoMasterWithExpectedReason(
                 "2 of 3 nodes agree 1 should be master, but old master cooldown period of 3600000 ms has not passed yet. To ensure it has got time to realize it is no longer master before we elect a new one, currently there is no master.",
-                -1, connections, remainingNodes);
+                connections,
+                remainingNodes);
         // Verify that fc 1 is not master, and the correct reasons for why not
         assertFalse(fleetControllers.get(1).isMaster());
 
