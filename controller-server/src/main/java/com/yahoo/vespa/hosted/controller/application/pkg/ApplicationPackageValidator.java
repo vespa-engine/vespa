@@ -11,6 +11,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -54,8 +55,8 @@ public class ApplicationPackageValidator {
      * @throws IllegalArgumentException if any validations fail
      */
     public void validate(Application application, ApplicationPackage applicationPackage, Instant instant) {
-        validateSteps(applicationPackage.deploymentSpec());
         validateCloudAccounts(application, applicationPackage.deploymentSpec());
+        validateSteps(applicationPackage.deploymentSpec());
         validateEndpointRegions(applicationPackage.deploymentSpec());
         validateEndpointChange(application, applicationPackage, instant);
         validateCompactedEndpoint(applicationPackage);
@@ -88,12 +89,22 @@ public class ApplicationPackageValidator {
     private void validateSteps(DeploymentSpec deploymentSpec) {
         for (var spec : deploymentSpec.instances()) {
             for (var zone : spec.zones()) {
-                if (zone.environment().isManuallyDeployed())
-                    throw new IllegalArgumentException("region must be one with automated deployments, but got: " + zone.environment());
+                Environment environment = zone.environment();
+                if (environment.isManuallyDeployed())
+                    throw new IllegalArgumentException("region must be one with automated deployments, but got: " + environment);
 
-                if (     zone.environment() == Environment.prod
-                    && ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(), zone.region().orElseThrow())))
-                    throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+                if (environment == Environment.prod) {
+                    RegionName region = zone.region().orElseThrow();
+                    if (!controller.zoneRegistry().hasZone(ZoneId.from(environment, region))) {
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+                    }
+                    Optional<CloudAccount> cloudAccount = spec.cloudAccount(environment, region);
+                    if (cloudAccount.isPresent() && !controller.zoneRegistry().hasZone(ZoneId.from(environment, region), cloudAccount.get())) {
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec is not configured for " +
+                                                           "use in cloud account '" + cloudAccount.get().value() +
+                                                           "', in this system");
+                    }
+                }
             }
         }
     }
