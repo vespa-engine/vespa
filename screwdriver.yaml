@@ -285,7 +285,6 @@ jobs:
 
   verify-opensource-rpm-installable:
     image: quay.io/centos/centos:stream8
-    requires: [~pr]
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
