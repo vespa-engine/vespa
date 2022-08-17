@@ -171,20 +171,29 @@ public class GramSplitterTestCase {
     public void testChineseComma() {
         String text = "我喜欢红色、蓝色和紫色";
         Iterator<GramSplitter.Gram> grams = gramSplitter.split(text, 2);
-        for (;  grams.hasNext(); ) {
-            System.out.println(grams.next().extractFrom(text));
-        }
+        assertEquals("我喜", grams.next().extractFrom(text));
+        assertEquals("喜欢", grams.next().extractFrom(text));
+        assertEquals("欢红", grams.next().extractFrom(text));
+        assertEquals("红色", grams.next().extractFrom(text));
+        assertEquals("蓝色", grams.next().extractFrom(text));
+        assertEquals("色和", grams.next().extractFrom(text));
+        assertEquals("和紫", grams.next().extractFrom(text));
+        assertEquals("紫色", grams.next().extractFrom(text));
     }
 
     @Test
     public void testEnglishComma() {
         String text = "我喜欢红色,蓝色和紫色";
         Iterator<GramSplitter.Gram> grams = gramSplitter.split(text, 2);
-        for (;  grams.hasNext(); ) {
-            System.out.println(grams.next().extractFrom(text));
-        }
+        assertEquals("我喜", grams.next().extractFrom(text));
+        assertEquals("喜欢", grams.next().extractFrom(text));
+        assertEquals("欢红", grams.next().extractFrom(text));
+        assertEquals("红色", grams.next().extractFrom(text));
+        assertEquals("蓝色", grams.next().extractFrom(text));
+        assertEquals("色和", grams.next().extractFrom(text));
+        assertEquals("和紫", grams.next().extractFrom(text));
+        assertEquals("紫色", grams.next().extractFrom(text));
     }
-
 
     private void assertGramSplits(String input, int gramSize, String ... expected) {
         assertEquals(Arrays.asList(expected), gramSplitter.split(input, gramSize).toExtractedList());

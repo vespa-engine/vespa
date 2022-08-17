@@ -7,24 +7,21 @@ import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
-import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.SimpleNormalizer;
-import com.yahoo.language.simple.SimpleToken;
-import com.yahoo.language.simple.SimpleTokenType;
 import com.yahoo.language.simple.SimpleTokenizer;
 import com.yahoo.language.simple.SimpleTransformer;
 import opennlp.tools.stemmer.Stemmer;
 import opennlp.tools.stemmer.snowball.SnowballStemmer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Tokenizer using OpenNlp
  *
  * @author matskin
+ * @author bratseth
  */
 public class OpenNlpTokenizer implements Tokenizer {
 
@@ -51,26 +48,11 @@ public class OpenNlpTokenizer implements Tokenizer {
 
     @Override
     public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
-        if (input.isEmpty()) return List.of();
         Stemmer stemmer = stemmerFor(language, stemMode);
-        if (stemmer == null) return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);
-
-        List<Token> tokens = new ArrayList<>();
-        int nextCode = input.codePointAt(0);
-        TokenType prevType = SimpleTokenType.valueOf(nextCode);
-        for (int prev = 0, next = Character.charCount(nextCode); next <= input.length(); ) {
-            nextCode = next < input.length() ? input.codePointAt(next) : SPACE_CODE;
-            TokenType nextType = SimpleTokenType.valueOf(nextCode);
-            if (!prevType.isIndexable() || !nextType.isIndexable()) {
-                String original = input.substring(prev, next);
-                String token = processToken(original, language, stemMode, removeAccents, stemmer);
-                tokens.add(new SimpleToken(original).setOffset(prev).setType(prevType).setTokenString(token));
-                prev = next;
-                prevType = nextType;
-            }
-            next += Character.charCount(nextCode);
-        }
-        return tokens;
+        if (stemmer == null)
+            return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);
+        else
+            return simpleTokenizer.tokenize(input, token -> processToken(token, language, stemMode, removeAccents, stemmer));
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents,

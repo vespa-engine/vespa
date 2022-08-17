@@ -7,8 +7,8 @@ import com.yahoo.language.process.*;
 import com.yahoo.language.simple.kstem.KStemmer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -49,28 +49,44 @@ public class SimpleTokenizer implements Tokenizer {
         this.specialTokenRegistry = specialTokenRegistry;
     }
 
+    /** Tokenize the input, applying the transform of this to each token string. */
     @Override
     public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
-        if (input.isEmpty()) return Collections.emptyList();
+        return tokenize(input,
+                        token -> processToken(token, language, stemMode, removeAccents));
+    }
+
+    /** Tokenize the input, and apply the given transform to each token string. */
+    public Iterable<Token> tokenize(String input, Function<String, String> tokenProocessor) {
+        if (input.isEmpty()) return List.of();
 
         List<Token> tokens = new ArrayList<>();
         int nextCode = input.codePointAt(0);
         TokenType prevType = SimpleTokenType.valueOf(nextCode);
+        TokenType tokenType = prevType;
         for (int prev = 0, next = Character.charCount(nextCode); next <= input.length(); ) {
             nextCode = next < input.length() ? input.codePointAt(next) : SPACE_CODE;
             TokenType nextType = SimpleTokenType.valueOf(nextCode);
             if (!prevType.isIndexable() || !nextType.isIndexable()) {
                 String original = input.substring(prev, next);
-                String token = processToken(original, language, stemMode, removeAccents);
                 tokens.add(new SimpleToken(original).setOffset(prev)
-                                                    .setType(prevType)
-                                                    .setTokenString(token));
+                                                    .setType(tokenType)
+                                                    .setTokenString(tokenProocessor.apply(original)));
                 prev = next;
                 prevType = nextType;
+                tokenType = prevType;
+            }
+            else {
+                tokenType = determineType(tokenType, nextType);
             }
             next += Character.charCount(nextCode);
         }
         return tokens;
+    }
+
+    private TokenType determineType(TokenType tokenType, TokenType characterType) {
+        if (characterType == TokenType.ALPHABETIC) return TokenType.ALPHABETIC;
+        return tokenType;
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {
