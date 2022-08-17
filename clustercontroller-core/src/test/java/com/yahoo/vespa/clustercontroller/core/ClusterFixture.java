@@ -9,13 +9,10 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static org.mockito.Mockito.mock;
 
@@ -24,7 +21,6 @@ public class ClusterFixture {
     public final ContentCluster cluster;
     public final Distribution distribution;
     public final FakeTimer timer;
-    private final EventLogInterface eventLog;
     final StateChangeHandler nodeStateChangeHandler;
     private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
@@ -32,9 +28,8 @@ public class ClusterFixture {
         this.cluster = cluster;
         this.distribution = distribution;
         this.timer = new FakeTimer();
-        this.eventLog = mock(EventLogInterface.class);
         var context = new FleetControllerContextImpl(new FleetControllerId(cluster.getName(), 0));
-        this.nodeStateChangeHandler = new StateChangeHandler(context, timer, eventLog);
+        this.nodeStateChangeHandler = new StateChangeHandler(context, timer, mock(EventLogInterface.class));
         this.params.cluster(this.cluster);
     }
 
@@ -148,13 +143,6 @@ public class ClusterFixture {
                     ni.getNodeIndex()));
         });
         return this;
-    }
-
-    static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
-        Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, distributorTransitionTime);
-        maxTransitionTime.put(NodeType.STORAGE, storageTransitionTime);
-        return maxTransitionTime;
     }
 
     void disableTransientMaintenanceModeOnDown() {

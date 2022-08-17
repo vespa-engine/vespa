@@ -24,7 +24,7 @@ public class ClusterStateGeneratorTest {
     private static AnnotatedClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
         final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
         params.cluster = fixture.cluster;
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(0, 0);
+        params.transitionTimes = ClusterStateGenerator.Params.buildTransitionTimeMap(0, 0);
         params.currentTimeInMillis = 0;
         return ClusterStateGenerator.generatedStateFrom(params);
     }
