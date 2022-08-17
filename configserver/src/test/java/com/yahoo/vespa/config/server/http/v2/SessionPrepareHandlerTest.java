@@ -61,6 +61,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     private ConfigserverConfig configserverConfig;
     private String preparedMessage = " prepared.\"}";
+    private String tenantMessage = "";
     private TenantRepository tenantRepository;
 
     @Rule
@@ -89,6 +90,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .build();
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
+        tenantMessage = ",\"tenant\":\"" + tenant + "\"";
     }
 
     @Test
@@ -121,16 +123,13 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void require_that_response_has_all_fields() throws Exception {
+    public void require_that_activate_url_is_returned_on_success() throws Exception {
         long sessionId = createSession(applicationId());
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
         assertEquals(OK, response.getStatus());
-        assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + sessionId + "/active\"");
-        assertResponseContains(response, "\"message\":\"Session " + sessionId + preparedMessage);
-        assertResponseContains(response, "\"tenant\":\"" + tenant + "\"");
-        assertResponseContains(response, "\"session-id\":\"" + sessionId + "\"");
-        assertResponseContains(response, "\"log\":[]");
+        assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + sessionId +
+                                         "/active\",\"message\":\"Session " + sessionId + preparedMessage);
     }
 
     @Test
@@ -184,6 +183,15 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
                                                 HttpErrorResponse.ErrorCode.NOT_FOUND,
                                                 "Session 9999 was not found");
+    }
+
+    @Test
+    public void require_that_tenant_is_in_response() throws Exception {
+        long sessionId = createSession(applicationId());
+        HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
+        assertNotNull(response);
+        assertEquals(OK, response.getStatus());
+        assertResponseContains(response, tenantMessage);
     }
 
     @Test
@@ -299,8 +307,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private static void assertResponseContains(HttpResponse response, String string) throws IOException {
-        String s = SessionHandlerTest.getRenderedString(response);
-        assertTrue(s, s.contains(string));
+        assertTrue(SessionHandlerTest.getRenderedString(response).contains(string));
     }
 
     private static void assertResponseNotContains(HttpResponse response, String string) throws IOException {
