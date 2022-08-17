@@ -41,24 +41,23 @@ void MatchCandidateTest::testLog() {
     TestQuery q("");
     std::string content("Here we go hepp and then some words away hoi some silly text here");
 
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content.c_str(), content.size(),
-                                   0, 0, 0);
-    _test(res); // We get a result handle
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content.c_str(), content.size(),
+                                0, 0, 0);
+    _test(static_cast<bool>(res)); // We get a result handle
     _test(!res->_mo); // but it is empty
 
-    juniper::Summary* sum = juniper::GetTeaser(res);
+    juniper::Summary* sum = juniper::GetTeaser(*res);
     std::string s(sum->Text());
     _test_equal(s, std::string(""));
 
-    long relevance = juniper::GetRelevancy(res);
+    long relevance = juniper::GetRelevancy(*res);
     _test_equal(relevance, PROXIMITYBOOST_NOCONSTRAINT_OFFSET);
 
-    sum = juniper::GetLog(res);
+    sum = juniper::GetLog(*res);
     s = sum->Text();
     _test_equal(s, std::string(""));
-    juniper::ReleaseResult(res);
 }
 
 
@@ -70,56 +69,52 @@ void MatchCandidateTest::testDump() {
 
     {
         TestQuery q("NEAR/1(hepp,hoi)");
-        Result* res = juniper::Analyse(juniper::TestConfig,
-                                       &q._qhandle,
-                                       content.c_str(), content.size(),
-                                       0, 0, 0);
-        _test(res != NULL);
-        long relevance = juniper::GetRelevancy(res);
+        auto res = juniper::Analyse(*juniper::TestConfig,
+                                    q._qhandle,
+                                    content.c_str(), content.size(),
+                                    0, 0, 0);
+        _test(static_cast<bool>(res));
+        long relevance = juniper::GetRelevancy(*res);
         // zero value since there are no hits and constraints are enabled..
         _test_equal(relevance, 0);
-        juniper::ReleaseResult(res);
     }
 
     {
         TestQuery q("OR(NEAR/1(hepp,hoi),bananas)");
-        Result* res = juniper::Analyse(juniper::TestConfig,
-                                       &q._qhandle,
-                                       content.c_str(), content.size(),
-                                       0, 0, 0);
-        _test(res != NULL);
-        long relevance = juniper::GetRelevancy(res);
+        auto res = juniper::Analyse(*juniper::TestConfig,
+                                    q._qhandle,
+                                    content.c_str(), content.size(),
+                                    0, 0, 0);
+        _test(static_cast<bool>(res));
+        long relevance = juniper::GetRelevancy(*res);
         // Check that X_CONSTR propagates as intended
         _test_equal(relevance, 0);
-        juniper::ReleaseResult(res);
     }
 
     {
         TestQuery q("PHRASE(hepp,hoi)");
-        Result* res = juniper::Analyse(juniper::TestConfig,
-                                       &q._qhandle,
-                                       content.c_str(), content.size(),
-                                       0, 0, 0);
-        _test(res != NULL);
-        long relevance = juniper::GetRelevancy(res);
+        auto res = juniper::Analyse(*juniper::TestConfig,
+                                    q._qhandle,
+                                    content.c_str(), content.size(),
+                                    0, 0, 0);
+        _test(static_cast<bool>(res));
+        long relevance = juniper::GetRelevancy(*res);
         // constant value since there are no hits but this is
         // also not a constrained search..
         _test_equal(relevance, PROXIMITYBOOST_NOCONSTRAINT_OFFSET);
-        juniper::ReleaseResult(res);
     }
 
     {
         TestQuery q("AND(hepp,hoi)");
-        Result* res = juniper::Analyse(juniper::TestConfig,
-                                       &q._qhandle,
-                                       content.c_str(), content.size(),
-                                       0, 0, 0);
-        _test(res != NULL);
-        long relevance = juniper::GetRelevancy(res);
+        auto res = juniper::Analyse(*juniper::TestConfig,
+                                    q._qhandle,
+                                    content.c_str(), content.size(),
+                                    0, 0, 0);
+        _test(static_cast<bool>(res));
+        long relevance = juniper::GetRelevancy(*res);
         // Relevance may change, but nice to discover such changes..
         // The important is that we get a nonzero value here as a hit
         _test_equal(relevance, 4470);
-        juniper::ReleaseResult(res);
     }
 }
 
@@ -135,11 +130,11 @@ void MatchCandidateTest::testorder() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Do the scanning manually. Scan calls accept several times
     res->Scan();
@@ -150,7 +145,6 @@ void MatchCandidateTest::testorder() {
     match_candidate_set& ms = m.OrderedMatchSet();
 
     _test(ms.size() == 1);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -165,11 +159,11 @@ void MatchCandidateTest::testMatches_limit() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
     res->Scan();
@@ -182,11 +176,10 @@ void MatchCandidateTest::testMatches_limit() {
     _test(ms.size() == 2); // The first (complete) match and the second starting at "test"
 
     // Check if we get the correct teaser as well..
-    juniper::Summary* sum = juniper::GetTeaser(res);
+    juniper::Summary* sum = juniper::GetTeaser(*res);
     _test(strcmp(sum->Text(),
                  "This is a simple text where a <b>phrase</b> <b>match</b> can be found not"
                  " quite adjacent to a <b>test</b> <b>word</b>") == 0);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -200,11 +193,11 @@ void MatchCandidateTest::testAccept() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
     res->Scan();
@@ -218,7 +211,6 @@ void MatchCandidateTest::testAccept() {
     _test(ms.size() > 0);
 
     if (!ms.size()) {
-        juniper::ReleaseResult(res);
         return; // No point in continuing..
     }
 
@@ -234,10 +226,9 @@ void MatchCandidateTest::testAccept() {
     _test(mc._klist.size() == 2); // Two occurrence elements in list
 
     // Just for the sake of it, verify that we get a proper teaser out of this also..
-    juniper::Summary* sum = juniper::GetTeaser(res);
+    juniper::Summary* sum = juniper::GetTeaser(*res);
     _test(strcmp(sum->Text(),
                  "This is a <b>simple</b> <b>test</b> where we should get a perfect match") == 0);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -260,11 +251,11 @@ void MatchCandidateTest::testMake_keylist() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
     res->Scan();
@@ -275,8 +266,6 @@ void MatchCandidateTest::testMake_keylist() {
     match_candidate_set& ms = m.OrderedMatchSet();
 
     _test_equal(static_cast<size_t>(ms.size()), 6u);
-
-    juniper::ReleaseResult(res);
 }
 
 
@@ -291,11 +280,11 @@ void MatchCandidateTest::testAdd_to_keylist() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
 // Do the scanning manually. This calls accept several times
     res->Scan();
@@ -308,13 +297,12 @@ void MatchCandidateTest::testAdd_to_keylist() {
     _test_equal(static_cast<size_t>(ms.size()), 1u); // Single result
 
     // Bug triggered when result is fetched..
-    juniper::Summary* sum = juniper::GetTeaser(res);
+    juniper::Summary* sum = juniper::GetTeaser(*res);
     std::string s(sum->Text());
     _test_equal(s,
                 "connect truende. <b>phr1</b> <b>phr2</b> www www www <b>phr3</b>"
                 " <b>phr4</b> acuicola 8844");
 
-    juniper::ReleaseResult(res);
 }
 
 
@@ -331,11 +319,11 @@ void MatchCandidateTest::testLength() {
         TestQuery q("NEAR/4(pattern,NEAR/1(simple,with),NEAR/2(simple,adjacent))");
 
         // Fetch a result descriptor:
-        Result* res = juniper::Analyse(juniper::TestConfig, &q._qhandle,
-                                       content, content_len,
-                                       0, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
+                                    content, content_len,
+                                    0, 0, 0);
 
-        juniper::Summary* sum = juniper::GetTeaser(res);
+        juniper::Summary* sum = juniper::GetTeaser(*res);
         Matcher& m = *res->_matcher;
         match_candidate_set& ms = m.OrderedMatchSet();
         _test_equal(static_cast<size_t>(ms.size()), 1u);
@@ -345,7 +333,6 @@ void MatchCandidateTest::testLength() {
                     "this <b>simple</b> text <b>with</b> <b>adjacent</b> words of "
                     "a certain <b>pattern</b> must be matched according to specific"
                     " rules to be detailed in this test.");
-        juniper::ReleaseResult(res);
     }
 
     {
@@ -353,17 +340,16 @@ void MatchCandidateTest::testLength() {
         TestQuery q("ONEAR/4(pattern,NEAR/1(simple,with),NEAR/2(simple,adjacent))");
 
         // Fetch a result descriptor:
-        Result* res = juniper::Analyse(juniper::TestConfig,
-                                       &q._qhandle
-                                       ,content, content_len,
-                                       0, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig,
+                                    q._qhandle
+                                    ,content, content_len,
+                                    0, 0, 0);
 
         res->Scan();
         Matcher& m = *res->_matcher;
         match_candidate_set& ms = m.OrderedMatchSet();
         _test_equal(static_cast<size_t>(ms.size()), 0u);
 
-        juniper::ReleaseResult(res);
     }
 
     {
@@ -372,16 +358,14 @@ void MatchCandidateTest::testLength() {
         TestQuery q("NEAR/4(pattern,NEAR/1(simple,with),NEAR/1(simple,adjacent))");
 
         // Fetch a result descriptor:
-        Result* res = juniper::Analyse(juniper::TestConfig, &q._qhandle,
-                                       content, content_len,
-                                       0, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
+                                    content, content_len,
+                                    0, 0, 0);
 
         res->Scan();
         Matcher& m = *res->_matcher;
         match_candidate_set& ms = m.OrderedMatchSet();
         _test_equal(static_cast<size_t>(ms.size()), 0u);
-
-        juniper::ReleaseResult(res);
     }
 }
 
@@ -416,11 +400,11 @@ void MatchCandidateTest::requireThatMaxNumberOfMatchCandidatesCanBeControlled()
     const char *content = "re re re re foo re re re re bar re re re re foo re re re re bar";
     size_t content_len = strlen(content);
 
-    Result *res = juniper::Analyse(juniper::TestConfig,
-                                   &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig,
+                                q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Deflect tokens to my processor
     Matcher &m = *res->_matcher;
@@ -435,8 +419,6 @@ void MatchCandidateTest::requireThatMaxNumberOfMatchCandidatesCanBeControlled()
     _test_equal(m.TotalHits(), 20);
     match_candidate_set& mcs = m.OrderedMatchSet();
     _test_equal(static_cast<size_t>(mcs.size()), 2u);
-
-    juniper::ReleaseResult(res);
 }
 
 

@@ -7,7 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.tokenizer");
 
-JuniperTokenizer::JuniperTokenizer(Fast_WordFolder* wordfolder,
+JuniperTokenizer::JuniperTokenizer(const Fast_WordFolder* wordfolder,
 				   const char* text, size_t len, ITokenProcessor* successor,
                                    const juniper::SpecialTokenRegistry * registry) :
     _wordfolder(wordfolder), _text(text), _len(len), _successor(successor), _registry(registry),

@@ -120,9 +120,9 @@ public:
      *   behaviour such as user customization of teaser parameters, selectively
      *   enabling of Juniper debugging/tracing features and to support Juniper extensions
      *   to the query language.
-     * @return An allocated handle to be subsequently released by ReleaseQueryHandle()
+     * @return A unique pointer to a QueryHandle.
      */
-    QueryHandle* CreateQueryHandle(const IQuery& query, const char* juniperoptions);
+    std::unique_ptr<QueryHandle> CreateQueryHandle(const IQuery& query, const char* juniperoptions);
 
     /** Add an rewriter for all terms that are prefixed with the given index.
      *  When Juniper encounter a term in the query tagged with this index,
@@ -150,11 +150,6 @@ private:
  */
 bool AnalyseCompatible(Config* conf1, Config* conf2);
 
-/** Release a QueryHandle as previously allocated by CreateQueryHandle.
- * @param handle The QueryHandle object to release
- */
-void ReleaseQueryHandle(QueryHandle*& handle);
-
 /** Perform initial content analysis on a query/content pair.
  *  Note that the content may either be a simple UTF-8 encoded string or a
  *  more advanced representation including document structure elements, as provided
@@ -170,10 +165,9 @@ void ReleaseQueryHandle(QueryHandle*& handle);
  within the document that contains the provided document summary.
  * @param langid A unique 32 bit id representing the language which
  this document summary is to be analysed in context of.
- * @return A pointer to an allocated handle to be used in subsequent specific result
- *   requests (must later be released with ReleaseResult())
+ * @return A unique pointer to a Result
  */
-Result* Analyse(const Config* config, QueryHandle* query,
+std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& query,
                 const char* docsum, size_t docsum_len,
                 uint32_t docid, uint32_t inputfield_id,
                 uint32_t langid);
@@ -182,17 +176,16 @@ Result* Analyse(const Config* config, QueryHandle* query,
  *  @param result_handle The result to retrieve from
  *  @return The relevancy (proximitymetric) of the processed content.
  */
-long GetRelevancy(Result* result_handle);
+long GetRelevancy(Result& result_handle);
 
 /** Generate a teaser based on the provided analysis result
  *  @param result_handle a handle obtained by a previous call to Analyse
  *  @param alt_config An optional alternate config to use for this teaser generation
  *    The purpose of alt_config is to allow generation of multiple teasers
  *    based on the same content and analysis.
- *  @return The generated Teaser object. This object is valid until ReleaseResult
- *    is called for result_handle
+ *  @return The generated Teaser object. This object is valid until result_handle is deleted.
  */
-Summary* GetTeaser(Result* result_handle, const Config* alt_config = NULL);
+Summary* GetTeaser(Result& result_handle, const Config* alt_config = NULL);
 
 /** Retrieve log information based on the previous calls to this result handle.
  *  Note that for the log to be complete, the juniper log override entry in
@@ -200,15 +193,9 @@ Summary* GetTeaser(Result* result_handle, const Config* alt_config = NULL);
  * @param result_handle a handle obtained by a previous call to Analyse.
  * @return value: a summary description containing the Juniper log as a text field
  *   if any log information is available, or else an empty summary.
- *   This object is valid until ReleaseResult is called for result_handle
+ *   This object is valid until result_handle is deleted.
  */
-Summary* GetLog(Result* result_handle);
-
-/** Release all resources associated with the handle given including the
- *  summaries created by this result handle.
- * @param result_handle The handle to release
- */
-void ReleaseResult(Result*& result_handle);
+Summary* GetLog(Result& result_handle);
 
 } // end namespace juniper
 

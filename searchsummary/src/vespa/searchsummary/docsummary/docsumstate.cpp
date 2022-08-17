@@ -4,6 +4,7 @@
 #include "docsum_field_writer_state.h"
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/juniper/queryhandle.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
@@ -36,24 +37,10 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _rankFeatures(nullptr),
       _matching_elements()
 {
-    _dynteaser._docid    = static_cast<uint32_t>(-1);
-    _dynteaser._input    = static_cast<uint32_t>(-1);
-    _dynteaser._lang     = static_cast<uint32_t>(-1);
-    _dynteaser._config   = nullptr;
-    _dynteaser._query    = nullptr;
-    _dynteaser._result   = nullptr;
 }
 
 
-GetDocsumsState::~GetDocsumsState()
-{
-    if (_dynteaser._result != nullptr) {
-        juniper::ReleaseResult(_dynteaser._result);
-    }
-    if (_dynteaser._query != nullptr) {
-        juniper::ReleaseQueryHandle(_dynteaser._query);
-    }
-}
+GetDocsumsState::~GetDocsumsState() = default;
 
 const MatchingElements &
 GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_elems_fields)
