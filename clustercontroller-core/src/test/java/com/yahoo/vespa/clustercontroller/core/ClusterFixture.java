@@ -162,7 +162,7 @@ public class ClusterFixture {
     }
 
     AnnotatedClusterState annotatedGeneratedClusterState() {
-        params.currentTimeInMilllis(timer.getCurrentTimeInMillis());
+        params.currentTimeInMillis(timer.getCurrentTimeInMillis());
         return ClusterStateGenerator.generatedStateFrom(params);
     }
 

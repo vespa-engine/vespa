@@ -1006,7 +1006,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
     private AnnotatedClusterState computeCurrentAnnotatedState() {
         ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
-        params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
+        params.currentTimeInMillis(timer.getCurrentTimeInMillis())
                 .cluster(cluster)
                 .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
         return ClusterStateGenerator.generatedStateFrom(params);
