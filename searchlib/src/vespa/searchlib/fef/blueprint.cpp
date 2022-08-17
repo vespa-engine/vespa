@@ -5,9 +5,6 @@
 #include <cassert>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.blueprint");
-
 namespace search::fef {
 
 std::optional<FeatureType>

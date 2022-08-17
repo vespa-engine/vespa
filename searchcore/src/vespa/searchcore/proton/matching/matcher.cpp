@@ -32,10 +32,12 @@ using search::MatchingElements;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
+using search::fef::RankSetup;
 using search::fef::indexproperties::hitcollector::HeapSize;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
+using vespalib::make_string_short::fmt;
 
 namespace proton::matching {
 
@@ -117,7 +119,8 @@ Matcher::Matcher(const search::index::Schema &schema, const Properties &props, c
     _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
-        throw vespalib::IllegalArgumentException("failed to compile rank setup", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException(fmt("failed to compile rank setup :\n%s",
+                                                     _rankSetup->getJoinedWarnings().c_str()), VESPA_STRLOC);
     }
 }
 
