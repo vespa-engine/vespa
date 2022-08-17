@@ -37,9 +37,7 @@ final class TokenPosition {
      * Returns null (no exception) if there are no more tokens.
      */
     public Token current() {
-        Token token = current(0);
-
-        return token;
+        return current(0);
     }
 
     /**

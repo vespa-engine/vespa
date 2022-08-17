@@ -9,8 +9,6 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.textserialize.TextSerialize;
 
-import java.util.Set;
-
 /**
  * @author Simon Thoresen Hult
  */
@@ -32,4 +30,5 @@ public final class ProgrammaticParser implements CustomParser {
         if (queryToParse == null)  return null;
         return TextSerialize.parse(queryToParse);
     }
+
 }

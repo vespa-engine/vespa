@@ -41,16 +41,16 @@ public class AllParser extends SimpleParser {
     }
 
     @Override
-    protected Item parseItems(String defaultIndexName) {
+    protected Item parseItems() {
         int position = tokens.getPosition();
         try {
-            return parseItemsBody(defaultIndexName);
+            return parseItemsBody();
         } finally {
             tokens.setPosition(position);
         }
     }
 
-    protected Item parseItemsBody(String defaultIndexName) {
+    protected Item parseItemsBody() {
         // Algorithm: Collect positive, negative, and and'ed items, then combine.
         CompositeItem and = null;
         NotItem not = null; // Store negatives here as we go
@@ -65,7 +65,7 @@ public class AllParser extends SimpleParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem(defaultIndexName);
+                current = indexableItem().getFirst();
             if (current == null)
                 current = compositeItem();
 
@@ -129,8 +129,9 @@ public class AllParser extends SimpleParser {
         try {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
-
-            item = indexableItem();
+            var itemAndExplicitIndex = indexableItem();
+            item = itemAndExplicitIndex.getFirst();
+            boolean explicitIndex = itemAndExplicitIndex.getSecond();
             if (item == null) {
                 item = compositeItem();
 
@@ -155,11 +156,11 @@ public class AllParser extends SimpleParser {
             // but interpret -(N) as a negative item matching a positive number
             // but interpret --N as a negative item matching a negative number
             if (item instanceof IntItem &&
-                ((IntItem)item).getIndexName().isEmpty() &&
+                ! explicitIndex &&
                 ! isComposited &&
-                ! ((IntItem)item).getNumber().startsWith(("-")))
+                ! ((IntItem)item).getNumber().startsWith(("-"))) {
                 item = null;
-
+            }
             return item;
         } finally {
             if (item == null) {
@@ -204,8 +205,7 @@ public class AllParser extends SimpleParser {
                 rank.addItem(topLevelItem);
             }
             return rank;
-        } else if ((item instanceof RankItem) && (((RankItem)item).getItem(0) instanceof OrItem)) {
-            RankItem itemAsRank = (RankItem) item;
+        } else if ((item instanceof RankItem itemAsRank) && (((RankItem)item).getItem(0) instanceof OrItem)) {
             OrItem or = (OrItem) itemAsRank.getItem(0);
 
             ((RankItem) topLevelItem).addItem(0, or);

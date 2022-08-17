@@ -1,14 +1,25 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.ONearItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.LBRACE;
 import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
 
 /**
- * Parser for queries of type advanced.
+ * Parser for queries of type 'advanced'.
  *
  * @author Steinar Knutsen
  * @deprecated YQL should be used for formal queries
@@ -20,7 +31,8 @@ public class AdvancedParser extends StructuredParser {
         super(environment);
     }
 
-    protected Item parseItems(String defaultIndexName) {
+    @Override
+    protected Item parseItems() {
         return advancedItems(true);
     }
 
@@ -53,46 +65,40 @@ public class AdvancedParser extends StructuredParser {
         boolean expectingOperator = false;
 
         do {
-            item = null;
-
+            item = indexableItem().getFirst();
             if (item == null) {
-                item = indexableItem();
-                if (item == null) {
-                    item = compositeItem();
-                    itemIsComposite = true;
-                } else {
-                    itemIsComposite = false;
+                item = compositeItem();
+                itemIsComposite = true;
+            } else {
+                itemIsComposite = false;
+            }
+            if (item != null) {
+                Item newTop = null;
+
+                if (expectingOperator) {
+                    newTop = handleAdvancedOperator(topLevelItem, item, topLevelIsClosed);
                 }
-                if (item != null) {
-                    Item newTop = null;
-
-                    if (expectingOperator) {
-                        newTop = handleAdvancedOperator(topLevelItem, item,
-                                topLevelIsClosed);
+                if (newTop != null) { // Operator found
+                    topLevelIsClosed = false;
+                    expectingOperator = false;
+                    topLevelItem = newTop;
+                } else if (topLevelItem == null) {
+                    topLevelItem = item;
+                    if (itemIsComposite) {
+                        topLevelIsClosed = true;
                     }
-                    if (newTop != null) { // Operator found
-                        topLevelIsClosed = false;
-                        expectingOperator = false;
-                        topLevelItem = newTop;
-                    } else if (topLevelItem == null) {
-                        topLevelItem = item;
-                        if (itemIsComposite) {
-                            topLevelIsClosed = true;
-                        }
-                        expectingOperator = true;
-                    } else if (topLevelItem instanceof CompositeItem
-                               && !(topLevelItem instanceof SegmentItem)) {
-                        ((CompositeItem) topLevelItem).addItem(item);
-                        expectingOperator = true;
-                    } else {
-                        AndItem and = new AndItem();
+                    expectingOperator = true;
+                } else if (topLevelItem instanceof CompositeItem && !(topLevelItem instanceof SegmentItem)) {
+                    ((CompositeItem) topLevelItem).addItem(item);
+                    expectingOperator = true;
+                } else {
+                    AndItem and = new AndItem();
 
-                        and.addItem(topLevelItem);
-                        and.addItem(item);
-                        topLevelItem = and;
-                        topLevelIsClosed = false;
-                        expectingOperator = true;
-                    }
+                    and.addItem(topLevelItem);
+                    and.addItem(item);
+                    topLevelItem = and;
+                    topLevelIsClosed = false;
+                    expectingOperator = true;
                 }
             }
 
@@ -178,7 +184,7 @@ public class AdvancedParser extends StructuredParser {
             int distance = consumeNumericArgument();
             if (distance==0)
                 distance=NearItem.defaultDistance;
-            if (topLevelIsClosed || !(topLevelItem instanceof NearItem) || distance!=((NearItem)topLevelItem).getDistance()) {
+            if (topLevelIsClosed || !(topLevelItem instanceof NearItem) || distance != ((NearItem)topLevelItem).getDistance()) {
                 NearItem near = new NearItem(distance);
 
                 near.addItem(topLevelItem);
@@ -188,7 +194,7 @@ public class AdvancedParser extends StructuredParser {
         } else if (isTheWord("onear", item)) {
             int distance = consumeNumericArgument();
             if (distance==0)
-                distance=ONearItem.defaultDistance;
+                distance= ONearItem.defaultDistance;
             if (topLevelIsClosed || !(topLevelItem instanceof ONearItem) || distance!=((ONearItem)topLevelItem).getDistance()) {
                 ONearItem oNear = new ONearItem(distance);
 

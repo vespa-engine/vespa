@@ -7,7 +7,6 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.search.query.parser.Parser;
 
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
 
 /**

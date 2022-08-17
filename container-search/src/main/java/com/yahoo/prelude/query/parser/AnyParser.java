@@ -14,9 +14,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -31,12 +29,13 @@ public class AnyParser extends SimpleParser {
         super(environment);
     }
 
-    protected Item parseItems(String defaultIndexName) {
-        return anyItems(true, defaultIndexName);
+    @Override
+    protected Item parseItems() {
+        return anyItems(true);
     }
 
-    Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
-        setState(queryLanguage, indexFacts);
+    Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts, String defaultIndex) {
+        setState(queryLanguage, indexFacts, defaultIndex);
         tokenize(filter, null, indexFacts, queryLanguage);
 
         Item filterRoot = anyItems(true);
@@ -55,7 +54,7 @@ public class AnyParser extends SimpleParser {
             if ( ! tokens.skipMultiple(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
 
-            item = indexableItem();
+            item = indexableItem().getFirst();
 
             if (item == null) {
                 item = compositeItem();
@@ -123,8 +122,8 @@ public class AnyParser extends SimpleParser {
         }
     }
 
-    Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
-        setState(queryLanguage, indexFacts);
+    Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts, String defaultIndex) {
+        setState(queryLanguage, indexFacts, defaultIndex);
         tokenize(filter, null, indexFacts, queryLanguage);
         return filterItems(root);
     }
@@ -148,16 +147,14 @@ public class AnyParser extends SimpleParser {
 
     private Item filterItems(Item root) {
         while (tokens.hasNext()) {
-            Item item = null;
-
-            item = positiveItem();
+            Item item = positiveItem();
             root = addAndFilter(root, item);
             if (item == null) {
                 item = negativeItem();
                 root = addNotFilter(root, item);
             }
             if (item == null) {
-                item = indexableItem();
+                item = indexableItem().getFirst();
                 root = addRankFilter(root, item);
             }
 
