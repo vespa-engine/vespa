@@ -125,15 +125,15 @@ public abstract class LockedTenant {
     /** A locked CloudTenant. */
     public static class Cloud extends LockedTenant {
 
-        private final Optional<Principal> creator;
-        private final BiMap<PublicKey, Principal> developerKeys;
+        private final Optional<SimplePrincipal> creator;
+        private final BiMap<PublicKey, SimplePrincipal> developerKeys;
         private final TenantInfo info;
         private final List<TenantSecretStore> tenantSecretStores;
         private final ArchiveAccess archiveAccess;
         private final Optional<Instant> invalidateUserSessionsBefore;
 
-        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator,
-                      BiMap<PublicKey, Principal> developerKeys, TenantInfo info,
+        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
+                      BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore) {
             super(name, createdAt, lastLoginInfo);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
@@ -154,18 +154,18 @@ public abstract class LockedTenant {
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
-            BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
-            principal = new SimplePrincipal(principal.getName());
+            BiMap<PublicKey, SimplePrincipal> keys = HashBiMap.create(developerKeys);
+            SimplePrincipal simplePrincipal = new SimplePrincipal(principal.getName());
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
-            if (keys.inverse().containsKey(principal))
-                throw new IllegalArgumentException(principal + " is already associated with key " + KeyUtils.toPem(keys.inverse().get(principal)));
-            keys.put(key, principal);
+            if (keys.inverse().containsKey(simplePrincipal))
+                throw new IllegalArgumentException(principal + " is already associated with key " + KeyUtils.toPem(keys.inverse().get(simplePrincipal)));
+            keys.put(key, simplePrincipal);
             return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
-            BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
+            BiMap<PublicKey, SimplePrincipal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
             return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }

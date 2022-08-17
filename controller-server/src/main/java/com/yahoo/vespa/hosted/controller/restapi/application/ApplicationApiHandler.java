@@ -1081,7 +1081,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(root);
     }
 
-    private void toSlime(Cursor keysArray, Map<PublicKey, Principal> keys) {
+    private void toSlime(Cursor keysArray, Map<PublicKey, ? extends Principal> keys) {
         keys.forEach((key, principal) -> {
             Cursor keyObject = keysArray.addObject();
             keyObject.setString("key", KeyUtils.toPem(key));
