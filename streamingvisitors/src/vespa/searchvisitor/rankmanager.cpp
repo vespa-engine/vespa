@@ -119,7 +119,7 @@ RankManager::Snapshot::initRankSetup(const BlueprintFactory & factory)
         auto rs = std::make_shared<RankSetup>(factory, ie);
         rs->configure(); // reads config values from the property map
         if (!rs->compile()) {
-            LOG(warning, "Could not compile rank setup for rank profile '%u'. Errors = %s", i, rs->getJoinedErrors().c_str());
+            LOG(warning, "Could not compile rank setup for rank profile '%u'. Errors = %s", i, rs->getJoinedWarnings().c_str());
             return false;
         }
         _rankSetup.push_back(rs);

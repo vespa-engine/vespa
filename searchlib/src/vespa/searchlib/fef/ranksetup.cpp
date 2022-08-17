@@ -54,7 +54,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
-      _compileErrors(),
+      _warnings(),
       _feature_rename_map(),
       _ignoreDefaultRankFeatures(false),
       _compiled(false),
@@ -173,8 +173,8 @@ RankSetup::compileAndCheckForErrors(BlueprintResolver &bpr) {
     bool ok = bpr.compile();
     if ( ! ok ) {
         _compileError = true;
-        const Errors & errors = bpr.getCompileErrors();
-        _compileErrors.insert(_compileErrors.end(), errors.begin(), errors.end());
+        const auto & warnings = bpr.getWarnings();
+        _warnings.insert(_warnings.end(), warnings.begin(), warnings.end());
     }
 }
 bool
@@ -188,7 +188,7 @@ RankSetup::compile()
             _first_phase_resolver->addSeed(_firstPhaseRankFeature);
         } else {
             vespalib::string e = fmt("invalid feature name for initial rank: '%s'", _firstPhaseRankFeature.c_str());
-            _compileErrors.emplace_back(e);
+            _warnings.emplace_back(e);
             _compileError = true;
         }
     }
@@ -199,7 +199,7 @@ RankSetup::compile()
             _second_phase_resolver->addSeed(_secondPhaseRankFeature);
         } else {
             vespalib::string e = fmt("invalid feature name for final rank: '%s'", _secondPhaseRankFeature.c_str());
-            _compileErrors.emplace_back(e);
+            _warnings.emplace_back(e);
             _compileError = true;
         }
     }
@@ -246,9 +246,9 @@ RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &o
 }
 
 vespalib::string
-RankSetup::getJoinedErrors() const {
+RankSetup::getJoinedWarnings() const {
     vespalib::asciistream os;
-    for (const auto & m : _compileErrors) {
+    for (const auto & m : _warnings) {
         os << m << "\n";
     }
     return os.str();

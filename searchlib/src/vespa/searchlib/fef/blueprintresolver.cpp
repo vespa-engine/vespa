@@ -266,7 +266,7 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
       _executorSpecs(),
       _featureMap(),
       _seedMap(),
-      _compileErrors()
+      _warnings()
 {
 }
 
@@ -302,7 +302,7 @@ BlueprintResolver::compile()
                                    for (const auto &seed: _seeds) {
                                        auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
                                        if (compiler.failed()) {
-                                           _compileErrors = std::move(compiler.errors);
+                                           _warnings = std::move(compiler.errors);
                                            return;
                                        }
                                        _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
@@ -314,7 +314,7 @@ BlueprintResolver::compile()
     executor.shutdown();
     size_t stack_usage = compiler.stack_usage();
     if (stack_usage > (128_Ki)) {
-        _compileErrors.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
+        _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
     }
     return !compiler.failed();
 }

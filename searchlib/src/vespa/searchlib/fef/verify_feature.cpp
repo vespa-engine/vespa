@@ -19,8 +19,8 @@ bool verifyFeature(const BlueprintFactory &factory,
     resolver.addSeed(featureName);
     bool result = resolver.compile();
     if (!result) {
-        const BlueprintResolver::Errors & compileErrors(resolver.getCompileErrors());
-        for (const auto & msg : compileErrors) {
+        const BlueprintResolver::Warnings & warnings(resolver.getWarnings());
+        for (const auto & msg : warnings) {
             errors.emplace_back(Level::WARNING, msg);
         }
         vespalib::string msg = fmt("verification failed: %s (%s)",BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());

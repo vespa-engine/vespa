@@ -25,7 +25,7 @@ class BlueprintResolver
 {
 public:
     using SP = std::shared_ptr<BlueprintResolver>;
-    using Errors = std::vector<vespalib::string>;
+    using Warnings = std::vector<vespalib::string>;
 
     /**
      * Low-level reference to a single output from a feature
@@ -85,7 +85,7 @@ private:
     ExecutorSpecList              _executorSpecs;
     FeatureMap                    _featureMap;
     FeatureMap                    _seedMap;
-    Errors                        _compileErrors;
+    Warnings                        _warnings;
 
 public:
     BlueprintResolver(const BlueprintResolver &) = delete;
@@ -161,10 +161,10 @@ public:
     const FeatureMap &getSeedMap() const { return _seedMap; }
 
     /**
-     * Will return any accumulated errors during compile
-     * @return list of errors
+     * Will return any accumulated warnings during compile
+     * @return list of warnings
      **/
-    const Errors & getCompileErrors() const { return _compileErrors; }
+    const Warnings & getWarnings() const { return _warnings; }
 };
 
 }

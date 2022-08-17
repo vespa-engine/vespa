@@ -23,7 +23,7 @@ namespace search::fef {
 class RankSetup
 {
 public:
-    using Errors = BlueprintResolver::Errors;
+    using Warnings = BlueprintResolver::Warnings;
     struct MutateOperation {
     public:
         MutateOperation() : MutateOperation("", "") {}
@@ -63,7 +63,7 @@ private:
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
-    Errors                   _compileErrors;
+    Warnings                 _warnings;
     StringStringMap          _feature_rename_map;
     bool                     _ignoreDefaultRankFeatures;
     bool                     _compiled;
@@ -443,11 +443,10 @@ public:
     bool compile();
 
     /**
-     * Will return any accumulated errors during compile
-     * @return list of errors
+     * Will return any accumulated warnings during compile
+     * @return joined string of warnings separated by newline
      */
-    const Errors & getCompileErrors() const { return _compileErrors; }
-    vespalib::string getJoinedErrors() const;
+    vespalib::string getJoinedWarnings() const;
 
     // These functions create rank programs for different tasks. Note
     // that the setup function must be called on rank programs for
