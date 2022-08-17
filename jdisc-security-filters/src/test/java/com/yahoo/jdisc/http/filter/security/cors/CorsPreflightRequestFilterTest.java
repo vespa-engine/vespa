@@ -43,6 +43,14 @@ public class CorsPreflightRequestFilterTest {
     }
 
     @Test
+    void extended_request_origin_does_not_yield_allow_origin_header_in_response() {
+        final String ALLOWED_ORIGIN = "https://allowed.origin";
+        final String EXTENDED_ORIGIN = "https://allowed.origin.as.subdomain.com";
+        HeaderFields headers = doFilterRequest(newRequestFilter(ALLOWED_ORIGIN), EXTENDED_ORIGIN);
+        assertNull(headers.getFirst(ALLOW_ORIGIN_HEADER));
+    }
+
+    @Test
     void allowed_wildcard_origin_yields_origin_header_in_response() {
         final String ALLOWED_ORIGIN = "http://allowed.origin";
         HeaderFields headers = doFilterRequest(newRequestFilter("*"), ALLOWED_ORIGIN);
