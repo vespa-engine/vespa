@@ -25,6 +25,7 @@ public class SessionPrepareAndActivateResponse extends SlimeJsonResponse {
         Cursor root = slime.get();
 
         root.setString("tenant", tenantName.value());
+        root.setString("session-id", Long.toString(result.sessionId()));
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName +
                 "/application/" + applicationId.application().value() +

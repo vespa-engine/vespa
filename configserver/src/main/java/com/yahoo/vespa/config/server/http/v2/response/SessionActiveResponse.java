@@ -18,6 +18,7 @@ public class SessionActiveResponse extends SlimeJsonResponse {
         Cursor root = metaData.get();
 
         root.setString("tenant", tenantName.value());
+        root.setString("session-id", Long.toString(sessionId));
         root.setString("message", message);
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName +
