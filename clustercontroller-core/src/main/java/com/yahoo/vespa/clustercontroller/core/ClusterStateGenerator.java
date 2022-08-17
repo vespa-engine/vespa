@@ -64,7 +64,7 @@ public class ClusterStateGenerator {
             this.transitionTimes = timesMs;
             return this;
         }
-        Params currentTimeInMilllis(long currentTimeMs) {
+        Params currentTimeInMillis(long currentTimeMs) {
             this.currentTimeInMillis = currentTimeMs;
             return this;
         }
