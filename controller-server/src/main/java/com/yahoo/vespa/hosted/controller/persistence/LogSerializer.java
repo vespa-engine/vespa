@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
  * @author jonmv
  */
 class LogSerializer {
+
+    private static final Logger logger = Logger.getLogger(LogSerializer.class.getName());
 
     // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
@@ -78,15 +82,21 @@ class LogSerializer {
 
     Map<Step, List<LogEntry>> fromSlime(List<Slime> slimes, long after) {
         Map<Step, List<LogEntry>> log = new HashMap<>();
-        slimes.forEach(slime -> slime.get().traverse((ObjectTraverser) (stepName, entryArray) -> {
-            Step step = RunSerializer.stepOf(stepName);
-            List<LogEntry> entries = log.computeIfAbsent(step, __ -> new ArrayList<>());
-            entryArray.traverse((ArrayTraverser) (__, entryObject) -> {
-                LogEntry entry = fromSlime(entryObject);
-                if (entry.id() > after)
-                    entries.add(entry);
-            });
-        }));
+        for (Slime slime : slimes)
+            try {
+                slime.get().traverse((ObjectTraverser) (stepName, entryArray) -> {
+                    Step step = RunSerializer.stepOf(stepName);
+                    List<LogEntry> entries = log.computeIfAbsent(step, __ -> new ArrayList<>());
+                    entryArray.traverse((ArrayTraverser) (__, entryObject) -> {
+                        LogEntry entry = fromSlime(entryObject);
+                        if (entry.id() > after)
+                            entries.add(entry);
+                    });
+                });
+            }
+            catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Bad log data; discarding it", e);
+            }
         return log;
     }
 
