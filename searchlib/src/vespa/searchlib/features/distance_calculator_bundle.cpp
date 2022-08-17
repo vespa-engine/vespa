@@ -79,13 +79,13 @@ resolve_attribute_for_field(const fef::IQueryEnvironment& env,
 
 }
 
-DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in)
+DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in) noexcept
     : handle(handle_in),
       calc()
 {
 }
 
-DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in)
+DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in) noexcept
     : handle(handle_in),
       calc(std::move(calc_in))
 {
