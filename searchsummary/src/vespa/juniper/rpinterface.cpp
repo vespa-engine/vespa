@@ -2,7 +2,6 @@
 
 #include "rpinterface.h"
 #include "juniperparams.h"
-#include "foreach_utils.h"
 #include "queryvisitor.h"
 #include "queryhandle.h"
 #include "propreader.h"

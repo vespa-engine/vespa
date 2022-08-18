@@ -3,6 +3,7 @@
 
 // Include something from STL so that _STLPORT_VERSION gets defined if appropriate
 #include <string>
+#include <algorithm>
 
 /* Juniper debug macro  */
 
@@ -43,14 +44,9 @@ extern unsigned debug_level;
 
 #endif
 
-
-#include "foreach_utils.h"
-
-FunctionObj(DoDump, dump);
-
 template <class _container>
 void dump_list(_container& __c)
 {
-    for_all(__c, DoDump);
+    std::for_each(__c.begin(), __c.end(), [](auto& elem) { elem->dump(); });
 }
 

@@ -47,7 +47,7 @@ public:
     std::unique_ptr<SpecialTokenRegistry> _registry;
     std::unique_ptr<JuniperTokenizer> _tokenizer;
 private:
-    std::vector<Summary*> _summaries; // Active summaries for this result
+    std::vector<std::unique_ptr<Summary>> _summaries; // Active summaries for this result
     bool _scan_done;  // State of the result - is text scan done?
 
     /* Option storage */

@@ -3,9 +3,9 @@
 
 #include "matchelem.h"
 #include "querynode.h"
+#include <memory>
 
-typedef key_occ* key_occ_ptr;
-typedef std::vector<key_occ_ptr> key_occ_vector;
+using key_occ_vector = std::vector<std::unique_ptr<key_occ>>;
 
 class key_occ : public MatchElement
 {
