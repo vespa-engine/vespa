@@ -233,41 +233,45 @@ public class JobController {
         Run run = run(id);
         return run.stepStatus(copyVespaLogs).map(succeeded::equals).orElse(false)
                ? controller.serviceRegistry().runDataStore().getLogs(id, tester)
-               : getVespaLogsFromLogserver(run, fromMillis, tester);
+               : getVespaLogsFromLogserver(run, fromMillis, tester).orElse(InputStream.nullInputStream());
     }
 
     public static Optional<Instant> deploymentCompletedAt(Run run, boolean tester) {
         return (tester ? run.stepInfo(installTester)
                        : run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)))
-                .flatMap(StepInfo::startTime);
+                .flatMap(StepInfo::startTime).map(start -> start.minusSeconds(10));
     }
 
     public void storeVespaLogs(RunId id) {
         Run run = run(id);
         if ( ! id.type().isProduction()) {
-            try (InputStream logs = getVespaLogsFromLogserver(run, 0, false)) {
-                controller.serviceRegistry().runDataStore().putLogs(id, false, logs);
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            getVespaLogsFromLogserver(run, 0, false).ifPresent(logs -> {
+                try (logs) {
+                    controller.serviceRegistry().runDataStore().putLogs(id, false, logs);
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
         }
         if (id.type().isTest()) {
-            try (InputStream logs = getVespaLogsFromLogserver(run, 0, true)) {
-                controller.serviceRegistry().runDataStore().putLogs(id, true, logs);
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            getVespaLogsFromLogserver(run, 0, true).ifPresent(logs -> {
+                try (logs) {
+                    controller.serviceRegistry().runDataStore().putLogs(id, true, logs);
+                }
+                catch(IOException e){
+                    throw new UncheckedIOException(e);
+                }
+            });
         }
     }
 
-    private InputStream getVespaLogsFromLogserver(Run run, long fromMillis, boolean tester) {
-        long deploymentCompletedAtMillis = deploymentCompletedAt(run, tester).orElse(Instant.EPOCH).toEpochMilli();
-        return controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
-                                                                                    run.id().type().zone()),
-                                                                   Map.of("from", Long.toString(Math.max(fromMillis, deploymentCompletedAtMillis)),
-                                                                          "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli())));
+    private Optional<InputStream> getVespaLogsFromLogserver(Run run, long fromMillis, boolean tester) {
+        return deploymentCompletedAt(run, tester).map(at ->
+            controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
+                                                                                 run.id().type().zone()),
+                                                                Map.of("from", Long.toString(Math.max(fromMillis, at.toEpochMilli())),
+                                                                       "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli()))));
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
