@@ -62,8 +62,12 @@ public class EmbedderOption {
      * Basic option transformer. No special handling of options.
      */
     public static class OptionTransformer {
+
         public void transform(DeployState deployState, Element parent, EmbedderOption option) {
-            createElement(parent, option.name(), option.value());
+            if (option.value().isEmpty())
+                createElement(parent, option.name(), option.attributes.get("path")); // always understand path=".."
+            else
+                createElement(parent, option.name(), option.value());
         }
 
         public static Element createElement(Element parent, String name, String value) {

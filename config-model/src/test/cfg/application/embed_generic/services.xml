@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+  <container version="1.0">
+
+    <!--
+    <embedder id='transformer' class='ai.vespa.example.paragraph.SentenceBertEmbedder' bundle='exampleEmbedder' def='ai.vespa.example.paragraph.sentence-embedder'>
+      <model>files/model.onnx</model>
+      <vocab>files/vocab.txt</vocab>
+    </embedder>
+    -->
+
+    <embedder id='transformer' class='ai.vespa.example.paragraph.SentenceBertEmbedder' bundle='exampleEmbedder' def='ai.vespa.example.paragraph.sentence-embedder'>
+      <model path="files/model.onnx" /> <!-- Embedder syntax for file path -->
+      <vocab>files/vocab.txt</vocab>   <!-- Generic config syntax for file path -->
+    </embedder>
+
+    <nodes>
+      <node hostalias='node1'/>
+    </nodes>
+  </container>
+
+</services>
