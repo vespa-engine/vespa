@@ -1221,7 +1221,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app.instance().change());
 
         // Application is pinned to previous version, and downgrades to that. Tests are re-run.
-        tester.deploymentTrigger().triggerChange(app.instanceId(), Change.of(version0).withPin());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version0).withPin());
         app.runJob(stagingTest).runJob(productionUsEast3);
         tester.clock().advance(Duration.ofMinutes(1));
         app.failDeployment(testUsEast3);
@@ -2106,12 +2106,12 @@ public class DeploymentTriggerTest {
         Version version2 = new Version("7.8.9");
         Version version3 = new Version("8.9.10");
         tester.controllerTester().upgradeSystem(version2);
-        tester.deploymentTrigger().triggerChange(appToAvoidVersionGC.instanceId(), Change.of(version2));
+        tester.deploymentTrigger().forceChange(appToAvoidVersionGC.instanceId(), Change.of(version2));
         appToAvoidVersionGC.deployPlatform(version2);
 
         // app upgrades first zone to version3, and then the other two to version2.
         tester.controllerTester().upgradeSystem(version3);
-        tester.deploymentTrigger().triggerChange(app.instanceId(), Change.of(version3));
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version3));
         app.runJob(systemTest).runJob(stagingTest);
         tester.triggerJobs();
         tester.upgrader().overrideConfidence(version3, VespaVersion.Confidence.broken);
