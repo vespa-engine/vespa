@@ -151,9 +151,7 @@ export standalone_jdisc_container__deployment_profile=configserver
 # class path
 CP="${VESPA_HOME}/lib/jars/jdisc_core-jar-with-dependencies.jar"
 
-baseuserargs="$VESPA_CONFIGSERVER_JVMARGS"
-serveruserargs="$cloudconfig_server__jvmargs"
-jvmargs="$baseuserargs $serveruserargs"
+jvmoptions="$VESPA_CONFIGSERVER_JVMARGS"
 
 export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
 
@@ -161,8 +159,8 @@ rm -f $cfpfile
 vespa-run-as-vespa-user sh -c "printenv > $cfpfile"
 fixddir $bundlecachedir
 
-heap_min=$(get_min_heap_mb "${jvmargs}" 128)
-heap_max=$(get_max_heap_mb "${jvmargs}" 2048)
+heap_min=$(get_min_heap_mb "${jvmoptions}" 128)
+heap_max=$(get_max_heap_mb "${jvmoptions}" 2048)
 vespa-run-as-vespa-user vespa-runserver -s ${VESPA_SERVICE_NAME} -r 30 -p $pidfile -- \
 	java \
 	-Xms${heap_min}m -Xmx${heap_max}m \
@@ -174,7 +172,7 @@ vespa-run-as-vespa-user vespa-runserver -s ${VESPA_SERVICE_NAME} -r 30 -p $pidfi
 	-XX:+ExitOnOutOfMemoryError \
 	-XX:-OmitStackTraceInFastThrow \
 	-XX:MaxJavaStackTraceDepth=1000000 \
-	$jvmargs \
+	$jvmoptions \
         --add-opens=java.base/java.io=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \
