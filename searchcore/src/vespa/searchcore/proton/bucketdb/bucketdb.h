@@ -14,14 +14,14 @@ namespace proton {
 class BucketDB
 {
 public:
-    typedef document::GlobalId GlobalId;
-    typedef document::BucketId BucketId;
-    typedef storage::spi::Timestamp Timestamp;
-    typedef storage::spi::BucketChecksum BucketChecksum;
-    typedef bucketdb::BucketState BucketState;
-    typedef vespalib::hash_map<BucketId, BucketState, BucketId::hash> Map;
-
 private:
+    using GlobalId = document::GlobalId;
+    using BucketId = document::BucketId;
+    using Timestamp = storage::spi::Timestamp;
+    using BucketChecksum = storage::spi::BucketChecksum;
+    using BucketState = bucketdb::BucketState;
+    using Map = vespalib::hash_map<BucketId, BucketState, document::BucketId::xxhash>;
+
     Map _map;
     BucketId _cachedBucketId;
     BucketState _cachedBucketState;

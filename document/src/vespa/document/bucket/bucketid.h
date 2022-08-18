@@ -41,6 +41,9 @@ public:
             return g.getId();
         }
     };
+    struct xxhash {
+        uint64_t operator () (const BucketId& g) const noexcept;
+    };
 
     /**
      * The primitive type used to store bucket identifiers. If you use the
