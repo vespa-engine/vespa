@@ -138,6 +138,7 @@
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.Utf8Array)",
       "public static com.yahoo.component.Version fromString(java.lang.String)",
+      "public com.yahoo.component.Version withQualifier(java.lang.String)",
       "public java.lang.String toFullString()",
       "public int getMajor()",
       "public int getMinor()",
