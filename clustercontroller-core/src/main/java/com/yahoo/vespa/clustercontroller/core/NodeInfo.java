@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.jrt.Target;
-import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
@@ -13,12 +12,12 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -244,11 +243,13 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public ContentCluster getCluster() { return cluster; }
 
-    /** Returns true if the node is currently registered in slobrok */
-    // FIXME why is this called "isRpcAddressOutdated" then???
-    public boolean isRpcAddressOutdated() { return lastSeenInSlobrok != null; }
+    /** Returns true if the node is registered in slobrok */
+    public boolean isInSlobrok() { return lastSeenInSlobrok == null; }
 
-    public Long getRpcAddressOutdatedTimestamp() { return lastSeenInSlobrok; }
+    /** Returns true if the node is NOT registered in slobrok */
+    public boolean isNotInSlobrok() { return ! isInSlobrok(); }
+
+    public Long lastSeenInSlobrok() { return lastSeenInSlobrok; }
 
     public void abortCurrentNodeStateRequests() {
         for(Pair<GetNodeStateRequest, Long> it : pendingNodeStateRequests) {
@@ -275,7 +276,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         return wantedState;
     }
 
-    /** Returns the wanted state set directly by a user (i.e not configured) */
+    /** Returns the wanted state set directly by a user (i.e. not configured) */
     public NodeState getUserWantedState() { return wantedState; }
 
     public long getTimeOfFirstFailingConnectionAttempt() {

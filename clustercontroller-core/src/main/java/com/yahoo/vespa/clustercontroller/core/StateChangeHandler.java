@@ -329,7 +329,7 @@ public class StateChangeHandler {
     {
         return currentStateInSystem.getState().equals(State.MAINTENANCE)
             && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
-            && (lastReportedState.getState().equals(State.DOWN) || node.isRpcAddressOutdated())
+            && (lastReportedState.getState().equals(State.DOWN) || node.isNotInSlobrok())
             && node.getTransitionTime() + maxTransitionTime.get(node.getNode().getType()) < currentTime;
     }
 
@@ -339,14 +339,14 @@ public class StateChangeHandler {
                                                     NodeInfo node,
                                                     NodeState lastReportedState)
     {
-        if (node.isRpcAddressOutdated()
+        if (node.isNotInSlobrok()
             && !lastReportedState.getState().equals(State.DOWN)
-            && node.getRpcAddressOutdatedTimestamp() + maxSlobrokDisconnectGracePeriod <= currentTime)
+            && node.lastSeenInSlobrok() + maxSlobrokDisconnectGracePeriod <= currentTime)
         {
             final String desc = String.format(
                     "Set node down as it has been out of slobrok for %d ms which " +
                     "is more than the max limit of %d ms.",
-                    currentTime - node.getRpcAddressOutdatedTimestamp(),
+                    currentTime - node.lastSeenInSlobrok(),
                     maxSlobrokDisconnectGracePeriod);
             node.abortCurrentNodeStateRequests();
             NodeState state = lastReportedState.clone();
