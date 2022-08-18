@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -1194,13 +1195,25 @@ public class ControllerTest {
                 .cloudAccount(cloudAccount)
                 .region(zone.region())
                 .build();
+        // Deployment fails because cloud account is not declared for this tenant
         try {
             context.submit(applicationPackage).deploy();
-            fail("Expected exception"); // Account invalid for tenant
-        } catch (IllegalArgumentException ignored) {
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cloud account '012345678912' is not valid for tenant 'tenant'", e.getMessage());
         }
 
+        // Deployment fails because requested region is not configured in cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Zone prod.us-west-1 in deployment spec is not configured for use in cloud account '012345678912', in this system", e.getMessage());
+        }
+
+        // Deployment succeeds
+        tester.controllerTester().zoneRegistry().setCloudAccountZones(new CloudAccount(cloudAccount), zone);
         context.submit(applicationPackage).deploy();
         assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(zone)).get().value());
     }

@@ -5,6 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -43,6 +44,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+    private final Map<CloudAccount, Set<ZoneId>> cloudAccountZones = new HashMap<>();
     private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
     private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
 
@@ -143,6 +145,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock reprovisionToUpgradeOsIn(List<ZoneApi> zones) {
         this.reprovisionToUpgradeOs.addAll(zones);
+        return this;
+    }
+
+    public ZoneRegistryMock setCloudAccountZones(CloudAccount cloudAccount, ZoneId... zones) {
+        this.cloudAccountZones.put(cloudAccount, Set.of(zones));
         return this;
     }
 
@@ -251,6 +258,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.stream().anyMatch(zone -> zone.getId().equals(zoneId));
+    }
+
+    @Override
+    public boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount) {
+        return hasZone(zoneId) && cloudAccountZones.getOrDefault(cloudAccount, Set.of()).contains(zoneId);
     }
 
     @Override
