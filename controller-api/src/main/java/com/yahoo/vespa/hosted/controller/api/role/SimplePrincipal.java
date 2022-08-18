@@ -18,6 +18,10 @@ public class SimplePrincipal implements Principal {
         this.name = name;
     }
 
+    public static SimplePrincipal of(Principal principal) {
+        return new SimplePrincipal(principal.getName());
+    }
+
     @Override
     public String getName() {
         return name;
