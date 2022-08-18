@@ -39,7 +39,6 @@ import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
