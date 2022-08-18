@@ -129,15 +129,6 @@ public class PermanentFlags {
             value -> value.isEmpty() || QUALIFIER_PATTERN.matcher(value).find() || VERSION_PATTERN.matcher(value).find(),
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
-    public static final UnboundStringFlag WANTED_VESPA_VERSION = defineStringFlag(
-            "wanted-vespa-version", "",
-            "If non-empty the flag value overrides the wantedVespaVersion of the node object." +
-            "If the flag value contains '.', it must specify a valid Vespa version like '8.83.42'.  " +
-            "Otherwise a '.' + the flag value will be appended.",
-            "Takes effect on the next host admin tick.  The upgrade to the new wanted docker image is orchestrated.",
-            value -> value.isEmpty() || QUALIFIER_PATTERN.matcher(value).find() || VERSION_PATTERN.matcher(value).find(),
-            HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
-
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
             "zookeeper-server-version", "3.7.1",  // Note: Nodes running Vespa 7 have 3.7.1 as the only available version
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",

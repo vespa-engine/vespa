@@ -53,7 +53,6 @@ class NodesResponse extends SlimeJsonResponse {
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final StringFlag wantedDockerTagFlag;
-    private final StringFlag wantedVespaVersionFlag;
 
     public NodesResponse(ResponseType responseType, HttpRequest request,
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
@@ -64,7 +63,6 @@ class NodesResponse extends SlimeJsonResponse {
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
         this.wantedDockerTagFlag = PermanentFlags.WANTED_DOCKER_TAG.bindTo(nodeRepository.flagSource());
-        this.wantedVespaVersionFlag = PermanentFlags.WANTED_VESPA_VERSION.bindTo(nodeRepository.flagSource());
 
         Cursor root = slime.setObject();
         switch (responseType) {
@@ -156,7 +154,7 @@ class NodesResponse extends SlimeJsonResponse {
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
             object.setString("wantedDockerImage", nodeRepository.containerImages().get(node).withTag(resolveVersionFlag(wantedDockerTagFlag, node, allocation)).asString());
-            object.setString("wantedVespaVersion", resolveVersionFlag(wantedVespaVersionFlag, node, allocation).toFullString());
+            object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
