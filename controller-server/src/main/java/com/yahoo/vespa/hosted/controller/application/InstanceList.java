@@ -36,14 +36,19 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances where all production deployments are compatible with the given version.
+     * Returns the subset of instances where all production deployments are compatible with the given version,
+     * and at least one known build is compatible with the given version.
      *
      * @param platform the version which applications returned are compatible with
      */
     public InstanceList compatibleWithPlatform(Version platform, Function<ApplicationId, VersionCompatibility> compatibility) {
-        return matching(id -> instance(id).productionDeployments().values().stream()
-                                          .flatMap(deployment -> application(id).revisions().get(deployment.revision()).compileVersion().stream())
-                                          .noneMatch(version -> compatibility.apply(id).refuse(platform, version)));
+        return matching(id ->    instance(id).productionDeployments().values().stream()
+                                             .flatMap(deployment -> application(id).revisions().get(deployment.revision()).compileVersion().stream())
+                                             .noneMatch(version -> compatibility.apply(id).refuse(platform, version))
+                              && application(id).revisions().production().stream()
+                                                .anyMatch(revision -> revision.compileVersion()
+                                                                              .map(compiled -> compatibility.apply(id).accept(platform, compiled))
+                                                                              .orElse(true)));
     }
 
     /**
