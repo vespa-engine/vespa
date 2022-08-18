@@ -1200,7 +1200,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             while (true) {
                 int distCount = 0, storCount = 0;
                 for (NodeInfo info : cluster.getNodeInfos()) {
-                    if (!info.isRpcAddressOutdated()) {
+                    if (info.isInSlobrok()) {
                         if (info.isDistributor()) ++distCount;
                         else ++storCount;
                     }

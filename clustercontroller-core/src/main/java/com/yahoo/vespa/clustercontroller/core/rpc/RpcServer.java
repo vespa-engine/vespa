@@ -199,7 +199,7 @@ public class RpcServer {
                 if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
                     lastConnectError = e.getMessage();
                     lastConnectErrorTime = time;
-                    log.log(Level.WARNING, "Failed to initailize RPC server socket: " + e.getMessage());
+                    log.log(Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
                 }
             }
         }
@@ -227,8 +227,8 @@ public class RpcServer {
                 }
                 if (req.methodName().equals("getNodeList")) {
                     log.log(Level.FINE, "Resolving RPC getNodeList request");
-                    List<String> slobrok = new ArrayList<String>();
-                    List<String> rpc = new ArrayList<String>();
+                    List<String> slobrok = new ArrayList<>();
+                    List<String> rpc = new ArrayList<>();
                     for(NodeInfo node : cluster.getNodeInfos()) {
                         String s1 = node.getSlobrokAddress();
                         String s2 = node.getRpcAddress();
@@ -236,8 +236,8 @@ public class RpcServer {
                         slobrok.add(s1);
                         rpc.add(s2 == null ? "" : s2);
                     }
-                    req.returnValues().add(new StringArray(slobrok.toArray(new String[slobrok.size()])));
-                    req.returnValues().add(new StringArray(rpc.toArray(new String[rpc.size()])));
+                    req.returnValues().add(new StringArray(slobrok.toArray(new String[0])));
+                    req.returnValues().add(new StringArray(rpc.toArray(new String[0])));
                     req.returnRequest();
                 } else if (req.methodName().equals("getSystemState")) {
                     log.log(Level.FINE, "Resolving RPC getSystemState request");
@@ -280,7 +280,7 @@ public class RpcServer {
                     NodeState oldState = node.getUserWantedState();
                     String message = (nodeState.getState().equals(State.UP)
                             ? "Clearing wanted nodeState for node " + node
-                            : "New wantedstate '" + nodeState.toString() + "' stored for node " + node);
+                            : "New wantedstate '" + nodeState + "' stored for node " + node);
                     if (!oldState.equals(nodeState) || !oldState.getDescription().equals(nodeState.getDescription())) {
                         if (!nodeState.getState().validWantedNodeState(nodeType)) {
                             throw new IllegalStateException("State " + nodeState.getState()
@@ -289,7 +289,7 @@ public class RpcServer {
                         node.setWantedState(nodeState);
                         changeListener.handleNewWantedNodeState(node, nodeState);
                     } else {
-                        message = "Node " + node + " already had wanted state " + nodeState.toString();
+                        message = "Node " + node + " already had wanted state " + nodeState;
                         log.log(Level.FINE, message);
                     }
                     req.returnValues().add(new StringValue(message));
