@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
@@ -490,7 +491,19 @@ public class Flags {
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(UnboundStringFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
+        return defineStringFlag(flagId, defaultValue, owners,
+                                createdAt, expiresAt, description,
+                                modificationEffect, value -> true,
+                                dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
+                                                     String createdAt, String expiresAt, String description,
+                                                     String modificationEffect, Predicate<String> validator,
+                                                     FetchVector.Dimension... dimensions) {
+        return define((i, d, v) -> new UnboundStringFlag(i, d, v, validator),
+                      flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
@@ -532,7 +545,7 @@ public class Flags {
 
     @FunctionalInterface
     private interface TypedUnboundFlagFactory<T, U extends UnboundFlag<?, ?, ?>> {
-        U create(FlagId id, T defaultVale, FetchVector defaultFetchVector);
+        U create(FlagId id, T defaultValue, FetchVector defaultFetchVector);
     }
 
     /**

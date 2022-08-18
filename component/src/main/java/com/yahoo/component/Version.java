@@ -202,6 +202,12 @@ public final class Version implements Comparable<Version> {
         return (versionString == null) ? emptyVersion :new Version(versionString);
     }
 
+    public Version withQualifier(String qualifier) {
+        if (qualifier.indexOf('.') != -1)
+            throw new IllegalArgumentException("Qualifier cannot contain '.'");
+        return new Version(major, minor, micro, qualifier);
+    }
+
     /**
      * Must be called on construction after the component values are set
      *

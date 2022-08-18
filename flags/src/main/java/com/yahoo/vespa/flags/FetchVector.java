@@ -20,7 +20,7 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /** A legal value for TenantName, e.g. vespa-team */
+        /** Value from TenantName::value, e.g. vespa-team */
         TENANT_ID,
 
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
@@ -29,7 +29,7 @@ public class FetchVector {
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,
 
-        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::value, e.g. content, container, admin */
+        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
         CLUSTER_TYPE,
 
         /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
