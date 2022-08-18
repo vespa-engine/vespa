@@ -5,7 +5,6 @@
 #include "transport_latch.h"
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/persistence/spi/catchresult.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
@@ -100,7 +99,7 @@ GenericResultHandler::~GenericResultHandler() = default;
 class BucketIdListResultHandler : public IBucketIdListResultHandler
 {
 private:
-    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
+    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::xxhash>;
     BucketIdSet _bucketSet;
 public:
     BucketIdListResultHandler()
