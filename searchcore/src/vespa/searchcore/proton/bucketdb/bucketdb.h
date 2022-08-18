@@ -13,7 +13,6 @@ namespace proton {
 
 class BucketDB
 {
-public:
 private:
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
