@@ -266,6 +266,7 @@ public final class ConfiguredApplication implements Application {
                     reconfigure(newConfig.shutdown());
                     synchronized (this) {
                         if (qrConfig.rpc().port() != newConfig.rpc().port()) {
+                            log.log(Level.INFO, "Rpc port changed from " + qrConfig.rpc().port() + " to " + newConfig.rpc().port());
                             try {
                                 reListenRpc(newConfig);
                             } catch (Throwable e) {
