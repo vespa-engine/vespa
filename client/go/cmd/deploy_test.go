@@ -121,7 +121,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
 	t.Helper()
 	client := &mock.HTTPClient{}
-	client.NextResponseString(200, `{"session-id":"42"}`)
+	client.NextResponseString(200, `{"session-id":"42","message":"Session 42 for tenant 'default' prepared.","log":[{"level":"WARNING","message":"Warning message 1","time": 1430134091319}]}`)
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
