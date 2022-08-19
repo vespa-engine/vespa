@@ -119,12 +119,18 @@ public class Upgrader extends ControllerMaintainer {
         }
 
         int numberToUpgrade = policy == UpgradePolicy.canary ? instances.size() : numberOfApplicationsToUpgrade();
-        for (ApplicationId id : instances.matching(targets.keySet()::contains).first(numberToUpgrade)) {
-            log.log(Level.INFO, "Triggering upgrade to " + targets.get(id) + " for " + id);
-            if (failingRevision.contains(id))
+        for (ApplicationId id : instances.matching(targets.keySet()::contains)) {
+            if (failingRevision.contains(id)) {
+                log.log(Level.INFO, "Cancelling failing revision for " + id);
                 controller().applications().deploymentTrigger().cancelChange(id, ChangesToCancel.APPLICATION);
+            }
 
-            controller().applications().deploymentTrigger().triggerChange(id, Change.of(targets.get(id)));
+            if (controller().applications().requireInstance(id).change().isEmpty()) {
+                log.log(Level.INFO, "Triggering upgrade to " + targets.get(id) + " for " + id);
+                controller().applications().deploymentTrigger().forceChange(id, Change.of(targets.get(id)));
+                --numberToUpgrade;
+            }
+            if (numberToUpgrade <= 0) break;
         }
     }
 

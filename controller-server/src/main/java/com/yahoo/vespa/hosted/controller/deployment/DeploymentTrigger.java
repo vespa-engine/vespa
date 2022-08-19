@@ -323,14 +323,6 @@ public class DeploymentTrigger {
                                                       instance -> instance.withJobPause(jobType, OptionalLong.empty()))));
     }
 
-    /** Triggers a change of this application, unless it already has a change. */
-    public void triggerChange(ApplicationId instanceId, Change change) {
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
-            if ( ! application.get().require(instanceId.instance()).change().hasTargets())
-                forceChange(instanceId, change);
-        });
-    }
-
     /** Overrides the given instance's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId instanceId, Change change) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
