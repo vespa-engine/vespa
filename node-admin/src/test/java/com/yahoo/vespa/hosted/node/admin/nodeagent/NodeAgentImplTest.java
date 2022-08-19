@@ -187,7 +187,7 @@ public class NodeAgentImplTest {
         inOrder.verify(containerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()).withRebootGeneration(0));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(vespaVersion).withRebootGeneration(0));
         inOrder.verify(orchestrator, never()).resume(hostName);
     }
 
@@ -614,7 +614,7 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(containerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()).withRebootGeneration(0));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(vespaVersion).withRebootGeneration(0));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
