@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -212,15 +213,15 @@ public class NodeAgentImpl implements NodeAgent {
             changed = true;
         }
 
-        Optional<DockerImage> actualDockerImage = context.node().wantedDockerImage().filter(n -> containerState == UNKNOWN);
-        if (!Objects.equals(context.node().currentDockerImage(), actualDockerImage)) {
+        Optional<DockerImage> wantedDockerImage = context.node().wantedDockerImage().filter(n -> containerState == UNKNOWN);
+        if (!Objects.equals(context.node().currentDockerImage(), wantedDockerImage)) {
             DockerImage currentImage = context.node().currentDockerImage().orElse(DockerImage.EMPTY);
-            DockerImage newImage = actualDockerImage.orElse(DockerImage.EMPTY);
+            DockerImage newImage = wantedDockerImage.orElse(DockerImage.EMPTY);
 
             currentNodeAttributes.withDockerImage(currentImage);
-            currentNodeAttributes.withVespaVersion(currentImage.tagAsVersion());
+            currentNodeAttributes.withVespaVersion(context.node().currentVespaVersion().orElse(Version.emptyVersion));
             newNodeAttributes.withDockerImage(newImage);
-            newNodeAttributes.withVespaVersion(newImage.tagAsVersion());
+            newNodeAttributes.withVespaVersion(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
             changed = true;
         }
 
