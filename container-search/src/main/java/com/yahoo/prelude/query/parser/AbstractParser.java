@@ -7,6 +7,7 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -16,6 +17,7 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -166,6 +168,8 @@ public abstract class AbstractParser implements CustomParser {
                 root = filterParser.applyFilter(root, filterToParse, parsingLanguage, indexFacts);
             }
         }
+        if (defaultIndex != null)
+            assignDefaultIndex(indexFacts.getCanonicName(defaultIndex), root);
         return simplifyPhrases(root);
     }
 
@@ -226,6 +230,31 @@ public abstract class AbstractParser implements CustomParser {
         }
         tokens.setPosition(initialPosition);
         return detectionText.toString();
+    }
+
+    /**
+     * Assigns the default index to query terms having no default index.
+     *
+     * This will apply the default index to terms without it added through the filter parameter,
+     * where setting defaultIndex into state causes incorrect parsing.
+     *
+     * @param defaultIndex the default index to assign
+     * @param item         the item to check
+     */
+    private static void assignDefaultIndex(String defaultIndex, Item item) {
+        if (defaultIndex == null || item == null) return;
+
+        if (item instanceof IndexedItem) {
+            IndexedItem indexName = (IndexedItem) item;
+
+            if ("".equals(indexName.getIndexName()))
+                indexName.setIndexName(defaultIndex);
+        }
+        else if (item instanceof CompositeItem) {
+            Iterator<Item> items = ((CompositeItem)item).getItemIterator();
+            while (items.hasNext())
+                assignDefaultIndex(defaultIndex, items.next());
+        }
     }
 
     private boolean is(Token.Kind kind, Token tokenOrNull) {

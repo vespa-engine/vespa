@@ -41,6 +41,17 @@ public class QueryWithFilterTestCase {
                      q.getModel().getQueryTree().toString());
     }
 
+    /** Tests that default-index is not applied to NOT filters */
+    @Test
+    void testAndFilterWithoutExplicitIndex() {
+        Query q = newQueryFromEncoded("?query=trump" +
+                                      "&model.type=all" +
+                                      "&model.defaultIndex=text" +
+                                      "&filter=%2B%28filterTerm%29");
+        assertEquals("AND text:trump |text:filterTerm",
+                     q.getModel().getQueryTree().toString());
+    }
+
     private Query newQueryFromEncoded(String queryString) {
         return newQueryFromEncoded(queryString, null, new SimpleLinguistics());
     }
