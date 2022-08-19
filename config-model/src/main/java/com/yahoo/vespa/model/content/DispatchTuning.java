@@ -70,7 +70,7 @@ public class DispatchTuning {
             return this;
         }
 
-        private DispatchPolicy toDispatchPolicy(String policy) {
+        public static DispatchPolicy toDispatchPolicy(String policy) {
             switch (policy.toLowerCase()) {
                 case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Vespa 9
                 case "round-robin": return DispatchPolicy.ROUNDROBIN;

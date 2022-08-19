@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
+    private String queryDispatchPolicy = "adaptive";
     private String sequencerType = "THROUGHPUT";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
@@ -147,6 +148,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
+    @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
 
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
@@ -190,6 +192,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
+        return this;
+    }
+    public TestProperties setQueryDispatchPolicy(String policy) {
+        queryDispatchPolicy = policy;
         return this;
     }
     public TestProperties setFeedSequencerType(String type) {

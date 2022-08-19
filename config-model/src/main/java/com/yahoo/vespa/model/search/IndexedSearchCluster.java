@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.content.DispatchSpec;
+import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.util.ArrayList;
@@ -56,6 +58,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
     private final List<SearchNode> searchNodes = new ArrayList<>();
+    private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
 
     /**
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
@@ -67,10 +70,11 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
+    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
+        defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
     }
 
     @Override
@@ -273,6 +277,15 @@ public class IndexedSearchCluster extends SearchCluster
         return dispatchSpec;
     }
 
+    private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
+        return switch (tuning) {
+            case ADAPTIVE: yield DistributionPolicy.ADAPTIVE;
+            case ROUNDROBIN: yield DistributionPolicy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2: yield DistributionPolicy.BEST_OF_RANDOM_2;
+            case LATENCY_AMORTIZED_OVER_REQUESTS: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME;
+        };
+    }
     @Override
     public void getConfig(DispatchConfig.Builder builder) {
         for (SearchNode node : getSearchNodes()) {
@@ -289,14 +302,9 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
         if (tuning.dispatch.getDispatchPolicy() != null) {
-            switch (tuning.dispatch.getDispatchPolicy()) {
-                case ADAPTIVE:
-                    builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
-                    break;
-                case ROUNDROBIN:
-                    builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
-                    break;
-            }
+            builder.distributionPolicy(toDistributionPolicy(tuning.dispatch.getDispatchPolicy()));
+        } else {
+            builder.distributionPolicy(toDistributionPolicy(defaultDispatchPolicy));
         }
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());

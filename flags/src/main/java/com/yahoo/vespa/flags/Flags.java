@@ -62,6 +62,14 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag QUERY_DISPATCH_POLICY = defineStringFlag(
+            "query-dispatch-policy", "adaptive",
+            List.of("baldersheim"), "2022-08-20", "2023-01-01",
+            "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
+                    " latency-amortized-over-requests, latency-amortized-over-time",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
             List.of("baldersheim"), "2020-12-02", "2023-01-01",
