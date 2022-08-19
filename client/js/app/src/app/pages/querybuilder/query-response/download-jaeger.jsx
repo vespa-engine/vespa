@@ -20,7 +20,7 @@ function downloadFile(filename, blob) {
   URL.revokeObjectURL(href);
 }
 
-export function DownloadJeager({ response, ...props }) {
+export function DownloadJaeger({ response, ...props }) {
   const handleClick = () => {
     try {
       const json = JSON.parse(response);
