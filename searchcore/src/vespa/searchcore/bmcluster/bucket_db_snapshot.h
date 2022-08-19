@@ -22,6 +22,10 @@ class BucketDbSnapshot
 public:
     using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
     BucketDbSnapshot();
+    BucketDbSnapshot(const BucketDbSnapshot &) = delete;
+    BucketDbSnapshot & operator=(const BucketDbSnapshot &) = delete;
+    BucketDbSnapshot(BucketDbSnapshot &&) noexcept = default;
+    BucketDbSnapshot & operator=(BucketDbSnapshot &&) noexcept = default;
     ~BucketDbSnapshot();
     void populate(document::BucketSpace bucket_space, storage::spi::PersistenceProvider& provider);
     uint32_t count_new_documents(const BucketDbSnapshot &old) const;

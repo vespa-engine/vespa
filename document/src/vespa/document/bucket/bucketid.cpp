@@ -78,7 +78,7 @@ void BucketId::initialize() noexcept {
 }
 
 uint64_t
-BucketId::xxhash::operator () (const BucketId& bucketId) const noexcept {
+BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
     const uint64_t raw_id = bucketId.getId();
     return XXH3_64bits(&raw_id, sizeof(uint64_t));
 }
@@ -159,4 +159,3 @@ operator>>(nbostream &is, BucketId &bucketId)
 } // document
 
 VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::hash);
-VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::xxhash);
