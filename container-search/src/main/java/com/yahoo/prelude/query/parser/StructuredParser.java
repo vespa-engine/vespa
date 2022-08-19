@@ -25,7 +25,6 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -220,7 +219,6 @@ abstract class StructuredParser extends AbstractParser {
                     item = indexPrefix();
                 }
             }
-
             return item;
         } finally {
             if (item == null) {

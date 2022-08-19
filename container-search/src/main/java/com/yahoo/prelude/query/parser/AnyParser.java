@@ -34,8 +34,8 @@ public class AnyParser extends SimpleParser {
         return anyItems(true);
     }
 
-    Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts, String defaultIndex) {
-        setState(queryLanguage, indexFacts, defaultIndex);
+    Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
+        setState(queryLanguage, indexFacts, null);
         tokenize(filter, null, indexFacts, queryLanguage);
 
         Item filterRoot = anyItems(true);
@@ -122,8 +122,8 @@ public class AnyParser extends SimpleParser {
         }
     }
 
-    Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts, String defaultIndex) {
-        setState(queryLanguage, indexFacts, defaultIndex);
+    Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
+        setState(queryLanguage, indexFacts, null);
         tokenize(filter, null, indexFacts, queryLanguage);
         return filterItems(root);
     }
