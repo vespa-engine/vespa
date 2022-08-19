@@ -96,6 +96,20 @@ public class Dispatcher extends AbstractComponent {
         this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster), metric);
     }
 
+    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
+        if (policy == DispatchConfig.DistributionPolicy.ROUNDROBIN) {
+            return LoadBalancer.Policy.ROUNDROBIN;
+        } else if (policy == DispatchConfig.DistributionPolicy.BEST_OF_RANDOM_2) {
+            return LoadBalancer.Policy.BEST_OF_RANDOM_2;
+        } else if (policy == DispatchConfig.DistributionPolicy.LATENCY_AMORTIZED_OVER_REQUESTS) {
+            return LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+        } else if (policy == DispatchConfig.DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME) {
+            return LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
+        } else {
+            return LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+        }
+    }
+
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
     protected Dispatcher(ClusterMonitor<Node> clusterMonitor,
                          SearchCluster searchCluster,
@@ -107,8 +121,7 @@ public class Dispatcher extends AbstractComponent {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
-        this.loadBalancer = new LoadBalancer(searchCluster,
-                                  dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
+        this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
         this.metric = metric;
         this.metricContext = metric.createContext(null);

@@ -31,16 +31,22 @@ public class LoadBalancer {
     private final List<GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
 
-    public LoadBalancer(SearchCluster searchCluster, boolean roundRobin) {
+    public enum Policy { ROUNDROBIN, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, BEST_OF_RANDOM_2}
+
+    public LoadBalancer(SearchCluster searchCluster, Policy policy) {
         this.scoreboard = new ArrayList<>(searchCluster.groups().size());
         for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupStatus(group));
         }
-        if (roundRobin || scoreboard.size() == 1) {
-            this.scheduler = new RoundRobinScheduler(scoreboard);
-        } else {
-            this.scheduler = new AdaptiveScheduler(new Random(), scoreboard);
-        }
+        if (scoreboard.size() == 1)
+            policy = Policy.ROUNDROBIN;
+
+        this.scheduler = switch (policy) {
+            case ROUNDROBIN: yield new RoundRobinScheduler(scoreboard);
+            case BEST_OF_RANDOM_2: yield new BestOfRandom2(new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_REQUESTS: yield new AdaptiveScheduler(new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(new Random(), scoreboard);
+        };
     }
 
     /**
@@ -237,6 +243,49 @@ public class LoadBalancer {
             if (gs.isPresent()) return gs;
             return selectGroup(needle, false, rejectedGroups); // any coverage better than none
         }
+    }
+
+    static class BestOfRandom2 implements GroupScheduler {
+        private final Random random;
+        private final List<GroupStatus> scoreboard;
+        public BestOfRandom2(Random random, List<GroupStatus> scoreboard) {
+            this.random = random;
+            this.scoreboard = scoreboard;
+        }
+        @Override
+        public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
+            GroupStatus gs = selectBestOf2(rejectedGroups, true);
+            return (gs != null)
+                    ? Optional.of(gs)
+                    : Optional.ofNullable(selectBestOf2(rejectedGroups, false));
+        }
+
+        private GroupStatus selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
+            List<Integer> candidates = new ArrayList<>(scoreboard.size());
+            for (int i=0; i < scoreboard.size(); i++) {
+                GroupStatus gs = scoreboard.get(i);
+                if (rejectedGroups == null || !rejectedGroups.contains(gs.group.id())) {
+                    if (!requireCoverage || gs.group.hasSufficientCoverage()) {
+                        candidates.add(i);
+                    }
+                }
+            }
+            GroupStatus candA = selectRandom(candidates);
+            GroupStatus candB = selectRandom(candidates);
+            if (candA == null) return candB;
+            if (candB == null) return candA;
+            if (candB.allocations < candA.allocations) return candB;
+            return candA;
+        }
+        private GroupStatus selectRandom(List<Integer> candidates) {
+            if ( ! candidates.isEmpty()) {
+                int index = random.nextInt(candidates.size());
+                Integer groupIndex = candidates.remove(index);
+                return scoreboard.get(groupIndex);
+            }
+            return null;
+        }
+
     }
 
 }

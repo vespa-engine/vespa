@@ -8,7 +8,7 @@ namespace=vespa.config.search
 minActivedocsPercentage double default=97.0
 
 # Distribution policy for group selection
-distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ADAPTIVE
+distributionPolicy enum { ROUNDROBIN, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, ADAPTIVE } default=ADAPTIVE
 
 ## Maximum number of hits that will be requested from a single node
 ## in this dataset. If not set, there is no limit. Using this option
