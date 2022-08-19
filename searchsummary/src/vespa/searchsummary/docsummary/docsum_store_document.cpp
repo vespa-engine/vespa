@@ -16,7 +16,7 @@ DocsumStoreDocument::DocsumStoreDocument(std::unique_ptr<document::Document> doc
 
 DocsumStoreDocument::~DocsumStoreDocument() = default;
 
-std::unique_ptr<document::FieldValue>
+DocsumStoreFieldValue
 DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
 {
     if (_document) {
@@ -24,11 +24,11 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
         auto value(field.getDataType().createFieldValue());
         if (value) {
             if (_document->getValue(field, *value)) {
-                return value;
+                return DocsumStoreFieldValue(std::move(value));
             }
         }
     }
-    return {};
+    return DocsumStoreFieldValue();
 }
 
 void
