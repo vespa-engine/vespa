@@ -163,7 +163,7 @@ OperationAbortingTest::validateReplies(DummyStorageLink& link, size_t repliesTot
 namespace {
 
 class ExplicitBucketSetPredicate : public AbortBucketOperationsCommand::AbortPredicate {
-    using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::xxhash>;
+    using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
     BucketSet _bucketsToAbort;
 
     bool doShouldAbort(const document::Bucket &bucket) const override;

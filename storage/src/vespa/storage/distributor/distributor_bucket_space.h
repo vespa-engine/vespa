@@ -40,8 +40,8 @@ class DistributorBucketSpace {
     bool                                     _merges_inhibited;
     std::shared_ptr<const lib::ClusterState> _pending_cluster_state;
     std::vector<bool>                        _available_nodes;
-    mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::xxhash>  _ownerships;
-    mutable vespalib::hash_map<document::BucketId, IdealServiceLayerNodesBundle, document::BucketId::xxhash> _ideal_nodes;
+    mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash>  _ownerships;
+    mutable vespalib::hash_map<document::BucketId, IdealServiceLayerNodesBundle, document::BucketId::hash> _ideal_nodes;
 
     void clear();
     void enumerate_available_nodes();

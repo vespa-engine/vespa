@@ -208,7 +208,7 @@ private:
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    using Content = vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::xxhash>;
+    using Content = vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>;
 
     Content _content;
     IteratorId _nextIterator;

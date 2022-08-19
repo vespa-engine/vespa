@@ -54,7 +54,7 @@ private:
 
     mutable std::mutex _queueProcessingLock;
     using ReplyQueue = std::vector<api::StorageReply::SP>;
-    using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::xxhash>;
+    using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::hash>;
     ReplyQueue _queuedReplies;
     ConflictingBuckets _conflictingBuckets;
     /**

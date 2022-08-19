@@ -65,4 +65,4 @@ BucketDbSnapshot::try_get_bucket_info(BucketId bucket_id) const
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE_H(document::BucketId, storage::spi::BucketInfo, document::BucketId::xxhash);
+VESPALIB_HASH_MAP_INSTANTIATE_H(document::BucketId, storage::spi::BucketInfo, document::BucketId::hash);

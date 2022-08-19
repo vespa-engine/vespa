@@ -17,10 +17,10 @@ namespace search::bmcluster {
  */
 class BucketDbSnapshot
 {
-    using BucketInfoMap = vespalib::hash_map<document::BucketId, storage::spi::BucketInfo, document::BucketId::xxhash>;
+    using BucketInfoMap = vespalib::hash_map<document::BucketId, storage::spi::BucketInfo, document::BucketId::hash>;
     BucketInfoMap _buckets;
 public:
-    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::xxhash>;
+    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
     BucketDbSnapshot();
     BucketDbSnapshot(const BucketDbSnapshot &) = delete;
     BucketDbSnapshot & operator=(const BucketDbSnapshot &) = delete;

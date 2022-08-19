@@ -19,7 +19,7 @@ private:
     using Timestamp = storage::spi::Timestamp;
     using BucketChecksum = storage::spi::BucketChecksum;
     using BucketState = bucketdb::BucketState;
-    using Map = vespalib::hash_map<BucketId, BucketState, document::BucketId::xxhash>;
+    using Map = vespalib::hash_map<BucketId, BucketState, document::BucketId::hash>;
 
     Map _map;
     BucketId _cachedBucketId;
