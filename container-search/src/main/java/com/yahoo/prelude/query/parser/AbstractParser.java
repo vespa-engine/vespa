@@ -161,9 +161,9 @@ public abstract class AbstractParser implements CustomParser {
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
             if (root == null) {
-                root = filterParser.parseFilter(filterToParse, parsingLanguage, indexFacts, defaultIndex);
+                root = filterParser.parseFilter(filterToParse, parsingLanguage, indexFacts);
             } else {
-                root = filterParser.applyFilter(root, filterToParse, parsingLanguage, indexFacts, defaultIndex);
+                root = filterParser.applyFilter(root, filterToParse, parsingLanguage, indexFacts);
             }
         }
         return simplifyPhrases(root);
