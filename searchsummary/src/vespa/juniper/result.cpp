@@ -98,7 +98,6 @@ Result::Result(const Config& config, QueryHandle& qhandle,
 
 Result::~Result()
 {
-    delete_all(_summaries);
 }
 
 
@@ -121,7 +120,7 @@ Summary* Result::GetTeaser(const Config* alt_config)
         _dynsum_len = dsp.Length();
     else
         _dynsum_len = _qhandle->_dynsum_len;
-    SummaryImpl *sum = NULL;
+    std::unique_ptr<SummaryImpl> sum;
     // Avoid overhead when being called with an empty stack
     if (_mo && _mo->Query()) {
         Scan();
@@ -139,13 +138,13 @@ Summary* Result::GetTeaser(const Config* alt_config)
 
         if (sdesc) {
             size_t char_size;
-            sum = new SummaryImpl(BuildSummary(_docsum, _docsum_len, sdesc, cfg->_sumconf, char_size));
+            sum = std::make_unique<SummaryImpl>(BuildSummary(_docsum, _docsum_len, sdesc, cfg->_sumconf, char_size));
             DeleteSummaryDesc(sdesc);
         }
     }
 
-    if (sum == NULL) {
-        sum = new SummaryImpl();
+    if (!sum) {
+        sum = std::make_unique<SummaryImpl>();
     }
 
     if (sum->_text.empty() && dsp.Fallback() == DocsumParams::FALLBACK_PREFIX)
@@ -186,25 +185,26 @@ Summary* Result::GetTeaser(const Config* alt_config)
         }
         sum->_text = std::string(&text[0], text.size());
     }
-    _summaries.push_back(sum);
-    return sum;
+    _summaries.emplace_back(std::move(sum));
+    return _summaries.back().get();
 }
 
 
 Summary* Result::GetLog()
 {
     // Avoid overhead when being called with an empty stack
-    Summary* sum = NULL;
+    std::unique_ptr<Summary> sum;
     if (_mo && _mo->Query())
     {
         LOG(debug, "juniper::GetLog");
         Scan();
-        sum = new SummaryImpl(_matcher->GetLog());
+        sum = std::make_unique<SummaryImpl>(_matcher->GetLog());
     }
-    else
-        sum = new SummaryImpl();
-    _summaries.push_back(sum);
-    return sum;
+    else {
+        sum = std::make_unique<SummaryImpl>();
+    }
+    _summaries.emplace_back(std::move(sum));
+    return _summaries.back().get();
 }
 
 

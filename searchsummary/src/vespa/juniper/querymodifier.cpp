@@ -2,7 +2,6 @@
 
 #include "juniperdebug.h"
 #include "querymodifier.h"
-#include "foreach_utils.h"
 #include "querynode.h"
 
 #include <vespa/log/log.h>
