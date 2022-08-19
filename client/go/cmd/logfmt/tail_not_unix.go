@@ -2,12 +2,14 @@
 // vespa logfmt command
 // Author: mpolden
 
+//go:build !unix
+
 package logfmt
 
-type Line struct {
-	Text string
-}
+import (
+	"fmt"
+)
 
-type Tail interface {
-	Lines() chan Line
+func FollowFile(fn string) (Tail, error) {
+	return nil, fmt.Errorf("tail is not supported on this platform")
 }
