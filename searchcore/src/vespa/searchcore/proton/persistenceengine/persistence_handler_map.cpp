@@ -6,6 +6,7 @@
 namespace proton {
 
 using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
+using UnsafeHandlerSnapshot = PersistenceHandlerMap::UnsafeHandlerSnapshot;
 
 PersistenceHandlerMap::PersistenceHandlerMap()
     : _map()
@@ -51,8 +52,7 @@ PersistenceHandlerMap::getHandlerSnapshot() const
             handlers.push_back(handlerItr.second);
         }
     }
-    size_t handlersSize = handlers.size();
-    return HandlerSnapshot(DocTypeToHandlerMap::Snapshot(std::move(handlers)), handlersSize);
+    return HandlerSnapshot(DocTypeToHandlerMap::Snapshot(std::move(handlers)));
 }
 
 HandlerSnapshot
@@ -60,9 +60,22 @@ PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) con
 {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
-        return HandlerSnapshot(itr->second.snapshot(), itr->second.size());
+        return HandlerSnapshot(itr->second.snapshot());
     }
     return HandlerSnapshot();
 }
+
+UnsafeHandlerSnapshot
+PersistenceHandlerMap::getUnsafeHandlerSnapshot(document::BucketSpace bucketSpace) const
+{
+    auto itr = _map.find(bucketSpace);
+    if (itr != _map.end()) {
+        return UnsafeHandlerSnapshot(itr->second.unsafeSnapshot());
+    }
+    return UnsafeHandlerSnapshot();
+}
+
+PersistenceHandlerMap::HandlerSnapshot::~HandlerSnapshot() = default;
+PersistenceHandlerMap::UnsafeHandlerSnapshot::~UnsafeHandlerSnapshot() = default;
 
 }

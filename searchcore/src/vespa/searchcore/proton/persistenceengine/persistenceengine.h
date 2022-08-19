@@ -19,8 +19,9 @@ class IDiskMemUsageNotifier;
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider,
                           public storage::spi::BucketExecutor {
 private:
-    using PersistenceHandlerSequence = PersistenceHandlerMap::PersistenceHandlerSequence;
+    using PersistenceHandlerSequence = PersistenceHandlerMap::DocTypeToHandlerMap::Snapshot;
     using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
+    using UnsafeHandlerSnapshot = PersistenceHandlerMap::UnsafeHandlerSnapshot;
     using DocumentUpdate = document::DocumentUpdate;
     using Bucket = storage::spi::Bucket;
     using BucketIdListResult = storage::spi::BucketIdListResult;
@@ -38,7 +39,6 @@ private:
     using Result = storage::spi::Result;
     using Selection = storage::spi::Selection;
     using Timestamp = storage::spi::Timestamp;
-    using TimestampList = storage::spi::TimestampList;
     using UpdateResult = storage::spi::UpdateResult;
     using OperationComplete = storage::spi::OperationComplete;
     using BucketExecutor = storage::spi::BucketExecutor;
@@ -82,7 +82,8 @@ private:
 
     IPersistenceHandler * getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;
-    HandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getSafeHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    UnsafeHandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
     HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
