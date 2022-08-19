@@ -34,7 +34,6 @@ class BucketManager : public StorageLink,
 {
 public:
     /** Type used for message queues */
-    using CommandList = std::list<std::shared_ptr<api::StorageCommand>>;
     using BucketInfoRequestList = std::list<std::shared_ptr<api::RequestBucketInfoCommand>>;
     using BucketInfoRequestMap = std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
 
@@ -55,8 +54,7 @@ private:
 
     mutable std::mutex _queueProcessingLock;
     using ReplyQueue = std::vector<api::StorageReply::SP>;
-    using ConflictingBuckets = std::unordered_set<document::BucketId,
-                                                  document::BucketId::hash>;
+    using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::xxhash>;
     ReplyQueue _queuedReplies;
     ConflictingBuckets _conflictingBuckets;
     /**
@@ -80,9 +78,6 @@ private:
     framework::Thread::UP _thread;
     std::chrono::milliseconds _simulated_processing_delay;
 
-    BucketManager(const BucketManager&);
-    BucketManager& operator=(const BucketManager&);
-
     class ScopedQueueDispatchGuard {
         BucketManager& _mgr;
     public:
@@ -94,8 +89,9 @@ private:
     };
 
 public:
-    explicit BucketManager(const config::ConfigUri&,
-                           ServiceLayerComponentRegister&);
+    BucketManager(const config::ConfigUri&, ServiceLayerComponentRegister&);
+    BucketManager(const BucketManager&) = delete;
+    BucketManager& operator=(const BucketManager&) = delete;
     ~BucketManager();
 
     void startWorkerThread();
@@ -127,8 +123,7 @@ private:
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;
-    bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
-                                          BucketInfoRequestList &reqs);
+    bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace, BucketInfoRequestList &reqs);
 
     /**
      * Enqueue reply and add its bucket to the set of conflicting buckets iff
@@ -199,42 +194,26 @@ private:
      *
      * Not thread safe.
      */
-    bool replyConflictsWithConcurrentOperation(
-            const api::BucketReply& reply) const;
-
+    bool replyConflictsWithConcurrentOperation(const api::BucketReply& reply) const;
     bool enqueueIfBucketHasConflicts(const api::BucketReply::SP& reply);
-
     bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
-    bool onSetSystemState(
-            const std::shared_ptr<api::SetSystemStateCommand>&) override;
-    bool onCreateBucket(
-            const std::shared_ptr<api::CreateBucketCommand>&) override;
-    bool onMergeBucket(
-            const std::shared_ptr<api::MergeBucketCommand>&) override;
-    bool onRemove(
-            const std::shared_ptr<api::RemoveCommand>&) override;
-    bool onRemoveReply(
-            const std::shared_ptr<api::RemoveReply>&) override;
-    bool onPut(
-            const std::shared_ptr<api::PutCommand>&) override;
-    bool onPutReply(
-            const std::shared_ptr<api::PutReply>&) override;
-    bool onUpdate(
-            const std::shared_ptr<api::UpdateCommand>&) override;
-    bool onUpdateReply(
-            const std::shared_ptr<api::UpdateReply>&) override;
-    bool onNotifyBucketChangeReply(
-           const std::shared_ptr<api::NotifyBucketChangeReply>&) override;
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
+    bool onCreateBucket(const std::shared_ptr<api::CreateBucketCommand>&) override;
+    bool onMergeBucket(const std::shared_ptr<api::MergeBucketCommand>&) override;
+    bool onRemove(const std::shared_ptr<api::RemoveCommand>&) override;
+    bool onRemoveReply(const std::shared_ptr<api::RemoveReply>&) override;
+    bool onPut(const std::shared_ptr<api::PutCommand>&) override;
+    bool onPutReply(const std::shared_ptr<api::PutReply>&) override;
+    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&) override;
+    bool onUpdateReply(const std::shared_ptr<api::UpdateReply>&) override;
+    bool onNotifyBucketChangeReply(const std::shared_ptr<api::NotifyBucketChangeReply>&) override;
 
     bool verifyAndUpdateLastModified(api::StorageCommand& cmd,
                                      const document::Bucket& bucket,
                                      uint64_t lastModified);
-    bool onSplitBucketReply(
-            const std::shared_ptr<api::SplitBucketReply>&) override;
-    bool onJoinBucketsReply(
-            const std::shared_ptr<api::JoinBucketsReply>&) override;
-    bool onDeleteBucketReply(
-            const std::shared_ptr<api::DeleteBucketReply>&) override;
+    bool onSplitBucketReply(const std::shared_ptr<api::SplitBucketReply>&) override;
+    bool onJoinBucketsReply(const std::shared_ptr<api::JoinBucketsReply>&) override;
+    bool onDeleteBucketReply(const std::shared_ptr<api::DeleteBucketReply>&) override;
 };
 
 } // storage

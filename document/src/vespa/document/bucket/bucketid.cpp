@@ -158,5 +158,4 @@ operator>>(nbostream &is, BucketId &bucketId)
 
 } // document
 
-VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::hash);
 VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::xxhash);

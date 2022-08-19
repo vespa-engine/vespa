@@ -934,4 +934,4 @@ DummyPersistence::internal_create_bucket(const Bucket& b)
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, std::shared_ptr<storage::spi::dummy::BucketContent>, document::BucketId::hash)
+VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, std::shared_ptr<storage::spi::dummy::BucketContent>, document::BucketId::xxhash)

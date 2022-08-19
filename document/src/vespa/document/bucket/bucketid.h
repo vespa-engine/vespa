@@ -36,14 +36,10 @@ namespace bucket { class BucketIdList; }
 class BucketId
 {
 public:
-    struct hash {
-        size_t operator () (const BucketId& g) const noexcept {
-            return g.getId();
-        }
-    };
     struct xxhash {
         uint64_t operator () (const BucketId& g) const noexcept;
     };
+    using hash = xxhash;
 
     /**
      * The primitive type used to store bucket identifiers. If you use the

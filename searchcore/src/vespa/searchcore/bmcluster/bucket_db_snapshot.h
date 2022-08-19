@@ -17,11 +17,15 @@ namespace search::bmcluster {
  */
 class BucketDbSnapshot
 {
-    using BucketInfoMap = vespalib::hash_map<document::BucketId, storage::spi::BucketInfo, document::BucketId::hash>;
+    using BucketInfoMap = vespalib::hash_map<document::BucketId, storage::spi::BucketInfo, document::BucketId::xxhash>;
     BucketInfoMap _buckets;
 public:
-    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
+    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::xxhash>;
     BucketDbSnapshot();
+    BucketDbSnapshot(const BucketDbSnapshot &) = delete;
+    BucketDbSnapshot & operator=(const BucketDbSnapshot &) = delete;
+    BucketDbSnapshot(BucketDbSnapshot &&) noexcept = default;
+    BucketDbSnapshot & operator=(BucketDbSnapshot &&) noexcept = default;
     ~BucketDbSnapshot();
     void populate(document::BucketSpace bucket_space, storage::spi::PersistenceProvider& provider);
     uint32_t count_new_documents(const BucketDbSnapshot &old) const;
