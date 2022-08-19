@@ -8,12 +8,18 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-
-	"github.com/mattn/go-isatty"
 )
 
-func inputIsTty() bool {
-	return isatty.IsTerminal(os.Stdin.Fd())
+func inputIsPipe() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	if fi.Mode()&os.ModeNamedPipe == 0 {
+		return false
+	} else {
+		return true
+	}
 }
 
 func vespaHome() string {
@@ -28,7 +34,7 @@ func vespaHome() string {
 
 func RunLogfmt(opts *Options, args []string) {
 	if len(args) == 0 {
-		if inputIsTty() {
+		if !inputIsPipe() {
 			args = append(args, vespaHome()+"/logs/vespa/vespa.log")
 		} else {
 			formatFile(opts, os.Stdin)
