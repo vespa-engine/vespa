@@ -47,8 +47,8 @@ class ApacheCluster implements Cluster {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
 
     ApacheCluster(FeedClientBuilderImpl builder) throws IOException {
-        for (URI endpoint : builder.endpoints)
-            for (int i = 0; i < builder.connectionsPerEndpoint; i++)
+        for (int i = 0; i < builder.connectionsPerEndpoint; i++)
+            for (URI endpoint : builder.endpoints)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
         this.requestConfig = createRequestConfig(builder);
     }
