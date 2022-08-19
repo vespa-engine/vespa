@@ -43,6 +43,7 @@ class ApacheCluster implements Cluster {
     private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader("User-Agent", String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final RequestConfig requestConfig;
+    private int someNumber = 0;
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
 
@@ -55,14 +56,18 @@ class ApacheCluster implements Cluster {
 
     @Override
     public void dispatch(HttpRequest wrapped, CompletableFuture<HttpResponse> vessel) {
-        int index = 0;
+        Endpoint leastBusy = endpoints.get(0);
         int min = Integer.MAX_VALUE;
-        for (int i = 0; i < endpoints.size(); i++)
-            if (endpoints.get(i).inflight.get() < min) {
-                index = i;
-                min = endpoints.get(i).inflight.get();
+        int start = ++someNumber % endpoints.size();
+        for (int i = 0; i < endpoints.size(); i++) {
+            Endpoint endpoint = endpoints.get((i + start) % endpoints.size());
+            int inflight = endpoint.inflight.get();
+            if (inflight < min) {
+                leastBusy = endpoint;
+                min = inflight;
             }
-        Endpoint endpoint = endpoints.get(index);
+        }
+        Endpoint endpoint = leastBusy;
         endpoint.inflight.incrementAndGet();
 
         try {
