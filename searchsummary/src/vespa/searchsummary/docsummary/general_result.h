@@ -4,10 +4,7 @@
 
 #include "resultclass.h"
 #include "docsumstorevalue.h"
-
-namespace document {
-class FieldValue;
-}
+#include "docsum_store_field_value.h"
 
 namespace search::docsummary {
 
@@ -42,7 +39,7 @@ public:
     }
     ResEntry *GetPresentEntry(const char *name);
     ResEntry *GetPresentEntryFromEnumValue(uint32_t val);
-    std::unique_ptr<document::FieldValue> get_field_value(const vespalib::string& field_name) const;
+    DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const;
     bool unpack(const char *buf, const size_t buflen);
 
     bool inplaceUnpack(const DocsumStoreValue &value) {

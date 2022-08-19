@@ -17,7 +17,7 @@ class DocsumStoreDocument : public IDocsumStoreDocument
 public:
     DocsumStoreDocument(std::unique_ptr<document::Document> document);
     ~DocsumStoreDocument() override;
-    std::unique_ptr<document::FieldValue> get_field_value(const vespalib::string& field_name) const override;
+    DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
     void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };

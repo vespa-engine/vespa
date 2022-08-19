@@ -62,13 +62,13 @@ GeneralResult::GetPresentEntryFromEnumValue(uint32_t value)
     return GetPresentEntry(idx);
 }
 
-std::unique_ptr<document::FieldValue>
+DocsumStoreFieldValue
 GeneralResult::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
         return _document->get_field_value(field_name);
     }
-    return {};
+    return DocsumStoreFieldValue();
 }
 
 bool
