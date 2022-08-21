@@ -8,6 +8,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func inputIsPipe() bool {
@@ -22,20 +24,12 @@ func inputIsPipe() bool {
 	}
 }
 
-func vespaHome() string {
-	ev := os.Getenv("VESPA_HOME")
-	if ev == "" {
-		return "/opt/vespa"
-	}
-	return ev
-}
-
 // main entry point for vespa-logfmt
 
 func RunLogfmt(opts *Options, args []string) {
 	if len(args) == 0 {
 		if !inputIsPipe() {
-			args = append(args, vespaHome()+"/logs/vespa/vespa.log")
+			args = append(args, vespa.FindHome()+"/logs/vespa/vespa.log")
 		} else {
 			formatFile(opts, os.Stdin)
 		}
