@@ -25,11 +25,11 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -227,7 +227,7 @@ public class Dispatcher extends AbstractComponent {
                 invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
                 return invoker.get();
             } else {
-                loadBalancer.releaseGroup(group, false, 0);
+                loadBalancer.releaseGroup(group, false, Duration.ZERO);
                 if (rejected == null) {
                     rejected = new HashSet<>();
                 }
@@ -247,7 +247,7 @@ public class Dispatcher extends AbstractComponent {
      */
     private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
         if (groups.size() == 1) return null;
-        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).collect(Collectors.toList());
+        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;
         Set<Integer> rejected = new HashSet<>();
         rejected.add(groupsRejectingFeed.get(0).id());

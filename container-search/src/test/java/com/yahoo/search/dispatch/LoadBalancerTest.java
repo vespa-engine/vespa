@@ -10,6 +10,7 @@ import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,7 +79,7 @@ public class LoadBalancerTest {
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
-        lb.releaseGroup(group, true, 1.0);
+        lb.releaseGroup(group, true, Duration.ofMillis(1));
 
         // get second group
         grp = lb.takeGroup(null);
@@ -91,28 +92,28 @@ public class LoadBalancerTest {
         final double delta = 0.00001;
 
         GroupStatus gs = newGroupStatus(1);
-        gs.setQueryStatistics(0, 1.0);
-        updateSearchTime(gs, 1.0);
-        assertEquals(1.0, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 2.0);
-        assertEquals(1.02326, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 2.0);
-        assertEquals(1.04545, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        assertEquals(0.966667, gs.averageSearchTime(), delta);
+        gs.setQueryStatistics(0, Duration.ofSeconds(1));
+        updateSearchTime(gs, Duration.ofSeconds(1));
+        assertEquals(Duration.ofSeconds(1), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofSeconds(2));
+        assertEquals(Duration.ofNanos(1023255813), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofSeconds(2));
+        assertEquals(Duration.ofNanos(1045454545), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        assertEquals(Duration.ofNanos(966666666), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, 1.0);
+            updateSearchTime(gs, Duration.ofSeconds(1));
         }
-        assertEquals(1.0, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 0.1);
-        assertEquals(0.9991, gs.averageSearchTime(), delta);
+        assertEquals(Duration.ofNanos(999999812), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofMillis(100));
+        assertEquals(Duration.ofNanos(999099812), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, 0.0);
+            updateSearchTime(gs, Duration.ZERO);
         }
-        assertEquals(0.001045, gs.averageSearchTime(), delta);
+        assertEquals(Duration.ofNanos(1045087), gs.averageSearchTime());
     }
 
     @Test
@@ -139,7 +140,7 @@ public class LoadBalancerTest {
         List<GroupStatus> scoreboard = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             GroupStatus gs = newGroupStatus(i);
-            gs.setQueryStatistics(1, 0.1 * (i + 1));
+            gs.setQueryStatistics(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0)));
             scoreboard.add(gs);
         }
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
@@ -189,7 +190,7 @@ public class LoadBalancerTest {
         assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
     }
 
-    private static void updateSearchTime(GroupStatus gs, double time) {
+    private static void updateSearchTime(GroupStatus gs, Duration time) {
         gs.allocate();
         gs.release(true, time);
     }
