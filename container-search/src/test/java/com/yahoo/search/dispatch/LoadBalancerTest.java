@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.LoadBalancer.AdaptiveScheduler;
+import com.yahoo.search.dispatch.LoadBalancer.BestOfRandom2;
 import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -155,6 +156,39 @@ public class LoadBalancerTest {
         assertEquals(4, sched.takeNextGroup(null).get().groupId());
     }
 
+    private static GroupStatus allocate(GroupStatus gs) {
+        gs.allocate();
+        return gs;
+    }
+    @Test
+    void requireBestOfRandom2Scheduler() {
+        List<GroupStatus> scoreboard = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            scoreboard.add(newGroupStatus(i));
+        }
+        Random seq = sequence(
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.375,
+                0.9, 0.125,
+                0.9, 0.125,
+                0.9, 0.125
+                );
+        BestOfRandom2 sched = new BestOfRandom2(seq, scoreboard);
+
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(2, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+    }
+
     private static void updateSearchTime(GroupStatus gs, double time) {
         gs.allocate();
         gs.release(true, time);
@@ -182,6 +216,10 @@ public class LoadBalancerTest {
                     index = 0;
                 }
                 return retv;
+            }
+            @Override
+            public int nextInt(int bound) {
+                return (int)(nextDouble() * bound);
             }
         };
     }

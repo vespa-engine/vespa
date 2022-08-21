@@ -45,7 +45,7 @@ public class LoadBalancer {
             case ROUNDROBIN: yield new RoundRobinScheduler(scoreboard);
             case BEST_OF_RANDOM_2: yield new BestOfRandom2(new Random(), scoreboard);
             case LATENCY_AMORTIZED_OVER_REQUESTS: yield new AdaptiveScheduler(new Random(), scoreboard);
-            case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(new Random(), scoreboard); // TODO Intentionally the same for now
         };
     }
 
