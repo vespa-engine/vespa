@@ -97,7 +97,7 @@ public class StateChangeHandlerTest {
     }
 
     private ClusterState currentClusterState() {
-        params.currentTimeInMillis(clock.getCurrentTimeInMillis());
+        params.currentTimeInMilllis(clock.getCurrentTimeInMillis());
         return ClusterStateGenerator.generatedStateFrom(params).getClusterState();
     }
 

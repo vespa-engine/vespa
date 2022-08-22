@@ -176,9 +176,12 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        if (slobrok == null)
-            setUpSystem(options);
-        startFleetController(useFakeTimer);
+        if (slobrok == null) setUpSystem(options);
+        if (fleetController == null) {
+            fleetController = createFleetController(useFakeTimer, options);
+        } else {
+            throw new Exception("called setUpFleetcontroller but it was already setup");
+        }
     }
 
     void stopFleetController() throws Exception {
@@ -189,10 +192,11 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void startFleetController(boolean useFakeTimer) throws Exception {
-        if (fleetController == null)
+        if (fleetController == null) {
             fleetController = createFleetController(useFakeTimer, options);
-        else
+        } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
+        }
     }
 
     protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options) throws Exception {

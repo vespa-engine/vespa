@@ -41,6 +41,7 @@ public class ClusterStateGenerator {
         Params() {
         }
 
+        // FIXME de-dupe
         static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTimeMs, int storageTransitionTimeMs) {
             Map<com.yahoo.vdslib.state.NodeType, java.lang.Integer> maxTransitionTime = new TreeMap<>();
             maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.DISTRIBUTOR, distributorTransitionTimeMs);
@@ -64,7 +65,7 @@ public class ClusterStateGenerator {
             this.transitionTimes = timesMs;
             return this;
         }
-        Params currentTimeInMillis(long currentTimeMs) {
+        Params currentTimeInMilllis(long currentTimeMs) {
             this.currentTimeInMillis = currentTimeMs;
             return this;
         }

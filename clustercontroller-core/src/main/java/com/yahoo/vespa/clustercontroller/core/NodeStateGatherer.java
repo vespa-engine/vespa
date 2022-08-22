@@ -3,13 +3,14 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Target;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
+
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,10 +63,10 @@ public class NodeStateGatherer {
             if (requestTime != null && (currentTime - requestTime < nodeStateRequestTimeoutMS)) continue; // pending request
             if (info.getTimeForNextStateRequestAttempt() > currentTime) continue; // too early
 
-            if (info.getRpcAddress() == null || info.isNotInSlobrok()) { // Cannot query state of node without RPC address or not in slobrok
+            if (info.getRpcAddress() == null || info.isRpcAddressOutdated()) { // Cannot query state of node without RPC address
                 log.log(Level.FINE, () -> "Not sending getNodeState request to node " + info.getNode() + ": Not in slobrok");
                 NodeState reportedState = info.getReportedState().clone();
-                if (( ! reportedState.getState().equals(State.DOWN) && currentTime - info.lastSeenInSlobrok() > maxSlobrokDisconnectGracePeriod)
+                if (( ! reportedState.getState().equals(State.DOWN) && currentTime - info.getRpcAddressOutdatedTimestamp() > maxSlobrokDisconnectGracePeriod)
                     || reportedState.getState().equals(State.STOPPING)) // Don't wait for grace period if we expect node to be stopping
                 {
                     log.log(Level.FINE, () -> "Setting reported state to DOWN "
@@ -74,8 +75,8 @@ public class NodeStateGatherer {
                                 : "as node has been out of slobrok longer than " + maxSlobrokDisconnectGracePeriod + "."));
                     if (reportedState.getState().oneOf("iur") || ! reportedState.hasDescription()) {
                         StringBuilder sb = new StringBuilder().append("Set node down as it has been out of slobrok for ")
-                                                              .append(currentTime - info.lastSeenInSlobrok()).append(" ms which is more than the max limit of ")
-                                                              .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
+                                .append(currentTime - info.getRpcAddressOutdatedTimestamp()).append(" ms which is more than the max limit of ")
+                                .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
                         reportedState.setDescription(sb.toString());
                     }
                     reportedState.setState(State.DOWN);
@@ -180,7 +181,7 @@ public class NodeStateGatherer {
                     newState.setState(State.DOWN);
                 } else if (msg.equals("jrt: Connection closed by peer") || msg.equals("Connection reset by peer")) {
                     msg = "Connection error: Closed at other end. (Node or switch likely shut down)";
-                    if (info.isNotInSlobrok()) {
+                    if (info.isRpcAddressOutdated()) {
                         msg += " Node is no longer in slobrok.";
                     }
                     if (info.getReportedState().getState().oneOf("ui")) {
