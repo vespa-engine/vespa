@@ -59,10 +59,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
@@ -502,13 +499,11 @@ public class ApplicationRepositoryTest {
         // Create a local session with invalid application package and check that expiring local sessions still works
         sessionId = 8;
         java.nio.file.Path applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
-        Files.createDirectory(applicationPath);
-        Files.writeString(Files.createFile(applicationPath.resolve("services.xml")),
-                          Files.readString(Paths.get(illegalApp2.getAbsolutePath()).resolve(Paths.get("services.xml"))));
-        assertTrue(applicationPath.toFile().exists());  // App exists on disk
         session = sessionRepository.createRemoteSession(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
         sessionRepository.createSetStatusTransaction(session, Session.Status.PREPARE).commit();
+        Files.createDirectory(applicationPath);
+        Files.writeString(Files.createFile(applicationPath.resolve("services.xml")), "non-legal xml");
         assertEquals(0, sessionRepository.getLocalSessions().size());  // Will not show up in local sessions
 
         // Advance time, session SHOULD be deleted
@@ -755,16 +750,6 @@ public class ApplicationRepositoryTest {
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
-    }
-
-    private void setCreatedTime(java.nio.file.Path file, Instant createdTime) {
-        try {
-            BasicFileAttributeView attributes = Files.getFileAttributeView(file, BasicFileAttributeView.class);
-            FileTime time = FileTime.fromMillis(createdTime.toEpochMilli());
-            attributes.setTimes(time, time, time);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /** Stores all added or set values for each metric and context. */
