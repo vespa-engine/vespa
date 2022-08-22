@@ -27,11 +27,21 @@ import org.w3c.dom.NodeList;
 public class EmbedderConfig {
 
     static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
-        String classId = getEmbedderClass(spec);
-        switch (classId) {
-            case "ai.vespa.embedding.BertBaseEmbedder": return new EmbedderConfigBertBaseTransformer(spec, hosted);
-        }
-        return new EmbedderConfigTransformer(spec, hosted);
+        return switch (embedderConfigFrom(spec)) {
+            case "embedding.bert-base-embedder" -> new EmbedderConfigBertBaseTransformer(spec, hosted);
+            default -> new EmbedderConfigTransformer(spec, hosted);
+        };
+    }
+
+    private static String embedderConfigFrom(Element spec) {
+        String explicitDefinition = spec.getAttribute("def");
+        if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
+
+        // Implicit from class name
+        return switch (spec.getAttribute("class")) {
+            case "ai.vespa.embedding.BertBaseEmbedder" -> "embedding.bert-base-embedder";
+            default -> "";
+        };
     }
 
     static String modelIdToUrl(String id) {

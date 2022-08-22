@@ -7,9 +7,9 @@
     <embedder id='transformer'
               class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'
               bundle='exampleEmbedder'
-              def='ai.vespa.example.paragraph.sentence-embedder'>
-      <model path="files/model.onnx" /> <!-- Embedder syntax for file path -->
-      <vocab>files/vocab.txt</vocab>   <!-- Generic config syntax for file path -->
+              def='embedding.bert-base-embedder'>
+      <model id="test-model-id" url="test-model-url"/>
+      <vocab path="files/vocab.txt"/>
     </embedder>
 
     <nodes>

@@ -160,9 +160,25 @@ public class EmbedderTestCase {
         ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder testConfig = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
-        assertEquals("files/vocab.txt", testConfig.getObject("vocab").getValue());
-        assertEquals("files/model.onnx", testConfig.getObject("model").getValue());
+        ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
+        assertEquals("files/vocab.txt", config.getObject("vocab").getValue());
+        assertEquals("files/model.onnx", config.getObject("model").getValue());
+    }
+
+    @Test
+    void testApplicationWithGenericEmbedConfigUsingProvidedModel() throws Exception  {
+        final String emptyPathFileName = "services.xml";
+
+        Path applicationDir = Path.fromString("src/test/cfg/application/embed_generic_using_provided_model/");
+        VespaModel model = loadModel(applicationDir, false);
+        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
+
+        Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
+        ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
+        assertEquals("test-model-url", config.getObject("transformerModelUrl").getValue());
+        assertEquals(emptyPathFileName, config.getObject("transformerModelPath").getValue());
+        assertEquals("", config.getObject("tokenizerVocabUrl").getValue());
+        assertEquals("files/vocab.txt", config.getObject("tokenizerVocabPath").getValue());
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
