@@ -246,7 +246,7 @@ public class LoadBalancer {
             public void decay(RequestDuration duration) {
                 double searchTime = Math.max(duration.duration().toMillis()/1000.0, MIN_QUERY_TIME);
                 double decayRate = LATENCY_DECAY_TIME;
-                double sampleWeight = toDouble(duration.timeSince(prev));
+                double sampleWeight = Math.min(decayRate/2, toDouble(duration.timeSince(prev)));
                 averageSearchTime = (sampleWeight*searchTime + (decayRate - sampleWeight) * averageSearchTime) / decayRate;
                 prev = duration;
             }

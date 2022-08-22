@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author ollivir
  */
 public class LoadBalancerTest {
-
+    private static final double delta = 0.0000001;
     @Test
     void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);
@@ -212,7 +212,6 @@ public class LoadBalancerTest {
 
     @Test
     public void requireDecayByTimeToDependOnlyOnTime() {
-        double delta = 0.0000001;
         GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         assertEquals(0.002, decayer.averageSearchTime(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
@@ -227,11 +226,19 @@ public class LoadBalancerTest {
         assertEquals(0.0059959552, decayer.averageSearchTime(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
         assertEquals(0.006076036096, decayer.averageSearchTime(), delta);
-        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(6000), Duration.ofMillis(10)));
-        assertEquals(0.0084304144384, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(5000), Duration.ofMillis(10)));
+        assertEquals(0.0076456216576000005, decayer.averageSearchTime(), delta);
         assertEquals(110, countRequestsToReach90p(Duration.ofMillis(100), Duration.ofMillis(10)));
         assertEquals(55, countRequestsToReach90p(Duration.ofMillis(200), Duration.ofMillis(10)));
         assertEquals(11, countRequestsToReach90p(Duration.ofMillis(1000), Duration.ofMillis(10)));
+    }
+
+    @Test
+    public void requireDecayByTimeToNotJumpTooFar() {
+        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        assertEquals(0.002, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(10000), Duration.ofMillis(10)));
+        assertEquals(0.006, decayer.averageSearchTime(), delta); // Capped at 50% sampleWeight
     }
 
     private static void updateSearchTime(GroupStatus gs, RequestDuration time) {
