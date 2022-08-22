@@ -227,7 +227,7 @@ public class Dispatcher extends AbstractComponent {
                 invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
                 return invoker.get();
             } else {
-                loadBalancer.releaseGroup(group, false, Duration.ZERO);
+                loadBalancer.releaseGroup(group, false, RequestDuration.of(Duration.ZERO));
                 if (rejected == null) {
                     rejected = new HashSet<>();
                 }

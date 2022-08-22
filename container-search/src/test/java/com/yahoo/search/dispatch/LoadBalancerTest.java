@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
-        Group group = grp.orElseGet(() -> {
+        Group group = grp.orElseThrow(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
         assertEquals(1, group.nodes().size());
@@ -48,7 +49,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
-        Group group = grp.orElseGet(() -> {
+        Group group = grp.orElseThrow(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
         assertEquals(1, group.nodes().size());
@@ -79,7 +80,7 @@ public class LoadBalancerTest {
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
-        lb.releaseGroup(group, true, Duration.ofMillis(1));
+        lb.releaseGroup(group, true, RequestDuration.of(Duration.ofMillis(1)));
 
         // get second group
         grp = lb.takeGroup(null);
@@ -89,29 +90,27 @@ public class LoadBalancerTest {
 
     @Test
     void requireCorrectAverageSearchTimeDecay() {
-        final double delta = 0.00001;
-
         GroupStatus gs = newGroupStatus(1);
-        gs.setQueryStatistics(0, Duration.ofSeconds(1));
-        updateSearchTime(gs, Duration.ofSeconds(1));
+        gs.setDecayer(new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1)));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(1)));
         assertEquals(Duration.ofSeconds(1), gs.averageSearchTime());
-        updateSearchTime(gs, Duration.ofSeconds(2));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(2)));
         assertEquals(Duration.ofNanos(1023255813), gs.averageSearchTime());
-        updateSearchTime(gs, Duration.ofSeconds(2));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(2)));
         assertEquals(Duration.ofNanos(1045454545), gs.averageSearchTime());
-        updateSearchTime(gs, Duration.ofMillis(100));
-        updateSearchTime(gs, Duration.ofMillis(100));
-        updateSearchTime(gs, Duration.ofMillis(100));
-        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
         assertEquals(Duration.ofNanos(966666666), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, Duration.ofSeconds(1));
+            updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(1)));
         }
         assertEquals(Duration.ofNanos(999999812), gs.averageSearchTime());
-        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
         assertEquals(Duration.ofNanos(999099812), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, Duration.ZERO);
+            updateSearchTime(gs, RequestDuration.of(Duration.ZERO));
         }
         assertEquals(Duration.ofNanos(1045087), gs.averageSearchTime());
     }
@@ -123,7 +122,7 @@ public class LoadBalancerTest {
             scoreboard.add(newGroupStatus(i));
         }
         Random seq = sequence(0.0, 0.1, 0.2, 0.39, 0.4, 0.6, 0.8, 0.99999);
-        AdaptiveScheduler sched = new AdaptiveScheduler(seq, scoreboard);
+        AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
 
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
@@ -140,11 +139,15 @@ public class LoadBalancerTest {
         List<GroupStatus> scoreboard = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             GroupStatus gs = newGroupStatus(i);
-            gs.setQueryStatistics(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0)));
             scoreboard.add(gs);
         }
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
-        AdaptiveScheduler sched = new AdaptiveScheduler(seq, scoreboard);
+        AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
+        int i= 0;
+        for (GroupStatus gs : scoreboard) {
+            gs.setDecayer(new AdaptiveScheduler.DecayByRequests(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0))));
+            i++;
+        }
 
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
@@ -190,7 +193,48 @@ public class LoadBalancerTest {
         assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
     }
 
-    private static void updateSearchTime(GroupStatus gs, Duration time) {
+    private static Duration from_s(double seconds) {
+        return Duration.ofNanos((long)(seconds * 1_000_000_000));
+    }
+
+    private static int countRequestsToReach90p(Duration timeBetweenSample, Duration searchTime) {
+        double p90 = 0.9*searchTime.toMillis()/1000.0;
+        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        int requests = 0;
+        Instant start = Instant.EPOCH;
+        for (; decayer.averageSearchTime() < p90;) {
+            decayer.decay(RequestDuration.of(start, searchTime));
+            start = start.plus(timeBetweenSample);
+            requests++;
+        }
+        return requests;
+    }
+
+    @Test
+    public void requireDecayByTimeToDependOnlyOnTime() {
+        double delta = 0.0000001;
+        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        assertEquals(0.002, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
+        assertEquals(0.003616, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(2000), Duration.ofMillis(10)));
+        assertEquals(0.0048928, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
+        assertEquals(0.00591424, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
+        assertEquals(0.0059959552, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
+        assertEquals(0.0059959552, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
+        assertEquals(0.006076036096, decayer.averageSearchTime(), delta);
+        decayer.decay(RequestDuration.of(Instant.ofEpochMilli(6000), Duration.ofMillis(10)));
+        assertEquals(0.0084304144384, decayer.averageSearchTime(), delta);
+        assertEquals(110, countRequestsToReach90p(Duration.ofMillis(100), Duration.ofMillis(10)));
+        assertEquals(55, countRequestsToReach90p(Duration.ofMillis(200), Duration.ofMillis(10)));
+        assertEquals(11, countRequestsToReach90p(Duration.ofMillis(1000), Duration.ofMillis(10)));
+    }
+
+    private static void updateSearchTime(GroupStatus gs, RequestDuration time) {
         gs.allocate();
         gs.release(true, time);
     }
