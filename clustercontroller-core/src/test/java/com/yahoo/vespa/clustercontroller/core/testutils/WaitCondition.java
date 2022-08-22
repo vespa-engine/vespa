@@ -9,11 +9,10 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,10 +64,10 @@ public interface WaitCondition {
     class RegexStateMatcher extends StateWait {
 
         private final Pattern pattern;
-        private Collection<DummyVdsNode> nodesToCheck;
+        private Collection<DummyVdsNode> nodesToCheck = Set.of();
         private ClusterState lastCheckedState;
         private boolean checkAllSpaces = false;
-        private Set<String> checkSpaceSubset = Collections.emptySet();
+        private Set<String> checkSpaceSubset = Set.of();
 
         RegexStateMatcher(String regex, FleetController fc, Object monitor) {
             super(fc, monitor);
@@ -76,6 +75,7 @@ public interface WaitCondition {
         }
 
         RegexStateMatcher includeNotifyingNodes(Collection<DummyVdsNode> nodes) {
+            Objects.requireNonNull(nodes, "nodes must be non-null");
             nodesToCheck = nodes;
             return this;
         }
@@ -86,6 +86,7 @@ public interface WaitCondition {
         }
 
         RegexStateMatcher checkSpaceSubset(Set<String> spaces) {
+            Objects.requireNonNull(spaces, "spaces must be non-null");
             this.checkSpaceSubset = spaces;
             return this;
         }
@@ -99,45 +100,39 @@ public interface WaitCondition {
 
         @Override
         public String isConditionMet() {
-            if (convergedState != null) {
-                lastCheckedState = convergedState;
-                Matcher m = pattern.matcher(lastCheckedState.toString());
-                if (m.matches() || !checkSpaceSubset.isEmpty()) {
-                    if (nodesToCheck != null) {
-                        for (DummyVdsNode node : nodesToCheck) {
-                            if (node.getClusterState() == null) {
-                                return "Node " + node + " has not received a cluster state yet";
-                            }
-                            // TODO refactor, simplify
-                            boolean match;
-                            if (checkAllSpaces) {
-                                match = statesInBundle(node.getClusterStateBundle()).stream()
-                                        .allMatch(state -> pattern.matcher(withoutTimestamps(state.toString())).matches());
-                            } else if (!checkSpaceSubset.isEmpty()) {
-                                match = checkSpaceSubset.stream().allMatch(space -> {
-                                    String state = node.getClusterStateBundle().getDerivedBucketSpaceStates()
-                                            .getOrDefault(space, AnnotatedClusterState.emptyState()).getClusterState().toString();
-                                    return pattern.matcher(withoutTimestamps(state)).matches();
-                                });
-                            } else {
-                                match = pattern.matcher(withoutTimestamps(node.getClusterState().toString())).matches();
-                            }
+            if (convergedState == null) return "No cluster state defined yet";
 
-                            if (!match) {
-                                return "Node " + node + " state mismatch.\n  wanted: " + pattern + "\n  is:     " + node.getClusterStateBundle().toString();
-                            }
-                            if (node.getStateCommunicationVersion() > 0) {
-                                if (!node.hasPendingGetNodeStateRequest()) {
-                                    return "Node " + node + " has not received another get node state request yet";
-                                }
-                            }
-                        }
-                    }
-                    return null;
+            lastCheckedState = convergedState;
+            Matcher m = pattern.matcher(lastCheckedState.toString());
+            if (!m.matches() && checkSpaceSubset.isEmpty()) return "Cluster state mismatch";
+
+            for (DummyVdsNode node : nodesToCheck) {
+                if (node.getClusterState() == null) return "Node " + node + " has not received a cluster state yet";
+
+                boolean match;
+                if (checkAllSpaces) {
+                    match = statesInBundle(node.getClusterStateBundle()).stream()
+                                                                        .allMatch(state -> pattern
+                                                                                .matcher(withoutTimestamps(state.toString()))
+                                                                                .matches());
+                } else if (!checkSpaceSubset.isEmpty()) {
+                    match = checkSpaceSubset.stream().allMatch(space -> {
+                        String state = node.getClusterStateBundle().getDerivedBucketSpaceStates()
+                                           .getOrDefault(space, AnnotatedClusterState.emptyState()).getClusterState().toString();
+                        return pattern.matcher(withoutTimestamps(state)).matches();
+                    });
+                } else {
+                    match = pattern.matcher(withoutTimestamps(node.getClusterState().toString())).matches();
                 }
-                return "Cluster state mismatch";
+
+                if (!match) {
+                    return "Node " + node + " state mismatch.\n  wanted: " + pattern + "\n  is:     " + node.getClusterStateBundle().toString();
+                }
+                if (node.getStateCommunicationVersion() > 0 && !node.hasPendingGetNodeStateRequest()) {
+                    return "Node " + node + " has not received another get node state request yet";
+                }
             }
-            return "No cluster state defined yet";
+            return null;
         }
 
         /** Returns the given state string with timestamps removed */
