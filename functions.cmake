@@ -400,7 +400,7 @@ function(__is_command_a_script COMMAND RESULT_VAR)
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT;COST" "COMMAND;DEPENDS" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;COST" "COMMAND;DEPENDS;ENVIRONMENT" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
