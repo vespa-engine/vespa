@@ -161,7 +161,7 @@ public class SystemStateBroadcaster {
     }
 
     private static boolean nodeIsReachable(NodeInfo node) {
-        if (node.getRpcAddress() == null || node.isNotInSlobrok()) {
+        if (node.getRpcAddress() == null || node.isRpcAddressOutdated()) {
             return false; // Can't set state on nodes we don't know where are
         }
         if (node.getReportedState().getState() == State.MAINTENANCE ||

@@ -243,7 +243,7 @@ public class VdsClusterHtmlRenderer {
                 row.addCell(new HtmlTable.Cell("-").addProperties(ERROR_PROPERTY));
             } else {
                 row.addCell(new HtmlTable.Cell(HtmlTable.escape(nodeInfo.getRpcAddress())));
-                if (nodeInfo.isNotInSlobrok()) {
+                if (nodeInfo.isRpcAddressOutdated()) {
                     row.getLastCell().addProperties(WARNING_PROPERTY);
                 }
             }
