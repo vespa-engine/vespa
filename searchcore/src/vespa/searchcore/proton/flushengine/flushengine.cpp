@@ -367,7 +367,7 @@ FlushEngine::initFlush(const FlushContext &ctx)
 void
 FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
 {
-    vespalib::duration duration = vespalib::duration::zero();
+    vespalib::duration duration;
     {
         std::lock_guard<std::mutex> guard(_lock);
         duration = _flushing[taskId].elapsed();
@@ -422,7 +422,7 @@ FlushEngine::getCurrentlyFlushingSet() const
 uint32_t
 FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target)
 {
-    uint32_t taskId(0);
+    uint32_t taskId;
     {
         std::lock_guard<std::mutex> guard(_lock);
         taskId = _taskId++;
