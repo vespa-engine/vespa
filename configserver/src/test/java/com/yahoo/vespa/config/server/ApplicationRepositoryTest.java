@@ -504,7 +504,7 @@ public class ApplicationRepositoryTest {
         java.nio.file.Path applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
         Files.createDirectory(applicationPath);
         Files.writeString(Files.createFile(applicationPath.resolve("services.xml")),
-                          Files.readString(Paths.get(illegalApp2.getAbsolutePath(), "services.xml")));
+                          Files.readString(Paths.get(illegalApp2.getAbsolutePath()).resolve(Paths.get("services.xml"))));
         assertTrue(applicationPath.toFile().exists());  // App exists on disk
         session = sessionRepository.createRemoteSession(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
