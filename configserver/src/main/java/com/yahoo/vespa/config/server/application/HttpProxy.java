@@ -10,6 +10,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.security.NodeHostnameVerifier;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.HttpFetcher.Params;
@@ -31,11 +32,9 @@ public class HttpProxy {
 
     private final HttpFetcher fetcher;
 
-    @Inject
-    public HttpProxy() { this(new SimpleHttpFetcher()); }
-    public HttpProxy(HttpFetcher fetcher) {
-        this.fetcher = fetcher;
-    }
+    @Inject public HttpProxy(NodeHostnameVerifier verifier) { this(new SimpleHttpFetcher(verifier)); }
+
+    public HttpProxy(HttpFetcher fetcher) { this.fetcher = fetcher; }
 
     public HttpResponse get(Application application, String hostName, String serviceType, Path path, Query query) {
         return get(application, hostName, serviceType, path, query, null);
