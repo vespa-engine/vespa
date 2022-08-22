@@ -61,35 +61,36 @@ public class DomDispatchTuningBuilderTest {
                         "  </tuning>" +
                         "</content>");
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
-        assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
-        assertEquals(0.999, dispatch.getTopkProbability().doubleValue(), 0.0);
+        assertEquals(12.5, dispatch.getMinActiveDocsCoverage(), 0.0);
+        assertEquals(0.999, dispatch.getTopkProbability(), 0.0);
+    }
+
+    private static String dispatchPolicy(String policy) {
+        return "<content>" +
+                "  <tuning>" +
+                "    <dispatch>" +
+                "      <dispatch-policy>" + policy +"</dispatch-policy>" +
+                "    </dispatch>" +
+                "  </tuning>" +
+                "</content>";
     }
 
     @Test
-    void requireThatTuningDispatchPolicyRoundRobin() throws Exception {
-        DispatchTuning dispatch = newTuningDispatch(
-                "<content>" +
-                        "  <tuning>" +
-                        "    <dispatch>" +
-                        "      <dispatch-policy>round-robin</dispatch-policy>" +
-                        "    </dispatch>" +
-                        "  </tuning>" +
-                        "</content>");
-        assertEquals(DispatchTuning.DispatchPolicy.ROUNDROBIN, dispatch.getDispatchPolicy());
+    void requireThatTuningDispatchPolicies() throws Exception {
+        assertEquals(DispatchTuning.DispatchPolicy.ROUNDROBIN,
+                newTuningDispatch(dispatchPolicy("round-robin")).getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.ADAPTIVE,
+                newTuningDispatch(dispatchPolicy("random")).getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.ADAPTIVE,
+                newTuningDispatch(dispatchPolicy("adaptive")).getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.BEST_OF_RANDOM_2,
+                newTuningDispatch(dispatchPolicy("best-of-random-2")).getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS,
+                newTuningDispatch(dispatchPolicy("latency-amortized-over-requests")).getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME,
+                newTuningDispatch(dispatchPolicy("latency-amortized-over-time")).getDispatchPolicy());
     }
 
-    @Test
-    void requireThatTuningDispatchPolicyRandom() throws Exception {
-        DispatchTuning dispatch = newTuningDispatch(
-                "<content>" +
-                        "  <tuning>" +
-                        "    <dispatch>" +
-                        "      <dispatch-policy>random</dispatch-policy>" +
-                        "    </dispatch>" +
-                        "  </tuning>" +
-                        "</content>");
-        assertEquals(DispatchTuning.DispatchPolicy.ADAPTIVE, dispatch.getDispatchPolicy());
-    }
 
     private static DispatchTuning newTuningDispatch(String xml) throws Exception {
         return DomTuningDispatchBuilder.build(

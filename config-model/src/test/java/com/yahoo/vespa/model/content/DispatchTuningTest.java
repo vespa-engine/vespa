@@ -20,7 +20,7 @@ public class DispatchTuningTest {
                 .setTopKProbability(18.3)
                 .build();
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
-        assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
+        assertEquals(12.5, dispatch.getMinActiveDocsCoverage(), 0.0);
         assertEquals(DispatchTuning.DispatchPolicy.ROUNDROBIN, dispatch.getDispatchPolicy());
         assertEquals(18.3, dispatch.getTopkProbability(), 0.0);
     }
@@ -40,6 +40,33 @@ public class DispatchTuningTest {
                 .setDispatchPolicy("adaptive")
                 .build();
         assertEquals(DispatchTuning.DispatchPolicy.ADAPTIVE, dispatch.getDispatchPolicy());
+        assertNull(dispatch.getMinActiveDocsCoverage());
+    }
+
+    @Test
+    void requireThatLatencyAmortizedOverRequestsDispatchWork() {
+        DispatchTuning dispatch = new DispatchTuning.Builder()
+                .setDispatchPolicy("latency-amortized-over-requests")
+                .build();
+        assertEquals(DispatchTuning.DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS, dispatch.getDispatchPolicy());
+        assertNull(dispatch.getMinActiveDocsCoverage());
+    }
+
+    @Test
+    void requireThatLatencyAmortizedOverTimeDispatchWork() {
+        DispatchTuning dispatch = new DispatchTuning.Builder()
+                .setDispatchPolicy("latency-amortized-over-time")
+                .build();
+        assertEquals(DispatchTuning.DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME, dispatch.getDispatchPolicy());
+        assertNull(dispatch.getMinActiveDocsCoverage());
+    }
+
+    @Test
+    void requireThatBestOfRandom2DispatchWork() {
+        DispatchTuning dispatch = new DispatchTuning.Builder()
+                .setDispatchPolicy("best-of-random-2")
+                .build();
+        assertEquals(DispatchTuning.DispatchPolicy.BEST_OF_RANDOM_2, dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinActiveDocsCoverage());
     }
 
