@@ -45,7 +45,10 @@ func RunLogfmt(opts *Options, args []string) {
 			fmt.Fprintf(os.Stderr, "Must have exact 1 file for 'follow' option, got %d\n", len(args))
 			return
 		}
-		tailFile(opts, args[0])
+		if err := tailFile(opts, args[0]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
 		return
 	}
 	for _, arg := range args {
@@ -68,11 +71,15 @@ func formatLine(opts *Options, line string) {
 	}
 }
 
-func tailFile(opts *Options, fn string) {
-	tailed := FollowFile(fn)
-	for line := range tailed.Lines {
+func tailFile(opts *Options, fn string) error {
+	tailed, err := FollowFile(fn)
+	if err != nil {
+		return err
+	}
+	for line := range tailed.Lines() {
 		formatLine(opts, line.Text)
 	}
+	return nil
 }
 
 func formatFile(opts *Options, arg *os.File) {
