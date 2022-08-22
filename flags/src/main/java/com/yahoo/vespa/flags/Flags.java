@@ -341,7 +341,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-09-01",
+            List.of("hmusum"), "2022-01-06", "2022-10-01",
             "Enable Data Highway in AWS",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
@@ -419,8 +419,8 @@ public class Flags {
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "FAIL",
-            List.of("hmusum"), "2022-04-27", "2022-09-01",
-            "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
+            List.of("hmusum"), "2022-04-27", "2022-10-01",
+            "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -440,14 +440,14 @@ public class Flags {
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
             "file-distribution-accepted-compression-types", List.of("gzip", "lz4"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            List.of("hmusum"), "2022-07-05", "2022-10-01",
             "´List of accepted compression types used when asking for a file reference. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
             "file-distribution-compression-types-to-use", List.of("lz4", "gzip"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            List.of("hmusum"), "2022-07-05", "2022-10-01",
             "List of compression types to use (in preferred order), matched with accepted compression types when serving file references. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
