@@ -38,7 +38,7 @@ public class EmbedderConfig {
         if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
 
         // Implicit from class name
-        return switch (spec.getAttribute("class")) {
+        return switch (getEmbedderClass(spec)) {
             case "ai.vespa.embedding.BertBaseEmbedder" -> "embedding.bert-base-embedder";
             default -> "";
         };
@@ -82,7 +82,7 @@ public class EmbedderConfig {
         if (spec.hasAttribute("id")) {
             return spec.getAttribute("id");
         }
-        throw new IllegalArgumentException("Embedder specification does not have a required class attribute");
+        throw new IllegalArgumentException("An <embedder> element must have a 'class' or 'id' attribute");
     }
 
 
