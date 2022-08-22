@@ -221,11 +221,27 @@ public class SessionRepository {
         Set<LocalSession> sessionIds = new HashSet<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
-            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-            File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
-            ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
-            LocalSession localSession = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+            LocalSession localSession = getSessionFromFile(sessionId);
             sessionIds.add(localSession);
+        }
+        return sessionIds;
+    }
+
+    private LocalSession getSessionFromFile(long sessionId) {
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+        File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
+        ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+    }
+
+    public Set<Long> getLocalSessionsIdsFromFileSystem() {
+        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
+        if (sessions == null) return Set.of();
+
+        Set<Long> sessionIds = new HashSet<>();
+        for (File session : sessions) {
+            long sessionId = Long.parseLong(session.getName());
+            sessionIds.add(sessionId);
         }
         return sessionIds;
     }
@@ -310,8 +326,7 @@ public class SessionRepository {
     }
 
     // Will delete session data in ZooKeeper and file system
-    public void deleteLocalSession(LocalSession session) {
-        long sessionId = session.getSessionId();
+    public void deleteLocalSession(long sessionId) {
         log.log(Level.FINE, () -> "Deleting local session " + sessionId);
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
@@ -323,7 +338,7 @@ public class SessionRepository {
 
     private void deleteAllSessions() {
         for (LocalSession session : getLocalSessions()) {
-            deleteLocalSession(session);
+            deleteLocalSession(session.getSessionId());
         }
     }
 
@@ -586,35 +601,48 @@ public class SessionRepository {
 
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, () -> "Deleting expired local sessions for tenant '" + tenantName + "'");
-        Set<LocalSession> toDelete = new HashSet<>();
+        Set<Long> sessionIdsToDelete = new HashSet<>();
         Set<Long> newSessions = findNewSessionsInFileSystem();
         try {
-            for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
+            for (long sessionId : getLocalSessionsIdsFromFileSystem()) {
                 // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
                 // we don't want to touch any of them)
-                if (newSessions.contains(candidate.getSessionId()))
+                if (newSessions.contains(sessionId))
                     continue;
 
-                Instant createTime = candidate.getCreateTime();
-                log.log(Level.FINE, () -> "Candidate local session for deletion: " + candidate.getSessionId() +
-                        ", created: " + createTime + ", state " + candidate.getStatus() + ", can be deleted: " + canBeDeleted(candidate));
+                var sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+                Instant createTime = sessionZooKeeperClient.readCreateTime();
+                Session.Status status = sessionZooKeeperClient.readStatus();
 
-                if (hasExpired(createTime) && canBeDeleted(candidate)) {
-                    toDelete.add(candidate);
+                log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
+                        ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
+                        ", hasExpired: " + hasExpired(createTime));
+
+                if (hasExpired(createTime) && canBeDeleted(sessionId, status)) {
+                    log.log(Level.FINE, () -> "expired: " + hasExpired(createTime) + ", can be deleted: " + canBeDeleted(sessionId, status));
+                    sessionIdsToDelete.add(sessionId);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
-                    Optional<ApplicationId> applicationId = candidate.getOptionalApplicationId();
+                    LocalSession session;
+                    log.log(Level.FINE, () -> "not expired, but more than 1 day old: " + sessionId);
+                    try {
+                        session = getSessionFromFile(sessionId);
+                    } catch (Exception e) {
+                        log.log(Level.FINE, () -> "could not get session from file: " + sessionId + ": " + e.getMessage());
+                        continue;
+                    }
+                    Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
                     if (applicationId.isEmpty()) continue;
 
                     Long activeSession = activeSessions.get(applicationId.get());
-                    if (activeSession == null || activeSession != candidate.getSessionId()) {
-                        toDelete.add(candidate);
-                        log.log(Level.FINE, () -> "Will delete inactive session " + candidate.getSessionId() + " created " +
+                    if (activeSession == null || activeSession != sessionId) {
+                        sessionIdsToDelete.add(sessionId);
+                        log.log(Level.FINE, () -> "Will delete inactive session " + sessionId + " created " +
                                 createTime + " for '" + applicationId + "'");
                     }
                 }
             }
 
-            toDelete.forEach(this::deleteLocalSession);
+            sessionIdsToDelete.forEach(this::deleteLocalSession);
 
             // Make sure to catch here, to avoid executor just dying in case of issues ...
         } catch (Throwable e) {
@@ -628,16 +656,16 @@ public class SessionRepository {
     }
 
     // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
-    private boolean canBeDeleted(LocalSession candidate) {
-        return ( ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus()))
-                || oldSessionDirWithUnknownStatus(candidate);
+    private boolean canBeDeleted(long sessionId, Session.Status status) {
+        return ( ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(status))
+                || oldSessionDirWithUnknownStatus(sessionId, status);
     }
 
-    private boolean oldSessionDirWithUnknownStatus(LocalSession session) {
+    private boolean oldSessionDirWithUnknownStatus(long sessionId, Session.Status status) {
         Duration expiryTime = Duration.ofHours(configserverConfig.keepSessionsWithUnknownStatusHours());
-        File sessionDir = tenantFileSystemDirs.getUserApplicationDir(session.getSessionId());
+        File sessionDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
         return sessionDir.exists()
-                && session.getStatus() == Session.Status.UNKNOWN
+                && status == Session.Status.UNKNOWN
                 && created(sessionDir).plus(expiryTime).isBefore(clock.instant());
     }
 

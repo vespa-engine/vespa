@@ -59,9 +59,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
@@ -94,6 +92,7 @@ public class ApplicationRepositoryTest {
     private final static File testAppLogServerWithContainer = new File("src/test/apps/app-logserver-with-container");
     private final static File app1 = new File("src/test/apps/cs1");
     private final static File app2 = new File("src/test/apps/cs2");
+    private final static File illegalApp2 = new File("src/test/apps/illegalapp2");
 
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
@@ -456,7 +455,7 @@ public class ApplicationRepositoryTest {
         deployment4.get().prepare();  // session 5 (not activated)
 
         assertEquals(2, sessionRepository.getLocalSessions().size());
-        sessionRepository.deleteLocalSession(localSession);
+        sessionRepository.deleteLocalSession(localSession.getSessionId());
         assertEquals(1, sessionRepository.getLocalSessions().size());
 
         // Create a local session without any data in zookeeper (corner case seen in production occasionally)
@@ -464,28 +463,29 @@ public class ApplicationRepositoryTest {
         int sessionId = 6;
         TenantName tenantName = tester.tenant().getName();
         Instant session6CreateTime = clock.instant();
-        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
-        LocalSession localSession2 = new LocalSession(tenant1,
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(serverdb, tenantName);
+        Files.createDirectory(tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath());
+        String hostName = ConfigUtils.getCanonicalHostName();
+        LocalSession localSession2 = new LocalSession(tenantName,
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
-                                                      new SessionZooKeeperClient(curator,
-                                                                                 tenantName,
-                                                                                 sessionId,
-                                                                                 ConfigUtils.getCanonicalHostName()));
+                                                      new SessionZooKeeperClient(curator, tenantName, sessionId, hostName));
         sessionRepository.addLocalSession(localSession2);
         assertEquals(2, sessionRepository.getLocalSessions().size());
 
         // Create a session, set status to UNKNOWN, we don't want to expire those (creation time is then EPOCH,
         // so will be candidate for expiry)
-        Session session = sessionRepository.createRemoteSession(7);
-        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
+        sessionId = 7;
+        Session session = sessionRepository.createRemoteSession(sessionId);
+        sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
+        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN).commit();
         assertEquals(2, sessionRepository.getLocalSessions().size()); // Still 2, no new local session
 
         // Check that trying to expire local session when there exists a local session without any data in zookeeper
         // should not delete session if this is a new file ...
         deleteExpiredLocalSessionsAndAssertNumberOfSessions(2, tester, sessionRepository);
 
-        // ... but it should be deleted if some time has passed
+        // ... but it should be deleted when some time has passed
         clock.advance(Duration.ofSeconds(60));
         deleteExpiredLocalSessionsAndAssertNumberOfSessions(1, tester, sessionRepository);
 
@@ -495,6 +495,21 @@ public class ApplicationRepositoryTest {
         // Advance time, session SHOULD be deleted
         clock.advance(Duration.ofHours(configserverConfig.keepSessionsWithUnknownStatusHours()).plus(Duration.ofMinutes(1)));
         deleteExpiredLocalSessionsAndAssertNumberOfSessions(0, tester, sessionRepository);
+
+        // Create a local session with invalid application package and check that expiring local sessions still works
+        sessionId = 8;
+        java.nio.file.Path applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
+        session = sessionRepository.createRemoteSession(sessionId);
+        sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
+        sessionRepository.createSetStatusTransaction(session, Session.Status.PREPARE).commit();
+        Files.createDirectory(applicationPath);
+        Files.writeString(Files.createFile(applicationPath.resolve("services.xml")), "non-legal xml");
+        assertEquals(0, sessionRepository.getLocalSessions().size());  // Will not show up in local sessions
+
+        // Advance time, session SHOULD be deleted
+        clock.advance(Duration.ofHours(configserverConfig.keepSessionsWithUnknownStatusHours()).plus(Duration.ofMinutes(1)));
+        deleteExpiredLocalSessionsAndAssertNumberOfSessions(0, tester, sessionRepository);
+        assertFalse(applicationPath.toFile().exists());  // App has been deleted
     }
 
     @Test
@@ -735,16 +750,6 @@ public class ApplicationRepositoryTest {
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
-    }
-
-    private void setCreatedTime(java.nio.file.Path file, Instant createdTime) {
-        try {
-            BasicFileAttributeView attributes = Files.getFileAttributeView(file, BasicFileAttributeView.class);
-            FileTime time = FileTime.fromMillis(createdTime.toEpochMilli());
-            attributes.setTimes(time, time, time);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /** Stores all added or set values for each metric and context. */
