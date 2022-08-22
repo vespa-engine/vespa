@@ -34,6 +34,7 @@ and converts it to something human-readable`,
 	cmd.Flags().BoolVar(&curOptions.TruncateService, "ts", false, "")
 	cmd.Flags().BoolVarP(&curOptions.FollowTail, "follow", "f", false, "follow logfile with tail -f")
 	cmd.Flags().BoolVarP(&curOptions.DequoteNewlines, "nldequote", "N", false, "dequote newlines embedded in message")
+	cmd.Flags().BoolVarP(&curOptions.DequoteNewlines, "dequotenewlines", "n", false, "dequote newlines embedded in message")
 	cmd.Flags().BoolVarP(&curOptions.TruncateComponent, "truncatecomponent", "t", false, "truncate component name")
 	cmd.Flags().BoolVar(&curOptions.TruncateComponent, "tc", false, "")
 	cmd.Flags().StringVarP(&curOptions.OnlyHostname, "host", "H", "", "select only one host")
@@ -41,5 +42,6 @@ and converts it to something human-readable`,
 	cmd.Flags().StringVarP(&curOptions.OnlyService, "service", "S", "", "select only one service")
 	cmd.Flags().MarkHidden("tc")
 	cmd.Flags().MarkHidden("ts")
+	cmd.Flags().MarkHidden("dequotenewlines")
 	return cmd
 }
