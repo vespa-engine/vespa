@@ -52,7 +52,6 @@ public class PlatformBundles {
 
     public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
             SEARCH_AND_DOCPROC_BUNDLE,
-            "container-search-gui",
             "docprocs",
             "linguistics-components"
     );

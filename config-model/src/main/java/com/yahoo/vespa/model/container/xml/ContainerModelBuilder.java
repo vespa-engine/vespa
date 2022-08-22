@@ -80,7 +80,6 @@ import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
@@ -552,9 +551,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addSearchHandler(cluster, searchElement);
 
-        // Set up GUI handler only on self hosted
-        if (!deployState.isHosted())
-            addGUIHandler(cluster);
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
@@ -897,13 +893,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Add as child to SearchHandler to get the correct chains config.
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY_CLASS, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
-
-    private void addGUIHandler(ApplicationContainerCluster cluster) {
-        Handler guiHandler = new GUIHandler();
-        guiHandler.addServerBindings(SystemBindingPattern.fromHttpPath(GUIHandler.BINDING_PATH));
-        cluster.addComponent(guiHandler);
-    }
-
 
     private List<BindingPattern> serverBindings(Element searchElement, BindingPattern... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
