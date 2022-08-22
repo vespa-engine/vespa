@@ -7,13 +7,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <stack>
 #include <cassert>
 #include <set>
 #include <thread>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.blueprintresolver");
 
 using vespalib::make_string_short::fmt;
 using vespalib::ThreadStackExecutor;
@@ -63,6 +59,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
+    using Errors = std::vector<vespalib::string>;
 
     struct FrameGuard {
         Stack &stack;
@@ -73,15 +70,16 @@ struct Compiler : public Blueprint::DependencyHandler {
         }
     };
 
-    const BlueprintFactory  &factory;
-    const IIndexEnvironment &index_env;
-    Stack                    resolve_stack;
-    ExecutorSpecList        &spec_list;
-    FeatureMap              &feature_map;
-    std::set<vespalib::string> setup_set;
-    std::set<vespalib::string> failed_set;
-    const char *min_stack;
-    const char *max_stack;
+    const BlueprintFactory     &factory;
+    const IIndexEnvironment    &index_env;
+    Stack                       resolve_stack;
+    Errors                      errors;
+    ExecutorSpecList           &spec_list;
+    FeatureMap                 &feature_map;
+    std::set<vespalib::string>  setup_set;
+    std::set<vespalib::string>  failed_set;
+    const char                 *min_stack;
+    const char                 *max_stack;
 
     Compiler(const BlueprintFactory &factory_in,
              const IIndexEnvironment &index_env_in,
@@ -90,6 +88,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         : factory(factory_in),
           index_env(index_env_in),
           resolve_stack(),
+          errors(),
           spec_list(spec_list_out),
           feature_map(feature_map_out),
           setup_set(),
@@ -138,11 +137,13 @@ struct Compiler : public Blueprint::DependencyHandler {
         if (failed_set.count(feature_name) == 0) {
             failed_set.insert(feature_name);
             auto trace = make_trace(skip_self);
+            vespalib::string msg;
             if (trace.empty()) {
-                LOG(warning, "invalid %s: %s", describe(feature_name).c_str(), reason.c_str());
+                msg = fmt("invalid %s: %s", describe(feature_name).c_str(), reason.c_str());
             } else {
-                LOG(warning, "invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
+                msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
             }
+            errors.emplace_back(msg);
         }
         probe_stack();
         return FeatureRef();
@@ -264,7 +265,8 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
       _seeds(),
       _executorSpecs(),
       _featureMap(),
-      _seedMap()
+      _seedMap(),
+      _warnings()
 {
 }
 
@@ -300,6 +302,7 @@ BlueprintResolver::compile()
                                    for (const auto &seed: _seeds) {
                                        auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
                                        if (compiler.failed()) {
+                                           _warnings = std::move(compiler.errors);
                                            return;
                                        }
                                        _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
@@ -311,27 +314,9 @@ BlueprintResolver::compile()
     executor.shutdown();
     size_t stack_usage = compiler.stack_usage();
     if (stack_usage > (128_Ki)) {
-        LOG(warning, "high stack usage: %zu bytes", stack_usage);
+        _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
     }
     return !compiler.failed();
-}
-
-const BlueprintResolver::ExecutorSpecList &
-BlueprintResolver::getExecutorSpecs() const
-{
-    return _executorSpecs;
-}
-
-const BlueprintResolver::FeatureMap &
-BlueprintResolver::getFeatureMap() const
-{
-    return _featureMap;
-}
-
-const BlueprintResolver::FeatureMap &
-BlueprintResolver::getSeedMap() const
-{
-    return _seedMap;
 }
 
 }

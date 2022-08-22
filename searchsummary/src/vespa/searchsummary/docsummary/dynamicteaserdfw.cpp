@@ -9,6 +9,8 @@
 #include <vespa/searchlib/queryeval/split_float.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
+#include <vespa/juniper/queryhandle.h>
+#include <vespa/juniper/result.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -368,27 +370,17 @@ DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
 vespalib::string
 DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, GetDocsumsState *state)
 {
-    if (state->_dynteaser._query == nullptr) {
+    if (!state->_dynteaser._query) {
         JuniperQueryAdapter iq(state->_kwExtractor,
                                state->_args.getStackDump(),
                                &state->_args.highlightTerms());
         state->_dynteaser._query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
-    LOG(debug, "makeDynamicTeaser: docid (%d,%d), fieldenum (%d,%d), lang (%d,%d) analyse %s",
-        docid, state->_dynteaser._docid,
-        _inputFieldEnumValue, state->_dynteaser._input,
-        _langFieldEnumValue, state->_dynteaser._lang,
-        (juniper::AnalyseCompatible(_juniperConfig.get(), state->_dynteaser._config) ? "no" : "yes"));
+    LOG(debug, "makeDynamicTeaser: docid (%d), fieldenum (%d), lang (%d)",
+        docid, _inputFieldEnumValue, _langFieldEnumValue);
 
-    if (state->_dynteaser._result != nullptr)
-        juniper::ReleaseResult(state->_dynteaser._result);
-
-    state->_dynteaser._docid  = docid;
-    state->_dynteaser._input  = _inputFieldEnumValue;
-    state->_dynteaser._lang   = _langFieldEnumValue;
-    state->_dynteaser._config = _juniperConfig.get();
-    state->_dynteaser._result = nullptr;
+    std::unique_ptr<juniper::Result> result;
 
     if (state->_dynteaser._query != nullptr) {
 
@@ -401,13 +393,12 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
 
         auto langid = static_cast<uint32_t>(-1);
 
-        state->_dynteaser._result =
-            juniper::Analyse(_juniperConfig.get(), state->_dynteaser._query,
-                             input.data(), input.length(), docid, _inputFieldEnumValue,  langid);
+        result = juniper::Analyse(*_juniperConfig, *state->_dynteaser._query,
+                                  input.data(), input.length(), docid, _inputFieldEnumValue,  langid);
     }
 
-    juniper::Summary *teaser = (state->_dynteaser._result != nullptr)
-                               ? juniper::GetTeaser(state->_dynteaser._result, _juniperConfig.get())
+    juniper::Summary *teaser = result
+                               ? juniper::GetTeaser(*result, _juniperConfig.get())
                                : nullptr;
 
     if (LOG_WOULD_LOG(debug)) {

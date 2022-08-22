@@ -27,8 +27,8 @@ public:
         fef::TermFieldHandle handle;
         std::unique_ptr<search::tensor::DistanceCalculator> calc;
         Element(Element&& rhs) noexcept = default; // Needed as std::vector::reserve() is used.
-        Element(fef::TermFieldHandle handle_in);
-        Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in);
+        Element(fef::TermFieldHandle handle_in) noexcept;
+        Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in) noexcept;
         ~Element();
     };
 private:

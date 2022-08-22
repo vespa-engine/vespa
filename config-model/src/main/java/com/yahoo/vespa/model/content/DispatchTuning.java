@@ -11,10 +11,16 @@ public class DispatchTuning {
 
     public static final DispatchTuning empty = new DispatchTuning.Builder().build();
 
-    public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE }
+    public enum DispatchPolicy {
+        ROUNDROBIN,
+        LATENCY_AMORTIZED_OVER_REQUESTS,
+        LATENCY_AMORTIZED_OVER_TIME,
+        BEST_OF_RANDOM_2,
+        ADAPTIVE
+    }
 
     private final Integer maxHitsPerPartition;
-    private DispatchPolicy dispatchPolicy;
+    private final DispatchPolicy dispatchPolicy;
     private final Double minActiveDocsCoverage;
 
     public Double getTopkProbability() {
@@ -35,9 +41,6 @@ public class DispatchTuning {
 
     /** Returns the policy used to select which group to dispatch a query to */
     public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
-
-    @SuppressWarnings("unused")
-    public void setDispatchPolicy(DispatchPolicy dispatchPolicy) { this.dispatchPolicy = dispatchPolicy; }
 
     /** Returns the percentage of documents which must be available in a group for that group to receive queries */
     public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
@@ -67,10 +70,13 @@ public class DispatchTuning {
             return this;
         }
 
-        private DispatchPolicy toDispatchPolicy(String policy) {
+        public static DispatchPolicy toDispatchPolicy(String policy) {
             switch (policy.toLowerCase()) {
                 case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Vespa 9
                 case "round-robin": return DispatchPolicy.ROUNDROBIN;
+                case "latency-amortized-over-requests" : return DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
+                case "latency-amortized-over-time" : return DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME;
+                case "best-of-random-2" : return DispatchPolicy.BEST_OF_RANDOM_2;
                 default: throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
             }
         }

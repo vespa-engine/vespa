@@ -108,17 +108,11 @@ MatcherParams& MatcherParams::SetWordFolder(Fast_WordFolder* wordfolder)
     return *this;
 }
 
-Fast_WordFolder* MatcherParams::WordFolder() { return _wordfolder; }
-
-
 MatcherParams& MatcherParams::SetProximityFactor(double factor)
 {
     _proximity_factor = factor;
     return *this;
 }
-
-double MatcherParams::ProximityFactor() { return _proximity_factor; }
-
 
 bool operator==(MatcherParams& mp1, MatcherParams& mp2)
 {

@@ -49,9 +49,9 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Gauge jvmHeapUsed;
     private final Gauge jvmHeapFree;
     private final Gauge jvmHeapTotal;
-    private final Gauge memoryOverhead;
     private final Gauge containerCount;
     private final Counter numberOfUnhandledExceptions;
+    private final Metrics metrics;
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock, FileSystem fileSystem) {
         this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
@@ -82,8 +82,8 @@ public class NodeAdminImpl implements NodeAdmin {
         this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
         this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
         this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
-        this.memoryOverhead = metrics.declareGauge("mem.system.overhead");
         this.containerCount = metrics.declareGauge("container.count");
+        this.metrics = metrics;
     }
 
     @Override
@@ -139,7 +139,8 @@ public class NodeAdminImpl implements NodeAdmin {
         if (!isSuspended) {
             containerCount.sample(numContainers);
             ProcMeminfo meminfo = procMeminfoReader.read();
-            memoryOverhead.sample(meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
+            metrics.declareGauge("mem.system.overhead", new Dimensions(Map.of("containers", Long.toString(numContainers))))
+                   .sample(meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
         }
     }
 

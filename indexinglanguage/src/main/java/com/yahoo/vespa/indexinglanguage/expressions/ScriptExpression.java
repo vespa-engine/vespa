@@ -91,7 +91,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     /** Creates an expression with simple lingustics for testing */
-    @SuppressWarnings("deprecation")
     public static ScriptExpression fromString(String expression) throws ParseException {
         return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }

@@ -121,7 +121,7 @@ public class SignatureFilterTest {
                 Instant.EPOCH,
                 LastLoginInfo.EMPTY,
                 Optional.empty(),
-                ImmutableBiMap.of(publicKey, () -> "user"),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("user")),
                 TenantInfo.empty(),
                 List.of(),
                 new ArchiveAccess(),

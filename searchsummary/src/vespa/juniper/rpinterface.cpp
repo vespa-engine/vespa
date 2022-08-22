@@ -2,7 +2,6 @@
 
 #include "rpinterface.h"
 #include "juniperparams.h"
-#include "foreach_utils.h"
 #include "queryvisitor.h"
 #include "queryhandle.h"
 #include "propreader.h"
@@ -79,9 +78,9 @@ std::unique_ptr<Config> Juniper::CreateConfig(const char* config_name)
     return std::unique_ptr<Config>(new Config(config_name, *this));
 }
 
-QueryHandle* Juniper::CreateQueryHandle(const IQuery& fquery, const char* juniperoptions)
+std::unique_ptr<QueryHandle> Juniper::CreateQueryHandle(const IQuery& fquery, const char* juniperoptions)
 {
-    return new QueryHandle(fquery, juniperoptions, *_modifier);
+    return std::make_unique<QueryHandle>(fquery, juniperoptions, *_modifier);
 }
 
 void Juniper::AddRewriter(const char* index_name, IRewriter* rewriter, bool for_query, bool for_document)
@@ -95,44 +94,29 @@ void Juniper::FlushRewriters()
 }
 
 
-void ReleaseQueryHandle(QueryHandle*& handle)
-{
-    delete handle;
-    handle = NULL;
-}
-
-
-Result* Analyse(const Config* config, QueryHandle* qhandle,
+std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& qhandle,
                 const char* docsum,  size_t docsum_len,
                 uint32_t docid, uint32_t /* inputfield_id */,
                 uint32_t langid)
 {
     LOG(debug, "juniper::Analyse(): docId(%u), docsumLen(%zu), docsum(%s), langId(%u)",
         docid, docsum_len, docsum, langid);
-    Result* res = new Result(const_cast<Config*>(config), qhandle, docsum, docsum_len, langid);
-    return res;
+    return std::make_unique<Result>(config, qhandle, docsum, docsum_len, langid);
 }
 
-long GetRelevancy(Result* result_handle)
+long GetRelevancy(Result& result_handle)
 {
-    return result_handle->GetRelevancy();
+    return result_handle.GetRelevancy();
 }
 
-Summary* GetTeaser(Result* result_handle, const Config* alt_config)
+Summary* GetTeaser(Result& result_handle, const Config* alt_config)
 {
-    return result_handle->GetTeaser(alt_config);
+    return result_handle.GetTeaser(alt_config);
 }
 
-Summary* GetLog(Result* result_handle)
+Summary* GetLog(Result& result_handle)
 {
-    return result_handle->GetLog();
-}
-
-void ReleaseResult(Result*& result_handle)
-{
-    LOG(debug, "juniper::ReleaseResult");
-    delete result_handle;
-    result_handle = NULL;
+    return result_handle.GetLog();
 }
 
 } // end namespace juniper

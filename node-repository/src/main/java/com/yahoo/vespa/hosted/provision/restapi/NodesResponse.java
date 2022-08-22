@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
@@ -10,10 +11,14 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -47,6 +52,7 @@ class NodesResponse extends SlimeJsonResponse {
     private final boolean recursive;
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
+    private final StringFlag wantedDockerTagFlag;
 
     public NodesResponse(ResponseType responseType, HttpRequest request,
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
@@ -56,6 +62,7 @@ class NodesResponse extends SlimeJsonResponse {
         this.recursive = request.getBooleanProperty("recursive");
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
+        this.wantedDockerTagFlag = PermanentFlags.WANTED_DOCKER_TAG.bindTo(nodeRepository.flagSource());
 
         Cursor root = slime.setObject();
         switch (responseType) {
@@ -146,7 +153,7 @@ class NodesResponse extends SlimeJsonResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", nodeRepository.containerImages().get(node).withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedDockerImage", nodeRepository.containerImages().get(node).withTag(resolveVersionFlag(wantedDockerTagFlag, node, allocation)).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
@@ -187,6 +194,24 @@ class NodesResponse extends SlimeJsonResponse {
         nodeRepository.archiveUris().archiveUriFor(node).ifPresent(uri -> object.setString("archiveUri", uri));
         trustedCertsToSlime(node.trustedCertificates(), object);
         node.cloudAccount().ifPresent(cloudAccount -> object.setString("cloudAccount", cloudAccount.value()));
+    }
+
+    private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {
+        String value = flag
+                .with(FetchVector.Dimension.HOSTNAME, node.hostname())
+                .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
+                .with(FetchVector.Dimension.TENANT_ID, allocation.owner().tenant().value())
+                .with(FetchVector.Dimension.APPLICATION_ID, allocation.owner().serializedForm())
+                .with(FetchVector.Dimension.CLUSTER_TYPE, allocation.membership().cluster().type().name())
+                .with(FetchVector.Dimension.CLUSTER_ID, allocation.membership().cluster().id().value())
+                .with(FetchVector.Dimension.VESPA_VERSION, allocation.membership().cluster().vespaVersion().toFullString())
+                .value();
+
+        return value.isEmpty() ?
+               allocation.membership().cluster().vespaVersion() :
+               value.indexOf('.') == -1 ?
+               allocation.membership().cluster().vespaVersion().withQualifier(value) :
+               new Version(value);
     }
 
     private void toSlime(ApplicationId id, Cursor object) {

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <limits>
+#include <xxh3.h>
 
 using vespalib::nbostream;
 using vespalib::asciistream;
@@ -74,6 +75,12 @@ Initialize _initializeUsedMasks;
 void BucketId::initialize() noexcept {
     fillUsedMasks(BucketId::_usedMasks, BucketId::maxNumBits);
     fillStripMasks(BucketId::_stripMasks, BucketId::maxNumBits);
+}
+
+uint64_t
+BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
+    const uint64_t raw_id = bucketId.getId();
+    return XXH3_64bits(&raw_id, sizeof(uint64_t));
 }
 
 vespalib::string

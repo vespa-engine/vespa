@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.LoadBalancer.AdaptiveScheduler;
+import com.yahoo.search.dispatch.LoadBalancer.BestOfRandom2;
 import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -9,6 +10,7 @@ import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +31,7 @@ public class LoadBalancerTest {
     void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, true);
+        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseGet(() -> {
@@ -43,7 +45,7 @@ public class LoadBalancerTest {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, true);
+        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseGet(() -> {
@@ -59,7 +61,7 @@ public class LoadBalancerTest {
         Node n3 = new Node(0, "test-node3", 1);
         Node n4 = new Node(1, "test-node4", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2, n3, n4), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, true);
+        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         assertTrue(grp.isPresent());
@@ -70,14 +72,14 @@ public class LoadBalancerTest {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, true);
+        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
-        lb.releaseGroup(group, true, 1.0);
+        lb.releaseGroup(group, true, Duration.ofMillis(1));
 
         // get second group
         grp = lb.takeGroup(null);
@@ -90,28 +92,28 @@ public class LoadBalancerTest {
         final double delta = 0.00001;
 
         GroupStatus gs = newGroupStatus(1);
-        gs.setQueryStatistics(0, 1.0);
-        updateSearchTime(gs, 1.0);
-        assertEquals(1.0, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 2.0);
-        assertEquals(1.02326, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 2.0);
-        assertEquals(1.04545, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        updateSearchTime(gs, 0.1);
-        assertEquals(0.966667, gs.averageSearchTime(), delta);
+        gs.setQueryStatistics(0, Duration.ofSeconds(1));
+        updateSearchTime(gs, Duration.ofSeconds(1));
+        assertEquals(Duration.ofSeconds(1), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofSeconds(2));
+        assertEquals(Duration.ofNanos(1023255813), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofSeconds(2));
+        assertEquals(Duration.ofNanos(1045454545), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        updateSearchTime(gs, Duration.ofMillis(100));
+        assertEquals(Duration.ofNanos(966666666), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, 1.0);
+            updateSearchTime(gs, Duration.ofSeconds(1));
         }
-        assertEquals(1.0, gs.averageSearchTime(), delta);
-        updateSearchTime(gs, 0.1);
-        assertEquals(0.9991, gs.averageSearchTime(), delta);
+        assertEquals(Duration.ofNanos(999999812), gs.averageSearchTime());
+        updateSearchTime(gs, Duration.ofMillis(100));
+        assertEquals(Duration.ofNanos(999099812), gs.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
-            updateSearchTime(gs, 0.0);
+            updateSearchTime(gs, Duration.ZERO);
         }
-        assertEquals(0.001045, gs.averageSearchTime(), delta);
+        assertEquals(Duration.ofNanos(1045087), gs.averageSearchTime());
     }
 
     @Test
@@ -138,7 +140,7 @@ public class LoadBalancerTest {
         List<GroupStatus> scoreboard = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             GroupStatus gs = newGroupStatus(i);
-            gs.setQueryStatistics(1, 0.1 * (i + 1));
+            gs.setQueryStatistics(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0)));
             scoreboard.add(gs);
         }
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
@@ -155,7 +157,40 @@ public class LoadBalancerTest {
         assertEquals(4, sched.takeNextGroup(null).get().groupId());
     }
 
-    private static void updateSearchTime(GroupStatus gs, double time) {
+    private static GroupStatus allocate(GroupStatus gs) {
+        gs.allocate();
+        return gs;
+    }
+    @Test
+    void requireBestOfRandom2Scheduler() {
+        List<GroupStatus> scoreboard = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            scoreboard.add(newGroupStatus(i));
+        }
+        Random seq = sequence(
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.125,
+                0.1, 0.375,
+                0.9, 0.125,
+                0.9, 0.125,
+                0.9, 0.125
+                );
+        BestOfRandom2 sched = new BestOfRandom2(seq, scoreboard);
+
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(2, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+    }
+
+    private static void updateSearchTime(GroupStatus gs, Duration time) {
         gs.allocate();
         gs.release(true, time);
     }
@@ -182,6 +217,10 @@ public class LoadBalancerTest {
                     index = 0;
                 }
                 return retv;
+            }
+            @Override
+            public int nextInt(int bound) {
+                return (int)(nextDouble() * bound);
             }
         };
     }

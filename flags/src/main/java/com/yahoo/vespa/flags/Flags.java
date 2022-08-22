@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
@@ -59,6 +60,14 @@ public class Flags {
             List.of("baldersheim"), "2020-12-02", "2023-01-01",
             "Default limit for when to apply termwise query evaluation",
             "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundStringFlag QUERY_DISPATCH_POLICY = defineStringFlag(
+            "query-dispatch-policy", "adaptive",
+            List.of("baldersheim"), "2022-08-20", "2023-01-01",
+            "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
+                    " latency-amortized-over-requests, latency-amortized-over-time",
+            "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
@@ -332,7 +341,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-09-01",
+            List.of("hmusum"), "2022-01-06", "2022-10-01",
             "Enable Data Highway in AWS",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
@@ -410,8 +419,8 @@ public class Flags {
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "FAIL",
-            List.of("hmusum"), "2022-04-27", "2022-09-01",
-            "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
+            List.of("hmusum"), "2022-04-27", "2022-10-01",
+            "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -431,14 +440,14 @@ public class Flags {
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
             "file-distribution-accepted-compression-types", List.of("gzip", "lz4"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            List.of("hmusum"), "2022-07-05", "2022-10-01",
             "´List of accepted compression types used when asking for a file reference. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
             "file-distribution-compression-types-to-use", List.of("lz4", "gzip"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            List.of("hmusum"), "2022-07-05", "2022-10-01",
             "List of compression types to use (in preferred order), matched with accepted compression types when serving file references. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
@@ -490,7 +499,19 @@ public class Flags {
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(UnboundStringFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
+        return defineStringFlag(flagId, defaultValue, owners,
+                                createdAt, expiresAt, description,
+                                modificationEffect, value -> true,
+                                dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
+                                                     String createdAt, String expiresAt, String description,
+                                                     String modificationEffect, Predicate<String> validator,
+                                                     FetchVector.Dimension... dimensions) {
+        return define((i, d, v) -> new UnboundStringFlag(i, d, v, validator),
+                      flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
@@ -532,7 +553,7 @@ public class Flags {
 
     @FunctionalInterface
     private interface TypedUnboundFlagFactory<T, U extends UnboundFlag<?, ?, ?>> {
-        U create(FlagId id, T defaultVale, FetchVector defaultFetchVector);
+        U create(FlagId id, T defaultValue, FetchVector defaultFetchVector);
     }
 
     /**

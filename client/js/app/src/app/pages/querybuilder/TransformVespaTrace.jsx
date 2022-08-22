@@ -128,6 +128,10 @@ function createProtonSpans(children, parentID) {
     [{ refType: 'CHILD_OF', traceID: traceID, spanID: parentID }]
   );
   data.push(newSpan);
+  // eslint-disable-next-line no-prototype-builtins
+  if (!child.hasOwnProperty('traces')) {
+    return;
+  }
   let traces = child['traces'];
   for (let k = 0; k < traces.length; k++) {
     let trace = traces[k];

@@ -21,30 +21,42 @@ class IPersistenceHandler;
 class PersistenceHandlerMap {
 public:
     using DocTypeToHandlerMap = HandlerMap<IPersistenceHandler>;
-    using PersistenceHandlerSequence = DocTypeToHandlerMap::Snapshot;
     using PersistenceHandlerSP = std::shared_ptr<IPersistenceHandler>;
 
     class HandlerSnapshot {
     private:
-        PersistenceHandlerSequence  _handlers;
-        size_t                      _size;
+        DocTypeToHandlerMap::Snapshot  _handlers;
     public:
-        HandlerSnapshot() : _handlers(), _size(0) {}
-        HandlerSnapshot(DocTypeToHandlerMap::Snapshot handlers_, size_t size_)
-            : _handlers(std::move(handlers_)),
-              _size(size_)
+        HandlerSnapshot() : _handlers() {}
+        HandlerSnapshot(DocTypeToHandlerMap::Snapshot handlers_)
+            : _handlers(std::move(handlers_))
         {}
         HandlerSnapshot(const HandlerSnapshot &) = delete;
         HandlerSnapshot & operator = (const HandlerSnapshot &) = delete;
+        ~HandlerSnapshot();
 
-        size_t size() const { return _size; }
-        PersistenceHandlerSequence &handlers() { return _handlers; }
-        static PersistenceHandlerSequence release(HandlerSnapshot &&rhs) { return std::move(rhs._handlers); }
+        size_t size() const { return _handlers.size(); }
+        vespalib::Sequence<IPersistenceHandler*> &handlers() { return _handlers; }
+        static DocTypeToHandlerMap::Snapshot release(HandlerSnapshot &&rhs) { return std::move(rhs._handlers); }
+    };
+
+    class UnsafeHandlerSnapshot {
+    private:
+        DocTypeToHandlerMap::UnsafeSnapshot  _handlers;
+    public:
+        UnsafeHandlerSnapshot() : _handlers() {}
+        UnsafeHandlerSnapshot(DocTypeToHandlerMap::UnsafeSnapshot handlers_)
+            : _handlers(std::move(handlers_))
+        {}
+        UnsafeHandlerSnapshot(const UnsafeHandlerSnapshot &) = delete;
+        UnsafeHandlerSnapshot & operator = (const UnsafeHandlerSnapshot &) = delete;
+        ~UnsafeHandlerSnapshot();
+
+        size_t size() const { return _handlers.size(); }
+        vespalib::Sequence<IPersistenceHandler*> &handlers() { return _handlers; }
     };
 
 private:
-
-
     struct BucketSpaceHash {
         std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }
     };
@@ -59,6 +71,7 @@ public:
     IPersistenceHandler * getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot getHandlerSnapshot() const;
     HandlerSnapshot getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    UnsafeHandlerSnapshot getUnsafeHandlerSnapshot(document::BucketSpace bucketSpace) const;
 };
 
 }

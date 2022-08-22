@@ -111,7 +111,7 @@ BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel = 1.11.0
+BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 %define _use_vespa_openssl 1
 BuildRequires: vespa-protobuf-devel = 3.19.1
@@ -139,7 +139,7 @@ BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel = 1.11.0
+BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-protobuf-devel = 3.19.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -149,7 +149,7 @@ BuildRequires: maven
 BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel = 1.11.0
+BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 BuildRequires: protobuf-devel
 %if 0%{?_centos_stream}
@@ -169,15 +169,11 @@ BuildRequires: maven-openjdk17
 %endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel = 1.11.0
+BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
-%if 0%{?fc34}
-BuildRequires: protobuf-devel
 %if 0%{?amzn2022}
+BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 13.0.0
-%else
-BuildRequires: llvm-devel >= 12.0.0
-%endif
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -198,8 +194,15 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc37}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 14.0.0
-BuildRequires: boost-devel >= 1.76
+BuildRequires: llvm-devel >= 14.0.5
+BuildRequires: boost-devel >= 1.78
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
+%if 0%{?fc38}
+BuildRequires: protobuf-devel
+BuildRequires: llvm-devel >= 14.0.5
+BuildRequires: boost-devel >= 1.78
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
@@ -328,12 +331,8 @@ Requires: gtest
 %endif
 %if 0%{?fedora}
 Requires: gtest
-%if 0%{?fc34}
 %if 0%{?amzn2022}
 %define _vespa_llvm_version 13
-%else
-%define _vespa_llvm_version 12
-%endif
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 13
@@ -342,6 +341,9 @@ Requires: gtest
 %define _vespa_llvm_version 14
 %endif
 %if 0%{?fc37}
+%define _vespa_llvm_version 14
+%endif
+%if 0%{?fc38}
 %define _vespa_llvm_version 14
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -459,12 +461,8 @@ Requires: protobuf
 %endif
 %if 0%{?fedora}
 Requires: protobuf
-%if 0%{?fc34}
 %if 0%{?amzn2022}
 Requires: llvm-libs >= 13.0.0
-%else
-Requires: llvm-libs >= 12.0.0
-%endif
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 13.0.0
@@ -473,10 +471,13 @@ Requires: llvm-libs >= 13.0.0
 Requires: llvm-libs >= 14.0.0
 %endif
 %if 0%{?fc37}
-Requires: llvm-libs >= 14.0.0
+Requires: llvm-libs >= 14.0.5
+%endif
+%if 0%{?fc38}
+Requires: llvm-libs >= 14.0.5
 %endif
 %endif
-Requires: vespa-onnxruntime = 1.11.0
+Requires: vespa-onnxruntime = 1.12.1
 
 %description libs
 
@@ -571,7 +572,7 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
-%if ( 0%{?el8} || 0%{?fc34} ) && %{_vespa_llvm_version} < 13
+%if 0%{?el8} && %{_vespa_llvm_version} < 13
 if grep -qs 'result_pair<R>(' /usr/include/llvm/ADT/STLExtras.h
 then
   patch /usr/include/llvm/ADT/STLExtras.h < dist/STLExtras.h.diff

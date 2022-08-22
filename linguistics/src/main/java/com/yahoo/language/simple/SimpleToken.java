@@ -111,43 +111,26 @@ public class SimpleToken implements Token {
     }
 
     @Override
-    public int hashCode() {
-        return orig.hashCode();
+    public boolean equals(Object o) {
+        if (!(o instanceof Token other)) return false;
+
+        if (getType() != other.getType()) return false;
+        if (!equalsOpt(getOrig(), other.getOrig())) return false;
+        if (getOffset() != other.getOffset()) return false;
+        if (!equalsOpt(getScript(), other.getScript())) return false;
+        if (!equalsOpt(getTokenString(), other.getTokenString())) return false;
+        if (isSpecialToken() != other.isSpecialToken()) return false;
+        if (getNumComponents() != other.getNumComponents()) return false;
+        for (int i = 0, len = getNumComponents(); i < len; ++i) {
+            if (!equalsOpt(getComponent(i), other.getComponent(i)))
+                return false;
+        }
+        return true;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Token)) {
-            return false;
-        }
-        Token rhs = (Token)obj;
-        if (!getType().equals(rhs.getType())) {
-            return false;
-        }
-        if (!equalsOpt(getOrig(), rhs.getOrig())) {
-            return false;
-        }
-        if (getOffset() != rhs.getOffset()) {
-            return false;
-        }
-        if (!equalsOpt(getScript(), rhs.getScript())) {
-            return false;
-        }
-        if (!equalsOpt(getTokenString(), rhs.getTokenString())) {
-            return false;
-        }
-        if (isSpecialToken() != rhs.isSpecialToken()) {
-            return false;
-        }
-        if (getNumComponents() != rhs.getNumComponents()) {
-            return false;
-        }
-        for (int i = 0, len = getNumComponents(); i < len; ++i) {
-            if (!equalsOpt(getComponent(i), rhs.getComponent(i))) {
-                return false;
-            }
-        }
-        return true;
+    public int hashCode() {
+        return orig.hashCode();
     }
 
     private static boolean equalsOpt(Object lhs, Object rhs) {

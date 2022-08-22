@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Stack, Textarea } from '@mantine/core';
-import { DownloadJeager } from 'app/pages/querybuilder/query-response/download-jeager';
+import { DownloadJaeger } from 'app/pages/querybuilder/query-response/download-jaeger';
 
 export function QueryTracer() {
   const [response, setResponse] = useState('');
@@ -19,7 +19,7 @@ export function QueryTracer() {
         value={response}
         onChange={({ target }) => setResponse(target.value)}
       />
-      <DownloadJeager fullWidth response={response} />
+      <DownloadJaeger fullWidth response={response} />
     </Stack>
   );
 }

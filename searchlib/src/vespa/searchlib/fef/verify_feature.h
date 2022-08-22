@@ -4,10 +4,11 @@
 
 #include "blueprintfactory.h"
 #include "iindexenvironment.h"
-#include <string>
 
-namespace search {
-namespace fef {
+namespace search::fef {
+
+enum class Level {INFO, WARNING, ERROR};
+using Message = std::pair<Level, vespalib::string>;
 
 /**
  * Verify whether a specific feature can be computed. If the feature
@@ -23,8 +24,7 @@ namespace fef {
 bool verifyFeature(const BlueprintFactory &factory,
                    const IIndexEnvironment &indexEnv,
                    const std::string &featureName,
-                   const std::string &desc);
+                   const std::string &desc,
+                   std::vector<Message> & errors);
 
-} // namespace fef
-} // namespace search
-
+}

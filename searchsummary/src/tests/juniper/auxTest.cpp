@@ -136,15 +136,14 @@ AuxTest::TestDoubleWidth()
 
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    juniper::Result* res = juniper::Analyse(&myConfig, &qh,
-            input, 17, 0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(myConfig, qh,
+                                input, 17, 0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     (void) sum;
     // this should work
     // _test(sum->Length() != 0);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -175,17 +174,15 @@ AuxTest::TestPartialUTF8()
 
     juniper::QueryParser q("ipod");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    juniper::Result* res = juniper::Analyse(&myConfig, &qh,
-            input, inputSize, 0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(myConfig, qh,
+                                input, inputSize, 0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     _test(sum->Length() != 0);
 
     // check for partial/broken utf-8
     _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
-
-    juniper::ReleaseResult(res);
 }
 
 void AuxTest::TestLargeBlockChinese()
@@ -215,11 +212,11 @@ void AuxTest::TestLargeBlockChinese()
 
     juniper::QueryParser q("希望");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    juniper::Result* res = juniper::Analyse(&myConfig, &qh,
-            input, inputSize, 0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(myConfig, qh,
+                                input, inputSize, 0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     _test(sum->Length() != 0);
 
     // check that the entire block of chinese data is not returned in the summary
@@ -227,8 +224,6 @@ void AuxTest::TestLargeBlockChinese()
 
     // check for partial/broken utf-8
     _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
-
-    juniper::ReleaseResult(res);
 }
 
 void AuxTest::TestExample()
@@ -241,17 +236,14 @@ void AuxTest::TestExample()
                           "&%#%&! cries the sleepy monkey and jumps down from the tree."
                           "the last token here is split across lines consumed";
     int content_len = strlen(content);
-    juniper::Result* res =
-        juniper::Analyse(juniper::TestConfig,
-                         &qh,
-                         content, content_len,
-                         0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     res->Scan();
     Matcher& m = *res->_matcher;
     _test(m.TotalMatchCnt(0) == 2 && m.ExactMatchCnt(0) == 0);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -410,8 +402,8 @@ void AuxTest::TestUTF8context()
     s.append(char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
-    juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh, s.c_str(), s.size(), 0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0, 0, 0);
+    _test(static_cast<bool>(res));
 
     size_t charsize;
     Matcher& m = *res->_matcher;
@@ -454,7 +446,6 @@ void AuxTest::TestUTF8context()
         test_dump(s.c_str(), s.size());
         m.dump_statistics();
     }
-    juniper::ReleaseResult(res);
 }
 
 
@@ -491,10 +482,10 @@ void AuxTest::TestJapanese()
 
         const char* content = testjap[i].text;
         int content_len = strlen(content);
-        juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
-                content, content_len,
-                0, 0, 0);
-        _test(res != nullptr);
+        auto res = juniper::Analyse(*juniper::TestConfig, qh,
+                                    content, content_len,
+                                    0, 0, 0);
+        _test(static_cast<bool>(res));
 
         size_t charsize;
         Matcher& m = *res->_matcher;
@@ -545,7 +536,6 @@ void AuxTest::TestJapanese()
         default:
             break;
         }
-        juniper::ReleaseResult(res);
         DeleteSummaryDesc(sumdesc);
         DeleteSummaryConfig(_sumconf);
     }
@@ -582,15 +572,14 @@ void AuxTest::TestStartHits()
         " In fact it must be much longer. And then som more text at the end. But this text at "
         "the end must be much longer than this to trigger the case";
     int content_len = strlen(content);
-    juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
-            content, content_len,
-            0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     (void) sum;
     // TODO: ReEnable    _test(sum->Length() != 0);
-    juniper::ReleaseResult(res);
 }
 
 
@@ -607,14 +596,13 @@ void AuxTest::TestEndHit()
         "surround_len bytes closer than good towardstheend�����������������������������������";
     size_t content_len = strlen(content) - 55;
 
-    juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
-            content, content_len,
-            0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     _test(sum->Length() != 0);
-    juniper::ReleaseResult(res);
 }
 
 void AuxTest::TestJuniperStack()
@@ -880,14 +868,13 @@ AuxTest::TestWhiteSpacePreserved()
 
     juniper::QueryParser q("best");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    juniper::Result* res = juniper::Analyse(&myConfig, &qh, input.c_str(), input.size(), 0, 0, 0);
-    _test(res != nullptr);
+    auto res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0, 0);
+    _test(static_cast<bool>(res));
 
-    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
+    juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     vespalib::string expected = "<hi>best</hi>  of  \nmetallica";
     vespalib::string actual(sum->Text(), sum->Length());
     _test(actual == expected);
-    juniper::ReleaseResult(res);
 }
 
 void AuxTest::Run(MethodContainer::iterator &itr) {

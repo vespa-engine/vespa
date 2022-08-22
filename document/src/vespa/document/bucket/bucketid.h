@@ -37,9 +37,7 @@ class BucketId
 {
 public:
     struct hash {
-        size_t operator () (const BucketId& g) const noexcept {
-            return g.getId();
-        }
+        uint64_t operator () (const BucketId& g) const noexcept;
     };
 
     /**

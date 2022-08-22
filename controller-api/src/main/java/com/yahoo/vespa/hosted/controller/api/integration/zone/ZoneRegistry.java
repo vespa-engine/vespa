@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.zone;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -33,6 +34,9 @@ public interface ZoneRegistry {
 
     /** Returns whether the system of this registry contains the given zone */
     boolean hasZone(ZoneId zoneId);
+
+    /** Returns whether cloudAccount in this system supports given zone */
+    boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount);
 
     /** Returns a list containing the id of all zones in this registry */
     ZoneFilter zones();

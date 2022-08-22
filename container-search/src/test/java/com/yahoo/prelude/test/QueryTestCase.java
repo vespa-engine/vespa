@@ -195,7 +195,7 @@ public class QueryTestCase {
         assertTrue(p.hashCode() != q.hashCode());
     }
 
-    /** Test using the defauultindex feature */
+    /** Test using the defaultindex feature */
     @Test
     void testDefaultIndex() {
         Query q = newQuery("?query=hi hello keyword:kanoo " +

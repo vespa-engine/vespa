@@ -84,7 +84,6 @@ public final class Tokenizer {
      * @param indexFacts information about the indexes we will search
      * @return a read-only list of tokens. This list can only be used by this thread
      */
-    @SuppressWarnings({"deprecation"})
     // To avoid this we need to pass an IndexFacts.session down instead - easily done but not without breaking API's
     public List<Token> tokenize(String string, String defaultIndexName, IndexFacts.Session indexFacts) {
         this.source = string;

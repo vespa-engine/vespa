@@ -5,7 +5,6 @@
 #include "transport_latch.h"
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/persistence/spi/catchresult.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
@@ -200,9 +199,14 @@ PersistenceEngine::getHandlerSnapshot(const WriteGuard &) const
 }
 
 PersistenceEngine::HandlerSnapshot
-PersistenceEngine::getHandlerSnapshot(const ReadGuard &, document::BucketSpace bucketSpace) const
+PersistenceEngine::getSafeHandlerSnapshot(const ReadGuard &, document::BucketSpace bucketSpace) const
 {
     return _handlers.getHandlerSnapshot(bucketSpace);
+}
+
+PersistenceEngine::UnsafeHandlerSnapshot
+PersistenceEngine::getHandlerSnapshot(const ReadGuard &, document::BucketSpace bucketSpace) const {
+    return _handlers.getUnsafeHandlerSnapshot(bucketSpace);
 }
 
 PersistenceEngine::HandlerSnapshot
@@ -279,7 +283,7 @@ PersistenceEngine::listBuckets(BucketSpace bucketSpace) const
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
     ReadGuard rguard(_rwMutex);
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, bucketSpace);
+    auto snap = getHandlerSnapshot(rguard, bucketSpace);
     BucketIdListResultHandler resultHandler;
     for (; snap.handlers().valid(); snap.handlers().next()) {
         IPersistenceHandler *handler = snap.handlers().get();
@@ -294,7 +298,7 @@ PersistenceEngine::setClusterState(BucketSpace bucketSpace, const ClusterState &
 {
     ReadGuard rguard(_rwMutex);
     saveClusterState(bucketSpace, calc);
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, bucketSpace);
+    auto snap = getHandlerSnapshot(rguard, bucketSpace);
     auto catchResult = std::make_unique<storage::spi::CatchResult>();
     auto futureResult = catchResult->future_result();
     GenericResultHandler resultHandler(snap.size(), std::move(catchResult));
@@ -312,7 +316,7 @@ void
 PersistenceEngine::setActiveStateAsync(const Bucket & bucket, BucketInfo::ActiveState newState, OperationComplete::UP onComplete)
 {
     ReadGuard rguard(_rwMutex);
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, bucket.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, bucket.getBucketSpace());
     auto resultHandler = std::make_shared<GenericResultHandler>(snap.size(), std::move(onComplete));
     while (snap.handlers().valid()) {
         IPersistenceHandler *handler = snap.handlers().get();
@@ -332,7 +336,7 @@ PersistenceEngine::getBucketInfo(const Bucket& b) const
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
     ReadGuard rguard(_rwMutex);
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, b.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
     BucketInfoResultHandler resultHandler;
     for (; snap.handlers().valid(); snap.handlers().next()) {
         IPersistenceHandler *handler = snap.handlers().get();
@@ -482,10 +486,10 @@ PersistenceEngine::GetResult
 PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const DocumentId& did, Context& context) const
 {
     ReadGuard rguard(_rwMutex);
-    HandlerSnapshot snapshot = getHandlerSnapshot(rguard, b.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
-    for (PersistenceHandlerSequence & handlers = snapshot.handlers(); handlers.valid(); handlers.next()) {
-        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
+    for (;snap.handlers().valid(); snap.handlers().next()) {
+        IPersistenceHandler::RetrieversSP retrievers = snap.handlers().get()->getDocumentRetrievers(context.getReadConsistency());
         for (size_t i = 0; i < retrievers->size(); ++i) {
             IDocumentRetriever &retriever = *(*retrievers)[i];
             search::DocumentMetaData meta = retriever.getDocumentMetaData(did);
@@ -514,17 +518,17 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
                                   IncludedVersions versions, Context &context)
 {
     ReadGuard rguard(_rwMutex);
-    HandlerSnapshot snapshot = getHandlerSnapshot(rguard, bucket.getBucketSpace());
+    auto snap = getSafeHandlerSnapshot(rguard, bucket.getBucketSpace());
 
     auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, std::move(fields), selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
-    for (PersistenceHandlerSequence & handlers = snapshot.handlers(); handlers.valid(); handlers.next()) {
-        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
+    for (; snap.handlers().valid(); snap.handlers().next()) {
+        IPersistenceHandler::RetrieversSP retrievers = snap.handlers().get()->getDocumentRetrievers(context.getReadConsistency());
         for (const auto & retriever : *retrievers) {
             entry->it.add(retriever);
         }
     }
-    entry->handler_sequence = HandlerSnapshot::release(std::move(snapshot));
+    entry->handler_sequence = HandlerSnapshot::release(std::move(snap));
 
     std::lock_guard<std::mutex> guard(_iterators_lock);
     static std::atomic<IteratorId::Type> id_counter(0);
@@ -591,7 +595,7 @@ PersistenceEngine::createBucketAsync(const Bucket &b, OperationComplete::UP onCo
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "createBucket(%s)", b.toString().c_str());
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, b.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
     auto transportContext = std::make_shared<AsyncTransportContext>(snap.size(), std::move(onComplete));
     while (snap.handlers().valid()) {
@@ -611,7 +615,7 @@ PersistenceEngine::deleteBucketAsync(const Bucket& b, OperationComplete::UP onCo
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, b.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
     auto transportContext = std::make_shared<AsyncTransportContext>(snap.size(), std::move(onComplete));
     while (snap.handlers().valid()) {
@@ -636,7 +640,7 @@ PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
         std::lock_guard<std::mutex> guard(_lock);
         extraModifiedBuckets.swap(_extraModifiedBuckets[bucketSpace]);
     }
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, bucketSpace);
+    auto snap = getHandlerSnapshot(rguard, bucketSpace);
     auto catchResult = std::make_unique<storage::spi::CatchResult>();
     auto futureResult = catchResult->future_result();
     SynchronizedBucketIdListResultHandler resultHandler(snap.size() + extraModifiedBuckets.size(), std::move(catchResult));
@@ -658,7 +662,7 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
     LOG(spam, "split(%s, %s, %s)", source.toString().c_str(), target1.toString().c_str(), target2.toString().c_str());
     assert(source.getBucketSpace() == target1.getBucketSpace());
     assert(source.getBucketSpace() == target2.getBucketSpace());
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, source.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, source.getBucketSpace());
     TransportLatch latch(snap.size());
     for (; snap.handlers().valid(); snap.handlers().next()) {
         IPersistenceHandler *handler = snap.handlers().get();
@@ -676,7 +680,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
     LOG(spam, "join(%s, %s, %s)", source1.toString().c_str(), source2.toString().c_str(), target.toString().c_str());
     assert(source1.getBucketSpace() == target.getBucketSpace());
     assert(source2.getBucketSpace() == target.getBucketSpace());
-    HandlerSnapshot snap = getHandlerSnapshot(rguard, target.getBucketSpace());
+    auto snap = getHandlerSnapshot(rguard, target.getBucketSpace());
     TransportLatch latch(snap.size());
     for (; snap.handlers().valid(); snap.handlers().next()) {
         IPersistenceHandler *handler = snap.handlers().get();

@@ -11,7 +11,7 @@ class Fast_WordFolder;
 class JuniperTokenizer
 {
 public:
-    JuniperTokenizer(Fast_WordFolder* wordfolder,
+    JuniperTokenizer(const Fast_WordFolder* wordfolder,
                      const char* text, size_t len, ITokenProcessor* = NULL,
                      const juniper::SpecialTokenRegistry * registry = NULL);
     inline void SetSuccessor(ITokenProcessor* successor) { _successor = successor; }
@@ -22,7 +22,7 @@ public:
     // Scan the input and dispatch to the successor
     void scan();
 private:
-    Fast_WordFolder* _wordfolder;
+    const Fast_WordFolder* _wordfolder;
     const char* _text;  // The current input text
     size_t _len;        // Length of the text input
     ITokenProcessor* _successor;

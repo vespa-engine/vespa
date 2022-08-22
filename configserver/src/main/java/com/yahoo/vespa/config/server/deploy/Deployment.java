@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
@@ -161,9 +160,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     private void deleteSession() {
-        SessionRepository sessionRepository = sessionRepository();
-        LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
-        sessionRepository.deleteLocalSession(localSession);
+        sessionRepository().deleteLocalSession(session.getSessionId());
     }
 
     private SessionRepository sessionRepository() {

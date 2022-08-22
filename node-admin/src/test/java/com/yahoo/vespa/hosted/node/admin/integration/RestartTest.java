@@ -25,7 +25,10 @@ public class RestartTest {
         DockerImage dockerImage = DockerImage.fromString("registry.example.com/repo/image:1.2.3");
         try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             String hostname = "host1.test.yahoo.com";
-            NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build();
+            NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostname)
+                                                .wantedDockerImage(dockerImage)
+                                                .wantedVespaVersion(dockerImage.tagAsVersion())
+                                                .build();
             tester.addChildNodeRepositoryNode(nodeSpec);
 
             ContainerName host1 = new ContainerName("host1");

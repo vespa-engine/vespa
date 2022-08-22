@@ -28,10 +28,10 @@ void MatchObjectTest::testTerm() {
     size_t content_len = strlen(content);
 
     // Fetch a result descriptor:
-    Result* res = juniper::Analyse(juniper::TestConfig, &q._qhandle,
-                                   content, content_len,
-                                   0, 0, 0);
-    _test(res != 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
+                                content, content_len,
+                                0, 0, 0);
+    _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
     res->Scan();
@@ -42,51 +42,39 @@ void MatchObjectTest::testTerm() {
 
     _test(ms.size() == 2);
 
-    delete res;
     // printf("%d %d\n", m.TotalHits(),ms.size());
     TestQuery q1("t*t");
     TestQuery q2("*ea*");
     TestQuery q3("*d");
     TestQuery q4("*word");
-    Result* r1 = juniper::Analyse(juniper::TestConfig, &q1._qhandle, content, content_len, 0, 0, 0);
-    Result* r2 = juniper::Analyse(juniper::TestConfig, &q2._qhandle, content, content_len, 0, 0, 0);
-    Result* r3 = juniper::Analyse(juniper::TestConfig, &q3._qhandle, content, content_len, 0, 0, 0);
-    Result* r4 = juniper::Analyse(juniper::TestConfig, &q4._qhandle, content, content_len, 0, 0, 0);
-    if (r1 != 0)
-    {
+    auto r1 = juniper::Analyse(*juniper::TestConfig, q1._qhandle, content, content_len, 0, 0, 0);
+    auto r2 = juniper::Analyse(*juniper::TestConfig, q2._qhandle, content, content_len, 0, 0, 0);
+    auto r3 = juniper::Analyse(*juniper::TestConfig, q3._qhandle, content, content_len, 0, 0, 0);
+    auto r4 = juniper::Analyse(*juniper::TestConfig, q4._qhandle, content, content_len, 0, 0, 0);
+    _test(static_cast<bool>(r1));
+    if (r1) {
         r1->Scan();
         _test(r1->_matcher->TotalHits() == 1);
-        delete r1;
     }
-    else
-        _test(r1 != 0);
-
-    if (r2 != 0)
-    {
+    _test(static_cast<bool>(r2));
+    if (r2) {
         r2->Scan();
         _test(r2->_matcher->TotalHits() == 2);
-        delete r2;
     }
-    else
-        _test(r2 != 0);
 
-    if (r3 != 0)
-    {
+    if (r3) {
         r3->Scan();
         _test(r3->_matcher->TotalHits() == 2);
-        delete r3;
+    } else {
+        _test(static_cast<bool>(r3));
     }
-    else
-        _test(r3 != 0);
 
-    if (r4 != 0)
-    {
+    if (r4) {
         r4->Scan();
         _test_equal(r4->_matcher->TotalHits(), 2);
-        delete r4;
+    } else {
+        _test(static_cast<bool>(r4));
     }
-    else
-        _test(r4 != 0);
 }
 
 /**
@@ -98,7 +86,7 @@ void MatchObjectTest::testMatch() {
     juniper::QueryHandle qh(p, NULL, juniper::_Juniper->getModifier());
 
     MatchObject* mo = qh.MatchObj(0);
-    juniper::Result res(juniper::TestConfig, &qh, "", 0, 0);
+    juniper::Result res(*juniper::TestConfig, qh, "", 0, 0);
     unsigned opts = 0;
     match_iterator mi(mo, &res);
     ucs4_t ucs4_str[10];
@@ -140,7 +128,7 @@ void MatchObjectTest::testMatch() {
                     "extremelylongwordhit,extremelylongwordhits,extremelylongwordhit,"
                     "extremelylongwordhit))");
         QueryHandle& qh1(q._qhandle);
-        juniper::Result res1(juniper::TestConfig, &qh1,
+        juniper::Result res1(*juniper::TestConfig, qh1,
                              doc.c_str(), doc.size(), 0);
         juniper::Summary* sum = res1.GetTeaser(NULL);
         std::string s(sum->Text());
@@ -165,7 +153,7 @@ void MatchObjectTest::testMatchAnnotated() {
     " stuff";
   TestQuery q("AND(big,buy)");
   QueryHandle &qh1(q._qhandle);
-  juniper::Result res1(juniper::TestConfig, &qh1,
+  juniper::Result res1(*juniper::TestConfig, qh1,
                        doc, strlen(doc), 0);
   juniper::Summary *sum = res1.GetTeaser(NULL);
   std::string s(sum->Text());
@@ -205,7 +193,7 @@ void MatchObjectTest::testLangid()
 
         std::string doc("see if we can match b or c somewhere in this a3 doc. "
                         "Note that we should not match b1 or c1 or a somewhere..");
-        juniper::Result res(juniper::TestConfig, &qh, doc.c_str(), doc.size(),0);
+        juniper::Result res(*juniper::TestConfig, qh, doc.c_str(), doc.size(),0);
 
         juniper::Summary* sum = res.GetTeaser(NULL);
         std::string s(sum->Text());
@@ -218,7 +206,7 @@ void MatchObjectTest::testLangid()
         // Do another test with the same query handle (testing reuse of qh with rewriters)
         std::string doc("Try to run this on another doc just to see if b or c still can be"
                         " matched with the same query handle");
-        juniper::Result res(juniper::TestConfig, &qh,
+        juniper::Result res(*juniper::TestConfig, qh,
                             doc.c_str(), doc.size(), 0);
 
         juniper::Summary* sum = res.GetTeaser(NULL);
@@ -247,7 +235,7 @@ void MatchObjectTest::testCombined()
     {
         std::string doc("see if we can match a3 or c somewhere in this b doc. "
                         "Note that we should not match b1 or c1 or a somewhere..");
-        juniper::Result res(juniper::TestConfig, &qh, doc.c_str(), doc.size(), 0);
+        juniper::Result res(*juniper::TestConfig, qh, doc.c_str(), doc.size(), 0);
 
         juniper::Summary* sum = res.GetTeaser(NULL);
         std::string s(sum->Text());

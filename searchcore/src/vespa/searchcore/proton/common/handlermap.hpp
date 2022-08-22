@@ -31,7 +31,7 @@ public:
      * using event barriers to resolve visibility constraints in the
      * future without changing the external API.
      **/
-    class Snapshot : public vespalib::Sequence<T*>
+    class Snapshot final : public vespalib::Sequence<T*>
     {
     private:
         std::vector<HandlerSP> _handlers;
@@ -41,7 +41,7 @@ public:
         Snapshot() : _handlers(), _offset(0) { }
         Snapshot(const StdMap &map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
-            for (auto itr : map) {
+            for (const auto & itr : map) {
                 _handlers.push_back(itr.second);
             }
         }
@@ -51,8 +51,36 @@ public:
         Snapshot(const Snapshot &) = delete;
         Snapshot & operator = (const Snapshot &) = delete;
 
+        size_t size() const { return _handlers.size(); }
+
         bool valid() const override { return (_offset < _handlers.size()); }
         T *get() const override { return _handlers[_offset].get(); }
+        void next() override { ++_offset; }
+    };
+
+    class UnsafeSnapshot final : public vespalib::Sequence<T*>
+    {
+    private:
+        std::vector<T *> _handlers;
+        size_t           _offset;
+
+    public:
+        UnsafeSnapshot() : _handlers(), _offset(0) { }
+        UnsafeSnapshot(const StdMap &map) : _handlers(), _offset(0) {
+            _handlers.reserve(map.size());
+            for (const auto & itr : map) {
+                _handlers.push_back(itr.second.get());
+            }
+        }
+        UnsafeSnapshot(UnsafeSnapshot &&) noexcept = default;
+        UnsafeSnapshot & operator = (UnsafeSnapshot &&) noexcept = default;
+        UnsafeSnapshot(const UnsafeSnapshot &) = delete;
+        UnsafeSnapshot & operator = (const UnsafeSnapshot &) = delete;
+
+        size_t size() const { return _handlers.size(); }
+
+        bool valid() const override { return (_offset < _handlers.size()); }
+        T *get() const override { return _handlers[_offset]; }
         void next() override { ++_offset; }
     };
 
@@ -170,12 +198,19 @@ public:
      **/
     Snapshot snapshot() const { return Snapshot(_handlers); }
 
+    /**
+     * Create a snapshot of the handlers currently contained in this
+     * map and return it as a sequence. Note that any lifetime guarantees
+     * must be be given at a higher level
+     *
+     * @return handler sequence
+     **/
+    UnsafeSnapshot unsafeSnapshot() const { return UnsafeSnapshot(_handlers); }
+
 // we want to use snapshots rather than direct iteration to reduce locking;
 // the below functions should be deprecated when possible.
 
-    iterator begin() { return _handlers.begin(); }
     const_iterator begin() const { return _handlers.begin(); }
-    iterator end() { return _handlers.end(); }
     const_iterator end() const { return _handlers.end(); }
     size_t size() const { return _handlers.size(); }
 };

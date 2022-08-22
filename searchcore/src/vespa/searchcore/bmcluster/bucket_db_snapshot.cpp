@@ -2,7 +2,6 @@
 
 #include "bucket_db_snapshot.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 
@@ -66,9 +65,4 @@ BucketDbSnapshot::try_get_bucket_info(BucketId bucket_id) const
 
 }
 
-namespace vespalib {
-
-template class hash_map<BucketId, BucketInfo, BucketId::hash>;
-template class hash_set<BucketId, BucketId::hash>;
-
-}
+VESPALIB_HASH_MAP_INSTANTIATE_H(document::BucketId, storage::spi::BucketInfo, document::BucketId::hash);

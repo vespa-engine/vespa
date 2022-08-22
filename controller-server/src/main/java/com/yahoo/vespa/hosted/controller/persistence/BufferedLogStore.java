@@ -69,8 +69,8 @@ public class BufferedLogStore {
         List<LogEntry> stepEntries = log.computeIfAbsent(step, __ -> new ArrayList<>());
         for (LogEntry entry : entries) {
             if (sizeLowerBound > chunkSize) {
-                buffer.writeLastLogEntryId(id, type, lastEntryId);
                 buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
+                buffer.writeLastLogEntryId(id, type, lastEntryId);
                 lastChunkId = lastEntryId + 1;
                 if (++numberOfChunks > maxLogSize / chunkSize && ! forceLog) {
                     log = Map.of(step, List.of(new LogEntry(++lastEntryId,
@@ -87,8 +87,8 @@ public class BufferedLogStore {
             stepEntries.add(new LogEntry(++lastEntryId, entry.at(), entry.type(), entry.message()));
             sizeLowerBound += entry.message().length();
         }
-        buffer.writeLastLogEntryId(id, type, lastEntryId);
         buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
+        buffer.writeLastLogEntryId(id, type, lastEntryId);
     }
 
     /** Reads all log entries after the given threshold, from the buffered log, i.e., for an active run. */

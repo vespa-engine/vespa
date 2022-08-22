@@ -133,7 +133,7 @@ class DocsumStoreVsmDocument : public IDocsumStoreDocument
 public:
     DocsumStoreVsmDocument(const document::Document* document);
     ~DocsumStoreVsmDocument() override;
-    std::unique_ptr<document::FieldValue> get_field_value(const vespalib::string& field_name) const override;
+    DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
     void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
@@ -145,7 +145,7 @@ DocsumStoreVsmDocument::DocsumStoreVsmDocument(const document::Document* documen
 
 DocsumStoreVsmDocument::~DocsumStoreVsmDocument() = default;
 
-std::unique_ptr<document::FieldValue>
+DocsumStoreFieldValue
 DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
@@ -153,11 +153,11 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
         auto value(field.getDataType().createFieldValue());
         if (value) {
             if (_document->getValue(field, *value)) {
-                return value;
+                return DocsumStoreFieldValue(std::move(value));
             }
         }
     }
-    return {};
+    return DocsumStoreFieldValue();
 }
 
 void

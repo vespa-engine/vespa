@@ -14,6 +14,7 @@ namespace proton {
 
 using bucketdb::RemoveBatchEntry;
 
+
 BucketDB::BucketDB()
     : _map(),
       _cachedBucketId(),
@@ -94,7 +95,6 @@ BucketDB::modify(const GlobalId &gid,
         add(gid, newBucketId, newTimestamp, newDocSize, subDbType);
     }
 }
-
 
 bucketdb::BucketState
 BucketDB::get(BucketId bucketId) const

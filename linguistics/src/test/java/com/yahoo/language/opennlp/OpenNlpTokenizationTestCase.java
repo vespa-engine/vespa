@@ -4,6 +4,7 @@ package com.yahoo.language.opennlp;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
+import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import org.junit.Test;
 
@@ -151,11 +152,9 @@ public class OpenNlpTokenizationTestCase {
         String input = "tafsirnya\u0648\u0643\u064F\u0646\u0652";
         for (StemMode stemMode : new StemMode[] { StemMode.NONE,
                 StemMode.SHORTEST }) {
-            for (Language l : new Language[] { Language.INDONESIAN,
-                    Language.ENGLISH, Language.ARABIC }) {
+            for (Language l : List.of(Language.INDONESIAN, Language.ENGLISH, Language.ARABIC)) {
                 for (boolean accentDrop : new boolean[] { true, false }) {
-                    for (Token token : tokenizer.tokenize(input,
-                            l, stemMode, accentDrop)) {
+                    for (Token token : tokenizer.tokenize(input, l, stemMode, accentDrop)) {
                         if (token.getTokenString().length() == 0) {
                             assertFalse(token.isIndexable());
                         }
@@ -163,6 +162,31 @@ public class OpenNlpTokenizationTestCase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testTokenTypes() {
+        testTokenTypes(Language.ENGLISH);
+        testTokenTypes(Language.SPANISH);
+    }
+
+    public void testTokenTypes(Language language) {
+        assertEquals(TokenType.ALPHABETIC, tokenize("word", language).iterator().next().getType());
+        assertEquals(TokenType.NUMERIC, tokenize("123", language).iterator().next().getType());
+        assertEquals(TokenType.SPACE, tokenize(" ", language).iterator().next().getType());
+        assertEquals(TokenType.PUNCTUATION, tokenize(".", language).iterator().next().getType());
+        assertEquals(TokenType.ALPHABETIC, tokenize("123word", language).iterator().next().getType());
+
+        var tokens = tokenize("123 123word word123", language).iterator();
+        assertEquals(TokenType.NUMERIC, tokens.next().getType());
+        assertEquals(TokenType.SPACE, tokens.next().getType());
+        assertEquals(TokenType.ALPHABETIC, tokens.next().getType());
+        assertEquals(TokenType.SPACE, tokens.next().getType());
+        assertEquals(TokenType.ALPHABETIC, tokens.next().getType());
+    }
+
+    private Iterable<Token> tokenize(String input, Language language) {
+        return tokenizer.tokenize(input, language, StemMode.SHORTEST, true);
     }
 
     private void recurseDecompose(Token t) {

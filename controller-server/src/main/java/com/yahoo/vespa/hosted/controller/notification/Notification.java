@@ -82,7 +82,7 @@ public class Notification {
         feedBlock,
 
         /** Application cluster is reindexing document(s) */
-        reindex;
+        reindex
     }
 
 }

@@ -25,11 +25,11 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -96,6 +96,15 @@ public class Dispatcher extends AbstractComponent {
         this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster), metric);
     }
 
+    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
+        return switch (policy) {
+            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
+            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
+        };
+    }
+
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
     protected Dispatcher(ClusterMonitor<Node> clusterMonitor,
                          SearchCluster searchCluster,
@@ -107,8 +116,7 @@ public class Dispatcher extends AbstractComponent {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
-        this.loadBalancer = new LoadBalancer(searchCluster,
-                                  dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
+        this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
         this.metric = metric;
         this.metricContext = metric.createContext(null);
@@ -219,7 +227,7 @@ public class Dispatcher extends AbstractComponent {
                 invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
                 return invoker.get();
             } else {
-                loadBalancer.releaseGroup(group, false, 0);
+                loadBalancer.releaseGroup(group, false, Duration.ZERO);
                 if (rejected == null) {
                     rejected = new HashSet<>();
                 }
@@ -239,7 +247,7 @@ public class Dispatcher extends AbstractComponent {
      */
     private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
         if (groups.size() == 1) return null;
-        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).collect(Collectors.toList());
+        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;
         Set<Integer> rejected = new HashSet<>();
         rejected.add(groupsRejectingFeed.get(0).id());

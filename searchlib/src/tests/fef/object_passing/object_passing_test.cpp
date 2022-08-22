@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -102,7 +101,8 @@ struct Fixture {
     }
 
     bool verify(const vespalib::string &feature) {
-        return verifyFeature(factory, indexEnv, feature, "unit test");
+        std::vector<search::fef::Message> errors;
+        return verifyFeature(factory, indexEnv, feature, "unit test", errors);
     }
 };
 

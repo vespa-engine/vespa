@@ -41,6 +41,6 @@ class CorsLogic {
     }
 
     private static boolean requestOriginMatchesAnyAllowed(String requestOrigin, Set<String> allowedUrls) {
-        return allowedUrls.stream().anyMatch(requestOrigin::startsWith) || allowedUrls.contains("*");
+        return allowedUrls.stream().anyMatch(requestOrigin::equals) || allowedUrls.contains("*");
     }
 }

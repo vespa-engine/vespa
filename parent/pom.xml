@@ -1066,7 +1066,7 @@
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
-        <onnxruntime.version>1.11.0</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <onnxruntime.version>1.12.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <org.json.version>20220320</org.json.version>
         <org.lz4.version>1.8.0</org.lz4.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>

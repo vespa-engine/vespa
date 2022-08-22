@@ -32,7 +32,7 @@ public class OutstandingChangeDeployerTest {
         var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         Version version = new Version(6, 2);
-        tester.deploymentTrigger().triggerChange(app.instanceId(), Change.of(version));
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version));
         assertEquals(Change.of(version), app.instance().change());
         assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
 

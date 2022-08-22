@@ -38,7 +38,7 @@ Matcher::Matcher(Result* result) :
     _log_text("")
 {
     _occ.reserve(KEY_OCC_RESERVED);
-    DocsumParams& dsp = _result->_config->_docsumparams;
+    const DocsumParams& dsp = _result->_config->_docsumparams;
     _winsize = _result->WinSize();
     _winsizeFallback = static_cast<size_t>(_result->WinSizeFallbackMultiplier() * _winsize);
     _max_match_candidates = _result->MaxMatchCandidates();
@@ -125,7 +125,6 @@ void Matcher::reset_matches()
 
 void Matcher::reset_occurrences()
 {
-    delete_all(_occ);
     _occ.clear();
 }
 
@@ -162,10 +161,11 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
     LOG(spam, "Match: %s(%" PRId64 ")", mexp->term(), static_cast<int64_t>(tpos));
 
     // Add new occurrence to sequence of all occurrences
-    key_occ_ptr k = new key_occ(mexp->term(), pos, tpos, len);
-    if (!k) return false;
+    auto smart_k = std::make_unique<key_occ>(mexp->term(), pos, tpos, len);
+    if (!smart_k) return false;
 
-    _occ.push_back(k);
+    auto k = smart_k.get();
+    _occ.emplace_back(std::move(smart_k));
 
     if (!(_need_complete_cnt > 0)) {
         size_t nodeno;

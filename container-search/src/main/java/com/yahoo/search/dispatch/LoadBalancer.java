@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,16 +32,22 @@ public class LoadBalancer {
     private final List<GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
 
-    public LoadBalancer(SearchCluster searchCluster, boolean roundRobin) {
+    public enum Policy { ROUNDROBIN, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, BEST_OF_RANDOM_2}
+
+    public LoadBalancer(SearchCluster searchCluster, Policy policy) {
         this.scoreboard = new ArrayList<>(searchCluster.groups().size());
         for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupStatus(group));
         }
-        if (roundRobin || scoreboard.size() == 1) {
-            this.scheduler = new RoundRobinScheduler(scoreboard);
-        } else {
-            this.scheduler = new AdaptiveScheduler(new Random(), scoreboard);
-        }
+        if (scoreboard.size() == 1)
+            policy = Policy.ROUNDROBIN;
+
+        this.scheduler = switch (policy) {
+            case ROUNDROBIN: yield new RoundRobinScheduler(scoreboard);
+            case BEST_OF_RANDOM_2: yield new BestOfRandom2(new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_REQUESTS: yield new AdaptiveScheduler(new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(new Random(), scoreboard); // TODO Intentionally the same for now
+        };
     }
 
     /**
@@ -71,13 +78,13 @@ public class LoadBalancer {
      *
      * @param group previously allocated group
      * @param success was the query successful
-     * @param searchTimeMs query execution time in milliseconds, used for adaptive load balancing
+     * @param searchTime query execution time, used for adaptive load balancing
      */
-    public void releaseGroup(Group group, boolean success, double searchTimeMs) {
+    public void releaseGroup(Group group, boolean success, Duration searchTime) {
         synchronized (this) {
             for (GroupStatus sched : scoreboard) {
                 if (sched.group.id() == group.id()) {
-                    sched.release(success, searchTimeMs / 1000.0);
+                    sched.release(success, searchTime);
                     break;
                 }
             }
@@ -99,22 +106,23 @@ public class LoadBalancer {
             allocations++;
         }
 
-        void release(boolean success, double searchTime) {
+        void release(boolean success, Duration searchTime) {
+            double searchSeconds = searchTime.toMillis()/1000.0;
             allocations--;
             if (allocations < 0) {
                 log.warning("Double free of query target group detected");
                 allocations = 0;
             }
             if (success) {
-                searchTime = Math.max(searchTime, MIN_QUERY_TIME);
+                searchSeconds = Math.max(searchSeconds, MIN_QUERY_TIME);
                 double decayRate = Math.min(queries + MIN_LATENCY_DECAY_RATE, DEFAULT_LATENCY_DECAY_RATE);
-                averageSearchTime = (searchTime + (decayRate - 1) * averageSearchTime) / decayRate;
+                averageSearchTime = (searchSeconds + (decayRate - 1) * averageSearchTime) / decayRate;
                 queries++;
             }
         }
 
-        double averageSearchTime() {
-            return averageSearchTime;
+        Duration averageSearchTime() {
+            return Duration.ofNanos((long)(averageSearchTime*1000000000));
         }
 
         double averageSearchTimeInverse() {
@@ -125,9 +133,9 @@ public class LoadBalancer {
             return group.id();
         }
 
-        void setQueryStatistics(long queries, double averageSearchTime) {
+        void setQueryStatistics(long queries, Duration averageSearchTime) {
             this.queries = queries;
-            this.averageSearchTime = averageSearchTime;
+            this.averageSearchTime = averageSearchTime.toMillis()/1000.0;
         }
     }
 
@@ -237,6 +245,49 @@ public class LoadBalancer {
             if (gs.isPresent()) return gs;
             return selectGroup(needle, false, rejectedGroups); // any coverage better than none
         }
+    }
+
+    static class BestOfRandom2 implements GroupScheduler {
+        private final Random random;
+        private final List<GroupStatus> scoreboard;
+        public BestOfRandom2(Random random, List<GroupStatus> scoreboard) {
+            this.random = random;
+            this.scoreboard = scoreboard;
+        }
+        @Override
+        public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
+            GroupStatus gs = selectBestOf2(rejectedGroups, true);
+            return (gs != null)
+                    ? Optional.of(gs)
+                    : Optional.ofNullable(selectBestOf2(rejectedGroups, false));
+        }
+
+        private GroupStatus selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
+            List<Integer> candidates = new ArrayList<>(scoreboard.size());
+            for (int i=0; i < scoreboard.size(); i++) {
+                GroupStatus gs = scoreboard.get(i);
+                if (rejectedGroups == null || !rejectedGroups.contains(gs.group.id())) {
+                    if (!requireCoverage || gs.group.hasSufficientCoverage()) {
+                        candidates.add(i);
+                    }
+                }
+            }
+            GroupStatus candA = selectRandom(candidates);
+            GroupStatus candB = selectRandom(candidates);
+            if (candA == null) return candB;
+            if (candB == null) return candA;
+            if (candB.allocations < candA.allocations) return candB;
+            return candA;
+        }
+        private GroupStatus selectRandom(List<Integer> candidates) {
+            if ( ! candidates.isEmpty()) {
+                int index = random.nextInt(candidates.size());
+                Integer groupIndex = candidates.remove(index);
+                return scoreboard.get(groupIndex);
+            }
+            return null;
+        }
+
     }
 
 }
