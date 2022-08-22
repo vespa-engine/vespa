@@ -147,13 +147,11 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
                                                                   .atStartOfDay()
                                                                   .toInstant(ZoneOffset.UTC);
 
-        /** The time that should elapse between versions */
+        /** The approximate time that should elapse between versions */
         private static final Duration SCHEDULING_STEP = Duration.ofDays(60);
 
         /** The day of week new releases are published */
-        private static final DayOfWeek RELEASE_DAY = DayOfWeek.MONDAY;
-
-        private static final DateTimeFormatter CALENDAR_VERSION_PATTERN = DateTimeFormatter.ofPattern("yyyyMMdd");
+        private static final DayOfWeek RELEASE_DAY = DayOfWeek.TUESDAY;
 
         public CalendarVersionedRelease {
             Objects.requireNonNull(system);
@@ -161,42 +159,63 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         @Override
         public Optional<Change> change(Version currentVersion, Instant instant) {
-            Version wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
-            while (!wantedVersion.isAfter(currentVersion)) {
+            CalendarVersion version = findVersion(instant, currentVersion);
+            while (!version.version().isAfter(currentVersion)) {
                 instant = instant.plus(Duration.ofDays(1));
-                wantedVersion = asVersion(dateOfWantedVersion(instant), currentVersion);
+                version = findVersion(instant, currentVersion);
             }
-            return Optional.of(new Change(wantedVersion, upgradeBudget(), schedulingInstant(instant, system)));
+            Duration cooldown = remainingCooldownAt(instant, version);
+            Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
+            return Optional.of(new Change(version.version(), upgradeBudget(), schedulingInstant));
         }
 
         private Duration upgradeBudget() {
             return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
         }
 
-        /**
-         * Calculate the date of the wanted version relative to now. A given zone will choose the oldest release
-         * available which is not older than this date.
-         */
-        static LocalDate dateOfWantedVersion(Instant now) {
+        private Duration remainingCooldownAt(Instant instant, CalendarVersion version) {
+            Duration minAge = system.isCd()
+                    ? Duration.ofDays(1)                          // CD: Give new releases some time to propagate
+                    : Duration.ofDays(7 - RELEASE_DAY.ordinal()); // non-CD: Wait until start of the following week
+            Duration age = version.age(instant);
+            if (age.compareTo(minAge) < 0) {
+                return minAge.minus(age);
+            }
+            return Duration.ZERO;
+        }
+
+        /** Find the most recent version available according to the scheduling step, relative to now */
+        static CalendarVersion findVersion(Instant now, Version currentVersion) {
             Instant candidate = START_OF_SCHEDULE;
             while (!candidate.plus(SCHEDULING_STEP).isAfter(now)) {
                 candidate = candidate.plus(SCHEDULING_STEP);
             }
             LocalDate date = LocalDate.ofInstant(candidate, ZoneOffset.UTC);
-            return releaseDayOf(date);
+            while (date.getDayOfWeek() != RELEASE_DAY) {
+                date = date.minusDays(1);
+            }
+            return CalendarVersion.from(date, currentVersion);
         }
 
-        private static LocalDate releaseDayOf(LocalDate date) {
-            int releaseDayDelta = RELEASE_DAY.getValue() - date.getDayOfWeek().getValue();
-            return date.plusDays(releaseDayDelta);
-        }
+        record CalendarVersion(Version version, LocalDate date) {
 
-        private static Version asVersion(LocalDate dateOfVersion, Version currentVersion) {
-            String calendarVersion = dateOfVersion.format(CALENDAR_VERSION_PATTERN);
-            return new Version(currentVersion.getMajor(),
-                               currentVersion.getMinor(),
-                               currentVersion.getMicro(),
-                               calendarVersion);
+            private static final DateTimeFormatter CALENDAR_VERSION_PATTERN = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+            private static CalendarVersion from(LocalDate date, Version currentVersion) {
+                String qualifier = date.format(CALENDAR_VERSION_PATTERN);
+                return new CalendarVersion(new Version(currentVersion.getMajor(),
+                                                       currentVersion.getMinor(),
+                                                       currentVersion.getMicro(),
+                                                       qualifier),
+                                           date);
+            }
+
+            /** Returns the age of this at given instant, in whole days */
+            private Duration age(Instant instant) {
+                return Duration.between(date.atStartOfDay().toInstant(ZoneOffset.UTC),
+                                        instant.truncatedTo(ChronoUnit.DAYS));
+            }
+
         }
 
     }
