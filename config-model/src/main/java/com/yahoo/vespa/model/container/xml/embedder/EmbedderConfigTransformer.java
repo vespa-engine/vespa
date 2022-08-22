@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -88,15 +89,13 @@ public class EmbedderConfigTransformer {
     }
 
     private void checkRequiredOptions() {
-        List<String> missingOptions = new ArrayList<>();
-        for (EmbedderOption option : options.values()) {
-            if ( ! option.isSet()) {
-                missingOptions.add(option.name());
-            }
-        }
-        if (missingOptions.size() > 0) {
+        var missingOptions = options.values()
+                                    .stream()
+                                    .filter(option -> ! option.isSet())
+                                    .map(option -> option.name())
+                                    .collect(Collectors.toList());
+        if (missingOptions.size() > 0)
             throw new IllegalArgumentException("Embedder '" + className + "' requires options for " + missingOptions);
-        }
     }
 
 }

@@ -58,6 +58,11 @@ public class EmbedderOption {
         return set;
     }
 
+    @Override
+    public String toString() {
+        return "embedder option '" + name + "'";
+    }
+
     /**
      * Basic option transformer. No special handling of options.
      */

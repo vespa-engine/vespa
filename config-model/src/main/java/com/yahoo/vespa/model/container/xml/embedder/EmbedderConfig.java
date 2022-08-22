@@ -26,7 +26,26 @@ import org.w3c.dom.NodeList;
  */
 public class EmbedderConfig {
 
-    static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
+    /**
+     * Transforms the &lt;embedder ...&gt; element to component configuration.
+     *
+     * @param deployState the deploy state - as config generation can depend on context
+     * @param embedderSpec the XML element containing the &lt;embedder ...&gt;
+     * @return a new XML element containting the &lt;component ...&gt; configuration
+     */
+    public static Element transform(DeployState deployState, Element embedderSpec) {
+        EmbedderConfigTransformer transformer = getEmbedderTransformer(embedderSpec, deployState.isHosted());
+        NodeList children = embedderSpec.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element) {
+                transformer.addOption((Element) child);
+            }
+        }
+        return transformer.createComponentConfig(deployState);
+    }
+
+    private static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
         return switch (embedderConfigFrom(spec)) {
             case "embedding.bert-base-embedder" -> new EmbedderConfigBertBaseTransformer(spec, hosted);
             default -> new EmbedderConfigTransformer(spec, hosted);
@@ -54,25 +73,6 @@ public class EmbedderConfig {
                 return "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt";
         }
         throw new IllegalArgumentException("Unknown model id: '" + id + "'");
-    }
-
-    /**
-     * Transforms the &lt;embedder ...&gt; element to component configuration.
-     *
-     * @param deployState the deploy state - as config generation can depend on context
-     * @param embedderSpec the XML element containing the &lt;embedder ...&gt;
-     * @return a new XML element containting the &lt;component ...&gt; configuration
-     */
-    public static Element transform(DeployState deployState, Element embedderSpec) {
-        EmbedderConfigTransformer transformer = getEmbedderTransformer(embedderSpec, deployState.isHosted());
-        NodeList children = embedderSpec.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element) {
-                transformer.addOption((Element) child);
-            }
-        }
-        return transformer.createComponentConfig(deployState);
     }
 
     private static String getEmbedderClass(Element spec) {
