@@ -783,6 +783,47 @@ TEST_F(ConformanceTest, testRemoveMulti)
     EXPECT_EQ(15u, removeResult->num_removed());
 }
 
+TEST_F(ConformanceTest, multi_remove_does_not_remove_docs_if_specified_timestamp_is_older_than_stored_doc)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+
+    BucketId bucketId1(8, 0x01);
+    Bucket bucket1(makeSpiBucket(bucketId1));
+    spi->createBucket(bucket1);
+
+    std::vector<Document::SP> docs;
+    for (size_t i(0); i < 30; i++) {
+        docs.push_back(testDocMan.createRandomDocumentAtLocation(0x01, i));
+    }
+
+    std::vector<spi::IdAndTimestamp> ids;
+    for (size_t i(0); i < docs.size(); i++) {
+        spi->put(bucket1, Timestamp(i + 200), docs[i]);
+        if (i & 0x1) {
+            ids.emplace_back(docs[i]->getId(), Timestamp(i + 100)); // Note: lower timestamps
+        }
+    }
+
+    auto onDone = std::make_unique<CatchResult>();
+    auto future = onDone->future_result();
+    spi->removeAsync(bucket1, ids, std::move(onDone));
+    auto result = future.get();
+    ASSERT_TRUE(result);
+    auto removeResult = dynamic_cast<spi::RemoveResult *>(result.get());
+    ASSERT_TRUE(removeResult != nullptr);
+    EXPECT_EQ(0u, removeResult->num_removed());
+
+    // Nothing shall have been removed
+    Context context(Priority(0), Trace::TraceLevel(0));
+    for (size_t i(0); i < docs.size(); i++) {
+        GetResult getResult = spi->get(bucket1, document::AllFields(), docs[i]->getId(), context);
+        EXPECT_EQ(Result::ErrorType::NONE, getResult.getErrorCode());
+        EXPECT_EQ(Timestamp(i + 200), getResult.getTimestamp());
+    }
+}
+
 TEST_F(ConformanceTest, testRemoveMerge)
 {
     document::TestDocMan testDocMan;

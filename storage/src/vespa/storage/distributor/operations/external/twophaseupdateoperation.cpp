@@ -97,6 +97,10 @@ struct IntermediateMessageSender : DistributorStripeMessageSender {
     const OperationSequencer& operation_sequencer() const noexcept override {
         return forward.operation_sequencer();
     }
+
+    OperationSequencer& operation_sequencer() noexcept override {
+        return forward.operation_sequencer();
+    }
 };
 
 IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,

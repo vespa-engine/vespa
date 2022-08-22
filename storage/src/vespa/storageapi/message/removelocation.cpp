@@ -11,15 +11,17 @@ IMPLEMENT_REPLY(RemoveLocationReply)
 RemoveLocationCommand::RemoveLocationCommand(vespalib::stringref documentSelection,
                                              const document::Bucket &bucket)
     : BucketInfoCommand(MessageType::REMOVELOCATION, bucket),
-      _documentSelection(documentSelection)
+      _documentSelection(documentSelection),
+      _explicit_remove_set(),
+      _only_enumerate_docs(false)
 {}
 
-RemoveLocationCommand::~RemoveLocationCommand() {}
+RemoveLocationCommand::~RemoveLocationCommand() = default;
 
 void
 RemoveLocationCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    if (_documentSelection.length()) {
+    if (!_documentSelection.empty()) {
         out << "Remove selection(" << _documentSelection << "): ";
     }
     BucketInfoCommand::print(out, verbose, indent);

@@ -36,6 +36,8 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
 {
 }
 
+PutOperation::~PutOperation() = default;
+
 void
 PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetList& copies, bool setOneActive,
                                                          const api::StorageCommand& originalCommand,

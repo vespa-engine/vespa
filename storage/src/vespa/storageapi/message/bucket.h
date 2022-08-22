@@ -393,7 +393,8 @@ public:
         friend std::ostream& operator<<(std::ostream& os, const Entry&);
     };
     struct SupportedNodeFeatures {
-        bool unordered_merge_chaining = false;
+        bool unordered_merge_chaining  = false;
+        bool two_phase_remove_location = false;
     };
     using EntryVector = vespalib::Array<Entry>;
 private:

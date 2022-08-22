@@ -2511,6 +2511,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
     for (auto* s : stripes) {
         for (uint16_t i : {0, 1, 2}) {
             EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
+            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).two_phase_remove_location);
         }
     }
 
@@ -2518,10 +2519,11 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
     for (uint32_t i = 0; i < _sender.commands().size(); i++) {
         ASSERT_NO_FATAL_FAILURE(fake_bucket_reply(state, *_sender.command(i),
                                                   dummy_buckets_to_return, [i](auto& reply) noexcept {
-            // Pretend nodes 1 and 2 are on a shiny version with unordered merge chaining supported.
+            // Pretend nodes 1 and 2 are on a shiny version with support for new features.
             // Node 0 does not support the fanciness.
             if (i > 0) {
                 reply.supported_node_features().unordered_merge_chaining = true;
+                reply.supported_node_features().two_phase_remove_location = true;
             }
         }));
     }
@@ -2529,8 +2531,11 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
     // Node features should be propagated to all stripes
     for (auto* s : stripes) {
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).unordered_merge_chaining);
+        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).two_phase_remove_location);
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).two_phase_remove_location);
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).two_phase_remove_location);
     }
 }
 
