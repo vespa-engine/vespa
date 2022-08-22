@@ -20,4 +20,12 @@ extern SocketSpec local_spec;
  **/
 vespalib::net::tls::TransportSecurityOptions make_tls_options_for_testing();
 
+/**
+ * Make security options whose authz rules only grant the telemetry capability
+ * set to the included certificate.
+ *
+ * Only useful for testing capability propagation and filtering.
+ */
+vespalib::net::tls::TransportSecurityOptions make_telemetry_only_capability_tls_options_for_testing();
+
 } // namespace vespalib::test

@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     authorization_mode.cpp
     auto_reloading_tls_crypto_engine.cpp
     capability.cpp
+    capability_env_config.cpp
     capability_set.cpp
     crypto_codec.cpp
     crypto_codec_adapter.cpp

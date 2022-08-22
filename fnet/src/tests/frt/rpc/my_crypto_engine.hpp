@@ -17,14 +17,17 @@ vespalib::CryptoEngine::SP my_crypto_engine() {
         return std::make_shared<vespalib::XorCryptoEngine>();
     } else if (engine == "tls") {
         fprintf(stderr, "crypto engine: tls\n");
-        return std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
+        return std::make_shared<vespalib::TlsCryptoEngine>(
+                vespalib::test::make_telemetry_only_capability_tls_options_for_testing());
     } else if (engine == "tls_maybe_yes") {
         fprintf(stderr, "crypto engine: tls client, mixed server\n");
-        auto tls = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
+        auto tls = std::make_shared<vespalib::TlsCryptoEngine>(
+                vespalib::test::make_telemetry_only_capability_tls_options_for_testing());
         return std::make_shared<vespalib::MaybeTlsCryptoEngine>(std::move(tls), true);
     } else if (engine == "tls_maybe_no") {
         fprintf(stderr, "crypto engine: null client, mixed server\n");
-        auto tls = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
+        auto tls = std::make_shared<vespalib::TlsCryptoEngine>(
+                vespalib::test::make_telemetry_only_capability_tls_options_for_testing());
         return std::make_shared<vespalib::MaybeTlsCryptoEngine>(std::move(tls), false);
     }
     TEST_FATAL(("invalid crypto engine: " + engine).c_str());

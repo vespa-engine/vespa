@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/net/tls/capability_env_config.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/latch.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -8,12 +9,14 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/request_access_filter.h>
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <mutex>
 #include <condition_variable>
 #include <string_view>
 
 using vespalib::SocketSpec;
 using vespalib::BenchmarkTimer;
+using namespace vespalib::net::tls;
 
 constexpr double timeout = 60.0;
 constexpr double short_timeout = 0.1;
@@ -221,6 +224,13 @@ public:
         rb.DefineMethod("accessRestricted", "s", "",
                         FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
         rb.RequestAccessFilter(std::make_unique<MyAccessFilter>());
+        // The authz rules used for this test only grant the telemetry capability set
+        rb.DefineMethod("capabilityRestricted", "", "",
+                        FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
+        rb.RequestAccessFilter(std::make_unique<FRT_RequireCapabilities>(CapabilitySet::content_node()));
+        rb.DefineMethod("capabilityAllowed", "", "",
+                        FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
+        rb.RequestAccessFilter(std::make_unique<FRT_RequireCapabilities>(CapabilitySet::telemetry()));
     }
 
     void RPC_Test(FRT_RPCRequest *req)
@@ -466,6 +476,30 @@ TEST_F("request allowed by access filter invokes server method as usual", Fixtur
     auto key = MyAccessFilter::CORRECT_KEY;
     req.get().GetParams()->AddString(key.data(), key.size());
     f1.target().InvokeSync(req.borrow(), timeout);
+    ASSERT_FALSE(req.get().IsError());
+    EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+}
+
+TEST_F("capability checking filter is enforced under mTLS unless overridden by env var", Fixture()) {
+    MyReq req("capabilityRestricted"); // Requires content node cap set; disallowed
+    f1.target().InvokeSync(req.borrow(), timeout);
+    auto cap_mode = capability_enforcement_mode_from_env();
+    fprintf(stderr, "capability enforcement mode: %s\n", to_string(cap_mode));
+    if (crypto->use_tls_when_client() && (cap_mode == CapabilityEnforcementMode::Enforce)) {
+        // Default authz rule does not give required capabilities; must fail.
+        EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
+        EXPECT_FALSE(f1.server_instance().restricted_method_was_invoked());
+    } else {
+        // Either no mTLS configured (implicit full capability set) or capabilities not enforced.
+        ASSERT_FALSE(req.get().IsError());
+        EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    }
+}
+
+TEST_F("access is allowed by capability filter when peer is granted the required capability", Fixture()) {
+    MyReq req("capabilityAllowed"); // Requires telemetry cap set; allowed
+    f1.target().InvokeSync(req.borrow(), timeout);
+    // Should always be allowed, regardless of mTLS mode or capability enforcement
     ASSERT_FALSE(req.get().IsError());
     EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
 }

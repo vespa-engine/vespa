@@ -33,6 +33,7 @@ public:
     ssize_t flush() override { return _socket->flush(); }
     ssize_t half_close() override { return _socket->half_close(); }
     void drop_empty_buffers() override { _socket->drop_empty_buffers(); }
+    std::unique_ptr<net::ConnectionAuthContext> make_auth_context() override;
 };
 
 } // namespace vespalib
