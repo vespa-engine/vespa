@@ -25,12 +25,13 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     cpu_usage.cpp
     crc.cpp
     destructor_callbacks.cpp
-    doom.cpp
     document_runnable.cpp
+    doom.cpp
     dual_merge_director.cpp
     error.cpp
     exception.cpp
     exceptions.cpp
+    execution_profiler.cpp
     executor_idle_tracking.cpp
     file_area_freelist.cpp
     foregroundtaskexecutor.cpp
@@ -41,13 +42,13 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     growablebytebuffer.cpp
     hdr_abort.cpp
     host_name.cpp
-    jsonexception.cpp
-    jsonstream.cpp
-    jsonwriter.cpp
     invokeserviceimpl.cpp
     isequencedtaskexecutor.cpp
     issue.cpp
     joinable.cpp
+    jsonexception.cpp
+    jsonstream.cpp
+    jsonwriter.cpp
     latch.cpp
     left_right_heap.cpp
     lz4compressor.cpp
