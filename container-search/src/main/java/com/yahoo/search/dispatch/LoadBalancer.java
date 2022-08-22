@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -77,13 +78,13 @@ public class LoadBalancer {
      *
      * @param group previously allocated group
      * @param success was the query successful
-     * @param searchTimeMs query execution time in milliseconds, used for adaptive load balancing
+     * @param searchTime query execution time, used for adaptive load balancing
      */
-    public void releaseGroup(Group group, boolean success, double searchTimeMs) {
+    public void releaseGroup(Group group, boolean success, Duration searchTime) {
         synchronized (this) {
             for (GroupStatus sched : scoreboard) {
                 if (sched.group.id() == group.id()) {
-                    sched.release(success, searchTimeMs / 1000.0);
+                    sched.release(success, searchTime);
                     break;
                 }
             }
@@ -105,22 +106,23 @@ public class LoadBalancer {
             allocations++;
         }
 
-        void release(boolean success, double searchTime) {
+        void release(boolean success, Duration searchTime) {
+            double searchSeconds = searchTime.toMillis()/1000.0;
             allocations--;
             if (allocations < 0) {
                 log.warning("Double free of query target group detected");
                 allocations = 0;
             }
             if (success) {
-                searchTime = Math.max(searchTime, MIN_QUERY_TIME);
+                searchSeconds = Math.max(searchSeconds, MIN_QUERY_TIME);
                 double decayRate = Math.min(queries + MIN_LATENCY_DECAY_RATE, DEFAULT_LATENCY_DECAY_RATE);
-                averageSearchTime = (searchTime + (decayRate - 1) * averageSearchTime) / decayRate;
+                averageSearchTime = (searchSeconds + (decayRate - 1) * averageSearchTime) / decayRate;
                 queries++;
             }
         }
 
-        double averageSearchTime() {
-            return averageSearchTime;
+        Duration averageSearchTime() {
+            return Duration.ofNanos((long)(averageSearchTime*1000000000));
         }
 
         double averageSearchTimeInverse() {
@@ -131,9 +133,9 @@ public class LoadBalancer {
             return group.id();
         }
 
-        void setQueryStatistics(long queries, double averageSearchTime) {
+        void setQueryStatistics(long queries, Duration averageSearchTime) {
             this.queries = queries;
-            this.averageSearchTime = averageSearchTime;
+            this.averageSearchTime = averageSearchTime.toMillis()/1000.0;
         }
     }
 
