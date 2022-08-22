@@ -2,7 +2,7 @@
 // vespa logfmt command
 // Author: arnej
 
-//go:build unix
+//go:build !windows
 
 package logfmt
 
