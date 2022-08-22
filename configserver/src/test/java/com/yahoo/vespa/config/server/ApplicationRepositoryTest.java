@@ -92,7 +92,6 @@ public class ApplicationRepositoryTest {
     private final static File testAppLogServerWithContainer = new File("src/test/apps/app-logserver-with-container");
     private final static File app1 = new File("src/test/apps/cs1");
     private final static File app2 = new File("src/test/apps/cs2");
-    private final static File illegalApp2 = new File("src/test/apps/illegalapp2");
 
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
