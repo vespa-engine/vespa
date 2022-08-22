@@ -22,7 +22,6 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +30,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author humbe
@@ -55,7 +57,7 @@ public class RpcServerTest extends FleetControllerTest {
         Slobrok slobrok = new Slobrok();
         String[] slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
         RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
-        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 18347);
+        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
         int portUsed = server.getPort();
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, portUsed);
         server.disconnect();
