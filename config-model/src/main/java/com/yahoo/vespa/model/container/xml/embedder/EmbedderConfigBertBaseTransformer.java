@@ -28,7 +28,7 @@ public class EmbedderConfigBertBaseTransformer extends EmbedderConfigTransformer
                 .optionTransformer(new EmbedderOption.ModelOptionTransformer("tokenizerVocabPath", "tokenizerVocabUrl"));
 
         // Defaults
-        if (hosted && 1==2) {
+        if (hosted) {
             modelOption.attributes(Map.of("id", "minilm-l6-v2")).value("");
             vocabOption.attributes(Map.of("id", "bert-base-uncased")).value("");
         }
