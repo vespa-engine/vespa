@@ -97,14 +97,6 @@ ZooKeeper = element zookeeper {
     empty
 }
 
-Embedder = element embedder {
-    attribute id { string } &
-    attribute class { xsd:Name | JavaId }? &
-    attribute bundle { xsd:Name }? &
-    attribute def { xsd:Name }? &
-    anyElement*
-}
-
 ModelEvaluation = element model-evaluation {
     element onnx {
         element models {
