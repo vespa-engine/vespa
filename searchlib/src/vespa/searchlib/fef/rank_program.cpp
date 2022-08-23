@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <algorithm>
 #include <cassert>
 
@@ -16,6 +17,7 @@ LOG_SETUP(".fef.rankprogram");
 
 using vespalib::Stash;
 using vespalib::Issue;
+using vespalib::ExecutionProfiler;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::FastValueBuilderFactory;
@@ -98,6 +100,33 @@ struct UnboxingExecutor : FeatureExecutor {
     bool isPure() override { return true; }
     void execute(uint32_t) override {
         outputs().set_number(0, inputs().get_object(0).get().as_double());
+    }
+};
+
+struct ProfiledExecutor : FeatureExecutor {
+    ExecutionProfiler &profiler;
+    FeatureExecutor &executor;
+    ExecutionProfiler::TaskId self;
+    ProfiledExecutor(ExecutionProfiler &profiler_in,
+                     FeatureExecutor &executor_in,
+                     const vespalib::string &name)
+      : profiler(profiler_in), executor(executor_in), self(profiler.resolve(name)) {}
+    void handle_bind_match_data(const MatchData &md) override {
+        executor.bind_match_data(md);
+    }
+    void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs) override {
+        executor.bind_inputs(inputs);
+    }
+    void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs) override {
+        executor.bind_outputs(outputs);
+    }
+    bool isPure() override {
+        return executor.isPure();
+    }
+    void execute(uint32_t docId) override {
+        profiler.start(self);
+        executor.lazy_execute(docId);
+        profiler.complete();
     }
 };
 
@@ -203,7 +232,8 @@ RankProgram::~RankProgram() = default;
 void
 RankProgram::setup(const MatchData &md,
                    const IQueryEnvironment &queryEnv,
-                   const Properties &featureOverrides)
+                   const Properties &featureOverrides,
+                   ExecutionProfiler *profiler)
 {
     const auto &specs = _resolver->getExecutorSpecs();
     assert(_executors.empty());
@@ -238,6 +268,10 @@ RankProgram::setup(const MatchData &md,
         for (; (override < override_end) && (override->ref.executor == i); ++override) {
             FeatureExecutor *tmp = executor;
             executor = &(stash.get().create<FeatureOverrider>(*tmp, override->ref.output, override->number, std::move(override->object)));
+        }
+        if (profiler) {
+            FeatureExecutor *tmp = executor;
+            executor = &(stash.get().create<ProfiledExecutor>(*profiler, *tmp, specs[i].blueprint->getName()));
         }
         executor->bind_inputs(inputs);
         executor->bind_outputs(outputs);

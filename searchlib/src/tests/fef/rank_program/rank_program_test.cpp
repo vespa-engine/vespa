@@ -13,10 +13,14 @@
 #include <vespa/searchlib/fef/test/plugin/double.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/test/test_features.h>
+#include <vespa/vespalib/util/execution_profiler.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using vespalib::ExecutionProfiler;
+using vespalib::Slime;
 
 uint32_t default_docid = 1;
 
@@ -109,12 +113,12 @@ struct Fixture {
         overrides.add(feature, vespalib::make_string("%g", value));
         return *this;
     }
-    Fixture &compile() {
+    Fixture &compile(ExecutionProfiler *profiler = nullptr) {
         ASSERT_TRUE(resolver->compile());
         MatchDataLayout mdl;
         QueryEnvironment queryEnv(&indexEnv);
         match_data = mdl.createMatchData();
-        program.setup(*match_data, queryEnv, overrides);
+        program.setup(*match_data, queryEnv, overrides, profiler);
         return *this;
     }
     vespalib::string final_executor_name() const {
@@ -389,6 +393,33 @@ TEST_F("require that fast-forest gbdt evaluation is pure", Fixture()) {
     EXPECT_EQUAL(3u, count_const_features(f1.program));
     EXPECT_EQUAL(f1.get(), 21.0);
     EXPECT_EQUAL(f1.final_executor_name(), "search::features::FastForestExecutor");
+}
+
+TEST_F("require that rank program can be profiled", Fixture()) {
+    ExecutionProfiler profiler(64);
+    f1.add("mysum(value(10),ivalue(5))").compile(&profiler);
+    EXPECT_EQUAL(3u, f1.program.num_executors());
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(1u, count_const_features(f1.program));
+    EXPECT_EQUAL(15.0, f1.get(1));
+    EXPECT_EQUAL(15.0, f1.get(2));
+    EXPECT_EQUAL(15.0, f1.get(3));
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s", slime.toString().c_str());
+    EXPECT_EQUAL(slime["roots"].entries(), 2u);
+    auto *a = &slime["roots"][0];
+    auto *b = &slime["roots"][1];
+    if ((*b)["count"].asLong() > (*a)["count"].asLong()) {
+        std::swap(a, b);
+    }
+    EXPECT_EQUAL((*a)["name"].asString().make_string(), vespalib::string("mysum(value(10),ivalue(5))"));
+    EXPECT_EQUAL((*a)["count"].asLong(), 3);
+    EXPECT_EQUAL((*a)["children"].entries(), 1u);
+    EXPECT_EQUAL((*a)["children"][0]["name"].asString().make_string(), vespalib::string("ivalue(5)"));
+    EXPECT_EQUAL((*a)["children"][0]["count"].asLong(), 3);
+    EXPECT_EQUAL((*b)["name"].asString().make_string(), vespalib::string("value(10)"));
+    EXPECT_EQUAL((*b)["count"].asLong(), 1);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
