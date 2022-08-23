@@ -55,85 +55,113 @@ public class EmbedderTestCase {
 
     @Test
     void testPredefinedEmbedConfigSelfHosted() throws IOException, SAXException {
-        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\"></embedder>",
-                "Embedder '" + PREDEFINED_EMBEDDER_CLASS + "' requires options for [vocab, model]");
-        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model />" +
-                "  <vocab />" +
-                "</embedder>",
-                "Model option requires either a 'path' or a 'url' attribute");
-        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model id=\"my_model_id\" />" +
-                "  <vocab id=\"my_vocab_id\" />" +
-                "</embedder>",
-                "Model option 'id' is not valid here");
-
         String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model id=\"my_model_id\" url=\"my-model-url\" />" +
-                "  <vocab id=\"my_vocab_id\" url=\"my-vocab-url\" />" +
-                "</embedder>";
+                          "  <model id=\"my_model_id\" url=\"my-model-url\" />" +
+                          "  <vocab id=\"my_vocab_id\" url=\"my-vocab-url\" />" +
+                          "</embedder>";
         String component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
-                "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
-                "      <tokenizerVocabUrl>my-vocab-url</tokenizerVocabUrl>" +
-                "      <tokenizerVocabPath></tokenizerVocabPath>" +
-                "      <transformerModelUrl>my-model-url</transformerModelUrl>" +
-                "      <transformerModelPath></transformerModelPath>" +
-                "  </config>" +
-                "</component>";
+                           "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                           "      <tokenizerVocabUrl>my-vocab-url</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>my-model-url</transformerModelUrl>" +
+                           "      <transformerModelPath></transformerModelPath>" +
+                           "  </config>" +
+                           "</component>";
         assertTransform(embedder, component, false);
+    }
 
-        // Path has priority:
-        embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model id=\"my_model_id\" url=\"my-model-url\" path=\"files/model.onnx\" />" +
-                "  <vocab id=\"my_vocab_id\" url=\"my-vocab-url\" path=\"files/vocab.txt\" />" +
-                "</embedder>";
-        component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
-                "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
-                "      <tokenizerVocabPath>files/vocab.txt</tokenizerVocabPath>" +
-                "      <tokenizerVocabUrl></tokenizerVocabUrl>" +
-                "      <transformerModelPath>files/model.onnx</transformerModelPath>" +
-                "      <transformerModelUrl></transformerModelUrl>" +
-                "  </config>" +
-                "</component>";
+    @Test
+    void testIncorrectEmbedderOptionsSelfHosted() throws IOException, SAXException {
+        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\"></embedder>",
+                              "Embedder '" + PREDEFINED_EMBEDDER_CLASS + "' requires options for [vocab, model]");
+        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
+                              "  <model />" +
+                              "  <vocab />" +
+                              "</embedder>",
+                              "Model option requires either a 'path' or a 'url' attribute");
+        assertTransformThrows("<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
+                              "  <model id=\"my_model_id\" />" +
+                              "  <vocab id=\"my_vocab_id\" />" +
+                              "</embedder>",
+                              "Model option 'id' is not valid here");
+    }
+
+    @Test
+    void testPathHasprioritySelfHosted() throws IOException, SAXException {
+        String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
+                          "  <model id=\"my_model_id\" url=\"my-model-url\" path=\"files/model.onnx\" />" +
+                          "  <vocab id=\"my_vocab_id\" url=\"my-vocab-url\" path=\"files/vocab.txt\" />" +
+                          "</embedder>";
+        String component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
+                           "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                           "      <tokenizerVocabPath>files/vocab.txt</tokenizerVocabPath>" +
+                           "      <tokenizerVocabUrl></tokenizerVocabUrl>" +
+                           "      <transformerModelPath>files/model.onnx</transformerModelPath>" +
+                           "      <transformerModelUrl></transformerModelUrl>" +
+                           "  </config>" +
+                           "</component>";
         assertTransform(embedder, component, false);
+    }
+
+    @Test
+    void testPredefinedEmptyEmbedConfigCloud() throws IOException, SAXException {
+        String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" />";
+        String component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
+                           "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                           "      <tokenizerVocabUrl>some url</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>some url</transformerModelUrl>" +
+                           "      <transformerModelPath></transformerModelPath>" +
+                           "  </config>" +
+                           "</component>";
+        assertTransform(embedder, component, true);
     }
 
     @Test
     void testPredefinedEmbedConfigCloud() throws IOException, SAXException {
-        String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" />";
+        String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
+                          "  <model id=\"test-model-id\" />" +
+                          "  <vocab id=\"test-model-id\" />" +
+                          "</embedder>";
         String component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
-                "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
-                "      <tokenizerVocabUrl>some url</tokenizerVocabUrl>" +
-                "      <tokenizerVocabPath></tokenizerVocabPath>" +
-                "      <transformerModelUrl>some url</transformerModelUrl>" +
-                "      <transformerModelPath></transformerModelPath>" +
-                "  </config>" +
-                "</component>";
-        assertTransform(embedder, component, true);
-
-        embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model id=\"my_model_id\" />" +
-                "  <vocab id=\"my_vocab_id\" />" +
-                "</embedder>";
-        assertTransformThrows(embedder, "Unknown model id: 'my_vocab_id'", true);
-
-        embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
-                "  <model id=\"test-model-id\" />" +
-                "  <vocab id=\"test-model-id\" />" +
-                "</embedder>";
-        component = "<component id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\" bundle=\"model-integration\">" +
-                "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
-                "      <tokenizerVocabUrl>test-model-url</tokenizerVocabUrl>" +
-                "      <tokenizerVocabPath></tokenizerVocabPath>" +
-                "      <transformerModelUrl>test-model-url</transformerModelUrl>" +
-                "      <transformerModelPath></transformerModelPath>" +
-                "  </config>" +
-                "</component>";
+                           "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                           "      <tokenizerVocabUrl>test-model-url</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>test-model-url</transformerModelUrl>" +
+                           "      <transformerModelPath></transformerModelPath>" +
+                           "  </config>" +
+                           "</component>";
         assertTransform(embedder, component, true);
     }
 
     @Test
-    void testEmbedConfig() throws Exception  {
+    void testCustomEmbedderWithPredefinedConfigCloud() throws IOException, SAXException {
+        String embedder = "<embedder id=\"test\" class=\"ApplicationSpecificEmbedder\" def=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                          "  <model id=\"test-model-id\" />" +
+                          "  <vocab id=\"test-model-id\" />" +
+                          "</embedder>";
+        String component = "<component id=\"test\" class=\"ApplicationSpecificEmbedder\" bundle=\"model-integration\">" +
+                           "  <config name=\"" + PREDEFINED_EMBEDDER_CONFIG + "\">" +
+                           "      <tokenizerVocabUrl>test-model-url</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>test-model-url</transformerModelUrl>" +
+                           "      <transformerModelPath></transformerModelPath>" +
+                           "  </config>" +
+                           "</component>";
+        assertTransform(embedder, component, true);
+    }
+
+    @Test
+    void testUnknownModelIdCloud() throws IOException, SAXException {
+        String embedder = "<embedder id=\"test\" class=\"" + PREDEFINED_EMBEDDER_CLASS + "\">" +
+                          "  <model id=\"my_model_id\" />" +
+                          "  <vocab id=\"my_vocab_id\" />" +
+                          "</embedder>";
+        assertTransformThrows(embedder, "Unknown model id: 'my_vocab_id'", true);
+    }
+
+    @Test
+    void testApplicationWithEmbedConfig() throws Exception  {
         final String emptyPathFileName = "services.xml";
 
         Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
@@ -142,15 +170,27 @@ public class EmbedderTestCase {
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("test"));
         ConfigPayloadBuilder testConfig = testComponent.getUserConfigs().get(new ConfigDefinitionKey("dummy", "test"));
-        assertEquals(testConfig.getObject("num").getValue(), "12");
-        assertEquals(testConfig.getObject("str").getValue(), "some text");
+        assertEquals("12", testConfig.getObject("num").getValue());
+        assertEquals("some text", testConfig.getObject("str").getValue());
 
         Component<?, ?> transformer = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
         ConfigPayloadBuilder transformerConfig = transformer.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
-        assertEquals(transformerConfig.getObject("transformerModelUrl").getValue(), "test-model-url");
-        assertEquals(transformerConfig.getObject("transformerModelPath").getValue(), emptyPathFileName);
-        assertEquals(transformerConfig.getObject("tokenizerVocabUrl").getValue(), "");
-        assertEquals(transformerConfig.getObject("tokenizerVocabPath").getValue(), "files/vocab.txt");
+        assertEquals("test-model-url", transformerConfig.getObject("transformerModelUrl").getValue());
+        assertEquals(emptyPathFileName, transformerConfig.getObject("transformerModelPath").getValue());
+        assertEquals("", transformerConfig.getObject("tokenizerVocabUrl").getValue());
+        assertEquals("files/vocab.txt", transformerConfig.getObject("tokenizerVocabPath").getValue());
+    }
+
+    @Test
+    void testApplicationWithGenericEmbedConfig() throws Exception  {
+        Path applicationDir = Path.fromString("src/test/cfg/application/embed_generic/");
+        VespaModel model = loadModel(applicationDir, false);
+        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
+
+        Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
+        ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
+        assertEquals("files/vocab.txt", config.getObject("vocab").getValue());
+        assertEquals("files/model.onnx", config.getObject("model").getValue());
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {

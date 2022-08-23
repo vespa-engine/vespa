@@ -26,26 +26,6 @@ import org.w3c.dom.NodeList;
  */
 public class EmbedderConfig {
 
-    static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
-        String classId = getEmbedderClass(spec);
-        switch (classId) {
-            case "ai.vespa.embedding.BertBaseEmbedder": return new EmbedderConfigBertBaseTransformer(spec, hosted);
-        }
-        return new EmbedderConfigTransformer(spec, hosted);
-    }
-
-    static String modelIdToUrl(String id) {
-        switch (id) {
-            case "test-model-id":
-                return "test-model-url";
-            case "minilm-l6-v2":
-                return "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx";
-            case "bert-base-uncased":
-                return "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt";
-        }
-        throw new IllegalArgumentException("Unknown model id: '" + id + "'");
-    }
-
     /**
      * Transforms the &lt;embedder ...&gt; element to component configuration.
      *
@@ -65,6 +45,36 @@ public class EmbedderConfig {
         return transformer.createComponentConfig(deployState);
     }
 
+    private static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
+        return switch (embedderConfigFrom(spec)) {
+            case "embedding.bert-base-embedder" -> new EmbedderConfigBertBaseTransformer(spec, hosted);
+            default -> new EmbedderConfigTransformer(spec, hosted);
+        };
+    }
+
+    private static String embedderConfigFrom(Element spec) {
+        String explicitDefinition = spec.getAttribute("def");
+        if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
+
+        // Implicit from class name
+        return switch (getEmbedderClass(spec)) {
+            case "ai.vespa.embedding.BertBaseEmbedder" -> "embedding.bert-base-embedder";
+            default -> "";
+        };
+    }
+
+    static String modelIdToUrl(String id) {
+        switch (id) {
+            case "test-model-id":
+                return "test-model-url";
+            case "minilm-l6-v2":
+                return "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx";
+            case "bert-base-uncased":
+                return "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt";
+        }
+        throw new IllegalArgumentException("Unknown model id: '" + id + "'");
+    }
+
     private static String getEmbedderClass(Element spec) {
         if (spec.hasAttribute("class")) {
             return spec.getAttribute("class");
@@ -72,7 +82,7 @@ public class EmbedderConfig {
         if (spec.hasAttribute("id")) {
             return spec.getAttribute("id");
         }
-        throw new IllegalArgumentException("Embedder specification does not have a required class attribute");
+        throw new IllegalArgumentException("An <embedder> element must have a 'class' or 'id' attribute");
     }
 
 
