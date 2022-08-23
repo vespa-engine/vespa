@@ -24,7 +24,7 @@ public class ClusterStateGeneratorTest {
     private static AnnotatedClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
         final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
         params.cluster = fixture.cluster;
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(0, 0);
+        params.transitionTimes = ClusterStateGenerator.Params.buildTransitionTimeMap(0, 0);
         params.currentTimeInMillis = 0;
         return ClusterStateGenerator.generatedStateFrom(params);
     }
@@ -257,7 +257,7 @@ public class ClusterStateGeneratorTest {
     private void do_test_change_within_node_transition_time_window_generates_maintenance(State reportedState) {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
-                .currentTimeInMilllis(10_000)
+                .currentTimeInMillis(10_000)
                 .transitionTimes(2000);
 
         fixture.reportStorageNodeState(1, reportedState);
@@ -292,7 +292,7 @@ public class ClusterStateGeneratorTest {
     void reported_node_down_after_transition_time_has_down_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
-                .currentTimeInMilllis(11_000)
+                .currentTimeInMillis(11_000)
                 .transitionTimes(2000);
 
         fixture.reportStorageNodeState(1, State.DOWN);
@@ -309,7 +309,7 @@ public class ClusterStateGeneratorTest {
     void distributor_nodes_are_not_implicitly_transitioned_to_maintenance_mode() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
-                .currentTimeInMilllis(10_000)
+                .currentTimeInMillis(10_000)
                 .transitionTimes(2000);
 
         fixture.reportDistributorNodeState(2, State.DOWN);
@@ -326,7 +326,7 @@ public class ClusterStateGeneratorTest {
     void transient_maintenance_mode_does_not_override_wanted_down_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
-                .currentTimeInMilllis(10_000)
+                .currentTimeInMillis(10_000)
                 .transitionTimes(2000);
 
         fixture.proposeStorageNodeWantedState(2, State.DOWN);
@@ -343,7 +343,7 @@ public class ClusterStateGeneratorTest {
     void reported_down_retired_node_within_transition_time_transitions_to_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
-                .currentTimeInMilllis(10_000)
+                .currentTimeInMillis(10_000)
                 .transitionTimes(2000);
 
         fixture.proposeStorageNodeWantedState(2, State.RETIRED);
@@ -787,7 +787,7 @@ public class ClusterStateGeneratorTest {
 
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .maxInitProgressTime(1000)
-                .currentTimeInMilllis(11_000);
+                .currentTimeInMillis(11_000);
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         return state.toString();
     }
@@ -891,7 +891,7 @@ public class ClusterStateGeneratorTest {
 
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .maxInitProgressTime(0)
-                .currentTimeInMilllis(11_000);
+                .currentTimeInMillis(11_000);
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:0.5"));
     }
