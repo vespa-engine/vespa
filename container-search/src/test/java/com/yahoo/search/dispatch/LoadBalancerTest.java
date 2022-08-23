@@ -212,22 +212,22 @@ public class LoadBalancerTest {
         GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         assertEquals(0.002, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
-        assertEquals(0.003616, decayer.averageCost(), delta);
+        assertEquals(0.003344426, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(2000), Duration.ofMillis(10)));
-        assertEquals(0.0048928, decayer.averageCost(), delta);
+        assertEquals(0.004453688, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
-        assertEquals(0.00591424, decayer.averageCost(), delta);
+        assertEquals(0.005378073, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
-        assertEquals(0.0059959552, decayer.averageCost(), delta);
+        assertEquals(0.005468700, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
-        assertEquals(0.0059959552, decayer.averageCost(), delta);
+        assertEquals(0.005468700, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
-        assertEquals(0.006076036096, decayer.averageCost(), delta);
+        assertEquals(0.005557549, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(5000), Duration.ofMillis(10)));
-        assertEquals(0.0076456216576000005, decayer.averageCost(), delta);
-        assertEquals(110, countRequestsToReach90p(Duration.ofMillis(100), Duration.ofMillis(10)));
-        assertEquals(55, countRequestsToReach90p(Duration.ofMillis(200), Duration.ofMillis(10)));
-        assertEquals(11, countRequestsToReach90p(Duration.ofMillis(1000), Duration.ofMillis(10)));
+        assertEquals(0.006826820, decayer.averageCost(), delta);
+        assertEquals(112, countRequestsToReach90p(Duration.ofMillis(100), Duration.ofMillis(10)));
+        assertEquals(57, countRequestsToReach90p(Duration.ofMillis(200), Duration.ofMillis(10)));
+        assertEquals(14, countRequestsToReach90p(Duration.ofMillis(1000), Duration.ofMillis(10)));
     }
 
     @Test
@@ -236,8 +236,8 @@ public class LoadBalancerTest {
         assertEquals(0.002, decayer.averageCost(), delta);
         assertEquals(Duration.ofMillis(2), decayer.averageSearchTime());
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(10000), Duration.ofMillis(10)));
-        assertEquals(0.006, decayer.averageCost(), delta); // Capped at 50% sampleWeight
-        assertEquals(Duration.ofMillis(6), decayer.averageSearchTime());
+        assertEquals(0.007335110, decayer.averageCost(), delta);
+        assertEquals(Duration.ofNanos(7335109), decayer.averageSearchTime());
 
     }
 

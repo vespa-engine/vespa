@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 /**
  * LoadBalancer determines which group of content nodes should be accessed next for each search query when the
  * internal java dispatcher is used.
- *
  * The implementation here is a simplistic least queries in flight + round-robin load balancer
  *
  * @author ollivir
@@ -244,9 +243,8 @@ public class LoadBalancer {
             }
             public void decay(RequestDuration duration) {
                 double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
-                double decayRate = LATENCY_DECAY_TIME;
-                double sampleWeight = Math.min(decayRate/2, toDouble(duration.difference(prev)));
-                averageSearchTime = (sampleWeight*searchTime + (decayRate - sampleWeight) * averageSearchTime) / decayRate;
+                double sampleWeight = toDouble(duration.difference(prev));
+                averageSearchTime = (sampleWeight*searchTime + LATENCY_DECAY_TIME * averageSearchTime) / (LATENCY_DECAY_TIME + sampleWeight);
                 prev = duration;
             }
             public double averageCost() { return averageSearchTime; }
