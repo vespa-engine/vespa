@@ -506,13 +506,30 @@ private:
         if (value.size() > 0) {
             Symbol isym = a.resolve("item");
             Symbol wsym = a.resolve("weight");
+            using matching_elements_iterator_type = std::vector<uint32_t>::const_iterator;
+            matching_elements_iterator_type matching_elements_itr;
+            matching_elements_iterator_type matching_elements_itr_end;
+            if (filter_matching_elements()) {
+                matching_elements_itr = (!_matching_elems->empty() && _matching_elems->back() < value.size()) ? _matching_elems->begin() : _matching_elems->end();
+                matching_elements_itr_end = _matching_elems->end();
+            }
+            uint32_t idx = 0;
             for (const auto & entry : value) {
+                if (filter_matching_elements()) {
+                    if (matching_elements_itr == matching_elements_itr_end ||
+                        idx < *matching_elements_itr) {
+                        ++idx;
+                        continue;
+                    }
+                    ++matching_elements_itr;
+                }
                 Cursor &o = a.addObject();
                 ObjectSymbolInserter ki(o, isym);
                 SlimeFiller conv(ki, _tokenize);
                 entry.first->accept(conv);
                 int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
                 o.setLong(wsym, weight);
+                ++idx;
             }
         }
     }
