@@ -48,6 +48,7 @@ public:
     using UniqueIssues = search::UniqueIssues;
 
 private:
+    enum class RankDropLimitE { no, yes, track};
     size_t                        thread_id;
     size_t                        num_threads;
     MatchParams                   matchParams;
@@ -71,7 +72,7 @@ private:
     public:
         Context(double rankDropLimit, MatchTools &tools, HitCollector &hits,
                 uint32_t num_threads) __attribute__((noinline));
-        template <bool use_rank_drop_limit>
+        template <RankDropLimitE use_rank_drop_limit>
         void rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
         bool isBelowLimit() const { return matches < _matches_limit; }
@@ -82,10 +83,11 @@ private:
     private:
         uint32_t        _matches_limit;
         LazyValue       _score_feature;
-        RankProgram    &_ranking;
         double          _rankDropLimit;
         HitCollector   &_hits;
         const Doom     &_doom;
+    public:
+        std::vector<uint32_t> dropped;
     };
 
     double estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar) __attribute__((noinline));
@@ -94,13 +96,13 @@ private:
     bool any_idle() const { return (idle_observer.get() > 0); }
     bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
 
-    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, bool use_rank_drop_limit>
+    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, RankDropLimitE use_rank_drop_limit>
     uint32_t inner_match_loop(Context &context, MatchTools &tools, DocidRange &docid_range) __attribute__((noinline));
 
-    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, bool use_rank_drop_limit>
+    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, RankDropLimitE use_rank_drop_limit>
     void match_loop(MatchTools &tools, HitCollector &hits) __attribute__((noinline));
 
-    template <bool do_rank, bool do_limit, bool do_share, bool use_rank_drop_limit>
+    template <bool do_rank, bool do_limit, bool do_share, RankDropLimitE use_rank_drop_limit>
     void match_loop_helper_rank_limit_share_drop(MatchTools &tools, HitCollector &hits);
     template <bool do_rank, bool do_limit, bool do_share> void match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits);
     template <bool do_rank, bool do_limit> void match_loop_helper_rank_limit(MatchTools &tools, HitCollector &hits);

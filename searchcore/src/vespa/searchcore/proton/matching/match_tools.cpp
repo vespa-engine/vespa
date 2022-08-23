@@ -285,6 +285,11 @@ MatchToolsFactory::createOnSummaryTask() const {
 }
 
 bool
+MatchToolsFactory::hasOnMatchTask() const {
+    return _rankSetup.getMutateOnMatch().enabled();
+}
+
+bool
 MatchToolsFactory::has_first_phase_rank() const {
     return !_rankSetup.getFirstPhaseRank().empty();
 }
