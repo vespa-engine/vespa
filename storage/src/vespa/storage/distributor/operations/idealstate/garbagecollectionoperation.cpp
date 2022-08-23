@@ -35,8 +35,8 @@ const char* GarbageCollectionOperation::to_string(Phase phase) noexcept {
     case Phase::LegacySinglePhase: return "LegacySinglePhase";
     case Phase::ReadMetadataPhase: return "ReadMetadataPhase";
     case Phase::WriteRemovesPhase: return "WriteRemovesPhase";
-    default: abort();
     }
+    abort();
 }
 
 bool GarbageCollectionOperation::all_involved_nodes_support_two_phase_gc() const noexcept {
