@@ -146,7 +146,9 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT64);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_STRING);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_DATA);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_LONG_STRING);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_LONG_DATA);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_JSONSTRING);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_TENSOR);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_FEATUREDATA);
     std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
