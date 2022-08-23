@@ -46,6 +46,10 @@ public:
     };
 
     explicit TransportSecurityOptions(Params params);
+    TransportSecurityOptions(const TransportSecurityOptions&);
+    TransportSecurityOptions& operator=(const TransportSecurityOptions&);
+    TransportSecurityOptions(TransportSecurityOptions&&) noexcept;
+    TransportSecurityOptions& operator=(TransportSecurityOptions&&) noexcept;
 
     ~TransportSecurityOptions();
 

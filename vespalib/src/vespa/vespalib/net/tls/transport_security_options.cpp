@@ -29,6 +29,15 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
 {
 }
 
+TransportSecurityOptions::TransportSecurityOptions(const TransportSecurityOptions&) = default;
+TransportSecurityOptions& TransportSecurityOptions::operator=(const TransportSecurityOptions&) = default;
+TransportSecurityOptions::TransportSecurityOptions(TransportSecurityOptions&&) noexcept = default;
+TransportSecurityOptions& TransportSecurityOptions::operator=(TransportSecurityOptions&&) noexcept = default;
+
+TransportSecurityOptions::~TransportSecurityOptions() {
+    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
+}
+
 TransportSecurityOptions TransportSecurityOptions::copy_without_private_key() const {
     return TransportSecurityOptions(_ca_certs_pem, _cert_chain_pem, "",
                                     _authorized_peers, _disable_hostname_validation);
@@ -61,9 +70,5 @@ TransportSecurityOptions::Params::Params(Params&&) noexcept = default;
 
 TransportSecurityOptions::Params&
 TransportSecurityOptions::Params::operator=(TransportSecurityOptions::Params&&) noexcept = default;
-
-TransportSecurityOptions::~TransportSecurityOptions() {
-    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
-}
 
 } // vespalib::net::tls

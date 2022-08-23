@@ -5,6 +5,7 @@
 #include "tls_crypto_socket.h"
 #include "protocol_snooping.h"
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib {
@@ -92,6 +93,10 @@ public:
 MaybeTlsCryptoSocket::MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<AbstractTlsCryptoEngine> tls_engine)
     : _socket(std::make_unique<MyCryptoSocket>(_socket, std::move(socket), std::move(tls_engine)))
 {
+}
+
+std::unique_ptr<net::ConnectionAuthContext> MaybeTlsCryptoSocket::make_auth_context() {
+    return _socket->make_auth_context();
 }
 
 } // namespace vespalib

@@ -4,6 +4,7 @@
 #include "rpcrequest.h"
 #include <vespa/fnet/connection.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
+#include <vespa/vespalib/net/tls/capability_env_config.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".fnet.frt.require_capabilities");
@@ -15,15 +16,22 @@ FRT_RequireCapabilities::allow(FRT_RPCRequest& req) const noexcept
 {
     const auto& auth_ctx = req.GetConnection()->auth_context();
     const bool is_authorized = auth_ctx.capabilities().contains_all(_required_capabilities);
-    if (!is_authorized) {
+    if (is_authorized) {
+        return true;
+    } else {
+        const auto mode = capability_enforcement_mode_from_env();
+        if (mode == CapabilityEnforcementMode::Disable) {
+            return true;
+        }
         auto peer_spec = req.GetConnection()->GetPeerSpec();
         std::string method_name(req.GetMethodName(), req.GetMethodNameLen());
-        LOGBT(warning, peer_spec, "Permission denied for RPC method '%s'. "
+        LOGBT(warning, peer_spec, "%sPermission denied for RPC method '%s'. "
                                   "Peer at %s with %s. Call requires %s, but peer has %s",
+              ((mode == CapabilityEnforcementMode::LogOnly) ? "(Dry-run only, not enforced): " : ""),
               method_name.c_str(), peer_spec.c_str(),
               to_string(auth_ctx.peer_credentials()).c_str(),
               _required_capabilities.to_string().c_str(),
               auth_ctx.capabilities().to_string().c_str());
+        return (mode != CapabilityEnforcementMode::Enforce);
     }
-    return is_authorized;
 }
