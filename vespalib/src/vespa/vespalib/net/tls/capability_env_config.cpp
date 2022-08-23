@@ -34,8 +34,8 @@ const char* to_string(CapabilityEnforcementMode mode) noexcept {
     case CapabilityEnforcementMode::Enforce: return "Enforce";
     case CapabilityEnforcementMode::LogOnly: return "LogOnly";
     case CapabilityEnforcementMode::Disable: return "Disable";
-    default: abort();
     }
+    abort();
 }
 
 CapabilityEnforcementMode capability_enforcement_mode_from_env() noexcept {
