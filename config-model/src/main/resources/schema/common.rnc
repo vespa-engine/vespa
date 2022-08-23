@@ -68,5 +68,12 @@ ComponentDefinition =
    Component* &
    Embedder*
 
+Embedder = element embedder {
+    attribute id { string } &
+    attribute class { xsd:Name | JavaId }? &
+    attribute bundle { xsd:Name }? &
+    attribute def { xsd:Name }? &
+    anyElement*
+}
 
 
