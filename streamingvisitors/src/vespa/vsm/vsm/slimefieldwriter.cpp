@@ -200,6 +200,12 @@ SlimeFieldWriter::SlimeFieldWriter() :
 SlimeFieldWriter::~SlimeFieldWriter() = default;
 
 void
+SlimeFieldWriter::insert(const document::FieldValue & fv, vespalib::slime::Inserter& inserter)
+{
+    traverseRecursive(fv, inserter);
+}
+
+void
 SlimeFieldWriter::convert(const document::FieldValue & fv)
 {
     if (LOG_WOULD_LOG(debug)) {

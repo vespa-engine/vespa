@@ -129,17 +129,33 @@ namespace {
  **/
 class DocsumStoreVsmDocument : public IDocsumStoreDocument
 {
+    DocsumFilter&             _docsum_filter;
+    const ResultClass&        _result_class;
+    const Document&           _vsm_document;
     const document::Document* _document;
+
+    static const document::Document *get_document_document(const Document& vsm_document) {
+        const auto* storage_doc = dynamic_cast<const StorageDocument *>(&vsm_document);
+        return (storage_doc != nullptr && storage_doc->valid()) ? &storage_doc->docDoc() : nullptr;
+    }
+    static const ResultClass& get_result_class(const DocsumFilter& docsum_filter) {
+        auto result_class = docsum_filter.getTools()->getResultClass();
+        assert(result_class != nullptr);
+        return *result_class;
+    }
 public:
-    DocsumStoreVsmDocument(const document::Document* document);
+    DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document);
     ~DocsumStoreVsmDocument() override;
     DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
     void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
-DocsumStoreVsmDocument::DocsumStoreVsmDocument(const document::Document* document)
-    : _document(document)
+DocsumStoreVsmDocument::DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document)
+    : _docsum_filter(docsum_filter),
+      _result_class(get_result_class(docsum_filter)),
+      _vsm_document(vsm_document),
+      _document(get_document_document(vsm_document))
 {
 }
 
@@ -149,6 +165,11 @@ DocsumStoreFieldValue
 DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
+        auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+        if (entry_idx >= 0) {
+            assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+            return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
+        }
         const document::Field & field = _document->getField(field_name);
         auto value(field.getDataType().createFieldValue());
         if (value) {
@@ -157,15 +178,26 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
             }
         }
     }
-    return DocsumStoreFieldValue();
+    return {};
 }
 
 void
 DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
 {
-    auto field_value = get_field_value(field_name);
-    if (field_value) {
-        SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+    if (_document != nullptr) {
+        auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+        if (entry_idx >= 0) {
+            assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+            _docsum_filter.insert_summary_field(entry_idx, _vsm_document, inserter);
+            return;
+        }
+        const document::Field & field = _document->getField(field_name);
+        auto value(field.getDataType().createFieldValue());
+        if (value) {
+            if (_document->getValue(field, *value)) {
+                SummaryFieldConverter::insert_summary_field(*value, inserter);
+            }
+        }
     }
 }
 
@@ -382,14 +414,13 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
         if (fv != nullptr) {
             LOG(debug, "writeSlimeField: About to write field '%d' as Slime: field value = '%s'",
                 fieldId.getId(), fv->toString().c_str());
-            SlimeFieldWriter writer;
             CheckUndefinedValueVisitor check_undefined;
-            if (! fieldSpec.hasIdentityMapping()) {
-                writer.setInputFields(fieldSpec.getInputFields());
-            } else {
-                fv->accept(check_undefined);
-            }
+            fv->accept(check_undefined);
             if (!check_undefined.is_undefined()) {
+                SlimeFieldWriter writer;
+                if (! fieldSpec.hasIdentityMapping()) {
+                    writer.setInputFields(fieldSpec.getInputFields());
+                }
                 writer.convert(*fv);
                 const vespalib::stringref out = writer.out();
                 packer.AddLongString(out.data(), out.size());
@@ -406,39 +437,32 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
     }
 }
 
-void
-DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
-                                const Document & docsum,
-                                ResultPacker & packer)
+bool
+DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Document& doc)
 {
-    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
-        LOG(debug, "writeFlattenField: Cannot handle command NONE");
-        packer.AddEmpty();
-        return;
+    if (field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+        LOG(debug, "write_flatten_field: Cannot handle command NONE");
+        return false;
     }
 
-    if (fieldSpec.getResultType() != RES_LONG_STRING &&
-        fieldSpec.getResultType() != RES_STRING)
-    {
-        LOG(debug, "writeFlattenField: Can only handle result types STRING and LONG_STRING");
-        packer.AddEmpty();
-        return;
+    if (field_spec.getResultType() != RES_LONG_STRING && field_spec.getResultType() != RES_STRING) {
+        LOG(debug, "write_flatten_field: Can only handle result types STRING and LONG_STRING");
+        return false;
     }
-
-    switch (fieldSpec.getCommand()) {
+    switch (field_spec.getCommand()) {
     case VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER:
         _flattenWriter.setSeparator("\x1E"); // record separator (same as juniper uses)
         break;
     default:
         break;
     }
-    const DocsumFieldSpec::FieldIdentifierVector & inputFields = fieldSpec.getInputFields();
+    const DocsumFieldSpec::FieldIdentifierVector & inputFields = field_spec.getInputFields();
     for (size_t i = 0; i < inputFields.size(); ++i) {
         const DocsumFieldSpec::FieldIdentifier & fieldId = inputFields[i];
         bool modified = false;
-        const document::FieldValue * fv = getFieldValue(fieldId, fieldSpec.getCommand(), docsum, modified);
+        const document::FieldValue * fv = getFieldValue(fieldId, field_spec.getCommand(), doc, modified);
         if (fv != nullptr) {
-            LOG(debug, "writeFlattenField: About to flatten field '%d' with field value (%s) '%s'",
+            LOG(debug, "write_flatten_field: About to flatten field '%d' with field value (%s) '%s'",
                 fieldId.getId(), modified ? "modified" : "original", fv->toString().c_str());
             if (modified) {
                 fv->iterateNested(_emptyFieldPath, _flattenWriter);
@@ -446,10 +470,21 @@ DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
                 fv->iterateNested(fieldId.getPath(), _flattenWriter);
             }
         } else {
-            LOG(debug, "writeFlattenField: Field value not set for field '%d'", fieldId.getId());
+            LOG(debug, "write_flatten_field: Field value not set for field '%d'", fieldId.getId());
         }
     }
+    return true;
+}
 
+void
+DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
+                                const Document & docsum,
+                                ResultPacker & packer)
+{
+    if (!write_flatten_field(fieldSpec, docsum)) {
+        packer.AddEmpty();
+        return;
+    }
     const CharBuffer & buf = _flattenWriter.getResult();
     switch (fieldSpec.getResultType()) {
     case RES_STRING:
@@ -549,11 +584,104 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     uint32_t buflen;
     bool ok = _packer.GetDocsumBlob(&buf, &buflen);
     if (ok) {
-        const auto* storage_doc = dynamic_cast<const StorageDocument *>(&doc);
-        const document::Document *doc_doc = (storage_doc != nullptr && storage_doc->valid()) ? &storage_doc->docDoc() : nullptr;
-        return DocsumStoreValue(buf, buflen, std::make_unique<DocsumStoreVsmDocument>(doc_doc));
+        return DocsumStoreValue(buf, buflen, std::make_unique<DocsumStoreVsmDocument>(*this, doc));
     } else {
         return DocsumStoreValue(nullptr, 0);
+    }
+}
+
+search::docsummary::DocsumStoreFieldValue
+DocsumFilter::get_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc)
+{
+    // Filtering not yet implemented, return whole struct or multivalue field
+    const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getOutputField();
+    const document::FieldValue* field_value = doc.getField(fieldId.getId());
+    return DocsumStoreFieldValue(field_value);
+}
+
+search::docsummary::DocsumStoreFieldValue
+DocsumFilter::get_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc)
+{
+    if (!write_flatten_field(field_spec, doc)) {
+        return {};
+    }
+    const CharBuffer& buf = _flattenWriter.getResult();
+    auto value = document::StringFieldValue::make(vespalib::stringref(buf.getBuffer(), buf.getPos()));
+    _flattenWriter.clear();
+    return DocsumStoreFieldValue(std::move(value));
+}
+
+search::docsummary::DocsumStoreFieldValue
+DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
+{
+    const auto& field_spec = _fields[entry_idx];
+    ResType type = field_spec.getResultType();
+    if (type == RES_JSONSTRING) {
+        return get_struct_or_multivalue_summary_field(field_spec, doc);
+    } else {
+        if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+            const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getInputFields()[0];
+            const document::FieldValue* field_value = doc.getField(fieldId.getId());
+            return DocsumStoreFieldValue(field_value);
+        } else if (field_spec.getInputFields().size() == 0 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+            return {};
+        } else {
+            return get_flattened_summary_field(field_spec, doc);
+        }
+    }
+}
+
+void
+DocsumFilter::insert_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter)
+{
+    if (field_spec.getCommand() != VsmsummaryConfig::Fieldmap::Command::NONE) {
+        return;
+    }
+    const DocsumFieldSpec::FieldIdentifier& fieldId = field_spec.getOutputField();
+    const document::FieldValue* fv = doc.getField(fieldId.getId());
+    if (fv == nullptr) {
+        return;
+    }
+    CheckUndefinedValueVisitor check_undefined;
+    fv->accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFieldWriter writer;
+        if (! field_spec.hasIdentityMapping()) {
+            writer.setInputFields(field_spec.getInputFields());
+        }
+        writer.insert(*fv, inserter);
+    }
+}
+
+void
+DocsumFilter::insert_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter)
+{
+    if (!write_flatten_field(field_spec, doc)) {
+        return;
+    }
+    const CharBuffer& buf = _flattenWriter.getResult();
+    inserter.insertString(vespalib::Memory(buf.getBuffer(), buf.getPos()));
+    _flattenWriter.clear();
+}
+
+void
+DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter)
+{
+    const auto& field_spec = _fields[entry_idx];
+    ResType type = field_spec.getResultType();
+    if (type == RES_JSONSTRING) {
+        insert_struct_or_multivalue_summary_field(field_spec, doc, inserter);
+    } else {
+        if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+            const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getInputFields()[0];
+            const document::FieldValue* field_value = doc.getField(fieldId.getId());
+            if (field_value != nullptr) {
+                SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+            }
+        } else if (field_spec.getInputFields().size() == 0 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+        } else {
+            insert_flattened_summary_field(field_spec, doc, inserter);
+        }
     }
 }
 
