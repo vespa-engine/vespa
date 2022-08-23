@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.auditlog;
 
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -66,9 +67,10 @@ public class AuditLogger {
             throw new UncheckedIOException(e);
         }
 
+        AuditLog.Entry.Client client = parseClient(request);
         Instant now = clock.instant();
-        AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), pathAndQueryOf(request.getUri()),
-                                                  data);
+        AuditLog.Entry entry = new AuditLog.Entry(now, client, principal.getName(), method.get(),
+                                                  pathAndQueryOf(request.getUri()), data);
         try (Mutex lock = db.lockAuditLog()) {
             AuditLog auditLog = db.readAuditLog()
                                   .pruneBefore(now.minus(entryTtl))
@@ -79,6 +81,21 @@ public class AuditLogger {
 
         // Create a new input stream to allow callers to consume request body
         return new HttpRequest(request.getJDiscRequest(), new ByteArrayInputStream(data), request.propertyMap());
+    }
+
+    private static AuditLog.Entry.Client parseClient(HttpRequest request) {
+        String userAgent = request.getHeader(HttpHeaders.Names.USER_AGENT);
+        if (userAgent != null) {
+            if (userAgent.startsWith("Vespa CLI/")) {
+                return AuditLog.Entry.Client.cli;
+            } else if (userAgent.startsWith("Vespa Hosted Client ")) {
+                return AuditLog.Entry.Client.hv;
+            }
+        }
+        if (request.getPort() == 443) {
+            return AuditLog.Entry.Client.console;
+        }
+        return AuditLog.Entry.Client.other;
     }
 
     /** Returns the auditable method of given request, if any */
