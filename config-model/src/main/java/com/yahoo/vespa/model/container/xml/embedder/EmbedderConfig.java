@@ -1,9 +1,10 @@
 package com.yahoo.vespa.model.container.xml.embedder;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.text.XML;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+
+import java.util.Map;
 
 /**
  * Translates config in services.xml of the form
@@ -26,23 +27,57 @@ import org.w3c.dom.NodeList;
  */
 public class EmbedderConfig {
 
+    // Until we have optional path parameters, use services.xml as it is guaranteed to exist
+    private final static String dummyPath = "services.xml";
+
     /**
      * Transforms the &lt;embedder ...&gt; element to component configuration.
      *
      * @param deployState the deploy state - as config generation can depend on context
-     * @param embedderSpec the XML element containing the &lt;embedder ...&gt;
+     * @param embedder the XML element containing the &lt;embedder ...&gt;
      * @return a new XML element containting the &lt;component ...&gt; configuration
      */
-    public static Element transform(DeployState deployState, Element embedderSpec) {
-        EmbedderConfigTransformer transformer = getEmbedderTransformer(embedderSpec, deployState.isHosted());
-        NodeList children = embedderSpec.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element) {
-                transformer.addOption((Element) child);
-            }
+    public static Element transform(DeployState deployState, Element embedder) {
+        Element component = XML.getDocumentBuilder().newDocument().createElement("component");
+        component.setAttribute("id", embedder.getAttribute("id"));
+        component.setAttribute("class", embedderClassFrom(embedder));
+        component.setAttribute("bundle", embedder.hasAttribute("bundle") ? embedder.getAttribute("bundle") : "model-integration");
+
+        String configDef = embedderConfigFrom(embedder);
+        if ( ! configDef.isEmpty()) {
+            Element config = component.getOwnerDocument().createElement("config");
+            config.setAttribute("name", configDef);
+            for (Element child : XML.getChildren(embedder))
+                addConfigValue(child, config, deployState.isHosted());
+            component.appendChild(config);
         }
-        return transformer.createComponentConfig(deployState);
+
+        return component;
+    }
+
+    /** Adds a config value from an embedder element into a regular config. */
+    private static void addConfigValue(Element value, Element config, boolean hosted) {
+        if (value.hasAttribute("path")) {
+            addChild(value.getTagName() + "Url", "", config);
+            addChild(value.getTagName() + "Path", value.getAttribute("path"), config);
+        }
+        else if (value.hasAttribute("id") && hosted) {
+            addChild(value.getTagName() + "Url", modelIdToUrl(value.getAttribute("id")), config);
+            addChild(value.getTagName() + "Path", dummyPath, config);
+        }
+        else if (value.hasAttribute("url")) {
+            addChild(value.getTagName() + "Url", value.getAttribute("url"), config);
+            addChild(value.getTagName() + "Path", dummyPath, config);
+        }
+        else {
+            addChild(value.getTagName(), value.getTextContent(), config);
+        }
+    }
+
+    private static void addChild(String name, String value, Element parent) {
+        Element element = parent.getOwnerDocument().createElement(name);
+        element.setTextContent(value);
+        parent.appendChild(element);
     }
 
     private static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
@@ -57,7 +92,7 @@ public class EmbedderConfig {
         if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
 
         // Implicit from class name
-        return switch (getEmbedderClass(spec)) {
+        return switch (embedderClassFrom(spec)) {
             case "ai.vespa.embedding.BertBaseEmbedder" -> "embedding.bert-base-embedder";
             default -> "";
         };
@@ -72,10 +107,10 @@ public class EmbedderConfig {
             case "bert-base-uncased":
                 return "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt";
         }
-        throw new IllegalArgumentException("Unknown model id: '" + id + "'");
+        throw new IllegalArgumentException("Unknown model id '" + id + "'");
     }
 
-    private static String getEmbedderClass(Element spec) {
+    private static String embedderClassFrom(Element spec) {
         if (spec.hasAttribute("class")) {
             return spec.getAttribute("class");
         }

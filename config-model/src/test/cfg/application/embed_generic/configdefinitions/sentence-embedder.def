@@ -4,7 +4,8 @@ package=ai.vespa.example.paragraph
 vocab path
 
 # Transformer model settings
-model path
+modelPath path
+modelUrl string
 
 # Max length of token sequence model can handle
 transforerMaxTokens int default=128
