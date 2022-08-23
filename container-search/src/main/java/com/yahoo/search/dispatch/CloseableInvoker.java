@@ -16,13 +16,13 @@ public abstract class CloseableInvoker implements Closeable {
 
     protected abstract void release();
 
-    private BiConsumer<Boolean, Duration> teardown = null;
+    private BiConsumer<Boolean, RequestDuration> teardown = null;
     private boolean success = false;
-    private long startTime = 0;
+    private RequestDuration duration;
 
-    public void teardown(BiConsumer<Boolean, Duration> teardown) {
+    public void teardown(BiConsumer<Boolean, RequestDuration> teardown) {
         this.teardown = teardown;
-        this.startTime = System.nanoTime();
+        this.duration = new RequestDuration();
     }
 
     protected void setFinalStatus(boolean success) {
@@ -32,7 +32,7 @@ public abstract class CloseableInvoker implements Closeable {
     @Override
     public final void close() {
         if (teardown != null) {
-            teardown.accept(success, Duration.ofNanos(System.nanoTime() - startTime));
+            teardown.accept(success, duration.complete());
             teardown = null;
         }
         release();
