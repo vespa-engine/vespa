@@ -153,8 +153,8 @@ constexpr const char* to_string(RequiredPeerCredential::Field field) noexcept {
     case RequiredPeerCredential::Field::CN:      return "CN";
     case RequiredPeerCredential::Field::SAN_DNS: return "SAN_DNS";
     case RequiredPeerCredential::Field::SAN_URI: return "SAN_URI";
-    default: abort();
     }
+    abort();
 }
 
 }

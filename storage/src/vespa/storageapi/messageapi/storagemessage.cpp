@@ -278,8 +278,8 @@ to_string(LockingRequirements req) noexcept {
     switch (req) {
     case LockingRequirements::Exclusive: return "Exclusive";
     case LockingRequirements::Shared:    return "Shared";
-    default: abort();
     }
+    abort();
 }
 
 std::ostream&
@@ -293,8 +293,8 @@ to_string(InternalReadConsistency consistency) noexcept {
     switch (consistency) {
     case InternalReadConsistency::Strong: return "Strong";
     case InternalReadConsistency::Weak:   return "Weak";
-    default: abort();
     }
+    abort();
 }
 
 std::ostream&
