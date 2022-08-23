@@ -1028,7 +1028,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var awsRegion = request.getProperty("aws-region");
         var parameterName = request.getProperty("parameter-name");
         var applicationId = ApplicationId.fromFullString(request.getProperty("application-id"));
-        var zoneId = ZoneId.from(request.getProperty("zone"));
+        var zoneId = requireZone(ZoneId.from(request.getProperty("zone")));
         var deploymentId = new DeploymentId(applicationId, zoneId);
 
         var tenant = controller.tenants().require(applicationId.tenant(), CloudTenant.class);
@@ -2949,7 +2949,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ZoneId requireZone(String environment, String region) {
-        ZoneId zone = ZoneId.from(environment, region);
+        return requireZone(ZoneId.from(environment, region));
+    }
+
+    private ZoneId requireZone(ZoneId zone) {
         // TODO(mpolden): Find a way to not hardcode this. Some APIs allow this "virtual" zone, e.g. /logs
         if (zone.environment() == Environment.prod && zone.region().value().equals("controller")) {
             return zone;

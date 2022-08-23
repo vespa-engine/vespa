@@ -47,26 +47,25 @@ public enum Environment {
 
     /** Returns the environment name from the string value returned by value() */
     public static Environment from(String value) {
-        switch(value) {
-            case "prod" : return prod;
-            case "staging" : return staging;
-            case "test" : return test;
-            case "dev" : return dev;
-            case "perf" : return perf;
-            default : throw new IllegalStateException("'" + value + "' is not a valid environment identifier");
-        }
+        return switch (value) {
+            case "prod" -> prod;
+            case "staging" -> staging;
+            case "test" -> test;
+            case "dev" -> dev;
+            case "perf" -> perf;
+            default -> throw new IllegalArgumentException("'" + value + "' is not a valid environment identifier");
+        };
     }
 
     /** Returns a name of this which is used in external API's and stored in persistent stores */
     public String value() {
-        switch(this) {
-            case prod : return "prod";
-            case staging : return "staging";
-            case test : return "test";
-            case dev : return "dev";
-            case perf : return "perf";
-            default : throw new IllegalStateException();
-        }
+        return switch (this) {
+            case prod -> "prod";
+            case staging -> "staging";
+            case test -> "test";
+            case dev -> "dev";
+            case perf -> "perf";
+        };
     }
 
 }
