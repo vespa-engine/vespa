@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -169,7 +168,7 @@ public class EmbedderTestCase {
     private void assertTransform(String embedder, String component, boolean hosted) throws IOException, SAXException {
         Element emb = createElement(embedder);
         Element cmp = createElement(component);
-        Element trans = EmbedderConfig.transform(createEmptyDeployState(hosted), emb);
+        Element trans = EmbedderConfigTransformer.transform(createEmptyDeployState(hosted), emb);
         assertSpec(cmp, trans);
     }
 
@@ -201,7 +200,7 @@ public class EmbedderTestCase {
 
     private void assertTransformThrows(String embedder, String expectedMessage, boolean hosted) throws IOException, SAXException {
         try {
-            EmbedderConfig.transform(createEmptyDeployState(hosted), createElement(embedder));
+            EmbedderConfigTransformer.transform(createEmptyDeployState(hosted), createElement(embedder));
             fail("Expected exception was not thrown: " + expectedMessage);
         } catch (IllegalArgumentException e) {
             assertEquals(expectedMessage, e.getMessage());

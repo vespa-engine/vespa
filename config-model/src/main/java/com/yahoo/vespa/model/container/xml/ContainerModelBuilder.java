@@ -83,7 +83,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
-import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -355,7 +354,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element node : XML.getChildren(spec, "embedder")) {
-            Element transformed = EmbedderConfig.transform(deployState, node);
+            Element transformed = EmbedderConfigTransformer.transform(deployState, node);
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, transformed));
         }
     }

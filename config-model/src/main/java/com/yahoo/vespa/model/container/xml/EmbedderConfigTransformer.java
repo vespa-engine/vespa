@@ -1,10 +1,9 @@
-package com.yahoo.vespa.model.container.xml.embedder;
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
-
-import java.util.Map;
 
 /**
  * Translates config in services.xml of the form
@@ -24,8 +23,9 @@ import java.util.Map;
  * with some added interpretations based on recognizing the class.
  *
  * @author lesters
+ * @author bratseth
  */
-public class EmbedderConfig {
+public class EmbedderConfigTransformer {
 
     // Until we have optional path parameters, use services.xml as it is guaranteed to exist
     private final static String dummyPath = "services.xml";
@@ -80,13 +80,6 @@ public class EmbedderConfig {
         parent.appendChild(element);
     }
 
-    private static EmbedderConfigTransformer getEmbedderTransformer(Element spec, boolean hosted) {
-        return switch (embedderConfigFrom(spec)) {
-            case "embedding.bert-base-embedder" -> new EmbedderConfigBertBaseTransformer(spec, hosted);
-            default -> new EmbedderConfigTransformer(spec, hosted);
-        };
-    }
-
     private static String embedderConfigFrom(Element spec) {
         String explicitDefinition = spec.getAttribute("def");
         if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
@@ -98,7 +91,7 @@ public class EmbedderConfig {
         };
     }
 
-    static String modelIdToUrl(String id) {
+    private static String modelIdToUrl(String id) {
         switch (id) {
             case "test-model-id":
                 return "test-model-url";
