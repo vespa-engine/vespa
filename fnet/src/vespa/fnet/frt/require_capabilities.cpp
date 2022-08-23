@@ -32,6 +32,6 @@ FRT_RequireCapabilities::allow(FRT_RPCRequest& req) const noexcept
               to_string(auth_ctx.peer_credentials()).c_str(),
               _required_capabilities.to_string().c_str(),
               auth_ctx.capabilities().to_string().c_str());
-        return (mode == CapabilityEnforcementMode::Enforce) ? false : true;
+        return (mode != CapabilityEnforcementMode::Enforce);
     }
 }
