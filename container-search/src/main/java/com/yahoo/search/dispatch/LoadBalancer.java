@@ -96,12 +96,12 @@ public class LoadBalancer {
 
         interface Decayer {
             void decay(RequestDuration duration);
-            double averageSearchTime();
+            double averageCost();
         }
 
         static class NoDecay implements Decayer {
             public void decay(RequestDuration duration) {}
-            public double averageSearchTime() { return MIN_QUERY_TIME; }
+            public double averageCost() { return MIN_QUERY_TIME; }
         }
 
         private final Group group;
@@ -131,12 +131,8 @@ public class LoadBalancer {
             }
         }
 
-        Duration averageSearchTime() {
-            return Duration.ofNanos((long)(decayer.averageSearchTime()*1_000_000_000));
-        }
-
-        double averageSearchTimeInverse() {
-            return 1.0 / decayer.averageSearchTime();
+        double weight() {
+            return 1.0 / decayer.averageCost();
         }
 
         int groupId() {
@@ -214,6 +210,8 @@ public class LoadBalancer {
         private static double toDouble(Duration duration) {
             return duration.toNanos()/1_000_000_000.0;
         }
+        private static Duration fromDouble(double seconds) { return Duration.ofNanos((long)(seconds*1_000_000_000));}
+
         static class DecayByRequests implements GroupStatus.Decayer {
             private long queries;
             private double averageSearchTime;
@@ -230,7 +228,8 @@ public class LoadBalancer {
                 queries++;
                 averageSearchTime = (searchTime + (decayRate - 1) * averageSearchTime) / decayRate;
             }
-            public double averageSearchTime() { return averageSearchTime; }
+            public double averageCost() { return averageSearchTime; }
+            Duration averageSearchTime() { return fromDouble(averageSearchTime);}
         }
 
         static class DecayByTime implements GroupStatus.Decayer {
@@ -244,13 +243,14 @@ public class LoadBalancer {
                 prev = start;
             }
             public void decay(RequestDuration duration) {
-                double searchTime = Math.max(duration.duration().toMillis()/1000.0, MIN_QUERY_TIME);
+                double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
                 double decayRate = LATENCY_DECAY_TIME;
-                double sampleWeight = Math.min(decayRate/2, toDouble(duration.timeSince(prev)));
+                double sampleWeight = Math.min(decayRate/2, toDouble(duration.difference(prev)));
                 averageSearchTime = (sampleWeight*searchTime + (decayRate - sampleWeight) * averageSearchTime) / decayRate;
                 prev = duration;
             }
-            public double averageSearchTime() { return averageSearchTime; }
+            public double averageCost() { return averageSearchTime; }
+            Duration averageSearchTime() { return fromDouble(averageSearchTime);}
         }
 
         public AdaptiveScheduler(Type type, Random random, List<GroupStatus> scoreboard) {
@@ -267,7 +267,7 @@ public class LoadBalancer {
             for (GroupStatus gs : scoreboard) {
                 if (rejected == null || !rejected.contains(gs.group.id())) {
                     if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        sum += gs.averageSearchTimeInverse();
+                        sum += gs.weight();
                         n++;
                     }
                 }
@@ -279,7 +279,7 @@ public class LoadBalancer {
             for (GroupStatus gs : scoreboard) {
                 if (rejected == null || !rejected.contains(gs.group.id())) {
                     if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        accum += gs.averageSearchTimeInverse();
+                        accum += gs.weight();
                         if (needle < accum / sum) {
                             return Optional.of(gs);
                         }

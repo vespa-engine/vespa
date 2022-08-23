@@ -90,29 +90,30 @@ public class LoadBalancerTest {
 
     @Test
     void requireCorrectAverageSearchTimeDecay() {
+        AdaptiveScheduler.DecayByRequests decayer = new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1));
         GroupStatus gs = newGroupStatus(1);
-        gs.setDecayer(new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1)));
+        gs.setDecayer(decayer);
         updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(1)));
-        assertEquals(Duration.ofSeconds(1), gs.averageSearchTime());
+        assertEquals(Duration.ofSeconds(1), decayer.averageSearchTime());
         updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(2)));
-        assertEquals(Duration.ofNanos(1023255813), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(1023255813), decayer.averageSearchTime());
         updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(2)));
-        assertEquals(Duration.ofNanos(1045454545), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(1045454545), decayer.averageSearchTime());
         updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
         updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
         updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
         updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
-        assertEquals(Duration.ofNanos(966666666), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(966666666), decayer.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
             updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(1)));
         }
-        assertEquals(Duration.ofNanos(999999812), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(999999812), decayer.averageSearchTime());
         updateSearchTime(gs, RequestDuration.of(Duration.ofMillis(100)));
-        assertEquals(Duration.ofNanos(999099812), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(999099812), decayer.averageSearchTime());
         for (int i = 0; i < 10000; i++) {
             updateSearchTime(gs, RequestDuration.of(Duration.ZERO));
         }
-        assertEquals(Duration.ofNanos(1045087), gs.averageSearchTime());
+        assertEquals(Duration.ofNanos(1045087), decayer.averageSearchTime());
     }
 
     @Test
@@ -193,16 +194,12 @@ public class LoadBalancerTest {
         assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
     }
 
-    private static Duration from_s(double seconds) {
-        return Duration.ofNanos((long)(seconds * 1_000_000_000));
-    }
-
     private static int countRequestsToReach90p(Duration timeBetweenSample, Duration searchTime) {
         double p90 = 0.9*searchTime.toMillis()/1000.0;
         GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         int requests = 0;
         Instant start = Instant.EPOCH;
-        for (; decayer.averageSearchTime() < p90;) {
+        while (decayer.averageCost() < p90) {
             decayer.decay(RequestDuration.of(start, searchTime));
             start = start.plus(timeBetweenSample);
             requests++;
@@ -213,21 +210,21 @@ public class LoadBalancerTest {
     @Test
     public void requireDecayByTimeToDependOnlyOnTime() {
         GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
-        assertEquals(0.002, decayer.averageSearchTime(), delta);
+        assertEquals(0.002, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
-        assertEquals(0.003616, decayer.averageSearchTime(), delta);
+        assertEquals(0.003616, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(2000), Duration.ofMillis(10)));
-        assertEquals(0.0048928, decayer.averageSearchTime(), delta);
+        assertEquals(0.0048928, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
-        assertEquals(0.00591424, decayer.averageSearchTime(), delta);
+        assertEquals(0.00591424, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
-        assertEquals(0.0059959552, decayer.averageSearchTime(), delta);
+        assertEquals(0.0059959552, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3100), Duration.ofMillis(10)));
-        assertEquals(0.0059959552, decayer.averageSearchTime(), delta);
+        assertEquals(0.0059959552, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(3000), Duration.ofMillis(10)));
-        assertEquals(0.006076036096, decayer.averageSearchTime(), delta);
+        assertEquals(0.006076036096, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(5000), Duration.ofMillis(10)));
-        assertEquals(0.0076456216576000005, decayer.averageSearchTime(), delta);
+        assertEquals(0.0076456216576000005, decayer.averageCost(), delta);
         assertEquals(110, countRequestsToReach90p(Duration.ofMillis(100), Duration.ofMillis(10)));
         assertEquals(55, countRequestsToReach90p(Duration.ofMillis(200), Duration.ofMillis(10)));
         assertEquals(11, countRequestsToReach90p(Duration.ofMillis(1000), Duration.ofMillis(10)));
@@ -235,10 +232,13 @@ public class LoadBalancerTest {
 
     @Test
     public void requireDecayByTimeToNotJumpTooFar() {
-        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
-        assertEquals(0.002, decayer.averageSearchTime(), delta);
+        AdaptiveScheduler.DecayByTime decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        assertEquals(0.002, decayer.averageCost(), delta);
+        assertEquals(Duration.ofMillis(2), decayer.averageSearchTime());
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(10000), Duration.ofMillis(10)));
-        assertEquals(0.006, decayer.averageSearchTime(), delta); // Capped at 50% sampleWeight
+        assertEquals(0.006, decayer.averageCost(), delta); // Capped at 50% sampleWeight
+        assertEquals(Duration.ofMillis(6), decayer.averageSearchTime());
+
     }
 
     private static void updateSearchTime(GroupStatus gs, RequestDuration time) {

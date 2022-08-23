@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
+ * Contains start and and time. Exposes a duration, and lets you measure the time difference between 2 requests.
+ * It does use System.nanoTime to get a steady clock.
  *
  * @author baldersheim
  */
@@ -29,7 +31,7 @@ class RequestDuration {
     Duration duration() {
         return Duration.ofNanos(endTime - startTime);
     }
-    Duration timeSince(RequestDuration prev) {
+    Duration difference(RequestDuration prev) {
         return Duration.ofNanos(Math.abs(endTime - prev.endTime));
     }
     static RequestDuration of(Duration duration) {
