@@ -100,8 +100,8 @@ ZooKeeper = element zookeeper {
 Embedder = element embedder {
     attribute id { string } &
     attribute class { xsd:Name | JavaId }? &
-    attribute bundle { xsd:Name } &
-    attribute def { xsd:Name } &
+    attribute bundle { xsd:Name }? &
+    attribute def { xsd:Name }? &
     anyElement*
 }
 
