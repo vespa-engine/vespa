@@ -36,6 +36,11 @@ public:
     void setInputFields(const DocsumFieldSpec::FieldIdentifierVector & inputFields) { _inputFields = &inputFields; }
 
     /**
+     * Insert the given field value
+     **/
+    void insert(const document::FieldValue & fv, vespalib::slime::Inserter& inserter);
+
+    /**
      * Convert the given field value
      **/
     void convert(const document::FieldValue & fv);
