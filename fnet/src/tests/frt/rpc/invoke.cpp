@@ -227,10 +227,10 @@ public:
         // The authz rules used for this test only grant the telemetry capability set
         rb.DefineMethod("capabilityRestricted", "", "",
                         FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
-        rb.RequestAccessFilter(std::make_unique<FRT_RequireCapabilities>(CapabilitySet::content_node()));
+        rb.RequestAccessFilter(FRT_RequireCapabilities::of(CapabilitySet::content_node()));
         rb.DefineMethod("capabilityAllowed", "", "",
                         FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
-        rb.RequestAccessFilter(std::make_unique<FRT_RequireCapabilities>(CapabilitySet::telemetry()));
+        rb.RequestAccessFilter(FRT_RequireCapabilities::of(CapabilitySet::telemetry()));
     }
 
     void RPC_Test(FRT_RPCRequest *req)

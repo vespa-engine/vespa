@@ -3,6 +3,7 @@
 
 #include "request_access_filter.h"
 #include <vespa/vespalib/net/tls/capability_set.h>
+#include <memory>
 
 /**
  * An RPC access filter which verifies that a request is associated with an auth
@@ -18,4 +19,7 @@ public:
     }
 
     bool allow(FRT_RPCRequest& req) const noexcept override;
+
+    static std::unique_ptr<FRT_RequireCapabilities> of(vespalib::net::tls::Capability required_capability);
+    static std::unique_ptr<FRT_RequireCapabilities> of(vespalib::net::tls::CapabilitySet required_capabilities);
 };

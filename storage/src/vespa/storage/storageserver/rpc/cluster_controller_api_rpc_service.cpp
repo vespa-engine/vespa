@@ -36,9 +36,7 @@ void ClusterControllerApiRpcService::close() {
 namespace {
 
 std::unique_ptr<FRT_RequireCapabilities> make_cc_api_capability_filter() {
-    return std::make_unique<FRT_RequireCapabilities>(vespalib::net::tls::CapabilitySet::of({
-        vespalib::net::tls::Capability::content_cluster_controller_internal_state_api()
-    }));
+    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::content_cluster_controller_internal_state_api());
 }
 
 }

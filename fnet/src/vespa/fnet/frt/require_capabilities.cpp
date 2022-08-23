@@ -35,3 +35,15 @@ FRT_RequireCapabilities::allow(FRT_RPCRequest& req) const noexcept
         return (mode != CapabilityEnforcementMode::Enforce);
     }
 }
+
+std::unique_ptr<FRT_RequireCapabilities>
+FRT_RequireCapabilities::of(Capability required_capability)
+{
+    return std::make_unique<FRT_RequireCapabilities>(CapabilitySet::of({required_capability}));
+}
+
+std::unique_ptr<FRT_RequireCapabilities>
+FRT_RequireCapabilities::of(CapabilitySet required_capabilities)
+{
+    return std::make_unique<FRT_RequireCapabilities>(required_capabilities);
+}
