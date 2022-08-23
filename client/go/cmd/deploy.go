@@ -132,6 +132,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 				return fmt.Errorf("could not write session id: %w", err)
 			}
 			cli.printSuccess("Prepared ", color.CyanString(pkg.Path), " with session ", result.ID)
+			printPrepareLog(cli.Stderr, result)
 			return nil
 		},
 	}

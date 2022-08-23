@@ -143,7 +143,23 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err := checkResponse(req, response, serviceDescription); err != nil {
 		return PrepareResult{}, err
 	}
-	return result, nil
+	var jsonResponse struct {
+		SessionID string                   `json:"session-id"`
+		Log       []LogLinePrepareResponse `json:"log"`
+	}
+	jsonDec := json.NewDecoder(response.Body)
+	if err := jsonDec.Decode(&jsonResponse); err != nil {
+		return PrepareResult{}, err
+	}
+	var id int64
+	id, err = strconv.ParseInt(jsonResponse.SessionID, 10, 64)
+	if err != nil {
+		return PrepareResult{}, err
+	}
+	return PrepareResult{
+		ID:       id,
+		LogLines: jsonResponse.Log,
+	}, err
 }
 
 // Activate deployment with sessionID from a past prepare
