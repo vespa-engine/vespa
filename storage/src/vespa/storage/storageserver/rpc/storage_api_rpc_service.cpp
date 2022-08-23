@@ -55,9 +55,7 @@ StorageApiRpcService::Params::~Params() = default;
 void StorageApiRpcService::register_server_methods(SharedRpcResources& rpc_resources) {
     FRT_ReflectionBuilder rb(&rpc_resources.supervisor());
     rb.DefineMethod(rpc_v1_method_name(), "bixbix", "bixbix", FRT_METHOD(StorageApiRpcService::RPC_rpc_v1_send), this);
-    rb.RequestAccessFilter(std::make_unique<FRT_RequireCapabilities>(vespalib::net::tls::CapabilitySet::of({
-        vespalib::net::tls::Capability::content_storage_api()
-    })));
+    rb.RequestAccessFilter(FRT_RequireCapabilities::of(vespalib::net::tls::Capability::content_storage_api()));
     rb.MethodDesc("V1 of StorageAPI direct RPC protocol");
     rb.ParamDesc("header_encoding", "0=raw, 6=lz4");
     rb.ParamDesc("header_decoded_size", "Uncompressed header blob size");
