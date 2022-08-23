@@ -50,6 +50,7 @@ ClusterV3 = element cluster {
   GenericConfig* &
   SchemaMapping? &
   Component* &
+  Embedder* &
   Handler* &
   DocprocChainsV3?
 }

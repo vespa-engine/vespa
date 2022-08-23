@@ -11,8 +11,8 @@
 
     <embedder id="transformer" class="ai.vespa.embedding.BertBaseEmbedder">
       <!-- model specifics -->
-      <model id="test-model-id" url="test-model-url"/>
-      <vocab path="files/vocab.txt"/>
+      <transformerModel id="test-model-id" url="test-model-url"/>
+      <tokenizerVocab path="files/vocab.txt"/>
 
       <!-- tunable parameters: number of threads etc -->
       <onnxIntraOpThreads>4</onnxIntraOpThreads>

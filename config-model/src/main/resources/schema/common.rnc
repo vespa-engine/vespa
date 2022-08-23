@@ -65,7 +65,8 @@ ComponentDefinition =
    ComponentId &
    BundleSpec &
    GenericConfig* &
-   Component*
+   Component* &
+   Embedder*
 
 
 
