@@ -160,9 +160,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         @Override
         public Optional<Change> change(Version currentVersion, Instant instant) {
             CalendarVersion version = findVersion(instant, currentVersion);
+            Instant predicatedInstant = instant;
             while (!version.version().isAfter(currentVersion)) {
-                instant = instant.plus(Duration.ofDays(1));
-                version = findVersion(instant, currentVersion);
+                predicatedInstant = predicatedInstant.plus(Duration.ofDays(1));
+                version = findVersion(predicatedInstant, currentVersion);
             }
             Duration cooldown = remainingCooldownAt(instant, version);
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
