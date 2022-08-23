@@ -95,6 +95,39 @@ public class OsUpgradeSchedulerTest {
     }
 
     @Test
+    void schedule_calendar_versioned_release_in_cd() {
+        ControllerTester tester = new ControllerTester(SystemName.cd);
+        OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
+        Instant t0 = Instant.parse("2022-01-16T02:05:00.00Z"); // Inside trigger period
+        tester.clock().setInstant(t0);
+        CloudName cloud = CloudName.from("cloud");
+        ZoneApi zone = zone("prod.us-west-1", cloud);
+        tester.zoneRegistry().setZones(zone).reprovisionToUpgradeOsIn(zone);
+
+        // Set initial target
+        Version version0 = Version.fromString("7.0.0.20220101");
+        tester.controller().upgradeOsIn(cloud, version0, Duration.ofDays(1), false);
+
+        // Next version is triggered
+        Version version1 = Version.fromString("7.0.0.20220301");
+        tester.clock().advance(Duration.ofDays(44));
+        assertEquals("2022-03-01T02:05:00", formatInstant(tester.clock().instant()));
+        scheduler.maintain();
+        assertEquals(version0, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        // Cool-down passes
+        tester.clock().advance(Duration.ofDays(1));
+        assertEquals(version1, scheduler.changeIn(cloud).get().version());
+        scheduler.maintain();
+        assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+
+        // Estimate next change
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud);
+        assertTrue(nextChange.isPresent());
+        assertEquals("7.0.0.20220426", nextChange.get().version().toFullString());
+        assertEquals("2022-04-27T02:00:00", formatInstant(nextChange.get().scheduleAt()));
+    }
+
+    @Test
     void schedule_stable_release() {
         ControllerTester tester = new ControllerTester();
         OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
