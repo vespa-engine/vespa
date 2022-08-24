@@ -46,11 +46,11 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName)
 
 ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName, const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
-      _store({}),
-      _indices(cfg.getGrowStrategy(), getGenerationHolder()),
+      _store(get_memory_allocator()),
+      _indices(cfg.getGrowStrategy(), getGenerationHolder(), get_initial_alloc()),
       _compaction_spec(),
       _gidToLidMapperFactory(),
-      _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
+      _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef(), get_initial_alloc())
 {
     setEnum(true);
 }

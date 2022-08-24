@@ -8,11 +8,13 @@
 
 namespace search::attribute {
 
-ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit)
-    : _reverseMappingIndices(vespalib::GrowStrategy(16, 1.0, 0, 0), genHolder),
+ReferenceMappings::ReferenceMappings(GenerationHolder& genHolder,
+                                     const std::atomic<uint32_t>& committedDocIdLimit,
+                                     const vespalib::alloc::Alloc& initial_alloc)
+    : _reverseMappingIndices(vespalib::GrowStrategy(16, 1.0, 0, 0), genHolder, initial_alloc),
       _targetLidLimit(0),
       _reverseMapping(),
-      _targetLids(vespalib::GrowStrategy(16, 1.0, 0, 0), genHolder),
+      _targetLids(vespalib::GrowStrategy(16, 1.0, 0, 0), genHolder, initial_alloc),
       _committedDocIdLimit(committedDocIdLimit)
 {
 }

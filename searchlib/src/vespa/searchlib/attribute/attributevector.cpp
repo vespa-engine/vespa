@@ -61,7 +61,7 @@ allow_paged(const search::attribute::Config& config)
         return false;
     }
     using Type = search::attribute::BasicType::Type;
-    if (config.basicType() == Type::REFERENCE || config.basicType() == Type::PREDICATE) {
+    if (config.basicType() == Type::PREDICATE) {
         return false;
     }
     if (config.basicType() == Type::TENSOR) {

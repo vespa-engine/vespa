@@ -59,8 +59,14 @@ public class PagedAttributeValidatorTestCase {
     }
 
     private void assertPagedSupported(String fieldType) throws ParseException {
-        var appBuilder = createFromString(getSd(fieldType));
-        var attribute = appBuilder.getSchema().getAttribute("foo");
+        assertPagedSupported(fieldType, Optional.empty());
+    }
+
+    private void assertPagedSupported(String fieldType, Optional<String> parentSd) throws ParseException {
+        var appBuilder = parentSd.isPresent() ?
+                createFromStrings(new BaseDeployLogger(), parentSd.get(), getSd(fieldType)) :
+                createFromString(getSd(fieldType));
+        var attribute = appBuilder.getSchema("test").getAttribute("foo");
         assertTrue(attribute.isPaged());
     }
 
@@ -75,8 +81,8 @@ public class PagedAttributeValidatorTestCase {
     }
 
     @Test
-    void reference_attribute_does_not_support_paged_setting() throws ParseException {
-        assertPagedSettingNotSupported("reference<parent>", Optional.of(getSd("parent", "int")));
+    void reference_attribute_support_paged_setting() throws ParseException {
+        assertPagedSupported("reference<parent>", Optional.of(getSd("parent", "int")));
     }
 
     private void assertPagedSettingNotSupported(String fieldType) throws ParseException {

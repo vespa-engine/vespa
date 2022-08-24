@@ -48,7 +48,6 @@ public class PagedAttributeValidator extends Processor {
     private boolean isSupportedType(Attribute attribute) {
         var type = attribute.getType();
         return (type != Attribute.Type.PREDICATE) &&
-                (type != Attribute.Type.REFERENCE) &&
                 (isSupportedTensorType(attribute.tensorType()));
     }
 
