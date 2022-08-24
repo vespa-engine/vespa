@@ -1165,6 +1165,32 @@ public class ContentClusterTest extends ContentBaseTest {
         return (new StorDistributormanagerConfig(builder)).use_unordered_merge_chaining();
     }
 
+    private boolean resolveTwoPhaseGcConfigWithFeatureFlag(Boolean flagEnableTwoPhase) {
+        var props = new TestProperties();
+        if (flagEnableTwoPhase != null) {
+            props.setUseTwoPhaseDocumentGc(flagEnableTwoPhase);
+        }
+        VespaModel model = createEnd2EndOneNode(props);
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+
+        return (new StorDistributormanagerConfig(builder)).enable_two_phase_garbage_collection();
+    }
+
+    @Test
+    public void two_phase_garbage_collection_config_is_controlled_by_properties() {
+        assertFalse(resolveTwoPhaseGcConfigWithFeatureFlag(false));
+        assertTrue(resolveTwoPhaseGcConfigWithFeatureFlag(true));
+    }
+
+    // TODO change once gradual rollout complete
+    @Test
+    public void two_phase_garbage_collection_config_is_disabled_by_default() {
+        assertFalse(resolveTwoPhaseGcConfigWithFeatureFlag(null));
+    }
+
     @Test
     void testDedicatedClusterControllers() {
         VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)

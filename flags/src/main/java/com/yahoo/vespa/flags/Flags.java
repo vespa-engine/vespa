@@ -488,6 +488,13 @@ public class Flags {
             "Takes effect next maintenance run"
     );
 
+    public static final UnboundBooleanFlag USE_TWO_PHASE_DOCUMENT_GC = defineFeatureFlag(
+            "use-two-phase-document-gc", false,
+            List.of("vekterli"), "2022-08-24", "2022-11-01",
+            "Use two-phase document GC in content clusters",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
