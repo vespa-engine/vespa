@@ -39,6 +39,9 @@ public class GetAclResponse {
         @JsonProperty("hostname")
         public final String hostname;
 
+        @JsonProperty("type")
+        public final String nodeType;
+
         @JsonProperty("ipAddress")
         public final String ipAddress;
 
@@ -46,9 +49,11 @@ public class GetAclResponse {
         public final String trustedBy;
 
         @JsonCreator
-        public Node(@JsonProperty("hostname") String hostname, @JsonProperty("ipAddress") String ipAddress,
+        public Node(@JsonProperty("hostname") String hostname, @JsonProperty("type") String nodeType,
+                    @JsonProperty("ipAddress") String ipAddress,
                     @JsonProperty("trustedBy") String trustedBy) {
             this.hostname = hostname;
+            this.nodeType = nodeType;
             this.ipAddress = ipAddress;
             this.trustedBy = trustedBy;
         }

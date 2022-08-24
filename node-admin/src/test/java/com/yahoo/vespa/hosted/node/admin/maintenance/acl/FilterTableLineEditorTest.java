@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
@@ -18,7 +19,7 @@ public class FilterTableLineEditorTest {
 
     @Test
     void filter_set_wanted_rules() {
-        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1").build();
+        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1", NodeType.tenant).build();
 
         assertFilterTableLineEditorResult(
                 acl, IPVersion.IPv6,
@@ -59,7 +60,7 @@ public class FilterTableLineEditorTest {
 
     private static void assertFilterTableLineEditorResult(
             Acl acl, IPVersion ipVersion, String currentFilterTable, String expectedRestoreFileContent) {
-        FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, ipVersion);
+        FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, ipVersion, NodeType.tenant);
         Editor editor = new Editor(
                 "nat-table",
                 () -> List.of(currentFilterTable.split("\n")),
@@ -70,16 +71,17 @@ public class FilterTableLineEditorTest {
 
     private static void assertFilterTableDiff(List<Integer> currentIpSuffix, List<Integer> wantedIpSuffix, String diff) {
         Acl.Builder currentAcl = new Acl.Builder();
-        currentIpSuffix.forEach(i -> currentAcl.withTrustedNode("host" + i, "2001::" + i));
+        NodeType nodeType = NodeType.tenant;
+        currentIpSuffix.forEach(i -> currentAcl.withTrustedNode("host" + i, "2001::" + i, nodeType));
         List<String> currentTable = new ArrayList<>();
 
         Acl.Builder wantedAcl = new Acl.Builder();
-        wantedIpSuffix.forEach(i -> wantedAcl.withTrustedNode("host" + i, "2001::" + i));
+        wantedIpSuffix.forEach(i -> wantedAcl.withTrustedNode("host" + i, "2001::" + i, nodeType));
 
-        new Editor("table", List::of, currentTable::addAll, FilterTableLineEditor.from(currentAcl.build(), IPVersion.IPv6))
+        new Editor("table", List::of, currentTable::addAll, FilterTableLineEditor.from(currentAcl.build(), IPVersion.IPv6, nodeType))
                 .edit(log -> {});
 
-        new Editor("table", () -> currentTable, result -> {}, FilterTableLineEditor.from(wantedAcl.build(), IPVersion.IPv6))
+        new Editor("table", () -> currentTable, result -> {}, FilterTableLineEditor.from(wantedAcl.build(), IPVersion.IPv6, nodeType))
                 .edit(log -> assertEquals(diff, log));
     }
 }

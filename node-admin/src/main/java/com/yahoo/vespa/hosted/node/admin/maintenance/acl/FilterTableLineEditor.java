@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
@@ -22,8 +23,8 @@ class FilterTableLineEditor implements LineEditor {
         this.wantedRules = List.copyOf(wantedRules);
     }
 
-    static FilterTableLineEditor from(Acl acl, IPVersion ipVersion) {
-        List<String> rules = acl.toRules(ipVersion);
+    static FilterTableLineEditor from(Acl acl, IPVersion ipVersion, NodeType nodeType) {
+        List<String> rules = acl.toRules(ipVersion, nodeType);
         return new FilterTableLineEditor(rules);
     }
 
