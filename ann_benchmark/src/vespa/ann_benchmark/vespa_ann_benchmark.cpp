@@ -132,11 +132,12 @@ HnswIndex::get_typed_cells(const std::vector<float>& value, std::vector<float>& 
     if (!_normalize_vectors) {
         return {&value[0], CellType::FLOAT, value.size()};
     }
-    float sum_of_squared = 0.0f;
+    double sum_of_squared = 0.0;
     for (auto elem : value) {
-        sum_of_squared += elem * elem;
+        double delem = elem;
+        sum_of_squared += delem * delem;
     }
-    float factor = 1.0f / (sqrtf(sum_of_squared) + 1e-40f);
+    double factor = 1.0 / (sqrt(sum_of_squared) + 1e-40);
     normalized_value.reserve(value.size());
     normalized_value.clear();
     for (auto elem : value) {

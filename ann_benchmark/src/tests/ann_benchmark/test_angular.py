@@ -21,7 +21,7 @@ class Fixture:
         top = self.find(10, [1, 1])
         assert [top[0][0], top[1][0]] == [0, 1]
         # Allow some rounding errors
-        epsilon = 5e-8
+        epsilon = 6e-8
         assert abs((1 - top[0][1]) - math.sqrt(0.5)) < epsilon
         assert abs((1 - top[1][1]) - 1) < epsilon
         top2 = self.find(10, [0, 2])
