@@ -51,6 +51,7 @@ class TestOsgi extends MockOsgi {
 
     @Override
     public void allowDuplicateBundles(Collection<Bundle> bundles) {
+        allowedDuplicates.clear();
         allowedDuplicates.addAll(bundles);
     }
 

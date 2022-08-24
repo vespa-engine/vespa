@@ -66,6 +66,11 @@ public class ContainerTestBase {
                         }
 
                         @Override
+                        public Collection<Bundle> revertApplicationBundles() {
+                            return emptySet();
+                        }
+
+                        @Override
                         public Bundle getBundle(ComponentSpecification spec) {
                             throw new UnsupportedOperationException("getBundle not supported.");
                         }

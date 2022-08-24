@@ -94,7 +94,7 @@ public interface OsgiFramework {
      * Allows this framework to install duplicates of the given collection of bundles. Duplicate detection
      * is handled by the {@link com.yahoo.jdisc.core.BundleCollisionHook}.
      *
-     * @param bundles The bundles to allow duplicates of
+     * @param bundles The bundles to allow duplicates of. An empty collection will prohibit any duplicates.
      */
     void allowDuplicateBundles(Collection<Bundle> bundles);
 
