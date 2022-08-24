@@ -52,6 +52,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Gauge containerCount;
     private final Counter numberOfUnhandledExceptions;
     private final Metrics metrics;
+    private Dimensions previousMemoryOverheadDimensions = null;
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock, FileSystem fileSystem) {
         this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
@@ -113,7 +114,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void updateMetrics(boolean isSuspended) {
-        long numContainers = 0;
+        int numContainers = 0;
         long totalContainerMemoryBytes = 0;
 
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
@@ -139,9 +140,18 @@ public class NodeAdminImpl implements NodeAdmin {
         if (!isSuspended) {
             containerCount.sample(numContainers);
             ProcMeminfo meminfo = procMeminfoReader.read();
-            metrics.declareGauge("mem.system.overhead", new Dimensions(Map.of("containers", Long.toString(numContainers))))
-                   .sample(meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
+            updateMemoryOverheadMetric(numContainers, meminfo.memTotalBytes() - meminfo.memAvailableBytes() - totalContainerMemoryBytes);
         }
+    }
+
+    private void updateMemoryOverheadMetric(int numContainers, double memoryOverhead) {
+        final String name = "mem.system.overhead";
+        Dimensions dimensions = new Dimensions(Map.of("containers", Integer.toString(numContainers)));
+        metrics.declareGauge(Metrics.APPLICATION_HOST, name, dimensions, Metrics.DimensionType.DEFAULT)
+               .sample(memoryOverhead);
+        if (previousMemoryOverheadDimensions != null && !previousMemoryOverheadDimensions.equals(dimensions))
+            metrics.deleteMetricByDimension(name, previousMemoryOverheadDimensions, Metrics.DimensionType.DEFAULT);
+        previousMemoryOverheadDimensions = dimensions;
     }
 
     @Override

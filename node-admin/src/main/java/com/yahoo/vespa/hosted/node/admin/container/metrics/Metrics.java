@@ -117,7 +117,7 @@ public class Metrics {
         }
     }
 
-    // Used to distinguish whether metrics have been populated with all tag vaules
+    // Used to distinguish whether metrics have been populated with all tag values
     public enum DimensionType {
         /** Default metrics get added default dimensions set in check config */
         DEFAULT,
