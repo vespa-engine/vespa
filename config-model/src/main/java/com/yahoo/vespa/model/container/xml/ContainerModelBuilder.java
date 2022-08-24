@@ -351,21 +351,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         container.setProp("rotations", String.join(",", rotationsProperty));
     }
 
-    private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element parent) {
-        for (Element node : XML.getChildren(parent, "embedder")) {
-            Element transformed = EmbedderConfigTransformer.transform(deployState, node);
-            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, transformed));
-        }
-    }
-
     private void addConfiguredComponents(DeployState deployState, ApplicationContainerCluster cluster, Element parent) {
         for (Element components : XML.getChildren(parent, "components")) {
             addIncludes(components);
             addConfiguredComponents(deployState, cluster, components, "component");
-            addEmbedderComponents(deployState, cluster, components);
         }
         addConfiguredComponents(deployState, cluster, parent, "component");
-        addEmbedderComponents(deployState, cluster, parent);
     }
 
     protected void addStatusHandlers(ApplicationContainerCluster cluster, boolean isHostedVespa) {
@@ -965,8 +956,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static void addConfiguredComponents(DeployState deployState, ContainerCluster<? extends Container> cluster,
                                                 Element parent, String componentName) {
-        for (Element node : XML.getChildren(parent, componentName)) {
-            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
+        for (Element component : XML.getChildren(parent, componentName)) {
+            component = ModelConfigTransformer.transform(deployState, component);
+            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, component));
         }
     }
 

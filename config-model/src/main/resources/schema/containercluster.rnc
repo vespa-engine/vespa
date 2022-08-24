@@ -17,7 +17,6 @@ ContainerServices =
     DocumentApi? &
     Components* &
     Component* &
-    Embedder* &
     Handler* &
     Server* &
     Http? &
@@ -31,8 +30,7 @@ ClientAuthorize = element client-authorize { empty }
 
 Components = element components {
     Include* &
-    Component* &
-    Embedder*
+    Component*
 }
 
 Include = element \include {

@@ -4,14 +4,15 @@
 
   <container version="1.0">
 
-    <embedder id='transformer'
-              class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'
-              bundle='exampleEmbedder'
-              def='ai.vespa.example.paragraph.sentence-embedder'>
-      <model id="minilm-l6-v2" url="application-url" />
-      <vocab path="files/vocab.txt"/>
-      <myValue>foo</myValue>
-    </embedder>
+    <component id='transformer'
+               class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'
+               bundle='exampleEmbedder'>
+      <config name='ai.vespa.example.paragraph.sentence-embedder'>
+        <model id="minilm-l6-v2" url="application-url" />
+        <vocab path="files/vocab.txt"/>
+        <myValue>foo</myValue>
+      </config>
+    </component>
 
     <nodes>
       <node hostalias='node1'/>
