@@ -31,6 +31,17 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
     return DocsumStoreFieldValue();
 }
 
+JuniperInput
+DocsumStoreDocument::get_juniper_input(const vespalib::string& field_name) const
+{
+    auto field_value = get_field_value(field_name);
+    if (field_value) {
+        auto field_value_with_markup = SummaryFieldConverter::convertSummaryField(true, *field_value);
+        return JuniperInput(DocsumStoreFieldValue(std::move(field_value_with_markup)));
+    }
+    return {};
+}
+
 void
 DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
 {

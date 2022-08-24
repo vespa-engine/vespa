@@ -28,6 +28,7 @@ public:
         : DocsumStoreFieldValue(nullptr)
     {
     }
+    DocsumStoreFieldValue(DocsumStoreFieldValue&& rhs) noexcept = default;
     ~DocsumStoreFieldValue() = default;
     const document::FieldValue& operator*() const noexcept  { return *_value; }
     const document::FieldValue* operator->() const noexcept { return _value; }

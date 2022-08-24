@@ -362,9 +362,9 @@ DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
     }
     const auto* document = gres->get_document();
     if (document != nullptr) {
-        return JuniperInput(document->get_field_value(_input_field_name).get());
+        return document->get_juniper_input(_input_field_name);
     }
-    return JuniperInput(vespalib::stringref());
+    return {};
 }
 
 vespalib::string
