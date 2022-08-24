@@ -31,6 +31,7 @@ public:
             : _attribute(attribute),
               _operation(operation)
         {}
+        bool enabled() const { return !_attribute.empty() && !_operation.empty(); }
         vespalib::string _attribute;
         vespalib::string _operation;
     };

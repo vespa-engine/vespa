@@ -148,6 +148,7 @@ public:
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const;
     bool has_match_features() const;
+    bool hasOnMatchTask() const;
     std::unique_ptr<AttributeOperationTask> createOnMatchTask() const;
     std::unique_ptr<AttributeOperationTask> createOnFirstPhaseTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSecondPhaseTask() const;

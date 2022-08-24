@@ -108,8 +108,8 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 const uint32_t NUM_DOCS = 1000;
 
 struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
-    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP(nullptr);
+    vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
+        return {};
     }
 };
 
@@ -196,7 +196,7 @@ struct MyWorld {
         }
 
         // grouping
-        sessionManager = SessionManager::SP(new SessionManager(100));
+        sessionManager = std::make_shared<SessionManager>(100);
 
         // metaStore
         for (uint32_t i = 0; i < NUM_DOCS; ++i) {
@@ -353,13 +353,13 @@ struct MyWorld {
     struct MySearchHandler : ISearchHandler {
         Matcher::SP _matcher;
 
-        MySearchHandler(Matcher::SP matcher) noexcept : _matcher(std::move(matcher)) {}
+        explicit MySearchHandler(Matcher::SP matcher) noexcept : _matcher(std::move(matcher)) {}
 
         DocsumReply::UP getDocsums(const DocsumRequest &) override {
-            return DocsumReply::UP();
+            return {};
         }
         SearchReply::UP match(const SearchRequest &, vespalib::ThreadBundle &) const override {
-            return SearchReply::UP();
+            return {};
         }
     };
 
@@ -420,15 +420,15 @@ struct MyWorld {
         return std::make_unique<FieldInfo>(*field);
     }
 
-    FeatureSet::SP getSummaryFeatures(DocsumRequest::SP req) {
+    FeatureSet::SP getSummaryFeatures(const DocsumRequest & req) {
         Matcher::SP matcher = createMatcher();
-        auto docsum_matcher = matcher->create_docsum_matcher(*req, searchContext, attributeContext, *sessionManager);
+        auto docsum_matcher = matcher->create_docsum_matcher(req, searchContext, attributeContext, *sessionManager);
         return docsum_matcher->get_summary_features();
     }
 
-    FeatureSet::SP getRankFeatures(DocsumRequest::SP req) {
+    FeatureSet::SP getRankFeatures(const DocsumRequest & req) {
         Matcher::SP matcher = createMatcher();
-        auto docsum_matcher = matcher->create_docsum_matcher(*req, searchContext, attributeContext, *sessionManager);
+        auto docsum_matcher = matcher->create_docsum_matcher(req, searchContext, attributeContext, *sessionManager);
         return docsum_matcher->get_rank_features();
     }
 
@@ -747,7 +747,7 @@ TEST("require that summary features are filled") {
     world.basicSetup();
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
-    FeatureSet::SP fs = world.getSummaryFeatures(req);
+    FeatureSet::SP fs = world.getSummaryFeatures(*req);
     const FeatureSet::Value * f = nullptr;
     EXPECT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
@@ -789,7 +789,7 @@ TEST("require that rank features are filled") {
     world.basicSetup();
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
-    FeatureSet::SP fs = world.getRankFeatures(req);
+    FeatureSet::SP fs = world.getRankFeatures(*req);
     const FeatureSet::Value * f = nullptr;
     EXPECT_EQUAL(1u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a2)", fs->getNames()[0]);
@@ -827,7 +827,7 @@ TEST("require that summary features can be renamed") {
     world.setup_feature_renames();
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
-    FeatureSet::SP fs = world.getSummaryFeatures(req);
+    FeatureSet::SP fs = world.getSummaryFeatures(*req);
     const FeatureSet::Value * f = nullptr;
     EXPECT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
@@ -853,10 +853,10 @@ TEST("require that getSummaryFeatures can use cached query setup") {
     DocsumRequest::SP docsum_request(new DocsumRequest);  // no stack dump
     docsum_request->sessionId = request->sessionId;
     docsum_request->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
-    docsum_request->hits.push_back(DocsumRequest::Hit());
+    docsum_request->hits.emplace_back();
     docsum_request->hits.back().docid = 30;
 
-    FeatureSet::SP fs = world.getSummaryFeatures(docsum_request);
+    FeatureSet::SP fs = world.getSummaryFeatures(*docsum_request);
     ASSERT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
     EXPECT_EQUAL("matches(f1)", fs->getNames()[1]);
@@ -870,7 +870,7 @@ TEST("require that getSummaryFeatures can use cached query setup") {
     EXPECT_EQUAL(100, f[4].as_double());
 
     // getSummaryFeatures can be called multiple times.
-    fs = world.getSummaryFeatures(docsum_request);
+    fs = world.getSummaryFeatures(*docsum_request);
     ASSERT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
     EXPECT_EQUAL("matches(f1)", fs->getNames()[1]);
@@ -907,7 +907,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
     req->sessionId = request->sessionId;
     req->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
-    FeatureSet::SP fs = world.getSummaryFeatures(req);
+    FeatureSet::SP fs = world.getSummaryFeatures(*req);
     EXPECT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL(3u, fs->numDocs());
     EXPECT_EQUAL(0.0, count_f1_matches(*fs)); // "spread" has no hits
@@ -916,7 +916,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     auto pruneTime = vespalib::steady_clock::now() + 600s;
     world.sessionManager->pruneTimedOutSessions(pruneTime);
 
-    fs = world.getSummaryFeatures(req);
+    fs = world.getSummaryFeatures(*req);
     EXPECT_EQUAL(5u, fs->numFeatures());
     EXPECT_EQUAL(3u, fs->numDocs());
     EXPECT_EQUAL(2.0, count_f1_matches(*fs)); // "foo" has two hits
@@ -1123,7 +1123,7 @@ struct GlobalFilterParamsFixture {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
    }
-   AttributeBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) {
+   AttributeBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
        return MatchToolsFactory::extract_global_filter_params(rank_setup, rank_properties, active_docids, docid_limit);
    }
 };
