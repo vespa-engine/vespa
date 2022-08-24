@@ -17,8 +17,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <hadoop.version>3.3.2</hadoop.version>
-        <pig.version>0.14.0</pig.version>
+        <hadoop.version>3.3.4</hadoop.version>
+        <pig.version>0.16.0</pig.version>
     </properties>
 
     <dependencyManagement>
@@ -113,18 +113,6 @@
             <!-- This is a HACK due to hadoop relying on mockito in NameNodeAdapter, but not providing it. Brum, brum !! -->
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Use slf4j's replacement for log4j to avoid log4j in the dependency tree -->
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Bind to java.util.logging -->
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
 
