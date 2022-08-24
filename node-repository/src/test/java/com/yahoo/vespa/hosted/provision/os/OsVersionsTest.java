@@ -172,7 +172,7 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(RetiringOsUpgrader.GRACE_PERIOD.plusDays(1));
+        tester.clock().advance(Duration.ofDays(31)); // Let grace period pass
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
@@ -234,7 +234,7 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.confighost)
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(RetiringOsUpgrader.GRACE_PERIOD.plusDays(1));
+        tester.clock().advance(Duration.ofDays(31)); // Let grace period pass
 
         // Target is set with zero budget and upgrade started
         var version1 = Version.fromString("7.1");

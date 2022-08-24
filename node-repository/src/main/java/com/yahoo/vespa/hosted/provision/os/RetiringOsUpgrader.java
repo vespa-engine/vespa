@@ -26,9 +26,6 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
-    /** The duration this leaves new nodes alone before scheduling any upgrade */
-    static final Duration GRACE_PERIOD = Duration.ofDays(30);
-
     protected final NodeRepository nodeRepository;
 
     public RetiringOsUpgrader(NodeRepository nodeRepository) {
@@ -54,7 +51,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     @Override
     public boolean canUpgradeAt(Instant instant, Node node) {
-        return node.history().age(instant).compareTo(GRACE_PERIOD) > 0;
+        return node.history().age(instant).compareTo(gracePeriod()) > 0;
     }
 
     /** Returns nodes that are candidates for upgrade */
@@ -77,6 +74,11 @@ public class RetiringOsUpgrader implements OsUpgrader {
         nodeRepository.nodes().deprovision(host.hostname(), Agent.RetiringOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
         nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
+    }
+
+    /** The duration this leaves new nodes alone before scheduling any upgrade */
+    private Duration gracePeriod() {
+        return nodeRepository.zone().system().isCd() ? Duration.ofDays(1) : Duration.ofDays(30);
     }
 
 }
