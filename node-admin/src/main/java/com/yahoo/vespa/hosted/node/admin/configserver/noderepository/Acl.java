@@ -76,8 +76,8 @@ public class Acl {
                                                                       .sorted()
                                                                       .toList();
             for (var ipAddress : clusterAddresses) {
-                rules.add("-A INPUT -p tcp -m multiport --dports " + joinPorts(zooKeeperPorts) + " -s " +
-                          ipAddress + ipVersion.singleHostCidr() + " -j ACCEPT");
+                rules.add("-A INPUT -s " + ipAddress + ipVersion.singleHostCidr() + " -p tcp -m multiport --dports " +
+                          joinPorts(zooKeeperPorts) + " -j ACCEPT");
             }
             // Reject any other connections to ZooKeeper
             rules.add("-A INPUT -p tcp -m multiport --dports " + joinPorts(zooKeeperPorts) +
