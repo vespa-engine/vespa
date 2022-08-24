@@ -559,13 +559,10 @@ public class XML {
      * the element is null, or has no content
      */
     public static String getValue(Element e) {
-        if (e == null) {
-            return "";
-        }
+        if (e == null) return "";
         Node child = e.getFirstChild();
-        if (child == null) {
-            return "";
-        }
+        if (child == null) return "";
+        if (child.getNodeValue() == null) return "";
         return child.getNodeValue();
     }
 

@@ -74,7 +74,7 @@ public class EmbedderConfigTransformer {
             addChild(value.getTagName() + "Path", dummyPath, config);
         }
         else {
-            addChild(value.getTagName(), value.getTextContent(), config);
+            addChild(value.getTagName(), XML.getValue(value), config);
         }
     }
 
@@ -97,8 +97,6 @@ public class EmbedderConfigTransformer {
 
     private static String modelIdToUrl(String id) {
         switch (id) {
-            case "test-model-id":
-                return "test-model-url";
             case "minilm-l6-v2":
                 return "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx";
             case "bert-base-uncased":

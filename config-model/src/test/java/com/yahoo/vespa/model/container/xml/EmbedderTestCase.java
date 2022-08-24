@@ -70,9 +70,9 @@ public class EmbedderTestCase {
         String component = "<component id='test' class='" + PREDEFINED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
                            "  <config name='" + PREDEFINED_EMBEDDER_CONFIG + "'>" +
                            "      <transformerModelUrl>my-model-url</transformerModelUrl>" +
-                           "      <transformerModelPath></transformerModelPath>" +
+                           "      <transformerModelPath>services.xml</transformerModelPath>" +
                            "      <tokenizerVocabUrl>my-vocab-url</tokenizerVocabUrl>" +
-                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <tokenizerVocabPath>services.xml</tokenizerVocabPath>" +
                            "  </config>" +
                            "</component>";
         assertTransform(embedder, component, false);
@@ -96,17 +96,17 @@ public class EmbedderTestCase {
     }
 
     @Test
-    void testPredefinedEmbedConfigCloud() throws IOException, SAXException {
+    void testPredefinedEmbedderCloud() throws IOException, SAXException {
         String embedder = "<embedder id='test' class='" + PREDEFINED_EMBEDDER_CLASS + "'>" +
-                          "  <transformerModel id='test-model-id' />" +
-                          "  <tokenizerVocab id='test-model-id' />" +
+                          "  <transformerModel id='minilm-l6-v2' />" +
+                          "  <tokenizerVocab id='bert-base-uncased' />" +
                           "</embedder>";
         String component = "<component id='test' class='" + PREDEFINED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
                            "  <config name='" + PREDEFINED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModelUrl>test-model-url</transformerModelUrl>" +
-                           "      <transformerModelPath></transformerModelPath>" +
-                           "      <tokenizerVocabUrl>test-model-url</tokenizerVocabUrl>" +
-                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx</transformerModelUrl>" +
+                           "      <transformerModelPath>services.xml</transformerModelPath>" +
+                           "      <tokenizerVocabUrl>https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath>services.xml</tokenizerVocabPath>" +
                            "  </config>" +
                            "</component>";
         assertTransform(embedder, component, true);
@@ -115,15 +115,15 @@ public class EmbedderTestCase {
     @Test
     void testCustomEmbedderWithPredefinedConfigCloud() throws IOException, SAXException {
         String embedder = "<embedder id='test' class='ApplicationSpecificEmbedder' def='" + PREDEFINED_EMBEDDER_CONFIG + "'>" +
-                          "  <transformerModel id='test-model-id' />" +
-                          "  <tokenizerVocab id='test-model-id' />" +
+                          "  <transformerModel id='minilm-l6-v2' />" +
+                          "  <tokenizerVocab id='bert-base-uncased' />" +
                           "</embedder>";
         String component = "<component id='test' class='ApplicationSpecificEmbedder' bundle='model-integration'>" +
                            "  <config name='" + PREDEFINED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModelUrl>test-model-url</transformerModelUrl>" +
-                           "      <transformerModelPath></transformerModelPath>" +
-                           "      <tokenizerVocabUrl>test-model-url</tokenizerVocabUrl>" +
-                           "      <tokenizerVocabPath></tokenizerVocabPath>" +
+                           "      <transformerModelUrl>https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx</transformerModelUrl>" +
+                           "      <transformerModelPath>services.xml</transformerModelPath>" +
+                           "      <tokenizerVocabUrl>https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt</tokenizerVocabUrl>" +
+                           "      <tokenizerVocabPath>services.xml</tokenizerVocabPath>" +
                            "  </config>" +
                            "</component>";
         assertTransform(embedder, component, true);
@@ -139,7 +139,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    void testApplicationWithEmbedConfig() throws Exception  {
+    void testApplicationWithEmbedder() throws Exception  {
         final String emptyPathFileName = "services.xml";
 
         Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
@@ -160,7 +160,7 @@ public class EmbedderTestCase {
     }
 
     @Test
-    void testApplicationWithGenericEmbedConfig() throws Exception  {
+    void testApplicationWithGenericEmbedder() throws Exception  {
         Path applicationDir = Path.fromString("src/test/cfg/application/embed_generic/");
         VespaModel model = loadModel(applicationDir, false);
         ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
@@ -182,17 +182,16 @@ public class EmbedderTestCase {
         assertTransform(embedder, component, false);
     }
 
-    private void assertTransform(String embedder, String component, boolean hosted) throws IOException, SAXException {
-        Element emb = createElement(embedder);
-        Element cmp = createElement(component);
-        Element trans = EmbedderConfigTransformer.transform(createEmptyDeployState(hosted), emb);
-        assertSpec(cmp, trans);
+    private void assertTransform(String embedder, String expectedComponent, boolean hosted) throws IOException, SAXException {
+        assertSpec(createElement(expectedComponent),
+                   EmbedderConfigTransformer.transform(createEmptyDeployState(hosted), createElement(embedder)));
     }
 
     private void assertSpec(Element e1, Element e2) {
         assertEquals(e1.getTagName(), e2.getTagName());
         assertAttributes(e1, e2);
         assertAttributes(e2, e1);
+        assertEquals(XML.getValue(e1).trim(), XML.getValue(e2).trim(), "Content of " + e1.getTagName() + "' is identical");
         assertChildren(e1, e2);
     }
 
