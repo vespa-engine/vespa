@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
@@ -159,15 +160,20 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     private Stream<DeploymentId> mapInstanceToDeployments(Instance instance) {
-        return instance.deployments().keySet().stream().map(zoneId -> {
-            return new DeploymentId(instance.id(), zoneId);
-        });
+        return instance.deployments().keySet().stream()
+                .filter(zoneId -> !zoneId.environment().isTest())
+                .map(zoneId -> new DeploymentId(instance.id(), zoneId));
     }
 
     private Stream<Map.Entry<ClusterId, List<Cluster.ScalingEvent>>> mapDeploymentToClusterScalingEvent(DeploymentId deploymentId) {
-        return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
-                .clusters().entrySet().stream()
-                .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));
+        try {
+            return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
+                    .clusters().entrySet().stream()
+                    .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));
+        } catch (ConfigServerException e) {
+            log.info("Could not retrieve scaling events for " + deploymentId + ": " + e.getMessage());
+            return Stream.empty();
+        }
     }
 
     private void reportAllScalingEvents() {
