@@ -49,7 +49,8 @@ public:
     // Class used to map from target lid to source lids
     using ReverseMappingRefs = vespalib::ConstArrayRef<AtomicEntryRef>;
 
-    ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit);
+    ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit,
+                      const vespalib::alloc::Alloc& initial_alloc);
 
     ~ReferenceMappings();
 
