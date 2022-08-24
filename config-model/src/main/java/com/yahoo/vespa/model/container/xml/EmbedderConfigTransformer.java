@@ -38,12 +38,15 @@ public class EmbedderConfigTransformer {
      * @return a new XML element containting the &lt;component ...&gt; configuration
      */
     public static Element transform(DeployState deployState, Element embedder) {
-        Element component = XML.getDocumentBuilder().newDocument().createElement("component");
-        component.setAttribute("id", embedder.getAttribute("id"));
-        component.setAttribute("class", embedderClassFrom(embedder));
-        component.setAttribute("bundle", embedder.hasAttribute("bundle") ? embedder.getAttribute("bundle") : "model-integration");
+        String embedderId = XML.attribute("id", embedder).orElseThrow(); // Required by schema
+        String embedderClass = XML.attribute("class", embedder).orElse(embedderId);
 
-        String configDef = embedderConfigFrom(embedder);
+        Element component = XML.getDocumentBuilder().newDocument().createElement("component");
+        component.setAttribute("id", embedderId);
+        component.setAttribute("class", embedderClass);
+        component.setAttribute("bundle", XML.attribute("bundle", embedder).orElse("model-integration"));
+
+        String configDef = embedderConfigFrom(embedder, embedderClass);
         if ( ! configDef.isEmpty()) {
             Element config = component.getOwnerDocument().createElement("config");
             config.setAttribute("name", configDef);
@@ -84,12 +87,12 @@ public class EmbedderConfigTransformer {
         parent.appendChild(element);
     }
 
-    private static String embedderConfigFrom(Element spec) {
-        String explicitDefinition = spec.getAttribute("def");
+    private static String embedderConfigFrom(Element embedder, String embedderClass) {
+        String explicitDefinition = embedder.getAttribute("def");
         if ( ! explicitDefinition.isEmpty()) return explicitDefinition;
 
         // Implicit from class name
-        return switch (embedderClassFrom(spec)) {
+        return switch (embedderClass) {
             case "ai.vespa.embedding.BertBaseEmbedder" -> "embedding.bert-base-embedder";
             default -> "";
         };
@@ -104,12 +107,5 @@ public class EmbedderConfigTransformer {
         }
         throw new IllegalArgumentException("Unknown model id '" + id + "'");
     }
-
-    private static String embedderClassFrom(Element spec) {
-        if (spec.hasAttribute("class"))
-            return spec.getAttribute("class");
-        return spec.getAttribute("id");
-    }
-
 
 }
