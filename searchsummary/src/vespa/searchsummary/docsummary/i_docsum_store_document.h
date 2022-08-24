@@ -3,6 +3,7 @@
 #pragma once
 
 #include "docsum_store_field_value.h"
+#include "juniper_input.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::slime { struct Inserter; }
@@ -19,6 +20,7 @@ class IDocsumStoreDocument
 public:
     virtual ~IDocsumStoreDocument() = default;
     virtual DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const = 0;
+    virtual JuniperInput get_juniper_input(const vespalib::string& field_name) const = 0;
     virtual void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const = 0;
     virtual void insert_document_id(vespalib::slime::Inserter& inserter) const = 0;
 };

@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "docsum_store_field_value.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <memory>
 
 namespace document { class FieldValue; }
 
@@ -13,11 +13,12 @@ namespace search::docsummary {
  * Class containing input for juniper processing.
  */
 class JuniperInput {
-    std::unique_ptr<document::FieldValue> _field_value_with_markup;
+    DocsumStoreFieldValue _field_value_with_markup;
     vespalib::stringref _value;
 public:
-    JuniperInput(vespalib::stringref value);
-    JuniperInput(const document::FieldValue* value);
+    JuniperInput();
+    explicit JuniperInput(vespalib::stringref value);
+    explicit JuniperInput(DocsumStoreFieldValue value);
     ~JuniperInput();
     bool empty() const noexcept { return _value.empty(); }
     vespalib::stringref get_value() const noexcept { return _value; };
