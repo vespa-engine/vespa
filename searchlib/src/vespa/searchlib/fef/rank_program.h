@@ -12,6 +12,8 @@
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
+namespace vespalib { class ExecutionProfiler; }
+
 namespace search::fef {
 
 /**
@@ -68,7 +70,8 @@ public:
      **/
     void setup(const MatchData &md,
                const IQueryEnvironment &queryEnv,
-               const Properties &featureOverrides = Properties());
+               const Properties &featureOverrides = Properties(),
+               vespalib::ExecutionProfiler *profiler = nullptr);
 
     /**
      * Obtain the names and storage locations of all seed features for
