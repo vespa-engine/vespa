@@ -23,7 +23,6 @@ and converts it to something human-readable`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logfmt.RunLogfmt(&curOptions, args)
 		},
-		Args: cobra.MaximumNArgs(1),
 	}
 	cmd.Flags().VarP(&curOptions.ShowLevels, "level", "l", "turn levels on/off\n")
 	cmd.Flags().VarP(&curOptions.ShowFields, "show", "s", "turn fields shown on/off\n")
