@@ -184,7 +184,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addEmbedderComponents(deployState, cluster, spec);
         addModelEvaluation(spec, cluster, context);
         addModelEvaluationBundles(cluster);
 
@@ -352,19 +351,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         container.setProp("rotations", String.join(",", rotationsProperty));
     }
 
-    private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
-        for (Element node : XML.getChildren(spec, "embedder")) {
+    private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element parent) {
+        for (Element node : XML.getChildren(parent, "embedder")) {
             Element transformed = EmbedderConfigTransformer.transform(deployState, node);
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, transformed));
         }
     }
 
-    private void addConfiguredComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
-        for (Element components : XML.getChildren(spec, "components")) {
+    private void addConfiguredComponents(DeployState deployState, ApplicationContainerCluster cluster, Element parent) {
+        for (Element components : XML.getChildren(parent, "components")) {
             addIncludes(components);
             addConfiguredComponents(deployState, cluster, components, "component");
+            addEmbedderComponents(deployState, cluster, components);
         }
-        addConfiguredComponents(deployState, cluster, spec, "component");
+        addConfiguredComponents(deployState, cluster, parent, "component");
+        addEmbedderComponents(deployState, cluster, parent);
     }
 
     protected void addStatusHandlers(ApplicationContainerCluster cluster, boolean isHostedVespa) {
@@ -963,8 +964,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static void addConfiguredComponents(DeployState deployState, ContainerCluster<? extends Container> cluster,
-                                                Element spec, String componentName) {
-        for (Element node : XML.getChildren(spec, componentName)) {
+                                                Element parent, String componentName) {
+        for (Element node : XML.getChildren(parent, componentName)) {
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
         }
     }
