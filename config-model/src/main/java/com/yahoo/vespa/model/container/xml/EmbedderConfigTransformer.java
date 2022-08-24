@@ -6,6 +6,7 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Translates config in services.xml of the form
@@ -106,8 +107,8 @@ public class EmbedderConfigTransformer {
 
     private static String modelIdToUrl(String id) {
         if ( ! providedModels.containsKey(id))
-            throw new IllegalArgumentException("Unknown embedder model '" + id + "'. Available models are " +
-                                               providedModels.keySet());
+            throw new IllegalArgumentException("Unknown embedder model '" + id + "'. Available models are [" +
+                                               providedModels.keySet().stream().sorted().collect(Collectors.joining(", ")) + "]");
         return providedModels.get(id);
     }
 
