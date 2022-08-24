@@ -287,9 +287,9 @@ public class AclMaintainerTest {
                         -A INPUT -i lo -j ACCEPT
                         -A INPUT -p icmp -j ACCEPT
                         -A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 172.17.0.41/32 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 172.17.0.42/32 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 172.17.0.43/32 -j ACCEPT
+                        -A INPUT -s 172.17.0.41/32 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
+                        -A INPUT -s 172.17.0.42/32 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
+                        -A INPUT -s 172.17.0.43/32 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
                         -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -j REJECT --reject-with icmp-port-unreachable
                         -A INPUT -s 172.17.0.41/32 -j ACCEPT
                         -A INPUT -s 172.17.0.42/32 -j ACCEPT
@@ -307,9 +307,9 @@ public class AclMaintainerTest {
                         -A INPUT -i lo -j ACCEPT
                         -A INPUT -p ipv6-icmp -j ACCEPT
                         -A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 2001:db8::1/128 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 2001:db8::2/128 -j ACCEPT
-                        -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -s 2001:db8::3/128 -j ACCEPT
+                        -A INPUT -s 2001:db8::1/128 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
+                        -A INPUT -s 2001:db8::2/128 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
+                        -A INPUT -s 2001:db8::3/128 -p tcp -m multiport --dports 2181,2182,2183 -j ACCEPT
                         -A INPUT -p tcp -m multiport --dports 2181,2182,2183 -j REJECT --reject-with icmp6-port-unreachable
                         -A INPUT -s 2001:db8::1/128 -j ACCEPT
                         -A INPUT -s 2001:db8::2/128 -j ACCEPT
