@@ -136,7 +136,10 @@ public class EmbedderTestCase {
                           "  <transformerModel id='my_model_id' />" +
                           "  <tokenizerVocab id='my_vocab_id' />" +
                           "</embedder>";
-        assertTransformThrows(embedder, "Unknown model id 'my_model_id'", true);
+        assertTransformThrows(embedder,
+                              "Unknown embedder model 'my_model_id'. " +
+                              "Available models are [bert-base-uncased, minilm-l6-v2]",
+                              true);
     }
 
     @Test

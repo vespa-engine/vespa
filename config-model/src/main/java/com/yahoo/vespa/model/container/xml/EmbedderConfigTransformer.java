@@ -5,6 +5,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
+import java.util.Map;
+
 /**
  * Translates config in services.xml of the form
  *
@@ -26,6 +28,10 @@ import org.w3c.dom.Element;
  * @author bratseth
  */
 public class EmbedderConfigTransformer {
+
+    private static final Map<String, String> providedModels =
+            Map.of("minilm-l6-v2", "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
+                   "bert-base-uncased", "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt");
 
     // Until we have optional path parameters, use services.xml as it is guaranteed to exist
     private final static String dummyPath = "services.xml";
@@ -99,13 +105,10 @@ public class EmbedderConfigTransformer {
     }
 
     private static String modelIdToUrl(String id) {
-        switch (id) {
-            case "minilm-l6-v2":
-                return "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx";
-            case "bert-base-uncased":
-                return "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt";
-        }
-        throw new IllegalArgumentException("Unknown model id '" + id + "'");
+        if ( ! providedModels.containsKey(id))
+            throw new IllegalArgumentException("Unknown embedder model '" + id + "'. Available models are " +
+                                               providedModels.keySet());
+        return providedModels.get(id);
     }
 
 }
