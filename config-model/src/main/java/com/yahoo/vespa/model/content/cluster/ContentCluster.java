@@ -56,6 +56,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -287,10 +288,10 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             if (context.properties().hostedVespa()) {
                 clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState, clusterName);
             }
-            else if (admin.multitenant()) { // system tests: Put on logserver
+            else if (admin.multitenant()) { // system tests: cluster controllers on logserver host
                 if (admin.getClusterControllers() == null) {
-                    // TODO: logserver == null only obtains in unit tests, disallow it
-                    List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
+                    Objects.requireNonNull(admin.getLogserver(), "logserver cannot be null");
+                    List<HostResource> host = List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                          host,
                                                                          clusterName,
@@ -300,7 +301,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                 }
                 clusterControllers = admin.getClusterControllers();
             }
-            else { // self hosted: Put on config servers or explicit cluster controllers
+            else { // self-hosted: Put cluser controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
                     var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).collect(toList());
                     if (hosts.size() > 1) {
@@ -522,8 +523,8 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             return 16;
         }
         else { // hosted test zone, or self-hosted system
-            // hosted test zones: have few nodes and use visiting in tests: This is slow with 16 bits (to many buckets)
-            // self hosted systems: should probably default to 16 bits, but the transition may cause problems
+            // hosted test zones: have few nodes and use visiting in tests: This is slow with 16 bits (too many buckets)
+            // self-hosted systems: should probably default to 16 bits, but the transition may cause problems
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
         }
     }
