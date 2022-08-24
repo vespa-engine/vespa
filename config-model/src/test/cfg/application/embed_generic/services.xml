@@ -8,8 +8,9 @@
               class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'
               bundle='exampleEmbedder'
               def='ai.vespa.example.paragraph.sentence-embedder'>
-      <model path="files/model.onnx" /> <!-- Embedder syntax for file path -->
-      <vocab>files/vocab.txt</vocab>   <!-- Generic config syntax for file path -->
+      <model id="minilm-l6-v2" url="application-url" />
+      <vocab path="files/vocab.txt"/>
+      <myValue>foo</myValue>
     </embedder>
 
     <nodes>

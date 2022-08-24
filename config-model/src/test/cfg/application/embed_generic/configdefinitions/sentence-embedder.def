@@ -1,11 +1,14 @@
 package=ai.vespa.example.paragraph
 
 # Settings for wordpiece tokenizer
-vocab path
+vocabPath path
+vocabUrl string
 
 # Transformer model settings
 modelPath path
 modelUrl string
+
+myValue string
 
 # Max length of token sequence model can handle
 transforerMaxTokens int default=128
