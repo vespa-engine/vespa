@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.auditlog;
 
-import com.google.common.collect.Ordering;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -14,17 +12,17 @@ import java.util.Optional;
  * This represents the audit log of a hosted Vespa system. The audit log contains manual actions performed through
  * operator APIs served by the controller.
  *
+ * Entries of the audit log are sorted by their timestamp, in descending order.
+ *
  * @author mpolden
  */
-public class AuditLog {
+public record AuditLog(List<Entry> entries) {
 
     public static final AuditLog empty = new AuditLog(List.of());
 
-    private final List<Entry> entries;
-
     /** DO NOT USE. Public for serialization purposes */
     public AuditLog(List<Entry> entries) {
-        this.entries = Ordering.natural().immutableSortedCopy(entries);
+        this.entries = Objects.requireNonNull(entries).stream().sorted().toList();
     }
 
     /** Returns a new audit log without entries older than given instant */
@@ -34,7 +32,7 @@ public class AuditLog {
         return new AuditLog(entries);
     }
 
-    /** Returns an new audit log with given entry added */
+    /** Returns copy of this with given entry added */
     public AuditLog with(Entry entry) {
         List<Entry> entries = new ArrayList<>(this.entries);
         entries.add(entry);
@@ -47,34 +45,33 @@ public class AuditLog {
         return new AuditLog(entries.subList(0, n));
     }
 
-    /** Returns all entries in this. Entries are sorted descendingly by their timestamp */
-    public List<Entry> entries() {
-        return entries;
-    }
-
     /** An entry in the audit log. This describes an HTTP request */
-    public static class Entry implements Comparable<Entry> {
+    public record Entry(Instant at, String principal, Method method, String resource, Optional<String> data,
+                        Client client) implements Comparable<Entry> {
 
         private final static int maxDataLength = 1024;
         private final static Comparator<Entry> comparator = Comparator.comparing(Entry::at).reversed();
 
-        private final Instant at;
-        private final String principal;
-        private final Method method;
-        private final String resource;
-        private final Optional<String> data;
-
-        public Entry(Instant at, String principal, Method method, String resource, byte[] data) {
-            this.at = Objects.requireNonNull(at, "at must be non-null");
-            this.principal = Objects.requireNonNull(principal, "principal must be non-null");
-            this.method = Objects.requireNonNull(method, "method must be non-null");
-            this.resource = Objects.requireNonNull(resource, "resource must be non-null");
-            this.data = sanitize(data);
+        public Entry(Instant at, Client client, String principal, Method method, String resource, byte[] data) {
+            this(Objects.requireNonNull(at, "at must be non-null"),
+                 Objects.requireNonNull(principal, "principal must be non-null"),
+                 Objects.requireNonNull(method, "method must be non-null"),
+                 Objects.requireNonNull(resource, "resource must be non-null"),
+                 sanitize(data),
+                 Objects.requireNonNull(client, "client must be non-null"));
         }
 
         /** Time of the request */
         public Instant at() {
             return at;
+        }
+
+        /**
+         * The client that performed this request. This may be based on user-controlled input, e.g. User-Agent header
+         * and is thus not guaranteed to be accurate.
+         */
+        public Client client() {
+            return client;
         }
 
         /** The principal performing the request */
@@ -108,6 +105,18 @@ public class AuditLog {
             PATCH,
             PUT,
             DELETE
+        }
+
+        /** Known clients of the audit log */
+        public enum Client {
+            /** The Vespa Cloud Console */
+            console,
+            /** Vespa CLI */
+            cli,
+            /** Operator tools */
+            hv,
+            /** Other clients, e.g. curl */
+            other,
         }
 
         private static Optional<String> sanitize(byte[] data) {

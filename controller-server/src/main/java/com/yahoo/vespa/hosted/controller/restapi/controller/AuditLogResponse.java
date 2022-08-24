@@ -22,6 +22,7 @@ public class AuditLogResponse extends SlimeJsonResponse {
         log.entries().forEach(entry -> {
             Cursor entryObject = entryArray.addObject();
             entryObject.setString("time", entry.at().toString());
+            entryObject.setString("client", entry.client().name());
             entryObject.setString("user", entry.principal());
             entryObject.setString("method", entry.method().name());
             entryObject.setString("resource", entry.resource());

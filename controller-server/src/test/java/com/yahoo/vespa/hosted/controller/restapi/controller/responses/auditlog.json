@@ -2,6 +2,7 @@
   "entries": [
     {
       "time": "2019-03-01T14:13:14Z",
+      "client": "other",
       "user": "operator2",
       "method": "POST",
       "resource": "/controller/v1/jobs/upgrader/confidence/6.42",
@@ -9,6 +10,7 @@
     },
     {
       "time": "2019-03-01T12:13:14Z",
+      "client": "other",
       "user": "operator1",
       "method": "POST",
       "resource": "/controller/v1/maintenance/inactive/DeploymentExpirer"
