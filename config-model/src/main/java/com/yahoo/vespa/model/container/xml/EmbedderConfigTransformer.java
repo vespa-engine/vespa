@@ -51,6 +51,10 @@ public class EmbedderConfigTransformer {
                 addConfigValue(child, config, deployState.isHosted());
             component.appendChild(config);
         }
+        else if ( ! XML.getChildren(embedder).isEmpty()) {
+            throw new IllegalArgumentException("Embedder '" + embedder.getAttribute("id") + "' does not specify " +
+                                               "a 'def' parameter so it cannot contain config values");
+        }
 
         return component;
     }
@@ -104,13 +108,9 @@ public class EmbedderConfigTransformer {
     }
 
     private static String embedderClassFrom(Element spec) {
-        if (spec.hasAttribute("class")) {
+        if (spec.hasAttribute("class"))
             return spec.getAttribute("class");
-        }
-        if (spec.hasAttribute("id")) {
-            return spec.getAttribute("id");
-        }
-        throw new IllegalArgumentException("An <embedder> element must have a 'class' or 'id' attribute");
+        return spec.getAttribute("id");
     }
 
 

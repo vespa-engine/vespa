@@ -32,7 +32,7 @@ public class EmbedderTestCase {
     private static final String PREDEFINED_EMBEDDER_CONFIG = "embedding.bert-base-embedder";
 
     @Test
-    void testGenericEmbedConfig() throws IOException, SAXException {
+    void testApplicationEmbedder() throws IOException, SAXException {
         String embedder = "<embedder id='test' class='ai.vespa.test' bundle='bundle' def='def.name'>" +
                           "  <val>123</val>" +
                           "</embedder>";
@@ -42,6 +42,23 @@ public class EmbedderTestCase {
                            "  </config>" +
                            "</component>";
         assertTransform(embedder, component);
+    }
+
+    @Test
+    void testApplicationEmbedderWithoutConfig() throws IOException, SAXException {
+        String embedder = "<embedder id='test' class='ai.vespa.test' bundle='bundle'>" +
+                          "</embedder>";
+        String component = "<component id='test' class='ai.vespa.test' bundle='bundle'>" +
+                           "</component>";
+        assertTransform(embedder, component);
+    }
+
+    @Test
+    void testApplicationEmbedderWithoutConfigAttemptsToSetConfig() throws IOException, SAXException {
+        String embedder = "<embedder id='test' class='ai.vespa.test' bundle='bundle'>" +
+                          "    <val>123</val>" +
+                          "</embedder>";
+        assertTransformThrows(embedder, "Embedder 'test' does not specify a 'def' parameter so it cannot contain config values", false);
     }
 
     @Test
