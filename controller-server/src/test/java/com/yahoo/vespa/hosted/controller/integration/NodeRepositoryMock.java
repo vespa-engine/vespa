@@ -21,12 +21,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVers
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -36,12 +36,12 @@ import java.util.stream.Collectors;
  */
 public class NodeRepositoryMock implements NodeRepository {
 
-    private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
-    private final Map<ZoneId, Map<ApplicationId, Application>> applications = new HashMap<>();
-    private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
-    private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
-    private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new HashMap<>();
-    private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new HashMap<>();
+    private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new ConcurrentHashMap<>();
+    private final Map<ZoneId, Map<ApplicationId, Application>> applications = new ConcurrentHashMap<>();
+    private final Map<ZoneId, TargetVersions> targetVersions = new ConcurrentHashMap<>();
+    private final Map<Integer, Duration> osUpgradeBudgets = new ConcurrentHashMap<>();
+    private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new ConcurrentHashMap<>();
+    private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new ConcurrentHashMap<>();
 
     private boolean allowPatching = true;
     private boolean hasSpareCapacity = false;
@@ -117,7 +117,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri) {
-        archiveUris.computeIfAbsent(zone, z -> new HashMap<>()).put(tenantName, archiveUri);
+        archiveUris.computeIfAbsent(zone, z -> new ConcurrentHashMap<>()).put(tenantName, archiveUri);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     /** Add or update given nodes in zone */
     public void putNodes(ZoneId zone, List<Node> nodes) {
-        Map<HostName, Node> zoneNodes = nodeRepository.computeIfAbsent(zone, (k) -> new HashMap<>());
+        Map<HostName, Node> zoneNodes = nodeRepository.computeIfAbsent(zone, (k) -> new ConcurrentHashMap<>());
         for (var node : nodes) {
             zoneNodes.put(node.hostname(), node);
         }

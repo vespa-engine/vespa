@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.playground;
 
+import ai.vespa.validation.StringWrapper;
 import com.yahoo.application.Networking;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -20,13 +23,26 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
 
 public class DeploymentPlayground extends ControllerContainerTest {
 
@@ -64,11 +80,12 @@ public class DeploymentPlayground extends ControllerContainerTest {
         domainMock.markAsVespaTenant();
         domainMock.admin(AllowingFilter.user.getIdentity());
 
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml());
         Map<String, DeploymentContext> instances = new LinkedHashMap<>();
-        for (String name : List.of("alpha", "beta", "prod5", "prod25", "prod100"))
-              instances.put(name, deploymentTester.newDeploymentContext("gemini", "core", name));
+        for (var instance : applicationPackage.deploymentSpec().instances())
+              instances.put(instance.name().value(), deploymentTester.newDeploymentContext("gemini", "core", instance.name().value()));
 
-        instances.values().iterator().next().submit(ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml())).deploy();
+        instances.values().iterator().next().submit(applicationPackage);
 
         repl(instances);
     }
@@ -112,10 +129,13 @@ public class DeploymentPlayground extends ControllerContainerTest {
                             deploymentTester.controllerTester().computeVersionStatus();
                             break;
                         case "submit":
-                            instances.values().iterator().next().submit(ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml()));
+                            instances.values().iterator().next().submit(ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml(),
+                                                                                                                    ValidationId.deploymentRemoval),
+                                                                        command.length == 1 ? 2 : Integer.parseInt(command[1]));
                             break;
                         case "resubmit":
-                            instances.values().iterator().next().resubmit(ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml()));
+                            instances.values().iterator().next().resubmit(ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml(),
+                                                                                                                      ValidationId.deploymentRemoval));
                             break;
                         case "advance":
                             deploymentTester.clock().advance(Duration.ofMinutes(Long.parseLong(command[1])));
@@ -130,6 +150,11 @@ public class DeploymentPlayground extends ControllerContainerTest {
                         default:
                             System.err.println("Cannot run '" + String.join(" ", command) + "'");
                     }
+                    Set<String> names = instances.values().iterator().next().application().deploymentSpec().instanceNames().stream().map(StringWrapper::value).collect(toSet());
+                    instances.keySet().removeIf(not(names::contains));
+                    names.removeIf(instances.keySet()::contains);
+                    for (String name : names)
+                        instances.put(name, deploymentTester.newDeploymentContext("gemini", "core", name));
                 }
             }
             catch (Throwable t) {
@@ -142,21 +167,35 @@ public class DeploymentPlayground extends ControllerContainerTest {
         while ( ! Thread.currentThread().isInterrupted()) {
             try {
                 synchronized (monitor) {
-                    monitor.wait(6000);
+                    monitor.wait(1000);
                     if ( ! on.get())
                         continue;
-
-                    System.err.println("auto running");
-                    deploymentTester.clock().advance(Duration.ofSeconds(60));
-                    deploymentTester.controllerTester().computeVersionStatus();
-                    deploymentTester.outstandingChangeDeployer().run();
-                    deploymentTester.upgrader().run();
-                    deploymentTester.triggerJobs();
-                    deploymentTester.runner().run();
-                    for (Run run : deploymentTester.jobs().active())
-                        if (run.versions().sourcePlatform().map(run.versions().targetPlatform()::equals).orElse(true) || Math.random() < 0.4)
-                            instances.get(run.id().application().instance().value()).runJob(run.id().type());
                 }
+
+                deploymentTester.clock().advance(Duration.ofSeconds(60));
+                deploymentTester.runner().run();
+                deploymentTester.triggerJobs();
+                deploymentTester.outstandingChangeDeployer().run();
+                deploymentTester.controllerTester().computeVersionStatus();
+                deploymentTester.upgrader().run();
+
+                synchronized (monitor) {
+                    monitor.wait(1000);
+                    if ( ! on.get())
+                        continue;
+                }
+                deploymentTester.clock().advance(Duration.ofSeconds(60));
+
+                List<Run> active = deploymentTester.jobs().active();
+                if ( ! active.isEmpty()) {
+                    Run run = active.stream()
+                                    .min(comparing(current -> deploymentTester.jobs().last(current.id().job()).map(Run::start)
+                                                                              .orElse(Instant.EPOCH))).get();
+                    if (run.versions().sourcePlatform().map(run.versions().targetPlatform()::equals).orElse(true) || Math.random() < 0.4) {
+                        instances.get(run.id().application().instance().value()).runJob(run.id().type());
+                    }
+                }
+
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -166,6 +205,58 @@ public class DeploymentPlayground extends ControllerContainerTest {
             }
         }
     }
+
+    /**
+     void auto(Map<String, DeploymentContext> instances, AtomicBoolean on) {
+     BooleanSupplier runJob = () -> {
+     List<Run> active = deploymentTester.jobs().active();
+     if ( ! active.isEmpty()) {
+     Run run = active.stream()
+     .min(comparing(current -> deploymentTester.jobs().last(current.id().job()).map(Run::start)
+     .orElse(Instant.EPOCH))).get();
+     if (run.versions().sourcePlatform().map(run.versions().targetPlatform()::equals).orElse(true) || Math.random() < 0.4) {
+     instances.get(run.id().application().instance().value()).runJob(run.id().type());
+                    return false;
+                }
+            }
+            return true;
+        };
+        List<Runnable> defaultTasks = List.of(() -> deploymentTester.runner().run(),
+                                              () -> deploymentTester.triggerJobs(),
+                                              () -> deploymentTester.outstandingChangeDeployer().run(),
+                                              () -> deploymentTester.upgrader().run(),
+                                              () -> deploymentTester.controllerTester().computeVersionStatus());
+        while ( ! Thread.currentThread().isInterrupted()) {
+            Deque<BooleanSupplier> tasks = new ArrayDeque<>();
+            tasks.push(runJob);
+            for (Runnable task : defaultTasks)
+                tasks.push(() -> {
+                    task.run();
+                    return true;
+                });
+
+            while ( ! tasks.isEmpty())
+                try {
+                    synchronized (monitor) {
+                        monitor.wait(1000);
+                        if ( ! on.get())
+                            break;
+
+                        deploymentTester.clock().advance(Duration.ofSeconds(60));
+                        BooleanSupplier task = tasks.pop();
+                        if ( ! task.getAsBoolean())
+                            tasks.push(task);
+                    }
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                catch (Throwable t) {
+                    t.printStackTrace();
+                }
+        }
+    }
+     */
 
     void run(DeploymentContext instance, BiConsumer<DeploymentContext, JobType> action, List<String> jobs) {
         Set<JobId> haveRun = new HashSet<>();
