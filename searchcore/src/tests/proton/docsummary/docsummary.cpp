@@ -35,6 +35,8 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
+#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -92,6 +94,26 @@ public:
 private:
     vespalib::string _dir;
 };
+
+DocsumBlobEntryFilter make_blob_entry_filter()
+{
+    return DocsumBlobEntryFilter().
+        add_skip(RES_INT).
+        add_skip(RES_SHORT).
+        add_skip(RES_BOOL).
+        add_skip(RES_BYTE).
+        add_skip(RES_FLOAT).
+        add_skip(RES_DOUBLE).
+        add_skip(RES_INT64).
+        add_skip(RES_STRING).
+        add_skip(RES_DATA).
+        add_skip(RES_LONG_STRING).
+        add_skip(RES_LONG_DATA).
+        add_skip(RES_JSONSTRING).
+        add_skip(RES_TENSOR).
+        add_skip(RES_FEATUREDATA);
+}
+
 
 class BuildContext
 {
@@ -159,8 +181,10 @@ vespalib::string asVstring(const Inspector &value) {
     return asVstring(value.asString());
 }
 
-void decode(const ResEntry *entry, vespalib::Slime &slime) {
-    vespalib::Memory mem(entry->_dataval, entry->_datalen);
+void decode(const FieldValue &fv, vespalib::Slime &slime) {
+    auto& raw_fv = dynamic_cast<const RawFieldValue&>(fv);
+    auto value_ref = raw_fv.getValueRef();
+    vespalib::Memory mem(value_ref.data(), value_ref.size());
     size_t decodeRes = BinaryFormat::decode(mem, slime);
     ASSERT_EQUAL(decodeRes, mem.size);
 }
@@ -307,13 +331,11 @@ public:
 };
 
 GeneralResultPtr
-getResult(DocumentStoreAdapter & dsa, uint32_t docId)
+getResult(DocumentStoreAdapter & dsa, const DocsumStoreValue& docsum)
 {
-    DocsumStoreValue docsum = dsa.getMappedDocsum(docId);
     ASSERT_TRUE(docsum.pt() != nullptr);
     auto retval = std::make_unique<GeneralResult>(dsa.getResultClass());
-    // skip the 4 byte class id
-    ASSERT_TRUE(retval->unpack(docsum.pt() + 4, docsum.len() - 4));
+    ASSERT_TRUE(retval->inplaceUnpack(docsum));
     return retval;
 }
 
@@ -321,9 +343,19 @@ bool
 assertString(const std::string & exp, const std::string & fieldName,
              DocumentStoreAdapter &dsa, uint32_t id)
 {
-    GeneralResultPtr res = getResult(dsa, id);
-    return EXPECT_EQUAL(exp, std::string(res->GetPresentEntry(fieldName.c_str())->_stringval,
-                                         res->GetPresentEntry(fieldName.c_str())->_stringlen));
+    auto docsum = dsa.getMappedDocsum(id);
+    GeneralResultPtr res = getResult(dsa, docsum);
+    return EXPECT_EQUAL(exp, res->get_field_value(fieldName)->getAsString());
+}
+
+bool
+assertAnnotatedString(const std::string & exp, const std::string & fieldName,
+                      DocumentStoreAdapter &dsa, uint32_t id)
+{
+    auto docsum = dsa.getMappedDocsum(id);
+    GeneralResultPtr res = getResult(dsa, docsum);
+    auto document = res->get_document();
+    return EXPECT_EQUAL(exp, document->get_juniper_input(fieldName).get_value());
 }
 
 void
@@ -391,25 +423,20 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
                              f.getResultConfig(), "class0",
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
                              f.getMarkupFields());
-    GeneralResultPtr res = getResult(dsa, 0);
-    EXPECT_EQUAL(255u,        res->GetPresentEntry("a")->_intval);
-    EXPECT_EQUAL(32767u,      res->GetPresentEntry("b")->_intval);
-    EXPECT_EQUAL(2147483647u, res->GetPresentEntry("c")->_intval);
-    EXPECT_EQUAL(2147483648u, res->GetPresentEntry("d")->_int64val);
-    EXPECT_APPROX(1234.56,    res->GetPresentEntry("e")->_doubleval, 10e-5);
-    EXPECT_APPROX(9876.54,    res->GetPresentEntry("f")->_doubleval, 10e-5);
-    EXPECT_EQUAL("foo",       std::string(res->GetPresentEntry("g")->_stringval,
-                                          res->GetPresentEntry("g")->_stringlen));
-    EXPECT_EQUAL("bar",       std::string(res->GetPresentEntry("h")->_stringval,
-                                          res->GetPresentEntry("h")->_stringlen));
-    EXPECT_EQUAL("baz",       std::string(res->GetPresentEntry("i")->_dataval,
-                                          res->GetPresentEntry("i")->_datalen));
-    EXPECT_EQUAL("qux",       std::string(res->GetPresentEntry("j")->_dataval,
-                                          res->GetPresentEntry("j")->_datalen));
-    EXPECT_EQUAL("<foo>",     std::string(res->GetPresentEntry("k")->_stringval,
-                                          res->GetPresentEntry("k")->_stringlen));
-    EXPECT_EQUAL("{foo:10}",  std::string(res->GetPresentEntry("l")->_stringval,
-                                          res->GetPresentEntry("l")->_stringlen));
+    auto docsum = dsa.getMappedDocsum(0);
+    GeneralResultPtr res = getResult(dsa, docsum);
+    EXPECT_EQUAL(-1,          res->get_field_value("a")->getAsInt());
+    EXPECT_EQUAL(32767,       res->get_field_value("b")->getAsInt());
+    EXPECT_EQUAL(2147483647,  res->get_field_value("c")->getAsInt());
+    EXPECT_EQUAL(INT64_C(2147483648), res->get_field_value("d")->getAsLong());
+    EXPECT_APPROX(1234.56,    res->get_field_value("e")->getAsFloat(), 10e-5);
+    EXPECT_APPROX(9876.54,    res->get_field_value("f")->getAsDouble(), 10e-5);
+    EXPECT_EQUAL("foo",       res->get_field_value("g")->getAsString());
+    EXPECT_EQUAL("bar",       res->get_field_value("h")->getAsString());
+    EXPECT_EQUAL("baz",       res->get_field_value("i")->getAsString());
+    EXPECT_EQUAL("qux",       res->get_field_value("j")->getAsString());
+    EXPECT_EQUAL("<foo>",     res->get_field_value("k")->getAsString());
+    EXPECT_EQUAL("{foo:10}",  res->get_field_value("l")->getAsString());
 }
 
 TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
@@ -432,20 +459,23 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class1"),
                              f.getMarkupFields());
     { // doc 0
-        GeneralResultPtr res = getResult(dsa, 0);
-        EXPECT_EQUAL(1000u, res->GetPresentEntry("a")->_intval);
+        auto docsum = dsa.getMappedDocsum(0);
+        GeneralResultPtr res = getResult(dsa, docsum);
+        EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
     }
     { // doc 1
-        GeneralResultPtr res = getResult(dsa, 1);
-        EXPECT_EQUAL(2000u, res->GetPresentEntry("a")->_intval);
+        auto docsum = dsa.getMappedDocsum(1);
+        GeneralResultPtr res = getResult(dsa, docsum);
+        EXPECT_EQUAL(2000, res->get_field_value("a")->getAsInt());
     }
     { // doc 2
-        DocsumStoreValue docsum = dsa.getMappedDocsum(2);
+        auto docsum = dsa.getMappedDocsum(2);
         EXPECT_TRUE(docsum.pt() == nullptr);
     }
     { // doc 0 (again)
-        GeneralResultPtr res = getResult(dsa, 0);
-        EXPECT_EQUAL(1000u, res->GetPresentEntry("a")->_intval);
+        auto docsum = dsa.getMappedDocsum(0);
+        GeneralResultPtr res = getResult(dsa, docsum);
+        EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
     }
     EXPECT_EQUAL(0u, bc._str.lastSyncToken());
     uint64_t flushToken = bc._str.initFlush(bc._serialNum - 1);
@@ -465,9 +495,12 @@ TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
     DocumentStoreAdapter dsa(bc._str, *bc._repo, f.getResultConfig(), "class4",
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class4"),
                              f.getMarkupFields());
-    GeneralResultPtr res = getResult(dsa, 0);
-    EXPECT_EQUAL("id:ns:searchdocument::0", std::string(res->GetPresentEntry("documentid")->_stringval,
-                                                        res->GetPresentEntry("documentid")->_stringlen));
+    auto docsum = dsa.getMappedDocsum(0);
+    GeneralResultPtr res = getResult(dsa, docsum);
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+    res->get_document()->insert_document_id(inserter);
+    EXPECT_EQUAL("id:ns:searchdocument::0", slime.get().asString().make_string());
 }
 
 GlobalId gid1 = DocumentId("id:ns:searchdocument::1").getGlobalId(); // lid 1
@@ -805,11 +838,11 @@ TEST_F("requireThatAnnotationsAreUsed", Fixture)
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
                              f.getMarkupFields());
     EXPECT_TRUE(assertString("foo bar", "g", dsa, 1));
-    EXPECT_TRUE(assertString(TERM_EMPTY + "foo" + TERM_SEP +
-                             " " + TERM_SEP +
-                             TERM_ORIG + "bar" + TERM_INDEX + "baz" + TERM_END +
-                             TERM_SEP,
-                             "dynamicstring", dsa, 1));
+    EXPECT_TRUE(assertAnnotatedString(TERM_EMPTY + "foo" + TERM_SEP +
+                                      " " + TERM_SEP +
+                                      TERM_ORIG + "bar" + TERM_INDEX + "baz" + TERM_END +
+                                      TERM_SEP,
+                                      "dynamicstring", dsa, 1));
 }
 
 TEST_F("requireThatUrisAreUsed", Fixture)
@@ -955,19 +988,19 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
                              f.getMarkupFields());
-
-    EXPECT_TRUE(assertString("http://www.example.com:81/fluke?ab=2#4", "urisingle", dsa, 1));
-    GeneralResultPtr res = getResult(dsa, 1);
+    auto docsum = dsa.getMappedDocsum(1);
+    GeneralResultPtr res = getResult(dsa, docsum);
+    EXPECT_EQUAL("http://www.example.com:81/fluke?ab=2#4", SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("urisingle"))->getAsString());
     {
         vespalib::Slime slime;
-        decode(res->GetPresentEntry("uriarray"), slime);
+        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("uriarray")), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
         EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(res->GetPresentEntry("uriwset"), slime);
+        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("uriwset")), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
@@ -1086,17 +1119,18 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
 
     ASSERT_TRUE(assertString(raw1s, "i", dsa, 1));
 
-    GeneralResultPtr res = getResult(dsa, 1);
+    auto docsum = dsa.getMappedDocsum(1);
+    GeneralResultPtr res = getResult(dsa, docsum);
     {
         vespalib::Slime slime;
-        decode(res->GetPresentEntry("araw"), slime);
+        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("araw")), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(res->GetPresentEntry("wraw"), slime);
+        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("wraw")), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(46L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(45L, slime.get()[1]["weight"].asLong());
@@ -1121,7 +1155,7 @@ TEST_F("requireThatFieldCacheRepoCanReturnDefaultFieldCache", Fixture)
 
 Fixture::Fixture()
     : _summaryCfg(),
-      _resultCfg(),
+      _resultCfg(make_blob_entry_filter()),
       _markupFields()
 {
     std::string cfgId("summary");

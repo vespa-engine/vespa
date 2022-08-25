@@ -64,6 +64,7 @@ constexpr uint32_t doc_id = 2;
 
 class DocsumStore {
 private:
+    DocsumBlobEntryFilter _docsum_blob_entry_filter;
     ResultConfig _config;
     ResultPacker _packer;
     DocumentType _doc_type;
@@ -78,26 +79,19 @@ private:
         return result;
     }
 
-    void write_field_value(const FieldValue& value) {
-        auto converted = SummaryFieldConverter::convertSummaryField(false, value);
-        const auto* raw_field = dynamic_cast<const RawFieldValue*>(converted.get());
-        ASSERT_TRUE(raw_field);
-        auto raw_buf = raw_field->getAsRaw();
-        bool result = _packer.AddLongString(raw_buf.first, raw_buf.second);
-        ASSERT_TRUE(result);
-    }
-
 public:
     DocsumStore()
-        : _config(),
+        : _docsum_blob_entry_filter(DocsumBlobEntryFilter().add_skip(ResType::RES_JSONSTRING)),
+          _config(_docsum_blob_entry_filter),
           _packer(&_config),
           _doc_type("test"),
           _elem_type(make_struct_elem_type()),
           _array_type(*_elem_type),
           _map_type(*DataType::STRING, *_elem_type)
     {
-        _doc_type.addField(Field("array_in_doc", _array_type));
-        _doc_type.addField(Field("map_in_doc", _map_type));
+        _doc_type.addField(Field("array", _array_type));
+        _doc_type.addField(Field("map", _map_type));
+        _doc_type.addField(Field("map2", _map_type));
 
         auto* result_class = _config.AddResultClass("test", class_id);
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
@@ -116,21 +110,19 @@ public:
             array_value.append(make_elem_value("a", 3));
             array_value.append(make_elem_value("b", 5));
             array_value.append(make_elem_value("c", 7));
-            write_field_value(array_value);
-            doc->setValue("array_in_doc", array_value);
+            doc->setValue("array", array_value);
         }
         {
             MapFieldValue map_value(_map_type);
             map_value.put(StringFieldValue("a"), *make_elem_value("a", 3));
             map_value.put(StringFieldValue("b"), *make_elem_value("b", 5));
             map_value.put(StringFieldValue("c"), *make_elem_value("c", 7));
-            write_field_value(map_value);
-            doc->setValue("map_in_doc", map_value);
+            doc->setValue("map", map_value);
         }
         {
             MapFieldValue map2_value(_map_type);
             map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
-            write_field_value(map2_value);
+            doc->setValue("map2", map2_value);
         }
         const char* buf;
         uint32_t buf_len;
@@ -241,18 +233,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
     expect_filtered("array", {0, 1, 2}, "[{'name':'a','weight':3},"
                                         "{'name':'b','weight':5},"
                                         "{'name':'c','weight':7}]");
-}
-
-TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value_when_input_field_is_not_in_docsum_blob)
-{
-    expect_filtered("array_in_doc", {}, "[]");
-    expect_filtered("array_in_doc", {0}, "[{'name':'a','weight':3}]");
-    expect_filtered("array_in_doc", {1}, "[{'name':'b','weight':5}]");
-    expect_filtered("array_in_doc", {2}, "[{'name':'c','weight':7}]");
-    expect_filtered("array_in_doc", {0, 1, 2}, "[{'name':'a','weight':3},"
-                                               "{'name':'b','weight':5},"
-                                               "{'name':'c','weight':7}]");
-    expect_filtered("array_in_doc", {0, 1, 100}, "[]");
+    expect_filtered("array", {0, 1, 100}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
@@ -272,18 +253,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
     expect_filtered("map", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
                                       "{'key':'b','value':{'name':'b','weight':5}},"
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
-}
-
-TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value_when_input_field_is_not_in_docsum_blob)
-{
-    expect_filtered("map_in_doc", {}, "[]");
-    expect_filtered("map_in_doc", {0}, "[{'key':'a','value':{'name':'a','weight':3}}]");
-    expect_filtered("map_in_doc", {1}, "[{'key':'b','value':{'name':'b','weight':5}}]");
-    expect_filtered("map_in_doc", {2}, "[{'key':'c','value':{'name':'c','weight':7}}]");
-    expect_filtered("map_in_doc", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
-                                             "{'key':'b','value':{'name':'b','weight':5}},"
-                                             "{'key':'c','value':{'name':'c','weight':7}}]");
-    expect_filtered("map_in_doc", {0, 1, 100}, "[]");
+    expect_filtered("map", {0, 1, 100}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)
