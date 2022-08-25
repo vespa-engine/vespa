@@ -1,6 +1,6 @@
 [
   {
     "name": "us-north-1",
-    "url": "http://localhost:8080/zone/v2/environment/prod/region/us-north-1"
+    "url": "http://localhost:8080/zone/v2/prod/us-north-1"
   }
 ]

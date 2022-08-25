@@ -1,4 +1,4 @@
 {
   "name": "us-north-2",
-  "url": "http://localhost:8080/zone/v2/environment/dev/region/us-north-2"
+  "url": "http://localhost:8080/zone/v2/dev/us-north-2"
 }
