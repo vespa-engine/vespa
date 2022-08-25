@@ -28,6 +28,8 @@ public record NodeAcl(Node node,
                       Set<String> trustedNetworks,
                       Set<Integer> trustedPorts) {
 
+    private static final Set<Integer> RPC_PORTS = Set.of(19070);
+
     public NodeAcl {
         Objects.requireNonNull(node, "node must be non-null");
         ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
@@ -81,9 +83,11 @@ public record NodeAcl(Node node,
             }
             case config -> {
                 // Config servers trust:
-                // - all nodes
+                // - port 19070 (RPC) from all tenant nodes
+                // - port 19070 (RPC) from all proxy nodes
                 // - port 4443 from the world
-                trustedNodes.addAll(TrustedNode.of(allNodes));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.tenant), RPC_PORTS));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), RPC_PORTS));
                 trustedPorts.add(4443);
             }
             case proxy -> {
@@ -107,17 +111,26 @@ public record NodeAcl(Node node,
         return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
     }
 
-    public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses) {
+    public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses, Set<Integer> ports) {
 
+        /** Trust given ports from node */
+        public static TrustedNode of(Node node, Set<Integer> ports) {
+            return new TrustedNode(node.hostname(), node.type(), node.ipConfig().primary(), ports);
+        }
+
+        /** Trust all ports from given node */
         public static TrustedNode of(Node node) {
-            return new TrustedNode(node.hostname(), node.type(), node.ipConfig().primary());
+            return of(node, Set.of());
+        }
 
+        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports) {
+            return StreamSupport.stream(nodes.spliterator(), false)
+                                .map(node -> TrustedNode.of(node, ports))
+                                .toList();
         }
 
         public static List<TrustedNode> of(Iterable<Node> nodes) {
-            return StreamSupport.stream(nodes.spliterator(), false)
-                                .map(TrustedNode::of)
-                                .toList();
+            return of(nodes, Set.of());
         }
 
     }

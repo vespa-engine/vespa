@@ -52,6 +52,10 @@ public class NodeAclResponse extends SlimeJsonResponse {
             object.setString("hostname", node.hostname());
             object.setString("type", node.type().name());
             object.setString("ipAddress", ipAddress);
+            if (!node.ports().isEmpty()) {
+                Cursor portsArray = object.setArray("ports");
+                node.ports().stream().sorted().forEach(portsArray::addLong);
+            }
             object.setString("trustedBy", nodeAcl.node().hostname());
         }));
     }

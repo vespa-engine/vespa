@@ -12,6 +12,8 @@
     @include(docker-node4.json),
     @include(docker-node5.json),
     @include(docker-node2.json),
-    @include(docker-node1.json)
+    @include(docker-node1.json),
+    @include(cfg1.json),
+    @include(cfg2.json)
   ]
 }
