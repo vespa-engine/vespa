@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * @author gjoranv
  */
 public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
-    private static Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
+    private static final Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
 
     private ServiceRegistration<?> registration;
     private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
@@ -90,7 +90,7 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
     /**
      * Filters out the set of bundles that should not be visible to the bundle associated with the given context.
      * If the given context represents one of the allowed duplicates, this method filters out all bundles
-     * that are duplicates of the allowed duplicates. Otherwise this method filters out the allowed duplicates,
+     * that are duplicates of the allowed duplicates. Otherwise, this method filters out the allowed duplicates,
      * so they are not visible to other bundles.
      */
     @Override
