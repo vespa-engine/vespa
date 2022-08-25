@@ -21,34 +21,16 @@ import java.util.TreeSet;
  *
  * @author mpolden
  */
-public class NodeAcl {
+public record NodeAcl(Node node,
+                      Set<Node> trustedNodes,
+                      Set<String> trustedNetworks,
+                      Set<Integer> trustedPorts) {
 
-    private final Node node;
-    private final Set<Node> trustedNodes;
-    private final Set<String> trustedNetworks;
-    private final Set<Integer> trustedPorts;
-
-    private NodeAcl(Node node, Set<Node> trustedNodes, Set<String> trustedNetworks, Set<Integer> trustedPorts) {
-        this.node = Objects.requireNonNull(node, "node must be non-null");
-        this.trustedNodes = ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
-        this.trustedNetworks = ImmutableSet.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
-        this.trustedPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
-    }
-
-    public Node node() {
-        return node;
-    }
-
-    public Set<Node> trustedNodes() {
-        return trustedNodes;
-    }
-
-    public Set<String> trustedNetworks() {
-        return trustedNetworks;
-    }
-
-    public Set<Integer> trustedPorts() {
-        return trustedPorts;
+    public NodeAcl {
+        Objects.requireNonNull(node, "node must be non-null");
+        ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
+        ImmutableSet.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
+        ImmutableSet.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
     }
 
     public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers) {
