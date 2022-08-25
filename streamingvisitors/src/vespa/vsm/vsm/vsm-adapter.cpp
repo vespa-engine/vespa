@@ -9,7 +9,6 @@
 LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::ResConfigEntry;
-using search::docsummary::DocsumBlobEntryFilter;
 using search::docsummary::KeywordExtractor;
 using search::MatchingElements;
 using config::ConfigSnapshot;
@@ -136,22 +135,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "configureVsmSummary(): outputclass='%s'", vsmSummary->outputclass.c_str()); // UlfC: debugging
 
     // init result config
-    DocsumBlobEntryFilter docsum_blob_entry_filter;
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_SHORT);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_BOOL);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_BYTE);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_FLOAT);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_DOUBLE);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT64);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_STRING);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_DATA);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_LONG_STRING);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_LONG_DATA);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_JSONSTRING);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_TENSOR);
-    docsum_blob_entry_filter.add_skip(search::docsummary::RES_FEATUREDATA);
-    std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
+    auto resCfg = std::make_unique<ResultConfig>();
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }

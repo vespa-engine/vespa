@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "docsumstorevalue.h"
+#include <memory>
 
 namespace search::docsummary {
+
+class IDocsumStoreDocument;
 
 /**
  * Interface for object able to fetch docsum blobs based on local
@@ -33,10 +35,10 @@ public:
      * owns the memory (which is either mmap()ed or from a memory-based
      * index of some kind).
      *
-     * @return docsum blob location and size
+     * @return unique pointer to interface class providing access to document
      * @param docid local document id
      **/
-    virtual DocsumStoreValue getMappedDocsum(uint32_t docid) = 0;
+    virtual std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) = 0;
 
     /**
      * Will return default input class used.

@@ -5,7 +5,6 @@
 #include "fieldcache.h"
 #include <vespa/searchsummary/docsummary/docsumstore.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
-#include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 
@@ -18,21 +17,8 @@ private:
     const document::DocumentTypeRepo       & _repo;
     const search::docsummary::ResultConfig & _resultConfig;
     const search::docsummary::ResultClass  * _resultClass;
-    search::docsummary::ResultPacker         _resultPacker;
     FieldCache::CSP                          _fieldCache;
     const std::set<vespalib::string>       & _markupFields;
-
-    bool
-    writeStringField(const char * buf,
-                     uint32_t buflen,
-                     search::docsummary::ResType type);
-
-    bool
-    writeField(const document::FieldValue &value,
-               search::docsummary::ResType type);
-
-    void
-    convertFromSearchDoc(document::Document &doc, uint32_t docId);
 
 public:
     DocumentStoreAdapter(const search::IDocumentStore &docStore,
@@ -48,7 +34,7 @@ public:
     }
 
     uint32_t getNumDocs() const override { return _docStore.getDocIdLimit(); }
-    search::docsummary::DocsumStoreValue getMappedDocsum(uint32_t docId) override;
+    std::unique_ptr<const search::docsummary::IDocsumStoreDocument> getMappedDocsum(uint32_t docId) override;
     uint32_t getSummaryClassId() const override { return _resultClass->GetClassID(); }
 
 };

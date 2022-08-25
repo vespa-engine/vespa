@@ -84,84 +84,9 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
     }
 }
 
-constexpr uint32_t default_32bits_int = search::attribute::getUndefined<int32_t>();
-constexpr uint64_t default_64bits_int = search::attribute::getUndefined<int64_t>();
-
-static void convertEntry(const ResConfigEntry *resCfg,
-                         const ResEntry *entry,
-                         const GeneralResult& gres,
-                         Inserter &inserter,
-                         Slime &slime)
-{
-    using vespalib::slime::BinaryFormat;
-    const char *ptr;
-    uint32_t len;
-
-    LOG_ASSERT(resCfg != nullptr);
-    if (entry == nullptr || entry->_not_present) {
-        // Entry is not present in docsum blob
-        const auto* document = gres.get_document();
-        if (document != nullptr) {
-            document->insert_summary_field(resCfg->_bindname, inserter);
-        }
-        return;
-    }
-
-    switch (resCfg->_type) {
-    case RES_INT:
-    case RES_SHORT:
-    case RES_BYTE:
-        if (entry->_intval != default_32bits_int) {
-            inserter.insertLong(entry->_intval);
-        }
-        break;
-    case RES_BOOL:
-        inserter.insertBool(entry->_intval != 0);
-        break;
-    case RES_FLOAT:
-    case RES_DOUBLE:
-        if (! std::isnan(entry->_doubleval)) {
-            inserter.insertDouble(entry->_doubleval);
-        }
-        break;
-    case RES_INT64:
-        if (entry->_int64val != default_64bits_int) {
-            inserter.insertLong(entry->_int64val);
-        }
-        break;
-    case RES_STRING:
-    case RES_LONG_STRING:
-    case RES_FEATUREDATA:
-        entry->_resolve_field(&ptr, &len);
-        if (len != 0) {
-            inserter.insertString(Memory(ptr, len));
-        }
-        break;
-    case RES_DATA:
-    case RES_TENSOR:
-    case RES_LONG_DATA:
-        entry->_resolve_field(&ptr, &len);
-        if (len != 0) {
-            inserter.insertData(Memory(ptr, len));
-        }
-        break;
-    case RES_JSONSTRING:
-        entry->_resolve_field(&ptr, &len);
-        if (len != 0) {
-            // note: 'JSONSTRING' really means 'structured data'
-            size_t d = BinaryFormat::decode_into(Memory(ptr, len), slime, inserter);
-            if (d != len) {
-                LOG(warning, "could not decode %u bytes: %zu bytes decoded", len, d);
-            }
-        }
-        break;
-    }
-}
-
-
 void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
-                                  IDocsumStore *docinfos, vespalib::Slime & slime, vespalib::slime::Inserter & topInserter)
+                                  IDocsumStore *docinfos, vespalib::slime::Inserter& topInserter)
 {
     if (rci.allGenerated) {
         // generate docsum entry on-the-fly
@@ -177,14 +102,8 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         }
     } else {
         // look up docsum entry
-        DocsumStoreValue value = docinfos->getMappedDocsum(docid);
-        // re-pack docsum blob
-        GeneralResult gres(rci.inputClass);
-        if (! gres.inplaceUnpack(value)) {
-            LOG(debug, "Unpack failed: illegal docsum entry for document %d. This is expected during lidspace compaction.", docid);
-            topInserter.insertNix();
-            return;
-        }
+        auto doc = docinfos->getMappedDocsum(docid);
+        // insert docsum blob
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
@@ -193,25 +112,11 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
                 if (! writer->isDefaultValue(docid, state)) {
-                    writer->insertField(docid, &gres, state, outCfg->_type, inserter);
+                    writer->insertField(docid, doc.get(), state, outCfg->_type, inserter);
                 }
             } else {
-                if (rci.inputClass == rci.outputClass) {
-                    convertEntry(outCfg, gres.GetEntry(i), gres, inserter, slime);
-                } else {
-                    int inIdx = rci.inputClass->GetIndexFromEnumValue(outCfg->_enumValue);
-                    const ResConfigEntry *inCfg = rci.inputClass->GetEntry(inIdx);
-                    if (inCfg != nullptr && inCfg->_type == outCfg->_type && !inCfg->_not_present) {
-                        // copy field
-                        const ResEntry *entry = gres.GetEntry(inIdx);
-                        LOG_ASSERT(entry != nullptr);
-                        convertEntry(outCfg, entry, gres, inserter, slime);
-                    } else {
-                        const auto* document = gres.get_document();
-                        if (document != nullptr) {
-                            document->insert_summary_field(outCfg->_bindname, inserter);
-                        }
-                    }
+                if (doc) {
+                    doc->insert_summary_field(outCfg->_bindname, inserter);
                 }
             }
         }
@@ -341,7 +246,7 @@ DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsum
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
     ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName(), docinfos->getSummaryClassId());
-    insertDocsum(rci, docid, state, docinfos, slime, inserter);
+    insertDocsum(rci, docid, state, docinfos, inserter);
     return slime2RawBuf(slime, *target);
 }
 

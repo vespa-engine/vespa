@@ -3,7 +3,7 @@
 #pragma once
 
 #include "juniperproperties.h"
-#include "general_result.h"
+#include "resultclass.h"
 #include "resultconfig.h"
 #include "docsumstore.h"
 #include "keywordextractor.h"
@@ -42,7 +42,7 @@ public:
     virtual uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
                                  IDocsumStore *docinfos, search::RawBuf *target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
-                              IDocsumStore *docinfos, vespalib::Slime & slime, vespalib::slime::Inserter & target) = 0;
+                              IDocsumStore *docinfos, vespalib::slime::Inserter & target) = 0;
     virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName, uint32_t inputClassId) const = 0;
 
     static uint32_t slime2RawBuf(const vespalib::Slime & slime, RawBuf & buf);
@@ -81,7 +81,7 @@ public:
                          IDocsumStore *docinfos, search::RawBuf *target) override;
 
     void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState *state,
-                      IDocsumStore *docinfos, vespalib::Slime & slime, vespalib::slime::Inserter & target) override;
+                      IDocsumStore *docinfos, vespalib::slime::Inserter & target) override;
 
     ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName, uint32_t inputClassId) const override;
 };

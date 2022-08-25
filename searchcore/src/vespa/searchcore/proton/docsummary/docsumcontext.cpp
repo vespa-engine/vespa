@@ -86,7 +86,7 @@ DocsumContext::createSlimeReply()
         Cursor &docSumC = array.addObject();
         ObjectSymbolInserter inserter(docSumC, docsumSym);
         if ((docId != search::endDocId) && !rci.mustSkip) {
-            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
+            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, inserter);
         }
         num_ok++;
     }

@@ -26,15 +26,9 @@ ResultConfig::Init()
 
 
 ResultConfig::ResultConfig()
-    : ResultConfig(DocsumBlobEntryFilter())
-{
-}
-
-ResultConfig::ResultConfig(const DocsumBlobEntryFilter& docsum_blob_entry_filter)
     : _defaultSummaryId(-1),
       _classLookup(),
-      _nameLookup(),
-      _docsum_blob_entry_filter(docsum_blob_entry_filter)
+      _nameLookup()
 {
     Init();
 }
@@ -62,7 +56,7 @@ ResultConfig::AddResultClass(const char *name, uint32_t id)
     ResultClass *ret = nullptr;
 
     if (id != NoClassID() && (_classLookup.find(id) == _classLookup.end())) {
-        ResultClass::UP rc(new ResultClass(name, id, _fieldEnum, _docsum_blob_entry_filter));
+        ResultClass::UP rc(new ResultClass(name, id, _fieldEnum));
         ret = rc.get();
         _classLookup[id] = std::move(rc);
         if (_nameLookup.find(name) != _nameLookup.end()) {

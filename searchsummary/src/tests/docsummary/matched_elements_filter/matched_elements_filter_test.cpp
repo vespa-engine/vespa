@@ -16,13 +16,11 @@
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
-#include <vespa/searchsummary/docsummary/docsumstorevalue.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
-#include <vespa/searchsummary/docsummary/general_result.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
+#include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
-#include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -41,6 +39,8 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::docsummary::IDocsumStoreDocument;
+using search::docsummary::DocsumStoreDocument;
 using search::docsummary::test::SlimeValue;
 using vespalib::Slime;
 
@@ -64,9 +64,7 @@ constexpr uint32_t doc_id = 2;
 
 class DocsumStore {
 private:
-    DocsumBlobEntryFilter _docsum_blob_entry_filter;
     ResultConfig _config;
-    ResultPacker _packer;
     DocumentType _doc_type;
     StructDataType::UP _elem_type;
     ArrayDataType _array_type;
@@ -81,9 +79,7 @@ private:
 
 public:
     DocsumStore()
-        : _docsum_blob_entry_filter(DocsumBlobEntryFilter().add_skip(ResType::RES_JSONSTRING)),
-          _config(_docsum_blob_entry_filter),
-          _packer(&_config),
+        : _config(),
           _doc_type("test"),
           _elem_type(make_struct_elem_type()),
           _array_type(*_elem_type),
@@ -102,8 +98,7 @@ public:
     ~DocsumStore();
     const ResultConfig& get_config() const { return _config; }
     const ResultClass* get_class() const { return _config.LookupResultClass(class_id); }
-    search::docsummary::DocsumStoreValue getMappedDocsum() {
-        assert(_packer.Init(class_id));
+    std::unique_ptr<IDocsumStoreDocument> getMappedDocsum() {
         auto doc = std::make_unique<Document>(_doc_type, DocumentId("id:test:test::0"));
         {
             ArrayFieldValue array_value(_array_type);
@@ -124,10 +119,7 @@ public:
             map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
             doc->setValue("map2", map2_value);
         }
-        const char* buf;
-        uint32_t buf_len;
-        assert(_packer.GetDocsumBlob(&buf, &buf_len));
-        return DocsumStoreValue(buf, buf_len, std::make_unique<DocsumStoreDocument>(std::move(doc)));
+        return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
 };
 
@@ -189,15 +181,13 @@ private:
 
     Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
         auto writer = make_field_writer(input_field_name);
-        GeneralResult result(_doc_store.get_class());
-        auto docsum = _doc_store.getMappedDocsum();
-        result.inplaceUnpack(docsum);
+        auto doc = _doc_store.getMappedDocsum();
         StateCallback callback(input_field_name, matching_elements);
         GetDocsumsState state(callback);
         Slime slime;
         SlimeInserter inserter(slime);
 
-        writer->insertField(doc_id, &result, &state, ResType::RES_JSONSTRING, inserter);
+        writer->insertField(doc_id, doc.get(), &state, ResType::RES_JSONSTRING, inserter);
         return slime;
     }
 

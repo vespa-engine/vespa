@@ -35,7 +35,7 @@ public:
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
     ~MatchedElementsFilterDFW();
     bool IsGenerated() const override { return false; }
-    void insertField(uint32_t docid, GeneralResult* result, GetDocsumsState *state,
+    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter& target) override;
 };
 

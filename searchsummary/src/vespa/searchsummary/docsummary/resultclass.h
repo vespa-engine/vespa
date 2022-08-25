@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "docsum_blob_entry_filter.h"
+#include "res_type.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -11,61 +11,20 @@
 namespace search::docsummary {
 
 /**
- * This struct describes a single docsum field (name and type). A
- * docsum blob is unpacked into an array of ResEntry instances
- * by interpreting it as described by an array of ResConfigEntry
- * instances.
+ * This struct describes a single docsum field (name and type).
  **/
 struct ResConfigEntry {
     ResType          _type;
-    bool             _not_present; // Entry not present in docsum blob when _not_present is set
     vespalib::string _bindname;
     int              _enumValue;
 };
 
 
 /**
- * This struct holds the actual value of a single docsum field. A
- * docsum blob is unpacked into an array of ResEntry instances
- * by interpreting it as described by an array of ResConfigEntry
- * instances. Note that type normalization is performed when unpacking
- * docsum fields. Fields of type RES_BYTE and RES_SHORT are promoted
- * to RES_INT. Fields of type RES_FLOAT are promoted to RES_DOUBLE.
- **/
-struct ResEntry
-{
-    ResType _type;
-    bool    _not_present; // Entry not present in docsum blob when _not_present is set
-    union {
-        uint32_t _intval;
-        uint32_t _stringlen;
-        uint32_t _datalen;
-        uint32_t _len;
-        uint64_t _int64val;
-        double   _doubleval;
-    };
-    union {
-        char *_stringval;
-        char *_dataval;
-        void *_pt;
-    };
-
-    void _resolve_field(const char **buf, uint32_t *buflen) const
-    {
-        // precond: IsVariableSize(_type)
-        *buf    = (char *) _pt;
-        *buflen = _len;
-    }
-};
-
-/**
  * This class represents a specific docsum format (docsum class). It
  * contains an array of ResConfigEntry instances (config
- * entries) that may be used to unpack docsum blobs into
- * ResEntry arrays. It also contains methods for mapping both
- * field name and field name enum value into field index. The field
- * index may then be used to access the actual field in the
- * GeneralResult object representing the unpacked docsum blob.
+ * entries). It also contains methods for mapping both
+ * field name and field name enum value into field index.
  **/
 class ResultClass
 {
@@ -92,7 +51,6 @@ private:
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
     bool                       _omit_summary_features;
-    DocsumBlobEntryFilter      _docsum_blob_entry_filter;
 
 public:
     typedef std::unique_ptr<ResultClass> UP;
@@ -105,7 +63,7 @@ public:
      * @param id the numeric id of this result class.
      * @param fieldEnum shared object used to enumerate field names.
      **/
-    ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum, const DocsumBlobEntryFilter& docsum_blob_entry_filter);
+    ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum);
 
     /**
      * Destructor. Delete internal structures.

@@ -24,7 +24,7 @@ public:
     bool Init(const ResultConfig & config, const char *inputField);
 
     bool IsGenerated() const override { return false; }
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type,
+    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType type,
                      vespalib::slime::Inserter &target) override;
 };
 
