@@ -48,10 +48,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -206,18 +204,18 @@ public class QueryTestCase {
         WordItem fClone = (WordItem) and2Clone.getItem(0);
         WordItem gClone = (WordItem) and2Clone.getItem(1);
 
-        assertTrue(rankClone != rank);
-        assertTrue(and1Clone != and1);
-        assertTrue(and2Clone != and2);
-        assertTrue(orClone != or);
+        assertNotSame(rankClone, rank);
+        assertNotSame(and1Clone, and1);
+        assertNotSame(and2Clone, and2);
+        assertNotSame(orClone, or);
 
-        assertTrue(aClone != a);
-        assertTrue(bClone != b);
-        assertTrue(cClone != c);
-        assertTrue(dClone != d);
-        assertTrue(eClone != e);
-        assertTrue(fClone != f);
-        assertTrue(gClone != g);
+        assertNotSame(aClone, a);
+        assertNotSame(bClone, b);
+        assertNotSame(cClone, c);
+        assertNotSame(dClone, d);
+        assertNotSame(eClone, e);
+        assertNotSame(fClone, f);
+        assertNotSame(gClone, g);
 
         assertEquals(aClone.getConnectedItem(), bClone);
         assertEquals(bClone.getConnectedItem(), cClone);
@@ -601,6 +599,12 @@ public class QueryTestCase {
         Query q = new Query("?query=foo&explainLevel=2");
         assertEquals(2, q.getTrace().getExplainLevel());
         assertEquals(0, q.getTrace().getLevel());
+    }
+
+    @Test
+    void testProfilingDepth() {
+        Query q = new Query("?query=foo&profileDepth=2");
+        assertEquals(2, q.getTrace().getProfileDepth());
     }
 
     @Test

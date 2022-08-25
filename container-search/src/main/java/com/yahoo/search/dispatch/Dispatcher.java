@@ -33,11 +33,9 @@ import java.util.Set;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
- *
  * This class allocates {@link SearchInvoker} and {@link FillInvoker} objects based
  * on query properties and general system status. The caller can then use the provided
  * invocation object to execute the search or fill.
- *
  * This class is multithread safe.
  *
  * @author bratseth
@@ -142,8 +140,8 @@ public class Dispatcher extends AbstractComponent {
      * Will run important code in order to trigger JIT compilation and avoid cold start issues.
      * Currently warms up lz4 compression code.
      */
-    private static long warmup(double seconds) {
-        return new Compressor().warmup(seconds);
+    private static void warmup(double seconds) {
+        new Compressor().warmup(seconds);
     }
 
     /** Returns the search cluster this dispatches to */

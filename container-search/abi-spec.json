@@ -5633,6 +5633,8 @@
       "public boolean isTraceable(int)",
       "public void setExplainLevel(int)",
       "public int getExplainLevel()",
+      "public void setProfileDepth(int)",
+      "public int getProfileDepth()",
       "public boolean getTimestamps()",
       "public void setTimestamps(boolean)",
       "public boolean getQuery()",
@@ -5653,6 +5655,7 @@
       "public static final java.lang.String TRACE",
       "public static final java.lang.String LEVEL",
       "public static final java.lang.String EXPLAIN_LEVEL",
+      "public static final java.lang.String PROFILE_DEPTH",
       "public static final java.lang.String TIMESTAMPS",
       "public static final java.lang.String QUERY"
     ]

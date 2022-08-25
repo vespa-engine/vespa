@@ -28,7 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -83,8 +82,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (tree instanceof GeoLocationItem) {
             return true;
         }
-        if (tree instanceof CompositeItem) {
-            var composite = (CompositeItem)tree;
+        if (tree instanceof CompositeItem composite) {
             for (Item child : composite.items()) {
                 if (hasLocation(child)) return true;
             }
@@ -202,8 +200,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         for (Iterator<Hit> i = hitIterator(result); i.hasNext(); ) {
             Hit hit = i.next();
-            if (hit instanceof FastHit) {
-                FastHit fastHit = (FastHit) hit;
+            if (hit instanceof FastHit fastHit) {
                 if ( ! fastHit.isFilled(summaryClass)) {
                     Query q = fastHit.getQuery();
                     if (q == null) {
@@ -309,9 +306,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" restrict=").append(query.getModel().getRestrict().toString());
         }
 
-        if (quotedSummaryClass.isPresent()) {
-            s.append(" summary=").append(quotedSummaryClass.get());
-        }
+        quotedSummaryClass.ifPresent((String summaryClass) -> s.append(" summary=").append(summaryClass));
 
         query.trace(s.toString(), false, level);
         if (query.getTrace().isTraceable(level + 1)) {
@@ -367,9 +362,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();
 
-            if (hit instanceof FastHit && ! hit.isFilled(summaryClass)) {
-                FastHit fastHit = (FastHit) hit;
-
+            if (hit instanceof FastHit fastHit && ! hit.isFilled(summaryClass)) {
                 DocsumPacket docsum = packets[packetIndex];
 
                 packetIndex++;
@@ -405,10 +398,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             hit.setFilled(summaryClass);
         }
         return error;
-    }
-
-    protected boolean isLoggingFine() {
-        return getLogger().isLoggable(Level.FINE);
     }
 
     public void shutDown() { }

@@ -23,10 +23,9 @@ class QueryEncoder {
      * Encodes properties of this query.
      *
      * @param buffer the buffer to encode to
-     * @param encodeQueryData true to encode all properties, false to only include session information, not actual query data
      * @return the encoded length
      */
-    static int encodeAsProperties(Query query, ByteBuffer buffer, boolean encodeQueryData) {
+    static int encodeAsProperties(Query query, ByteBuffer buffer) {
         // Make sure we don't encode anything here if we have turned the property feature off
         // Due to sendQuery we sometimes end up turning this feature on and then encoding a 0 int as the number of
         // property maps - that's ok (probably we should simplify by just always turning the feature on)
@@ -36,15 +35,13 @@ class QueryEncoder {
         int mapCountPosition = buffer.position();
         buffer.putInt(0); // map count will go here
         int mapCount = 0;
-        mapCount += query.getRanking().getProperties().encode(buffer, encodeQueryData);
-        if (encodeQueryData) {
-            mapCount += query.getRanking().getFeatures().encode(buffer);
-            if (query.getPresentation().getHighlight() != null) {
-                mapCount += MapEncoder.encodeMultiMap(Highlight.HIGHLIGHTTERMS,
-                                                      query.getPresentation().getHighlight().getHighlightTerms(), buffer);
-            }
-            mapCount += MapEncoder.encodeMap("model", createModelMap(query), buffer);
+        mapCount += query.getRanking().getProperties().encode(buffer, true);
+        mapCount += query.getRanking().getFeatures().encode(buffer);
+        if (query.getPresentation().getHighlight() != null) {
+            mapCount += MapEncoder.encodeMultiMap(Highlight.HIGHLIGHTTERMS,
+                                                  query.getPresentation().getHighlight().getHighlightTerms(), buffer);
         }
+        mapCount += MapEncoder.encodeMap("model", createModelMap(query), buffer);
         mapCount += MapEncoder.encodeSingleValue(DocumentDatabase.MATCH_PROPERTY, DocumentDatabase.SEARCH_DOC_TYPE_KEY,
                                                  query.getModel().getDocumentDb(), buffer);
         mapCount += MapEncoder.encodeMap("caches", createCacheSettingMap(query), buffer);
