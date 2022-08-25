@@ -44,7 +44,7 @@ public class Trace implements Cloneable {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(LEVEL, "integer", "tracelevel traceLevel"));
         argumentType.addField(new FieldDescription(EXPLAIN_LEVEL, "integer", "explainlevel explainLevel"));
-        argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer", "profiledepth profileDepth"));
+        argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer"));
         argumentType.addField(new FieldDescription(TIMESTAMPS, "boolean"));
         argumentType.addField(new FieldDescription(QUERY, "boolean"));
         argumentType.freeze();

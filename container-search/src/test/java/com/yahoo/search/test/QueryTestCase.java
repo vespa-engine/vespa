@@ -603,7 +603,7 @@ public class QueryTestCase {
 
     @Test
     void testProfilingDepth() {
-        Query q = new Query("?query=foo&profileDepth=2");
+        Query q = new Query("?query=foo&trace.profileDepth=2");
         assertEquals(2, q.getTrace().getProfileDepth());
     }
 
