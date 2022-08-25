@@ -28,9 +28,9 @@ public class GetAclResponse {
     public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes,
                           @JsonProperty("trustedNetworks") List<Network> trustedNetworks,
                           @JsonProperty("trustedPorts") List<Port> trustedPorts) {
-        this.trustedNodes = trustedNodes == null ? List.of() : trustedNodes;
-        this.trustedNetworks = trustedNetworks == null ? List.of() : trustedNetworks;
-        this.trustedPorts = trustedPorts == null ? List.of() : trustedPorts;
+        this.trustedNodes = trustedNodes == null ? List.of() : List.copyOf(trustedNodes);
+        this.trustedNetworks = trustedNetworks == null ? List.of() : List.copyOf(trustedNetworks);
+        this.trustedPorts = trustedPorts == null ? List.of() : List.copyOf(trustedPorts);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -45,16 +45,20 @@ public class GetAclResponse {
         @JsonProperty("ipAddress")
         public final String ipAddress;
 
+        @JsonProperty("ports")
+        public final List<Integer> ports;
+
         @JsonProperty("trustedBy")
         public final String trustedBy;
 
         @JsonCreator
         public Node(@JsonProperty("hostname") String hostname, @JsonProperty("type") String nodeType,
-                    @JsonProperty("ipAddress") String ipAddress,
+                    @JsonProperty("ipAddress") String ipAddress, @JsonProperty("ports") List<Integer> ports,
                     @JsonProperty("trustedBy") String trustedBy) {
             this.hostname = hostname;
             this.nodeType = nodeType;
             this.ipAddress = ipAddress;
+            this.ports = ports == null ? List.of() : List.copyOf(ports);
             this.trustedBy = trustedBy;
         }
 

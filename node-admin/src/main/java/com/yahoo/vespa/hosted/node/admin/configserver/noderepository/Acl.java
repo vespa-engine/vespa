@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
 import java.net.InetAddress;
@@ -45,7 +44,7 @@ public class Acl {
         this(trustedPorts, trustedNodes, Set.of());
     }
 
-    public List<String> toRules(IPVersion ipVersion, NodeType nodeType) {
+    public List<String> toRules(IPVersion ipVersion) {
         List<String> rules = new LinkedList<>();
 
         // We reject with rules instead of using policies
@@ -67,26 +66,20 @@ public class Acl {
             rules.add("-A INPUT -p tcp -m multiport --dports " + joinPorts(trustedPorts) + " -j ACCEPT");
         }
 
-        // Trust ZooKeeper from other config servers/controllers only
-        if (nodeType.isConfigServerLike()) {
-            Set<Integer> zooKeeperPorts = Set.of(2181, 2182, 2183);
-            List<String> clusterAddresses = getTrustedNodes(ipVersion).stream()
-                                                                      .filter(node -> node.type() == nodeType)
-                                                                      .map(Node::inetAddressString)
-                                                                      .sorted()
-                                                                      .toList();
-            for (var ipAddress : clusterAddresses) {
-                rules.add("-A INPUT -s " + ipAddress + ipVersion.singleHostCidr() + " -p tcp -m multiport --dports " +
-                          joinPorts(zooKeeperPorts) + " -j ACCEPT");
-            }
-            // Reject any other connections to ZooKeeper
-            rules.add("-A INPUT -p tcp -m multiport --dports " + joinPorts(zooKeeperPorts) +
-                      " -j REJECT --reject-with " + ipVersion.icmpPortUnreachable());
-        }
-
-        // Allow traffic from trusted nodes
+        // Allow traffic from trusted nodes, limited to specific ports, if any
         getTrustedNodes(ipVersion).stream()
-                                  .map(node -> "-A INPUT -s " + node.inetAddressString() + ipVersion.singleHostCidr() + " -j ACCEPT")
+                                  .map(node -> {
+                                      StringBuilder rule = new StringBuilder();
+                                      rule.append("-A INPUT -s ")
+                                          .append(node.inetAddressString())
+                                          .append(ipVersion.singleHostCidr());
+                                      if (!node.ports.isEmpty()) {
+                                          rule.append(" -p tcp -m multiport --dports ")
+                                              .append(joinPorts(node.ports()));
+                                      }
+                                      rule.append(" -j ACCEPT");
+                                      return rule.toString();
+                                  })
                                   .sorted()
                                   .forEach(rules::add);
 
@@ -103,7 +96,7 @@ public class Acl {
     }
 
     private static String joinPorts(Collection<Integer> ports) {
-        return ports.stream().map(String::valueOf).sorted().collect(Collectors.joining(","));
+        return ports.stream().sorted().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     public Set<Node> getTrustedNodes() {
@@ -158,10 +151,10 @@ public class Acl {
         return Optional.ofNullable(set).map(Set::copyOf).orElseGet(Set::of);
     }
 
-    public record Node(String hostname, NodeType type, InetAddress inetAddress) {
+    public record Node(String hostname, InetAddress inetAddress, Set<Integer> ports) {
 
-        public Node(String hostname, NodeType type, String ipAddress) {
-            this(hostname, type, InetAddresses.forString(ipAddress));
+        public Node(String hostname, String ipAddress, Set<Integer> ports) {
+            this(hostname, InetAddresses.forString(ipAddress), ports);
         }
 
         public String inetAddressString() {
@@ -173,7 +166,7 @@ public class Acl {
             return "Node{" +
                    "hostname='" + hostname + '\'' +
                    ", inetAddress=" + inetAddress +
-                   ", nodeType=" + type +
+                   ", ports=" + ports +
                    '}';
         }
     }
@@ -197,12 +190,16 @@ public class Acl {
             return this;
         }
 
-        public Builder withTrustedNode(String hostname, String ipAddress, NodeType nodeType) {
-            return withTrustedNode(new Node(hostname, nodeType, ipAddress));
+        public Builder withTrustedNode(String hostname, String ipAddress) {
+            return withTrustedNode(hostname, ipAddress, Set.of());
         }
 
-        public Builder withTrustedNode(String hostname, InetAddress inetAddress, NodeType nodeType) {
-            return withTrustedNode(new Node(hostname, nodeType, inetAddress));
+        public Builder withTrustedNode(String hostname, String ipAddress, Set<Integer> ports) {
+            return withTrustedNode(new Node(hostname, ipAddress, ports));
+        }
+
+        public Builder withTrustedNode(String hostname, InetAddress inetAddress, Set<Integer> ports) {
+            return withTrustedNode(new Node(hostname, inetAddress, ports));
         }
 
         public Builder withTrustedPorts(Integer... ports) {

@@ -19,7 +19,7 @@ public class FilterTableLineEditorTest {
 
     @Test
     void filter_set_wanted_rules() {
-        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1", NodeType.tenant).build();
+        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1").build();
 
         assertFilterTableLineEditorResult(
                 acl, IPVersion.IPv6,
@@ -60,7 +60,7 @@ public class FilterTableLineEditorTest {
 
     private static void assertFilterTableLineEditorResult(
             Acl acl, IPVersion ipVersion, String currentFilterTable, String expectedRestoreFileContent) {
-        FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, ipVersion, NodeType.tenant);
+        FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, ipVersion);
         Editor editor = new Editor(
                 "nat-table",
                 () -> List.of(currentFilterTable.split("\n")),
@@ -72,16 +72,17 @@ public class FilterTableLineEditorTest {
     private static void assertFilterTableDiff(List<Integer> currentIpSuffix, List<Integer> wantedIpSuffix, String diff) {
         Acl.Builder currentAcl = new Acl.Builder();
         NodeType nodeType = NodeType.tenant;
-        currentIpSuffix.forEach(i -> currentAcl.withTrustedNode("host" + i, "2001::" + i, nodeType));
+        currentIpSuffix.forEach(i -> currentAcl.withTrustedNode("host" + i, "2001::" + i));
         List<String> currentTable = new ArrayList<>();
 
         Acl.Builder wantedAcl = new Acl.Builder();
-        wantedIpSuffix.forEach(i -> wantedAcl.withTrustedNode("host" + i, "2001::" + i, nodeType));
+        wantedIpSuffix.forEach(i -> wantedAcl.withTrustedNode("host" + i, "2001::" + i));
 
-        new Editor("table", List::of, currentTable::addAll, FilterTableLineEditor.from(currentAcl.build(), IPVersion.IPv6, nodeType))
+        new Editor("table", List::of, currentTable::addAll, FilterTableLineEditor.from(currentAcl.build(), IPVersion.IPv6))
                 .edit(log -> {});
 
-        new Editor("table", () -> currentTable, result -> {}, FilterTableLineEditor.from(wantedAcl.build(), IPVersion.IPv6, nodeType))
+        new Editor("table", () -> currentTable, result -> {}, FilterTableLineEditor.from(wantedAcl.build(), IPVersion.IPv6))
                 .edit(log -> assertEquals(diff, log));
     }
+
 }
