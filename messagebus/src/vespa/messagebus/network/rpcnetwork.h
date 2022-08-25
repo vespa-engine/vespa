@@ -11,6 +11,7 @@
 #include <vespa/messagebus/reply.h>
 #include <vespa/slobrok/imirrorapi.h>
 #include <vespa/vespalib/component/versionspecification.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/fnet/frt/invokable.h>
 
@@ -36,6 +37,7 @@ class RPCServiceAddress;
 class RPCNetwork : public FRT_Invokable, public INetwork {
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
+    using CapabilitySet     = vespalib::net::tls::CapabilitySet;
     struct SendContext : public RPCTarget::IVersionHandler {
         std::mutex                _lock;
         RPCNetwork               &_net;
@@ -68,6 +70,7 @@ private:
     std::unique_ptr<RPCSendAdapter>                    _sendV2;
     SendAdapterMap                                     _sendAdapters;
     CompressionConfig                                  _compressionConfig;
+    CapabilitySet                                      _required_capabilities;
 
     /**
      * Resolves and assigns a service address for the given recipient using the

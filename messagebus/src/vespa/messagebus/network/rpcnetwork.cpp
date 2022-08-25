@@ -4,6 +4,7 @@
 #include "rpcsendv2.h"
 #include "rpctargetpool.h"
 #include "rpcnetworkparams.h"
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
@@ -138,7 +139,8 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
-    _compressionConfig(params.getCompressionConfig())
+    _compressionConfig(params.getCompressionConfig()),
+    _required_capabilities(params.required_capabilities())
 {
 }
 
@@ -191,13 +193,14 @@ RPCNetwork::attach(INetworkOwner &owner)
     LOG_ASSERT(_owner == nullptr);
     _owner = &owner;
 
-    _sendV2->attach(*this);
+    _sendV2->attach(*this, _required_capabilities);
     _sendAdapters[vespalib::Version(6, 149)] = _sendV2.get();
 
     FRT_ReflectionBuilder builder(_orb.get());
     builder.DefineMethod("mbus.getVersion", "", "s", FRT_METHOD(RPCNetwork::invoke), this);
     builder.MethodDesc("Retrieves the message bus version.");
     builder.ReturnDesc("version", "The message bus version.");
+    builder.RequestAccessFilter(FRT_RequireCapabilities::of(_required_capabilities));
 }
 
 void

@@ -4,6 +4,7 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/fnet/frt/reflection.h>
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -59,7 +60,7 @@ RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
 }
 
 void
-RPCSendV2::build(FRT_ReflectionBuilder & builder)
+RPCSendV2::build(FRT_ReflectionBuilder & builder, CapabilitySet required_capabilities)
 {
     builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, FRT_METHOD(RPCSendV2::invoke), this);
     builder.MethodDesc("Send a message bus slime request and get a reply back.");
@@ -75,6 +76,7 @@ RPCSendV2::build(FRT_ReflectionBuilder & builder)
     builder.ReturnDesc("body_encoding",  "0=raw, 6=lz4");
     builder.ReturnDesc("body_decoded_size", "Uncompressed body blob size");
     builder.ReturnDesc("body_payload", "The reply body blob in slime.");
+    builder.RequestAccessFilter(FRT_RequireCapabilities::of(required_capabilities));
 }
 
 const char *

@@ -54,7 +54,7 @@ protected:
     string _clientIdent;
     string _serverIdent;
 
-    virtual void build(FRT_ReflectionBuilder & builder) = 0;
+    virtual void build(FRT_ReflectionBuilder & builder, CapabilitySet required_capabilities) = 0;
     virtual std::unique_ptr<Reply> createReply(const FRT_Values & response, const string & serviceName,
                                                Error & error, vespalib::Trace & trace) const = 0;
     virtual void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
@@ -86,7 +86,7 @@ private:
     void doRequest(FRT_RPCRequest *req);
     void doRequestDone(FRT_RPCRequest *req);
     void doHandleReply(std::unique_ptr<Reply> reply);
-    void attach(RPCNetwork &net) final override;
+    void attach(RPCNetwork &net, CapabilitySet required_capabilities) final override;
     void handleDiscard(Context ctx) final override;
     void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
                         Blob payload, duration timeRemaining) final override;

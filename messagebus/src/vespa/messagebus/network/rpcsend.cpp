@@ -64,7 +64,7 @@ RPCSend::RPCSend()
 RPCSend::~RPCSend() = default;
 
 void
-RPCSend::attach(RPCNetwork &net)
+RPCSend::attach(RPCNetwork &net, CapabilitySet required_capabilities)
 {
     _net = &net;
     const string &prefix = _net->getIdentity().getServicePrefix();
@@ -74,7 +74,7 @@ RPCSend::attach(RPCNetwork &net)
     }
 
     FRT_ReflectionBuilder builder(&_net->getSupervisor());
-    build(builder);
+    build(builder, required_capabilities);
 }
 
 void

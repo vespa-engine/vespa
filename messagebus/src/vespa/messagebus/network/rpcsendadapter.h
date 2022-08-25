@@ -4,6 +4,7 @@
 #include <vespa/messagebus/blobref.h>
 #include <vespa/messagebus/common.h>
 #include <vespa/vespalib/component/version.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
 
 namespace mbus {
 
@@ -20,6 +21,8 @@ class RPCSendAdapter
 protected:
     RPCSendAdapter() = default;
 public:
+    using CapabilitySet = vespalib::net::tls::CapabilitySet;
+
     RPCSendAdapter(const RPCSendAdapter &) = delete;
     RPCSendAdapter & operator = (const RPCSendAdapter &) = delete;
     /**
@@ -31,8 +34,9 @@ public:
      * Attaches this adapter to the given network.
      *
      * @param net The network to attach to.
+     * @param required_capabilities capabilities required to invoke mbus on this server
      */
-    virtual void attach(RPCNetwork &net) = 0;
+    virtual void attach(RPCNetwork &net, CapabilitySet required_capabilities) = 0;
 
     /**
      * Performs the actual sending to the given recipient.
