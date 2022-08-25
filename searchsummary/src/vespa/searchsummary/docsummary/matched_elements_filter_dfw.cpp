@@ -89,8 +89,6 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument
                                       ResType type, vespalib::slime::Inserter& target)
 {
     assert(type == ResType::RES_JSONSTRING);
-    Slime input_field;
-    // Use the document instance if the input field is not in the docsum blob.
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
         filter_matching_elements_in_input_field_while_converting_to_slime(*field_value, get_matching_elements(docid, *state), target);
