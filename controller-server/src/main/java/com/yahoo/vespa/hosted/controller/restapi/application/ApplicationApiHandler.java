@@ -1389,6 +1389,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                     logStream.transferTo(outputStream);
                 }
             }
+            @Override
+            public long maxPendingBytes() {
+                return 1 << 26;
+            }
         };
     }
 
