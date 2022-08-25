@@ -3,7 +3,7 @@ package com.yahoo.processing.request;
 
 import com.yahoo.collections.MethodCache;
 import com.yahoo.component.provider.FreezableClass;
-import com.yahoo.processing.request.properties.PublicCloneable;
+import com.yahoo.lang.PublicCloneable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +30,7 @@ import java.util.HashMap;
  */
 public class CloneHelper {
 
-    private static Logger log = Logger.getLogger(CloneHelper.class.getName());
+    private static final Logger log = Logger.getLogger(CloneHelper.class.getName());
     private static final MethodCache cloneMethodCache = new MethodCache("clone");
 
     /**
@@ -79,28 +79,43 @@ public class CloneHelper {
         return arrayClone;
     }
 
+    @SuppressWarnings("deprecation")
     protected Object objectClone(Object object) {
         // Fastpath for our commonly used classes
         if (object instanceof FreezableClass)
             return ((FreezableClass)object).clone();
         else if (object instanceof PublicCloneable)
             return ((PublicCloneable<?>)object).clone();
+        else if (object instanceof com.yahoo.processing.request.properties.PublicCloneable)
+            return ((com.yahoo.processing.request.properties.PublicCloneable<?>)object).clone();
         else if (object instanceof LinkedList)
             return ((LinkedList<?>) object).clone();
         else if (object instanceof ArrayList)
             return ((ArrayList<?>) object).clone();
+        try {
+            return cloneByReflection(object);
+        } catch (ClassCastException e) {
+            // When changing bundles you might end up having cached the old method pointing to old bundle,
+            // That might then lead to a class cast exception when invoking the wrong clone method.
+            // So we will give dropping the cache a try, and retry the clone.
+            cloneMethodCache.clear();
+            return cloneByReflection(object);
+        }
 
+    }
+
+    private Object cloneByReflection(Object object) {
         try {
             Method cloneMethod = cloneMethodCache.get(object);
             if (cloneMethod == null) {
-                log.warning("'" + object + "' of class " + object.getClass() + 
-                            " is Cloneable, but has no clone method - will use the same instance in all requests");
+                log.warning("'" + object + "' of class " + object.getClass() +
+                        " is Cloneable, but has no clone method - will use the same instance in all requests");
                 return null;
             }
             return cloneMethod.invoke(object);
         } catch (IllegalAccessException e) {
-            log.warning("'" + object + "' of class " + object.getClass() + 
-                        " is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
+            log.warning("'" + object + "' of class " + object.getClass() +
+                    " is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
             return null;
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Exception cloning '" + object + "'", e);
