@@ -10,7 +10,6 @@ add_custom_command(OUTPUT ${GODIR}/bin/vespa-logfmt ${GODIR}/bin/vespa-deploy
                    WORKING_DIRECTORY ${GODIR})
 
 add_custom_target(vespalog_logfmt ALL DEPENDS ${GODIR}/bin/vespa-logfmt)
-add_custom_target(vespa_deploy_go ALL DEPENDS ${GODIR}/bin/vespa-deploy)
 
 install(PROGRAMS ${GODIR}/bin/vespa-logfmt DESTINATION bin)
 install(PROGRAMS ${GODIR}/bin/vespa-deploy DESTINATION bin)
