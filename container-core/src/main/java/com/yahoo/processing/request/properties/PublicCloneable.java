@@ -7,9 +7,11 @@ package com.yahoo.processing.request.properties;
  *
  * @author bratseth
  * @since  5.66
+ * @deprecated Use com.yahoo.lang.PublicCloneable instead
  */
+@Deprecated(forRemoval = true) // TODO: Remove on Vespa 9
 public interface PublicCloneable<T> extends Cloneable {
 
-    public T clone();
+    T clone();
 
 }

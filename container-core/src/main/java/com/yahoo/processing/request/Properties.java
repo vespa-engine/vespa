@@ -149,7 +149,6 @@ public class Properties implements Cloneable {
     /**
      * Gets a named value from the first chained instance which has one,
      * or the default value if no value is set, or if the first value encountered is explicitly set to null.
-     *
      * This default implementation simply forwards to the chained instance, or returns the default if none.
      *
      * @param name         the name of the property to return
@@ -164,7 +163,6 @@ public class Properties implements Cloneable {
     /**
      * Gets a named value from the first chained instance which has one,
      * or the default value if no value is set, or if the first value encountered is explicitly set to null.
-     *
      * This default implementation simply forwards to the chained instance, or returns the default if none.
      *
      * @param name         the name of the property to return
@@ -176,7 +174,6 @@ public class Properties implements Cloneable {
 
     /**
      * Sets a value to the first chained instance which accepts it.
-     *
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
@@ -193,7 +190,6 @@ public class Properties implements Cloneable {
 
     /**
      * Sets a value to the first chained instance which accepts it.
-     *
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
@@ -325,16 +321,14 @@ public class Properties implements Cloneable {
 
         String s = value.toString();
         int sz = s.length();
-        switch (sz) {
-            case 0:
-                return true;
-            case 4:
-                return ((s.charAt(0) | 0x20) == 't') &&
-                        ((s.charAt(1) | 0x20) == 'r') &&
-                        ((s.charAt(2) | 0x20) == 'u') &&
-                        ((s.charAt(3) | 0x20) == 'e');
-        }
-        return false;
+        return switch (sz) {
+            case 0: yield true;
+            case 4: yield ((s.charAt(0) | 0x20) == 't') &&
+                          ((s.charAt(1) | 0x20) == 'r') &&
+                          ((s.charAt(2) | 0x20) == 'u') &&
+                          ((s.charAt(3) | 0x20) == 'e');
+            default: yield false;
+        };
     }
 
     /**

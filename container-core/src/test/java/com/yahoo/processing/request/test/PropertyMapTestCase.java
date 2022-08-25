@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request.test;
 
+import com.yahoo.lang.PublicCloneable;
 import com.yahoo.processing.request.properties.PropertyMap;
-import com.yahoo.processing.request.properties.PublicCloneable;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,14 +30,14 @@ public class PropertyMapTestCase {
         assertNotNull(map.get("nonclonable"));
 
         PropertyMap mapClone = map.clone();
-        assertTrue(map.get("clonable")      != mapClone.get("clonable"));
-        assertTrue(map.get("publicClonable") != mapClone.get("publicClonable"));
+        assertNotSame(map.get("clonable"), mapClone.get("clonable"));
+        assertNotSame(map.get("publicClonable"), mapClone.get("publicClonable"));
         assertEquals(map.get("nonclonable"), mapClone.get("nonclonable"));
 
-        assertTrue(map.get("clonableArray") != mapClone.get("clonableArray"));
-        assertTrue(first(map.get("clonableArray")) != first(mapClone.get("clonableArray")));
-        assertTrue(map.get("publicClonableArray") != mapClone.get("publicClonableArray"));
-        assertTrue(first(map.get("publicClonableArray")) != first(mapClone.get("publicClonableArray")));
+        assertNotSame(map.get("clonableArray"), mapClone.get("clonableArray"));
+        assertNotSame(first(map.get("clonableArray")), first(mapClone.get("clonableArray")));
+        assertNotSame(map.get("publicClonableArray"), mapClone.get("publicClonableArray"));
+        assertNotSame(first(map.get("publicClonableArray")), first(mapClone.get("publicClonableArray")));
         assertEquals(first(map.get("nonclonableArray")), first(mapClone.get("nonclonableArray")));
     }
 
@@ -50,7 +49,7 @@ public class PropertyMapTestCase {
 
         PropertyMap mapClone = map.clone();
         assertArrayEquals(byteArray, (byte[]) mapClone.get("byteArray"));
-        assertTrue(mapClone.get("byteArray") != byteArray, "Array was cloned");
+        assertNotSame(mapClone.get("byteArray"), byteArray, "Array was cloned");
     }
 
     private Object first(Object object) {

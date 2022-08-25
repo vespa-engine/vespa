@@ -3,10 +3,13 @@ package com.yahoo.collections;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
+ * This will cache methods solved by reflection as reflection is expensive.
+ * Note that if the bundle from which the method is removed/changed you might have
+ * a problem... A ClassCastException might be one indication. Then clearing the cache and retrying it
+ * once to see if it goes away might be a solution.
  * @author baldersheim
  */
 public final class MethodCache {
@@ -18,7 +21,14 @@ public final class MethodCache {
         this.methodName = methodName;
     }
 
-    public final Method get(Object object) {
+    /*
+     Clear all cached methods. Might be a wise thing to do, if you have cached some methods
+     that have changed due to new bundles being reloaded.
+    */
+    public void clear() {
+        cache.clear();
+    }
+    public Method get(Object object) {
         Method m = cache.get(object.getClass().getName());
         if (m == null) {
             m = lookupMethod(object);
