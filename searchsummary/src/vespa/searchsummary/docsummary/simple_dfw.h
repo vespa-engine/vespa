@@ -14,7 +14,7 @@ class SimpleDFW : public DocsumFieldWriter
 {
 public:
     virtual void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) = 0;
-    void insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 
 }

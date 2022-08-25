@@ -9,7 +9,7 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
 
-class GeneralResult;
+class IDocsumStoreDocument;
 class GetDocsumsState;
 
 /*
@@ -27,7 +27,7 @@ public:
         return ResTypeUtils::IsRuntimeCompatible(a, b);
     }
     virtual bool IsGenerated() const = 0;
-    virtual void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) = 0;
+    virtual void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) = 0;
     virtual const vespalib::string & getAttributeName() const;
     virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const;
     void setIndex(size_t v) { _index = v; }

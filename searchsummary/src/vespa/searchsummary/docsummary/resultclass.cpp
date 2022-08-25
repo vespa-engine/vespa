@@ -7,7 +7,7 @@
 
 namespace search::docsummary {
 
-ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum, const DocsumBlobEntryFilter& docsum_blob_entry_filter)
+ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum)
     : _name(name),
       _classID(id),
       _entries(),
@@ -15,8 +15,7 @@ ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & field
       _fieldEnum(fieldEnum),
       _enumMap(),
       _dynInfo(NULL),
-      _omit_summary_features(false),
-      _docsum_blob_entry_filter(docsum_blob_entry_filter)
+      _omit_summary_features(false)
 { }
 
 
@@ -38,7 +37,6 @@ ResultClass::AddConfigEntry(const char *name, ResType type)
     _nameMap[name] = _entries.size();
     ResConfigEntry e;
     e._type      = type;
-    e._not_present = _docsum_blob_entry_filter.skip(type);
     e._bindname  = name;
     e._enumValue = _fieldEnum.Add(name);
     assert(e._enumValue >= 0);

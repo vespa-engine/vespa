@@ -331,40 +331,7 @@ JuniperTeaserDFW::Init(
         const ResultConfig & config,
         const char *inputField)
 {
-    bool rc = JuniperDFW::Init(fieldName, langFieldName, config, inputField);
-
-    for (ResultConfig::const_iterator it(config.begin()), mt(config.end()); rc && it != mt; it++) {
-
-        const ResConfigEntry *entry =
-            it->GetEntry(it->GetIndexFromEnumValue(_inputFieldEnumValue));
-
-        if (entry != nullptr && !entry->_not_present &&
-            !IsRuntimeCompatible(entry->_type, RES_STRING) &&
-            !IsRuntimeCompatible(entry->_type, RES_DATA))
-        {
-            LOG(warning, "cannot use docsum field '%s' as input to dynamicteaser; bad type in result class %d (%s)",
-                inputField, it->GetClassID(), it->GetClassName());
-            rc = false;
-        }
-    }
-    return rc;
-}
-
-JuniperInput
-DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
-    int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
-    ResEntry *entry = gres->GetPresentEntry(idx);
-    if (entry != nullptr) {
-        const char *buf;
-        uint32_t    buflen;
-        entry->_resolve_field(&buf, &buflen);
-        return JuniperInput(vespalib::stringref(buf, buflen));
-    }
-    const auto* document = gres->get_document();
-    if (document != nullptr) {
-        return document->get_juniper_input(_input_field_name);
-    }
-    return {};
+    return JuniperDFW::Init(fieldName, langFieldName, config, inputField);
 }
 
 vespalib::string
@@ -419,14 +386,16 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
 }
 
 void
-DynamicTeaserDFW::insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType,
+DynamicTeaserDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType,
                               vespalib::slime::Inserter &target)
 {
-    auto input = getJuniperInput(gres);
-    if (!input.empty()) {
-        vespalib::string teaser = makeDynamicTeaser(docid, input.get_value(), state);
-        vespalib::Memory value(teaser.c_str(), teaser.size());
-        target.insertString(value);
+    if (doc != nullptr) {
+        auto input = doc->get_juniper_input(_input_field_name);
+        if (!input.empty()) {
+            vespalib::string teaser = makeDynamicTeaser(docid, input.get_value(), state);
+            vespalib::Memory value(teaser.c_str(), teaser.size());
+            target.insertString(value);
+        }
     }
 }
 

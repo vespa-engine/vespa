@@ -15,7 +15,6 @@ vespa_define_module(
     src/vespa/searchsummary/test
 
     TESTS
-    src/tests/docsumformat
     src/tests/docsummary
     src/tests/docsummary/attribute_combiner
     src/tests/docsummary/attributedfw

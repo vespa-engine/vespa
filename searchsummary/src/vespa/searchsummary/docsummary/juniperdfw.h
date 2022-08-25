@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "general_result.h"
 #include "resultconfig.h"
 #include "docsum_field_writer.h"
 #include "juniper_input.h"
@@ -48,14 +47,13 @@ protected:
 
 class DynamicTeaserDFW : public JuniperTeaserDFW
 {
-    JuniperInput getJuniperInput(GeneralResult *gres) __attribute__((noinline));
     vespalib::string makeDynamicTeaser(uint32_t docid,
                                        vespalib::stringref input,
                                        GetDocsumsState *state);
 public:
     DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
 
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
 };
 

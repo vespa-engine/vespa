@@ -13,7 +13,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -58,9 +57,7 @@ struct FieldBlock {
 };
 
 struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
-    DocsumBlobEntryFilter docsum_blob_entry_filter;
     std::unique_ptr<DynamicDocsumWriter> writer;
-    std::unique_ptr<ResultPacker> packer;
     StructDataType  int_pair_type;
     DocumentType    doc_type;
     GetDocsumsState state;
@@ -78,9 +75,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
                        ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
     }
     uint32_t getNumDocs() const override { return 2; }
-    DocsumStoreValue getMappedDocsum(uint32_t docid) override {
+    std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) override {
         EXPECT_EQUAL(1u, docid);
-        EXPECT_TRUE(packer->Init(0));
         auto doc = std::make_unique<Document>(doc_type, DocumentId("id:test:test::0"));
         doc->setValue("int_field", IntFieldValue(4));
         doc->setValue("short_field", ShortFieldValue(2));
@@ -98,10 +94,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
             int_pair.setValue("bar", IntFieldValue(2));
             doc->setValue("int_pair_field", int_pair);
         }
-        const char *buf;
-        uint32_t len;
-        EXPECT_TRUE(packer->GetDocsumBlob(&buf, &len));
-        return DocsumStoreValue(buf, len, std::make_unique<DocsumStoreDocument>(std::move(doc)));
+        return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
     uint32_t getSummaryClassId() const override { return 0; }
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
@@ -111,13 +104,12 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
 
 
 DocsumFixture::DocsumFixture()
-    : docsum_blob_entry_filter(DocsumBlobEntryFilter().add_skip(RES_INT).add_skip(RES_SHORT).add_skip(RES_BYTE).add_skip(RES_FLOAT).add_skip(RES_DOUBLE).add_skip(RES_INT64).add_skip(RES_STRING).add_skip(RES_DATA).add_skip(RES_LONG_STRING).add_skip(RES_LONG_DATA).add_skip(RES_JSONSTRING)),
-      writer(), packer(),
+    : writer(),
       int_pair_type("int_pair"),
       doc_type("test"),
       state(*this)
 {
-    ResultConfig *config = new ResultConfig(docsum_blob_entry_filter);
+    ResultConfig *config = new ResultConfig;
     ResultClass *cfg = config->AddResultClass("default", 0);
     EXPECT_TRUE(cfg != 0);
     EXPECT_TRUE(cfg->AddConfigEntry("int_field", RES_INT));
@@ -133,7 +125,6 @@ DocsumFixture::DocsumFixture()
     EXPECT_TRUE(cfg->AddConfigEntry("int_pair_field", RES_JSONSTRING));
     config->CreateEnumMaps();
     writer.reset(new DynamicDocsumWriter(config, 0));
-    packer.reset(new ResultPacker(writer->GetResultConfig()));
     int_pair_type.addField(Field("foo", *DataType::INT));
     int_pair_type.addField(Field("bar", *DataType::INT));
     doc_type.addField(Field("int_field", *DataType::INT));
