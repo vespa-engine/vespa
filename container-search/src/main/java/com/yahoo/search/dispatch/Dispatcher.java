@@ -33,9 +33,11 @@ import java.util.Set;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
+ *
  * This class allocates {@link SearchInvoker} and {@link FillInvoker} objects based
  * on query properties and general system status. The caller can then use the provided
  * invocation object to execute the search or fill.
+ *
  * This class is multithread safe.
  *
  * @author bratseth

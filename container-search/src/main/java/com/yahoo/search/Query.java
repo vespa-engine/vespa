@@ -929,6 +929,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Prepares this for binary serialization.
+     *
      * This must be invoked after all changes have been made to this query before it is passed
      * on to a receiving backend. Calling it is somewhat expensive, so it should only happen once.
      * If a prepared query is cloned, it stays prepared.
