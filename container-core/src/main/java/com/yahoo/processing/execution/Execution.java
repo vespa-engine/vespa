@@ -393,7 +393,7 @@ public class Execution {
             /**
              * The name of the property to find
              */
-            private String name;
+            private final String name;
             private Object foundValue = null;
 
             public PropertyValueVisitor(String name) {
@@ -403,9 +403,8 @@ public class Execution {
             @Override
             public void visit(TraceNode node) {
                 if (node.payload() == null) return;
-                if (!(node.payload() instanceof Pair)) return;
+                if (!(node.payload() instanceof Pair property)) return;
 
-                Pair property = (Pair) node.payload();
                 if (!property.getFirst().equals(name)) return;
                 foundValue = property.getSecond();
             }
@@ -465,7 +464,7 @@ public class Execution {
             /**
              * The smallest trace level at which this information will be traced
              */
-            private int value;
+            private final int value;
 
             Level(int value) {
                 this.value = value;

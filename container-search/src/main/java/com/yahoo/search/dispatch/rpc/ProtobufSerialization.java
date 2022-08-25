@@ -81,6 +81,7 @@ public class ProtobufSerialization {
         }
 
         builder.setTraceLevel(getTraceLevelForBackend(query));
+        builder.setProfileDepth(query.getTrace().getProfileDepth());
 
         mergeToSearchRequestFromRanking(query.getRanking(), builder);
 
@@ -283,8 +284,7 @@ public class ProtobufSerialization {
             if (hit.getRelevance() != null) {
                 hitBuilder.setRelevance(hit.getRelevance().getScore());
             }
-            if (hit instanceof FastHit) {
-                FastHit fhit = (FastHit) hit;
+            if (hit instanceof FastHit fhit) {
                 hitBuilder.setGlobalId(ByteString.copyFrom(fhit.getRawGlobalId()));
             }
             builder.addHits(hitBuilder);

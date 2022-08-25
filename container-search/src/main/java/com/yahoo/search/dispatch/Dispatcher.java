@@ -142,8 +142,8 @@ public class Dispatcher extends AbstractComponent {
      * Will run important code in order to trigger JIT compilation and avoid cold start issues.
      * Currently warms up lz4 compression code.
      */
-    private static long warmup(double seconds) {
-        return new Compressor().warmup(seconds);
+    private static void warmup(double seconds) {
+        new Compressor().warmup(seconds);
     }
 
     /** Returns the search cluster this dispatches to */

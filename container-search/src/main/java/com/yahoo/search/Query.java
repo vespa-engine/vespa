@@ -687,6 +687,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public void attachContext(Query query) throws IllegalStateException {
         query.getTrace().setLevel(getTrace().getLevel());
         query.getTrace().setExplainLevel(getTrace().getExplainLevel());
+        query.getTrace().setProfileDepth(getTrace().getProfileDepth());
         if (context == null) return;
         if (query.getContext(false) != null) {
             // If we added the other query's context info as a subnode in this
@@ -851,8 +852,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public boolean equals(Object other) {
         if (this == other) return true;
 
-        if ( ! (other instanceof Query)) return false;
-        Query q = (Query) other;
+        if ( ! (other instanceof Query q)) return false;
 
         if (getOffset() != q.getOffset()) return false;
         if (getHits() != q.getHits()) return false;

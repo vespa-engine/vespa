@@ -34,6 +34,7 @@ public class Trace implements Cloneable {
     public static final String TRACE = "trace";
     public static final String LEVEL = "level";
     public static final String EXPLAIN_LEVEL = "explainLevel";
+    public static final String PROFILE_DEPTH = "profileDepth";
     public static final String TIMESTAMPS = "timestamps";
     public static final String QUERY = "query";
 
@@ -43,6 +44,7 @@ public class Trace implements Cloneable {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(LEVEL, "integer", "tracelevel traceLevel"));
         argumentType.addField(new FieldDescription(EXPLAIN_LEVEL, "integer", "explainlevel explainLevel"));
+        argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer"));
         argumentType.addField(new FieldDescription(TIMESTAMPS, "boolean"));
         argumentType.addField(new FieldDescription(QUERY, "boolean"));
         argumentType.freeze();
@@ -54,6 +56,7 @@ public class Trace implements Cloneable {
 
     private int level = 0;
     private int explainLevel = 0;
+    private int profileDepth = 0;
     private boolean timestamps = false;
     private boolean query = true;
 
@@ -69,6 +72,10 @@ public class Trace implements Cloneable {
     /** Sets the explain level of this query, 0 means no tracing. Higher numbers means increasingly more explaining. */
     public void setExplainLevel(int explainLevel) { this.explainLevel = explainLevel; }
     public int getExplainLevel() { return explainLevel; }
+
+    /** Sets the profiling depth. Profiling enabled if non-zero. Higher numbers means increasingly more detail. */
+    public void setProfileDepth(int profileDepth) { this.profileDepth = profileDepth; }
+    public int getProfileDepth() { return profileDepth; }
 
     /** Returns whether trace entries should have a timestamp. Default is false. */
     public boolean getTimestamps() { return timestamps; }
@@ -212,8 +219,7 @@ public class Trace implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this ) return true;
-        if ( ! (o instanceof Trace)) return false;
-        Trace other = (Trace)o;
+        if ( ! (o instanceof Trace other)) return false;
         if (other.level != this.level) return false;
         if (other.explainLevel != this.explainLevel) return false;
         if (other.timestamps != this.timestamps) return false;

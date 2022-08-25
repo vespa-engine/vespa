@@ -312,6 +312,8 @@ public class QueryProperties extends Properties {
                     query.getTrace().setLevel(asInteger(value, 0));
                 if (key.last().equals(Trace.EXPLAIN_LEVEL))
                     query.getTrace().setExplainLevel(asInteger(value, 0));
+                if (key.last().equals(Trace.PROFILE_DEPTH))
+                    query.getTrace().setProfileDepth(asInteger(value, 0));
                 if (key.last().equals(Trace.TIMESTAMPS))
                     query.getTrace().setTimestamps(asBoolean(value, false));
                 if (key.last().equals(Trace.QUERY))

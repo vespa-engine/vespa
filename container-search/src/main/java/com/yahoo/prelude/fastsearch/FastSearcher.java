@@ -6,7 +6,6 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.SearchInvoker;
@@ -21,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * The searcher which forwards queries to fdispatch nodes, using the fnet/fs4
@@ -170,7 +168,4 @@ public class FastSearcher extends VespaBackEndSearcher {
         return "fast searcher (" + getName() + ") ";
     }
 
-    protected boolean isLoggingFine() {
-        return getLogger().isLoggable(Level.FINE);
-    }
 }

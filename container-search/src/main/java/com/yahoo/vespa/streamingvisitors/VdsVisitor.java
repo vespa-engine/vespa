@@ -55,7 +55,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
     private static final CompoundName streamingFromtimestamp=new CompoundName("streaming.fromtimestamp");
     private static final CompoundName streamingTotimestamp=new CompoundName("streaming.totimestamp");
-    private static final CompoundName streamingLoadtype=new CompoundName("streaming.loadtype");
     private static final CompoundName streamingPriority=new CompoundName("streaming.priority");
     private static final CompoundName streamingMaxbucketspervisitor=new CompoundName("streaming.maxbucketspervisitor");
 
@@ -69,7 +68,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();
     private final Map<Integer, Grouping> groupingMap = new ConcurrentHashMap<>();
     private Query query = null;
-    private VisitorSessionFactory visitorSessionFactory;
+    private final VisitorSessionFactory visitorSessionFactory;
     private final int traceLevelOverride;
     private Trace sessionTrace;
 
@@ -202,11 +201,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     static int getQueryFlags(Query query) {
         int flags = 0;
 
-        boolean requestCoverage = true; // Always request coverage information
-
         flags |= query.properties().getBoolean(Model.ESTIMATE) ? 0x00000080 : 0;
         flags |= (query.getRanking().getFreshness() != null) ? 0x00002000 : 0;
-        flags |= requestCoverage ? 0x00008000 : 0;
+        flags |= 0x00008000;
         flags |= query.getNoCache() ? 0x00010000 : 0;
         flags |= 0x00020000;                         // was PARALLEL
         flags |= query.properties().getBoolean(Ranking.RANKFEATURES,false) ? 0x00040000 : 0;
@@ -241,7 +238,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
                         ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf));
                         break;
                     case 1:
-                        ed.setReturned(QueryEncoder.encodeAsProperties(query, buf, true));
+                        ed.setReturned(QueryEncoder.encodeAsProperties(query, buf));
                         break;
                     case 2:
                         throw new IllegalArgumentException("old aggregation no longer exists!");
@@ -296,13 +293,11 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     @Override
     public void onMessage(Message m, AckToken token) {
-        if (m instanceof QueryResultMessage) {
-            QueryResultMessage qm = (QueryResultMessage)m;
+        if (m instanceof QueryResultMessage qm) {
             onQueryResult(qm.getResult(), qm.getSummary());
         } else if (m instanceof SearchResultMessage) {
             onSearchResult(((SearchResultMessage) m).getResult());
-        } else if (m instanceof DocumentSummaryMessage) {
-            DocumentSummaryMessage dsm = (DocumentSummaryMessage)m;
+        } else if (m instanceof DocumentSummaryMessage dsm) {
             onDocumentSummary(dsm.getResult());
         } else {
             throw new UnsupportedOperationException("Received unsupported message " + m + ". VdsVisitor can only accept query result, search result, and documentsummary messages.");
