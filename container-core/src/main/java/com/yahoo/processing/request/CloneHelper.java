@@ -79,7 +79,7 @@ public class CloneHelper {
         return arrayClone;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"removal"})
     protected Object objectClone(Object object) {
         // Fastpath for our commonly used classes
         if (object instanceof FreezableClass)
