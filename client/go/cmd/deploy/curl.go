@@ -41,8 +41,8 @@ func curlGet(url string, output io.Writer) error {
 }
 
 func urlWithoutQuery(url string) string {
-	before, _, _ := strings.Cut(url, "?")
-	return before
+	parts := strings.Split(url, "?")
+	return parts[0]
 }
 
 func getOutputFromCmd(program string, args ...string) (string, error) {
