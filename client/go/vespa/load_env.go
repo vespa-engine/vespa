@@ -53,6 +53,9 @@ func LoadDefaultEnv() error {
 			err = fmt.Errorf("unknown action '%s'", action)
 		}
 	}
+	if err == nil {
+		err = scanner.Err()
+	}
 	return err
 }
 
