@@ -16,8 +16,10 @@ constexpr std::array<std::string_view, Capability::max_value_count()> capability
     "vespa.content.storage_api"sv,
     "vespa.content.document_api"sv,
     "vespa.content.search_api"sv,
+    "vespa.content.proton_admin_api"sv,
     "vespa.content.cluster_controller.internal_state_api"sv,
     "vespa.slobrok.api"sv,
+    "vespa.config.sentinel_api"sv,
     "vespa.content.status_pages"sv,
     "vespa.content.metrics_api"sv,
 };
@@ -40,8 +42,10 @@ std::optional<Capability> Capability::find_capability(const string& cap_name) no
         {"vespa.content.storage_api",                           content_storage_api()},
         {"vespa.content.document_api",                          content_document_api()},
         {"vespa.content.search_api",                            content_search_api()},
+        {"vespa.content.proton_admin_api",                      content_proton_admin_api()},
         {"vespa.content.cluster_controller.internal_state_api", content_cluster_controller_internal_state_api()},
         {"vespa.slobrok.api",                                   slobrok_api()},
+        {"vespa.config.sentinel_api",                           config_sentinel_api()},
         {"vespa.content.status_pages",                          content_status_pages()},
         {"vespa.content.metrics_api",                           content_metrics_api()},
     });

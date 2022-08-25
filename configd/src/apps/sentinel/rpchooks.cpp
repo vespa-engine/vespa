@@ -6,6 +6,7 @@
 #include "peer-check.h"
 #include "report-connectivity.h"
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
@@ -23,6 +24,13 @@ RPCHooks::RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelOwne
 
 RPCHooks::~RPCHooks() = default;
 
+namespace {
+
+std::unique_ptr<FRT_RequireCapabilities> make_sentinel_api_capability_filter() {
+    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::config_sentinel_api());
+}
+
+}
 
 void
 RPCHooks::initRPC(FRT_Supervisor *supervisor)
@@ -34,18 +42,22 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
                     FRT_METHOD(RPCHooks::rpc_listServices), this);
     rb.MethodDesc("list services");
     rb.ReturnDesc("status", "Status for services");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("sentinel.service.restart", "s", "",
                     FRT_METHOD(RPCHooks::rpc_restartService), this);
     rb.MethodDesc("restart a service");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("sentinel.service.stop", "s", "",
                     FRT_METHOD(RPCHooks::rpc_stopService), this);
     rb.MethodDesc("stop a service");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("sentinel.service.start", "s", "",
                     FRT_METHOD(RPCHooks::rpc_startService), this);
     rb.MethodDesc("start a service");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("sentinel.check.connectivity", "sii", "s",
                     FRT_METHOD(RPCHooks::rpc_checkConnectivity), this);
@@ -54,6 +66,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ParamDesc("port", "Port number of peer sentinel");
     rb.ParamDesc("timeout", "Timeout for check in milliseconds");
     rb.ReturnDesc("status", "Status (ok, bad, or unknown) for peer");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("sentinel.report.connectivity", "i", "SS",
                     FRT_METHOD(RPCHooks::rpc_reportConnectivity), this);
@@ -61,6 +74,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ParamDesc("timeout", "Timeout for check in milliseconds");
     rb.ReturnDesc("hostnames", "Names of peers checked");
     rb.ReturnDesc("peerstatus", "Status description for each peer");
+    rb.RequestAccessFilter(make_sentinel_api_capability_filter());
     //-------------------------------------------------------------------------
 }
 
