@@ -10,11 +10,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
+import com.yahoo.vespa.hosted.provision.node.NodeAcl.TrustedNode;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -56,7 +55,7 @@ public class AclProvisioningTest {
         Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode),
+        assertAcls(trustedNodesOf(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcls.get()));
     }
@@ -78,7 +77,7 @@ public class AclProvisioningTest {
         NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
         // Trusted nodes are all proxy-, config-, and, tenant-nodes
-        assertAcls(List.of(proxyNodes, configServers.asList(), tenantNodes.asList()), List.of(nodeAcl));
+        assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList(), tenantNodes.asList())), List.of(nodeAcl));
     }
 
     @Test
@@ -99,7 +98,11 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
-        assertAcls(List.of(tenantNodes.asList(), proxyNodes, configServers.asList()), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(nodeAcl));
+        assertAcls(List.of(TrustedNode.of(tenantNodes, Set.of(19070)),
+                           TrustedNode.of(proxyNodes, Set.of(19070)),
+                           TrustedNode.of(configServers)),
+                   Set.of("10.2.3.0/24", "10.4.5.0/24"),
+                   List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
     }
 
@@ -121,7 +124,7 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes is all config servers and all proxy nodes
-        assertAcls(List.of(proxyNodes.asList(), configServers.asList()), List.of(nodeAcl));
+        assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList())), List.of(nodeAcl));
         assertEquals(Set.of(22, 443, 4443), nodeAcl.trustedPorts());
     }
 
@@ -146,7 +149,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + node.hostname()));
             assertEquals(host.hostname(), node.parentHostname().get());
-            assertAcls(List.of(configServers.asList(), nodes, List.of(host)), nodeAcl);
+            assertAcls(trustedNodesOf(List.of(configServers.asList(), nodes, List.of(host))), nodeAcl);
         }
     }
 
@@ -160,7 +163,7 @@ public class AclProvisioningTest {
 
         // Controllers and hosts all trust each other
         NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
-        assertAcls(List.of(controllers), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
+        assertAcls(trustedNodesOf(List.of(controllers)), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
         assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
     }
 
@@ -203,10 +206,16 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = readyNodes.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         assertEquals(3, nodeAcl.trustedNodes().size());
-        Iterator<Node> trustedNodes = nodeAcl.trustedNodes().iterator();
-        assertEquals(Set.of("127.0.1.1"), trustedNodes.next().ipConfig().primary());
-        assertEquals(Set.of("127.0.1.2"), trustedNodes.next().ipConfig().primary());
-        assertEquals(Set.of("127.0.1.3"), trustedNodes.next().ipConfig().primary());
+        assertEquals(List.of(Set.of("127.0.1.1"), Set.of("127.0.1.2"), Set.of("127.0.1.3")),
+                     nodeAcl.trustedNodes().stream().map(TrustedNode::ipAddresses).toList());
+    }
+
+    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports) {
+        return nodes.stream().map(node -> TrustedNode.of(node, ports)).toList();
+    }
+
+    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes) {
+        return trustedNodesOf(nodes, Set.of());
     }
 
     private List<Node> deploy(int nodeCount) {
@@ -217,24 +226,24 @@ public class AclProvisioningTest {
         return tester.deploy(application, Capacity.from(new ClusterResources(nodeCount, 1, nodeResources)));
     }
 
-    private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
-        assertAcls(expected, Collections.singletonList(actual));
+    private static void assertAcls(List<List<TrustedNode>> expected, NodeAcl actual) {
+        assertAcls(expected, List.of(actual));
     }
 
-    private static void assertAcls(List<List<Node>> expectedNodes, List<NodeAcl> actual) {
+    private static void assertAcls(List<List<TrustedNode>> expectedNodes, List<NodeAcl> actual) {
         assertAcls(expectedNodes, Set.of(), actual);
     }
 
-    private static void assertAcls(List<List<Node>> expectedNodes, Set<String> expectedNetworks, List<NodeAcl> actual) {
-        List<Node> expectedTrustedNodes = expectedNodes.stream()
+    private static void assertAcls(List<List<TrustedNode>> expectedNodes, Set<String> expectedNetworks, List<NodeAcl> actual) {
+        List<TrustedNode> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(List::stream)
                 .distinct()
-                .sorted(Comparator.comparing(Node::hostname))
+                .sorted(Comparator.comparing(TrustedNode::hostname))
                 .collect(Collectors.toList());
-        List<Node> actualTrustedNodes = actual.stream()
+        List<TrustedNode> actualTrustedNodes = actual.stream()
                 .flatMap(acl -> acl.trustedNodes().stream())
                 .distinct()
-                .sorted(Comparator.comparing(Node::hostname))
+                .sorted(Comparator.comparing(TrustedNode::hostname))
                 .collect(Collectors.toList());
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 

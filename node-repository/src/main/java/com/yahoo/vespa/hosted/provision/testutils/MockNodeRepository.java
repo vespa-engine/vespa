@@ -159,6 +159,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes().fail("dockerhost6.yahoo.com", Agent.operator, getClass().getSimpleName());
         nodes().removeRecursively("dockerhost6.yahoo.com");
 
+        // Activate config servers
+        ApplicationId cfgApp = ApplicationId.from("cfg", "cfg", "cfg");
+        ClusterSpec cfgCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("configservers")).vespaVersion("6.42").build();
+        activate(provisioner.prepare(cfgApp, cfgCluster, Capacity.fromRequiredNodeType(NodeType.config), null), cfgApp, provisioner);
+
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
