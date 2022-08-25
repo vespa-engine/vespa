@@ -8,8 +8,6 @@ import (
 	// "fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -64,11 +62,6 @@ func getConfigsourceUrlUsed() string {
 	return string(bytes)
 }
 
-func writeSessionIdFromResponseToFile(tenant, response string) {
-	newSessionId := getSessionIdFromResponse(response)
-	writeSessionIdToFile(tenant, newSessionId)
-}
-
 func writeSessionIdToFile(tenant, newSessionId string) {
 	if newSessionId != "" {
 		dir := createTenantDir(tenant)
@@ -76,21 +69,6 @@ func writeSessionIdToFile(tenant, newSessionId string) {
 		os.WriteFile(fn, []byte(newSessionId), 0600)
 		// fmt.Printf("wrote %s to %s\n", newSessionId, fn)
 	}
-}
-
-func getSessionIdFromResponse(response string) string {
-	_, after, found := strings.Cut(response, `"session-id":"`)
-	if !found {
-		return ""
-	}
-	digits, _, found := strings.Cut(after, `"`)
-	if !found {
-		return ""
-	}
-	if _, err := strconv.Atoi(digits); err != nil {
-		return ""
-	}
-	return digits
 }
 
 func getSessionIdFromFile(tenant string) string {
