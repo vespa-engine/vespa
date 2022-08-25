@@ -19,7 +19,6 @@ import com.yahoo.yolean.Exceptions;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Read-only REST API that provides information about zones in hosted Vespa (version 1)
@@ -69,19 +68,18 @@ public class ZoneApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private HttpResponse root(HttpRequest request) {
-        List<Environment> environments = zoneRegistry.zones().all().zones().stream()
+        List<Environment> environments = zoneRegistry.zones().publiclyVisible().zones().stream()
                                                      .map(ZoneApi::getEnvironment)
                                                      .distinct()
                                                      .sorted(Comparator.comparing(Environment::value))
-                                                     .collect(Collectors.toList());
+                                                     .toList();
         Slime slime = new Slime();
         Cursor root = slime.setArray();
         environments.forEach(environment -> {
             Cursor object = root.addObject();
             object.setString("name", environment.value());
-            // Returning /zone/v2 is a bit strange, but that's what the original Jersey implementation did
             object.setString("url", request.getUri()
-                                           .resolve("/zone/v2/environment/")
+                                           .resolve("/zone/v1/environment/")
                                            .resolve(environment.value())
                                            .toString());
         });
@@ -91,13 +89,12 @@ public class ZoneApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse environment(HttpRequest request, Environment environment) {
         Slime slime = new Slime();
         Cursor root = slime.setArray();
-        zoneRegistry.zones().all().in(environment).zones().forEach(zone -> {
+        zoneRegistry.zones().publiclyVisible().all().in(environment).zones().forEach(zone -> {
             Cursor object = root.addObject();
             object.setString("name", zone.getRegionName().value());
             object.setString("url", request.getUri()
-                                           .resolve("/zone/v2/environment/")
+                                           .resolve("/zone/v2/")
                                            .resolve(environment.value() + "/")
-                                           .resolve("region/")
                                            .resolve(zone.getRegionName().value())
                                            .toString());
         });
@@ -111,9 +108,8 @@ public class ZoneApiHandler extends ThreadedHttpRequestHandler {
         Cursor root = slime.setObject();
         root.setString("name", region.value());
         root.setString("url", request.getUri()
-                                     .resolve("/zone/v2/environment/")
+                                     .resolve("/zone/v2/")
                                      .resolve(environment.value() + "/")
-                                     .resolve("region/")
                                      .resolve(region.value())
                                      .toString());
         return new SlimeJsonResponse(slime);

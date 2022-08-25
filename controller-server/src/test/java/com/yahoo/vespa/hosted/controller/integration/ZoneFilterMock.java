@@ -51,6 +51,11 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
+    public ZoneList publiclyVisible() {
+        return controllerUpgraded();
+    }
+
+    @Override
     public ZoneList controllerUpgraded() {
         return all();
     }

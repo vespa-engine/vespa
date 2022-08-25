@@ -15,13 +15,16 @@ public interface ZoneFilter {
     /** Negates the next filter. */
     ZoneFilter not();
 
+    /** All zones defined in code, including those not yet set up. */
+    ZoneList all();
+
     /** Zones where config servers are up and running. */
     ZoneList reachable();
 
     /** Zones which are upgraded by the controller. */
     ZoneList controllerUpgraded();
 
-    /** All zones from the initial pool. */
-    ZoneList all();
+    /** Zones for use by tenants. */
+    ZoneList publiclyVisible();
 
 }
