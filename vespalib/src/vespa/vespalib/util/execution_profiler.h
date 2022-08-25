@@ -9,7 +9,7 @@
 
 namespace vespalib {
 
-namespace slime { class Cursor; }
+namespace slime { struct Cursor; }
 
 /**
  * A simple single-threaded profiler used to measure where time is
