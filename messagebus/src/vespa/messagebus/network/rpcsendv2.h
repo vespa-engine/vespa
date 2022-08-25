@@ -9,7 +9,7 @@ class RPCSendV2 : public RPCSend {
 public:
     static bool isCompatible(vespalib::stringref method, vespalib::stringref request, vespalib::stringref response);
 private:
-    void build(FRT_ReflectionBuilder & builder) override;
+    void build(FRT_ReflectionBuilder & builder, CapabilitySet required_capabilities) override;
     const char * getReturnSpec() const override;
     std::unique_ptr<Params> toParams(const FRT_Values &param) const override;
     void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,

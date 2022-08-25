@@ -3,6 +3,7 @@
 
 #include "identity.h"
 #include <vespa/slobrok/cfg.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 
 namespace mbus {
@@ -14,6 +15,7 @@ namespace mbus {
 class RPCNetworkParams {
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
+    using CapabilitySet     = vespalib::net::tls::CapabilitySet;
     Identity          _identity;
     config::ConfigUri _slobrokConfig;
     int               _listenPort;
@@ -25,6 +27,7 @@ private:
     bool              _tcpNoDelay;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
+    CapabilitySet     _required_capabilities;
 
 public:
     RPCNetworkParams();
@@ -166,6 +169,14 @@ public:
         return *this;
     }
     uint32_t events_before_wakeup() const { return _events_before_wakeup; }
+
+    RPCNetworkParams& required_capabilities(CapabilitySet capabilities) noexcept {
+        _required_capabilities = capabilities;
+        return *this;
+    }
+    [[nodiscard]] CapabilitySet required_capabilities() const noexcept {
+        return _required_capabilities;
+    }
 };
 
 }

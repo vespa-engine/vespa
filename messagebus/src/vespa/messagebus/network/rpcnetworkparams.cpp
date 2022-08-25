@@ -20,7 +20,8 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _events_before_wakeup(1),
     _tcpNoDelay(true),
     _connectionExpireSecs(600),
-    _compressionConfig(CompressionConfig::LZ4, 6, 90, 1024)
+    _compressionConfig(CompressionConfig::LZ4, 6, 90, 1024),
+    _required_capabilities(CapabilitySet::make_empty()) // No special peer requirements by default
 { }
 
 RPCNetworkParams::~RPCNetworkParams() = default;
