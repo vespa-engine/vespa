@@ -356,6 +356,9 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setNumRpcTargets(std::max(1, config->mbus.numRpcTargets));
         params.events_before_wakeup(std::max(1, config->mbus.eventsBeforeWakeup));
         params.setTcpNoDelay(config->mbus.tcpNoDelay);
+        params.required_capabilities(vespalib::net::tls::CapabilitySet::of({
+            vespalib::net::tls::Capability::content_document_api()
+        }));
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {
