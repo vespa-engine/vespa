@@ -38,12 +38,14 @@ TEST("CapabilitySet instances are equality comparable") {
 }
 
 TEST("Can get underlying name of all Capability instances") {
-    EXPECT_EQUAL(Capability::content_storage_api().name(),  "vespa.content.storage_api"sv);
-    EXPECT_EQUAL(Capability::content_document_api().name(), "vespa.content.document_api"sv);
-    EXPECT_EQUAL(Capability::content_search_api().name(),   "vespa.content.search_api"sv);
-    EXPECT_EQUAL(Capability::slobrok_api().name(),          "vespa.slobrok.api"sv);
-    EXPECT_EQUAL(Capability::content_status_pages().name(), "vespa.content.status_pages"sv);
-    EXPECT_EQUAL(Capability::content_metrics_api().name(),  "vespa.content.metrics_api"sv);
+    EXPECT_EQUAL(Capability::content_storage_api().name(),      "vespa.content.storage_api"sv);
+    EXPECT_EQUAL(Capability::content_document_api().name(),     "vespa.content.document_api"sv);
+    EXPECT_EQUAL(Capability::content_search_api().name(),       "vespa.content.search_api"sv);
+    EXPECT_EQUAL(Capability::content_proton_admin_api().name(), "vespa.content.proton_admin_api"sv);
+    EXPECT_EQUAL(Capability::slobrok_api().name(),              "vespa.slobrok.api"sv);
+    EXPECT_EQUAL(Capability::config_sentinel_api().name(),      "vespa.config.sentinel_api"sv);
+    EXPECT_EQUAL(Capability::content_status_pages().name(),     "vespa.content.status_pages"sv);
+    EXPECT_EQUAL(Capability::content_metrics_api().name(),      "vespa.content.metrics_api"sv);
     EXPECT_EQUAL(Capability::content_cluster_controller_internal_state_api().name(),
                  "vespa.content.cluster_controller.internal_state_api"sv);
 }
@@ -69,12 +71,14 @@ void check_capability_set_mapping(const std::string& name, CapabilitySet expecte
 }
 
 TEST("All known capabilities can be looked up by name") {
-    check_capability_mapping("vespa.content.storage_api",  Capability::content_storage_api());
-    check_capability_mapping("vespa.content.document_api", Capability::content_document_api());
-    check_capability_mapping("vespa.content.search_api",   Capability::content_search_api());
-    check_capability_mapping("vespa.slobrok.api",          Capability::slobrok_api());
-    check_capability_mapping("vespa.content.status_pages", Capability::content_status_pages());
-    check_capability_mapping("vespa.content.metrics_api",  Capability::content_metrics_api());
+    check_capability_mapping("vespa.content.storage_api",      Capability::content_storage_api());
+    check_capability_mapping("vespa.content.document_api",     Capability::content_document_api());
+    check_capability_mapping("vespa.content.search_api",       Capability::content_search_api());
+    check_capability_mapping("vespa.content.proton_admin_api", Capability::content_proton_admin_api());
+    check_capability_mapping("vespa.slobrok.api",              Capability::slobrok_api());
+    check_capability_mapping("vespa.config.sentinel_api",      Capability::config_sentinel_api());
+    check_capability_mapping("vespa.content.status_pages",     Capability::content_status_pages());
+    check_capability_mapping("vespa.content.metrics_api",      Capability::content_metrics_api());
     check_capability_mapping("vespa.content.cluster_controller.internal_state_api",
                              Capability::content_cluster_controller_internal_state_api());
 }

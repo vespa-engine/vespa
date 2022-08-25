@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 
@@ -55,6 +56,14 @@ RPCHooksBase::reportState(FRT_RPCRequest * req)
     ret.AddInt32(0);
 }
 
+namespace {
+
+std::unique_ptr<FRT_RequireCapabilities> make_proton_admin_api_capability_filter() {
+    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::content_proton_admin_api());
+}
+
+}
+
 void
 RPCHooksBase::initRPC()
 {
@@ -68,6 +77,7 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("keys", "Array of state keys");
     rb.ReturnDesc("values", "Array of state values");
     rb.ReturnDesc("newgen", "New state generation count");
+    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("proton.getStatus", "s", "SSSS",
                     FRT_METHOD(RPCHooksBase::rpc_GetProtonStatus), this);
@@ -77,21 +87,25 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("states", "Array of states ");
     rb.ReturnDesc("internalStates", "Array of internal states ");
     rb.ReturnDesc("message", "Array of status messages");
+    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("pandora.rtc.die", "", "",
                     FRT_METHOD(RPCHooksBase::rpc_die), this);
     rb.MethodDesc("Exit the rtc application without cleanup");
+    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("proton.triggerFlush", "", "b",
                     FRT_METHOD(RPCHooksBase::rpc_triggerFlush), this);
     rb.MethodDesc("Tell the node to trigger flush ASAP");
     rb.ReturnDesc("success", "Whether or not a flush was triggered.");
+    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("proton.prepareRestart", "", "b",
                     FRT_METHOD(RPCHooksBase::rpc_prepareRestart), this);
     rb.MethodDesc("Tell the node to prepare for a restart by flushing components "
             "such that TLS replay time + time spent flushing components is as low as possible");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
+    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
 }
 
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,

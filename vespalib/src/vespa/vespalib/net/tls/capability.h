@@ -23,12 +23,15 @@ private:
     // Each ID value corresponds to a unique single-bit position.
     // These values shall never be exposed outside the running process, i.e. they
     // must be possible to change arbitrarily internally across versions.
+    // Changes must be reflected in capabilities_test.cpp
     enum class Id : uint32_t {
         ContentStorageApi = 0, // Must start at zero
         ContentDocumentApi,
         ContentSearchApi,
+        ContentProtonAdminApi,
         ContentClusterControllerInternalStateApi,
         SlobrokApi,
+        ConfigSentinelApi,
         ContentStatusPages,
         ContentMetricsApi,
         // When adding a capability ID to the end, max_value_count() MUST be updated
@@ -80,12 +83,20 @@ public:
         return Capability(Id::ContentSearchApi);
     }
 
+    constexpr static Capability content_proton_admin_api() noexcept {
+        return Capability(Id::ContentProtonAdminApi);
+    }
+
     constexpr static Capability content_cluster_controller_internal_state_api() noexcept {
         return Capability(Id::ContentClusterControllerInternalStateApi);
     }
 
     constexpr static Capability slobrok_api() noexcept {
         return Capability(Id::SlobrokApi);
+    }
+
+    constexpr static Capability config_sentinel_api() noexcept {
+        return Capability(Id::ConfigSentinelApi);
     }
 
     constexpr static Capability content_status_pages() noexcept {
