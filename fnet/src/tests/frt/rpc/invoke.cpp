@@ -231,6 +231,9 @@ public:
         rb.DefineMethod("capabilityAllowed", "", "",
                         FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
         rb.RequestAccessFilter(FRT_RequireCapabilities::of(CapabilitySet::telemetry()));
+        rb.DefineMethod("emptyCapabilitySet", "", "",
+                        FRT_METHOD(TestRPC::RPC_AccessRestricted), this);
+        rb.RequestAccessFilter(FRT_RequireCapabilities::of(CapabilitySet::make_empty()));
     }
 
     void RPC_Test(FRT_RPCRequest *req)
@@ -500,6 +503,13 @@ TEST_F("access is allowed by capability filter when peer is granted the required
     MyReq req("capabilityAllowed"); // Requires telemetry cap set; allowed
     f1.target().InvokeSync(req.borrow(), timeout);
     // Should always be allowed, regardless of mTLS mode or capability enforcement
+    ASSERT_FALSE(req.get().IsError());
+    EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+}
+
+TEST_F("access is allowed by capability filter when required capability set is empty", Fixture()) {
+    MyReq req("emptyCapabilitySet");
+    f1.target().InvokeSync(req.borrow(), timeout);
     ASSERT_FALSE(req.get().IsError());
     EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
 }
