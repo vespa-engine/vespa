@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -112,11 +113,37 @@ public class ConfigUtilsTest {
 
     @Test
     public void testGetNamespace() {
+        // namespace after version
         StringReader reader = new StringReader("version=1\nnamespace=a\nint a default=0");
         assertEquals("a", ConfigUtils.getDefNamespace(reader));
+
         // namespace first
         reader = new StringReader("namespace=a\nversion=1\nint a default=0");
         assertEquals("a", ConfigUtils.getDefNamespace(reader));
+
+        // package after namespace
+        reader = new StringReader("namespace=a\npackage=b\nint a default=0");
+        assertEquals("b", ConfigUtils.getDefNamespace(reader));
+
+        // package before namespace
+        reader = new StringReader("package=b\nnamespace=a\nint a default=0");
+        assertEquals("b", ConfigUtils.getDefNamespace(reader));
+
+        // no actual package
+        assertEquals("package (or namespace) must consist of one or more segments joined by single dots (.), " +
+                     "each starting with a lowercase letter (a-z), and then containing one or more lowercase letters (a-z), " +
+                     "digits (0-9), or underscores (_)",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> ConfigUtils.getDefNamespace(new StringReader("package= \t \nint a default=0")))
+                             .getMessage());
+
+        // too relaxed namespace
+        assertEquals("package (or namespace) must consist of one or more segments joined by single dots (.), " +
+                     "each starting with a lowercase letter (a-z), and then containing one or more lowercase letters (a-z), " +
+                     "digits (0-9), or underscores (_)",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> ConfigUtils.getDefNamespace(new StringReader("namespace=a/b\nint a default=0")))
+                             .getMessage());
 
         // No namespace
         reader = new StringReader("version=1\nint a default=0");

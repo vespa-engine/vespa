@@ -41,6 +41,9 @@ public class ConfigUtils {
     private static final Pattern intPattern = Pattern.compile(".*int.*range.*");
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
     private static final Pattern spaceBeforeCommaPatter = Pattern.compile("\\s,");
+    private static final Pattern packageDirectivePattern = Pattern.compile("^\\s*package\\s*=(.*)$");
+    private static final Pattern namespaceDirectivePattern = Pattern.compile("^\\s*namespace\\s*=(.*)$");
+    private static final Pattern packagePattern = Pattern.compile("^(([a-z][a-z0-9_]*)+([.][a-z][a-z0-9_]*)*)$");
     private static final String intFormattedMax = new DecimalFormat("#.#").format(0x7fffffff);
     private static final String intFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-0x80000000);
     private static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
@@ -194,20 +197,26 @@ public class ConfigUtils {
      */
     public static String getDefNamespace(Reader in) {
         List<String> defLines = getDefLines(in);
-        String defPackage = getDefKeyword(defLines, "package");
-        if (!defPackage.isEmpty()) return defPackage;
-        return getDefKeyword(defLines, "namespace");
+        String declaredPackage = getDirective(defLines, packageDirectivePattern);
+        String declaredNamespace = getDirective(defLines, namespaceDirectivePattern);
+        return declaredPackage != null ? declaredPackage : declaredNamespace != null ? declaredNamespace : "";
     }
 
-    private static String getDefKeyword(List<String> defLines, String keyword) {
-        for (String line : defLines) {
-            if (line.startsWith(keyword)) {
-                String[] v = line.split("=");
-                return v[1].trim();
+    static String getDirective(List<String> defLines, Pattern directivePattern) {
+        Matcher matcher;
+        for (String defLine : defLines) {
+            if ((matcher = directivePattern.matcher(defLine)).matches()) {
+                if ((matcher = packagePattern.matcher(matcher.group(1))).matches())
+                    return matcher.group(1);
+                else
+                    throw new IllegalArgumentException("package (or namespace) must consist of one or more segments joined by single dots (.), " +
+                                                       "each starting with a lowercase letter (a-z), and then containing one or more " +
+                                                       "lowercase letters (a-z), digits (0-9), or underscores (_)");
             }
         }
-        return "";
+        return null;
     }
+
 
     private static List<String> getDefLines(Reader in) {
         if (null == in) {
