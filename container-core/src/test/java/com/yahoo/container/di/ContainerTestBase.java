@@ -120,11 +120,9 @@ public class ContainerTestBase {
         }
 
         String asConfig(int position) {
-            return "<config>\n" + //
-                    "components[" + position + "].id \"" + componentId + "\"\n" + //
-                    "components[" + position + "].classId \"" + classId.getName() + "\"\n" + //
-                    "components[" + position + "].configId \"" + dirConfigSource.configId() + "\"\n" + //
-                    "</config>";
+            return  "components[" + position + "].id \"" + componentId + "\"\n" +
+                    "components[" + position + "].classId \"" + classId.getName() + "\"\n" +
+                    "components[" + position + "].configId \"" + dirConfigSource.configId() + "\"\n" ;
         }
     }
 
