@@ -81,6 +81,15 @@ TEST_F("require that TensorDataType can check for assignable tensor type", Tenso
     EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
 }
 
+TEST("TensorDataType implements equals() that takes underlying tensor type into consideration")
+{
+    auto a = TensorDataType::fromSpec("tensor<float>(x[4])");
+    auto b = TensorDataType::fromSpec("tensor<bfloat16>(x[4])");
+    EXPECT_EQUAL(*a, *a);
+    EXPECT_NOT_EQUAL(*a, *b);
+    EXPECT_NOT_EQUAL(*b, *a);
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }

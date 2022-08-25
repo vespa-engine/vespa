@@ -18,14 +18,15 @@ class FieldValue;
 class Field;
 class FieldPath;
 
+class ArrayDataType;
+class CollectionDataType;
+class DocumentType;
+class MapDataType;
 class NumericDataType;
 class PrimitiveDataType;
-class DocumentType;
-class WeightedSetDataType;
-class CollectionDataType;
-class ArrayDataType;
-class MapDataType;
 class ReferenceDataType;
+class TensorDataType;
+class WeightedSetDataType;
 
 class DataType : public Printable
 {
@@ -120,6 +121,7 @@ public:
     virtual const CollectionDataType * cast_collection() const noexcept { return nullptr; }
     virtual const MapDataType * cast_map() const noexcept { return nullptr; }
     virtual const ReferenceDataType * cast_reference() const noexcept { return nullptr; }
+    virtual const TensorDataType* cast_tensor() const noexcept { return nullptr; }
     bool isMap() const { return cast_map() != nullptr; }
 
     /**

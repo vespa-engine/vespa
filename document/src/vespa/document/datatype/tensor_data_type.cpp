@@ -18,6 +18,15 @@ TensorDataType::TensorDataType(ValueType tensorType)
 TensorDataType::TensorDataType(const TensorDataType &) = default;
 TensorDataType::~TensorDataType() = default;
 
+bool
+TensorDataType::equals(const DataType& other) const noexcept
+{
+    if (!DataType::equals(other)) {
+        return false;
+    }
+    return _tensorType == other.cast_tensor()->_tensorType;
+}
+
 FieldValue::UP
 TensorDataType::createFieldValue() const
 {
