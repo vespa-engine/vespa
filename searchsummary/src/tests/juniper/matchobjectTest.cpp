@@ -30,7 +30,7 @@ void MatchObjectTest::testTerm() {
     // Fetch a result descriptor:
     auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -47,10 +47,10 @@ void MatchObjectTest::testTerm() {
     TestQuery q2("*ea*");
     TestQuery q3("*d");
     TestQuery q4("*word");
-    auto r1 = juniper::Analyse(*juniper::TestConfig, q1._qhandle, content, content_len, 0, 0, 0);
-    auto r2 = juniper::Analyse(*juniper::TestConfig, q2._qhandle, content, content_len, 0, 0, 0);
-    auto r3 = juniper::Analyse(*juniper::TestConfig, q3._qhandle, content, content_len, 0, 0, 0);
-    auto r4 = juniper::Analyse(*juniper::TestConfig, q4._qhandle, content, content_len, 0, 0, 0);
+    auto r1 = juniper::Analyse(*juniper::TestConfig, q1._qhandle, content, content_len, 0, 0);
+    auto r2 = juniper::Analyse(*juniper::TestConfig, q2._qhandle, content, content_len, 0, 0);
+    auto r3 = juniper::Analyse(*juniper::TestConfig, q3._qhandle, content, content_len, 0, 0);
+    auto r4 = juniper::Analyse(*juniper::TestConfig, q4._qhandle, content, content_len, 0, 0);
     _test(static_cast<bool>(r1));
     if (r1) {
         r1->Scan();

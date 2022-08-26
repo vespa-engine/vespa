@@ -137,7 +137,7 @@ AuxTest::TestDoubleWidth()
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     auto res = juniper::Analyse(myConfig, qh,
-                                input, 17, 0, 0, 0);
+                                input, 17, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -175,7 +175,7 @@ AuxTest::TestPartialUTF8()
     juniper::QueryParser q("ipod");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     auto res = juniper::Analyse(myConfig, qh,
-                                input, inputSize, 0, 0, 0);
+                                input, inputSize, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -213,7 +213,7 @@ void AuxTest::TestLargeBlockChinese()
     juniper::QueryParser q("希望");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     auto res = juniper::Analyse(myConfig, qh,
-                                input, inputSize, 0, 0, 0);
+                                input, inputSize, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -238,7 +238,7 @@ void AuxTest::TestExample()
     int content_len = strlen(content);
     auto res = juniper::Analyse(*juniper::TestConfig, qh,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     res->Scan();
@@ -402,7 +402,7 @@ void AuxTest::TestUTF8context()
     s.append(char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
-    auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0, 0);
     _test(static_cast<bool>(res));
 
     size_t charsize;
@@ -484,7 +484,7 @@ void AuxTest::TestJapanese()
         int content_len = strlen(content);
         auto res = juniper::Analyse(*juniper::TestConfig, qh,
                                     content, content_len,
-                                    0, 0, 0);
+                                    0, 0);
         _test(static_cast<bool>(res));
 
         size_t charsize;
@@ -574,7 +574,7 @@ void AuxTest::TestStartHits()
     int content_len = strlen(content);
     auto res = juniper::Analyse(*juniper::TestConfig, qh,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -598,7 +598,7 @@ void AuxTest::TestEndHit()
 
     auto res = juniper::Analyse(*juniper::TestConfig, qh,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -868,7 +868,7 @@ AuxTest::TestWhiteSpacePreserved()
 
     juniper::QueryParser q("best");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0, 0);
+    auto res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);

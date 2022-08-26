@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include "resultconfig.h"
 #include "docsum_field_writer.h"
-#include "juniper_input.h"
-#include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/juniper/rpinterface.h>
+#include <memory>
+
+namespace juniper {
+class Config;
+class Juniper;
+}
+namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
 
@@ -16,17 +18,13 @@ class JuniperDFW : public DocsumFieldWriter
 public:
     virtual bool Init(
             const char *fieldName,
-            const char *langFieldName,
-            const ResultConfig & config,
-            const char *inputField);
+            const vespalib::string& inputField);
 protected:
     JuniperDFW(juniper::Juniper * juniper);
     ~JuniperDFW() override;
 
-    uint32_t                         _inputFieldEnumValue;
     vespalib::string                 _input_field_name;
     std::unique_ptr<juniper::Config> _juniperConfig;
-    uint32_t                         _langFieldEnumValue;
     juniper::Juniper                *_juniper;
 private:
     bool IsGenerated() const override { return false; }
@@ -38,8 +36,8 @@ private:
 class JuniperTeaserDFW : public JuniperDFW
 {
 public:
-    bool Init(const char *fieldName, const char *langFieldName,
-              const ResultConfig & config, const char *inputField) override;
+    bool Init(const char *fieldName,
+              const vespalib::string& inputField) override;
 protected:
     JuniperTeaserDFW(juniper::Juniper * juniper) : JuniperDFW(juniper) { }
 };

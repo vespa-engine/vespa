@@ -96,7 +96,7 @@ void Juniper::FlushRewriters()
 
 std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& qhandle,
                 const char* docsum,  size_t docsum_len,
-                uint32_t docid, uint32_t /* inputfield_id */,
+                uint32_t docid,
                 uint32_t langid)
 {
     LOG(debug, "juniper::Analyse(): docId(%u), docsumLen(%zu), docsum(%s), langId(%u)",

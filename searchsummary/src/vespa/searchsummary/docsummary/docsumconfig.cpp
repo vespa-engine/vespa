@@ -35,11 +35,10 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (overrideName == "dynamicteaser") {
         if ( ! argument.empty() ) {
-            const char *langFieldName = "something unused";
             auto fw = std::make_unique<DynamicTeaserDFW>(getEnvironment()->getJuniper());
             auto fw_ptr = fw.get();
             fieldWriter = std::move(fw);
-            rc = fw_ptr->Init(fieldName.c_str(), langFieldName, resultConfig, argument.c_str());
+            rc = fw_ptr->Init(fieldName.c_str(), argument);
         } else {
             throw IllegalArgumentException("Missing argument");
         }
