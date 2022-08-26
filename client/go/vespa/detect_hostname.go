@@ -12,10 +12,8 @@ import (
 
 // detect if this host is IPv6-only, in which case we want to pass
 // the flag "-Djava.net.preferIPv6Addresses=true" to any java command
-
 func HasOnlyIpV6() bool {
-	hostname, err := os.Hostname()
-	hostname, err = FindOurHostname(hostname)
+	hostname, err := FindOurHostname()
 	if hostname == "" || err != nil {
 		return false
 	}
@@ -38,21 +36,38 @@ func HasOnlyIpV6() bool {
 	return foundV6 && !foundV4
 }
 
-func FindOurHostname(name string) (string, error) {
+// Find a good name for the host we're running on.
+// We need something that *other* hosts can use for connnecting back
+// to our services, preferably the canonical DNS name.
+// If automatic detection fails, "localhost" will be returned, so
+// single-node setups still have a good chance of working.
+// Use the enviroment variable VESPA_HOSTNAME to override.
+func FindOurHostname() (string, error) {
 	env := os.Getenv("VESPA_HOSTNAME")
 	if env != "" {
 		// assumes: env var is already validated and OK
-		fmt.Fprintln(os.Stderr, "from env:", env)
 		return env, nil
 	}
+	name, err := os.Hostname()
+	if err != nil {
+		return findOurHostnameFrom("localhost")
+	}
+	name, err = findOurHostnameFrom(name)
+	if strings.HasSuffix(name, ".") {
+		name = name[:len(name)-1]
+	}
+	return name, err
+}
+
+func findOurHostnameFrom(name string) (string, error) {
 	ifAddrs, _ := net.InterfaceAddrs()
-	fmt.Fprintln(os.Stderr, "interface addrs:", ifAddrs)
 	var checkIsMine = func(addr string) bool {
 		if len(ifAddrs) == 0 {
 			// no validation possible, assume OK
 			return true
 		}
 		for _, ifAddr := range ifAddrs {
+			// note: ifAddr.String() is typically "127.0.0.1/8"
 			if ipnet, ok := ifAddr.(*net.IPNet); ok {
 				if ipnet.IP.String() == addr {
 					return true
@@ -63,7 +78,6 @@ func FindOurHostname(name string) (string, error) {
 	}
 	if name != "" {
 		ipAddrs, _ := net.LookupIP(name)
-		fmt.Fprintln(os.Stderr, "LookupIP", name, "->", ipAddrs)
 		for _, addr := range ipAddrs {
 			switch {
 			case addr.IsLoopback():
@@ -73,13 +87,11 @@ func FindOurHostname(name string) (string, error) {
 					reverseNames, _ := net.LookupAddr(addr.String())
 					for _, reverse := range reverseNames {
 						if strings.HasPrefix(reverse, name) {
-							fmt.Fprintln(os.Stderr, "hostname", name, "->", addr, "-> ", reverse)
 							return reverse, nil
 						}
 					}
 					if len(reverseNames) > 0 {
 						reverse := reverseNames[0]
-						fmt.Fprintln(os.Stderr, "hostname", name, "->", addr, "-> ", reverse)
 						return reverse, nil
 					}
 				}
@@ -89,14 +101,12 @@ func FindOurHostname(name string) (string, error) {
 	for _, ifAddr := range ifAddrs {
 		if ipnet, ok := ifAddr.(*net.IPNet); ok {
 			ip := ipnet.IP
-			fmt.Fprintln(os.Stderr, "converted IP", ifAddr, "->", ip)
 			if ip == nil || ip.IsLoopback() {
 				continue
 			}
 			reverseNames, _ := net.LookupAddr(ip.String())
 			if len(reverseNames) > 0 {
 				reverse := reverseNames[0]
-				fmt.Fprintln(os.Stderr, "interface", ifAddr, "->", reverse)
 				return reverse, nil
 			}
 		}
