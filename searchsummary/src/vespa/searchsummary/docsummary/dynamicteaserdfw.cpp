@@ -335,7 +335,7 @@ JuniperTeaserDFW::Init(
 }
 
 vespalib::string
-DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, GetDocsumsState *state)
+DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, GetDocsumsState *state) const
 {
     if (!state->_dynteaser._query) {
         JuniperQueryAdapter iq(state->_kwExtractor,
@@ -387,7 +387,7 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
 
 void
 DynamicTeaserDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType,
-                              vespalib::slime::Inserter &target)
+                              vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {
         auto input = doc->get_juniper_input(_input_field_name);

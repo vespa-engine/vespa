@@ -15,7 +15,7 @@ RankFeaturesDFW::~RankFeaturesDFW() = default;
 
 void
 RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
-                             ResType, vespalib::slime::Inserter &target)
+                             ResType, vespalib::slime::Inserter &target) const
 {
     if ( !state->_rankFeatures ) {
         state->_callback.FillRankFeatures(state, _env);

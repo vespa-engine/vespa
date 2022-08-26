@@ -55,7 +55,7 @@ void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool useV8geoPos
 }
 
 void
-GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, vespalib::slime::Inserter &target)
+GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, vespalib::slime::Inserter &target) const
 {
     using vespalib::slime::Cursor;
     using vespalib::slime::ObjectSymbolInserter;

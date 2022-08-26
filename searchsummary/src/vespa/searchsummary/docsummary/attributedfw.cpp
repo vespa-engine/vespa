@@ -65,14 +65,14 @@ public:
     explicit SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) const override;
     bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override {
         return get_attribute(*state).isUndefined(docid);
     }
 };
 
 void
-SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target)
+SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target) const
 {
     const auto& v = get_attribute(*state);
     switch (type) {
@@ -290,7 +290,7 @@ public:
         }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    void insertField(uint32_t docid, GetDocsumsState* state, ResType type, Inserter& target) override;
+    void insertField(uint32_t docid, GetDocsumsState* state, ResType type, Inserter& target) const override;
 };
 
 bool
@@ -338,7 +338,7 @@ make_field_writer_state(const vespalib::string& field_name, const IAttributeVect
 }
 
 void
-MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target)
+MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const
 {
     auto& field_writer_state = state->_fieldWriterStates[_state_index];
     if (!field_writer_state) {

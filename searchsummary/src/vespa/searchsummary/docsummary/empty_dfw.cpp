@@ -9,7 +9,7 @@ EmptyDFW::EmptyDFW() = default;
 EmptyDFW::~EmptyDFW() = default;
 
 void
-EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Inserter &target)
+EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Inserter &target) const
 {
     // insert explicitly-empty field?
     // target.insertNix();

@@ -33,6 +33,11 @@ public:
     {
         uint32_t _overrideCnt; // # fields overridden
         uint32_t _generateCnt; // # fields generated
+        DynamicInfo() noexcept
+            : _overrideCnt(0),
+              _generateCnt(0)
+        {
+        }
     };
 
 private:

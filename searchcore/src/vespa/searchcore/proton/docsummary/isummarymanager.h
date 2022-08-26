@@ -34,7 +34,7 @@ public:
         virtual ~ISummarySetup() {}
 
         virtual search::docsummary::IDocsumWriter &getDocsumWriter() const = 0;
-        virtual search::docsummary::ResultConfig &getResultConfig() = 0;
+        virtual const search::docsummary::ResultConfig &getResultConfig() = 0;
         virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
 
         // Inherit doc from IDocsumEnvironment

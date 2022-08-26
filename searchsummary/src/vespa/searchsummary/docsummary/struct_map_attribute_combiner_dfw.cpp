@@ -139,7 +139,7 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::str
 StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;
 
 DocsumFieldWriterState*
-StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements)
+StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements) const
 {
     return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, stash, _fieldName, matching_elements);
 }
