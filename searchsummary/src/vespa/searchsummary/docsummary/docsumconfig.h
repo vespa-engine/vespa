@@ -19,12 +19,11 @@ public:
         _env(env),
         _writer(writer)
     { }
-    virtual ~DynamicDocsumConfig() { }
+    virtual ~DynamicDocsumConfig() = default;
     void configure(const vespa::config::search::SummarymapConfig &cfg);
 protected:
     using string = vespalib::string;
     IDocsumEnvironment * getEnvironment() { return _env; }
-    const IDocsumEnvironment * getEnvironment() const { return _env; }
     const ResultConfig & getResultConfig() const;
 
     virtual std::unique_ptr<DocsumFieldWriter>
