@@ -2,6 +2,7 @@
 
 #include "http_connection.h"
 #include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
@@ -121,14 +122,21 @@ HttpConnection::set_state(State state, bool read, bool write)
 }
 
 void
+HttpConnection::complete_handshake()
+{
+    _auth_ctx = _socket->make_auth_context();
+    set_state(State::READ_REQUEST, true, false);
+}
+
+void
 HttpConnection::do_handshake()
 {
     for (;;) {
         switch (_socket->handshake()) {
-        case vespalib::CryptoSocket::HandshakeResult::FAIL:       return set_state(State::NOTIFY,       false, false);
-        case vespalib::CryptoSocket::HandshakeResult::DONE:       return set_state(State::READ_REQUEST,  true, false);
-        case vespalib::CryptoSocket::HandshakeResult::NEED_READ:  return set_state(State::HANDSHAKE,     true, false);
-        case vespalib::CryptoSocket::HandshakeResult::NEED_WRITE: return set_state(State::HANDSHAKE,    false,  true);
+        case vespalib::CryptoSocket::HandshakeResult::FAIL:       return set_state(State::NOTIFY,    false, false);
+        case vespalib::CryptoSocket::HandshakeResult::DONE:       return complete_handshake();
+        case vespalib::CryptoSocket::HandshakeResult::NEED_READ:  return set_state(State::HANDSHAKE,  true, false);
+        case vespalib::CryptoSocket::HandshakeResult::NEED_WRITE: return set_state(State::HANDSHAKE, false,  true);
         case vespalib::CryptoSocket::HandshakeResult::NEED_WORK:  _socket->do_handshake_work();
         }
     }
@@ -193,6 +201,7 @@ HttpConnection::HttpConnection(HandleGuard guard, Reactor &reactor, CryptoSocket
     : _guard(std::move(guard)),
       _state(State::HANDSHAKE),
       _socket(std::move(socket)),
+      _auth_ctx(),
       _input(CHUNK_SIZE * 2),
       _output(CHUNK_SIZE * 2),
       _request(),

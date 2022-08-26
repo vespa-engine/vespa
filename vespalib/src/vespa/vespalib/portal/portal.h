@@ -18,6 +18,7 @@
 namespace vespalib {
 
 namespace portal { class HttpConnection; }
+namespace net { class ConnectionAuthContext; }
 
 /**
  * Minimal HTTP server and connection establishment manager.
@@ -67,6 +68,7 @@ public:
         void respond_with_content(const vespalib::string &content_type,
                                   const vespalib::string &content);
         void respond_with_error(int code, const vespalib::string &msg);
+        const net::ConnectionAuthContext &auth_context() const noexcept;
         ~GetRequest();
     };
 
