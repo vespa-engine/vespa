@@ -51,10 +51,14 @@ public:
     int main(int argc, char **argv);
 };
 
+bool timeout_specified(char **argv) {
+    return strcmp(argv[1], "-t") == 0;
+}
+
 int
 RPCClient::main(int argc, char **argv)
 {
-    if (argc < 3) {
+    if ((argc < 3) || (timeout_specified(argv) && argc < 5)) {
         fprintf(stderr, "usage: vespa-rpc-invoke [-t timeout] <connectspec> <method> [args]\n");
         fprintf(stderr, "    -t timeout in seconds\n");
         fprintf(stderr, "    Each arg must be on the form <type>:<value>\n");
@@ -79,7 +83,7 @@ RPCClient::run(int argc, char **argv)
     int methNameArg = 2;
     int startOfArgs = 3;
     int timeOut = 10;
-    if (strcmp(argv[1], "-t") == 0) {
+    if (timeout_specified(argv)) {
       timeOut = atoi(argv[2]);
       targetArg = 3;
       methNameArg = 4;
