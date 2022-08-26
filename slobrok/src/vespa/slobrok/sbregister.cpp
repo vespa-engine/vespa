@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sbregister.h"
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -45,6 +46,10 @@ discard(std::vector<vespalib::string> &vec, vespalib::stringref val)
         }
     }
     LOG_ASSERT(size == vec.size());
+}
+
+std::unique_ptr<FRT_RequireCapabilities> make_slobrok_capability_filter() {
+    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::slobrok_api());
 }
 
 } // namespace <unnamed>
@@ -287,11 +292,13 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner)
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcserver names");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
                     FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
     rb.MethodDesc("Notify a server about removed registration");
     rb.ParamDesc("name", "RpcServer name");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 }
 

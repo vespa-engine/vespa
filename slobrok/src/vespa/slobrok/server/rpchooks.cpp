@@ -7,6 +7,7 @@
 #include "remote_slobrok.h"
 #include "sbenv.h"
 #include "rpcmirror.h"
+#include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/component/vtag.h>
 
@@ -55,6 +56,10 @@ bool match(const char *name, const char *pattern) {
     return (*name == *pattern);
 }
 
+std::unique_ptr<FRT_RequireCapabilities> make_slobrok_capability_filter() {
+    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::slobrok_api());
+}
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -92,10 +97,12 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
                     FRT_METHOD(RPCHooks::rpc_version), this);
     rb.MethodDesc("Get location broker version");
     rb.ReturnDesc("version", "version string");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.system.stop", "", "",
                     FRT_METHOD(RPCHooks::rpc_stop), this);
     rb.MethodDesc("Shut down the location broker application");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -104,6 +111,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.MethodDesc("List all rpcservers managed by this location broker");
     rb.ReturnDesc("names", "Managed rpcserver names");
     rb.ReturnDesc("specs", "The connection specifications (in same order)");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.internal.lookupManaged", "s", "ss",
                     FRT_METHOD(RPCHooks::rpc_lookupManaged), this);
@@ -111,6 +119,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ParamDesc("name", "Name of rpc server");
     rb.ReturnDesc("name", "Name of rpc server");
     rb.ReturnDesc("spec", "The connection specification");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.internal.wantAdd", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_wantAdd), this);
@@ -120,6 +129,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ParamDesc("spec", "The connection specification");
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.internal.doAdd", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_doAdd), this);
@@ -129,6 +139,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ParamDesc("spec", "The connection specification");
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.internal.doRemove", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_doRemove), this);
@@ -138,6 +149,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ParamDesc("spec", "The connection specification");
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.internal.fetchLocalView", "ii", "iSSSi",
                     FRT_METHOD(RPCHooks::rpc_fetchLocalView), this);
@@ -151,6 +163,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ReturnDesc("names",   "Array of NamedService names with new values");
     rb.ReturnDesc("specs",   "Array of connection specifications (same order)");
     rb.ReturnDesc("newgen",  "Generation count for new version of the map");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -158,6 +171,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcservers served");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -166,12 +180,14 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.MethodDesc("stop syncing with other location broker");
     rb.ParamDesc("slobrok", "NamedService name of remote location broker");
     rb.ParamDesc("spec", "Connection specification of remote location broker");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.admin.addPeer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_addPeer), this);
     rb.MethodDesc("sync our information with other location broker");
     rb.ParamDesc("slobrok", "NamedService name of remote location broker");
     rb.ParamDesc("spec", "Connection specification of remote location broker");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.admin.listAllRpcServers", "", "SSS",
                     FRT_METHOD(RPCHooks::rpc_listAllRpcServers), this);
@@ -179,6 +195,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ReturnDesc("names", "NamedService names");
     rb.ReturnDesc("specs", "The connection specifications (in same order)");
     rb.ReturnDesc("owners", "Corresponding names of managing location broker");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -187,12 +204,14 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.MethodDesc("Unregister a rpcserver");
     rb.ParamDesc("name", "NamedService name");
     rb.ParamDesc("spec", "The connection specification");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.registerRpcServer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_registerRpcServer), this);
     rb.MethodDesc("Register a rpcserver");
     rb.ParamDesc("name", "NamedService name");
     rb.ParamDesc("spec", "The connection specification");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -208,6 +227,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     rb.ReturnDesc("names",   "Array of NamedService names with new values");
     rb.ReturnDesc("specs",   "Array of connection specifications (same order)");
     rb.ReturnDesc("newgen",  "Generation count for new version of the map");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.lookupRpcServer", "s", "SS",
                     FRT_METHOD(RPCHooks::rpc_lookupRpcServer), this);
@@ -224,6 +244,7 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
                  );
     rb.ReturnDesc("names", "The rpcserver names matching pattern");
     rb.ReturnDesc("specs", "The connection specifications (in same order)");
+    rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 }
 
