@@ -232,7 +232,7 @@ createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCf
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
-        (grow, baseDir, getSubDbName(), _docTypeName, _writeService.shared(),
+        (grow, baseDir, getSubDbName(), _writeService.shared(),
          storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, std::move(bucketizer), std::move(result));
 }
 

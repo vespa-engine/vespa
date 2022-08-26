@@ -125,11 +125,10 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const Summa
 
 SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,
                                const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
-                               const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
+                               const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
                                search::IBucketizer::SP bucketizer)
     : _baseDir(baseDir),
-      _docTypeName(docTypeName),
       _docStore()
 {
     _docStore = std::make_shared<LogDocumentStore>(shared_executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
