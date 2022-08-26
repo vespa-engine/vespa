@@ -3362,6 +3362,7 @@
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(java.lang.String, java.lang.ClassLoader, boolean)",
       "public static java.util.List getChildren(org.w3c.dom.Element)",
       "public static java.util.List getChildren(org.w3c.dom.Element, java.lang.String)",
+      "public static java.util.Optional attribute(java.lang.String, org.w3c.dom.Element)",
       "public static java.lang.String getValue(org.w3c.dom.Element)",
       "public static org.w3c.dom.Element getChild(org.w3c.dom.Element, java.lang.String)",
       "public static java.lang.String getNodePath(org.w3c.dom.Node, java.lang.String)",

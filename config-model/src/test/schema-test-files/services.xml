@@ -196,7 +196,6 @@
       <component id="injected-to-handler">
         <config name="foo"/>
       </component>
-      <embedder id="transformer" class="ai.vespa.example.SomeEmbedder" bundle="myBundle" def="my.def-file"/>
     </handler>
 
     <server id="server-provider">

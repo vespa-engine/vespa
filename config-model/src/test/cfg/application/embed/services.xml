@@ -4,19 +4,16 @@
 
   <container version="1.0">
 
-    <embedder id="test" class="ai.vespa.embedding.UndefinedEmbedder" bundle="dummy" def="test.dummy">
-      <num>12</num>
-      <str>some text</str>
-    </embedder>
+    <component id="transformer" class="ai.vespa.embedding.BertBaseEmbedder" bindle="model-integration">
+      <config name="embedding.bert-base-embedder">
+        <!-- model specifics -->
+        <transformerModel id="minilm-l6-v2" url="application-url"/>
+        <tokenizerVocab path="files/vocab.txt"/>
 
-    <embedder id="transformer" class="ai.vespa.embedding.BertBaseEmbedder">
-      <!-- model specifics -->
-      <transformerModel id="test-model-id" url="test-model-url"/>
-      <tokenizerVocab path="files/vocab.txt"/>
-
-      <!-- tunable parameters: number of threads etc -->
-      <onnxIntraOpThreads>4</onnxIntraOpThreads>
-    </embedder>
+        <!-- tunable parameters: number of threads etc -->
+        <onnxIntraOpThreads>4</onnxIntraOpThreads>
+      </config>
+    </component>
 
     <nodes>
       <node hostalias="node1" />
