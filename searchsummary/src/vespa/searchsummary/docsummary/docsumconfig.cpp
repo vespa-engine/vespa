@@ -124,7 +124,7 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
         bool rc(false);
         std::unique_ptr<DocsumFieldWriter> fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
         if (rc && fieldWriter) {
-            rc = _writer->Override(o.field.c_str(), fieldWriter.release()); // OBJECT HAND-OVER
+            rc = _writer->Override(o.field.c_str(), std::move(fieldWriter)); // OBJECT HAND-OVER
         }
         if (!rc) {
             throw IllegalArgumentException(o.command + " override operation failed during initialization");

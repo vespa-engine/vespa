@@ -21,7 +21,7 @@ SummaryFeaturesDFW::~SummaryFeaturesDFW() = default;
 static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
-SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target)
+SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const
 {
     if (state->_omit_summary_features) {
         return;

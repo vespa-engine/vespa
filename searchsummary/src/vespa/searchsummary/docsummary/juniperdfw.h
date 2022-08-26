@@ -49,12 +49,12 @@ class DynamicTeaserDFW : public JuniperTeaserDFW
 {
     vespalib::string makeDynamicTeaser(uint32_t docid,
                                        vespalib::stringref input,
-                                       GetDocsumsState *state);
+                                       GetDocsumsState *state) const;
 public:
     DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
 
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
-                     ResType type, vespalib::slime::Inserter &target) override;
+                     ResType type, vespalib::slime::Inserter &target) const override;
 };
 
 }

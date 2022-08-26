@@ -122,7 +122,7 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fie
 ArrayAttributeCombinerDFW::~ArrayAttributeCombinerDFW() = default;
 
 DocsumFieldWriterState*
-ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash &stash, const MatchingElements* matching_elements)
+ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash &stash, const MatchingElements* matching_elements) const
 {
     return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, stash, _fieldName, matching_elements, _is_map_of_scalar);
 }

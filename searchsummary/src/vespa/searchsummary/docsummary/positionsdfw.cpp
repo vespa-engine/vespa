@@ -34,7 +34,7 @@ using search::common::Location;
 using search::common::GeoGcd;
 
 LocationAttrDFW::AllLocations
-LocationAttrDFW::getAllLocations(GetDocsumsState *state)
+LocationAttrDFW::getAllLocations(GetDocsumsState *state) const
 {
     AllLocations retval;
     if (! state->_args.locations_possible()) {
@@ -67,7 +67,7 @@ AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName)
 
 uint64_t
 AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
-                                const std::vector<const GeoLoc *> &locations)
+                                const std::vector<const GeoLoc *> &locations) const
 {
     // ensure result fits in Java "int"
     uint64_t absdist = std::numeric_limits<int32_t>::max();
@@ -92,7 +92,7 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
 }
 
 void
-AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target)
+AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const
 {
     const auto & all_locations = getAllLocations(state);
     if (all_locations.empty()) {
@@ -237,7 +237,7 @@ void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t doc
 } // namespace
 
 void
-PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target)
+PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target) const
 {
     checkExpected(type);
     if (_useV8geoPositions) {

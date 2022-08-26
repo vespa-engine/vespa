@@ -34,7 +34,7 @@ CopyDFW::Init(const ResultConfig & config, const char *inputField)
 
 void
 CopyDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState *, ResType,
-                     vespalib::slime::Inserter &target)
+                     vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {
         doc->insert_summary_field(_input_field_name, target);

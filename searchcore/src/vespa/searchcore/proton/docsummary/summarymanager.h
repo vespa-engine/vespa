@@ -39,7 +39,7 @@ public:
                      std::shared_ptr<const document::DocumentTypeRepo> repo);
 
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
-        search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
+        const search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
 
         search::docsummary::IDocsumStore::UP createDocsumStore() override;
 

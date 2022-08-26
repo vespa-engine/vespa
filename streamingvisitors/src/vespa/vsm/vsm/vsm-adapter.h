@@ -80,7 +80,7 @@ public:
     DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer);
     ~DocsumTools();
     void setJuniper(std::unique_ptr<juniper::Juniper> juniper) { _juniper = std::move(juniper); }
-    ResultConfig *getResultConfig() const { return _writer->GetResultConfig(); }
+    const ResultConfig *getResultConfig() const { return _writer->GetResultConfig(); }
     DynamicDocsumWriter *getDocsumWriter() const { return _writer.get(); }
     const ResultClass *getResultClass() const { return _resultClass; }
     const std::vector<FieldSpec> & getFieldSpecs() const { return _fieldSpecs; }

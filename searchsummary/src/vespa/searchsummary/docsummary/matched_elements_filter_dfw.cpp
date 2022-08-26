@@ -86,7 +86,7 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
 
 void
 MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
-                                      ResType type, vespalib::slime::Inserter& target)
+                                      ResType type, vespalib::slime::Inserter& target) const
 {
     assert(type == ResType::RES_JSONSTRING);
     auto field_value = doc->get_field_value(_input_field_name);

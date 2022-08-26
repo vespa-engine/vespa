@@ -19,7 +19,7 @@ DocumentIdDFW::IsGenerated() const
 
 void
 DocumentIdDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState *, ResType,
-                           vespalib::slime::Inserter &target)
+                           vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {
         doc->insert_document_id(target);

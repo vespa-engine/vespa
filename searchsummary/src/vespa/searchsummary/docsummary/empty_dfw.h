@@ -16,7 +16,7 @@ public:
     ~EmptyDFW() override;
 
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const override;
 };
 
 }

@@ -108,7 +108,7 @@ DocsumFixture::DocsumFixture()
       doc_type("test"),
       state(*this)
 {
-    ResultConfig *config = new ResultConfig;
+    auto config = std::make_unique<ResultConfig>();
     ResultClass *cfg = config->AddResultClass("default", 0);
     EXPECT_TRUE(cfg != 0);
     EXPECT_TRUE(cfg->AddConfigEntry("int_field", RES_INT));
@@ -124,7 +124,7 @@ DocsumFixture::DocsumFixture()
     EXPECT_TRUE(cfg->AddConfigEntry("int_pair_field", RES_JSONSTRING));
     config->set_default_result_class_id(0);
     config->CreateEnumMaps();
-    writer.reset(new DynamicDocsumWriter(config, 0));
+    writer = std::make_unique<DynamicDocsumWriter>(std::move(config), std::unique_ptr<KeywordExtractor>());
     int_pair_type.addField(Field("foo", *DataType::INT));
     int_pair_type.addField(Field("bar", *DataType::INT));
     doc_type.addField(Field("int_field", *DataType::INT));

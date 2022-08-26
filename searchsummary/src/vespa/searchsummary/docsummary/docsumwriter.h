@@ -52,25 +52,25 @@ public:
 class DynamicDocsumWriter : public IDocsumWriter
 {
 private:
-    ResultConfig        *_resultConfig;
-    KeywordExtractor    *_keywordExtractor;
-    uint32_t             _numClasses;
-    uint32_t             _numEnumValues;
-    uint32_t             _numFieldWriterStates;
-    ResultClass::DynamicInfo *_classInfoTable;
-    DocsumFieldWriter**  _overrideTable;
+    std::unique_ptr<ResultConfig>                         _resultConfig;
+    std::unique_ptr<KeywordExtractor>                     _keywordExtractor;
+    uint32_t                                              _numClasses;
+    uint32_t                                              _numEnumValues;
+    uint32_t                                              _numFieldWriterStates;
+    std::vector<ResultClass::DynamicInfo>                 _classInfoTable;
+    std::vector<std::unique_ptr<const DocsumFieldWriter>> _overrideTable;
 
     ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;
 
 public:
-    DynamicDocsumWriter(ResultConfig *config, KeywordExtractor *extractor);
+    DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<KeywordExtractor> extractor);
     DynamicDocsumWriter(const DynamicDocsumWriter &) = delete;
     DynamicDocsumWriter& operator=(const DynamicDocsumWriter &) = delete;
     ~DynamicDocsumWriter() override;
 
-    ResultConfig *GetResultConfig() { return _resultConfig; }
+    const ResultConfig *GetResultConfig() { return _resultConfig.get(); }
 
-    bool Override(const char *fieldName, DocsumFieldWriter *writer);
+    bool Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer);
     void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) override;
     uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
                          IDocsumStore *docinfos, search::RawBuf *target) override;
