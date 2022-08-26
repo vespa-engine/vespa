@@ -2,6 +2,7 @@
 package vespa
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -97,4 +98,20 @@ override VESPA_V2 v2
 	assert.Equal(t, os.Getenv("VESPA_V2"), "v2")
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "Not a valid environment variable name: '.A'")
+}
+
+func TestFindUser(t *testing.T) {
+	u := FindVespaUser()
+	if u == "" {
+		fmt.Fprintln(os.Stderr, "WARNING: empty result from FindVespaUser()")
+	} else {
+		fmt.Fprintln(os.Stderr, "INFO: result from FindVespaUser() is", u)
+		assert.Equal(t, u, os.Getenv("VESPA_USER"))
+	}
+	setup(t, `
+override VESPA_USER unprivuser
+`)
+	LoadDefaultEnv()
+	u = FindVespaUser()
+	assert.Equal(t, "unprivuser", u)
 }
