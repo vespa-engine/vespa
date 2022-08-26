@@ -115,3 +115,43 @@ override VESPA_USER unprivuser
 	u = FindVespaUser()
 	assert.Equal(t, "unprivuser", u)
 }
+
+func TestExportEnv(t *testing.T) {
+	os.Setenv("VESPA_FOO", "was foo")
+	os.Setenv("VESPA_BAR", "was bar")
+	os.Setenv("VESPA_FOOBAR", "foobar")
+	os.Setenv("VESPA_BARFOO", "was barfoo")
+	os.Unsetenv("VESPA_QUUX")
+	setup(t, `
+# vespa env vars file
+override VESPA_FOO "newFoo1"
+
+fallback VESPA_BAR "new bar"
+fallback VESPA_QUUX "new quux"
+
+unset VESPA_FOOBAR
+unset VESPA_BARFOO
+fallback VESPA_BARFOO new'b<a>r'foo
+override XYZ xyz
+unset XYZ
+`)
+	holder := newShellEnvExporter()
+	err := loadDefaultEnvTo(holder)
+	assert.Nil(t, err)
+	// new values:
+	assert.Equal(t, "newFoo1", holder.exportVars["VESPA_FOO"])
+	assert.Equal(t, "", holder.exportVars["VESPA_BAR"])
+	assert.Equal(t, "'new quux'", holder.exportVars["VESPA_QUUX"])
+	assert.Equal(t, `'new'\''b<a>r'\''foo'`, holder.exportVars["VESPA_BARFOO"])
+	// unsets:
+	assert.Equal(t, "", holder.exportVars["VESPA_FOOBAR"])
+	assert.Equal(t, "unset", holder.unsetVars["VESPA_FOOBAR"])
+	assert.Equal(t, "", holder.exportVars["XYZ"])
+	assert.Equal(t, "unset", holder.unsetVars["XYZ"])
+	// nothing extra allowed:
+	assert.Equal(t, 3, len(holder.exportVars))
+	assert.Equal(t, 2, len(holder.unsetVars))
+	// run it
+	err = ExportDefaultEnvToSh()
+	assert.Nil(t, err)
+}
