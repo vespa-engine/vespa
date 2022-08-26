@@ -7,6 +7,8 @@ import com.yahoo.lang.PublicCloneable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.logging.Logger;
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -81,7 +83,7 @@ public class CloneHelper {
 
     @SuppressWarnings({"removal"})
     protected Object objectClone(Object object) {
-        // Fastpath for our commonly used classes
+        // Fastpath for commonly used classes
         if (object instanceof FreezableClass)
             return ((FreezableClass)object).clone();
         else if (object instanceof PublicCloneable)
@@ -92,6 +94,10 @@ public class CloneHelper {
             return ((LinkedList<?>) object).clone();
         else if (object instanceof ArrayList)
             return ((ArrayList<?>) object).clone();
+        else if (object instanceof HashMap)
+            return ((HashMap<?, ?>) object).clone();
+        else if (object instanceof HashSet)
+            return ((HashSet<?>) object).clone();
         try {
             return cloneByReflection(object);
         } catch (ClassCastException e) {
