@@ -23,7 +23,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~IDocsumStore() { }
+    virtual ~IDocsumStore() = default;
 
     /**
      * @return total number of documents.

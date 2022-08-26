@@ -20,20 +20,19 @@ namespace search::docsummary {
 class MatchedElementsFilterDFW : public DocsumFieldWriter {
 private:
     std::string _input_field_name;
-    uint32_t _input_field_enum;
     std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
     const std::vector<uint32_t>& get_matching_elements(uint32_t docid, GetDocsumsState& state) const;
 
 public:
-    MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
+    MatchedElementsFilterDFW(const std::string& input_field_name,
                              std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,
                                                      search::attribute::IAttributeContext& attr_ctx,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    ~MatchedElementsFilterDFW();
+    ~MatchedElementsFilterDFW() override;
     bool IsGenerated() const override { return false; }
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter& target) const override;

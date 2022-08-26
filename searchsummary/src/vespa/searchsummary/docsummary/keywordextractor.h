@@ -11,18 +11,13 @@ class IDocsumEnvironment;
 
 class KeywordExtractor
 {
-private:
-    KeywordExtractor(const KeywordExtractor &);
-    KeywordExtractor& operator=(const KeywordExtractor &);
-
 public:
 
     class IndexPrefix
     {
         vespalib::string  _prefix;
     public:
-
-        IndexPrefix(const char *prefix);
+        explicit IndexPrefix(const char *prefix);
         ~IndexPrefix();
         bool Match(const char *idxName) const;
         const vespalib::string& get_prefix() const noexcept { return _prefix; }
@@ -47,6 +42,8 @@ private:
     bool IsLegalIndexName(const char *idxName) const;
 public:
     explicit KeywordExtractor(IDocsumEnvironment * env);
+    KeywordExtractor(const KeywordExtractor &) = delete;
+    KeywordExtractor& operator=(const KeywordExtractor &) = delete;
     ~KeywordExtractor();
 
 

@@ -29,12 +29,6 @@ AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bo
 AttributeCombinerDFW::~AttributeCombinerDFW() = default;
 
 bool
-AttributeCombinerDFW::IsGenerated() const
-{
-    return true;
-}
-
-bool
 AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 {
     _stateIndex = fieldWriterStateIndex;

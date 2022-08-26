@@ -63,8 +63,7 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
     _properties["juniper.stem.min_length"]  = make_string("%d", cfg.stemMinLength);
     _properties["juniper.stem.max_extend"]  = make_string("%d", cfg.stemMaxExtend);
 
-    for (uint32_t i = 0; i < cfg.override.size(); ++i) {
-        const JuniperrcConfig::Override &override = cfg.override[i];
+    for (const auto & override : cfg.override) {
         const vespalib::string keyDynsum = make_string("%s.dynsum.", override.fieldname.c_str());
         const vespalib::string keyMatcher = make_string("%s.matcher.", override.fieldname.c_str());
         const vespalib::string keyStem = make_string("%s.stem.", override.fieldname.c_str());
@@ -87,7 +86,7 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
 const char *
 JuniperProperties::GetProperty(const char *name, const char *def)
 {
-    std::map<vespalib::string, vespalib::string>::const_iterator it = _properties.find(name);
+    auto it = _properties.find(name);
     return it != _properties.end() ? it->second.c_str() : def;
 }
 

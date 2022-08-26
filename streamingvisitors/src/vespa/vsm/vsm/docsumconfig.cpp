@@ -68,10 +68,8 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if ((overrideName == "matchedattributeelementsfilter") ||
                (overrideName == "matchedelementsfilter")) {
         string source_field = argument.empty() ? fieldName : argument;
-        const ResultConfig& resultConfig = getResultConfig();
-        int source_field_enum = resultConfig.GetFieldNameEnum().Lookup(source_field.c_str());
         populate_fields(*matching_elems_fields, *_vsm_fields_config, source_field);
-        fieldWriter = MatchedElementsFilterDFW::create(source_field, source_field_enum, matching_elems_fields);
+        fieldWriter = MatchedElementsFilterDFW::create(source_field, matching_elems_fields);
         rc = static_cast<bool>(fieldWriter);
     } else {
         fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc, matching_elems_fields);

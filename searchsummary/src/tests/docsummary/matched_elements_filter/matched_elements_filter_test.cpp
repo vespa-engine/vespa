@@ -25,7 +25,6 @@
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matched_elements_filter_test");
@@ -198,11 +197,9 @@ public:
           _fields(std::make_shared<MatchingElementsFields>())
     {
     }
-    ~MatchedElementsFilterTest();
+    ~MatchedElementsFilterTest() override;
     std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
-        int input_field_enum = _doc_store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
-        return MatchedElementsFilterDFW::create(input_field_name, input_field_enum,
-                                                _attr_ctx, _fields);
+        return MatchedElementsFilterDFW::create(input_field_name,_attr_ctx, _fields);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
         Slime act = run_filter_field_writer(input_field_name, matching_elements);

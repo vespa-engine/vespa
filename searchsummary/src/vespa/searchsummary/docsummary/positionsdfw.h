@@ -13,7 +13,7 @@ class LocationAttrDFW : public AttrDFW
 public:
     using GeoLoc = search::common::GeoLocation;
 
-    LocationAttrDFW(const vespalib::string & attrName)
+    explicit LocationAttrDFW(const vespalib::string & attrName)
         : AttrDFW(attrName)
     {}
 
@@ -21,7 +21,8 @@ public:
         std::vector<const GeoLoc *> matching;
         std::vector<const GeoLoc *> other;
 
-        ~AllLocations() {}
+        AllLocations();
+        ~AllLocations();
 
         bool empty() const {
             return matching.empty() && other.empty();
@@ -39,7 +40,7 @@ private:
     uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state,
                              const std::vector<const GeoLoc *> &locations) const;
 public:
-    AbsDistanceDFW(const vespalib::string & attrName);
+    explicit AbsDistanceDFW(const vespalib::string & attrName);
 
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state,

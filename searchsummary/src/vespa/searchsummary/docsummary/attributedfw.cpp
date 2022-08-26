@@ -45,18 +45,6 @@ AttrDFW::get_attribute(const GetDocsumsState& s) const
     return *s.getAttribute(getIndex());
 }
 
-const vespalib::string &
-AttrDFW::getAttributeName() const
-{
-    return _attrName;
-}
-
-bool
-AttrDFW::IsGenerated() const
-{
-    return true;
-}
-
 namespace {
 
 class SingleAttrDFW : public AttrDFW
@@ -280,9 +268,10 @@ private:
     std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
 public:
-    explicit MultiAttrDFW(const vespalib::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+    MultiAttrDFW(const vespalib::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
         : AttrDFW(attr_name),
           _filter_elements(filter_elements),
+          _state_index(0),
           _matching_elems_fields(std::move(matching_elems_fields))
     {
         if (filter_elements && _matching_elems_fields) {

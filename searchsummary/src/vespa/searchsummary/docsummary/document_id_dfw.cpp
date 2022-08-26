@@ -5,17 +5,9 @@
 
 namespace search::docsummary {
 
-DocumentIdDFW::DocumentIdDFW()
-{
-}
+DocumentIdDFW::DocumentIdDFW() = default;
 
 DocumentIdDFW::~DocumentIdDFW() = default;
-
-bool
-DocumentIdDFW::IsGenerated() const
-{
-    return false;
-}
 
 void
 DocumentIdDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState *, ResType,

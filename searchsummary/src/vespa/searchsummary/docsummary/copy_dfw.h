@@ -17,7 +17,7 @@ private:
     vespalib::string _input_field_name;
 
 public:
-    CopyDFW(const vespalib::string& inputField);
+    explicit CopyDFW(const vespalib::string& inputField);
     ~CopyDFW() override;
 
     bool IsGenerated() const override { return false; }

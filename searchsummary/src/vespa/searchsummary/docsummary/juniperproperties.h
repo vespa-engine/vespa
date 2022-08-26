@@ -28,10 +28,7 @@ public:
      */
     JuniperProperties(const vespa::config::search::summary::JuniperrcConfig &cfg);
 
-    /**
-     * Destructor. Frees any allocated resources.
-     */
-    virtual ~JuniperProperties();
+    ~JuniperProperties() override;
 
     /**
      * Implements configure callback for config subscription.

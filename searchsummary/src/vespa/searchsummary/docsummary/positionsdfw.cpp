@@ -61,6 +61,9 @@ LocationAttrDFW::getAllLocations(GetDocsumsState *state) const
     return retval;
 }
 
+LocationAttrDFW::AllLocations::AllLocations() = default;
+LocationAttrDFW::AllLocations::~AllLocations() = default;
+
 AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName)
     : LocationAttrDFW(attrName)
 { }

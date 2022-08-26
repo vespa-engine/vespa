@@ -17,7 +17,6 @@ class JuniperInput {
     vespalib::stringref _value;
 public:
     JuniperInput();
-    explicit JuniperInput(vespalib::stringref value);
     explicit JuniperInput(DocsumStoreFieldValue value);
     ~JuniperInput();
     bool empty() const noexcept { return _value.empty(); }

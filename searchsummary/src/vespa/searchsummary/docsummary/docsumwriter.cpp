@@ -4,9 +4,7 @@
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
 #include "i_docsum_store_document.h"
-#include "summaryfieldconverter.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -56,9 +54,7 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
             LOG_ASSERT(rcInfo->_overrideCnt == rcInfo->_generateCnt);
             result.allGenerated = true;
         }
-        result.outputClassInfo = rcInfo;
     }
-    result.outputClassId = id;
     return result;
 }
 
@@ -108,17 +104,15 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
 DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<KeywordExtractor> extractor)
     : _resultConfig(std::move(config)),
       _keywordExtractor(std::move(extractor)),
-      _numClasses(_resultConfig->GetNumResultClasses()),
-      _numEnumValues(_resultConfig->GetFieldNameEnum().GetNumEntries()),
       _numFieldWriterStates(0),
-      _classInfoTable(_numClasses),
-      _overrideTable(_numEnumValues)
+      _classInfoTable(_resultConfig->GetNumResultClasses()),
+      _overrideTable(_resultConfig->GetFieldNameEnum().GetNumEntries())
 {
     uint32_t i = 0;
-    for (ResultConfig::iterator it(_resultConfig->begin()), mt(_resultConfig->end()); it != mt; it++, i++) {
-        it->setDynamicInfo(&(_classInfoTable[i]));
+    for (auto & result_class : *_resultConfig) {
+        result_class.setDynamicInfo(&(_classInfoTable[i++]));
     }
-    LOG_ASSERT(i == _numClasses);
+    LOG_ASSERT(i == _resultConfig->GetNumResultClasses());
 }
 
 
@@ -129,10 +123,8 @@ DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumField
 {
     uint32_t fieldEnumValue = _resultConfig->GetFieldNameEnum().Lookup(fieldName);
 
-    if (fieldEnumValue >= _numEnumValues || _overrideTable[fieldEnumValue])
-    {
-
-        if (fieldEnumValue >= _numEnumValues) {
+    if (fieldEnumValue >= _overrideTable.size() || _overrideTable[fieldEnumValue]) {
+        if (fieldEnumValue >= _overrideTable.size()) {
             LOG(warning, "cannot override docsum field '%s'; undefined field name", fieldName);
         } else if (_overrideTable[fieldEnumValue] != nullptr) {
             LOG(warning, "cannot override docsum field '%s'; already overridden", fieldName);
@@ -148,7 +140,6 @@ DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumField
     }
 
     for (auto & result_class : *_resultConfig) {
-
         if (result_class.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
             ResultClass::DynamicInfo *info = result_class.getDynamicInfo();
             info->_overrideCnt++;
@@ -166,7 +157,7 @@ DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *sta
 {
     state->_kwExtractor = _keywordExtractor.get();
     state->_attrCtx = attrMan.createContext();
-    state->_attributes.resize(_numEnumValues);
+    state->_attributes.resize(_overrideTable.size());
     state->_fieldWriterStates.resize(_numFieldWriterStates);
     for (size_t i(0); i < state->_attributes.size(); i++) {
         const DocsumFieldWriter *fw = _overrideTable[i].get();
