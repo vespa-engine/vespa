@@ -98,7 +98,9 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
-        assertAcls(trustedNodesOf(List.of(tenantNodes.asList(), proxyNodes, configServers.asList())),
+        assertAcls(List.of(TrustedNode.of(tenantNodes, Set.of(19070)),
+                           TrustedNode.of(proxyNodes, Set.of(19070)),
+                           TrustedNode.of(configServers)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
@@ -208,8 +210,12 @@ public class AclProvisioningTest {
                      nodeAcl.trustedNodes().stream().map(TrustedNode::ipAddresses).toList());
     }
 
+    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports) {
+        return nodes.stream().map(node -> TrustedNode.of(node, ports)).toList();
+    }
+
     private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes) {
-        return nodes.stream().map(TrustedNode::of).toList();
+        return trustedNodesOf(nodes, Set.of());
     }
 
     private List<Node> deploy(int nodeCount) {
