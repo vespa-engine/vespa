@@ -93,6 +93,13 @@ Portal::GetRequest::respond_with_error(int code, const vespalib::string &msg)
     _conn = nullptr;
 }
 
+const net::ConnectionAuthContext&
+Portal::GetRequest::auth_context() const noexcept
+{
+    assert(active());
+    return _conn->auth_context();
+}
+
 Portal::GetRequest::~GetRequest()
 {
     if (active()) {

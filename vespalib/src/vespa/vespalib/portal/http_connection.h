@@ -18,10 +18,12 @@ public:
     enum class State { HANDSHAKE, READ_REQUEST, DISPATCH, WAIT, WRITE_REPLY, CLOSE, NOTIFY, END };
 private:
     using handler_fun_t = std::function<void(HttpConnection*)>;
+    using AuthCtxPtr    = std::unique_ptr<net::ConnectionAuthContext>;
 
     HandleGuard        _guard;
     State              _state;
     CryptoSocket::UP   _socket;
+    AuthCtxPtr         _auth_ctx;
     SmartBuffer        _input;
     SmartBuffer        _output;
     HttpRequest        _request;
@@ -31,6 +33,7 @@ private:
 
     void set_state(State state, bool read, bool write);
 
+    void complete_handshake();
     void do_handshake();
     void do_read_request();
     void do_dispatch();
@@ -47,6 +50,9 @@ public:
     State get_state() const { return _state; }
     void resolve_host(const vespalib::string &my_host) { _request.resolve_host(my_host); }
     const HttpRequest &get_request() const { return _request; }
+    // Precondition: handshake must have been completed
+    const net::ConnectionAuthContext &auth_context() const noexcept { return *_auth_ctx; }
+
     void respond_with_content(const vespalib::string &content_type,
                               const vespalib::string &content);
     void respond_with_error(int code, const vespalib::string &msg);
