@@ -60,11 +60,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if ((overrideName == "attribute") ||
                (overrideName == "attributecombiner")) {
         if (!argument.empty() && argument != fieldName) {
-            auto fw = std::make_unique<CopyDFW>();
-            const ResultConfig& resultConfig = getResultConfig();
-            if (fw->Init(resultConfig, argument.c_str())) {
-                fieldWriter = std::move(fw);
-            }
+            fieldWriter = std::make_unique<CopyDFW>(argument);
         }
         rc = true;
     } else if (overrideName == "geopos") {

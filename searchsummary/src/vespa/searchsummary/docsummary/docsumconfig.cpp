@@ -36,9 +36,10 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     if (overrideName == "dynamicteaser") {
         if ( ! argument.empty() ) {
             const char *langFieldName = "something unused";
-            DynamicTeaserDFW *fw = new DynamicTeaserDFW(getEnvironment()->getJuniper());
-            fieldWriter.reset(fw);
-            rc = fw->Init(fieldName.c_str(), langFieldName, resultConfig, argument.c_str());
+            auto fw = std::make_unique<DynamicTeaserDFW>(getEnvironment()->getJuniper());
+            auto fw_ptr = fw.get();
+            fieldWriter = std::move(fw);
+            rc = fw_ptr->Init(fieldName.c_str(), langFieldName, resultConfig, argument.c_str());
         } else {
             throw IllegalArgumentException("Missing argument");
         }
@@ -53,9 +54,8 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         rc = true;
     } else if (overrideName == "copy") {
         if ( ! argument.empty() ) {
-            CopyDFW *fw = new CopyDFW();
-            fieldWriter.reset(fw);
-            rc = fw->Init(resultConfig, argument.c_str());
+            fieldWriter = std::make_unique<CopyDFW>(argument);
+            rc = true;
         } else {
             throw IllegalArgumentException("Missing argument");
         }

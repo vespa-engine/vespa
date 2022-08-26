@@ -19,7 +19,7 @@ bool useful(search::ParseItem::ItemCreator creator)
 
 KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
     : _env(env),
-      _legalPrefixes(nullptr),
+      _legalPrefixes(),
       _legalIndexes()
 {
 }
@@ -27,11 +27,6 @@ KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
 
 KeywordExtractor::~KeywordExtractor()
 {
-    while (_legalPrefixes != nullptr) {
-        IndexPrefix *tmp = _legalPrefixes;
-        _legalPrefixes = tmp->_next;
-        delete tmp;
-    }
 }
 
 bool
@@ -40,12 +35,9 @@ KeywordExtractor::IsLegalIndexName(const char *idxName) const
     return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
 
-KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix, IndexPrefix **list)
-    : _prefix(prefix),
-      _next(nullptr)
+KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix)
+    : _prefix(prefix)
 {
-    _next = *list;
-    *list = this;
 }
 
 KeywordExtractor::IndexPrefix::~IndexPrefix() = default;
@@ -99,12 +91,12 @@ KeywordExtractor::GetLegalIndexSpec()
 {
     vespalib::string spec;
 
-    if (_legalPrefixes != nullptr) {
-        for (IndexPrefix *pt = _legalPrefixes;
-             pt != nullptr; pt = pt->_next) {
-            if (spec.size() > 0)
+    if (!_legalPrefixes.empty()) {
+        for (auto& prefix : _legalPrefixes) {
+            if (!spec.empty()) {
                 spec.append(';');
-            spec.append(pt->_prefix);
+            }
+            spec.append(prefix.get_prefix());
             spec.append('*');
         }
     }
