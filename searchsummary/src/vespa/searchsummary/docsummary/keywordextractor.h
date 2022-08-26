@@ -19,33 +19,27 @@ public:
 
     class IndexPrefix
     {
-    private:
-        IndexPrefix(const IndexPrefix &);
-        IndexPrefix& operator=(const IndexPrefix &);
-
-    public:
         vespalib::string  _prefix;
-        IndexPrefix      *_next;
+    public:
 
-        IndexPrefix(const char *prefix, IndexPrefix **list);
+        IndexPrefix(const char *prefix);
         ~IndexPrefix();
         bool Match(const char *idxName) const;
+        const vespalib::string& get_prefix() const noexcept { return _prefix; }
     };
 
 private:
     typedef vespalib::hash_set<vespalib::string> Set;
     IDocsumEnvironment  *_env;
-    IndexPrefix         *_legalPrefixes;
+    std::vector<IndexPrefix> _legalPrefixes;
     Set                  _legalIndexes;
 
     bool IsLegalIndexPrefix(const char *idxName) const
     {
-        for (const IndexPrefix *pt = _legalPrefixes;
-             pt != nullptr;
-             pt = pt->_next)
-        {
-            if (pt->Match(idxName))
+        for (auto& prefix : _legalPrefixes ) {
+            if (prefix.Match(idxName)) {
                 return true;
+            }
         }
         return false;
     }
@@ -63,8 +57,7 @@ public:
      **/
     void AddLegalIndexPrefix(const char *prefix)
     {
-        //Self destructing construction
-        new IndexPrefix(prefix, &_legalPrefixes);
+        _legalPrefixes.emplace_back(prefix);
     }
 
 

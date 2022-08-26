@@ -243,7 +243,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     void visit(const BoolFieldValue &value) override { visitPrimitive(value); }
     void visit(const ByteFieldValue &value) override {
         int8_t signedValue = value.getAsByte();
-        _field_value.reset(new ShortFieldValue(signedValue));
+        _field_value = std::make_unique<ShortFieldValue>(signedValue);
     }
     void visit(const DoubleFieldValue &value) override { visitPrimitive(value); }
     void visit(const FloatFieldValue &value) override { visitPrimitive(value); }

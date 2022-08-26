@@ -14,14 +14,11 @@ class ResultConfig;
 class CopyDFW : public DocsumFieldWriter
 {
 private:
-    uint32_t _inputFieldEnumValue;
     vespalib::string _input_field_name;
 
 public:
-    CopyDFW();
+    CopyDFW(const vespalib::string& inputField);
     ~CopyDFW() override;
-
-    bool Init(const ResultConfig & config, const char *inputField);
 
     bool IsGenerated() const override { return false; }
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType type,
