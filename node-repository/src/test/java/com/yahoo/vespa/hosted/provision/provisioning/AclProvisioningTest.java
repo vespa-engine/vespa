@@ -82,25 +82,31 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_config_server() {
-        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        NodeList configNodes = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, nodeResources);
+        List<Node> proxyHosts = tester.makeReadyNodes(2, nodeResources, NodeType.proxyhost, 5);
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.makeReadyHosts(2, nodeResources)
+              .activateTenantHosts();
 
-        // Allocate 2 nodes
-        deploy(4);
-        NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
+        // Allocate nodes
+        deploy(2);
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        NodeList tenantNodes = nodes.nodeType(NodeType.tenant);
+        NodeList tenantHosts = nodes.nodeType(NodeType.host);
 
         // Get trusted nodes for the first config server
         Node node = tester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
-        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers());
 
-        // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
-        assertAcls(List.of(TrustedNode.of(tenantNodes, Set.of(19070)),
+        // Trusted nodes is all tenant nodes+hosts, all proxy nodes+hosts, all config servers and load balancer subnets
+        assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070)),
+                           TrustedNode.of(tenantNodes, Set.of(19070)),
+                           TrustedNode.of(proxyHosts, Set.of(19070)),
                            TrustedNode.of(proxyNodes, Set.of(19070)),
-                           TrustedNode.of(configServers)),
+                           TrustedNode.of(configNodes)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
