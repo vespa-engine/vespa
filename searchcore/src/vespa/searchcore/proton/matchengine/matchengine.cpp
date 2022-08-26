@@ -115,7 +115,7 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
     }
     if (_async) {
         _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
-        return search::engine::SearchReply::UP();
+        return {};
     }
     return performSearch(std::move(request));
 }

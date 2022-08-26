@@ -128,7 +128,8 @@ public:
                 vespalib::DualMergeDirector &md,
                 uint32_t distributionKey,
                 const RelativeTime & relativeTime,
-                uint32_t traceLevel);
+                uint32_t traceLevel,
+                uint32_t profileDepth);
     void run() override;
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }

@@ -58,6 +58,7 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.maxhits = proto.hits();
     request.setTimeout(1ms * proto.timeout());
     request.setTraceLevel(proto.trace_level());
+    request.trace().setProfileDepth(proto.profile_depth());
     request.sortSpec = make_sort_spec(proto.sorting());
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
     request.propertiesMap.lookupCreate(MapNames::MATCH).add("documentdb.searchdoctype", proto.document_type());
@@ -114,7 +115,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
             hit->set_sort_data(&reply.sortData[sort_data_offset], sort_data_size);
         }
     }
-    if (reply.match_features.values.size() > 0) {
+    if ( ! reply.match_features.values.empty()) {
         size_t num_match_features = reply.match_features.names.size();
         assert(num_match_features * reply.hits.size() == reply.match_features.values.size());
         for (const auto & name : reply.match_features.names) {

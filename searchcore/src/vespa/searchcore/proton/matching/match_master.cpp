@@ -95,7 +95,7 @@ MatchMaster::match(search::engine::Trace & trace,
                 : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
                                                                resultProcessor, mergeDirector, distributionKey,
-                                                               trace.getRelativeTime(), trace.getLevel()));
+                                                               trace.getRelativeTime(), trace.getLevel(), trace.getProfileDepth()));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
