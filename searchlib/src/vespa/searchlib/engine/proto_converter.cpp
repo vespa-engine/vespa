@@ -57,7 +57,7 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.offset = proto.offset();
     request.maxhits = proto.hits();
     request.setTimeout(1ms * proto.timeout());
-    request.setTraceLevel(proto.trace_level());
+    request.trace().setLevel(proto.trace_level());
     request.trace().setProfileDepth(proto.profile_depth());
     request.sortSpec = make_sort_spec(proto.sorting());
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
