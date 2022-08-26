@@ -365,13 +365,17 @@ public class ApplicationPackageBuilder {
     }
 
     public static ApplicationPackage fromDeploymentXml(String deploymentXml) {
+        return fromDeploymentXml(deploymentXml, "6.1");
+    }
+
+    public static ApplicationPackage fromDeploymentXml(String deploymentXml, String compileVersion) {
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
             out.putNextEntry(new ZipEntry("deployment.xml"));
             out.write(deploymentXml.getBytes(UTF_8));
             out.closeEntry();
             out.putNextEntry(new ZipEntry("build-meta.json"));
-            out.write(buildMeta(Version.fromString("6.1")));
+            out.write(buildMeta(Version.fromString(compileVersion)));
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

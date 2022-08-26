@@ -83,26 +83,30 @@ public class DeploymentTrigger {
         applications().lockApplicationIfPresent(id, application -> {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
             for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
-                Change outstanding = outstandingChange(status, instanceName);
-                if (outstanding.hasTargets()
-                    && status.instanceSteps().get(instanceName)
-                             .readyAt(outstanding)
-                             .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
-                    && acceptNewRevision(status, instanceName, outstanding.revision().get())) {
-                    application = application.with(instanceName,
-                                                   instance -> withRemainingChange(instance, outstanding.onTopOf(instance.change()), status));
-                }
+                Change outstanding = status.outstandingChange(instanceName);
+                boolean deployOutstanding =    outstanding.hasTargets()
+                                            && status.instanceSteps().get(instanceName)
+                                                     .readyAt(outstanding)
+                                                     .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
+                                            && acceptNewRevision(status, instanceName, outstanding.revision().get());
+                application = application.with(instanceName,
+                                               instance -> withRemainingChange(instance,
+                                                                               withCompatibilityPlatform((deployOutstanding ? outstanding
+                                                                                                                            : Change.empty())
+                                                                                                                 .onTopOf(instance.change()),
+                                                                                                         status,
+                                                                                                         instanceName),
+                                                                               status));
             }
             applications().store(application);
         });
     }
 
     /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
-    private Change outstandingChange(DeploymentStatus status, InstanceName instance) {
-        Change outstanding = status.outstandingChange(instance);
-        Optional<Version> compileVersion = outstanding.revision()
-                                                      .map(status.application().revisions()::get)
-                                                      .flatMap(ApplicationVersion::compileVersion);
+    private Change withCompatibilityPlatform(Change revisionChange, DeploymentStatus status, InstanceName instance) {
+        Optional<Version> compileVersion = revisionChange.revision()
+                                                         .map(status.application().revisions()::get)
+                                                         .flatMap(ApplicationVersion::compileVersion);
 
         // If the outstanding revision requires a certain platform for compatibility, add that here.
         VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
@@ -113,13 +117,13 @@ public class DeploymentTrigger {
             return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
                     .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
                     .filter(compatibleWithCompileVersion)
-                    .map(outstanding::with)
+                    .map(revisionChange::with)
                     .filter(change -> status.instanceSteps().get(instance).readyAt(change)
                                             .map(readyAt -> ! readyAt.isAfter(controller.clock().instant()))
                                             .orElse(false))
                     .findFirst().orElse(Change.empty());
         }
-        return outstanding;
+        return revisionChange;
     }
 
     /** Returns target versions for given confidence, by descending version number. */
