@@ -2,7 +2,6 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.TransportSecurityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.util.function.Supplier;
@@ -14,12 +13,19 @@ import java.util.function.Supplier;
  */
 public class VespaSslContextProvider implements Supplier<SSLContext> {
 
-    private static final SSLContext sslContext = TransportSecurityUtils.getSystemTlsContext().map(TlsContext::context).orElse(null);
+    private static TlsContext tlsContext;
 
     @Override
     public SSLContext get() {
-        if (sslContext == null) throw new IllegalStateException("Vespa TLS is not enabled");
-        return sslContext;
+        synchronized (VespaSslContextProvider.class) {
+            if (tlsContext == null) throw new IllegalStateException("Vespa TLS is not enabled");
+            return tlsContext.context();
+        }
+    }
+
+    static synchronized void set(TlsContext ctx) {
+        if (tlsContext != null) tlsContext.close();
+        tlsContext = ctx;
     }
 
 }

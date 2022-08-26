@@ -45,3 +45,6 @@ trustEmptySnapshot bool default=true
 
 dynamicReconfiguration bool default=false
 snapshotMethod string default="gz"
+
+# Uses default Vespa mTLS config if empty string
+vespaTlsConfigFile string default=""
