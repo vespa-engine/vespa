@@ -18,9 +18,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
-
-import java.util.logging.Level;
 
 /**
  * REST API for proxying requests to config servers in a given zone (version 2).
@@ -45,23 +44,15 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     @Override
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET:
-                    return get(request);
-                case POST:
-                case PUT:
-                case DELETE:
-                case PATCH:
-                    return proxy(request);
-                default:
-                    return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST, PUT, DELETE, PATCH -> proxy(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+            };
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "', "
-                                   + Exceptions.toMessageString(e));
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 

@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -76,25 +76,18 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
                 return ErrorResponse.unauthorized("Must be authenticated to use this API");
 
             Path path = new Path(request.getUri());
-            switch (request.getMethod()) {
-                case GET:
-                    return handleGET(request, path, userId.get());
-                case PATCH:
-                    return handlePATCH(request, path, userId.get());
-                case DELETE:
-                    return handleDELETE(path, userId.get());
-                case POST:
-                    return handlePOST(path, request, userId.get());
-                default:
-                    return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> handleGET(request, path, userId.get());
+                case PATCH -> handlePATCH(request, path, userId.get());
+                case DELETE -> handleDELETE(path, userId.get());
+                case POST -> handlePOST(path, request, userId.get());
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            };
         }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (Exception e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            // Don't expose internal billing details in error message to user
-            return ErrorResponse.internalServerError("Internal problem while handling billing API request");
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 
