@@ -5,6 +5,7 @@ import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,11 +28,11 @@ public class PropertyMapTestCase {
         assertNotNull(map.get("nonclonable"));
 
         PropertyMap mapClone = map.clone();
-        assertTrue(map.get("clonable")      != mapClone.get("clonable"));
+        assertNotSame(map.get("clonable"), mapClone.get("clonable"));
         assertEquals(map.get("nonclonable"), mapClone.get("nonclonable"));
 
-        assertTrue(map.get("clonableArray") != mapClone.get("clonableArray"));
-        assertTrue(first(map.get("clonableArray")) != first(mapClone.get("clonableArray")));
+        assertNotSame(map.get("clonableArray"), mapClone.get("clonableArray"));
+        assertNotSame(first(map.get("clonableArray")), first(mapClone.get("clonableArray")));
         assertEquals(first(map.get("nonclonableArray")), first(mapClone.get("nonclonableArray")));
     }
 
