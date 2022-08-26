@@ -35,7 +35,7 @@ public:
     virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &matching_elems_fields) = 0;
-    virtual ~GetDocsumsStateCallback(void) { }
+    virtual ~GetDocsumsStateCallback() = default;
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
     GetDocsumsStateCallback & operator = (const GetDocsumsStateCallback &) = delete;
 protected:

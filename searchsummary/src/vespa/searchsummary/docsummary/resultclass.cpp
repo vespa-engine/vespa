@@ -7,14 +7,13 @@
 
 namespace search::docsummary {
 
-ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum)
+ResultClass::ResultClass(const char *name, util::StringEnum & fieldEnum)
     : _name(name),
-      _classID(id),
       _entries(),
       _nameMap(),
       _fieldEnum(fieldEnum),
       _enumMap(),
-      _dynInfo(NULL),
+      _dynInfo(nullptr),
       _omit_summary_features(false)
 { }
 
@@ -49,8 +48,8 @@ ResultClass::CreateEnumMap()
 {
     _enumMap.resize(_fieldEnum.GetNumEntries());
 
-    for (uint32_t i(0), m(_enumMap.size()); i < m; i++) {
-        _enumMap[i] = -1;
+    for (int & value : _enumMap) {
+        value = -1;
     }
     for (uint32_t i(0); i < _entries.size(); i++) {
         _enumMap[_entries[i]._enumValue] = i;

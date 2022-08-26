@@ -47,7 +47,6 @@ private:
     typedef std::vector<ResConfigEntry> Configs;
 
     vespalib::string           _name;        // name of this class
-    uint32_t                   _classID;     // ID of this class
     Configs                    _entries;     // config entries for this result class
     NameIdMap                  _nameMap;     // fieldname -> entry index
     util::StringEnum          &_fieldEnum;   // fieldname -> f.n. enum value [SHARED]
@@ -65,10 +64,9 @@ public:
      * ref. to shared string enum object and insert into linked list.
      *
      * @param name the name of this result class.
-     * @param id the numeric id of this result class.
      * @param fieldEnum shared object used to enumerate field names.
      **/
-    ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum);
+    ResultClass(const char *name, util::StringEnum & fieldEnum);
 
     /**
      * Destructor. Delete internal structures.
@@ -90,22 +88,6 @@ public:
      * @return pointer to dynamic field data.
      **/
     DynamicInfo *getDynamicInfo() const { return _dynInfo; }
-
-
-    /**
-     * Obtain the name of this result class.
-     *
-     * @return name of this result class.
-     **/
-    const char *GetClassName() const { return _name.c_str(); }
-
-
-    /**
-     * Obtain the numeric id of this result class.
-     *
-     * @return numeric id of this result class.
-     **/
-    uint32_t GetClassID() const { return _classID; }
 
 
     /**
@@ -191,7 +173,7 @@ public:
      **/
     const ResConfigEntry *GetEntry(uint32_t offset) const
     {
-        return (offset < _entries.size()) ? &_entries[offset] : NULL;
+        return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
 
     void set_omit_summary_features(bool value) {

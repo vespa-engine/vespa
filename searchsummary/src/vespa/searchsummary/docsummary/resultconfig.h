@@ -39,7 +39,6 @@ private:
     NameMap                     _nameLookup; // name -> class id
 
     void Clean();
-    void Init();
 
 public:
     bool useV8geoPositions() const { return _useV8geoPositions; }
@@ -91,11 +90,6 @@ public:
      * @return value denoting an undefined class id.
      **/
     static uint32_t NoClassID() { return static_cast<uint32_t>(-1); }
-
-
-    static bool IsVariableSize(ResType t) { return ResTypeUtils::IsVariableSize(t); }
-    static bool IsBinaryCompatible(ResType a, ResType b) { return ResTypeUtils::IsBinaryCompatible(a, b); }
-    static bool IsRuntimeCompatible(ResType a, ResType b) { return ResTypeUtils::IsRuntimeCompatible(a, b); }
 
     // whether last config seen wanted useV8geoPositions = true
     static bool wantedV8geoPositions();
@@ -183,17 +177,6 @@ public:
      * @param configId reference on server
      **/
     bool ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId);
-
-    /**
-     * Inspect a docsum blob and return the class id of the docsum
-     * contained within it. This method is useful if you want to know
-     * what it is before deciding whether to unpack it.
-     *
-     * @return docsum blob class id.
-     * @param buf docsum blob.
-     * @param buflen length of docsum blob.
-     **/
-    uint32_t GetClassID(const char *buf, uint32_t buflen);
 };
 
 }

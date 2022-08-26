@@ -19,18 +19,13 @@ ResultConfig::Clean()
 }
 
 
-void
-ResultConfig::Init()
-{
-}
-
-
 ResultConfig::ResultConfig()
     : _defaultSummaryId(-1),
+      _useV8geoPositions(false),
       _classLookup(),
       _nameLookup()
 {
-    Init();
+
 }
 
 
@@ -45,7 +40,6 @@ ResultConfig::Reset()
 {
     if (! _classLookup.empty() || _fieldEnum.GetNumEntries() > 0) {
         Clean();
-        Init();
     }
 }
 
@@ -56,7 +50,7 @@ ResultConfig::AddResultClass(const char *name, uint32_t id)
     ResultClass *ret = nullptr;
 
     if (id != NoClassID() && (_classLookup.find(id) == _classLookup.end())) {
-        ResultClass::UP rc(new ResultClass(name, id, _fieldEnum));
+        auto rc = std::make_unique<ResultClass>(name, _fieldEnum);
         ret = rc.get();
         _classLookup[id] = std::move(rc);
         if (_nameLookup.find(name) != _nameLookup.end()) {
@@ -186,19 +180,5 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
     }
     return rc;
 }
-
-uint32_t
-ResultConfig::GetClassID(const char *buf, uint32_t buflen)
-{
-    uint32_t ret = NoClassID();
-    uint32_t tmp32;
-
-    if (buflen >= sizeof(tmp32)) {
-        memcpy(&tmp32, buf, sizeof(tmp32));
-        ret = tmp32;
-    }
-    return ret;
-}
-
 
 }
