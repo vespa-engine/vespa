@@ -21,7 +21,7 @@ class AttributeFieldWriter
 {
 protected:
     const vespalib::Memory                     _fieldName;
-    AttributeFieldWriter(vespalib::Memory fieldName);
+    explicit AttributeFieldWriter(vespalib::Memory fieldName);
 public:
     virtual ~AttributeFieldWriter();
     virtual uint32_t fetch(uint32_t docId) = 0;

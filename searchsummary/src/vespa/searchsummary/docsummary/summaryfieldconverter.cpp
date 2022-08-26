@@ -137,7 +137,7 @@ void handleIndexingTerms(Handler &handler, const StringFieldValue &value) {
     if (!tree) {
         // Treat a string without annotations as a single span.
         SpanTerm str(Span(0, handler.text.size()),
-                     static_cast<const FieldValue*>(0));
+                     static_cast<const FieldValue*>(nullptr));
         handler.handleAnnotations(str.first, &str, &str + 1);
         return;
     }
@@ -184,7 +184,7 @@ const StringFieldValue &ensureStringFieldValue(const FieldValue &value) {
 
 struct FieldValueConverter {
     virtual FieldValue::UP convert(const FieldValue &input) = 0;
-    virtual ~FieldValueConverter() {}
+    virtual ~FieldValueConverter() = default;
 };
 
 
@@ -313,7 +313,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 
 public:
     SummaryFieldValueConverter(bool tokenize, FieldValueConverter &subConverter);
-    ~SummaryFieldValueConverter();
+    ~SummaryFieldValueConverter() override;
 
     FieldValue::UP convert(const FieldValue &input) {
         input.accept(*this);
@@ -569,7 +569,7 @@ private:
     const std::vector<uint32_t>* _matching_elems;
 
 public:
-    SlimeConverter(bool tokenize)
+    explicit SlimeConverter(bool tokenize)
         : _tokenize(tokenize),
           _matching_elems()
     {}

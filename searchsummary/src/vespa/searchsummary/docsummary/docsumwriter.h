@@ -26,17 +26,14 @@ public:
     struct ResolveClassInfo {
         bool mustSkip;
         bool allGenerated;
-        uint32_t outputClassId;
         const ResultClass *outputClass;
-        const ResultClass::DynamicInfo *outputClassInfo;
         ResolveClassInfo()
             : mustSkip(false), allGenerated(false),
-              outputClassId(ResultConfig::NoClassID()),
-              outputClass(nullptr), outputClassInfo(nullptr)
+              outputClass(nullptr)
         { }
     };
 
-    virtual ~IDocsumWriter() {}
+    virtual ~IDocsumWriter() = default;
     virtual void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
     virtual uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
                                  IDocsumStore *docinfos, search::RawBuf *target) = 0;
@@ -54,8 +51,6 @@ class DynamicDocsumWriter : public IDocsumWriter
 private:
     std::unique_ptr<ResultConfig>                         _resultConfig;
     std::unique_ptr<KeywordExtractor>                     _keywordExtractor;
-    uint32_t                                              _numClasses;
-    uint32_t                                              _numEnumValues;
     uint32_t                                              _numFieldWriterStates;
     std::vector<ResultClass::DynamicInfo>                 _classInfoTable;
     std::vector<std::unique_ptr<const DocsumFieldWriter>> _overrideTable;

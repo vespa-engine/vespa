@@ -15,7 +15,7 @@ class DocsumStoreDocument : public IDocsumStoreDocument
 {
     std::unique_ptr<document::Document> _document;
 public:
-    DocsumStoreDocument(std::unique_ptr<document::Document> document);
+    explicit DocsumStoreDocument(std::unique_ptr<document::Document> document);
     ~DocsumStoreDocument() override;
     DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
     JuniperInput get_juniper_input(const vespalib::string& field_name) const override;

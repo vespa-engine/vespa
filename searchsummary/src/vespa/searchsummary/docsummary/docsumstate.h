@@ -86,7 +86,7 @@ public:
 
     GetDocsumsState(const GetDocsumsState &) = delete;
     GetDocsumsState& operator=(const GetDocsumsState &) = delete;
-    GetDocsumsState(GetDocsumsStateCallback &callback);
+    explicit GetDocsumsState(GetDocsumsStateCallback &callback);
     ~GetDocsumsState();
 
     const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);

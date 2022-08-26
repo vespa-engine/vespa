@@ -25,9 +25,7 @@ KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
 }
 
 
-KeywordExtractor::~KeywordExtractor()
-{
-}
+KeywordExtractor::~KeywordExtractor() = default;
 
 bool
 KeywordExtractor::IsLegalIndexName(const char *idxName) const
@@ -101,10 +99,10 @@ KeywordExtractor::GetLegalIndexSpec()
         }
     }
 
-    for (Set::const_iterator it(_legalIndexes.begin()), mt(_legalIndexes.end()); it != mt; it++) {
-        if (spec.size() > 0)
+    for (const auto & index : _legalIndexes) {
+        if (!spec.empty())
             spec.append(';');
-        spec.append(*it);
+        spec.append(index);
     }
     return spec;
 }

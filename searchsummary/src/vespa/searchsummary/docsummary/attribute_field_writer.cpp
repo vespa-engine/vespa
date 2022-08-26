@@ -51,7 +51,7 @@ class WriteStringFieldNeverSkip : public WriteField<const char*>
 public:
     WriteStringFieldNeverSkip(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
         : WriteField(fieldName, attr, stash) {}
-    ~WriteStringFieldNeverSkip() override {}
+    ~WriteStringFieldNeverSkip() override = default;
     void print(uint32_t idx, Cursor &cursor) override;
 };
 
@@ -202,7 +202,6 @@ AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector&
         }
     default:
         assert(false);
-        abort();
     }
 }
 

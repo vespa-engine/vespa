@@ -12,12 +12,6 @@ JuniperInput::JuniperInput()
 {
 }
 
-JuniperInput::JuniperInput(vespalib::stringref value)
-    : _field_value_with_markup(),
-      _value(value)
-{
-}
-
 JuniperInput::JuniperInput(DocsumStoreFieldValue value)
     : _field_value_with_markup(std::move(value)),
       _value()

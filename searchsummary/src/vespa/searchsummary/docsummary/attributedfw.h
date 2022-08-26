@@ -30,10 +30,10 @@ private:
     vespalib::string _attrName;
 protected:
     const attribute::IAttributeVector& get_attribute(const GetDocsumsState& s) const;
-    const vespalib::string & getAttributeName() const override;
+    const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
-    AttrDFW(const vespalib::string & attrName);
-    bool IsGenerated() const override;
+    explicit AttrDFW(const vespalib::string & attrName);
+    bool IsGenerated() const override { return true; }
 };
 
 }

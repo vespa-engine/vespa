@@ -100,8 +100,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         const string& source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
-            fieldWriter = MatchedElementsFilterDFW::create(source_field, resultConfig.GetFieldNameEnum().Lookup(source_field.c_str()),
-                                                           *attr_ctx, matching_elems_fields);
+            fieldWriter = MatchedElementsFilterDFW::create(source_field,*attr_ctx, matching_elems_fields);
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "documentid") {
@@ -118,8 +117,7 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
 {
     std::vector<string> strCfg;
     auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
-    for (size_t i = 0; i < cfg.override.size(); ++i) {
-        const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
+    for (const auto & o : cfg.override) {
         bool rc(false);
         std::unique_ptr<DocsumFieldWriter> fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
         if (rc && fieldWriter) {
