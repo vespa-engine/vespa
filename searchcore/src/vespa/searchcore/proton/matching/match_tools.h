@@ -18,12 +18,15 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/clock.h>
 
+namespace vespalib { class ExecutionProfiler; }
+
 namespace search::engine { class Trace; }
 
 namespace search::fef {
     class RankProgram;
     class RankSetup;
 }
+
 namespace proton::matching {
 
 class MatchTools
@@ -36,6 +39,7 @@ private:
     using Properties = search::fef::Properties;
     using RankProgram = search::fef::RankProgram;
     using RankSetup = search::fef::RankSetup;
+    using ExecutionProfiler = vespalib::ExecutionProfiler;
     QueryLimiter                    &_queryLimiter;
     const vespalib::Doom            &_doom;
     const Query                     &_query;
@@ -48,7 +52,7 @@ private:
     std::unique_ptr<SearchIterator>  _search;
     HandleRecorder::HandleMap        _used_handles;
     bool                             _search_has_changed;
-    void setup(std::unique_ptr<RankProgram>, double termwise_limit = 1.0);
+    void setup(std::unique_ptr<RankProgram>, ExecutionProfiler *profiler, double termwise_limit = 1.0);
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(const MatchTools &) = delete;
@@ -72,8 +76,8 @@ public:
     std::unique_ptr<SearchIterator> borrow_search() { return std::move(_search); }
     void give_back_search(std::unique_ptr<SearchIterator> search_in) { _search = std::move(search_in); }
     void tag_search_as_changed() { _search_has_changed = true; }
-    void setup_first_phase();
-    void setup_second_phase();
+    void setup_first_phase(ExecutionProfiler *profiler);
+    void setup_second_phase(ExecutionProfiler *profiler);
     void setup_match_features();
     void setup_summary();
     void setup_dump();

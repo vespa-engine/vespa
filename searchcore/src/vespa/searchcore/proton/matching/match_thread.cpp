@@ -272,7 +272,7 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
 {
-    tools.setup_first_phase();
+    tools.setup_first_phase(first_phase_profiler.get());
     if (isFirstThread()) {
         LOG(spam, "SearchIterator: %s", tools.search().asString().c_str());
     }
@@ -300,7 +300,7 @@ MatchThread::findMatches(MatchTools &tools)
             my_work.clear();
         }
         if (!my_work.empty()) {
-            tools.setup_second_phase();
+            tools.setup_second_phase(second_phase_profiler.get());
             DocumentScorer scorer(tools.rank_program(), tools.search());
             scorer.score(my_work);
         }
@@ -415,8 +415,14 @@ MatchThread::MatchThread(size_t thread_id_in,
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
     trace(std::make_unique<Trace>(relativeTime, traceLevel, profileDepth)),
+    first_phase_profiler(),
+    second_phase_profiler(),
     my_issues()
 {
+    if ((traceLevel > 0) && (profileDepth > 0)) {
+        first_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
+        second_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
+    }
 }
 
 void
@@ -448,6 +454,12 @@ MatchThread::run()
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
+    if (first_phase_profiler) {
+        first_phase_profiler->report(trace->createCursor("first_phase_profiling"));
+    }
+    if (second_phase_profiler) {
+        second_phase_profiler->report(trace->createCursor("second_phase_profiling"));
+    }
 }
 
 }
