@@ -127,6 +127,10 @@ public:
      **/
     ResultClass *AddResultClass(const char *name, uint32_t classID);
 
+    /*
+     * Set default result class id.
+     */
+    void set_default_result_class_id(uint32_t id);
 
     /**
      * Obtain result class from the result class id. This method is used
@@ -137,15 +141,6 @@ public:
      **/
     const ResultClass *LookupResultClass(uint32_t classID) const;
 
-
-    /**
-     * Obtain result class id from the result class name.
-     *
-     * @return result class id or 'def' if not found
-     * @param name the name of the result class
-     * @param def default return value if not found
-     **/
-    uint32_t LookupResultClassId(const vespalib::string &name, uint32_t def) const;
 
     /**
      * Obtain result class id from the result class name.

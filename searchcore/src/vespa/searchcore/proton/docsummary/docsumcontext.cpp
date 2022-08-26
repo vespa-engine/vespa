@@ -77,9 +77,8 @@ DocsumContext::createSlimeReply()
     Cursor & root = response->setObject();
     Cursor & array = root.setArray(DOCSUMS);
     const Symbol docsumSym = response->insert(DOCSUM);
-    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
-                                                                         _docsumStore.getSummaryClassId());
-    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
+    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName());
+    _docsumState._omit_summary_features = (rci.outputClass != nullptr) ? rci.outputClass->omit_summary_features() : true;
     uint32_t num_ok(0);
     for (uint32_t docId : _docsumState._docsumbuf) {
         if (_request.expired() ) { break; }

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "isummarymanager.h"
-#include "fieldcacherepo.h"
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
@@ -29,12 +28,9 @@ public:
         std::unique_ptr<juniper::Juniper>     _juniperConfig;
         search::IAttributeManager::SP         _attributeMgr;
         search::IDocumentStore::SP            _docStore;
-        FieldCacheRepo::UP                    _fieldCacheRepo;
         const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
-        std::set<vespalib::string>            _markupFields;
     public:
         SummarySetup(const vespalib::string & baseDir,
-                     const DocTypeName & docTypeName,
                      const vespa::config::search::SummaryConfig & summaryCfg,
                      const vespa::config::search::SummarymapConfig & summarymapCfg,
                      const vespa::config::search::summary::JuniperrcConfig & juniperCfg,
@@ -45,7 +41,7 @@ public:
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
 
-        search::docsummary::IDocsumStore::UP createDocsumStore(const vespalib::string &resultClassName) override;
+        search::docsummary::IDocsumStore::UP createDocsumStore() override;
 
         search::IAttributeManager * getAttributeManager() override { return _attributeMgr.get(); }
         vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }

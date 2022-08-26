@@ -39,11 +39,6 @@ public:
      * @param docid local document id
      **/
     virtual std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) = 0;
-
-    /**
-     * Will return default input class used.
-     **/
-    virtual uint32_t getSummaryClassId() const = 0;
 };
 
 }

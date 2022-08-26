@@ -32,12 +32,9 @@ IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)
 }
 
 DynamicDocsumWriter::ResolveClassInfo
-DynamicDocsumWriter::resolveClassInfo(vespalib::stringref outputClassName, uint32_t inputClassId) const
+DynamicDocsumWriter::resolveClassInfo(vespalib::stringref outputClassName) const
 {
     DynamicDocsumWriter::ResolveClassInfo rci = resolveOutputClass(outputClassName);
-    if (!rci.mustSkip && !rci.allGenerated) {
-        resolveInputClass(rci, inputClassId);
-    }
     return rci;
 }
 
@@ -45,49 +42,34 @@ DynamicDocsumWriter::ResolveClassInfo
 DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
 {
     DynamicDocsumWriter::ResolveClassInfo result;
-    uint32_t id = _defaultOutputClass;
-    id = _resultConfig->LookupResultClassId(summaryClass, id);
+    auto id = _resultConfig->LookupResultClassId(summaryClass);
 
-    if (id != ResultConfig::NoClassID()) {
-        const ResultClass *oC = _resultConfig->LookupResultClass(id);
-        if (oC == nullptr) {
-            Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
-                          vespalib::string(summaryClass).c_str());
-            result.mustSkip = true;
-        } else {
-            result.outputClass = oC;
-            const ResultClass::DynamicInfo *rcInfo = oC->getDynamicInfo();
-            if (rcInfo->_generateCnt == oC->GetNumEntries()) {
-                LOG_ASSERT(rcInfo->_overrideCnt == rcInfo->_generateCnt);
-                result.allGenerated = true;
-            }
-            result.outputClassInfo = rcInfo;
+    const ResultClass *oC = (id != ResultConfig::NoClassID()) ? _resultConfig->LookupResultClass(id) : nullptr;
+    if (oC == nullptr) {
+        Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
+                      vespalib::string(summaryClass).c_str());
+        result.mustSkip = true;
+    } else {
+        result.outputClass = oC;
+        const ResultClass::DynamicInfo *rcInfo = oC->getDynamicInfo();
+        if (rcInfo->_generateCnt == oC->GetNumEntries()) {
+            LOG_ASSERT(rcInfo->_overrideCnt == rcInfo->_generateCnt);
+            result.allGenerated = true;
         }
+        result.outputClassInfo = rcInfo;
     }
     result.outputClassId = id;
     return result;
 }
 
 void
-DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
-{
-    rci.inputClass = _resultConfig->LookupResultClass(id);
-    if (rci.inputClass == nullptr) {
-        rci.mustSkip = true;
-        return;
-    }
-    if (rci.outputClass == nullptr) {
-        LOG_ASSERT(rci.outputClassId == ResultConfig::NoClassID());
-        rci.outputClassId = id;
-        rci.outputClass = rci.inputClass;
-        rci.outputClassInfo = rci.inputClass->getDynamicInfo();
-    }
-}
-
-void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
                                   IDocsumStore *docinfos, vespalib::slime::Inserter& topInserter)
 {
+    if (rci.mustSkip || rci.outputClass == nullptr) {
+        // Use empty docsum when illegal docsum class has been requested
+        return;
+    }
     if (rci.allGenerated) {
         // generate docsum entry on-the-fly
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
@@ -126,7 +108,6 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
 DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor *extractor)
     : _resultConfig(config),
       _keywordExtractor(extractor),
-      _defaultOutputClass(ResultConfig::NoClassID()),
       _numClasses(config->GetNumResultClasses()),
       _numEnumValues(config->GetFieldNameEnum().GetNumEntries()),
       _numFieldWriterStates(0),
@@ -162,26 +143,6 @@ DynamicDocsumWriter::~DynamicDocsumWriter()
     delete [] _overrideTable;
 
 }
-
-bool
-DynamicDocsumWriter::SetDefaultOutputClass(uint32_t classID)
-{
-    const ResultClass *resClass = _resultConfig->LookupResultClass(classID);
-
-    if (resClass == nullptr ||
-        _defaultOutputClass != ResultConfig::NoClassID())
-    {
-        if (resClass == nullptr) {
-            LOG(warning, "cannot set default output docsum class to %d; class not defined", classID);
-        } else if (_defaultOutputClass != ResultConfig::NoClassID()) {
-            LOG(warning, "cannot set default output docsum class to %d; value already set", classID);
-        }
-        return false;
-    }
-    _defaultOutputClass = classID;
-    return true;
-}
-
 
 bool
 DynamicDocsumWriter::Override(const char *fieldName, DocsumFieldWriter *writer)
@@ -245,7 +206,7 @@ DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsum
 {
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName(), docinfos->getSummaryClassId());
+    ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName());
     insertDocsum(rci, docid, state, docinfos, inserter);
     return slime2RawBuf(slime, *target);
 }

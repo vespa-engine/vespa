@@ -79,7 +79,7 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared
 }
 
 SummaryManager::SummarySetup::
-SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, const SummaryConfig & summaryCfg,
+SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
              const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
              std::shared_ptr<const DocumentTypeRepo> repo)
@@ -89,9 +89,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
       _juniperConfig(),
       _attributeMgr(std::move(attributeMgr)),
       _docStore(std::move(docStore)),
-      _fieldCacheRepo(),
-      _repo(repo),
-      _markupFields()
+      _repo(repo)
 {
     auto resultConfig = std::make_unique<ResultConfig>();
     if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
@@ -107,32 +105,12 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
     _docsumWriter = std::make_unique<DynamicDocsumWriter>(resultConfig.release(), nullptr);
     DynamicDocsumConfig dynCfg(this, _docsumWriter.get());
     dynCfg.configure(summarymapCfg);
-    for (const auto & o : summarymapCfg.override) {
-        if (o.command == "dynamicteaser") {
-            vespalib::string markupField = o.arguments;
-            if (markupField.empty())
-                continue;
-            // Assume just one argument: source field that must contain markup
-            _markupFields.insert(markupField);
-        }
-    }
-    const DocumentType *docType = repo->getDocumentType(docTypeName.getName());
-    if (docType != nullptr) {
-        _fieldCacheRepo = std::make_unique<FieldCacheRepo>(getResultConfig(), *docType);
-    } else if (getResultConfig().GetNumResultClasses() == 0) {
-        LOG(debug, "Create empty field cache repo for document type '%s'", docTypeName.toString().c_str());
-        _fieldCacheRepo = std::make_unique<FieldCacheRepo>();
-    } else {
-        throw IllegalArgumentException(make_string("Did not find document type '%s' in current document type repo."
-                                                   " Cannot setup field cache repo for the summary setup",
-                                                   docTypeName.toString().c_str()));
-    }
 }
 
 IDocsumStore::UP
-SummaryManager::SummarySetup::createDocsumStore(const vespalib::string &resultClassName) {
-    return std::make_unique<DocumentStoreAdapter>(*_docStore, *_repo, getResultConfig(), resultClassName,
-                                                  _fieldCacheRepo->getFieldCache(resultClassName), _markupFields);
+SummaryManager::SummarySetup::createDocsumStore()
+{
+    return std::make_unique<DocumentStoreAdapter>(*_docStore, *_repo);
 }
 
 
@@ -141,7 +119,7 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const Summa
                                    const JuniperrcConfig & juniperCfg, const std::shared_ptr<const DocumentTypeRepo> &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
-    return std::make_shared<SummarySetup>(_baseDir, _docTypeName, summaryCfg, summarymapCfg,
+    return std::make_shared<SummarySetup>(_baseDir, summaryCfg, summarymapCfg,
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 

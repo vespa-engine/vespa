@@ -119,9 +119,6 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
 {
     std::vector<string> strCfg;
     auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
-    if ((cfg.defaultoutputclass != -1) && !_writer->SetDefaultOutputClass(cfg.defaultoutputclass)) {
-        throw IllegalArgumentException(make_string("could not set default output class to %d", cfg.defaultoutputclass));
-    }
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
         bool rc(false);
