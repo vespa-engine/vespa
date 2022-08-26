@@ -44,7 +44,7 @@ void MatchCandidateTest::testLog() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content.c_str(), content.size(),
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res)); // We get a result handle
     _test(!res->_mo); // but it is empty
 
@@ -72,7 +72,7 @@ void MatchCandidateTest::testDump() {
         auto res = juniper::Analyse(*juniper::TestConfig,
                                     q._qhandle,
                                     content.c_str(), content.size(),
-                                    0, 0, 0);
+                                    0, 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // zero value since there are no hits and constraints are enabled..
@@ -84,7 +84,7 @@ void MatchCandidateTest::testDump() {
         auto res = juniper::Analyse(*juniper::TestConfig,
                                     q._qhandle,
                                     content.c_str(), content.size(),
-                                    0, 0, 0);
+                                    0, 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // Check that X_CONSTR propagates as intended
@@ -96,7 +96,7 @@ void MatchCandidateTest::testDump() {
         auto res = juniper::Analyse(*juniper::TestConfig,
                                     q._qhandle,
                                     content.c_str(), content.size(),
-                                    0, 0, 0);
+                                    0, 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // constant value since there are no hits but this is
@@ -109,7 +109,7 @@ void MatchCandidateTest::testDump() {
         auto res = juniper::Analyse(*juniper::TestConfig,
                                     q._qhandle,
                                     content.c_str(), content.size(),
-                                    0, 0, 0);
+                                    0, 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // Relevance may change, but nice to discover such changes..
@@ -133,7 +133,7 @@ void MatchCandidateTest::testorder() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. Scan calls accept several times
@@ -162,7 +162,7 @@ void MatchCandidateTest::testMatches_limit() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -196,7 +196,7 @@ void MatchCandidateTest::testAccept() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -254,7 +254,7 @@ void MatchCandidateTest::testMake_keylist() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -283,7 +283,7 @@ void MatchCandidateTest::testAdd_to_keylist() {
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
 // Do the scanning manually. This calls accept several times
@@ -321,7 +321,7 @@ void MatchCandidateTest::testLength() {
         // Fetch a result descriptor:
         auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
                                     content, content_len,
-                                    0, 0, 0);
+                                    0, 0);
 
         juniper::Summary* sum = juniper::GetTeaser(*res);
         Matcher& m = *res->_matcher;
@@ -343,7 +343,7 @@ void MatchCandidateTest::testLength() {
         auto res = juniper::Analyse(*juniper::TestConfig,
                                     q._qhandle
                                     ,content, content_len,
-                                    0, 0, 0);
+                                    0, 0);
 
         res->Scan();
         Matcher& m = *res->_matcher;
@@ -360,7 +360,7 @@ void MatchCandidateTest::testLength() {
         // Fetch a result descriptor:
         auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle,
                                     content, content_len,
-                                    0, 0, 0);
+                                    0, 0);
 
         res->Scan();
         Matcher& m = *res->_matcher;
@@ -403,7 +403,7 @@ void MatchCandidateTest::requireThatMaxNumberOfMatchCandidatesCanBeControlled()
     auto res = juniper::Analyse(*juniper::TestConfig,
                                 q._qhandle,
                                 content, content_len,
-                                0, 0, 0);
+                                0, 0);
     _test(static_cast<bool>(res));
 
     // Deflect tokens to my processor

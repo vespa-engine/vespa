@@ -161,15 +161,13 @@ bool AnalyseCompatible(Config* conf1, Config* conf2);
  * @param docsum_len The length in bytes of the document summary, including
  any meta information.
  * @param docid A 32 bit number uniquely identifying the document to be analysed
- * @param inputfield_id A 32 bit number uniquely identifying the summary field
- within the document that contains the provided document summary.
  * @param langid A unique 32 bit id representing the language which
  this document summary is to be analysed in context of.
  * @return A unique pointer to a Result
  */
 std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& query,
                 const char* docsum, size_t docsum_len,
-                uint32_t docid, uint32_t inputfield_id,
+                uint32_t docid,
                 uint32_t langid);
 
 /** Get the computed relevancy of the processed content from the result.

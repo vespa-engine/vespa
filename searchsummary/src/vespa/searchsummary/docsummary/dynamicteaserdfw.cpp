@@ -11,6 +11,7 @@
 #include <vespa/juniper/config.h>
 #include <vespa/juniper/queryhandle.h>
 #include <vespa/juniper/result.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -286,10 +287,8 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
 }
 
 JuniperDFW::JuniperDFW(juniper::Juniper * juniper)
-    : _inputFieldEnumValue(static_cast<uint32_t>(-1)),
-      _input_field_name(),
+    : _input_field_name(),
       _juniperConfig(),
-      _langFieldEnumValue(static_cast<uint32_t>(-1)),
       _juniper(juniper)
 {
 }
@@ -300,38 +299,25 @@ JuniperDFW::~JuniperDFW() = default;
 bool
 JuniperDFW::Init(
         const char *fieldName,
-        const char *langFieldName,
-        const ResultConfig & config,
-        const char *inputField)
+        const vespalib::string& inputField)
 {
     bool rc = true;
-    const util::StringEnum & enums(config.GetFieldNameEnum());
-    if (langFieldName != nullptr)
-        _langFieldEnumValue = enums.Lookup(langFieldName);
     _juniperConfig = _juniper->CreateConfig(fieldName);
     if (_juniperConfig.get() == nullptr) {
         LOG(warning, "could not create juniper config for field '%s'", fieldName);
         rc = false;
     }
 
-    _inputFieldEnumValue = enums.Lookup(inputField);
     _input_field_name = inputField;
-
-    if (_inputFieldEnumValue >= enums.GetNumEntries()) {
-        LOG(warning, "no docsum format contains field '%s'; dynamic teasers will be empty",
-            inputField);
-    }
     return rc;
 }
 
 bool
 JuniperTeaserDFW::Init(
         const char *fieldName,
-        const char *langFieldName,
-        const ResultConfig & config,
-        const char *inputField)
+        const vespalib::string& inputField)
 {
-    return JuniperDFW::Init(fieldName, langFieldName, config, inputField);
+    return JuniperDFW::Init(fieldName, inputField);
 }
 
 vespalib::string
@@ -344,8 +330,8 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
         state->_dynteaser._query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
-    LOG(debug, "makeDynamicTeaser: docid (%d), fieldenum (%d), lang (%d)",
-        docid, _inputFieldEnumValue, _langFieldEnumValue);
+    LOG(debug, "makeDynamicTeaser: docid (%d)",
+        docid);
 
     std::unique_ptr<juniper::Result> result;
 
@@ -361,7 +347,7 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
         auto langid = static_cast<uint32_t>(-1);
 
         result = juniper::Analyse(*_juniperConfig, *state->_dynteaser._query,
-                                  input.data(), input.length(), docid, _inputFieldEnumValue,  langid);
+                                  input.data(), input.length(), docid, langid);
     }
 
     juniper::Summary *teaser = result
