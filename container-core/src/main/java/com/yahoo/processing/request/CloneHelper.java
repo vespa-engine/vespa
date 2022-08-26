@@ -99,7 +99,6 @@ public class CloneHelper {
         else if (object instanceof HashSet)
             return ((HashSet<?>) object).clone();
         try {
-            System.out.println("Cloning " + object + " by reflection");
             return cloneByReflection(object);
         } catch (ClassCastException e) {
             // When changing bundles you might end up having cached the old method pointing to old bundle,
