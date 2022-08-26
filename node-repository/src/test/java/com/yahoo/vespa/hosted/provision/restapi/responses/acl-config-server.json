@@ -28,202 +28,244 @@
       "hostname": "dockerhost1.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.100.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost1.yahoo.com",
       "type": "host",
       "ipAddress": "::100:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost2.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.101.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost2.yahoo.com",
       "type": "host",
       "ipAddress": "::101:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost3.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.102.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost3.yahoo.com",
       "type": "host",
       "ipAddress": "::102:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost4.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.103.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost4.yahoo.com",
       "type": "host",
       "ipAddress": "::103:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost5.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.104.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "dockerhost5.yahoo.com",
       "type": "host",
       "ipAddress": "::104:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host1.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.1.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host1.yahoo.com",
       "type": "tenant",
       "ipAddress": "::1:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host10.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.10.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host10.yahoo.com",
       "type": "tenant",
       "ipAddress": "::10:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.13.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
       "ipAddress": "::13:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host14.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.14.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host14.yahoo.com",
       "type": "tenant",
       "ipAddress": "::14:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host2.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.2.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host2.yahoo.com",
       "type": "tenant",
       "ipAddress": "::2:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host3.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.3.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host3.yahoo.com",
       "type": "tenant",
       "ipAddress": "::3:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host4.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.4.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host4.yahoo.com",
       "type": "tenant",
       "ipAddress": "::4:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host5.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.5.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host5.yahoo.com",
       "type": "tenant",
       "ipAddress": "::5:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host55.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.55.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host55.yahoo.com",
       "type": "tenant",
       "ipAddress": "::55:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host6.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.6.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host6.yahoo.com",
       "type": "tenant",
       "ipAddress": "::6:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host7.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.7.1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "host7.yahoo.com",
       "type": "tenant",
       "ipAddress": "::7:1",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     },
     {
       "hostname": "test-node-pool-102-2",
       "type": "tenant",
       "ipAddress": "::102:2",
+      "ports": [19070],
       "trustedBy": "cfg1.yahoo.com"
     }
   ],
-  "trustedNetworks": [],
+  "trustedNetworks": [
+    {
+      "network": "10.2.3.0/24",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "network": "10.4.5.0/24",
+      "trustedBy": "cfg1.yahoo.com"
+    }
+  ],
   "trustedPorts": [
     {
       "port":22,

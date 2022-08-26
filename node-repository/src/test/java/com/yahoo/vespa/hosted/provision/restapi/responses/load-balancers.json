@@ -31,6 +31,25 @@
       ]
     },
     {
+      "id": "cfg:cfg:cfg:configservers",
+      "state": "reserved",
+      "changedAt": 123,
+      "application": "cfg",
+      "tenant": "cfg",
+      "instance": "cfg",
+      "cluster": "configservers",
+      "hostname": "lb-cfg.cfg.cfg-configservers",
+      "dnsZone": "zone-id-1",
+      "networks": [
+        "10.2.3.0/24",
+        "10.4.5.0/24"
+      ],
+      "ports": [
+        4443
+      ],
+      "reals": []
+    },
+    {
       "id": "tenant4:application4:instance4:id4",
       "state": "active",
       "changedAt": 123,
