@@ -9,6 +9,7 @@
 #include "result_processor.h"
 #include "docid_range_scheduler.h"
 #include <vespa/vespalib/util/runnable.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/sortresults.h>
@@ -66,6 +67,8 @@ private:
     double                        wait_time_s;
     bool                          match_with_ranking;
     std::unique_ptr<Trace>        trace;
+    std::unique_ptr<vespalib::ExecutionProfiler> first_phase_profiler;
+    std::unique_ptr<vespalib::ExecutionProfiler> second_phase_profiler;
     UniqueIssues                  my_issues;
 
     class Context {

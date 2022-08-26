@@ -378,7 +378,7 @@ struct MyWorld {
         MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
                 *request, searchContext, attributeContext, metaStore, overrides, true);
         MatchTools::UP match_tools = match_tools_factory->createMatchTools();
-        match_tools->setup_first_phase();
+        match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();
     }
 

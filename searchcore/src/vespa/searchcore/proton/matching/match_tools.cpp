@@ -70,7 +70,7 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
 } // namespace proton::matching::<unnamed>
 
 void
-MatchTools::setup(std::unique_ptr<RankProgram> rank_program, double termwise_limit)
+MatchTools::setup(std::unique_ptr<RankProgram> rank_program, ExecutionProfiler *profiler, double termwise_limit)
 {
     if (_search) {
         _match_data->soft_reset();
@@ -79,7 +79,7 @@ MatchTools::setup(std::unique_ptr<RankProgram> rank_program, double termwise_lim
     HandleRecorder recorder;
     {
         HandleRecorder::Binder bind(recorder);
-        _rank_program->setup(*_match_data, _queryEnv, _featureOverrides);
+        _rank_program->setup(*_match_data, _queryEnv, _featureOverrides, profiler);
     }
     bool can_reuse_search = (_search && !_search_has_changed &&
             contains_all(_used_handles, recorder.get_handles()));
@@ -123,34 +123,34 @@ MatchTools::has_second_phase_rank() const {
 }
 
 void
-MatchTools::setup_first_phase()
+MatchTools::setup_first_phase(ExecutionProfiler *profiler)
 {
-    setup(_rankSetup.create_first_phase_program(),
+    setup(_rankSetup.create_first_phase_program(), profiler,
           TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
 }
 
 void
-MatchTools::setup_second_phase()
+MatchTools::setup_second_phase(ExecutionProfiler *profiler)
 {
-    setup(_rankSetup.create_second_phase_program());
+    setup(_rankSetup.create_second_phase_program(), profiler);
 }
 
 void
 MatchTools::setup_match_features()
 {
-    setup(_rankSetup.create_match_program());
+    setup(_rankSetup.create_match_program(), nullptr);
 }
 
 void
 MatchTools::setup_summary()
 {
-    setup(_rankSetup.create_summary_program());
+    setup(_rankSetup.create_summary_program(), nullptr);
 }
 
 void
 MatchTools::setup_dump()
 {
-    setup(_rankSetup.create_dump_program());
+    setup(_rankSetup.create_dump_program(), nullptr);
 }
 
 //-----------------------------------------------------------------------------
