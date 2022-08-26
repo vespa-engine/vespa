@@ -85,8 +85,8 @@ public class Acceptor {
      * is listening to.  If this Acceptor is no longer listening (it has
      * been shut down), null will be returned.
      *
-     * @return listening spec, or null if not listening.
-     **/
+     * @return listening spec, or null if not listening
+     */
     public Spec spec() {
         if ( ! serverChannel.isOpen()) {
             return null;
