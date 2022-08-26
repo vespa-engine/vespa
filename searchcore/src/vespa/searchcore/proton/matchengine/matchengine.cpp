@@ -115,7 +115,7 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
     }
     if (_async) {
         _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
-        return search::engine::SearchReply::UP();
+        return {};
     }
     return performSearch(std::move(request));
 }
@@ -131,7 +131,8 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
     const search::engine::SearchRequest * searchRequest = req.get();
     if (searchRequest) {
         // 3 is the minimum level required for backend tracing.
-        searchRequest->setTraceLevel(search::fef::indexproperties::trace::Level::lookup(searchRequest->propertiesMap.modelOverrides(), searchRequest->getTraceLevel()), 3);
+        searchRequest->setTraceLevel(search::fef::indexproperties::trace::Level::lookup(searchRequest->propertiesMap.modelOverrides(),
+                                                                                        searchRequest->trace().getLevel()), 3);
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type

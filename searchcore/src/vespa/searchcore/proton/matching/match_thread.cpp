@@ -396,7 +396,8 @@ MatchThread::MatchThread(size_t thread_id_in,
                          vespalib::DualMergeDirector &md,
                          uint32_t distributionKey,
                          const RelativeTime & relativeTime,
-                         uint32_t traceLevel) :
+                         uint32_t traceLevel,
+                         uint32_t profileDepth) :
     thread_id(thread_id_in),
     num_threads(num_threads_in),
     matchParams(mp),
@@ -413,7 +414,7 @@ MatchThread::MatchThread(size_t thread_id_in,
     match_time_s(0.0),
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
-    trace(std::make_unique<Trace>(relativeTime, traceLevel)),
+    trace(std::make_unique<Trace>(relativeTime, traceLevel, profileDepth)),
     my_issues()
 {
 }

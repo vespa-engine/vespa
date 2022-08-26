@@ -63,7 +63,13 @@ TEST_F(SearchRequestTest, require_that_timeout_is_converted) {
 TEST_F(SearchRequestTest, require_that_trace_level_is_converted) {
     proto.set_trace_level(9);
     convert();
-    EXPECT_EQ(request.getTraceLevel(), 9);
+    EXPECT_EQ(request.trace().getLevel(), 9);
+}
+
+TEST_F(SearchRequestTest, require_that_profile_depth_is_converted) {
+    proto.set_profile_depth(7);
+    convert();
+    EXPECT_EQ(request.trace().getProfileDepth(), 7);
 }
 
 TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
