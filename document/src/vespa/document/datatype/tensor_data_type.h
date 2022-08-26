@@ -18,6 +18,8 @@ public:
     ~TensorDataType();
 
     bool isTensor() const noexcept override { return true; }
+    virtual const TensorDataType* cast_tensor() const noexcept override { return this; }
+    bool equals(const DataType& other) const noexcept override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     static std::unique_ptr<const TensorDataType> fromSpec(const vespalib::string &spec);
