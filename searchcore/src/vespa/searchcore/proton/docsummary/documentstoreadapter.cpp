@@ -3,6 +3,7 @@
 #include "documentstoreadapter.h"
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -24,18 +25,9 @@ const vespalib::string DOCUMENT_ID_FIELD("documentid");
 
 DocumentStoreAdapter::
 DocumentStoreAdapter(const search::IDocumentStore & docStore,
-                     const DocumentTypeRepo &repo,
-                     const ResultConfig & resultConfig,
-                     const vespalib::string & resultClassName,
-                     const FieldCache::CSP & fieldCache,
-                     const std::set<vespalib::string> &markupFields)
+                     const DocumentTypeRepo &repo)
     : _docStore(docStore),
-      _repo(repo),
-      _resultConfig(resultConfig),
-      _resultClass(resultConfig.
-                   LookupResultClass(resultConfig.LookupResultClassId(resultClassName.c_str()))),
-      _fieldCache(fieldCache),
-      _markupFields(markupFields)
+      _repo(repo)
 {
 }
 
@@ -44,7 +36,7 @@ DocumentStoreAdapter::~DocumentStoreAdapter() = default;
 std::unique_ptr<const IDocsumStoreDocument>
 DocumentStoreAdapter::getMappedDocsum(uint32_t docId)
 {
-    Document::UP document = _docStore.read(docId, _repo);
+    auto document = _docStore.read(docId, _repo);
     if ( ! document) {
         LOG(debug, "Did not find summary document for docId %u. Returning empty docsum", docId);
         return {};

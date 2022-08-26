@@ -67,6 +67,11 @@ ResultConfig::AddResultClass(const char *name, uint32_t id)
     return ret;
 }
 
+void
+ResultConfig::set_default_result_class_id(uint32_t id)
+{
+    _defaultSummaryId = id;
+}
 
 const ResultClass*
 ResultConfig::LookupResultClass(uint32_t id) const
@@ -76,16 +81,10 @@ ResultConfig::LookupResultClass(uint32_t id) const
 }
 
 uint32_t
-ResultConfig::LookupResultClassId(const vespalib::string &name, uint32_t def) const
-{
-    NameMap::const_iterator found(_nameLookup.find(name));
-    return (found != _nameLookup.end()) ? found->second : def;
-}
-
-uint32_t
 ResultConfig::LookupResultClassId(const vespalib::string &name) const
 {
-    return LookupResultClassId(name, (name.empty() || (name == "default")) ? _defaultSummaryId : NoClassID());
+    NameMap::const_iterator found(_nameLookup.find(name));
+    return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : NoClassID());
 }
 
 

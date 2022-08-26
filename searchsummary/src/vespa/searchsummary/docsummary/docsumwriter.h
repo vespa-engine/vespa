@@ -29,11 +29,10 @@ public:
         uint32_t outputClassId;
         const ResultClass *outputClass;
         const ResultClass::DynamicInfo *outputClassInfo;
-        const ResultClass *inputClass;
         ResolveClassInfo()
             : mustSkip(false), allGenerated(false),
               outputClassId(ResultConfig::NoClassID()),
-              outputClass(nullptr), outputClassInfo(nullptr), inputClass(nullptr)
+              outputClass(nullptr), outputClassInfo(nullptr)
         { }
     };
 
@@ -43,7 +42,7 @@ public:
                                  IDocsumStore *docinfos, search::RawBuf *target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
                               IDocsumStore *docinfos, vespalib::slime::Inserter & target) = 0;
-    virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName, uint32_t inputClassId) const = 0;
+    virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const = 0;
 
     static uint32_t slime2RawBuf(const vespalib::Slime & slime, RawBuf & buf);
 };
@@ -55,14 +54,11 @@ class DynamicDocsumWriter : public IDocsumWriter
 private:
     ResultConfig        *_resultConfig;
     KeywordExtractor    *_keywordExtractor;
-    uint32_t             _defaultOutputClass;
     uint32_t             _numClasses;
     uint32_t             _numEnumValues;
     uint32_t             _numFieldWriterStates;
     ResultClass::DynamicInfo *_classInfoTable;
     DocsumFieldWriter**  _overrideTable;
-
-    void resolveInputClass(ResolveClassInfo &rci, uint32_t id) const;
 
     ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;
 
@@ -74,7 +70,6 @@ public:
 
     ResultConfig *GetResultConfig() { return _resultConfig; }
 
-    bool SetDefaultOutputClass(uint32_t classID);
     bool Override(const char *fieldName, DocsumFieldWriter *writer);
     void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) override;
     uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
@@ -83,7 +78,7 @@ public:
     void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState *state,
                       IDocsumStore *docinfos, vespalib::slime::Inserter & target) override;
 
-    ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName, uint32_t inputClassId) const override;
+    ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const override;
 };
 
 }

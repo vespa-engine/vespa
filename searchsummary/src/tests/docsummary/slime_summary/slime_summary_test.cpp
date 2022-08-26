@@ -96,7 +96,6 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
-    uint32_t getSummaryClassId() const override { return 0; }
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields &) override { abort(); }
@@ -123,6 +122,7 @@ DocsumFixture::DocsumFixture()
     EXPECT_TRUE(cfg->AddConfigEntry("longstring_field", RES_LONG_STRING));
     EXPECT_TRUE(cfg->AddConfigEntry("longdata_field", RES_LONG_DATA));
     EXPECT_TRUE(cfg->AddConfigEntry("int_pair_field", RES_JSONSTRING));
+    config->set_default_result_class_id(0);
     config->CreateEnumMaps();
     writer.reset(new DynamicDocsumWriter(config, 0));
     int_pair_type.addField(Field("foo", *DataType::INT));

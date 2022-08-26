@@ -4,8 +4,6 @@ vespa_add_library(searchcore_docsummary STATIC
     docsumcontext.cpp
     document_store_explorer.cpp
     documentstoreadapter.cpp
-    fieldcache.cpp
-    fieldcacherepo.cpp
     summarycompacttarget.cpp
     summaryflushtarget.cpp
     summarymanager.cpp

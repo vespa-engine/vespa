@@ -81,7 +81,6 @@ public:
     // Inherit doc from IDocsumStore
     std::unique_ptr<const search::docsummary::IDocsumStoreDocument> getMappedDocsum(uint32_t id) override;
     uint32_t getNumDocs() const override;
-    uint32_t getSummaryClassId() const override;
 
     search::docsummary::DocsumStoreFieldValue get_summary_field(uint32_t entry_idx, const Document& doc);
     void insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter);

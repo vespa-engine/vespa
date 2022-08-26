@@ -124,7 +124,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     uint64_t startGeneration = readGuard->get().getCurrentGeneration();
 
     convertGidsToLids(req, metaStore, _matchView->getDocIdLimit().get());
-    IDocsumStore::UP store(_summarySetup->createDocsumStore(req.resultClassName));
+    IDocsumStore::UP store(_summarySetup->createDocsumStore());
     MatchContext::UP mctx = _matchView->createContext();
     auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, _matchView->getMatcher(req.ranking),
                                                mctx->getSearchContext(), mctx->getAttributeContext(),

@@ -275,12 +275,6 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
     return true;
 }
 
-uint32_t
-DocsumFilter::getSummaryClassId() const
-{
-    return _tools->getResultClass() ? _tools->getResultClass()->GetClassID() : ResultConfig::NoClassID();
-}
-
 std::unique_ptr<const IDocsumStoreDocument>
 DocsumFilter::getMappedDocsum(uint32_t id)
 {

@@ -35,7 +35,7 @@ public:
 
         virtual search::docsummary::IDocsumWriter &getDocsumWriter() const = 0;
         virtual search::docsummary::ResultConfig &getResultConfig() = 0;
-        virtual search::docsummary::IDocsumStore::UP createDocsumStore(const vespalib::string &resultClassName) = 0;
+        virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
 
         // Inherit doc from IDocsumEnvironment
         virtual search::IAttributeManager *getAttributeManager() override = 0;

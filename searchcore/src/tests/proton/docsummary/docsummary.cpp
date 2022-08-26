@@ -4,6 +4,7 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -133,10 +134,6 @@ public:
     {
         Document::UP doc = _bld.endDocument();
         _str.write(_serialNum++, docId, *doc);
-    }
-
-    FieldCacheRepo::UP createFieldCacheRepo(const ResultConfig &resConfig) const {
-        return std::make_unique<FieldCacheRepo>(resConfig, _bld.getDocumentType());
     }
 };
 
@@ -293,7 +290,6 @@ class Fixture
 private:
     std::unique_ptr<vespa::config::search::SummaryConfig> _summaryCfg;
     ResultConfig               _resultCfg;
-    std::set<vespalib::string> _markupFields;
 
 public:
     Fixture();
@@ -301,10 +297,6 @@ public:
 
     const ResultConfig &getResultConfig() const{
         return _resultCfg;
-    }
-
-    const std::set<vespalib::string> &getMarkupFields() const{
-        return _markupFields;
     }
 };
 
@@ -385,10 +377,7 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
     bc.endDocument(0);
 
     DocumentStoreAdapter dsa(bc._str,
-                             *bc._repo,
-                             f.getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
-                             f.getMarkupFields());
+                             *bc._repo);
     auto res = dsa.getMappedDocsum(0);
     EXPECT_EQUAL(-1,          res->get_field_value("a")->getAsInt());
     EXPECT_EQUAL(32767,       res->get_field_value("b")->getAsInt());
@@ -420,9 +409,7 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
         addInt(2000).endField();
     bc.endDocument(1);
 
-    DocumentStoreAdapter dsa(bc._str, *bc._repo, f.getResultConfig(), "class1",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class1"),
-                             f.getMarkupFields());
+    DocumentStoreAdapter dsa(bc._str, *bc._repo);
     { // doc 0
         auto res = dsa.getMappedDocsum(0);
         EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
@@ -454,9 +441,7 @@ TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
         addStr("foo").
         endField();
     bc.endDocument(0);
-    DocumentStoreAdapter dsa(bc._str, *bc._repo, f.getResultConfig(), "class4",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class4"),
-                             f.getMarkupFields());
+    DocumentStoreAdapter dsa(bc._str, *bc._repo);
     auto res = dsa.getMappedDocsum(0);
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -795,9 +780,7 @@ TEST_F("requireThatAnnotationsAreUsed", Fixture)
     EXPECT_EQUAL("foo bar", act->getValue("g")->getAsString());
     EXPECT_EQUAL("foo bar", act->getValue("dynamicstring")->getAsString());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
-                             f.getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo);
     EXPECT_TRUE(assertString("foo bar", "g", dsa, 1));
     EXPECT_TRUE(assertAnnotatedString(TERM_EMPTY + "foo" + TERM_SEP +
                                       " " + TERM_SEP +
@@ -946,9 +929,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
-                             f.getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo);
     auto res = dsa.getMappedDocsum(1);
     EXPECT_EQUAL("http://www.example.com:81/fluke?ab=2#4", SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("urisingle"))->getAsString());
     {
@@ -1073,9 +1054,7 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
-                             f.getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo);
 
     ASSERT_TRUE(assertString(raw1s, "i", dsa, 1));
 
@@ -1100,41 +1079,14 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     }
 }
 
-TEST_F("requireThatFieldCacheRepoCanReturnDefaultFieldCache", Fixture)
-{
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
-    BuildContext bc(s);
-    FieldCacheRepo::UP repo = bc.createFieldCacheRepo(f.getResultConfig());
-    FieldCache::CSP cache = repo->getFieldCache("");
-    EXPECT_TRUE(cache.get() == repo->getFieldCache("class1").get());
-    EXPECT_EQUAL(1u, cache->size());
-    EXPECT_EQUAL("a", cache->getField(0)->getName());
-}
-
 Fixture::Fixture()
     : _summaryCfg(),
-      _resultCfg(),
-      _markupFields()
+      _resultCfg()
 {
     std::string cfgId("summary");
     _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
         cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
     _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
-    std::string mapCfgId("summarymap");
-    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = ::config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(
-        mapCfgId, ::config::FileSpec(TEST_PATH("summarymap.cfg")));
-    for (size_t i = 0; i < mapCfg->override.size(); ++i) {
-        const vespa::config::search::SummarymapConfig::Override & o = mapCfg->override[i];
-        if (o.command == "dynamicteaser") {
-            vespalib::string markupField = o.arguments;
-            if (markupField.empty())
-                continue;
-            // Assume just one argument: source field that must contain markup
-            _markupFields.insert(markupField);
-            LOG(info, "Field %s has markup", markupField.c_str());
-        }
-    }
 }
 
 Fixture::~Fixture() = default;
