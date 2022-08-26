@@ -10,7 +10,6 @@ SummaryManagerInitializer::
 SummaryManagerInitializer(const search::GrowStrategy &grow,
                           const vespalib::string & baseDir,
                           const vespalib::string &subDbName,
-                          const DocTypeName &docTypeName,
                           vespalib::Executor &shared_executor,
                           const search::LogDocumentStore::Config & storeCfg,
                           const search::TuneFileSummary &tuneFile,
@@ -22,7 +21,6 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _grow(grow),
       _baseDir(baseDir),
       _subDbName(subDbName),
-      _docTypeName(docTypeName),
       _shared_executor(shared_executor),
       _storeCfg(storeCfg),
       _tuneFile(tuneFile),
@@ -41,7 +39,7 @@ SummaryManagerInitializer::run()
     vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(_subDbName);
     *_result = std::make_shared<SummaryManager>
-               (_shared_executor, _storeCfg, _grow, _baseDir, _docTypeName,
+               (_shared_executor, _storeCfg, _grow, _baseDir,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
     EventLogger::loadDocumentStoreComplete(_subDbName, timer.elapsed());
 }

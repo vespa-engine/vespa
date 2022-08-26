@@ -50,7 +50,6 @@ public:
 
 private:
     vespalib::string               _baseDir;
-    DocTypeName                    _docTypeName;
     std::shared_ptr<search::IDocumentStore> _docStore;
 
 public:
@@ -59,7 +58,6 @@ public:
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,
-                   const DocTypeName &docTypeName,
                    const search::TuneFileSummary &tuneFileSummary,
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,
