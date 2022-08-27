@@ -8,6 +8,8 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -51,6 +53,11 @@ public class CloningTestCase {
         ((MutableString) q2.properties().get("a")).set("a2");
         assertEquals("a2", q1.properties().get("a").toString());
         assertEquals("a2", q2.properties().get("a").toString());
+    }
+
+    @Test
+    void testTmp() throws Exception {
+        new URI("https://container.embedders.vespa.aws-us-east-1c.z.cd.vespa-app.cloud/search/?yql=select%20*%20from%20sources%20*%20where%20text%20contains%20%22hello%22%3B&ranking.features.query(embedding)=embed(transformer, \"Hello%20world\")&format=json&format.tensors=short");
     }
 
     @Test
