@@ -28,6 +28,7 @@ public abstract class LeafCNode extends CNode {
                 case "path": return new PathLeaf(parent, name);
                 case "enum": return new EnumLeaf(parent, name, type.enumArray);
                 case "url" : return new UrlLeaf(parent, name);
+                case "model" : return new ModelLeaf(parent, name);
                 default: return null;
             }
         } catch (NumberFormatException e) {
@@ -226,6 +227,17 @@ public abstract class LeafCNode extends CNode {
         @Override
         public String getType() {
             return "url";
+        }
+    }
+
+    public static class ModelLeaf extends NoClassLeafCNode {
+        ModelLeaf(InnerCNode parent, String name) {
+            super(parent, name);
+        }
+
+        @Override
+        public String getType() {
+            return "model";
         }
     }
 
