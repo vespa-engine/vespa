@@ -183,7 +183,15 @@ public class ConfigDefinitionBuilder {
             def.addUrlDef(leaf.getName(), null);
         }
     }
-
+/*
+    private static void addNode(ConfigDefinition def, LeafCNode.ModelLeaf leaf) {
+        if (leaf.getDefaultValue() != null) {
+            def.addUrlDef(leaf.getName(), leaf.getDefaultValue().getValue());
+        } else {
+            def.addUrlDef(leaf.getName(), null);
+        }
+    }
+*/
     private static void addNode(ConfigDefinition def, LeafCNode.EnumLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addEnumDef(leaf.getName(), Arrays.asList(leaf.getLegalValues()), leaf.getDefaultValue().getValue());

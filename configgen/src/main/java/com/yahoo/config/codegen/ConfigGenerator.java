@@ -11,6 +11,7 @@ import com.yahoo.config.codegen.LeafCNode.PathLeaf;
 import com.yahoo.config.codegen.LeafCNode.ReferenceLeaf;
 import com.yahoo.config.codegen.LeafCNode.StringLeaf;
 import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
+import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 
 import java.util.LinkedList;
 import java.util.List;
