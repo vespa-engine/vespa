@@ -275,6 +275,7 @@
                                 <goal>run</goal>
                             </goals>
                             <configuration>
+                                <protocVersion>3.21.2</protocVersion>
                                 <addSources>main</addSources>
                                 <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                                 <inputDirectories>

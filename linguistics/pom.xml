@@ -66,10 +66,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
