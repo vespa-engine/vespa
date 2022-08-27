@@ -22,9 +22,6 @@ import java.util.Map;
  */
 public class PropertyMap extends Properties {
 
-    /**
-     * The properties of this
-     */
     private Map<CompoundName, Object> properties = new HashMap<>();
 
     public void set(CompoundName name, Object value, Map<String, String> context) {

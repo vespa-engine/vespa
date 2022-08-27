@@ -8,7 +8,6 @@ import com.yahoo.lang.PublicCloneable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.logging.Logger;
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -35,9 +34,7 @@ public class CloneHelper {
     private static final Logger log = Logger.getLogger(CloneHelper.class.getName());
     private static final MethodCache cloneMethodCache = new MethodCache("clone");
 
-    /**
-     * Clones this object if it is clonable, and the clone is public. Returns null if not
-     */
+    /** Clones this object if it is clonable, and the clone is public. Returns null if not. */
     public final Object clone(Object object) {
         if (object == null) return null;
         if ( ! (object instanceof Cloneable)) return null;
@@ -115,24 +112,22 @@ public class CloneHelper {
             Method cloneMethod = cloneMethodCache.get(object);
             if (cloneMethod == null) {
                 log.warning("'" + object + "' of class " + object.getClass() +
-                        " is Cloneable, but has no clone method - will use the same instance in all requests");
+                            " is Cloneable, but has no clone method - will use the same instance in all requests");
                 return null;
             }
             return cloneMethod.invoke(object);
         } catch (IllegalAccessException e) {
             log.warning("'" + object + "' of class " + object.getClass() +
-                    " is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
+                        " is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
             return null;
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Exception cloning '" + object + "'", e);
         }
     }
 
-    /**
-     * Clones a map by deep cloning each value which is cloneable and shallow copying all other values.
-     */
+    /** Clones a map by deep cloning each value which is cloneable and shallow copying all other values. */
     public Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
-        Map<CompoundName, Object> cloneMap = new HashMap<>(map.size());
+        Map<CompoundName, Object> cloneMap = new HashMap<>((int)(map.size()/0.75) + 1);
         for (Map.Entry<CompoundName, Object> entry : map.entrySet()) {
             Object cloneValue = clone(entry.getValue());
             if (cloneValue == null)
