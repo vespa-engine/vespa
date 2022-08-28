@@ -8,8 +8,6 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
