@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -27,7 +28,6 @@ import com.yahoo.tensor.TensorType;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -118,7 +118,7 @@ public class RankProfile implements Cloneable {
 
     private Map<Reference, Constant> constants = new LinkedHashMap<>();
 
-    private Map<String, OnnxModel> onnxModels = new LinkedHashMap<>();
+    private final Map<String, OnnxModel> onnxModels = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -142,11 +142,9 @@ public class RankProfile implements Cloneable {
      *                            and looking up rank profiles.
      */
     public RankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry) {
-        this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.schema = Objects.requireNonNull(schema, "schema cannot be null");
-        this.rankProfileRegistry = rankProfileRegistry;
-        this.applicationPackage = schema.applicationPackage();
-        this.deployLogger = schema.getDeployLogger();
+        this(name, Objects.requireNonNull(schema, "schema cannot be null"),
+                schema.applicationPackage(), schema.getDeployLogger(),
+                schema.getDeployProperties(), rankProfileRegistry);
     }
 
     /**
@@ -154,13 +152,19 @@ public class RankProfile implements Cloneable {
      *
      * @param name  the name of the new profile
      */
-    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger,
-                       RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, Schema schema, ApplicationPackage applicationPackage, DeployLogger deployLogger,
+                       ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.schema = null;
+        this.schema = schema;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
+        if (deployProperties.featureFlags().phraseOptimization().contains("split")) {
+            addRankProperty(new RankProperty("vespa.matching.split_unpacking_iterators", "true"));
+        }
+        if (deployProperties.featureFlags().phraseOptimization().contains("delay")) {
+            addRankProperty(new RankProperty("vespa.matching.delay_unpacking_iterators", "true"));
+        }
     }
 
     public String name() { return name; }
@@ -317,7 +321,7 @@ public class RankProfile implements Cloneable {
                                              .filter(p -> nonEmptyValueFilter.test(p))
                                              .collect(Collectors.toSet());
         if (uniqueProperties.isEmpty()) return Optional.empty();
-        if (uniqueProperties.size() == 1) return Optional.of(uniqueProperties.stream().findAny().get());
+        if (uniqueProperties.size() == 1) return uniqueProperties.stream().findAny();
         throw new IllegalArgumentException("Only one of the profiles inherited by " + this + " can contain " +
                                            propertyDescription + ", but it is present in multiple");
     }
@@ -641,7 +645,7 @@ public class RankProfile implements Cloneable {
 
     /** Returns a read only map view of the rank properties to use in this profile. This is never null. */
     public Map<String, List<RankProperty>> getRankPropertyMap() {
-        if (rankProperties.size() == 0 && inherited().isEmpty()) return Map.of();
+        if (rankProperties.isEmpty() && inherited().isEmpty()) return Map.of();
         if (inherited().isEmpty()) return Collections.unmodifiableMap(rankProperties);
 
         var inheritedProperties = uniquelyInherited(p -> p.getRankPropertyMap(), m -> ! m.isEmpty(), "rank-properties")
@@ -1148,7 +1152,7 @@ public class RankProfile implements Cloneable {
      * A rank setting. The identity of a rank setting is its field name and type (not value).
      * A rank setting is immutable.
      */
-    public static class RankSetting implements Serializable {
+    public static class RankSetting {
 
         private final String fieldName;
 
@@ -1222,13 +1226,10 @@ public class RankProfile implements Cloneable {
 
         @Override
         public boolean equals(Object object) {
-            if (!(object instanceof RankSetting)) {
+            if (!(object instanceof RankSetting other)) {
                 return false;
             }
-            RankSetting other = (RankSetting)object;
-            return
-                    fieldName.equals(other.fieldName) &&
-                    type.equals(other.type);
+            return fieldName.equals(other.fieldName) && type.equals(other.type);
         }
 
         @Override
@@ -1239,7 +1240,7 @@ public class RankProfile implements Cloneable {
     }
 
     /** A rank property. Rank properties are Value Objects */
-    public static class RankProperty implements Serializable {
+    public static class RankProperty {
 
         private final String name;
         private final String value;
@@ -1260,8 +1261,7 @@ public class RankProfile implements Cloneable {
 
         @Override
         public boolean equals(Object object) {
-            if (! (object instanceof RankProperty)) return false;
-            RankProperty other=(RankProperty)object;
+            if (! (object instanceof RankProperty other)) return false;
             return (other.name.equals(this.name) && other.value.equals(this.value));
         }
 
@@ -1482,8 +1482,7 @@ public class RankProfile implements Cloneable {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( ! (o instanceof Constant)) return false;
-            Constant other = (Constant)o;
+            if ( ! (o instanceof Constant other)) return false;
             if ( ! other.name().equals(this.name())) return false;
             if ( ! other.type().equals(this.type())) return false;
             if ( ! other.value().equals(this.value())) return false;
