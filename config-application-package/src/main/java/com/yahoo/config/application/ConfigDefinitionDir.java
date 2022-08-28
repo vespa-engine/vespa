@@ -41,12 +41,8 @@ public class ConfigDefinitionDir {
     private void checkUserDefConflict(Bundle bundle, Bundle.DefEntry userDef, List<Bundle> bundlesAdded) {
         final String defName = userDef.defName;
         final String defNamespace = userDef.defNamespace;
-        File[] builtinDefsWithSameName = defDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.matches(defName + ".def") || name.matches(defNamespace + "." + defName + ".def");
-            }
-        });
+        File[] builtinDefsWithSameName = defDir.listFiles((dir, name) ->    name.matches(defName + ".def")
+                                                                         || name.matches(defNamespace + "." + defName + ".def"));
         if (builtinDefsWithSameName != null && builtinDefsWithSameName.length > 0) {
             String message = "a built-in config definition (" + getFilePathsCommaSeparated(builtinDefsWithSameName) + ")";
             for (Bundle b : bundlesAdded) {
