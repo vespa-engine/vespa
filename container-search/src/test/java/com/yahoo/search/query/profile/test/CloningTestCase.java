@@ -56,11 +56,6 @@ public class CloningTestCase {
     }
 
     @Test
-    void testTmp() throws Exception {
-        new URI("https://container.embedders.vespa.aws-us-east-1c.z.cd.vespa-app.cloud/search/?yql=select%20*%20from%20sources%20*%20where%20text%20contains%20%22hello%22%3B&ranking.features.query(embedding)=embed(transformer, \"Hello%20world\")&format=json&format.tensors=short");
-    }
-
-    @Test
     void testDeepCloning() {
         QueryProfile test = new QueryProfile("test");
         test.freeze();
