@@ -45,7 +45,7 @@ public:
      **/
     SimplePhraseSearch(Children children,
                        fef::MatchData::UP md,
-                       const fef::TermFieldMatchDataArray &childMatch,
+                       fef::TermFieldMatchDataArray childMatch,
                        std::vector<uint32_t> eval_order,
                        fef::TermFieldMatchData &tmd, bool strict);
     void doSeek(uint32_t doc_id) override;

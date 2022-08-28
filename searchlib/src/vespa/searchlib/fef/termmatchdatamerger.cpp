@@ -6,9 +6,9 @@
 namespace search::fef {
 
 TermMatchDataMerger::TermMatchDataMerger(const Inputs &allinputs,
-                                         const TermFieldMatchDataArray &outputs)
+                                         TermFieldMatchDataArray outputs)
     : _inputs(),
-      _output(outputs),
+      _output(std::move(outputs)),
       _scratch()
 {
     for (size_t i = 0; i < _output.size(); ++i) {

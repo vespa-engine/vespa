@@ -33,7 +33,7 @@ public:
     PostingIteratorBase(PostingListIteratorType itr,
                         const FeatureStore& feature_store,
                         uint32_t field_id,
-                        const fef::TermFieldMatchDataArray& match_data);
+                        fef::TermFieldMatchDataArray match_data);
     ~PostingIteratorBase();
 
     void doSeek(uint32_t docId) override;
@@ -45,8 +45,8 @@ template <bool interleaved_features>
 PostingIteratorBase<interleaved_features>::PostingIteratorBase(PostingListIteratorType itr,
                                                                const FeatureStore& feature_store,
                                                                uint32_t field_id,
-                                                               const fef::TermFieldMatchDataArray& match_data) :
-    queryeval::RankedSearchIteratorBase(match_data),
+                                                               fef::TermFieldMatchDataArray match_data) :
+    queryeval::RankedSearchIteratorBase(std::move(match_data)),
     _itr(itr),
     _feature_store(feature_store),
     _feature_decoder(nullptr)
@@ -141,25 +141,25 @@ queryeval::SearchIterator::UP
 make_search_iterator(typename FieldIndex<interleaved_features>::PostingList::ConstIterator itr,
                      const FeatureStore& feature_store,
                      uint32_t field_id,
-                     const fef::TermFieldMatchDataArray& match_data)
+                     fef::TermFieldMatchDataArray match_data)
 {
     assert(match_data.size() == 1);
     auto* tfmd = match_data[0];
     if (tfmd->needs_normal_features()) {
        if (tfmd->needs_interleaved_features()) {
            return std::make_unique<PostingIterator<interleaved_features, true, true>>
-                   (itr, feature_store, field_id, match_data);
+                   (itr, feature_store, field_id, std::move(match_data));
        } else {
            return std::make_unique<PostingIterator<interleaved_features, true, false>>
-                   (itr, feature_store, field_id, match_data);
+                   (itr, feature_store, field_id, std::move(match_data));
        }
     } else {
         if (tfmd->needs_interleaved_features()) {
             return std::make_unique<PostingIterator<interleaved_features, false, true>>
-                    (itr, feature_store, field_id, match_data);
+                    (itr, feature_store, field_id, std::move(match_data));
         } else {
             return std::make_unique<PostingIterator<interleaved_features, false, false>>
-                    (itr, feature_store, field_id, match_data);
+                    (itr, feature_store, field_id, std::move(match_data));
         }
     }
 }
@@ -169,14 +169,14 @@ queryeval::SearchIterator::UP
 make_search_iterator<false>(typename FieldIndex<false>::PostingList::ConstIterator,
                             const FeatureStore&,
                             uint32_t,
-                            const fef::TermFieldMatchDataArray&);
+                            fef::TermFieldMatchDataArray);
 
 template
 queryeval::SearchIterator::UP
 make_search_iterator<true>(typename FieldIndex<true>::PostingList::ConstIterator,
                            const FeatureStore&,
                            uint32_t,
-                           const fef::TermFieldMatchDataArray&);
+                           fef::TermFieldMatchDataArray);
 
 template class PostingIteratorBase<false>;
 template class PostingIteratorBase<true>;

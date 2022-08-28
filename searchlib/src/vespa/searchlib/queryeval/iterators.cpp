@@ -5,9 +5,9 @@
 namespace search::queryeval {
 
 RankedSearchIteratorBase::
-RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData)
+RankedSearchIteratorBase(fef::TermFieldMatchDataArray matchData)
     : SearchIterator(),
-      _matchData(matchData),
+      _matchData(std::move(matchData)),
       _needUnpack(1)
 { }
 

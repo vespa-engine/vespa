@@ -10,7 +10,6 @@ PostingListHandle::createIterator(const PostingListCounts &counts,
                                   const search::fef::TermFieldMatchDataArray &matchData,
                                   bool useBitVector) const
 {
-    (void) useBitVector;
     return _file->createIterator(counts, *this, matchData, useBitVector);
 }
 

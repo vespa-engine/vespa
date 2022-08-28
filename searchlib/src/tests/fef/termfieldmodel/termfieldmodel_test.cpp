@@ -20,7 +20,7 @@ struct State {
     ~State();
 
     void setArray(TermFieldMatchDataArray value) {
-        array = value;
+        array = std::move(value);
     }
 };
 

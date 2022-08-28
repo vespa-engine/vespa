@@ -44,7 +44,7 @@ protected:
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 public:
     SimpleBlueprint(const SimpleResult &result);
-    ~SimpleBlueprint();
+    ~SimpleBlueprint() override;
     SimpleBlueprint &tag(const vespalib::string &tag);
     const vespalib::string &tag() const { return _tag; }
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
@@ -67,7 +67,7 @@ protected:
 
 public:
     FakeBlueprint(const FieldSpec &field, const FakeResult &result);
-    ~FakeBlueprint();
+    ~FakeBlueprint() override;
 
     FakeBlueprint &tag(const vespalib::string &t) {
         _tag = t;
