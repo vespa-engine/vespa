@@ -167,6 +167,7 @@ public class ModelContextImpl implements ModelContext {
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
         private final String queryDispatchPolicy;
+        private final String phraseOptimization;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
@@ -280,9 +281,11 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_num_targets = flagValue(source, appId, version, Flags.RPC_NUM_TARGETS);
             this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
+            this.phraseOptimization = flagValue(source, appId, version, Flags.PHRASE_OPTIMIZATION);
         }
 
-        @Override public String queryDispatchPolicy() { return queryDispatchPolicy;}
+        @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
+        @Override public String phraseOptimization() { return phraseOptimization; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }

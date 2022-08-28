@@ -70,6 +70,13 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag PHRASE_OPTIMIZATION = defineStringFlag(
+            "phrase-optimization", "",
+            List.of("baldersheim"), "2022-08-28", "2023-01-01",
+            "Select phase optimization, valid values are 'delay', 'spilt' or both",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
             List.of("baldersheim"), "2020-12-02", "2023-01-01",

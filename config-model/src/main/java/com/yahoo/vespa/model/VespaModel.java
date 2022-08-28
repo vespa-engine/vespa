@@ -17,10 +17,7 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.ApplicationClusterInfo;
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.Provisioned;
+import com.yahoo.config.model.api.*;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -61,7 +58,6 @@ import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -96,9 +92,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  *
  * @author gjoranv
  */
-public final class VespaModel extends AbstractConfigProducerRoot implements Serializable, Model {
-
-    private static final long serialVersionUID = 1L;
+public final class VespaModel extends AbstractConfigProducerRoot implements Model {
 
     public static final Logger log = Logger.getLogger(VespaModel.class.getName());
 
@@ -264,11 +258,13 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         DeployLogger deployLogger = deployState.getDeployLogger();
         RankProfileRegistry rankProfileRegistry = deployState.rankProfileRegistry();
         QueryProfiles queryProfiles = deployState.getQueryProfiles();
+        ModelContext.Properties deployProperties = deployState.getProperties();
         List <Future<ConvertedModel>> futureModels = new ArrayList<>();
         if ( ! importedModels.isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
-                RankProfile profile = new RankProfile(model.name(), applicationPackage, deployLogger, rankProfileRegistry);
+                RankProfile profile = new RankProfile(model.name(), null, applicationPackage,
+                                                      deployLogger, deployProperties, rankProfileRegistry);
                 addOnnxModelInfoFromSource(model, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
@@ -285,7 +281,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 String modelName = generatedModelDir.getPath().last();
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
-                RankProfile profile = new RankProfile(modelName, applicationPackage, deployLogger, rankProfileRegistry);
+                RankProfile profile = new RankProfile(modelName, null, applicationPackage,
+                                                      deployLogger, deployProperties, rankProfileRegistry);
                 addOnnxModelInfoFromStore(modelName, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
