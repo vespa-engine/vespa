@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -2149,29 +2150,44 @@ public class DeploymentTriggerTest {
     void testOrchestrationWithIncompatibleVersionPairs() {
         Version version1 = new Version("7");
         Version version2 = new Version("8");
+        Version version3 = new Version("8.1");
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
 
         // App deploys on version1.
         tester.controllerTester().upgradeSystem(version1);
         DeploymentContext app = tester.newDeploymentContext()
                 .submit(new ApplicationPackageBuilder().region("us-east-3")
-                        .compileVersion(version1)
-                        .build())
+                                                       .compileVersion(version1)
+                                                       .build())
                 .deploy();
 
-        // System upgrades to version2, but the app is not upgraded.
+        // System upgrades to version2, and then version3, but the app is not upgraded.
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().run();
         assertEquals(Change.empty(), app.instance().change());
+        tester.newDeploymentContext("some", "other", "app")
+              .submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                     .compileVersion(version2)
+                                                     .build())
+              .deploy();
 
-        // App compiles against version2, and upgrades.
+        tester.controllerTester().upgradeSystem(version3);
+        tester.upgrader().run();
+        assertEquals(Change.empty(), app.instance().change());
+
+        // App compiles against version2, but confidence is broken for the version on new major before app has time to upgrade.
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
                 .compileVersion(version2)
                 .build());
+        tester.upgrader().overrideConfidence(version3, Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().run();
+        tester.outstandingChangeDeployer().run();
+
+        // App instead deploys to version2.
         app.deploy();
         assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version2, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
-
 
         // App specifies version1 in deployment spec, compiles against version1, pins to version1, and then downgrades.
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
