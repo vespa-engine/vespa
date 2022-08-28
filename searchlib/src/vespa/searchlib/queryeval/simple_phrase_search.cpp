@@ -22,17 +22,21 @@ class PhraseMatcher {
     uint32_t _element_id;
     uint32_t _position;
 
-    TermFieldMatchData::PositionsIterator &iterator(uint32_t word_index)
-    { return _iterators[word_index]; }
+    TermFieldMatchData::PositionsIterator &iterator(uint32_t word_index) {
+        return _iterators[word_index];
+    }
 
-    TermFieldMatchData::PositionsIterator end(uint32_t word_index)
-    { return _tmds[word_index]->end(); }
+    TermFieldMatchData::PositionsIterator end(uint32_t word_index) {
+        return _tmds[word_index]->end();
+    }
 
-    uint32_t elementId(uint32_t word_index)
-    { return iterator(word_index)->getElementId(); }
+    uint32_t elementId(uint32_t word_index) {
+        return iterator(word_index)->getElementId();
+    }
 
-    uint32_t position(uint32_t word_index)
-    { return iterator(word_index)->getPosition(); }
+    uint32_t position(uint32_t word_index) {
+        return iterator(word_index)->getPosition();
+    }
 
     void iterateToElement(uint32_t word_index) {
         while (iterator(word_index) != end(word_index) &&
@@ -145,13 +149,9 @@ allTermsHaveMatch(const SimplePhraseSearch::Children &terms, const vector<uint32
 void
 SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
     if (allTermsHaveMatch(getChildren(), _eval_order, doc_id)) {
-        if (doom()) {
-            setAtEnd();
-        } else {
-            AndSearch::doUnpack(doc_id);
-            if (PhraseMatcher(_childMatch, _eval_order, _iterators).hasMatch()) {
-                setDocId(doc_id);
-            }
+        AndSearch::doUnpack(doc_id);
+        if (PhraseMatcher(_childMatch, _eval_order, _iterators).hasMatch()) {
+            setDocId(doc_id);
         }
     }
 }
@@ -167,11 +167,10 @@ SimplePhraseSearch::SimplePhraseSearch(Children children,
       _childMatch(childMatch),
       _eval_order(std::move(eval_order)),
       _tmd(tmd),
-      _doom(nullptr),
       _strict(strict),
       _iterators(getChildren().size())
 {
-    assert(getChildren().size() > 0);
+    assert( ! getChildren().empty());
     assert(getChildren().size() == _childMatch.size());
     assert(getChildren().size() == _eval_order.size());
 }

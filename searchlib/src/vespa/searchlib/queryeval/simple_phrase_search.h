@@ -7,7 +7,6 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/vespalib/util/doom.h>
 #include <memory>
 #include <vector>
 
@@ -22,7 +21,6 @@ class SimplePhraseSearch : public AndSearch
     fef::TermFieldMatchDataArray _childMatch;
     std::vector<uint32_t>        _eval_order;
     fef::TermFieldMatchData     &_tmd;
-    const vespalib::Doom        *_doom;
     bool                         _strict;
 
     typedef fef::TermFieldMatchData::PositionsIterator It;
@@ -30,8 +28,6 @@ class SimplePhraseSearch : public AndSearch
     std::vector<It> _iterators;
 
     void phraseSeek(uint32_t doc_id);
-    bool doom() const { return ((_doom != nullptr) && _doom->soft_doom()); }
-
 public:
     /**
      * Takes ownership of the contents of children.
@@ -51,7 +47,6 @@ public:
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    SimplePhraseSearch & setDoom(const vespalib::Doom * doom) { _doom = doom; return *this; }
 };
 
 }

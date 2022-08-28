@@ -42,9 +42,8 @@ MultiSearch::MultiSearch(Children children)
 {
 }
 
-MultiSearch::~MultiSearch()
-{
-}
+MultiSearch::MultiSearch() = default;
+MultiSearch::~MultiSearch() = default;
 
 void
 MultiSearch::initRange(uint32_t beginid, uint32_t endid)

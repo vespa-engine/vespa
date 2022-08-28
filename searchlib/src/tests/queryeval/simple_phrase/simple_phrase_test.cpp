@@ -48,9 +48,6 @@ class Test : public vespalib::TestApp {
     void requireThatTermsCanBeEvaluatedInPriorityOrder();
     void requireThatBlueprintExposesFieldWithEstimate();
     void requireThatBlueprintForcesPositionDataOnChildren();
-    void requireThatIteratorHonorsFutureDoom();
-    void requireThatIteratorHonorsDoom();
-    void requireThatDoomIsPropagated();
 
 public:
     int Main() override;
@@ -79,9 +76,6 @@ Test::Main()
     TEST_DO(requireThatPhrasesAreUnpacked(true, false, true));
     TEST_DO(requireThatBlueprintExposesFieldWithEstimate());
     TEST_DO(requireThatBlueprintForcesPositionDataOnChildren());
-    TEST_DO(requireThatIteratorHonorsFutureDoom());
-    TEST_DO(requireThatIteratorHonorsDoom());
-    TEST_DO(requireThatDoomIsPropagated());
 
     TEST_DONE();
 }
@@ -187,7 +181,7 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
     : _requestContext(nullptr, expiredDoom ? vespalib::steady_time(): vespalib::steady_time::max()),
       _index(),
       _phrase_fs(field, fieldId, phrase_handle),
-      _phrase(_phrase_fs, _requestContext, false),
+      _phrase(_phrase_fs, false),
       _children(),
       _md(MatchData::makeTestInstance(100, 10)),
       _order(),
@@ -205,51 +199,6 @@ void Test::requireThatIteratorFindsSimplePhrase(bool useBlueprint) {
     EXPECT_TRUE(!search->seek(1u));
     EXPECT_TRUE(search->seek(doc_match));
     EXPECT_TRUE(!search->seek(doc_no_match));
-}
-
-void Test::requireThatIteratorHonorsFutureDoom() {
-    PhraseSearchTest test;
-    test.addTerm("foo", 0).addTerm("bar", 1);
-
-    test.fetchPostings(false);
-    vespalib::TestClock clock;
-    vespalib::Doom futureDoom(clock.clock(), vespalib::steady_time::max());
-    unique_ptr<SearchIterator> search(test.createSearch(false));
-    static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_TRUE(search->seek(doc_match));
-    EXPECT_TRUE(!search->seek(doc_no_match));
-}
-
-void Test::requireThatIteratorHonorsDoom() {
-    PhraseSearchTest test;
-    test.addTerm("foo", 0).addTerm("bar", 1);
-
-    test.fetchPostings(false);
-    vespalib::TestClock clock;
-    vespalib::Doom futureDoom(clock.clock(), vespalib::steady_time());
-    unique_ptr<SearchIterator> search(test.createSearch(false));
-    static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_EQUAL(search->beginId(), search->getDocId());
-    EXPECT_TRUE(!search->seek(doc_match));
-    EXPECT_TRUE(search->isAtEnd());
-    EXPECT_TRUE(!search->seek(doc_no_match));
-    EXPECT_TRUE(search->isAtEnd());
-}
-
-void Test::requireThatDoomIsPropagated() {
-    PhraseSearchTest test(true);
-    test.addTerm("foo", 0).addTerm("bar", 1);
-
-    test.fetchPostings(true);
-    unique_ptr<SearchIterator> search(test.createSearch(true));
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_EQUAL(search->beginId(), search->getDocId());
-    EXPECT_TRUE(!search->seek(doc_match));
-    EXPECT_TRUE(search->isAtEnd());
-    EXPECT_TRUE(!search->seek(doc_no_match));
-    EXPECT_TRUE(search->isAtEnd());
 }
 
 void Test::requireThatIteratorFindsLongPhrase(bool useBlueprint) {
@@ -326,9 +275,8 @@ void Test::requireThatTermsCanBeEvaluatedInPriorityOrder() {
 void
 Test::requireThatBlueprintExposesFieldWithEstimate()
 {
-    FakeRequestContext requestContext;
     FieldSpec f("foo", 1, 1);
-    SimplePhraseBlueprint phrase(f, requestContext, false);
+    SimplePhraseBlueprint phrase(f, false);
     ASSERT_TRUE(phrase.getState().numFields() == 1);
     EXPECT_EQUAL(f.getFieldId(), phrase.getState().field(0).getFieldId());
     EXPECT_EQUAL(f.getHandle(), phrase.getState().field(0).getHandle());
@@ -352,9 +300,8 @@ Test::requireThatBlueprintExposesFieldWithEstimate()
 void
 Test::requireThatBlueprintForcesPositionDataOnChildren()
 {
-    FakeRequestContext requestContext;
     FieldSpec f("foo", 1, 1, true);
-    SimplePhraseBlueprint phrase(f, requestContext, false);
+    SimplePhraseBlueprint phrase(f, false);
     EXPECT_TRUE(f.isFilter());
     EXPECT_TRUE(!phrase.getNextChildField(f).isFilter());
 }
