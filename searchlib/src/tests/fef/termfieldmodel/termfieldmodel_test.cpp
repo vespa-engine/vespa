@@ -20,12 +20,12 @@ struct State {
     ~State();
 
     void setArray(TermFieldMatchDataArray value) {
-        array = value;
+        array = std::move(value);
     }
 };
 
-State::State() : term(), md(), f3(0), f5(0), f7(0), array() {}
-State::~State() {}
+State::State() : term(), md(), f3(nullptr), f5(nullptr), f7(nullptr), array() {}
+State::~State() = default;
 
 void testInvalidId() {
     const TermFieldMatchData empty;
