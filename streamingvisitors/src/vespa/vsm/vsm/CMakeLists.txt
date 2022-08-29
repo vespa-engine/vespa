@@ -3,6 +3,7 @@ vespa_add_library(vsm_vsmbase OBJECT
     SOURCES
     docsumfieldspec.cpp
     docsumfilter.cpp
+    docsum_field_writer_factory.cpp
     fieldsearchspec.cpp
     flattendocsumwriter.cpp
     slimefieldwriter.cpp

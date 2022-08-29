@@ -20,9 +20,7 @@ private:
 public:
     DynamicDocsumConfig(search::docsummary::IDocsumEnvironment* env, search::docsummary::DynamicDocsumWriter* writer, std::shared_ptr<VsmfieldsConfig> vsm_fields_config);
 private:
-    std::unique_ptr<search::docsummary::DocsumFieldWriter>
-        createFieldWriter(const string & fieldName, const string & overrideName,
-                          const string & cf, bool & rc, std::shared_ptr<search::MatchingElementsFields> matching_elems_fields) override;
+    std::unique_ptr<search::docsummary::IDocsumFieldWriterFactory> make_docsum_field_writer_factory() override;
 };
 
 }

@@ -9,6 +9,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     copy_dfw.cpp
     docsumconfig.cpp
     docsum_field_writer.cpp
+    docsum_field_writer_factory.cpp
     docsum_store_document.cpp
     docsumstate.cpp
     docsumwriter.cpp
@@ -24,6 +25,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     matched_elements_filter_dfw.cpp
     positionsdfw.cpp
     rankfeaturesdfw.cpp
+    res_config_entry.cpp
     res_type_utils.cpp
     resultclass.cpp
     resultconfig.cpp

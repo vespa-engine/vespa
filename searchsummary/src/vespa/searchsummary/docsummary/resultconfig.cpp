@@ -129,39 +129,10 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
         for (unsigned int j = 0; rc && (j < cfg_class.fields.size()); j++) {
             const char *fieldtype = cfg_class.fields[j].type.c_str();
             const char *fieldname = cfg_class.fields[j].name.c_str();
+            auto res_type = ResTypeUtils::get_res_type(fieldtype);
             LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg_class.name.c_str(), fieldname, fieldtype);
-            if (strcmp(fieldtype, "integer") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_INT);
-            } else if (strcmp(fieldtype, "short") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_SHORT);
-            } else if (strcmp(fieldtype, "bool") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_BOOL);
-            } else if (strcmp(fieldtype, "byte") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_BYTE);
-            } else if (strcmp(fieldtype, "float") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_FLOAT);
-            } else if (strcmp(fieldtype, "double") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_DOUBLE);
-            } else if (strcmp(fieldtype, "int64") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_INT64);
-            } else if (strcmp(fieldtype, "string") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_STRING);
-            } else if (strcmp(fieldtype, "data") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_DATA);
-            } else if (strcmp(fieldtype, "raw") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_DATA);
-            } else if (strcmp(fieldtype, "longstring") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_LONG_STRING);
-            } else if (strcmp(fieldtype, "longdata") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_LONG_DATA);
-            } else if (strcmp(fieldtype, "xmlstring") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_JSONSTRING);
-            } else if (strcmp(fieldtype, "jsonstring") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_JSONSTRING);
-            } else if (strcmp(fieldtype, "tensor") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_TENSOR);
-            } else if (strcmp(fieldtype, "featuredata") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_FEATUREDATA);
+            if (res_type != RES_BAD) {
+                rc = resClass->AddConfigEntry(fieldname, res_type);
             } else {
                 LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg_class.name.c_str(), j, fieldtype);
                 rc = false;
