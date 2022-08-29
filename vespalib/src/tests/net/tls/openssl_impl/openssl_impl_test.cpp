@@ -622,8 +622,8 @@ TEST_F("Peer credentials are propagated to CryptoCodec", CertFixture) {
     auto& client_creds = f.server->peer_credentials();
     auto& server_creds = f.client->peer_credentials();
 
-    fprintf(stderr, "Client credentials (observed by server): %s\n", to_string(client_creds).c_str());
-    fprintf(stderr, "Server credentials (observed by client): %s\n", to_string(server_creds).c_str());
+    fprintf(stderr, "Client credentials (observed by server): %s\n", client_creds.to_string().c_str());
+    fprintf(stderr, "Server credentials (observed by client): %s\n", server_creds.to_string().c_str());
 
     EXPECT_EQUAL("rockets.wile.example.com", client_creds.common_name);
     ASSERT_EQUAL(2u, client_creds.dns_sans.size());

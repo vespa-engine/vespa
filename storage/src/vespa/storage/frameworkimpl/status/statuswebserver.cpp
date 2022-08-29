@@ -184,7 +184,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
                 // TODO should print peer address as well; not currently exposed
                 LOG(warning, "Peer with %s denied status page access to '%s' due to insufficient "
                              "credentials (had %s, needed %s)",
-                    vespalib::net::tls::to_string(auth_ctx.peer_credentials()).c_str(),
+                    auth_ctx.peer_credentials().to_string().c_str(),
                     link.c_str(), auth_ctx.capabilities().to_string().c_str(),
                     reporter->required_capabilities().to_string().c_str());
                 request.respond_with_error(403, "Forbidden");

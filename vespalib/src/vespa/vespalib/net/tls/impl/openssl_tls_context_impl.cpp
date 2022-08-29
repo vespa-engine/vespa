@@ -482,7 +482,7 @@ bool OpenSslTlsContextImpl::verify_trusted_certificate(::X509_STORE_CTX* store_c
             // Buffer warnings on peer IP address to avoid log flooding.
             LOGBT(warning, codec_impl.peer_address().ip_address(),
                   "Certificate verification of peer '%s' failed with %s",
-                  codec_impl.peer_address().spec().c_str(), to_string(creds).c_str());
+                  codec_impl.peer_address().spec().c_str(), creds.to_string().c_str());
             return (authz_mode != AuthorizationMode::Enforce);
         }
         // Store away credentials and role set for later use by requests that arrive over this connection.
