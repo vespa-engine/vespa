@@ -3,10 +3,8 @@ package com.yahoo.vespa.model.content.storagecluster;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-
-import java.util.Optional;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 /**
  * Serves config for stor-server for storage clusters (clusters of storage nodes).
@@ -28,11 +26,10 @@ public class StorServerProducer implements StorServerConfig.Producer {
         }
     }
 
-    private String clusterName;
+    private final String clusterName;
     private Integer maxMergesPerNode;
     private Integer queueSize;
-    private Integer bucketDBStripeBits;
-    private StorServerConfig.Merge_throttling_policy.Type.Enum mergeThrottlingPolicyType;
+    private final StorServerConfig.Merge_throttling_policy.Type.Enum mergeThrottlingPolicyType;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
         if (value != null) {
@@ -44,10 +41,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
         if (value != null) {
             queueSize = value;
         }
-        return this;
-    }
-    private StorServerProducer setBucketDBStripeBits(Integer value) {
-        bucketDBStripeBits = value;
         return this;
     }
 
@@ -79,9 +72,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
         }
         if (queueSize != null) {
             builder.max_merge_queue_size(queueSize);
-        }
-        if (bucketDBStripeBits != null) {
-            builder.content_node_bucket_db_stripe_bits(bucketDBStripeBits);
         }
         // TODO set throttle policy params based on existing or separate flags
         builder.merge_throttling_policy(new StorServerConfig.Merge_throttling_policy.Builder().type(mergeThrottlingPolicyType));

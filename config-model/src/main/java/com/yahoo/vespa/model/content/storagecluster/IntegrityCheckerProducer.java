@@ -16,9 +16,9 @@ public class IntegrityCheckerProducer implements StorIntegritycheckerConfig.Prod
         }
     }
 
-    private Integer startTime;
-    private Integer stopTime;
-    private String weeklyCycle;
+    private final Integer startTime;
+    private final Integer stopTime;
+    private final String weeklyCycle;
 
     IntegrityCheckerProducer(Integer startTime, Integer stopTime, String weeklyCycle) {
         this.startTime = startTime;

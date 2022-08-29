@@ -30,7 +30,7 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
 {
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageCluster> {
         @Override
-        protected StorageCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected StorageCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             final ModelElement clusterElem = new ModelElement(producerSpec);
             final ContentCluster cluster = (ContentCluster)ancestor;
 
@@ -51,7 +51,7 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     private final StorVisitorProducer storVisitorProducer;
     private final PersistenceProducer persistenceProducer;
 
-    StorageCluster(AbstractConfigProducer parent,
+    StorageCluster(AbstractConfigProducer<?> parent,
                    String clusterName,
                    FileStorProducer fileStorProducer,
                    IntegrityCheckerProducer integrityCheckerProducer,
