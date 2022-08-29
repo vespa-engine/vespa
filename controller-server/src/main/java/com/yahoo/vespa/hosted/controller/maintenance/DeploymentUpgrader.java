@@ -52,6 +52,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
 
                         Run last = controller().jobController().last(job).get();
                         Versions target = new Versions(targetPlatform, last.versions().targetRevision(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetRevision()));
+                        if ( ! last.hasEnded()) continue;
                         if (application.revisions().get(last.versions().targetRevision()).compileVersion()
                                 .map(version -> controller().applications().versionCompatibility(instance.id()).refuse(version, target.targetPlatform()))
                                 .orElse(false)) continue;
