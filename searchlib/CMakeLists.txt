@@ -186,7 +186,6 @@ vespa_define_module(
     src/tests/nearsearch
     src/tests/postinglistbm
     src/tests/predicate
-    src/tests/prettyfloat
     src/tests/query
     src/tests/queryeval
     src/tests/queryeval/blueprint
