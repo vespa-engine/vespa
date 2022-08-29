@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
@@ -298,6 +299,14 @@ func loadConfigFrom(dir string, environment map[string]string, flags map[string]
 	return c, nil
 }
 
+func athenzPath(filename string) (string, error) {
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(userHome, ".athenz", filename), nil
+}
+
 func (c *Config) loadLocalConfigFrom(parent string) error {
 	home := filepath.Join(parent, ".vespa")
 	_, err := os.Stat(home)
@@ -383,44 +392,69 @@ func (c *Config) deploymentIn(system vespa.System) (vespa.Deployment, error) {
 	return vespa.Deployment{System: system, Application: app, Zone: zone}, nil
 }
 
-func (c *Config) certificatePath(app vespa.ApplicationID) (string, error) {
+func (c *Config) certificatePath(app vespa.ApplicationID, targetType string) (string, error) {
 	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_CERT_FILE"]; ok {
 		return override, nil
+	}
+	if targetType == vespa.TargetHosted {
+		return athenzPath("cert")
 	}
 	return c.applicationFilePath(app, "data-plane-public-cert.pem")
 }
 
-func (c *Config) privateKeyPath(app vespa.ApplicationID) (string, error) {
+func (c *Config) privateKeyPath(app vespa.ApplicationID, targetType string) (string, error) {
 	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_KEY_FILE"]; ok {
 		return override, nil
+	}
+	if targetType == vespa.TargetHosted {
+		return athenzPath("key")
 	}
 	return c.applicationFilePath(app, "data-plane-private-key.pem")
 }
 
-func (c *Config) x509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
+func (c *Config) x509KeyPair(app vespa.ApplicationID, targetType string) (KeyPair, error) {
 	cert, certOk := c.environment["VESPA_CLI_DATA_PLANE_CERT"]
 	key, keyOk := c.environment["VESPA_CLI_DATA_PLANE_KEY"]
+	var (
+		kp       tls.Certificate
+		err      error
+		certFile string
+		keyFile  string
+	)
 	if certOk && keyOk {
 		// Use key pair from environment
-		kp, err := tls.X509KeyPair([]byte(cert), []byte(key))
-		return KeyPair{KeyPair: kp}, err
+		kp, err = tls.X509KeyPair([]byte(cert), []byte(key))
+	} else {
+		keyFile, err = c.privateKeyPath(app, targetType)
+		if err != nil {
+			return KeyPair{}, err
+		}
+		certFile, err = c.certificatePath(app, targetType)
+		if err != nil {
+			return KeyPair{}, err
+		}
+		kp, err = tls.LoadX509KeyPair(certFile, keyFile)
 	}
-	privateKeyFile, err := c.privateKeyPath(app)
 	if err != nil {
 		return KeyPair{}, err
 	}
-	certificateFile, err := c.certificatePath(app)
-	if err != nil {
-		return KeyPair{}, err
-	}
-	kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
-	if err != nil {
-		return KeyPair{}, err
+	if targetType == vespa.TargetHosted {
+		cert, err := x509.ParseCertificate(kp.Certificate[0])
+		if err != nil {
+			return KeyPair{}, err
+		}
+		now := time.Now()
+		expiredAt := cert.NotAfter
+		if expiredAt.Before(now) {
+			delta := now.Sub(expiredAt).Truncate(time.Second)
+			return KeyPair{}, fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta)
+		}
+		return KeyPair{KeyPair: kp, CertificateFile: certFile, PrivateKeyFile: keyFile}, nil
 	}
 	return KeyPair{
 		KeyPair:         kp,
-		CertificateFile: certificateFile,
-		PrivateKeyFile:  privateKeyFile,
+		CertificateFile: certFile,
+		PrivateKeyFile:  keyFile,
 	}, nil
 }
 
