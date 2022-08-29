@@ -4,12 +4,9 @@
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/metrics/metricset.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>

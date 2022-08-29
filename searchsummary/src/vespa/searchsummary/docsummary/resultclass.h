@@ -3,7 +3,6 @@
 #pragma once
 
 #include "res_config_entry.h"
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/util/stringenum.h>

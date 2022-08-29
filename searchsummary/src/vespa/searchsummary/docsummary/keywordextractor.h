@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/searchlib/util/rawbuf.h>
 
 namespace search::docsummary {
 
@@ -25,12 +24,11 @@ public:
 
 private:
     typedef vespalib::hash_set<vespalib::string> Set;
-    IDocsumEnvironment  *_env;
-    std::vector<IndexPrefix> _legalPrefixes;
-    Set                  _legalIndexes;
+    IDocsumEnvironment       *_env;
+    std::vector<IndexPrefix>  _legalPrefixes;
+    Set                       _legalIndexes;
 
-    bool IsLegalIndexPrefix(const char *idxName) const
-    {
+    bool IsLegalIndexPrefix(const char *idxName) const {
         for (auto& prefix : _legalPrefixes ) {
             if (prefix.Match(idxName)) {
                 return true;
@@ -39,34 +37,19 @@ private:
         return false;
     }
 
+    void AddLegalIndexPrefix(const char *prefix) {
+        _legalPrefixes.emplace_back(prefix);
+    }
+
+    void AddLegalIndexName(const char *idxName) {
+        _legalIndexes.insert(idxName);
+    }
     bool IsLegalIndexName(const char *idxName) const;
 public:
     explicit KeywordExtractor(IDocsumEnvironment * env);
     KeywordExtractor(const KeywordExtractor &) = delete;
     KeywordExtractor& operator=(const KeywordExtractor &) = delete;
     ~KeywordExtractor();
-
-
-    /**
-     * Add a prefix to the set of legal index name prefixes.
-     *
-     * @param prefix the index name prefix to add.
-     **/
-    void AddLegalIndexPrefix(const char *prefix)
-    {
-        _legalPrefixes.emplace_back(prefix);
-    }
-
-
-    /**
-     * Add a name to the set of legal index names.
-     *
-     * @param idxName the index name to add.
-     **/
-    void AddLegalIndexName(const char *idxName)
-    {
-        _legalIndexes.insert(idxName);
-    }
 
 
     /**
@@ -98,27 +81,6 @@ public:
      * @return true if the given index name is legal.
      **/
     bool IsLegalIndex(vespalib::stringref idx) const;
-
-
-    /**
-     * Extract keywords from a stack dump of a SimpleQueryStack.
-     *
-     * The words are extracted as follows: For AND and OR operators, all
-     * TERM items occuring in a legal index (the set of legal indexes is
-     * defined by invoking the @ref AddLegalIndex and @ref
-     * AddLegalIndexPrefix methods) are extracted.
-     *
-     * For PHRASE operators, the TERMS in a phrase are put together with
-     * space between them.
-     *
-     * @todo For NOT operators, only the first operand is considered.
-     *
-     * @param buf Pointer to buffer with simple query stack dump.
-     * @param bufLen Length of stack dump buffer
-     * @return Pointer to a buffer containing zero-terminated keywords,
-     * with an empty word at the end.
-     */
-    char *ExtractKeywords(vespalib::stringref buf) const;
 };
 
 }

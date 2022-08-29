@@ -5,7 +5,6 @@
 #include "attributememoryfilewriter.h"
 #include "iattributesavetarget.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <memory>
 #include <unordered_map>
@@ -37,7 +36,7 @@ private:
 
 public:
     AttributeMemorySaveTarget();
-    ~AttributeMemorySaveTarget();
+    ~AttributeMemorySaveTarget() override;
 
     /**
      * Write the underlying buffer(s) to file(s).

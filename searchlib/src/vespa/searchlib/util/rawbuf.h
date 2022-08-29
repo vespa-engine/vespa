@@ -19,9 +19,6 @@ namespace search {
 class RawBuf
 {
 private:
-    RawBuf(const RawBuf &);
-    RawBuf& operator=(const RawBuf &);
-
     char* _bufStart;        // ref. to start of buffer (don't move this!)
     char* _bufEnd;          // ref. to byte after last in buffer (don't mo)
     char* _bufFillPos;      // ref. to byte where next should be put in
@@ -31,9 +28,9 @@ private:
 
     void ensureSizeInternal(size_t size);
 public:
-
-    RawBuf(char *start, size_t size);// Initially use provided buffer
-    RawBuf(size_t size);    // malloc-s given size, assigns to _bufStart
+    RawBuf(const RawBuf &) = delete;
+    RawBuf& operator=(const RawBuf &) = delete;
+    explicit RawBuf(size_t size);    // malloc-s given size, assigns to _bufStart
     ~RawBuf();      // Frees _bufStart, i.e. the char[].
 
     void    operator+=(const char *src);
@@ -48,10 +45,8 @@ public:
 
     void    append(const void *data, size_t len);
     void    append(uint8_t byte);
-    void    appendLong(uint64_t n);
     void    appendCompressedPositiveNumber(uint64_t n);
     void    appendCompressedNumber(int64_t n);
-    bool    IsEmpty();  // Return whether all written.
     void    expandBuf(size_t needlen);
     size_t      GetFreeLen() const { return _bufEnd - _bufFillPos; }
     size_t      GetDrainLen() const { return _bufDrainPos - _bufStart; }
@@ -59,7 +54,6 @@ public:
     const char *GetFillPos() const { return _bufFillPos; }
     char *      GetWritableFillPos() const { return _bufFillPos; }
     char *      GetWritableFillPos(size_t len) { preAlloc(len); return _bufFillPos; }
-    char *      GetWritableDrainPos(size_t offset) { return _bufDrainPos + offset; }
     void    truncate(size_t offset) { _bufFillPos = _bufDrainPos + offset; }
     void    preAlloc(size_t len);   // Ensure room for 'len' more bytes.
     size_t  readFile(FastOS_FileInterface &file, size_t maxlen);
@@ -83,15 +77,10 @@ public:
     static uint16_t InetTo16(const unsigned char *src) {
         return (static_cast<uint16_t>(*src) << 8) + *(src + 1);
     };
-    static uint16_t InetTo16(const char* src) {
-        return InetTo16(reinterpret_cast<const unsigned char *>(src));
-    };
+
     static uint32_t InetTo32(const unsigned char* src) {
         return (((((static_cast<uint32_t>(*src) << 8) + *(src + 1)) << 8)
                  + *(src + 2)) << 8) + *(src + 3);
-    };
-    static uint32_t InetTo32(const char* src) {
-        return InetTo32(reinterpret_cast<const unsigned char *>(src));
     };
 
     /**

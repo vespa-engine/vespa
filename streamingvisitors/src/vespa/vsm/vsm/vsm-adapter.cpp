@@ -4,6 +4,7 @@
 #include "docsumconfig.h"
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchsummary/docsummary/keywordextractor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
