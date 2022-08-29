@@ -98,7 +98,7 @@ public:
     }
 
     IAttributeContext::UP createContext() const override {
-        return IAttributeContext::UP(new MyAttributeContext(_attr));
+        return std::make_unique<MyAttributeContext>(_attr);
     }
 
     std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {

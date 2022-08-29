@@ -29,9 +29,11 @@ public:
     ~SpanTree();
 
     // The annotate functions return the annotation index.
-    size_t annotate(std::unique_ptr<Annotation> annotation);
-    size_t annotate(const SpanNode &node, std::unique_ptr<Annotation> a);
-    size_t annotate(const SpanNode &node, const AnnotationType &a_type);
+    size_t annotate(Annotation&& annotation_);
+    size_t annotate(std::unique_ptr<Annotation> annotation_);
+    size_t annotate(const SpanNode& node, Annotation&& annotation_);
+    size_t annotate(const SpanNode& node, std::unique_ptr<Annotation> annotation_);
+    size_t annotate(const SpanNode& node, const AnnotationType& annotation_type);
 
     Annotation & annotation(size_t index) { return _annotations[index]; }
     const Annotation & annotation(size_t index) const { return _annotations[index]; }
