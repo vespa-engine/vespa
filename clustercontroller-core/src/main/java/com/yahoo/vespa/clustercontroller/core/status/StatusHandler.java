@@ -31,7 +31,7 @@ public class StatusHandler implements HttpRequestHandler {
 
         StatusPageServer.HttpRequest request;
         StatusPageResponse response;
-        // Ensure only only one use the server at a time
+        // Ensure only one use the server at a time
         private final Object queueMonitor = new Object();
         // Lock safety with fleetcontroller. Wait until completion
         private final Object answerMonitor = new Object();
