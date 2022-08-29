@@ -187,7 +187,6 @@ public class DocprocBuilderTest extends DomBuilderTest {
         assertEquals(1536, jvm.minHeapsize());
         assertEquals(1536, jvm.heapsize());
         assertEquals(512, jvm.stacksize());
-        assertTrue(qrStartConfig.ulimitv().isEmpty());
         assertEquals(0, jvm.compressedClassSpaceSize());
     }
 
