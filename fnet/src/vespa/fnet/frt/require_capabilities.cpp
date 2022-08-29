@@ -29,7 +29,7 @@ FRT_RequireCapabilities::allow(FRT_RPCRequest& req) const noexcept
                                   "Peer at %s with %s. Call requires %s, but peer has %s",
               ((mode == CapabilityEnforcementMode::LogOnly) ? "(Dry-run only, not enforced): " : ""),
               method_name.c_str(), peer_spec.c_str(),
-              to_string(auth_ctx.peer_credentials()).c_str(),
+              auth_ctx.peer_credentials().to_string().c_str(),
               _required_capabilities.to_string().c_str(),
               auth_ctx.capabilities().to_string().c_str());
         return (mode != CapabilityEnforcementMode::Enforce);

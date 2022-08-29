@@ -16,12 +16,15 @@
 
 #include <ostream>
 #include <vespa/storageframework/generic/status/httpurlpath.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace storage::framework {
 
-struct StatusReporter
-{
+struct StatusReporter {
+    using Capability    = vespalib::net::tls::Capability;
+    using CapabilitySet = vespalib::net::tls::CapabilitySet;
+
     StatusReporter(vespalib::stringref id, vespalib::stringref name);
     virtual ~StatusReporter();
 
@@ -38,6 +41,16 @@ struct StatusReporter
     const vespalib::string& getName() const { return _name; }
 
     virtual bool isValidStatusRequest() const { return true; }
+
+    /**
+     * By default, a status reporter requires the "vespa.content.status_pages" client capability.
+     * This can be overridden by subclasses to require reporter-specific capabilities
+     * (or none at all). If the client does not satisfy the required capabilities, a
+     * "403 Forbidden" error response will be returned to the client.
+     */
+    virtual CapabilitySet required_capabilities() const noexcept {
+        return CapabilitySet::of({ Capability::content_status_pages() });
+    }
 
     /**
      * Called to get content type.

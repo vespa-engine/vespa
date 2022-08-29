@@ -14,7 +14,7 @@ PeerCredentials& PeerCredentials::operator=(PeerCredentials&&) noexcept = defaul
 PeerCredentials::~PeerCredentials() = default;
 
 std::ostream& operator<<(std::ostream& os, const PeerCredentials& creds) {
-    os << to_string(creds);
+    os << creds.to_string();
     return os;
 }
 
@@ -36,20 +36,20 @@ void emit_comma_separated_string_list(asciistream& os, stringref title,
 }
 }
 
-vespalib::string to_string(const PeerCredentials& creds) {
+vespalib::string PeerCredentials::to_string() const {
     asciistream os;
     os << "PeerCredentials(";
     bool emit_comma = false;
-    if (!creds.common_name.empty()) {
-        os << "CN '" << creds.common_name << "'";
+    if (!common_name.empty()) {
+        os << "CN '" << common_name << "'";
         emit_comma = true;
     }
-    if (!creds.dns_sans.empty()) {
-        emit_comma_separated_string_list(os, "DNS SANs", creds.dns_sans, emit_comma);
+    if (!dns_sans.empty()) {
+        emit_comma_separated_string_list(os, "DNS SANs", dns_sans, emit_comma);
         emit_comma = true;
     }
-    if (!creds.uri_sans.empty()) {
-        emit_comma_separated_string_list(os, "URI SANs", creds.uri_sans, emit_comma);
+    if (!uri_sans.empty()) {
+        emit_comma_separated_string_list(os, "URI SANs", uri_sans, emit_comma);
     }
     os << ')';
     return os.str();
