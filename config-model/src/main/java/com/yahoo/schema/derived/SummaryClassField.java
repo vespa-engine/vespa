@@ -28,8 +28,9 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 public class SummaryClassField {
 
     private final String name;
-
     private final Type type;
+    private final String command;
+    private final String source;
 
     /** The summary field type enumeration */
     public enum Type {
@@ -68,14 +69,20 @@ public class SummaryClassField {
         }
     }
 
-    public SummaryClassField(String name, DataType type, SummaryTransform transform, boolean rawAsBase64) {
+    public SummaryClassField(String name, DataType type, SummaryTransform transform, String source, boolean rawAsBase64) {
         this.name = name;
         this.type = convertDataType(type, transform, rawAsBase64);
+        this.command = SummaryMap.getCommand(transform);
+        this.source = source;
     }
 
     public String getName() { return name; }
 
     public Type getType() { return type; }
+
+    public String getCommand() { return command; }
+
+    public String getSource() { return source; }
 
     /** Converts to the right summary field type from a field datatype and a transform*/
     public static Type convertDataType(DataType fieldType, SummaryTransform transform, boolean rawAsBase64) {
