@@ -100,7 +100,7 @@ public:
      */
     queryeval::SearchIterator::UP make_search_iterator(const vespalib::string& term,
                                                        uint32_t field_id,
-                                                       const fef::TermFieldMatchDataArray& match_data) const;
+                                                       fef::TermFieldMatchDataArray match_data) const;
 
     std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
                                                                         const queryeval::FieldSpecBase& field,

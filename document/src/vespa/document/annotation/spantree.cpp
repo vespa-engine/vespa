@@ -12,20 +12,20 @@ namespace document {
 SpanTree::~SpanTree() = default;
 
 size_t
-SpanTree::annotate(std::unique_ptr<Annotation> annotation_) {
-    _annotations.push_back(std::move(*annotation_));
+SpanTree::annotate(Annotation&& annotation_) {
+    _annotations.push_back(std::move(annotation_));
     return _annotations.size() - 1;
 }
 
 size_t
-SpanTree::annotate(const SpanNode &node, std::unique_ptr<Annotation> annotation_) {
-    annotation_->setSpanNode(node);
+SpanTree::annotate(const SpanNode &node, Annotation&& annotation_) {
+    annotation_.setSpanNode(node);
     return annotate(std::move(annotation_));
 }
 
 size_t
-SpanTree::annotate(const SpanNode &node, const AnnotationType &type) {
-    return annotate(node, std::make_unique<Annotation>(type));
+SpanTree::annotate(const SpanNode &node, const AnnotationType &annotation_type) {
+    return annotate(node, Annotation(annotation_type));
 }
 
 void

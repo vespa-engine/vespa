@@ -10,9 +10,8 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
-
-import java.util.logging.Level;
 
 /**
  * This handler implements the /cli/v1/ API. The API allows Vespa CLI to retrieve information about the system, without
@@ -44,8 +43,7 @@ public class CliApiHandler extends ThreadedHttpRequestHandler {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 

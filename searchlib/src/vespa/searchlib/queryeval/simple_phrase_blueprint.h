@@ -22,6 +22,7 @@ public:
     SimplePhraseBlueprint(const FieldSpec &field, bool expensive);
     SimplePhraseBlueprint(const SimplePhraseBlueprint &) = delete;
     SimplePhraseBlueprint &operator=(const SimplePhraseBlueprint &) = delete;
+
     ~SimplePhraseBlueprint() override;
 
     // used by create visitor

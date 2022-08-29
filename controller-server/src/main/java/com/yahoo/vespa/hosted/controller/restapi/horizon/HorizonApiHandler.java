@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -28,7 +29,6 @@ import java.io.OutputStream;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -63,19 +63,18 @@ public class HorizonApiHandler extends ThreadedHttpRequestHandler {
             return ErrorResponse.forbidden("No tenant with enabled metrics view");
 
         try {
-            switch (request.getMethod()) {
-                case GET: return get(request);
-                case POST: return post(request, authorizedTenants, operator);
-                case PUT: return put(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST -> post(request, authorizedTenants, operator);
+                case PUT -> put(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            };
         }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError("An unexpected error occurred");
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 

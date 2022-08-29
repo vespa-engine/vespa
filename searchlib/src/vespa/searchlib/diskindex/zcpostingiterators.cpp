@@ -16,8 +16,8 @@ using queryeval::RankedSearchIteratorBase;
 #define DEBUG_ZCPOSTING_PRINTF 0
 #define DEBUG_ZCPOSTING_ASSERT 0
 
-ZcIteratorBase::ZcIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit) :
-    RankedSearchIteratorBase(matchData),
+ZcIteratorBase::ZcIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit) :
+    RankedSearchIteratorBase(std::move(matchData)),
     _docIdLimit(docIdLimit),
     _start(start)
 { }
@@ -37,10 +37,10 @@ ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid)
 
 template <bool bigEndian>
 ZcRareWordPostingIteratorBase<bigEndian>::
-ZcRareWordPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+ZcRareWordPostingIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit,
                               bool decode_normal_features, bool decode_interleaved_features,
                               bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcIteratorBase(matchData, start, docIdLimit),
+    : ZcIteratorBase(std::move(matchData), start, docIdLimit),
       _decodeContext(nullptr),
       _residue(0),
       _prevDocId(0),
@@ -56,10 +56,10 @@ ZcRareWordPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position
 
 template <bool bigEndian, bool dynamic_k>
 ZcRareWordPostingIterator<bigEndian, dynamic_k>::
-ZcRareWordPostingIterator(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+ZcRareWordPostingIterator(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit,
                           bool decode_normal_features, bool decode_interleaved_features,
                           bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcRareWordPostingIteratorBase<bigEndian>(matchData, start, docIdLimit,
+    : ZcRareWordPostingIteratorBase<bigEndian>(std::move(matchData), start, docIdLimit,
                                                decode_normal_features, decode_interleaved_features,
                                                unpack_normal_features, unpack_interleaved_features),
       _doc_id_k_param()
@@ -187,10 +187,10 @@ ZcRareWordPostingIterator<bigEndian, dynamic_k>::readWordStart(uint32_t docIdLim
     clearUnpacked();
 }
 
-ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+ZcPostingIteratorBase::ZcPostingIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit,
                                              bool decode_normal_features, bool decode_interleaved_features,
                                              bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcIteratorBase(matchData, start, docIdLimit),
+    : ZcIteratorBase(std::move(matchData), start, docIdLimit),
       _valI(nullptr),
       _valIBase(nullptr),
       _featureSeekPos(0),
@@ -216,11 +216,11 @@ ZcPostingIterator<bigEndian>::
 ZcPostingIterator(uint32_t minChunkDocs,
                   bool dynamicK,
                   const PostingListCounts &counts,
-                  const search::fef::TermFieldMatchDataArray &matchData,
+                  search::fef::TermFieldMatchDataArray matchData,
                   Position start, uint32_t docIdLimit,
                   bool decode_normal_features, bool decode_interleaved_features,
                   bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcPostingIteratorBase(matchData, start, docIdLimit,
+    : ZcPostingIteratorBase(std::move(matchData), start, docIdLimit,
                             decode_normal_features, decode_interleaved_features,
                             unpack_normal_features, unpack_interleaved_features),
       _decodeContext(nullptr),

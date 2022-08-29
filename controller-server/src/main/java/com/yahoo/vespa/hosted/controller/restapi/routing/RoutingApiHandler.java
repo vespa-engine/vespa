@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.RoutingContext;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -69,8 +69,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 

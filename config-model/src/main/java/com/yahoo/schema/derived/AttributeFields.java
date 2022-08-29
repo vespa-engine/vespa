@@ -32,8 +32,8 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     public enum FieldSet {ALL, FAST_ACCESS}
 
-    private Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
-    private Map<String, Attribute> importedAttributes = new java.util.LinkedHashMap<>();
+    private final Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
+    private final Map<String, Attribute> importedAttributes = new java.util.LinkedHashMap<>();
 
     /** Whether this has any position attribute */
     private boolean hasPosition = false;
@@ -156,7 +156,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     }
 
     /** Returns a read only attribute iterator */
-    public Iterator attributeIterator() {
+    public Iterator<Attribute> attributeIterator() {
         return attributes().iterator();
     }
 
@@ -257,33 +257,24 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     }
 
     private static AttributesConfig.Attribute.Dictionary.Type.Enum convert(Dictionary.Type type) {
-        switch (type) {
-            case BTREE:
-                return AttributesConfig.Attribute.Dictionary.Type.BTREE;
-            case HASH:
-                return AttributesConfig.Attribute.Dictionary.Type.HASH;
-            case BTREE_AND_HASH:
-                return AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
-        }
-        return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+        return switch (type) {
+            case BTREE: yield AttributesConfig.Attribute.Dictionary.Type.BTREE;
+            case HASH: yield AttributesConfig.Attribute.Dictionary.Type.HASH;
+            case BTREE_AND_HASH: yield AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
+
+        };
     }
     private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Case type) {
-        switch (type) {
-            case CASED:
-                return AttributesConfig.Attribute.Dictionary.Match.CASED;
-            case UNCASED:
-                return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
-        }
-        return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+        return switch (type) {
+            case CASED: yield AttributesConfig.Attribute.Dictionary.Match.CASED;
+            case UNCASED: yield AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+        };
     }
     private static AttributesConfig.Attribute.Match.Enum convertMatch(Case type) {
-        switch (type) {
-            case CASED:
-                return AttributesConfig.Attribute.Match.CASED;
-            case UNCASED:
-                return AttributesConfig.Attribute.Match.UNCASED;
-        }
-        return AttributesConfig.Attribute.Match.UNCASED;
+        return switch (type) {
+            case CASED: yield AttributesConfig.Attribute.Match.CASED;
+            case UNCASED: yield AttributesConfig.Attribute.Match.UNCASED;
+        };
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory, boolean enableBitVectors) {

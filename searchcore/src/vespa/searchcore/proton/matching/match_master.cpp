@@ -24,6 +24,21 @@ using vespalib::Issue;
 
 namespace {
 
+struct LazyThreadTraceInserter {
+    search::engine::Trace &root_trace;
+    std::unique_ptr<vespalib::slime::Inserter> inserter;
+    LazyThreadTraceInserter(search::engine::Trace &root_trace_in)
+      : root_trace(root_trace_in), inserter() {}
+    void handle(const search::engine::Trace &thread_trace) {
+        if (thread_trace.hasTrace()) {
+            if (!inserter) {
+                inserter = std::make_unique<vespalib::slime::ArrayInserter>(root_trace.createCursor("query_execution").setArray("threads"));
+            }
+            vespalib::slime::inject(thread_trace.getRoot(), *inserter);
+        }
+    }
+};
+
 struct TimedMatchLoopCommunicator final : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     vespalib::Timer timer;
@@ -104,17 +119,12 @@ MatchMaster::match(search::engine::Trace & trace,
     double query_time_s = vespalib::to_s(query_latency_time.elapsed());
     double rerank_time_s = vespalib::to_s(timedCommunicator.elapsed);
     double match_time_s = 0.0;
-    std::unique_ptr<vespalib::slime::Inserter> inserter;
-    if (trace.shouldTrace(4)) {
-        inserter = std::make_unique<vespalib::slime::ArrayInserter>(trace.createCursor("query_execution").setArray("threads"));
-    }
+    LazyThreadTraceInserter inserter(trace);
     for (size_t i = 0; i < threadState.size(); ++i) {
         const MatchThread & matchThread = *threadState[i];
         match_time_s = std::max(match_time_s, matchThread.get_match_time());
         _stats.merge_partition(matchThread.get_thread_stats(), i);
-        if (inserter && matchThread.getTrace().hasTrace()) {
-            vespalib::slime::inject(matchThread.getTrace().getRoot(), *inserter);
-        }
+        inserter.handle(matchThread.getTrace());
         matchThread.get_issues().for_each_message([](const auto &msg){ Issue::report(Issue(msg)); });
     }
     _stats.queryLatency(query_time_s);

@@ -626,7 +626,7 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
     const AnnotationType *a_type =my_repo.getAnnotationType(*inner_type, a_id);
     StringFieldValue str("foo");
     auto tree = std::make_unique<SpanTree>("name", std::make_unique<Span>(0, 3));
-    tree->annotate(std::make_unique<Annotation>(*a_type));
+    tree->annotate(Annotation(*a_type));
 
 
     setSpanTree(str, *tree);

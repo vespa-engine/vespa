@@ -101,6 +101,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -226,13 +227,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return switch (e.code()) {
                 case NOT_FOUND: yield ErrorResponse.notFoundError(Exceptions.toMessageString(e));
                 case ACTIVATION_CONFLICT: yield new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
-                case INTERNAL_SERVER_ERROR: yield ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+                case INTERNAL_SERVER_ERROR: yield ErrorResponses.logThrowing(request, log, e);
                 default: yield new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
             };
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 
@@ -1051,7 +1051,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             SlimeUtils.copyObject(responseSlime.get(), responseResultCursor);
             return new SlimeJsonResponse(responseRoot);
         } catch (JsonParseException e) {
-            return ErrorResponse.internalServerError(response);
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 
@@ -2742,7 +2742,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static Principal requireUserPrincipal(HttpRequest request) {
         Principal principal = request.getJDiscRequest().getUserPrincipal();
-        if (principal == null) throw new RestApiException.InternalServerError("Expected a user principal");
+        if (principal == null) throw new IllegalArgumentException("Expected a user principal");
         return principal;
     }
 

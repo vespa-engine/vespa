@@ -242,7 +242,7 @@ DocumenttypesConfig getDocumenttypesConfig() {
 }
 
 Test::Test() :
-    _documentRepo(new DocumentTypeRepo(getDocumenttypesConfig())),
+    _documentRepo(std::make_unique<DocumentTypeRepo>(getDocumenttypesConfig())),
     _documentType(_documentRepo->getDocumentType("indexingdocument")),
     _fixedRepo(*_documentRepo, *_documentType)
 {
@@ -285,8 +285,8 @@ Test::Main()
 }
 
 void Test::setUp() {
-    _schema.reset(new Schema);
-    _summarymap.reset(new SummarymapConfigBuilder);
+    _schema = std::make_unique<Schema>();
+    _summarymap = std::make_unique<SummarymapConfigBuilder>();
 }
 
 void Test::tearDown() {
@@ -298,34 +298,26 @@ const DataType &Test::getDataType(const string &name) const {
     return *type;
 }
 
-template <typename T>
-std::unique_ptr<T> makeUP(T *p) { return std::unique_ptr<T>(p); }
-
 StringFieldValue Test::makeAnnotatedString() {
-    SpanList *span_list = new SpanList;
-    SpanTree::UP tree(new SpanTree(SPANTREE_NAME, makeUP(span_list)));
+    auto span_list_up = std::make_unique<SpanList>();
+    auto span_list = span_list_up.get();
+    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
     // Annotations don't have to be added sequentially.
-    tree->annotate(span_list->add(makeUP(new Span(8, 3))),
-                   makeUP(new Annotation(*TERM,
-                                         makeUP(new StringFieldValue(
-                                                         "Annotation")))));
-    tree->annotate(span_list->add(makeUP(new Span(0, 3))), *TERM);
-    tree->annotate(span_list->add(makeUP(new Span(4, 3))), *TERM);
-    tree->annotate(span_list->add(makeUP(new Span(4, 3))),
-                   makeUP(new Annotation(*TERM,
-                                         makeUP(new StringFieldValue(
-                                                         "Multiple")))));
-    tree->annotate(span_list->add(makeUP(new Span(1, 2))),
-                   makeUP(new Annotation(*TERM,
-                                         makeUP(new StringFieldValue(
-                                                         "Overlap")))));
+    tree->annotate(span_list->add(std::make_unique<Span>(8, 3)),
+                   Annotation(*TERM, std::make_unique<StringFieldValue>("Annotation")));
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(4, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
+                   Annotation(*TERM, std::make_unique<StringFieldValue>("Multiple")));
+    tree->annotate(span_list->add(std::make_unique<Span>(1, 2)),
+                   Annotation(*TERM, std::make_unique<StringFieldValue>("Overlap")));
     StringFieldValue value("Foo Bar Baz");
     setSpanTree(value, std::move(tree));
     return value;
 }
 
 StringFieldValue Test::annotateTerm(const string &term) {
-    SpanTree::UP tree(new SpanTree(SPANTREE_NAME, makeUP(new Span(0, term.size()))));
+    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::make_unique<Span>(0, term.size()));
     tree->annotate(tree->getRoot(), *TERM);
     StringFieldValue value(term);
     setSpanTree(value, std::move(tree));
@@ -339,11 +331,12 @@ void Test::setSpanTree(StringFieldValue & value, SpanTree::UP tree) {
 }
 
 StringFieldValue Test::makeAnnotatedChineseString() {
-    SpanList *span_list = new SpanList;
-    SpanTree::UP tree(new SpanTree(SPANTREE_NAME, makeUP(span_list)));
+    auto span_list_up = std::make_unique<SpanList>();
+    auto span_list = span_list_up.get();
+    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
     // These chinese characters each use 3 bytes in their UTF8 encoding.
-    tree->annotate(span_list->add(makeUP(new Span(0, 15))), *TERM);
-    tree->annotate(span_list->add(makeUP(new Span(15, 9))), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 15)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(15, 9)), *TERM);
     StringFieldValue value("我就是那个大灰狼");
     setSpanTree(value, std::move(tree));
     return value;
@@ -660,7 +653,7 @@ void Test::requireThatLinguisticsAnnotationUsesDefaultDataTypes() {
 void
 Test::requireThatPredicateIsPrinted()
 {
-    std::unique_ptr<Slime> input(new Slime());
+    auto input = std::make_unique<Slime>();
     Cursor &obj = input->setObject();
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_FEATURE_SET);
     obj.setString(Predicate::KEY, "foo");

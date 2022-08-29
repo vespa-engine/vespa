@@ -29,9 +29,9 @@ public:
                const vespalib::string &field,
                const vespalib::string &term,
                const FakeResult &res,
-               const fef::TermFieldMatchDataArray &tfmda)
+               fef::TermFieldMatchDataArray tfmda)
         : _tag(tag), _field(field), _term(term),
-          _result(res), _offset(0), _tfmda(tfmda),
+          _result(res), _offset(0), _tfmda(std::move(tfmda)),
           _ctx(nullptr)
     {
         assert(_tfmda.size() == 1);

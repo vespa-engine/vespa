@@ -21,7 +21,7 @@ class DotProductBlueprint : public ComplexLeafBlueprint
 
 public:
     DotProductBlueprint(const FieldSpec &field);
-    ~DotProductBlueprint();
+    ~DotProductBlueprint() override;
 
     // used by create visitor
     FieldSpec getNextChildField(const FieldSpec &outer);
