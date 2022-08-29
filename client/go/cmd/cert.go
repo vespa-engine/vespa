@@ -100,11 +100,15 @@ func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []st
 			return err
 		}
 	}
-	privateKeyFile, err := cli.config.privateKeyPath(app)
+	targetType, err := cli.config.targetType()
 	if err != nil {
 		return err
 	}
-	certificateFile, err := cli.config.certificatePath(app)
+	privateKeyFile, err := cli.config.privateKeyPath(app, targetType)
+	if err != nil {
+		return err
+	}
+	certificateFile, err := cli.config.certificatePath(app, targetType)
 	if err != nil {
 		return err
 	}
@@ -167,7 +171,11 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	certificateFile, err := cli.config.certificatePath(app)
+	targetType, err := cli.config.targetType()
+	if err != nil {
+		return err
+	}
+	certificateFile, err := cli.config.certificatePath(app, targetType)
 	if err != nil {
 		return err
 	}

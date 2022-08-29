@@ -162,12 +162,12 @@ func TestProdSubmit(t *testing.T) {
 	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
 
 	// Remove certificate as it's not required for submission (but it must be part of the application package)
-	if path, err := cli.config.privateKeyPath(app); err == nil {
+	if path, err := cli.config.privateKeyPath(app, vespa.TargetCloud); err == nil {
 		os.RemoveAll(path)
 	} else {
 		require.Nil(t, err)
 	}
-	if path, err := cli.config.certificatePath(app); err == nil {
+	if path, err := cli.config.certificatePath(app, vespa.TargetCloud); err == nil {
 		os.RemoveAll(path)
 	} else {
 		require.Nil(t, err)

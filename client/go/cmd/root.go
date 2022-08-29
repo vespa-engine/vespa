@@ -2,15 +2,12 @@
 package cmd
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -332,7 +329,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 		authConfigPath = c.config.authConfigPath()
 		deploymentTLSOptions = vespa.TLSOptions{}
 		if !opts.noCertificate {
-			kp, err := c.config.x509KeyPair(deployment.Application)
+			kp, err := c.config.x509KeyPair(deployment.Application, targetType)
 			if err != nil {
 				return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
 			}
@@ -343,9 +340,9 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 			}
 		}
 	case vespa.TargetHosted:
-		kp, err := athenzKeyPair()
+		kp, err := c.config.x509KeyPair(deployment.Application, targetType)
 		if err != nil {
-			return nil, err
+			return nil, errHint(err, "Deployment to hosted requires an Athenz certificate", "Try renewing certificate with 'athenz-user-cert'")
 		}
 		apiTLSOptions = vespa.TLSOptions{
 			KeyPair:         kp.KeyPair,
@@ -485,40 +482,6 @@ func isTerminal(w io.Writer) bool {
 		return isatty.IsTerminal(f.Fd())
 	}
 	return false
-}
-
-func athenzPath(filename string) (string, error) {
-	userHome, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(userHome, ".athenz", filename), nil
-}
-
-func athenzKeyPair() (KeyPair, error) {
-	certFile, err := athenzPath("cert")
-	if err != nil {
-		return KeyPair{}, err
-	}
-	keyFile, err := athenzPath("key")
-	if err != nil {
-		return KeyPair{}, err
-	}
-	kp, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return KeyPair{}, err
-	}
-	cert, err := x509.ParseCertificate(kp.Certificate[0])
-	if err != nil {
-		return KeyPair{}, err
-	}
-	now := time.Now()
-	expiredAt := cert.NotAfter
-	if expiredAt.Before(now) {
-		delta := now.Sub(expiredAt).Truncate(time.Second)
-		return KeyPair{}, errHint(fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta), "Try renewing certificate with 'athenz-user-cert'")
-	}
-	return KeyPair{KeyPair: kp, CertificateFile: certFile, PrivateKeyFile: keyFile}, nil
 }
 
 // applicationPackageFrom returns an application loaded from args. If args is empty, the application package is loaded
