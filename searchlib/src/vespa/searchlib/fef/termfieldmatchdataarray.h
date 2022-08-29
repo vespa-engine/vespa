@@ -23,6 +23,12 @@ private:
     std::vector<TermFieldMatchData *> _array;
 
 public:
+    TermFieldMatchDataArray() = default;
+    TermFieldMatchDataArray(TermFieldMatchDataArray &&) noexcept = default;
+    TermFieldMatchDataArray & operator = (TermFieldMatchDataArray &&) noexcept = default;
+    TermFieldMatchDataArray(const TermFieldMatchDataArray&) = default;
+    TermFieldMatchDataArray & operator = (const TermFieldMatchDataArray &) = delete;
+    ~TermFieldMatchDataArray();
     /**
      * Reserve space for a number of elements in order to reduce number of allocations.
      * @param size Number of elements to reserve space for.
@@ -37,7 +43,7 @@ public:
      * @param value the pointer to be added
      **/
     TermFieldMatchDataArray &add(TermFieldMatchData *value) {
-        assert(value != 0);
+        assert(value != nullptr);
         _array.push_back(value);
         return *this;
     }

@@ -17,7 +17,7 @@ namespace search::queryeval {
 class IRequestContext
 {
 public:
-    virtual ~IRequestContext() { }
+    virtual ~IRequestContext() = default;
 
     /**
      * Provides the time of soft doom for the query. Now it is time to start cleaning up and return what you have.

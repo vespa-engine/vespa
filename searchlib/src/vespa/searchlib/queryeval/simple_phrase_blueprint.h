@@ -25,7 +25,7 @@ private:
 
 public:
     SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext, bool expensive);
-    ~SimplePhraseBlueprint();
+    ~SimplePhraseBlueprint() override;
 
     // used by create visitor
     FieldSpec getNextChildField(const FieldSpec &outer);

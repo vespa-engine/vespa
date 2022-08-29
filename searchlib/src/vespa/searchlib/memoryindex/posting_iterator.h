@@ -22,7 +22,7 @@ queryeval::SearchIterator::UP
 make_search_iterator(typename FieldIndex<interleaved_features>::PostingList::ConstIterator itr,
                      const FeatureStore& feature_store,
                      uint32_t field_id,
-                     const fef::TermFieldMatchDataArray& match_data);
+                     fef::TermFieldMatchDataArray match_data);
 
 }
 

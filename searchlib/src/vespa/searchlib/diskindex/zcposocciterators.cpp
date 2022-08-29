@@ -20,13 +20,13 @@ ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit
                          bool decode_normal_features, bool decode_interleaved_features,
                          bool unpack_normal_features, bool unpack_interleaved_features,
                          const PosOccFieldsParams *fieldsParams,
-                         const TermFieldMatchDataArray &matchData)
-    : ZcRareWordPostingIterator<bigEndian, dynamic_k>(matchData, start, docIdLimit,
+                         TermFieldMatchDataArray matchData)
+    : ZcRareWordPostingIterator<bigEndian, dynamic_k>(std::move(matchData), start, docIdLimit,
                                                       decode_normal_features, decode_interleaved_features,
                                                       unpack_normal_features, unpack_interleaved_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -37,19 +37,21 @@ ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                  bool unpack_normal_features, bool unpack_interleaved_features,
                  uint32_t minChunkDocs, const PostingListCounts &counts,
                  const PosOccFieldsParams *fieldsParams,
-                 const TermFieldMatchDataArray &matchData)
-    : ZcPostingIterator<bigEndian>(minChunkDocs, dynamic_k, counts, matchData, start, docIdLimit,
+                 TermFieldMatchDataArray matchData)
+    : ZcPostingIterator<bigEndian>(minChunkDocs, dynamic_k, counts, std::move(matchData), start, docIdLimit,
                                    decode_normal_features, decode_interleaved_features,
                                    unpack_normal_features, unpack_interleaved_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
 template <bool bigEndian>
 std::unique_ptr<search::queryeval::SearchIterator>
-create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data, bool unpack_normal_features, bool unpack_interleaved_features)
+create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length,
+                          const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params,
+                          fef::TermFieldMatchDataArray match_data, bool unpack_normal_features, bool unpack_interleaved_features)
 {
     using EC = bitcompression::EncodeContext64<bigEndian>;
     bitcompression::DecodeContext64<bigEndian> d(start.getOccurences(), start.getBitOffset());
@@ -61,28 +63,38 @@ create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Posit
     assert((num_docs == counts._numDocs) || ((num_docs == posting_params._min_chunk_docs) && (num_docs < counts._numDocs)));
     if (num_docs < posting_params._min_skip_docs) {
         if (posting_params._dynamic_k) {
-            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features, unpack_interleaved_features, &fields_params, match_data);
+            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit,
+                    posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features,
+                    unpack_interleaved_features, &fields_params, std::move(match_data));
         } else {
-            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features, unpack_interleaved_features, &fields_params, match_data);
+            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit,
+                    posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features,
+                    unpack_interleaved_features, &fields_params, std::move(match_data));
         }
     } else {
         if (posting_params._dynamic_k) {
-            return std::make_unique<ZcPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features, unpack_interleaved_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
+            return std::make_unique<ZcPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit,
+                    posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features,
+                    unpack_interleaved_features, posting_params._min_chunk_docs, counts, &fields_params, std::move(match_data));
         } else {
-            return std::make_unique<ZcPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features, unpack_interleaved_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
+            return std::make_unique<ZcPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit,
+                    posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features,
+                    unpack_interleaved_features, posting_params._min_chunk_docs, counts, &fields_params, std::move(match_data));
         }
     }
 }
 
 std::unique_ptr<search::queryeval::SearchIterator>
-create_zc_posocc_iterator(bool bigEndian, const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data)
+create_zc_posocc_iterator(bool bigEndian, const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length,
+                          const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params,
+                          fef::TermFieldMatchDataArray match_data)
 {
     bool unpack_normal_features = match_data.valid() ? match_data[0]->needs_normal_features() : false;
     bool unpack_interleaved_features = match_data.valid() ? match_data[0]->needs_interleaved_features() : false;
     if (bigEndian) {
-        return create_zc_posocc_iterator<true>(counts, start, bit_length, posting_params, fields_params, match_data, unpack_normal_features, unpack_interleaved_features);
+        return create_zc_posocc_iterator<true>(counts, start, bit_length, posting_params, fields_params, std::move(match_data), unpack_normal_features, unpack_interleaved_features);
     } else {
-        return create_zc_posocc_iterator<false>(counts, start, bit_length, posting_params, fields_params, match_data, unpack_normal_features, unpack_interleaved_features);
+        return create_zc_posocc_iterator<false>(counts, start, bit_length, posting_params, fields_params, std::move(match_data), unpack_normal_features, unpack_interleaved_features);
     }
 }
 

@@ -36,6 +36,7 @@ vespa_add_library(searchlib_fef OBJECT
     table.cpp
     tablemanager.cpp
     termfieldmatchdata.cpp
+    termfieldmatchdataarray.cpp
     termfieldmatchdataposition.cpp
     termmatchdatamerger.cpp
     utils.cpp

@@ -31,7 +31,7 @@ public:
     TermMatchDataMerger(const TermMatchDataMerger &) = delete;
     TermMatchDataMerger &operator=(const TermMatchDataMerger &) = delete;
 
-    TermMatchDataMerger(const Inputs &allinputs, const TermFieldMatchDataArray &outputs);
+    TermMatchDataMerger(const Inputs &allinputs, TermFieldMatchDataArray outputs);
     ~TermMatchDataMerger();
 
     void merge(uint32_t docid);

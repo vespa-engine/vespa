@@ -120,7 +120,7 @@ TEST(ElementIteratorTest, require_that_non_searchcontext)
     fef::TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
     queryeval::FakeResult result = createResult();
-    auto search = std::make_unique<queryeval::FakeSearch>("","","", result, tfmda);
+    auto search = std::make_unique<queryeval::FakeSearch>("","","", result, std::move(tfmda));
     queryeval::ElementIteratorWrapper wrapper(std::move(search), tfmd);
     verifyElementIterator(wrapper);
 }
