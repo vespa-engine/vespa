@@ -2,23 +2,13 @@
 
 #pragma once
 
-#include "res_type.h"
+#include "res_config_entry.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/util/stringenum.h>
 
 namespace search::docsummary {
-
-/**
- * This struct describes a single docsum field (name and type).
- **/
-struct ResConfigEntry {
-    ResType          _type;
-    vespalib::string _bindname;
-    int              _enumValue;
-};
-
 
 /**
  * This class represents a specific docsum format (docsum class). It

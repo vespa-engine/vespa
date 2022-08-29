@@ -8,6 +8,7 @@ namespace search { class MatchingElementsFields; }
 namespace search::docsummary {
 
 class IDocsumEnvironment;
+class IDocsumFieldWriterFactory;
 class DocsumFieldWriter;
 class DynamicDocsumWriter;
 class ResultConfig;
@@ -26,9 +27,7 @@ protected:
     IDocsumEnvironment * getEnvironment() { return _env; }
     const ResultConfig & getResultConfig() const;
 
-    virtual std::unique_ptr<DocsumFieldWriter>
-    createFieldWriter(const string & fieldName, const string & overrideName,
-                      const string & argument, bool & rc, std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+    virtual std::unique_ptr<IDocsumFieldWriterFactory> make_docsum_field_writer_factory();
 private:
     IDocsumEnvironment  * _env;
     DynamicDocsumWriter * _writer;

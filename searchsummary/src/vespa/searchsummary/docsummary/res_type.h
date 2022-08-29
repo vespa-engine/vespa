@@ -24,7 +24,8 @@ enum ResType {
     RES_LONG_DATA,
     RES_JSONSTRING,
     RES_TENSOR,
-    RES_FEATUREDATA
+    RES_FEATUREDATA,
+    RES_BAD
 };
 
 }

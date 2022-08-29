@@ -3,6 +3,7 @@
 #pragma once
 
 #include "res_type.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::docsummary {
 
@@ -16,6 +17,8 @@ struct ResTypeUtils
      * @param resType enum value of a result field type.
      **/
     static const char *GetResTypeName(ResType type);
+
+    static ResType get_res_type(vespalib::stringref name);
 };
 
 }
