@@ -2,6 +2,7 @@
 package vespa
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -15,15 +16,15 @@ func setup(t *testing.T, contents string) {
 	envf := cdir + "/default-env.txt"
 	err := os.MkdirAll(cdir, 0755)
 	assert.Nil(t, err)
-	os.Setenv("VESPA_HOME", vdir)
+	t.Setenv("VESPA_HOME", vdir)
 	err = os.WriteFile(envf, []byte(contents), 0644)
 	assert.Nil(t, err)
 }
 
 func TestLoadEnvSimple(t *testing.T) {
-	os.Setenv("VESPA_FOO", "was foo")
-	os.Setenv("VESPA_BAR", "was bar")
-	os.Setenv("VESPA_FOOBAR", "foobar")
+	t.Setenv("VESPA_FOO", "was foo")
+	t.Setenv("VESPA_BAR", "was bar")
+	t.Setenv("VESPA_FOOBAR", "foobar")
 	os.Unsetenv("VESPA_QUUX")
 	setup(t, `
 # vespa env vars file
@@ -97,4 +98,60 @@ override VESPA_V2 v2
 	assert.Equal(t, os.Getenv("VESPA_V2"), "v2")
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "Not a valid environment variable name: '.A'")
+}
+
+func TestFindUser(t *testing.T) {
+	u := FindVespaUser()
+	if u == "" {
+		fmt.Fprintln(os.Stderr, "WARNING: empty result from FindVespaUser()")
+	} else {
+		fmt.Fprintln(os.Stderr, "INFO: result from FindVespaUser() is", u)
+		assert.Equal(t, u, os.Getenv("VESPA_USER"))
+	}
+	setup(t, `
+override VESPA_USER unprivuser
+`)
+	LoadDefaultEnv()
+	u = FindVespaUser()
+	assert.Equal(t, "unprivuser", u)
+}
+
+func TestExportEnv(t *testing.T) {
+	t.Setenv("VESPA_FOO", "was foo")
+	t.Setenv("VESPA_BAR", "was bar")
+	t.Setenv("VESPA_FOOBAR", "foobar")
+	t.Setenv("VESPA_BARFOO", "was barfoo")
+	os.Unsetenv("VESPA_QUUX")
+	setup(t, `
+# vespa env vars file
+override VESPA_FOO "newFoo1"
+
+fallback VESPA_BAR "new bar"
+fallback VESPA_QUUX "new quux"
+
+unset VESPA_FOOBAR
+unset VESPA_BARFOO
+fallback VESPA_BARFOO new'b<a>r'foo
+override XYZ xyz
+unset XYZ
+`)
+	holder := newShellEnvExporter()
+	err := loadDefaultEnvTo(holder)
+	assert.Nil(t, err)
+	// new values:
+	assert.Equal(t, "newFoo1", holder.exportVars["VESPA_FOO"])
+	assert.Equal(t, "", holder.exportVars["VESPA_BAR"])
+	assert.Equal(t, "'new quux'", holder.exportVars["VESPA_QUUX"])
+	assert.Equal(t, `'new'\''b<a>r'\''foo'`, holder.exportVars["VESPA_BARFOO"])
+	// unsets:
+	assert.Equal(t, "", holder.exportVars["VESPA_FOOBAR"])
+	assert.Equal(t, "unset", holder.unsetVars["VESPA_FOOBAR"])
+	assert.Equal(t, "", holder.exportVars["XYZ"])
+	assert.Equal(t, "unset", holder.unsetVars["XYZ"])
+	// nothing extra allowed:
+	assert.Equal(t, 3, len(holder.exportVars))
+	assert.Equal(t, 2, len(holder.unsetVars))
+	// run it
+	err = ExportDefaultEnvToSh()
+	assert.Nil(t, err)
 }
