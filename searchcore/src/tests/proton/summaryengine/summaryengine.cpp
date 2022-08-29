@@ -3,7 +3,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/compressor.h>

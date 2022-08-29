@@ -7,6 +7,8 @@
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
 #include <vespa/vsm/vsm/slimefieldwriter.h>
+#include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace document;
 
@@ -30,18 +32,18 @@ private:
 
 public:
     TestDocument(const search::DocumentIdT & docId, size_t numFields) : vsm::Document(docId, numFields), _fields(numFields) {}
-    virtual bool setField(FieldIdT fId, document::FieldValue::UP fv) override {
+    bool setField(FieldIdT fId, document::FieldValue::UP fv) override {
         if (fId < _fields.size()) {
             _fields[fId].reset(fv.release());
             return true;
         }
         return false;
     }
-    virtual const document::FieldValue * getField(FieldIdT fId) const override {
+    const document::FieldValue * getField(FieldIdT fId) const override {
         if (fId < _fields.size()) {
             return _fields[fId].get();
         }
-        return NULL;
+        return nullptr;
     }
 };
 
@@ -105,12 +107,22 @@ DocsumTest::assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValu
 }
 
 void
+convert(SlimeFieldWriter & sfw, const document::FieldValue & fv, vespalib::Output & output)
+{
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+    sfw.insert(fv, inserter);
+    vespalib::slime::BinaryFormat::encode(slime, output);
+}
+
+void
 DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp)
 {
-    sfw.convert(fv);
+    vespalib::SmartBuffer buffer(1024);
+    convert(sfw, fv, buffer);
 
     vespalib::Slime gotSlime;
-    vespalib::Memory serialized(sfw.out());
+    vespalib::Memory serialized(buffer.obtain());
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized, gotSlime);
     ASSERT_EQUAL(decodeRes, serialized.size);
 

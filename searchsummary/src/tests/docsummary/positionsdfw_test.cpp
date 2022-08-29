@@ -9,7 +9,6 @@
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/test/slime_value.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/juniper/rpinterface.h>

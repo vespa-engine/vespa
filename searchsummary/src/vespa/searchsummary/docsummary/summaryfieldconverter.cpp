@@ -35,8 +35,8 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 
@@ -152,11 +152,11 @@ void handleIndexingTerms(Handler &handler, const StringFieldValue &value) {
         }
     }
     sort(terms.begin(), terms.end());
-    SpanTermVector::const_iterator it = terms.begin();
-    SpanTermVector::const_iterator ite = terms.end();
+    auto it = terms.begin();
+    auto ite = terms.end();
     int32_t endPos = 0;
     for (; it != ite; ) {
-        SpanTermVector::const_iterator it_begin = it;
+        auto it_begin = it;
         if (it_begin->first.from() >  endPos) {
             Span tmpSpan(endPos, it_begin->first.from() - endPos);
             handler.handleAnnotations(tmpSpan, it, it);
@@ -584,10 +584,10 @@ public:
         SlimeInserter inserter(slime);
         SlimeFiller visitor(inserter, _tokenize, _matching_elems);
         input.accept(visitor);
-        search::RawBuf rbuf(4_Ki);
-        search::SlimeOutputRawBufAdapter adapter(rbuf);
-        vespalib::slime::BinaryFormat::encode(slime, adapter);
-        return std::make_unique<RawFieldValue>(rbuf.GetDrainPos(), rbuf.GetUsedLen());
+        vespalib::SmartBuffer buffer(4_Ki);
+        vespalib::slime::BinaryFormat::encode(slime, buffer);
+        vespalib::Memory mem = buffer.obtain();
+        return std::make_unique<RawFieldValue>(mem.data, mem.size);
     }
 };
 

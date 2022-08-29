@@ -7,6 +7,7 @@
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
