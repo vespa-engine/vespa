@@ -23,13 +23,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ChangeManagementAssessor;
 import com.yahoo.vespa.hosted.controller.persistence.ChangeRequestSerializer;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
@@ -61,8 +61,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 

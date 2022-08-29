@@ -12,9 +12,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvi
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
+import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
 
 /**
  * Handler implementation for '/system-flags/v1', an API for controlling system-wide feature flags
@@ -38,12 +38,10 @@ public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        switch (request.getMethod()) {
-            case PUT:
-                return put(request);
-            default:
-                return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
-        }
+        return switch (request.getMethod()) {
+            case PUT -> put(request);
+            default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+        };
     }
 
     private HttpResponse put(HttpRequest request) {
@@ -63,9 +61,7 @@ public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
             SystemFlagsDeployResult result = deployer.deployFlags(archive, dryRun);
             return new JacksonJsonResponse<>(200, result.toWire());
         } catch (Exception e) {
-            String errorMessage = "System flags deploy failed: " + e.getMessage();
-            log.log(Level.SEVERE, errorMessage, e);
-            return ErrorResponse.internalServerError(errorMessage);
+            return ErrorResponses.logThrowing(request, log, e);
         }
     }
 
