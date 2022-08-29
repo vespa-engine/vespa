@@ -6,17 +6,20 @@
 #include "resultclass.h"
 #include "resultconfig.h"
 #include "docsumstore.h"
-#include "keywordextractor.h"
 #include "docsum_field_writer.h"
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/wordfolder.h>
 
-namespace search { class IAttributeManager; }
+namespace search {
+    class IAttributeManager;
+    class RawBuf;
+}
 
 namespace vespalib { class Slime; }
 
 namespace search::docsummary {
+
+class KeywordExtractor;
 
 static constexpr uint32_t SLIME_MAGIC_ID = 0x55555555;
 

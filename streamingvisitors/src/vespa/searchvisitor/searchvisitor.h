@@ -24,6 +24,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/sortspec.h>
+#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>

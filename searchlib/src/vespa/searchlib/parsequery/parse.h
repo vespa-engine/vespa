@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/query/weight.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {

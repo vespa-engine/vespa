@@ -4,6 +4,7 @@
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
 #include "i_docsum_store_document.h"
+#include "keywordextractor.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/util/rawbuf.h>
 
 using vespalib::string;
 using std::vector;

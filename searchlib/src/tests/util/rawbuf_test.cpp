@@ -116,23 +116,6 @@ TEST("require that prealloc makes enough room") {
     EXPECT_LESS_EQUAL(100u, buf.GetFreeLen());
 }
 
-TEST("require that rawbuf can read from file") {
-    FastOS_File file("mytemporaryfile");
-    ASSERT_TRUE(file.OpenReadWrite());
-    ASSERT_EQUAL(6, file.Write2("barbaz", 6));
-    file.SetPosition(0);
-
-    RawBuf buf(10);
-    buf += "foo";
-    buf.readFile(file, 3);
-    EXPECT_EQUAL("foobar", getString(buf));
-    buf.readFile(file, 100);
-    EXPECT_EQUAL("foobarbaz", getString(buf));
-
-    ASSERT_TRUE(file.Close());
-    file.Delete();
-}
-
 TEST("require that compact discards drained data") {
     RawBuf buf(10);
     buf += "foobar";

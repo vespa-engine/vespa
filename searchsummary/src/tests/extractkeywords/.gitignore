@@ -1,7 +1,0 @@
-*.core
-.depend
-Makefile
-core
-core.*
-extractkeywordstest
-searchsummary_extractkeywordstest_app

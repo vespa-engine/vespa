@@ -10,6 +10,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
+#include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
@@ -89,7 +90,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
       _juniperConfig(),
       _attributeMgr(std::move(attributeMgr)),
       _docStore(std::move(docStore)),
-      _repo(repo)
+      _repo(std::move(repo))
 {
     auto resultConfig = std::make_unique<ResultConfig>();
     if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
