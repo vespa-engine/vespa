@@ -156,8 +156,8 @@ TEST("requireThatAnnotationsCanHaveValues") {
 TEST("requireThatAnnotationsCanReferenceAnnotations") {
     auto root = std::make_unique<SpanList>();
     SpanTree tree("html", std::move(root));
-    size_t san_index = tree.annotate(makeUP(new Annotation(text_type)));
-    size_t fran_index = tree.annotate(makeUP(new Annotation(text_type)));
+    size_t san_index = tree.annotate(Annotation(text_type));
+    size_t fran_index = tree.annotate(Annotation(text_type));
 
     AnnotationReferenceDataType annotation_ref_type(text_type, 101);
     ArrayDataType array_type(annotation_ref_type);

@@ -44,7 +44,7 @@ make_doc_type_repo()
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, doc_type_name,
                      Struct(header_name), Struct(body_name));
-    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
+    return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
 
 class DocumentIdDFWTest : public ::testing::Test
