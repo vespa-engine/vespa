@@ -59,7 +59,7 @@ public class SummaryClass extends Derived {
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.getName().equals("default")) {
-            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryTransform.DOCUMENT_ID, fields);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryTransform.DOCUMENT_ID, "", fields);
         }
     }
 
@@ -68,12 +68,14 @@ public class SummaryClass extends Derived {
             if (!accessingDiskSummary && schema.isAccessingDiskSummary(summaryField)) {
                 accessingDiskSummary = true;
             }
-            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(), fields);
+            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(),
+                    SummaryMap.getSource(summaryField), fields);
         }
     }
 
     private void addField(String name, DataType type,
                           SummaryTransform transform,
+                          String source,
                           Map<String, SummaryClassField> fields) {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
@@ -82,7 +84,7 @@ public class SummaryClass extends Derived {
                                                                   ". " + "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
-            fields.put(name, new SummaryClassField(name, type, transform, rawAsBase64));
+            fields.put(name, new SummaryClassField(name, type, transform, source, rawAsBase64));
         }
     }
 
@@ -110,7 +112,9 @@ public class SummaryClass extends Derived {
         for (SummaryClassField field : fields.values() ) {
             classBuilder.fields(new SummaryConfig.Classes.Fields.Builder().
                     name(field.getName()).
-                    type(field.getType().getName()));
+                    type(field.getType().getName()).
+                    command(field.getCommand()).
+                    source(field.getSource()));
         }
         return classBuilder;
     }

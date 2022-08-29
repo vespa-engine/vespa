@@ -66,57 +66,19 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
 
         assertEquals(13, summary.fields().size());
 
-        field = fields.next();
-        assertEquals("exactemento", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("exact", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("title", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("description", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("dyndesc", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("longdesc", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("longstat", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("dynlong", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("dyndesc2", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
-
-        field = fields.next();
-        assertEquals("measurement", field.getName());
-        assertEquals(SummaryClassField.Type.INTEGER, field.getType());
-
-        field = fields.next();
-        assertEquals("rankfeatures", field.getName());
-        assertEquals(SummaryClassField.Type.FEATUREDATA, field.getType());
-
-        field = fields.next();
-        assertEquals("summaryfeatures", field.getName());
-        assertEquals(SummaryClassField.Type.FEATUREDATA, field.getType());
-
-        field = fields.next();
-        assertEquals("documentid", field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
+        assertSummaryField("exactemento", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("exact", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("title", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("description", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("dyndesc", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dyndesc", fields.next());
+        assertSummaryField("longdesc", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("longstat", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("dynlong", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dynlong", fields.next());
+        assertSummaryField("dyndesc2", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dyndesc2", fields.next());
+        assertSummaryField("measurement", SummaryClassField.Type.INTEGER, "attribute", "measurement", fields.next());
+        assertSummaryField("rankfeatures", SummaryClassField.Type.FEATUREDATA, "rankfeatures", fields.next());
+        assertSummaryField("summaryfeatures", SummaryClassField.Type.FEATUREDATA, "summaryfeatures", fields.next());
+        assertSummaryField("documentid", SummaryClassField.Type.LONGSTRING, "documentid", fields.next());
     }
 
     @Test
@@ -130,6 +92,23 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         SummaryClass myClass = new SummaryClass(adSchema, adSchema.getSummary("my_summary"), new BaseDeployLogger());
         assertNull(myClass.fields().get("campaign_ref"));
         assertEquals(SummaryClassField.Type.LONGSTRING, myClass.fields().get("other_campaign_ref").getType());
+    }
+
+    private void assertSummaryField(String expName, SummaryClassField.Type expType, SummaryClassField field) {
+        assertSummaryField(expName, expType, "", "", field);
+    }
+
+    private void assertSummaryField(String expName, SummaryClassField.Type expType, String expCommand, SummaryClassField field) {
+        assertSummaryField(expName, expType, expCommand, "", field);
+    }
+
+    private void assertSummaryField(String expName, SummaryClassField.Type expType,
+                                    String expCommand, String expSource, SummaryClassField field) {
+        assertEquals(expName, field.getName());
+        assertEquals(expType, field.getType());
+        assertEquals(expCommand, field.getCommand());
+        assertEquals(expSource, field.getSource());
+
     }
 
     private static Schema buildCampaignAdModel() throws ParseException {

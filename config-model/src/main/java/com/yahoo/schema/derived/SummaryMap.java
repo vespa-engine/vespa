@@ -49,31 +49,14 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
 
     private void derive(DocumentSummary documentSummary) {
         for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
-            if (summaryField.getTransform()== SummaryTransform.NONE) continue;
-
-            if (summaryField.getTransform()==SummaryTransform.ATTRIBUTE ||
-                (summaryField.getTransform()==SummaryTransform.ATTRIBUTECOMBINER && summaryField.hasExplicitSingleSource()) ||
-                summaryField.getTransform()==SummaryTransform.COPY ||
-                summaryField.getTransform()==SummaryTransform.DISTANCE ||
-                summaryField.getTransform()==SummaryTransform.GEOPOS ||
-                summaryField.getTransform()==SummaryTransform.POSITIONS ||
-                summaryField.getTransform()==SummaryTransform.MATCHED_ELEMENTS_FILTER ||
-                summaryField.getTransform()==SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
-            {
-                resultTransforms.put(summaryField.getName(), new FieldResultTransform(summaryField.getName(),
-                                                                                      summaryField.getTransform(),
-                                                                                      summaryField.getSingleSource()));
-            } else {
-                // Note: Currently source mapping is handled in the indexing statement,
-                // by creating a summary field for each of the values
-                // This works, but is suboptimal. We could consolidate to a minimal set and
-                // use the right value from the minimal set as the third parameter here,
-                // and add "override" commands to multiple static values
-                boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic();
-                resultTransforms.put(summaryField.getName(), new FieldResultTransform(summaryField.getName(),
-                                                                                      summaryField.getTransform(),
-                                                                                      useFieldNameAsArgument ? summaryField.getName() : ""));
+            if (summaryField.getTransform()== SummaryTransform.NONE) {
+                continue;
             }
+
+            resultTransforms.put(summaryField.getName(),
+                    new FieldResultTransform(summaryField.getName(),
+                            summaryField.getTransform(),
+                            getSource(summaryField)));
         }
     }
 
@@ -85,13 +68,42 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
     protected String getDerivedName() { return "summarymap"; }
 
     /** Returns the command name of a transform */
-    private String getCommand(SummaryTransform transform) {
-        if (transform == SummaryTransform.DISTANCE)
+    static String getCommand(SummaryTransform transform) {
+        if (transform == SummaryTransform.NONE) {
+            return "";
+        } else if (transform == SummaryTransform.DISTANCE) {
             return "absdist";
-        else if (transform.isDynamic())
+        } else if (transform.isDynamic()) {
             return "dynamicteaser";
-        else
+        } else {
             return transform.getName();
+        }
+    }
+
+    static String getSource(SummaryField summaryField) {
+        if (summaryField.getTransform() == SummaryTransform.NONE) {
+            return "";
+        }
+
+        if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE ||
+                (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER && summaryField.hasExplicitSingleSource()) ||
+                summaryField.getTransform() == SummaryTransform.COPY ||
+                summaryField.getTransform() == SummaryTransform.DISTANCE ||
+                summaryField.getTransform() == SummaryTransform.GEOPOS ||
+                summaryField.getTransform() == SummaryTransform.POSITIONS ||
+                summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
+                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
+        {
+            return summaryField.getSingleSource();
+        } else {
+            // Note: Currently source mapping is handled in the indexing statement,
+            // by creating a summary field for each of the values
+            // This works, but is suboptimal. We could consolidate to a minimal set and
+            // use the right value from the minimal set as the third parameter here,
+            // and add "override" commands to multiple static values
+            boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic();
+            return useFieldNameAsArgument ? summaryField.getName() : "";
+        }
     }
 
     /**
@@ -100,7 +112,7 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
      * A dynamic transform needs the query to perform its computations.
      */
     // TODO/Note: "dynamic" here means something else than in SummaryTransform
-    public static boolean isDynamicCommand(String commandName) {
+    static boolean isDynamicCommand(String commandName) {
         return (commandName.equals("dynamicteaser") ||
                 commandName.equals(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()) ||
                 commandName.equals(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
