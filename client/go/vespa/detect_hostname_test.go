@@ -11,7 +11,7 @@ import (
 )
 
 func TestDetectHostname(t *testing.T) {
-	os.Setenv("VESPA_HOSTNAME", "foo.bar")
+	t.Setenv("VESPA_HOSTNAME", "foo.bar")
 	got, err := FindOurHostname()
 	assert.Equal(t, "foo.bar", got)
 	os.Unsetenv("VESPA_HOSTNAME")

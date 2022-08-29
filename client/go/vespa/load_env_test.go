@@ -16,15 +16,15 @@ func setup(t *testing.T, contents string) {
 	envf := cdir + "/default-env.txt"
 	err := os.MkdirAll(cdir, 0755)
 	assert.Nil(t, err)
-	os.Setenv("VESPA_HOME", vdir)
+	t.Setenv("VESPA_HOME", vdir)
 	err = os.WriteFile(envf, []byte(contents), 0644)
 	assert.Nil(t, err)
 }
 
 func TestLoadEnvSimple(t *testing.T) {
-	os.Setenv("VESPA_FOO", "was foo")
-	os.Setenv("VESPA_BAR", "was bar")
-	os.Setenv("VESPA_FOOBAR", "foobar")
+	t.Setenv("VESPA_FOO", "was foo")
+	t.Setenv("VESPA_BAR", "was bar")
+	t.Setenv("VESPA_FOOBAR", "foobar")
 	os.Unsetenv("VESPA_QUUX")
 	setup(t, `
 # vespa env vars file
@@ -117,10 +117,10 @@ override VESPA_USER unprivuser
 }
 
 func TestExportEnv(t *testing.T) {
-	os.Setenv("VESPA_FOO", "was foo")
-	os.Setenv("VESPA_BAR", "was bar")
-	os.Setenv("VESPA_FOOBAR", "foobar")
-	os.Setenv("VESPA_BARFOO", "was barfoo")
+	t.Setenv("VESPA_FOO", "was foo")
+	t.Setenv("VESPA_BAR", "was bar")
+	t.Setenv("VESPA_FOOBAR", "foobar")
+	t.Setenv("VESPA_BARFOO", "was barfoo")
 	os.Unsetenv("VESPA_QUUX")
 	setup(t, `
 # vespa env vars file
