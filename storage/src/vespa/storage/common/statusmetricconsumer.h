@@ -34,6 +34,10 @@ public:
             const std::string& name = "status");
     ~StatusMetricConsumer() override;
 
+    // Metric reporting requires the "vespa.content.metrics_api" capability
+    CapabilitySet required_capabilities() const noexcept override {
+        return CapabilitySet::of({ Capability::content_metrics_api() });
+    }
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
     void updateMetrics(const MetricLockGuard & guard) override;

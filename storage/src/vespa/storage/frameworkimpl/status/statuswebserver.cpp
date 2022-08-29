@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configfetcher.hpp>
@@ -45,15 +46,15 @@ StatusWebServer::~StatusWebServer()
 void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config)
 {
     int newPort = config->httpport;
-        // If server is already running, ignore config updates that doesn't
-        // alter port, or suggests random port.
+    // If server is already running, ignore config updates that doesn't
+    // alter port, or suggests random port.
     if (_httpServer) {
         if (newPort == 0 || newPort == _port) return;
     }
-        // Try to create new server before destroying old.
+    // Try to create new server before destroying old.
     LOG(info, "Starting status web server on port %u.", newPort);
     std::unique_ptr<WebServer> server;
-        // Negative port number means don't run the web server
+    // Negative port number means don't run the web server
     if (newPort >= 0) {
         try {
             server = std::make_unique<WebServer>(*this, newPort);
@@ -146,6 +147,25 @@ StatusWebServer::getListenPort() const
 }
 
 void
+StatusWebServer::invoke_reporter(const framework::StatusReporter& reporter,
+                                 const framework::HttpUrlPath& url_path,
+                                 vespalib::Portal::GetRequest& request)
+{
+    try {
+        std::ostringstream content;
+        auto content_type = reporter.getReportContentType(url_path);
+        if (reporter.reportStatus(content, url_path)) {
+            request.respond_with_content(content_type, content.str());
+        } else {
+            request.respond_with_error(404, "Not Found");
+        }
+    } catch (std::exception &e) {
+        LOG(warning, "Internal Server Error: %s", e.what());
+        request.respond_with_error(500, "Internal Server Error");
+    }
+}
+
+void
 StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Portal::GetRequest request)
 {
     vespalib::string link(urlpath.getPath());
@@ -157,22 +177,25 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
     if ( ! link.empty()) {
         const framework::StatusReporter *reporter = _reporterMap.getStatusReporter(link);
         if (reporter != nullptr) {
-            try {
-                std::ostringstream content;
-                auto content_type = reporter->getReportContentType(urlpath);
-                if (reporter->reportStatus(content, urlpath)) {
-                    request.respond_with_content(content_type, content.str());
-                } else {
-                    request.respond_with_error(404, "Not Found");
-                }
-            } catch (std::exception &e) {
-                LOG(warning, "Internal Server Error: %s", e.what());
-                request.respond_with_error(500, "Internal Server Error");
+            const auto& auth_ctx = request.auth_context();
+            if (auth_ctx.capabilities().contains_all(reporter->required_capabilities())) {
+                invoke_reporter(*reporter, urlpath, request);
+            } else {
+                // TODO should print peer address as well; not currently exposed
+                LOG(warning, "Peer with %s denied status page access to '%s' due to insufficient "
+                             "credentials (had %s, needed %s)",
+                    vespalib::net::tls::to_string(auth_ctx.peer_credentials()).c_str(),
+                    link.c_str(), auth_ctx.capabilities().to_string().c_str(),
+                    reporter->required_capabilities().to_string().c_str());
+                request.respond_with_error(403, "Forbidden");
             }
         } else {
             request.respond_with_error(404, "Not Found");
         }
     } else {
+        // TODO should the index page be capability-restricted? Would be a bit strange if the root
+        //  index '/' page requires status capabilities but '/metrics' does not.
+        //  The index page only leaks the Vespa version and node type (inferred by reporter set).
         IndexPageReporter indexRep;
         indexRep << "<p><b>Binary version of Vespa:</b> "
                  << vespalib::Vtag::currentVersion.toString()

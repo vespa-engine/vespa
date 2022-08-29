@@ -24,6 +24,7 @@ namespace config {
 namespace storage {
 
 namespace framework {
+    struct StatusReporter;
     struct StatusReporterMap;
     struct ThreadHandle;
     struct ComponentRegister;
@@ -35,10 +36,10 @@ namespace framework {
 class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>
 {
     class WebServer : public vespalib::Portal::GetHandler {
-        StatusWebServer& _status;
-        vespalib::Portal::SP _server;
+        StatusWebServer&              _status;
+        vespalib::Portal::SP          _server;
         vespalib::ThreadStackExecutor _executor;
-        vespalib::Portal::Token::UP _root;
+        vespalib::Portal::Token::UP   _root;
 
     public:
         WebServer(StatusWebServer&, uint16_t port);
@@ -81,6 +82,9 @@ public:
     int getListenPort() const;
     void handlePage(const framework::HttpUrlPath&, vespalib::Portal::GetRequest request);
 private:
+    void invoke_reporter(const framework::StatusReporter&,
+                         const framework::HttpUrlPath&,
+                         vespalib::Portal::GetRequest&);
     void configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config) override;
 };
 
