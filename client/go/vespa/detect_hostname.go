@@ -59,23 +59,37 @@ func FindOurHostname() (string, error) {
 	return name, err
 }
 
-func findOurHostnameFrom(name string) (string, error) {
-	ifAddrs, _ := net.InterfaceAddrs()
-	var checkIsMine = func(addr string) bool {
-		if len(ifAddrs) == 0 {
+func validateHostname(name string) bool {
+	myIpAddresses := make(map[string]bool)
+	interfaceAddrs, _ := net.InterfaceAddrs()
+	for _, ifAddr := range interfaceAddrs {
+		// note: ifAddr.String() is typically "127.0.0.1/8"
+		if ipnet, ok := ifAddr.(*net.IPNet); ok {
+			myIpAddresses[ipnet.IP.String()] = true
+		}
+	}
+	ipAddrs, _ := net.LookupIP(name)
+	someGood := false
+	for _, addr := range ipAddrs {
+		if len(myIpAddresses) == 0 {
 			// no validation possible, assume OK
 			return true
 		}
-		for _, ifAddr := range ifAddrs {
-			// note: ifAddr.String() is typically "127.0.0.1/8"
-			if ipnet, ok := ifAddr.(*net.IPNet); ok {
-				if ipnet.IP.String() == addr {
-					return true
-				}
-			}
+		if myIpAddresses[addr.String()] {
+			someGood = true
+		} else {
+			return false
 		}
-		return false
 	}
+	return someGood
+}
+
+func findOurHostnameFrom(name string) (string, error) {
+	if strings.Contains(name, ".") && validateHostname(name) {
+		// it's all good
+		return name, nil
+	}
+	possibles := make([]string, 0, 5)
 	if name != "" {
 		ipAddrs, _ := net.LookupIP(name)
 		for _, addr := range ipAddrs {
@@ -83,36 +97,39 @@ func findOurHostnameFrom(name string) (string, error) {
 			case addr.IsLoopback():
 				// skip
 			case addr.To4() != nil || addr.To16() != nil:
-				if checkIsMine(addr.String()) {
-					reverseNames, _ := net.LookupAddr(addr.String())
-					for _, reverse := range reverseNames {
-						if strings.HasPrefix(reverse, name) {
-							return reverse, nil
-						}
-					}
-					if len(reverseNames) > 0 {
-						reverse := reverseNames[0]
-						return reverse, nil
-					}
-				}
+				reverseNames, _ := net.LookupAddr(addr.String())
+				possibles = append(possibles, reverseNames...)
 			}
 		}
 	}
-	for _, ifAddr := range ifAddrs {
+	interfaceAddrs, _ := net.InterfaceAddrs()
+	for _, ifAddr := range interfaceAddrs {
 		if ipnet, ok := ifAddr.(*net.IPNet); ok {
 			ip := ipnet.IP
 			if ip == nil || ip.IsLoopback() {
 				continue
 			}
 			reverseNames, _ := net.LookupAddr(ip.String())
-			if len(reverseNames) > 0 {
-				reverse := reverseNames[0]
-				return reverse, nil
-			}
+			possibles = append(possibles, reverseNames...)
 		}
 	}
-	if name != "" {
-		return name, fmt.Errorf("unvalidated hostname '%s'", name)
+	// look for valid possible starting with the given name
+	for _, poss := range possibles {
+		if strings.HasPrefix(poss, name+".") && validateHostname(poss) {
+			return poss, nil
+		}
+	}
+	// look for valid possible
+	for _, poss := range possibles {
+		if strings.Contains(poss, ".") && validateHostname(poss) {
+			return poss, nil
+		}
+	}
+	// look for any valid possible
+	for _, poss := range possibles {
+		if validateHostname(poss) {
+			return poss, nil
+		}
 	}
 	return "localhost", fmt.Errorf("fallback to localhost, os.Hostname '%s'", name)
 }
