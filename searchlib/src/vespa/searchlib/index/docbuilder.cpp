@@ -111,21 +111,6 @@ insertRaw(const Schema::Field & sfield,
     rfvalue->setValue(static_cast<const char *>(buf), len);
 }
 
-
-template <typename T>
-std::unique_ptr<T>
-make_UP(T *p)
-{
-    return std::unique_ptr<T>(p);
-}
-
-template <typename T>
-std::unique_ptr<T>
-makeUP(T *p)
-{
-    return std::unique_ptr<T>(p);
-}
-
 }
 
 namespace docbuilderkludge
@@ -154,10 +139,10 @@ using namespace docbuilderkludge;
 
 namespace {
 
-std::unique_ptr<Annotation>
+Annotation
 makeTokenType(linguistics::TokenType type)
 {
-    return std::make_unique<Annotation>(*AnnotationType::TOKEN_TYPE, std::make_unique<IntFieldValue>(type));
+    return Annotation(*AnnotationType::TOKEN_TYPE, std::make_unique<IntFieldValue>(type));
 }
 
 }
@@ -337,7 +322,7 @@ DocBuilder::IndexFieldHandle::addTokenizedString(const vespalib::string &val,
 void
 DocBuilder::IndexFieldHandle::addSpan(size_t start, size_t len)
 {
-    const SpanNode &span = _spanList->add(makeUP(new Span(start, len)));
+    const SpanNode &span = _spanList->add(std::make_unique<Span>(start, len));
     _lastSpan = &span;
 }
 
@@ -388,8 +373,8 @@ DocBuilder::IndexFieldHandle::addTermAnnotation(const vespalib::string &val)
     assert(_spanTree);
     assert(_lastSpan != nullptr);
     _spanTree->annotate(*_lastSpan,
-                        makeUP(new Annotation(*AnnotationType::TERM,
-                                       makeUP(new StringFieldValue(val)))));
+                        Annotation(*AnnotationType::TERM,
+                                   std::make_unique<StringFieldValue>(val)));
 }
 
 void

@@ -18,20 +18,8 @@ SpanTree::annotate(Annotation&& annotation_) {
 }
 
 size_t
-SpanTree::annotate(std::unique_ptr<Annotation> annotation_) {
-    _annotations.push_back(std::move(*annotation_));
-    return _annotations.size() - 1;
-}
-
-size_t
 SpanTree::annotate(const SpanNode &node, Annotation&& annotation_) {
     annotation_.setSpanNode(node);
-    return annotate(std::move(annotation_));
-}
-
-size_t
-SpanTree::annotate(const SpanNode &node, std::unique_ptr<Annotation> annotation_) {
-    annotation_->setSpanNode(node);
     return annotate(std::move(annotation_));
 }
 
