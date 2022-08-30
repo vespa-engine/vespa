@@ -5,18 +5,13 @@ import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
-
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * This class represents all the options that can be set in the fleetcontroller.
@@ -125,7 +120,7 @@ public class FleetControllerOptions implements Cloneable {
     // TODO: Get rid of this by always getting nodes by distribution.getNodes()
     public Set<ConfiguredNode> nodes;
 
-    private Duration maxDeferredTaskVersionWaitTime = Duration.ofSeconds(30);
+    public Duration maxDeferredTaskVersionWaitTime = Duration.ofSeconds(30);
 
     public boolean clusterHasGlobalDocumentTypes = false;
 
@@ -173,84 +168,6 @@ public class FleetControllerOptions implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Will not happen");
         }
-    }
-
-    public static String splitZooKeeperAddress(String s) {
-        StringBuilder sb = new StringBuilder();
-        while (true) {
-            int index = s.indexOf(',');
-            if (index > 0) {
-                sb.append(s.substring(0, index + 1)).append(' ');
-                s = s.substring(index+1);
-            } else {
-                break;
-            }
-        }
-        sb.append(s);
-        return sb.toString();
-    }
-
-    static DecimalFormat DecimalDot2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.ENGLISH));
-
-    public void writeHtmlState(StringBuilder sb) {
-        String slobrokspecs = "";
-        for (int i=0; i<slobrokConnectionSpecs.length; ++i) {
-            if (i != 0) slobrokspecs += "<br>";
-            slobrokspecs += slobrokConnectionSpecs[i];
-        }
-        sb.append("<h1>Current config</h1>\n")
-          .append("<p>Fleet controller config id: ").append(fleetControllerConfigId == null ? null : fleetControllerConfigId.replaceAll("\n", "<br>\n")).append("</p>\n")
-          .append("<p>Slobrok config id: ").append(slobrokConfigId == null ? null : slobrokConfigId.replaceAll("\n", "<br>\n")).append("</p>\n")
-          .append("<table border=\"1\" cellspacing=\"0\"><tr><th>Property</th><th>Value</th></tr>\n");
-
-        sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(clusterName).append("</td></tr>");
-        sb.append("<tr><td><nobr>Fleet controller index</nobr></td><td align=\"right\">").append(fleetControllerIndex).append("/").append(fleetControllerCount).append("</td></tr>");
-        sb.append("<tr><td><nobr>Number of fleetcontrollers gathering states from nodes</nobr></td><td align=\"right\">").append(stateGatherCount).append("</td></tr>");
-
-        sb.append("<tr><td><nobr>Slobrok connection spec</nobr></td><td align=\"right\">").append(slobrokspecs).append("</td></tr>");
-        sb.append("<tr><td><nobr>RPC port</nobr></td><td align=\"right\">").append(rpcPort == 0 ? "Pick random available" : rpcPort).append("</td></tr>");
-        sb.append("<tr><td><nobr>HTTP port</nobr></td><td align=\"right\">").append(httpPort == 0 ? "Pick random available" : httpPort).append("</td></tr>");
-        sb.append("<tr><td><nobr>Master cooldown period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(masterZooKeeperCooldownPeriod)).append("</td></tr>");
-        String zooKeeperAddress = (zooKeeperServerAddress == null ? "Not using Zookeeper" : splitZooKeeperAddress(zooKeeperServerAddress));
-        sb.append("<tr><td><nobr>Zookeeper server address</nobr></td><td align=\"right\">").append(zooKeeperAddress).append("</td></tr>");
-        sb.append("<tr><td><nobr>Zookeeper session timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(zooKeeperSessionTimeout)).append("</td></tr>");
-
-        sb.append("<tr><td><nobr>Cycle wait time</nobr></td><td align=\"right\">").append(cycleWaitTime).append(" ms</td></tr>");
-        sb.append("<tr><td><nobr>Minimum time before first clusterstate broadcast as master</nobr></td><td align=\"right\">").append(RealTimer.printDuration(minTimeBeforeFirstSystemStateBroadcast)).append("</td></tr>");
-        sb.append("<tr><td><nobr>Minimum time between official cluster states</nobr></td><td align=\"right\">").append(RealTimer.printDuration(minTimeBetweenNewSystemStates)).append("</td></tr>");
-        sb.append("<tr><td><nobr>Slobrok mirror backoff policy</nobr></td><td align=\"right\">").append(slobrokBackOffPolicy == null ? "default" : "overridden").append("</td></tr>");
-
-        sb.append("<tr><td><nobr>Node state request timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(nodeStateRequestTimeoutMS)).append("</td></tr>");
-        sb.append("<tr><td><nobr>VDS 4.1 node state polling frequency</nobr></td><td align=\"right\">").append(RealTimer.printDuration(statePollingFrequency)).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum distributor transition time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(maxTransitionTime.get(NodeType.DISTRIBUTOR))).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum storage transition time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(maxTransitionTime.get(NodeType.STORAGE))).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum initialize without progress time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(maxInitProgressTime)).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum premature crashes</nobr></td><td align=\"right\">").append(maxPrematureCrashes).append("</td></tr>");
-        sb.append("<tr><td><nobr>Stable state time period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(stableStateTimePeriod)).append("</td></tr>");
-        sb.append("<tr><td><nobr>Slobrok disconnect grace period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(maxSlobrokDisconnectGracePeriod)).append("</td></tr>");
-
-        sb.append("<tr><td><nobr>Number of distributor nodes</nobr></td><td align=\"right\">").append(nodes == null ? "Autodetect" : nodes.size()).append("</td></tr>");
-        sb.append("<tr><td><nobr>Number of storage nodes</nobr></td><td align=\"right\">").append(nodes == null ? "Autodetect" : nodes.size()).append("</td></tr>");
-        sb.append("<tr><td><nobr>Minimum distributor nodes being up for cluster to be up</nobr></td><td align=\"right\">").append(minDistributorNodesUp).append("</td></tr>");
-        sb.append("<tr><td><nobr>Minimum storage nodes being up for cluster to be up</nobr></td><td align=\"right\">").append(minStorageNodesUp).append("</td></tr>");
-        sb.append("<tr><td><nobr>Minimum percentage of distributor nodes being up for cluster to be up</nobr></td><td align=\"right\">").append(DecimalDot2.format(100 * minRatioOfDistributorNodesUp)).append(" %</td></tr>");
-        sb.append("<tr><td><nobr>Minimum percentage of storage nodes being up for cluster to be up</nobr></td><td align=\"right\">").append(DecimalDot2.format(100 * minRatioOfStorageNodesUp)).append(" %</td></tr>");
-
-        sb.append("<tr><td><nobr>Show local cluster state changes</nobr></td><td align=\"right\">").append(showLocalSystemStatesInEventLog).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum event log size</nobr></td><td align=\"right\">").append(eventLogMaxSize).append("</td></tr>");
-        sb.append("<tr><td><nobr>Maximum node event log size</nobr></td><td align=\"right\">").append(eventNodeLogMaxSize).append("</td></tr>");
-        sb.append("<tr><td><nobr>Wanted distribution bits</nobr></td><td align=\"right\">").append(distributionBits).append("</td></tr>");
-        sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
-        sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
-        sb.append("<tr><td><nobr>Enable 2-phase cluster state activation protocol</nobr></td><td align=\"right\">").append(enableTwoPhaseClusterStateActivation).append("</td></tr>");
-        sb.append("<tr><td><nobr>Cluster auto feed block on resource exhaustion enabled</nobr></td><td align=\"right\">")
-                        .append(clusterFeedBlockEnabled).append("</td></tr>");
-        sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
-                        .append(clusterFeedBlockLimit.entrySet().stream()
-                                .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
-                                .collect(Collectors.joining("<br/>"))).append("</td></tr>");
-
-        sb.append("</table>");
     }
 
 }
