@@ -35,26 +35,7 @@ consider_fallback () {
 read_conf_file () {
     deffile="$VESPA_HOME/conf/vespa/default-env.txt"
     if [ -f "${deffile}" ]; then
-        eval $(perl -ne '
-            chomp;
-            my ($action, $varname, $value) = split(" ", $_, 3);
-            $varname =~ s{[.]}{__}g;
-            if ($varname !~ m{^\w+}) {
-                # print STDERR "invalid var name $varname"
-                next;
-            }
-            if ($action eq "fallback" || $action eq "override") {
-                next if ($action eq "fallback" && $ENV{$varname} ne "");
-                # quote value
-                if ($value !~ m{^["][^"]*["]$} ) {
-                    $value =~ s{(\W)}{\\$1}g;
-                }
-                print "$varname=$value; export $varname; "
-            }
-            if ($action eq "unset") {
-                print "export -n $varname; unset $varname; "
-            }
-        ' < $deffile)
+        eval $(${VESPA_HOME}/libexec/vespa/script-utils export-env)
     fi
 }
 
@@ -329,8 +310,7 @@ use_configserver_if_needed () {
 }
 
 getJavaOptionsIPV46() {
-    canon_ipv4=$(hostname | perl -pe 'chomp; ($_,$rest) = gethostbyname($_);')
-    if [ -z "${canon_ipv4}" ]; then
+    if ${VESPA_HOME}/libexec/vespa/script-utils ipv6-only; then
         echo " -Djava.net.preferIPv6Addresses=true"
     fi
 }
