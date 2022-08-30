@@ -9,9 +9,11 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author valerijf
@@ -24,21 +26,21 @@ public class TsdbQueryRewriter {
         JsonNode root = mapper.readTree(data);
         requireLegalType(root);
         getField(root, "executionGraph", ArrayNode.class)
-                .ifPresent(graph -> rewriteQueryGraph(graph, authorizedTenants, operator, systemName));
+                .ifPresent(graph -> rewriteQueryGraph(root, graph, authorizedTenants, operator, systemName));
         getField(root, "filters", ArrayNode.class)
                 .ifPresent(filters -> rewriteFilters(filters, authorizedTenants, operator, systemName));
         getField(root, "queries", ArrayNode.class)
-                .ifPresent(graph -> rewriteQueryGraph(graph, authorizedTenants, operator, systemName));
+                .ifPresent(graph -> rewriteQueryGraph(root, graph, authorizedTenants, operator, systemName));
 
         return mapper.writeValueAsBytes(root);
     }
 
-    private static void rewriteQueryGraph(ArrayNode executionGraph, Set<TenantName> tenantNames, boolean operator, SystemName systemName) {
+    private static void rewriteQueryGraph(JsonNode root, ArrayNode executionGraph, Set<TenantName> tenantNames, boolean operator, SystemName systemName) {
         for (int i = 0; i < executionGraph.size(); i++) {
             JsonNode execution = executionGraph.get(i);
 
             // Will be handled by rewriteFilters()
-            if (execution.has("filterId")) continue;
+            if (execution.has("filterId") && filterExists(root, execution.get("filterId").asText())) continue;
 
             rewriteFilter((ObjectNode) execution, tenantNames, operator, systemName);
         }
@@ -78,6 +80,16 @@ public class TsdbQueryRewriter {
                     tenantNames.stream().map(TenantName::value).sorted().collect(Collectors.joining("|", "^(", ")\\..*")));
             appFilter.put("tagKey", "applicationId");
         }
+    }
+
+    private static boolean filterExists(JsonNode root, String filterId) {
+        return getField(root, "filters", ArrayNode.class).stream()
+                .flatMap(filters -> IntStream.range(0, filters.size())
+                        .mapToObj(i -> filters.get(i).get("id")))
+                .filter(Objects::nonNull)
+                .filter(JsonNode::isTextual)
+                .map(JsonNode::asText)
+                .anyMatch(filterId::equals);
     }
 
     private static void requireLegalType(JsonNode root) {

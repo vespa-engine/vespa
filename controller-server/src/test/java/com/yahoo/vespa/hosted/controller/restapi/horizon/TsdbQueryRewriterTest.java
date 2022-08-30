@@ -3,11 +3,8 @@ package com.yahoo.vespa.hosted.controller.restapi.horizon;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
