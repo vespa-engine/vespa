@@ -70,15 +70,23 @@ DocsumTools::FieldSpec::FieldSpec() :
 
 DocsumTools::FieldSpec::~FieldSpec() = default;
 
-DocsumTools::DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer) :
-    _writer(std::move(writer)),
-    _juniper(),
-    _resultClass(),
-    _fieldSpecs()
-{ }
+DocsumTools::DocsumTools()
+    : IDocsumEnvironment(),
+      _writer(),
+      _juniper(),
+      _resultClass(),
+      _fieldSpecs()
+{
+}
 
 
 DocsumTools::~DocsumTools() = default;
+
+void
+DocsumTools::set_writer(std::unique_ptr<DynamicDocsumWriter> writer)
+{
+    _writer = std::move(writer);
+}
 
 bool
 DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
@@ -135,6 +143,14 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "configureVsmSummary(): Size of cfg fieldmap: %zd", vsmSummary->fieldmap.size()); // UlfC: debugging
     LOG(debug, "configureVsmSummary(): outputclass='%s'", vsmSummary->outputclass.c_str()); // UlfC: debugging
 
+    // create new docsum tools
+    auto docsumTools = std::make_unique<DocsumTools>();
+
+    // configure juniper (used when configuring DynamicDocsumConfig)
+    _juniperProps = std::make_unique<JuniperProperties>(*juniperrc);
+    auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
+    docsumTools->setJuniper(std::move(juniper));
+
     // init result config
     auto resCfg = std::make_unique<ResultConfig>();
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
@@ -149,14 +165,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
 
     // create dynamic docsum writer
     auto writer = std::make_unique<DynamicDocsumWriter>(std::move(resCfg), std::move(kwExtractor));
-
-    // configure juniper (used when configuring DynamicDocsumConfig)
-    _juniperProps = std::make_unique<JuniperProperties>(*juniperrc);
-    auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
-
-    // create new docsum tools
-    auto docsumTools = std::make_unique<DocsumTools>(std::move(writer));
-    docsumTools->setJuniper(std::move(juniper));
+    docsumTools->set_writer(std::move(writer));
 
     // configure dynamic docsum writer
     DynamicDocsumConfig dynDocsumConfig(docsumTools.get(), docsumTools->getDocsumWriter(), _fieldsCfg.get());
