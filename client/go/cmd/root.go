@@ -403,7 +403,11 @@ func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cl
 	}
 	s, err := target.Service(name, timeout, sessionOrRunID, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("service '%s' is unavailable: %w", name, err)
+		err := fmt.Errorf("service '%s' is unavailable: %w", name, err)
+		if target.IsCloud() {
+			return nil, errHint(err, "Confirm that you're communicating with the correct zone and cluster", "The -z option controls the zone", "The -C option controls the cluster")
+		}
+		return nil, err
 	}
 	return s, nil
 }

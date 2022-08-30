@@ -114,6 +114,8 @@ func (t *cloudTarget) Type() string {
 	return TargetCloud
 }
 
+func (t *cloudTarget) IsCloud() bool { return true }
+
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
@@ -384,7 +386,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 		return err
 	}
 	if len(urlsByCluster) == 0 {
-		return fmt.Errorf("no endpoints discovered")
+		return fmt.Errorf("no endpoints discovered for %s", t.deploymentOptions.Deployment)
 	}
 	t.deploymentOptions.ClusterURLs = urlsByCluster
 	return nil

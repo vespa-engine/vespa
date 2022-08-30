@@ -52,6 +52,9 @@ type Target interface {
 	// Type returns this target's type, e.g. local or cloud.
 	Type() string
 
+	// IsCloud returns whether this target is Vespa Cloud or hosted Vespa
+	IsCloud() bool
+
 	// Deployment returns the deployment managed by this target.
 	Deployment() Deployment
 

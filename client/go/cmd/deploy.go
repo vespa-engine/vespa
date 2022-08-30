@@ -78,13 +78,13 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 
 			log.Println()
-			if opts.IsCloud() {
+			if opts.Target.IsCloud() {
 				cli.printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 			} else {
 				cli.printSuccess("Deployed ", color.CyanString(pkg.Path))
 				printPrepareLog(cli.Stderr, result)
 			}
-			if opts.IsCloud() {
+			if opts.Target.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status"))
 				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
 					opts.Target.Deployment().System.ConsoleURL,

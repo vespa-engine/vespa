@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+type lookupAddrFunc func(addr string) ([]string, error)
+type lookupIPFunc func(host string) ([]net.IP, error)
+
 // detect if this host is IPv6-only, in which case we want to pass
 // the flag "-Djava.net.preferIPv6Addresses=true" to any java command
 func HasOnlyIpV6() bool {
@@ -42,7 +45,9 @@ func HasOnlyIpV6() bool {
 // If automatic detection fails, "localhost" will be returned, so
 // single-node setups still have a good chance of working.
 // Use the enviroment variable VESPA_HOSTNAME to override.
-func FindOurHostname() (string, error) {
+func FindOurHostname() (string, error) { return findOurHostname(net.LookupAddr, net.LookupIP) }
+
+func findOurHostname(lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, error) {
 	env := os.Getenv("VESPA_HOSTNAME")
 	if env != "" {
 		// assumes: env var is already validated and OK
@@ -50,13 +55,10 @@ func FindOurHostname() (string, error) {
 	}
 	name, err := os.Hostname()
 	if err != nil {
-		return findOurHostnameFrom("localhost")
+		return findOurHostnameFrom("localhost", lookupAddr, lookupIP)
 	}
-	name, err = findOurHostnameFrom(name)
-	if strings.HasSuffix(name, ".") {
-		name = name[:len(name)-1]
-	}
-	return name, err
+	name, err = findOurHostnameFrom(name, lookupAddr, lookupIP)
+	return strings.TrimSuffix(name, "."), err
 }
 
 func validateHostname(name string) bool {
@@ -84,20 +86,20 @@ func validateHostname(name string) bool {
 	return someGood
 }
 
-func findOurHostnameFrom(name string) (string, error) {
+func findOurHostnameFrom(name string, lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, error) {
 	if strings.Contains(name, ".") && validateHostname(name) {
 		// it's all good
 		return name, nil
 	}
 	possibles := make([]string, 0, 5)
 	if name != "" {
-		ipAddrs, _ := net.LookupIP(name)
+		ipAddrs, _ := lookupIP(name)
 		for _, addr := range ipAddrs {
 			switch {
 			case addr.IsLoopback():
 				// skip
 			case addr.To4() != nil || addr.To16() != nil:
-				reverseNames, _ := net.LookupAddr(addr.String())
+				reverseNames, _ := lookupAddr(addr.String())
 				possibles = append(possibles, reverseNames...)
 			}
 		}
@@ -109,7 +111,7 @@ func findOurHostnameFrom(name string) (string, error) {
 			if ip == nil || ip.IsLoopback() {
 				continue
 			}
-			reverseNames, _ := net.LookupAddr(ip.String())
+			reverseNames, _ := lookupAddr(ip.String())
 			possibles = append(possibles, reverseNames...)
 		}
 	}
