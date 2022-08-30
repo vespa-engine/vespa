@@ -3,9 +3,9 @@
 #pragma once
 
 #include "type.h"
-#include <vespa/vespalib/data/memory.h>
 #include "symbol.h"
 #include "external_memory.h"
+#include <vespa/vespalib/data/memory.h>
 
 namespace vespalib { class Slime; }
 

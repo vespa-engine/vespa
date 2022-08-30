@@ -132,7 +132,7 @@ FieldBlock::FieldBlock(const vespalib::string &jsonInput)
     vespalib::slime::BinaryFormat::encode(slime, adapter);
 }
 
-FieldBlock::~FieldBlock() {}
+FieldBlock::~FieldBlock() = default;
 
 class Test : public vespalib::TestApp {
     std::unique_ptr<Schema> _schema;

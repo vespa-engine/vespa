@@ -17,7 +17,7 @@
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib::slime::convenience;
@@ -41,29 +41,13 @@ using document::StructFieldValue;
 
 namespace {
 
-struct FieldBlock {
-    Slime slime;
-    search::RawBuf binary;
-
-    explicit FieldBlock(const vespalib::string &jsonInput)
-        : slime(), binary(1024)
-    {
-        size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-        EXPECT_TRUE(used > 0);
-        search::SlimeOutputRawBufAdapter adapter(binary);
-        vespalib::slime::BinaryFormat::encode(slime, adapter);
-    }
-    const char *data() const { return binary.GetDrainPos(); }
-    size_t dataLen() const { return binary.GetUsedLen(); }
-};
-
 struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     std::unique_ptr<DynamicDocsumWriter> writer;
     StructDataType  int_pair_type;
     DocumentType    doc_type;
     GetDocsumsState state;
     DocsumFixture();
-    ~DocsumFixture();
+    ~DocsumFixture() override;
     void getDocsum(Slime &slime) {
         uint32_t classId;
         search::RawBuf buf(4_Ki);
@@ -111,7 +95,7 @@ DocsumFixture::DocsumFixture()
 {
     auto config = std::make_unique<ResultConfig>();
     ResultClass *cfg = config->AddResultClass("default", 0);
-    EXPECT_TRUE(cfg != 0);
+    EXPECT_TRUE(cfg != nullptr);
     EXPECT_TRUE(cfg->AddConfigEntry("int_field", RES_INT));
     EXPECT_TRUE(cfg->AddConfigEntry("short_field", RES_SHORT));
     EXPECT_TRUE(cfg->AddConfigEntry("byte_field", RES_BYTE));
@@ -140,7 +124,7 @@ DocsumFixture::DocsumFixture()
     doc_type.addField(Field("longdata_field", *DataType::RAW));
     doc_type.addField(Field("int_pair_field", int_pair_type));
 }
-DocsumFixture::~DocsumFixture() {}
+DocsumFixture::~DocsumFixture() = default;
 
 } // namespace <unnamed>
 

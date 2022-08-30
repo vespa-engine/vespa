@@ -1,29 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slimefieldwriter.h"
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.slimefieldwriter");
 
 namespace {
-
-vespalib::string
-toString(const vsm::FieldPath & fieldPath)
-{
-    vespalib::asciistream oss;
-    for (size_t i = 0; i < fieldPath.size(); ++i) {
-        if (i > 0) {
-            oss << ".";
-        }
-        oss << fieldPath[i].getName();
-    }
-    return oss.str();
-}
 
 vespalib::string
 toString(const std::vector<vespalib::string> & fieldPath)
@@ -42,7 +29,6 @@ toString(const std::vector<vespalib::string> & fieldPath)
 
 using namespace vespalib::slime::convenience;
 
-
 namespace vsm {
 
 void
@@ -52,18 +38,17 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
         fv.className(), fv.toString().c_str(), toString(_currPath).c_str());
 
     if (fv.isCollection()) {
-        const document::CollectionFieldValue & cfv = static_cast<const document::CollectionFieldValue &>(fv);
+        const auto & cfv = static_cast<const document::CollectionFieldValue &>(fv);
         if (cfv.isA(document::FieldValue::Type::ARRAY)) {
-            const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(cfv);
+            const auto & afv = static_cast<const document::ArrayFieldValue &>(cfv);
             Cursor &a = inserter.insertArray();
-            for (size_t i = 0; i < afv.size(); ++i) {
-                const document::FieldValue & nfv = afv[i];
+            for (const auto & nfv : afv) {
                 ArrayInserter ai(a);
                 traverseRecursive(nfv, ai);
             }
         } else {
             assert(cfv.isA(document::FieldValue::Type::WSET));
-            const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(cfv);
+            const auto & wsfv = static_cast<const document::WeightedSetFieldValue &>(cfv);
             Cursor &a = inserter.insertArray();
             Symbol isym = a.resolve("item");
             Symbol wsym = a.resolve("weight");
@@ -77,7 +62,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
             }
         }
     } else if (fv.isA(document::FieldValue::Type::MAP)) {
-        const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
+        const auto & mfv = static_cast<const document::MapFieldValue &>(fv);
         Cursor &a = inserter.insertArray();
         Symbol keysym = a.resolve("key");
         Symbol valsym = a.resolve("value");
@@ -85,13 +70,13 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
             Cursor &o = a.addObject();
             ObjectSymbolInserter ki(o, keysym);
             traverseRecursive(*entry.first, ki);
-            _currPath.push_back("value");
+            _currPath.emplace_back("value");
             ObjectSymbolInserter vi(o, valsym);
             traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
         }
     } else if (fv.isStructured()) {
-        const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
+        const auto & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
         if (sfv.getDataType() == &document::PositionDataType::getInstance()
             && search::docsummary::ResultConfig::wantedV8geoPositions())
@@ -134,7 +119,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
         }
     } else {
         if (fv.isLiteral()) {
-            const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
+            const auto & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
             inserter.insertString(lfv.getValueRef());
         } else if (fv.isNumeric()) {
             switch (fv.getDataType()->getId()) {
@@ -169,8 +154,8 @@ SlimeFieldWriter::explorePath(vespalib::stringref candidate)
         return true;
     }
     // find out if we should explore the current path
-    for (size_t i = 0; i < _inputFields->size(); ++i) {
-        const FieldPath & fp = (*_inputFields)[i].getPath();
+    for (const auto & field : *_inputFields) {
+        const FieldPath & fp = field.getPath();
         if (_currPath.size() <= fp.size()) {
             bool equal = true;
             for (size_t j = 0; j < _currPath.size() && equal; ++j) {
@@ -190,8 +175,6 @@ SlimeFieldWriter::explorePath(vespalib::stringref candidate)
 }
 
 SlimeFieldWriter::SlimeFieldWriter() :
-    _rbuf(4_Ki),
-    _slime(),
     _inputFields(nullptr),
     _currPath()
 {
@@ -203,24 +186,6 @@ void
 SlimeFieldWriter::insert(const document::FieldValue & fv, vespalib::slime::Inserter& inserter)
 {
     traverseRecursive(fv, inserter);
-}
-
-void
-SlimeFieldWriter::convert(const document::FieldValue & fv)
-{
-    if (LOG_WOULD_LOG(debug)) {
-        if (_inputFields != nullptr) {
-            for (size_t i = 0; i < _inputFields->size(); ++i) {
-                LOG(debug, "write: input field path [%zd] '%s'", i, toString((*_inputFields)[i].getPath()).c_str());
-            }
-        } else {
-            LOG(debug, "write: no input fields");
-        }
-    }
-    SlimeInserter inserter(_slime);
-    traverseRecursive(fv, inserter);
-    search::SlimeOutputRawBufAdapter adapter(_rbuf);
-    vespalib::slime::BinaryFormat::encode(_slime, adapter);
 }
 
 }
