@@ -18,6 +18,7 @@ namespace storage {
 
 namespace spi { struct PersistenceProvider; }
 
+class BucketManager;
 class FileStorManager;
 
 class ServiceLayerNode
@@ -31,6 +32,7 @@ class ServiceLayerNode
 
     // FIXME: Should probably use the fetcher in StorageNode
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
+    BucketManager* _bucket_manager;
     FileStorManager* _fileStorManager;
     bool _init_has_been_called;
 

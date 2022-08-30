@@ -103,6 +103,8 @@ public:
     /** Get info for given bucket (Used for whitebox testing) */
     StorBucketDatabase::Entry getBucketInfo(const document::Bucket &id) const;
 
+    void force_db_sweep_and_metric_update() { updateMetrics(true); }
+
 private:
     friend struct BucketManagerTest;
 

@@ -1966,6 +1966,7 @@ TEST_F(FileStorManagerTest, bucket_db_is_populated_from_provider_when_initialize
 
     getDummyPersistence().set_fake_bucket_set(buckets);
     c.manager->initialize_bucket_databases_from_provider();
+    c.manager->complete_internal_initialization();
 
     std::vector<std::pair<document::BucketId, api::BucketInfo>> from_db;
     auto populate_from_db = [&from_db](uint64_t key, auto& entry) {
