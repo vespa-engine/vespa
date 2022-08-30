@@ -110,7 +110,12 @@ public:
     // By ensuring that this function is called prior to chain opening, this invariant
     // shall be upheld since no RPC/MessageBus endpoints have been made available
     // yet at that point in time.
+    // Must always be called _before_ complete_internal_initialization()
     void initialize_bucket_databases_from_provider();
+    // Tag node internally as having completed initialization. Updates reported state
+    // (although this will not be communicated out of the process until the
+    // CommunicationManager thread has been fired up).
+    void complete_internal_initialization();
 
     const FileStorMetrics& get_metrics() const { return *_metrics; }
 

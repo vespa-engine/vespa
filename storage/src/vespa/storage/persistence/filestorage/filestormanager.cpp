@@ -1041,7 +1041,9 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
     const double elapsed = start_time.getElapsedTimeAsDouble();
     LOG(info, "Completed listing of %zu buckets in %.2g milliseconds", bucket_count, elapsed);
     _metrics->bucket_db_init_latency.addValue(elapsed);
+}
 
+void FileStorManager::complete_internal_initialization() {
     update_reported_state_after_db_init();
     _init_handler.notifyDoneInitializing();
 }

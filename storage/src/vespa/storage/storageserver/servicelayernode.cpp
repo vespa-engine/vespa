@@ -33,6 +33,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
+      _bucket_manager(nullptr),
       _fileStorManager(nullptr),
       _init_has_been_called(false)
 {
@@ -160,7 +161,9 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
     builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
-    builder.add(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
+    auto bucket_manager = std::make_unique<BucketManager>(_configUri, _context.getComponentRegister());
+    _bucket_manager = bucket_manager.get();
+    builder.add(std::move(bucket_manager));
     builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
     builder.add(std::make_unique<ModifiedBucketChecker>(
             _context.getComponentRegister(), _persistenceProvider, _configUri));
@@ -186,7 +189,20 @@ ServiceLayerNode::pause()
 
 void ServiceLayerNode::perform_post_chain_creation_init_steps() {
     assert(_fileStorManager);
+    assert(_bucket_manager);
+    // After initialization, the node will immediately start communicating with the cluster
+    // controller, exchanging host info. This host info contains a subset snapshot of the active
+    // metrics, which includes the total bucket count, doc count etc. It is critical that
+    // we must never report back host info _prior_ to having run at least one full sweep of
+    // the bucket database, lest we risk transiently reporting zero buckets held by the
+    // content node. Doing so could cause orchestration logic to perform operations based
+    // on erroneous assumptions.
+    // To avoid this, we explicitly force a full DB sweep and metric update prior to reporting
+    // the node as up. Since this function is called prior to the CommunicationManager thread
+    // being started, any CC health pings should also always happen after this init step.
     _fileStorManager->initialize_bucket_databases_from_provider();
+    _bucket_manager->force_db_sweep_and_metric_update();
+    _fileStorManager->complete_internal_initialization();
 }
 
 } // storage
