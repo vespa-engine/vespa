@@ -237,7 +237,8 @@ namespace matching {
     struct SplitUnpackingIterators {
         static const vespalib::string NAME;
         static const bool DEFAULT_VALUE;
-        static bool check(const Properties &props);
+        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
+        static bool check(const Properties &props, bool fallback);
     };
 
     /**
@@ -248,7 +249,8 @@ namespace matching {
     struct DelayUnpackingIterators {
         static const vespalib::string NAME;
         static const bool DEFAULT_VALUE;
-        static bool check(const Properties &props);
+        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
+        static bool check(const Properties &props, bool fallback);
     };
 
     /**
