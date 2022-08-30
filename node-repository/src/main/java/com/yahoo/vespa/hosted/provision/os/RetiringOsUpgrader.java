@@ -78,7 +78,9 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */
     private Duration gracePeriod() {
-        return nodeRepository.zone().system().isCd() ? Duration.ofDays(1) : Duration.ofDays(30);
+        if (nodeRepository.zone().system().isCd()) return Duration.ofDays(1);
+        if (!nodeRepository.zone().environment().isProduction()) return Duration.ofDays(7);
+        return Duration.ofDays(30);
     }
 
 }
