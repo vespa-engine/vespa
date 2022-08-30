@@ -189,6 +189,7 @@ vespa_define_module(
     src/tests/util/rcuvector
     src/tests/util/reusable_set
     src/tests/util/size_literals
+    src/tests/util/string_escape
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/invokeservice
