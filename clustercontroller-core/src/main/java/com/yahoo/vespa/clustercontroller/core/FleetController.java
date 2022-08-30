@@ -1216,8 +1216,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
     public ContentCluster getCluster() { return cluster; }
 
-    public List<NodeEvent> getNodeEvents(Node n) { return eventLog.getNodeEvents(n); }
-
     public EventLog getEventLog() {
         return eventLog;
     }
