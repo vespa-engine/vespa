@@ -85,24 +85,6 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    void setting_and_deleting_instrument() {
-        assertTrue(billingController.getDefaultInstrument(tenant).isEmpty());
-
-        var instrumentRequest = request("/billing/v1/tenant/tenant1/instrument", PATCH)
-                .data("{\"active\": \"id-1\"}")
-                .roles(tenantRole);
-
-        tester.assertResponse(instrumentRequest, "OK");
-        assertEquals("id-1", billingController.getDefaultInstrument(tenant).get().getId());
-
-        var deleteInstrumentRequest = request("/billing/v1/tenant/tenant1/instrument/id-1", DELETE)
-                .roles(tenantRole);
-
-        tester.assertResponse(deleteInstrumentRequest, "OK");
-        assertTrue(billingController.getDefaultInstrument(tenant).isEmpty());
-    }
-
-    @Test
     void response_list_bills() {
         var bill = createBill();
 
@@ -194,15 +176,6 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         var request = request("/billing/v1/billing?until=2020-05-28").roles(financeAdmin);
 
         tester.assertResponse(request, new File("billing-all-tenants.json"));
-    }
-
-    @Test
-    void setting_plans() {
-        var planRequest = request("/billing/v1/tenant/tenant1/plan", PATCH)
-                .data("{\"plan\": \"new-plan\"}")
-                .roles(tenantRole);
-        tester.assertResponse(planRequest, "Plan: new-plan");
-        assertEquals("new-plan", billingController.getPlan(tenant).value());
     }
 
     @Test

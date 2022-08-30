@@ -74,24 +74,16 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     }
 
     @Test
-    void require_admin_for_update_plan() {
-        var request = request("/billing/v2/tenant/" + tenant.value(), Request.Method.PATCH)
-                .data("{\"plan\": \"paid\"}");
-
-        var forbidden = request.roles(tenantReader);
-        tester.assertResponse(forbidden, ACCESS_DENIED, 403);
-        var success = request.roles(tenantAdmin);
-        tester.assertResponse(success, """
-                {"tenant":"tenant1","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"collection":"AUTO"}""");
-    }
-
-    @Test
     void require_accountant_for_update_collection() {
         var request = request("/billing/v2/tenant/" + tenant.value(), Request.Method.PATCH)
                 .data("{\"collection\": \"INVOICE\"}");
 
         var forbidden = request.roles(tenantAdmin);
-        tester.assertResponse(forbidden, "{\"error-code\":\"FORBIDDEN\",\"message\":\"Only accountant can change billing method\"}", 403);
+        tester.assertResponse(forbidden, """
+                {
+                  "code" : 403,
+                  "message" : "Access denied"
+                }""", 403);
 
         var success = request.roles(financeAdmin);
         tester.assertResponse(success, """
