@@ -77,16 +77,15 @@ public class MasterElectionHandler implements MasterInterface {
 
     @Override
     public Integer getMaster() {
-            // If too few followers there can be no master
-        if (2 * followers <= totalCount) {
+        if (tooFewFollowersToHaveAMaster()) {
             return null;
         }
-            // If all are following master candidate, it is master if it exists.
+        // If all are following master candidate, it is master if it exists.
         if (followers == totalCount) {
             return masterCandidate;
         }
-            // If not all are following we only accept master candidate if old master
-            // disappeared sufficient time ago
+        // If not all are following we only accept master candidate if old master
+        // disappeared sufficient time ago
         if (masterGoneFromZooKeeperTime + masterZooKeeperCooldownPeriod > timer.getCurrentTimeInMillis()) {
             return null;
         }
@@ -97,8 +96,7 @@ public class MasterElectionHandler implements MasterInterface {
         if (masterCandidate == null) {
             return "There is currently no master candidate.";
         }
-        // If too few followers there can be no master
-        if (2 * followers <= totalCount) {
+        if (tooFewFollowersToHaveAMaster()) {
             return "More than half of the nodes must agree for there to be a master. Only " + followers + " of "
                     + totalCount + " nodes agree on current master candidate (" + masterCandidate + ").";
         }
@@ -116,6 +114,10 @@ public class MasterElectionHandler implements MasterInterface {
                     + "currently there is no master.";
         }
         return followers + " of " + totalCount + " nodes agree " + masterCandidate + " is master.";
+    }
+
+    private boolean tooFewFollowersToHaveAMaster() {
+        return 2 * followers <= totalCount;
     }
 
     public boolean isAmongNthFirst(int first) { return (nextInLineCount < first); }
@@ -256,7 +258,7 @@ public class MasterElectionHandler implements MasterInterface {
             if (master.intValue() == index) sb.append(" (This node)");
             sb.append("</p>");
         } else {
-            if (2 * followers <= totalCount) {
+            if (tooFewFollowersToHaveAMaster()) {
                 sb.append("<p>There is currently no master. Less than half the fleet controllers (")
                   .append(followers).append(") are following master candidate ").append(masterCandidate)
                   .append(".</p>");
@@ -267,7 +269,7 @@ public class MasterElectionHandler implements MasterInterface {
                   .append(" before electing new master unless all possible master candidates are online.</p>");
             }
         }
-        if ((master == null || master.intValue() != index) && nextInLineCount < stateGatherCount) {
+        if ((master == null || master != index) && nextInLineCount < stateGatherCount) {
             sb.append("<p>As we are number ").append(nextInLineCount)
                     .append(" in line for taking over as master, we're gathering state from nodes.</p>");
             sb.append("<p><font color=\"red\">As we are not the master, we don't know about nodes current system state"
