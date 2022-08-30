@@ -14,12 +14,15 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/string_escape.h>
 #include <xxhash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.handler.impl");
 
 using document::BucketSpace;
+using vespalib::xml_attribute_escaped;
+using vespalib::xml_content_escaped;
 
 namespace storage {
 
@@ -1338,8 +1341,8 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 
     const PriorityIdx& idx = bmi::get<1>(*_queue);
     for (const auto & entry : idx) {
-        os << "<li>" << entry._command->toString() << " (priority: "
-           << (int)entry._command->getPriority() << ")</li>\n";
+        os << "<li>" << xml_content_escaped(entry._command->toString()) << " (priority: "
+           << static_cast<int>(entry._command->getPriority()) << ")</li>\n";
     }
 }
 
@@ -1379,8 +1382,9 @@ FileStorHandlerImpl::Stripe::dumpQueue(std::ostream & os) const
 
     const PriorityIdx& idx = bmi::get<1>(*_queue);
     for (const auto & entry : idx) {
-        os << entry._bucket.getBucketId() << ": " << entry._command->toString() << " (priority: "
-           << (int)entry._command->getPriority() << ")\n";
+        os << entry._bucket.getBucketId() << ": "
+           << xml_content_escaped(entry._command->toString())
+           << " (priority: " << static_cast<int>(entry._command->getPriority()) << ")\n";
     }
 }
 
