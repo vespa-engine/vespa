@@ -166,9 +166,9 @@ public class RoleTest {
 
         Role admin = Role.administrator(TenantName.from("t1"));
         assertTrue(publicCdEnforcer.allows(admin, Action.read, paymentInstrumentUri));
-        assertTrue(publicCdEnforcer.allows(admin, Action.delete, paymentInstrumentUri));
-        assertTrue(publicCdEnforcer.allows(admin, Action.update, tenantPaymentInstrumentUri));
-        assertTrue(publicCdEnforcer.allows(admin, Action.read, tokenUri));
+        assertFalse(publicCdEnforcer.allows(admin, Action.delete, paymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(admin, Action.update, tenantPaymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(admin, Action.read, tokenUri));
     }
 
     @Test
@@ -204,7 +204,6 @@ public class RoleTest {
                 .assertAction(operator)
                 .assertAction(reader)
                 .assertAction(developer)
-                .assertAction(admin,    Action.read)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/instrument")
@@ -212,7 +211,7 @@ public class RoleTest {
                 .assertAction(operator,                 Action.read)
                 .assertAction(reader,                   Action.read,                Action.delete)
                 .assertAction(developer,                Action.read,                Action.delete)
-                .assertAction(admin,                    Action.read, Action.update, Action.delete)
+                .assertAction(admin,                    Action.read)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/instrument/i1")
@@ -220,7 +219,7 @@ public class RoleTest {
                 .assertAction(operator,  Action.read)
                 .assertAction(reader,    Action.read,                Action.delete)
                 .assertAction(developer, Action.read,                Action.delete)
-                .assertAction(admin,     Action.read, Action.update, Action.delete)
+                .assertAction(admin,     Action.read)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/billing")
@@ -236,7 +235,7 @@ public class RoleTest {
                 .assertAction(operator,   Action.read)
                 .assertAction(reader)
                 .assertAction(developer)
-                .assertAction(admin,      Action.update)
+                .assertAction(admin)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/collection")
