@@ -2,6 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
@@ -47,7 +48,16 @@ public class Configurator {
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
     }
 
-    void writeConfigToDisk() { writeConfigToDisk(VespaTlsConfig.fromSystem()); }
+    void writeConfigToDisk() {
+        VespaTlsConfig config;
+        String cfgFile = zookeeperServerConfig.vespaTlsConfigFile();
+        if (cfgFile.isBlank()) {
+            config = VespaTlsConfig.fromSystem();
+        } else {
+            config = VespaTlsConfig.fromConfig(Paths.get(cfgFile));
+        }
+        writeConfigToDisk(config);
+    }
 
     // override of Vespa TLS config for unit testing
     void writeConfigToDisk(VespaTlsConfig vespaTlsConfig) {
@@ -158,6 +168,7 @@ public class Configurator {
 
         default void appendSharedTlsConfig(StringBuilder builder, VespaTlsConfig vespaTlsConfig) {
             vespaTlsConfig.context().ifPresent(ctx -> {
+                VespaSslContextProvider.set(ctx);
                 builder.append(configFieldPrefix()).append(".context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n");
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
                 builder.append(configFieldPrefix()).append(".ciphersuites=").append(enabledCiphers).append("\n");
@@ -223,6 +234,13 @@ public class Configurator {
                     TransportSecurityUtils.getSystemTlsContext().orElse(null),
                     TransportSecurityUtils.getInsecureMixedMode());
         }
+
+        static VespaTlsConfig fromConfig(Path file) {
+            return new VespaTlsConfig(
+                    new ConfigFileBasedTlsContext(file, TransportSecurityUtils.getInsecureAuthorizationMode()),
+                    TransportSecurityUtils.getInsecureMixedMode());
+        }
+
 
         static VespaTlsConfig tlsDisabled() { return new VespaTlsConfig(null, MixedMode.defaultValue()); }
 

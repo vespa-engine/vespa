@@ -41,6 +41,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "localhost");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 0);
         assertEquals(0, config.myid());
+        assertEquals("/opt/vespa/conf/zookeeper/tls.conf.json", config.vespaTlsConfigFile());
     }
 
     @Test
@@ -51,6 +52,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 0, 1, 2);
         assertEquals(1, config.myid());
         assertEquals("gz", config.snapshotMethod());
+        assertEquals("/opt/vespa/conf/zookeeper/tls.conf.json", config.vespaTlsConfigFile());
     }
 
     @Test
@@ -60,6 +62,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
+        assertEquals("/opt/vespa/conf/zookeeper/tls.conf.json", config.vespaTlsConfigFile());
     }
 
     @Test
@@ -71,6 +74,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
         assertEquals("gz", config.snapshotMethod());
+        assertEquals("", config.vespaTlsConfigFile());
     }
 
     @Test

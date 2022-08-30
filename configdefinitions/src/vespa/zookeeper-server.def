@@ -16,8 +16,6 @@ maxClientConnections int default=0
 dataDir string default="var/zookeeper"
 
 clientPort int default=2181
-# TODO(bjorncs): remove setting - no longer in use
-secureClientPort int default=2184
 
 snapshotCount int default=50000
 # Purge interval in hours
@@ -45,13 +43,8 @@ server[].retired bool default=false
 # TODO: Consider setting this to false by default (and override where appropriate)
 trustEmptySnapshot bool default=true
 
-# TLS options
-# TODO(bjorncs): todo cleanup after migrating to unified Vespa TLS configuration
-tlsForQuorumCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY } default=OFF
-# TODO(bjorncs): todo cleanup after migrating to unified Vespa TLS configuration
-tlsForClientServerCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY } default=OFF
-# TODO(bjorncs): remove setting - no longer in use
-jksKeyStoreFile string default="conf/zookeeper/zookeeper.jks"
-
 dynamicReconfiguration bool default=false
 snapshotMethod string default="gz"
+
+# Uses default Vespa mTLS config if empty string
+vespaTlsConfigFile string default=""
