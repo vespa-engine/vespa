@@ -71,8 +71,10 @@ public class ApplicationBundleLoader {
         bundlesFromNewGeneration.forEach(reference2Bundle::remove);
         Collection<Bundle> ret = bundlesFromNewGeneration.values();
 
-        // No duplicate bundles should be allowed until the next call to useBundles.
-        osgi.allowDuplicateBundles(Set.of());
+        // For correct operation of the CollisionHook (more specifically its FindHook implementation), the set of
+        // allowed duplicates must reflect the next set of bundles to uninstall, which is now the bundles from the
+        // failed generation.
+        osgi.allowDuplicateBundles(ret);
 
         // Clear restore info in case this method is called multiple times, for some reason.
         bundlesFromNewGeneration = Map.of();
