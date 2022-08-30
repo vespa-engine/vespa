@@ -12,7 +12,6 @@
 
 namespace search {
     class IAttributeManager;
-    class RawBuf;
 }
 
 namespace vespalib { class Slime; }
@@ -26,6 +25,7 @@ static constexpr uint32_t SLIME_MAGIC_ID = 0x55555555;
 class IDocsumWriter
 {
 public:
+    using Inserter = vespalib::slime::Inserter;
     struct ResolveClassInfo {
         bool mustSkip;
         bool allGenerated;
@@ -38,13 +38,11 @@ public:
 
     virtual ~IDocsumWriter() = default;
     virtual void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
-    virtual uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
-                                 IDocsumStore *docinfos, search::RawBuf *target) = 0;
+    virtual void WriteDocsum(uint32_t docid, GetDocsumsState *state,
+                             IDocsumStore *docinfos, Inserter & target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
-                              IDocsumStore *docinfos, vespalib::slime::Inserter & target) = 0;
+                              IDocsumStore *docinfos, Inserter & target) = 0;
     virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const = 0;
-
-    static uint32_t slime2RawBuf(const vespalib::Slime & slime, RawBuf & buf);
 };
 
 //--------------------------------------------------------------------------
@@ -70,11 +68,11 @@ public:
 
     bool Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer);
     void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) override;
-    uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
-                         IDocsumStore *docinfos, search::RawBuf *target) override;
+    void WriteDocsum(uint32_t docid, GetDocsumsState *state,
+                     IDocsumStore *docinfos, Inserter & inserter) override;
 
     void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState *state,
-                      IDocsumStore *docinfos, vespalib::slime::Inserter & target) override;
+                      IDocsumStore *docinfos, Inserter & inserter) override;
 
     ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const override;
 };

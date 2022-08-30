@@ -18,13 +18,13 @@
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
@@ -45,7 +45,7 @@ public:
     SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv,
                   const vdslib::Parameters & params);
 
-    ~SearchVisitor();
+    ~SearchVisitor() override;
 private:
     /**
      * This struct wraps an attribute vector.
@@ -102,7 +102,7 @@ private:
     class PositionInserter : public AttributeInserter {
     public:
         PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
-        ~PositionInserter();
+        ~PositionInserter() override;
     private:
         void onPrimitive(uint32_t fid, const Content & c) override;
         void onStructStart(const Content & fv) override;
@@ -129,9 +129,9 @@ private:
         /**
          * Process attribute hints and add needed attributes to the given list.
          **/
-        void processHintedAttributes(const IndexEnvironment & indexEnv, bool rank,
-                                     const search::IAttributeManager & attrMan,
-                                     std::vector<AttrInfo> & attributeFields);
+        static void processHintedAttributes(const IndexEnvironment & indexEnv, bool rank,
+                                            const search::IAttributeManager & attrMan,
+                                            std::vector<AttrInfo> & attributeFields);
 
     public:
         RankController();
@@ -245,8 +245,8 @@ private:
      * @param docsumSpec config with the field names used by the docsum setup.
      * @param fieldList list of field names that are built.
      **/
-    void registerAdditionalFields(const std::vector<vsm::DocsumTools::FieldSpec> & docsumSpec,
-                                  std::vector<vespalib::string> & fieldList);
+    static void registerAdditionalFields(const std::vector<vsm::DocsumTools::FieldSpec> & docsumSpec,
+                                         std::vector<vespalib::string> & fieldList);
 
     /**
      * Setup the field searchers used when matching the query with the stream of documents.
@@ -302,8 +302,8 @@ private:
                          DocEntryList& entries,
                          HitCounter& hitCounter) override;
 
-    bool compatibleDocumentTypes(const document::DocumentType& typeA,
-                                 const document::DocumentType& typeB) const;
+    static bool compatibleDocumentTypes(const document::DocumentType& typeA,
+                                        const document::DocumentType& typeB);
 
     /**
      * Process one document
@@ -370,7 +370,7 @@ private:
 
     class GroupingEntry : std::shared_ptr<Grouping> {
     public:
-        GroupingEntry(Grouping * grouping);
+        explicit GroupingEntry(Grouping * grouping);
         ~GroupingEntry();
         void aggregate(const document::Document & doc, search::HitRank rank);
         const Grouping & operator * () const { return *_grouping; }
@@ -388,32 +388,32 @@ private:
     {
     public:
         SummaryGenerator();
-        ~SummaryGenerator();
+        ~SummaryGenerator() override;
         GetDocsumsState & getDocsumState() { return _docsumState; }
         vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
         void setDocsumCache(const vsm::IDocSumCache & cache) { _docsumFilter->setDocSumStore(cache); }
         void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
-        virtual vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass) override;
+        vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass) override;
     private:
         vsm::GetDocsumsStateCallback            _callback;
         GetDocsumsState                         _docsumState;
         std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
         search::docsummary::IDocsumWriter     * _docsumWriter;
-        search::RawBuf                          _rawBuf;
+        vespalib::SmartBuffer                   _buf;
     };
 
     class HitsResultPreparator : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     public:
-        HitsResultPreparator(SummaryGenerator & summaryGenerator) :
+        explicit HitsResultPreparator(SummaryGenerator & summaryGenerator) :
            _summaryGenerator(summaryGenerator),
            _numHitsAggregators(0)
         { }
         size_t getNumHitsAggregators() const  { return _numHitsAggregators; }
     private:
-        virtual void execute(vespalib::Identifiable &obj) override;
-        virtual bool check(const vespalib::Identifiable &obj) const override;
+        void execute(vespalib::Identifiable &obj) override;
+        bool check(const vespalib::Identifiable &obj) const override;
         SummaryGenerator & _summaryGenerator;
         size_t             _numHitsAggregators;
     };
@@ -462,7 +462,7 @@ class SearchVisitorFactory : public storage::VisitorFactory {
     storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
                          const vdslib::Parameters& params) override;
 public:
-    SearchVisitorFactory(const config::ConfigUri & configUri);
+    explicit SearchVisitorFactory(const config::ConfigUri & configUri);
 };
 
 }

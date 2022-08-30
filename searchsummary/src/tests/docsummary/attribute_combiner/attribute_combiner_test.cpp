@@ -2,9 +2,7 @@
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
@@ -40,7 +38,7 @@ struct AttributeCombinerTest : public ::testing::Test
     std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
 
     AttributeCombinerTest();
-    ~AttributeCombinerTest();
+    ~AttributeCombinerTest() override;
     void set_field(const vespalib::string &field_name, bool filter_elements);
     void assertWritten(const vespalib::string &exp, uint32_t docId);
 };

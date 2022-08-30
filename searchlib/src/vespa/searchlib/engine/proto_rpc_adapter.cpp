@@ -8,7 +8,6 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/searchlib/common/packets.h>
 

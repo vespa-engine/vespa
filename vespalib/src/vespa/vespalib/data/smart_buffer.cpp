@@ -32,8 +32,7 @@ SmartBuffer::drop()
 {
     alloc::Alloc empty_buf;
     _data.swap(empty_buf);
-    _read_pos = 0;
-    _write_pos = 0;
+    reset();
 }
 
 SmartBuffer::SmartBuffer(size_t initial_size)

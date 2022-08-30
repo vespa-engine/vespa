@@ -14,7 +14,6 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>

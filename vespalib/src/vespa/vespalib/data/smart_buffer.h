@@ -39,6 +39,10 @@ public:
             drop();
         }
     }
+    void reset() {
+        _read_pos = 0;
+        _write_pos = 0;
+    }
     Memory obtain() override;
     Input &evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;
