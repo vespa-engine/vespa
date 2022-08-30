@@ -40,7 +40,7 @@ public class History {
                           .stream()
                           .sorted(Comparator.comparing(Event::at))
                           .skip(Math.max(log.size() - maxLogSize, 0))
-                          .collect(Collectors.toUnmodifiableList());
+                          .toList();
         this.maxLogSize = maxLogSize;
     }
 
@@ -53,7 +53,7 @@ public class History {
 
     /** Returns the age of this node as best as we can determine: The time since the first event registered for it */
     public Duration age(Instant now) {
-        Instant oldestEventTime = events.values().stream().map(event -> event.at()).sorted().findFirst().orElse(now);
+        Instant oldestEventTime = events.values().stream().map(Event::at).sorted().findFirst().orElse(now);
         return Duration.between(oldestEventTime, now);
     }
 
@@ -117,19 +117,18 @@ public class History {
     public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
         // If the event is a re-reservation, allow the new one to override the older one.
         if (from == to && from != Node.State.reserved) return this;
-        switch (to) {
-            case provisioned:   return this.with(new Event(Event.Type.provisioned, agent, at));
-            case deprovisioned: return this.with(new Event(Event.Type.deprovisioned, agent, at));
-            case ready:         return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
-            case active:        return this.with(new Event(Event.Type.activated, agent, at));
-            case inactive:      return this.with(new Event(Event.Type.deactivated, agent, at));
-            case reserved:      return this.with(new Event(Event.Type.reserved, agent, at));
-            case failed:        return this.with(new Event(Event.Type.failed, agent, at));
-            case dirty:         return this.with(new Event(Event.Type.deallocated, agent, at));
-            case parked:        return this.with(new Event(Event.Type.parked, agent, at));
-            case breakfixed:    return this.with(new Event(Event.Type.breakfixed, agent, at));
-            default:            return this;
-        }
+        return switch (to) {
+            case provisioned -> this.with(new Event(Event.Type.provisioned, agent, at));
+            case deprovisioned -> this.with(new Event(Event.Type.deprovisioned, agent, at));
+            case ready -> this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
+            case active -> this.with(new Event(Event.Type.activated, agent, at));
+            case inactive -> this.with(new Event(Event.Type.deactivated, agent, at));
+            case reserved -> this.with(new Event(Event.Type.reserved, agent, at));
+            case failed -> this.with(new Event(Event.Type.failed, agent, at));
+            case dirty -> this.with(new Event(Event.Type.deallocated, agent, at));
+            case parked -> this.with(new Event(Event.Type.parked, agent, at));
+            case breakfixed -> this.with(new Event(Event.Type.breakfixed, agent, at));
+        };
     }
     
     /** 
@@ -154,17 +153,7 @@ public class History {
     }
 
     /** An event which may happen to a node */
-    public static class Event {
-
-        private final Instant at;
-        private final Agent agent;
-        private final Type type;
-
-        public Event(Event.Type type, Agent agent, Instant at) {
-            this.type = type;
-            this.agent = agent;
-            this.at = at;
-        }
+    public record Event(Type type, Agent agent, Instant at) {
 
         public enum Type { 
             // State changes
@@ -213,7 +202,7 @@ public class History {
                 this.applicationLevel = applicationLevel;
             }
 
-            /** Returns true if this is an application level event and false it it is a node level event */
+            /** Returns true if this is an application-level event and false if it's a node-level event */
             public boolean isApplicationLevel() { return applicationLevel; }
         }
 
@@ -228,19 +217,6 @@ public class History {
 
         @Override
         public String toString() { return "'" + type + "' event at " + at + " by " + agent; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Event event = (Event) o;
-            return at.equals(event.at) && agent == event.agent && type == event.type;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(at, agent, type);
-        }
 
     }
 
