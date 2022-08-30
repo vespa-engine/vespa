@@ -98,7 +98,7 @@ public class RealNodeRepository implements NodeRepository {
                 .collect(Collectors.groupingBy(
                         GetAclResponse.Node::getTrustedBy,
                         Collectors.mapping(
-                                node -> new Acl.Node(node.hostname, NodeType.valueOf(node.nodeType), node.ipAddress),
+                                node -> new Acl.Node(node.hostname, node.ipAddress, Set.copyOf(node.ports)),
                                 Collectors.toSet())));
 
         // Group trusted networks by container hostname that trusts them
