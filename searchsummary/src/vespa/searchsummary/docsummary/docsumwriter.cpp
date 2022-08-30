@@ -71,6 +71,9 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
     } else {
         // look up docsum entry
         auto doc = docinfos->getMappedDocsum(docid);
+        if (!doc) {
+            return; // Use empty docsum when document is gone
+        }
         // insert docsum blob
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
