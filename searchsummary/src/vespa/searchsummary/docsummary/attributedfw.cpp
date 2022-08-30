@@ -364,7 +364,7 @@ create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::sha
 }
 
 std::unique_ptr<DocsumFieldWriter>
-AttributeDFWFactory::create(IAttributeManager& attr_mgr,
+AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
                             const vespalib::string& attr_name,
                             bool filter_elements,
                             std::shared_ptr<MatchingElementsFields> matching_elems_fields)

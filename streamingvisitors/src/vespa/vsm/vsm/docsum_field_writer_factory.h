@@ -16,7 +16,7 @@ class DocsumFieldWriterFactory : public search::docsummary::DocsumFieldWriterFac
     const vespa::config::search::vsm::VsmfieldsConfig& _vsm_fields_config;
 
 public:
-    DocsumFieldWriterFactory(bool use_v8_geo_positions, search::docsummary::IDocsumEnvironment* env, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config);
+    DocsumFieldWriterFactory(bool use_v8_geo_positions, search::docsummary::IDocsumEnvironment& env, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<search::docsummary::DocsumFieldWriter>
     create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) override;

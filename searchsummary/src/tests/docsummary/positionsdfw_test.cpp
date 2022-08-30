@@ -51,7 +51,7 @@ struct MyEnvironment : IDocsumEnvironment {
 
     MyEnvironment() : attribute_man(0) {}
 
-    IAttributeManager *getAttributeManager() override { return attribute_man; }
+    const IAttributeManager *getAttributeManager() const override { return attribute_man; }
     string lookupIndex(const string &s) const override { return s; }
     juniper::Juniper *getJuniper() override { return 0; }
 };
@@ -106,8 +106,8 @@ public:
 };
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
-    virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
-    virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
+    virtual void FillSummaryFeatures(GetDocsumsState&) override {}
+    virtual void FillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 

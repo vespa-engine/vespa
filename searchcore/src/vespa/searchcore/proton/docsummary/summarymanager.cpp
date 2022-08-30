@@ -104,7 +104,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
 
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<KeywordExtractor>());
-    DynamicDocsumConfig dynCfg(this, _docsumWriter.get());
+    DynamicDocsumConfig dynCfg(*this, _docsumWriter.get());
     dynCfg.configure(summarymapCfg);
 }
 

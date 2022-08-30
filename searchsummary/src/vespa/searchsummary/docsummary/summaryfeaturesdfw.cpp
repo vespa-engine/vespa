@@ -11,10 +11,7 @@ LOG_SETUP(".searchlib.docsummary.summaryfeaturesdfw");
 namespace search::docsummary {
 
 
-SummaryFeaturesDFW::SummaryFeaturesDFW(IDocsumEnvironment * env) :
-    _env(env)
-{
-}
+SummaryFeaturesDFW::SummaryFeaturesDFW() = default;
 
 SummaryFeaturesDFW::~SummaryFeaturesDFW() = default;
 
@@ -27,7 +24,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType,
         return;
     }
     if ( ! state->_summaryFeatures) {
-        state->_callback.FillSummaryFeatures(state, _env);
+        state->_callback.FillSummaryFeatures(*state);
         if ( !state->_summaryFeatures) { // still no summary features to write
             return;
         }

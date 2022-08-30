@@ -38,8 +38,8 @@ private:
 
 public:
     GetDocsumsStateCallback();
-    void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
-    void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
+    void FillSummaryFeatures(GetDocsumsState& state) override;
+    void FillRankFeatures(GetDocsumsState& state) override;
     virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
     virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
@@ -88,7 +88,7 @@ public:
     bool obtainFieldNames(const FastS_VsmsummaryHandle &cfg);
 
     // inherit doc from IDocsumEnvironment
-    search::IAttributeManager * getAttributeManager() override { return NULL; }
+    const search::IAttributeManager * getAttributeManager() const override { return nullptr; }
     vespalib::string lookupIndex(const vespalib::string&) const override { return ""; }
     juniper::Juniper * getJuniper() override { return _juniper.get(); }
 };

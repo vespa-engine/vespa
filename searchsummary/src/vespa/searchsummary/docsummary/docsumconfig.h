@@ -16,7 +16,7 @@ class ResultConfig;
 class DynamicDocsumConfig
 {
 public:
-    DynamicDocsumConfig(IDocsumEnvironment * env, DynamicDocsumWriter * writer) :
+    DynamicDocsumConfig(IDocsumEnvironment& env, DynamicDocsumWriter * writer) :
         _env(env),
         _writer(writer)
     { }
@@ -24,12 +24,12 @@ public:
     void configure(const vespa::config::search::SummarymapConfig &cfg);
 protected:
     using string = vespalib::string;
-    IDocsumEnvironment * getEnvironment() { return _env; }
+    IDocsumEnvironment& getEnvironment() { return _env; }
     const ResultConfig & getResultConfig() const;
 
     virtual std::unique_ptr<IDocsumFieldWriterFactory> make_docsum_field_writer_factory();
 private:
-    IDocsumEnvironment  * _env;
+    IDocsumEnvironment& _env;
     DynamicDocsumWriter * _writer;
 };
 

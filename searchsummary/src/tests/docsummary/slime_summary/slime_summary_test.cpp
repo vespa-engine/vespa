@@ -79,8 +79,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
-    void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
-    void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
+    void FillSummaryFeatures(GetDocsumsState&) override { }
+    void FillRankFeatures(GetDocsumsState&) override { }
     std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields &) override { abort(); }
 };
 

@@ -27,7 +27,7 @@ private:
     std::shared_ptr<matching::Matcher>     _matcher;
     matching::ISearchContext             & _searchCtx;
     search::attribute::IAttributeContext & _attrCtx;
-    search::IAttributeManager            & _attrMgr;
+    const search::IAttributeManager      & _attrMgr;
     search::docsummary::GetDocsumsState    _docsumState;
     matching::SessionManager             & _sessionMgr;
 
@@ -43,14 +43,14 @@ public:
                   std::shared_ptr<matching::Matcher> matcher,
                   matching::ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
-                  search::IAttributeManager & attrMgr,
+                  const search::IAttributeManager & attrMgr,
                   matching::SessionManager & sessionMgr);
 
     search::engine::DocsumReply::UP getDocsums();
 
     // Implements GetDocsumsStateCallback
-    void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
+    void FillSummaryFeatures(search::docsummary::GetDocsumsState& state) override;
+    void FillRankFeatures(search::docsummary::GetDocsumsState& state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields &fields) override;
 };
 

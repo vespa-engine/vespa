@@ -101,7 +101,7 @@ GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, 
 
 GeoPositionDFW::UP
 GeoPositionDFW::create(const char *attribute_name,
-                       IAttributeManager *attribute_manager,
+                       const IAttributeManager *attribute_manager,
                        bool useV8geoPositions)
 {
     GeoPositionDFW::UP ret;

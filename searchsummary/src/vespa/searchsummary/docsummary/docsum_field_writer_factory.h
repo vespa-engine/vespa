@@ -16,12 +16,13 @@ class IDocsumEnvironment;
 class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory
 {
     bool _use_v8_geo_positions;
-    IDocsumEnvironment * _env;
+    IDocsumEnvironment& _env;
 protected:
     std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
-    IDocsumEnvironment * getEnvironment() { return _env; }
+    IDocsumEnvironment& getEnvironment() const noexcept { return _env; }
+    bool has_attribute_manager() const noexcept;
 public:
-    DocsumFieldWriterFactory(bool use_v8_geo_positions, IDocsumEnvironment* env);
+    DocsumFieldWriterFactory(bool use_v8_geo_positions, IDocsumEnvironment& env);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) override;
 };

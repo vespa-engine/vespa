@@ -31,16 +31,11 @@ public:
         typedef std::unique_ptr<ISummarySetup> UP;
         typedef std::shared_ptr<ISummarySetup> SP;
 
-        virtual ~ISummarySetup() {}
+        ~ISummarySetup() override = default;
 
         virtual search::docsummary::IDocsumWriter &getDocsumWriter() const = 0;
         virtual const search::docsummary::ResultConfig &getResultConfig() = 0;
         virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
-
-        // Inherit doc from IDocsumEnvironment
-        virtual search::IAttributeManager *getAttributeManager() override = 0;
-        virtual vespalib::string lookupIndex(const vespalib::string & s) const override = 0;
-        virtual juniper::Juniper *getJuniper() override = 0;
     };
 
     typedef std::unique_ptr<ISummaryManager> UP;

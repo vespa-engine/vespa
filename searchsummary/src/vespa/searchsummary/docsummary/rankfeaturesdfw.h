@@ -10,11 +10,8 @@ class IDocsumEnvironment;
 
 class RankFeaturesDFW : public SimpleDFW
 {
-private:
-    IDocsumEnvironment * _env;
-
 public:
-    RankFeaturesDFW(IDocsumEnvironment * env);
+    RankFeaturesDFW();
     RankFeaturesDFW(const RankFeaturesDFW &) = delete;
     RankFeaturesDFW & operator=(const RankFeaturesDFW &) = delete;
     ~RankFeaturesDFW() override;
