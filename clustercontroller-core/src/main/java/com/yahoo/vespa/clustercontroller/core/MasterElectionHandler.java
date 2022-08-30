@@ -35,11 +35,9 @@ public class MasterElectionHandler implements MasterInterface {
         this.index = index;
         this.totalCount = totalCount;
         this.nextInLineCount = Integer.MAX_VALUE;
-        // Only a given set of nodes can ever become master
-        if (index > (totalCount - 1) / 2) {
+        if (cannotBecomeMaster())
             context.log(logger, Level.FINE, () -> "We can never become master and will always stay a follower.");
-        }
-            // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
+        // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
         masterGoneFromZooKeeperTime = timer.getCurrentTimeInMillis();
     }
 
@@ -133,8 +131,8 @@ public class MasterElectionHandler implements MasterInterface {
             }
             return false; // Nothing have happened since last time.
         }
-            // Move next data to temporary, such that we don't need to keep lock, and such that we don't retry
-            // if we happen to fail processing the data.
+        // Move next data to temporary, such that we don't need to keep lock, and such that we don't retry
+        // if we happen to fail processing the data.
         Map<Integer, Integer> state;
         context.log(logger, Level.INFO, "Handling new master election, as we have received " + nextMasterData.size() + " entries");
         synchronized (monitor) {
@@ -186,8 +184,7 @@ public class MasterElectionHandler implements MasterInterface {
                 database.setMasterVote(dbContext, first.getKey());
             }
         }
-            // Only a given set of nodes can ever become master
-        if (index <= (totalCount - 1) / 2) {
+        if (canBecomeMaster()) {
             int ourPosition = 0;
             for (Map.Entry<Integer, Integer> entry : state.entrySet()) {
                 if (entry.getKey() != index) {
@@ -206,6 +203,11 @@ public class MasterElectionHandler implements MasterInterface {
         masterData = state;
         return true;
     }
+
+    // Only a given set of nodes can ever become master
+    private boolean canBecomeMaster() {return index <= (totalCount - 1) / 2;}
+
+    private boolean cannotBecomeMaster() {return ! canBecomeMaster();}
 
     private static String toString(Map<Integer, Integer> data) {
         StringBuilder sb = new StringBuilder();
@@ -255,7 +257,7 @@ public class MasterElectionHandler implements MasterInterface {
         Integer master = getMaster();
         if (master != null) {
             sb.append("<p>Current cluster controller master is node " + master + ".");
-            if (master.intValue() == index) sb.append(" (This node)");
+            if (master == index) sb.append(" (This node)");
             sb.append("</p>");
         } else {
             if (tooFewFollowersToHaveAMaster()) {
@@ -276,12 +278,12 @@ public class MasterElectionHandler implements MasterInterface {
                     + " or wanted states, so some statistics below may be stale. Look at status page on master "
                     + "for updated data.</font></p>");
         }
-        if (index * 2 > totalCount) {
+        if (cannotBecomeMaster()) {
             sb.append("<p>As lowest index fleet controller is prioritized to become master, and more than half "
                     + "of the fleet controllers need to be available to select a master, we can never become master.</p>");
         }
 
-            // Debug data
+        // Debug data
         sb.append("<p><font size=\"-1\" color=\"grey\">Master election handler internal state:")
           .append("<br>Index: " + index)
           .append("<br>Fleet controller count: " + totalCount)

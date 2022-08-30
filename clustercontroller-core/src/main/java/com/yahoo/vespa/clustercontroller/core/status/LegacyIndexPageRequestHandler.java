@@ -75,7 +75,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                 .append(" | <a href=\"#eventlog\">Event log</a>")
                 .append(" ]</font></p>\n");
         content.append("<table><tr><td>UTC time when creating this page:</td><td align=\"right\">").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</td></tr>");
-        //content.append("<tr><td>Fleetcontroller version:</td><td align=\"right\">" + Vtag.V_TAG_PKG + "</td></tr/>");
         content.append("<tr><td>Cluster controller uptime:</td><td align=\"right\">" + RealTimer.printDuration(currentTime - startedTime) + "</td></tr></table>");
         if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount)) {
             // Table overview of all the nodes
