@@ -11,6 +11,7 @@
 #include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 
@@ -1313,6 +1314,8 @@ void
 MergeThrottler::reportHtmlStatus(std::ostream& out,
                                  const framework::HttpUrlPath&) const
 {
+    using vespalib::xml_content_escaped;
+
     std::lock_guard lock(_stateLock);
     if (_use_dynamic_throttling) {
         out << "<p>Dynamic throttle policy; window size min/max: ["
@@ -1333,7 +1336,7 @@ MergeThrottler::reportHtmlStatus(std::ostream& out,
     if (!_merges.empty()) {
         out << "<ul>\n";
         for (auto& m : _merges) {
-            out << "<li>" << m.second.getMergeCmdString();
+            out << "<li>" << xml_content_escaped(m.second.getMergeCmdString());
             if (m.second.isExecutingLocally()) {
                 out << " <strong>(";
                 if (m.second.isInCycle()) {
@@ -1364,7 +1367,7 @@ MergeThrottler::reportHtmlStatus(std::ostream& out,
             // The queue always owns its messages, thus this is safe
             out << "<li>Pri "
                 << static_cast<unsigned int>(qm._msg->getPriority())
-                << ": " << *qm._msg;
+                << ": " << xml_content_escaped(qm._msg->toString());
             out << "</li>\n";
         }
         out << "</ol>\n";
