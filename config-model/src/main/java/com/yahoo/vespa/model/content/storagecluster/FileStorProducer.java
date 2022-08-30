@@ -44,11 +44,11 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
 
     private final Integer numThreads;
     private final ContentCluster cluster;
-    private final int reponseNumThreads;
+    private final int responseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
     private final double persistenceThrottlingWsDecrementFactor;
     private final double persistenceThrottlingWsBackoff;
-    private final int persistenceThrottingWindowSize;
+    private final int persistenceThrottlingWindowSize;
     private final double persistenceThrottlingWsResizeRate;
     private final boolean persistenceThrottlingOfMergeFeedOps;
     private final boolean useAsyncMessageHandlingOnSchedule;
@@ -64,11 +64,11 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     public FileStorProducer(ModelContext.FeatureFlags featureFlags, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
-        this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
+        this.responseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
         this.persistenceThrottlingWsDecrementFactor = featureFlags.persistenceThrottlingWsDecrementFactor();
         this.persistenceThrottlingWsBackoff = featureFlags.persistenceThrottlingWsBackoff();
-        this.persistenceThrottingWindowSize = featureFlags.persistenceThrottlingWindowSize();
+        this.persistenceThrottlingWindowSize = featureFlags.persistenceThrottlingWindowSize();
         this.persistenceThrottlingWsResizeRate = featureFlags.persistenceThrottlingWsResizeRate();
         this.persistenceThrottlingOfMergeFeedOps = featureFlags.persistenceThrottlingOfMergeFeedOps();
         this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
@@ -80,15 +80,15 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
             builder.num_threads(numThreads);
         }
         builder.enable_multibit_split_optimalization(cluster.getPersistence().enableMultiLevelSplitting());
-        builder.num_response_threads(reponseNumThreads);
+        builder.num_response_threads(responseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
         throttleBuilder.window_size_decrement_factor(persistenceThrottlingWsDecrementFactor);
         throttleBuilder.window_size_backoff(persistenceThrottlingWsBackoff);
-        if (persistenceThrottingWindowSize > 0) {
-            throttleBuilder.min_window_size(persistenceThrottingWindowSize);
-            throttleBuilder.max_window_size(persistenceThrottingWindowSize);
+        if (persistenceThrottlingWindowSize > 0) {
+            throttleBuilder.min_window_size(persistenceThrottlingWindowSize);
+            throttleBuilder.max_window_size(persistenceThrottlingWindowSize);
         }
         throttleBuilder.resize_rate(persistenceThrottlingWsResizeRate);
         throttleBuilder.throttle_individual_merge_feed_ops(persistenceThrottlingOfMergeFeedOps);

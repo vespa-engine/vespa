@@ -117,20 +117,23 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             RedundancyBuilder redundancyBuilder = new RedundancyBuilder(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
-            ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterId(contentElement), documentDefinitions,
+            String clusterId = getClusterId(contentElement);
+            ContentCluster c = new ContentCluster(context.getParentProducer(), clusterId, documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
             var resourceLimits = new ClusterResourceLimits.Builder(stateIsHosted(deployState),
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
-            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
-                    contentElement,
-                    resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());
+            c.clusterControllerConfig = new ClusterControllerConfig.Builder(clusterId,
+                                                                            contentElement,
+                                                                            resourceLimits.getClusterControllerLimits())
+                    .build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
-                    globallyDistributedDocuments,
-                    fractionOfMemoryReserved(getClusterId(contentElement), containers),
-                    resourceLimits.getContentNodeLimits()).build(deployState, c, contentElement.getXml());
+                                                        globallyDistributedDocuments,
+                                                        fractionOfMemoryReserved(clusterId, containers),
+                                                        resourceLimits.getContentNodeLimits())
+                    .build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
@@ -173,9 +176,8 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             if (csc.hasIndexedCluster()) {
                 setupIndexedCluster(csc.getIndexed(), search, element, logger);
             }
-
-
         }
+
         private void setupIndexedCluster(IndexedSearchCluster index, ContentSearch search, ModelElement element, DeployLogger logger) {
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
@@ -267,9 +269,8 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
         }
 
         private void validateThatGroupSiblingsAreUnique(String cluster, StorageGroup group) {
-            if (group == null) {
-                return; // Unit testing case
-            }
+            if (group == null) return; // Unit testing case
+
             validateGroupSiblings(cluster, group);
             for (StorageGroup g : group.getSubgroups()) {
                 validateThatGroupSiblingsAreUnique(cluster, g);
@@ -301,7 +302,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                 }
                 clusterControllers = admin.getClusterControllers();
             }
-            else { // self-hosted: Put cluser controller on config servers or use explicit cluster controllers
+            else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
                     var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).collect(toList());
                     if (hosts.size() > 1) {

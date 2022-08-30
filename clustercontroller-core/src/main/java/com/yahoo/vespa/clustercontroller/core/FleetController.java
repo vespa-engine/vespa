@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
@@ -130,12 +131,9 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         this.systemStateBroadcaster = systemStateBroadcaster;
         this.stateVersionTracker = new StateVersionTracker(options.minMergeCompletionRatio);
         this.metricUpdater = metricUpdater;
-
-        this.statusPageServer = statusPage;
+        this.statusPageServer = Objects.requireNonNull(statusPage, "statusPage cannot be null");
         this.rpcServer = server;
-
         this.masterElectionHandler = masterElectionHandler;
-
         this.statusRequestRouter.addHandler(
                 "^/node=([a-z]+)\\.(\\d+)$",
                 new LegacyNodePageRequestHandler(timer, eventLog, cluster));
@@ -277,9 +275,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         controllerThreadId = Thread.currentThread().getId();
         database.shutdown(databaseContext);
 
-        if (statusPageServer != null) {
-            statusPageServer.shutdown();
-        }
+        statusPageServer.shutdown();
         if (rpcServer != null) {
             rpcServer.shutdown();
         }
@@ -530,12 +526,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             }
         }
 
-        if (statusPageServer != null) {
-            try{
-                statusPageServer.setPort(options.httpPort);
-            } catch (Exception e) {
-                context.log(logger, Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
-            }
+        try {
+            statusPageServer.setPort(options.httpPort);
+        } catch (Exception e) {
+            context.log(logger, Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
         }
 
         long currentTime = timer.getCurrentTimeInMillis();
@@ -679,12 +673,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     }
 
     private boolean processAnyPendingStatusPageRequest() {
-        if (statusPageServer != null) {
-            StatusPageServer.HttpRequest statusRequest = statusPageServer.getCurrentHttpRequest();
-            if (statusRequest != null) {
-                statusPageServer.answerCurrentStatusRequest(fetchStatusPage(statusRequest));
-                return true;
-            }
+        StatusPageServer.HttpRequest statusRequest = statusPageServer.getCurrentHttpRequest();
+        if (statusRequest != null) {
+            statusPageServer.answerCurrentStatusRequest(fetchStatusPage(statusRequest));
+            return true;
         }
         return false;
     }
@@ -1223,8 +1215,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public int getSlobrokMirrorUpdates() { return ((SlobrokClient)nodeLookup).getMirror().updates(); }
 
     public ContentCluster getCluster() { return cluster; }
-
-    public List<NodeEvent> getNodeEvents(Node n) { return eventLog.getNodeEvents(n); }
 
     public EventLog getEventLog() {
         return eventLog;
