@@ -114,6 +114,8 @@ func (t *cloudTarget) Type() string {
 	return TargetCloud
 }
 
+func (t *cloudTarget) IsCloud() bool { return true }
+
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {

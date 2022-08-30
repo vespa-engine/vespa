@@ -74,25 +74,27 @@ func printServiceStatus(cli *CLI, name string) error {
 	if err != nil {
 		return err
 	}
+	cluster := cli.config.cluster()
+	s, err := cli.service(t, name, 0, cluster)
+	if err != nil {
+		return err
+	}
 	timeout, err := cli.config.timeout()
 	if err != nil {
 		return err
 	}
-	if timeout > 0 {
-		log.Printf("Waiting up to %s for service to become ready ...", color.CyanString(timeout.String()))
-	}
-	s, err := t.Service(name, timeout, 0, cli.config.cluster())
-	if err != nil {
-		return err
-	}
 	status, err := s.Wait(timeout)
+	clusterPart := ""
+	if cluster != "" {
+		clusterPart = fmt.Sprintf(" named %s", color.CyanString(cluster))
+	}
 	if status/100 == 2 {
-		log.Print(s.Description(), " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
+		log.Print(s.Description(), clusterPart, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
 	} else {
 		if err == nil {
 			err = fmt.Errorf("status %d", status)
 		}
-		return fmt.Errorf("%s at %s is %s: %w", s.Description(), color.CyanString(s.BaseURL), color.RedString("not ready"), err)
+		return fmt.Errorf("%s%s at %s is %s: %w", s.Description(), clusterPart, color.CyanString(s.BaseURL), color.RedString("not ready"), err)
 	}
 	return nil
 }
