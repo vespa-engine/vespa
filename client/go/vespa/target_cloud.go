@@ -384,7 +384,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 		return err
 	}
 	if len(urlsByCluster) == 0 {
-		return fmt.Errorf("no endpoints discovered")
+		return fmt.Errorf("no endpoints discovered for %s", t.deploymentOptions.Deployment)
 	}
 	t.deploymentOptions.ClusterURLs = urlsByCluster
 	return nil
