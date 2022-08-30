@@ -117,7 +117,6 @@ public class TransportSecurityUtils {
         SystemTlsContext(Path tlsOptionsConfigFile) {
             super(tlsOptionsConfigFile, getInsecureAuthorizationMode());
         }
-
-        @Override public void close() { throw new UnsupportedOperationException("Shared TLS context cannot be closed"); }
+        @Override public void close() {}
     }
 }
