@@ -91,8 +91,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                                 .map(detectorConnFactory -> detectorConnFactory.getBean(SslConnectionFactory.class)))
                         .map(connFactory -> (SslContextFactory.Server) connFactory.getSslContextFactory())
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
-        ConnectorConfig.ProxyProtocol proxyProtocolCfg = targetConnector.connectorConfig().proxyProtocol();
-        boolean proxyProtocol = proxyProtocolCfg.enabled() && !proxyProtocolCfg.mixedMode();
+        boolean proxyProtocol = targetConnector.connectorConfig().proxyProtocol().enabled();
         return new ProxyTarget(targetPort, clientTimeout,handlerTimeout, cacheExpiry, sslContextFactory, proxyProtocol);
     }
 
