@@ -67,11 +67,6 @@ public class Container {
         this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
     }
 
-    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor) {
-        this(subscriberFactory, configId, destructor, new Osgi() {
-        });
-    }
-
     // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
     public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
