@@ -252,7 +252,7 @@ PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType typ
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::UP PositionsDFW::create(const char *attribute_name, IAttributeManager *attribute_manager, bool useV8geoPositions) {
+PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager, bool useV8geoPositions) {
     PositionsDFW::UP ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
@@ -274,7 +274,7 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, IAttributeMana
 }
 
 std::unique_ptr<DocsumFieldWriter>
-AbsDistanceDFW::create(const char *attribute_name, IAttributeManager *attribute_manager) {
+AbsDistanceDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager) {
     std::unique_ptr<DocsumFieldWriter> ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {

@@ -22,20 +22,18 @@ GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _matching_elements_filler()
 { }
 
-void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
+void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState& state)
 {
-    (void) env;
     if (_summaryFeatures) { // set the summary features to write to the docsum
-        state->_summaryFeatures = _summaryFeatures;
-        state->_summaryFeaturesCached = true;
+        state._summaryFeatures = _summaryFeatures;
+        state._summaryFeaturesCached = true;
     }
 }
 
-void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
+void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState& state)
 {
-    (void) env;
     if (_rankFeatures) { // set the rank features to write to the docsum
-        state->_rankFeatures = _rankFeatures;
+        state._rankFeatures = _rankFeatures;
     }
 }
 
@@ -168,7 +166,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsumTools->set_writer(std::move(writer));
 
     // configure dynamic docsum writer
-    DynamicDocsumConfig dynDocsumConfig(docsumTools.get(), docsumTools->getDocsumWriter(), _fieldsCfg.get());
+    DynamicDocsumConfig dynDocsumConfig(*docsumTools, docsumTools->getDocsumWriter(), _fieldsCfg.get());
     dynDocsumConfig.configure(*summaryMap.get());
 
     // configure new docsum tools

@@ -12,10 +12,10 @@ namespace search::docsummary {
  **/
 class IDocsumEnvironment {
 public:
-    virtual search::IAttributeManager * getAttributeManager() = 0;
+    virtual const search::IAttributeManager * getAttributeManager() const = 0;
     virtual vespalib::string lookupIndex(const vespalib::string & s) const = 0;
     virtual juniper::Juniper * getJuniper() = 0;
-    virtual ~IDocsumEnvironment() {}
+    virtual ~IDocsumEnvironment() = default;
 };
 
 }

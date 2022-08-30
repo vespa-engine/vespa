@@ -143,7 +143,7 @@ DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumField
 
 
 void
-DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *state)
+DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState *state)
 {
     state->_kwExtractor = _keywordExtractor.get();
     state->_attrCtx = attrMan.createContext();

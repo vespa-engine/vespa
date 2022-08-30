@@ -7,9 +7,7 @@
 
 namespace search::docsummary {
 
-RankFeaturesDFW::RankFeaturesDFW(IDocsumEnvironment * env) :
-    _env(env)
-{ }
+RankFeaturesDFW::RankFeaturesDFW() = default;
 
 RankFeaturesDFW::~RankFeaturesDFW() = default;
 
@@ -18,7 +16,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
                              ResType, vespalib::slime::Inserter &target) const
 {
     if ( !state->_rankFeatures ) {
-        state->_callback.FillRankFeatures(state, _env);
+        state->_callback.FillRankFeatures(*state);
         if (state->_rankFeatures.get() == nullptr) { // still no rank features to write
             return;
         }

@@ -10,11 +10,8 @@ class IDocsumEnvironment;
 
 class SummaryFeaturesDFW : public SimpleDFW
 {
-private:
-    IDocsumEnvironment * _env;
-
 public:
-    SummaryFeaturesDFW(IDocsumEnvironment * env);
+    SummaryFeaturesDFW();
     SummaryFeaturesDFW(const SummaryFeaturesDFW &) = delete;
     SummaryFeaturesDFW & operator=(const SummaryFeaturesDFW &) = delete;
     ~SummaryFeaturesDFW() override;

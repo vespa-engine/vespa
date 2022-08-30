@@ -18,7 +18,7 @@ namespace search::docsummary {
  */
 class AttributeDFWFactory {
 public:
-    static std::unique_ptr<DocsumFieldWriter> create(IAttributeManager& attr_mgr,
+    static std::unique_ptr<DocsumFieldWriter> create(const IAttributeManager& attr_mgr,
                                                      const vespalib::string& attr_name,
                                                      bool filter_elements = false,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields = std::shared_ptr<MatchingElementsFields>());
