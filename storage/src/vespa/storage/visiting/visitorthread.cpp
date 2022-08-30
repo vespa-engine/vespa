@@ -2,18 +2,16 @@
 
 #include "visitorthread.h"
 #include "messages.h"
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storageapi/message/datagram.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/document/base/exceptions.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <locale>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");

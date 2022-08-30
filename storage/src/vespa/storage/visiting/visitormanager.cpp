@@ -7,11 +7,12 @@
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
 #include "reindexing_visitor.h"
-#include <vespa/storage/common/statusmessages.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/storage/common/statusmessages.h>
+#include <vespa/vespalib/util/string_escape.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -557,6 +558,9 @@ void
 VisitorManager::reportHtmlStatus(std::ostream& out,
                                  const framework::HttpUrlPath& path) const
 {
+    using vespalib::xml_attribute_escaped;
+    using vespalib::xml_content_escaped;
+
     bool showStatus = !path.hasAttribute("visitor");
     bool verbose = path.hasAttribute("verbose");
     bool showAll = path.hasAttribute("allvisitors");
@@ -568,7 +572,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
         << " | <a href=\"?allvisitors" << (verbose ? "&verbose" : "")
         << "\">Show all visitors</a>"
         << " | <a href=\"?" << (verbose ? "notverbose" : "verbose");
-    if (!showStatus) out << "&visitor=" << path.get("visitor", std::string(""));
+    if (!showStatus) out << "&visitor=" << xml_attribute_escaped(path.get("visitor", std::string("")));
     if (showAll) out << "&allvisitors";
     out << "\">" << (verbose ? "Less verbose" : "More verbose") << "</a>\n"
         << " ]</font><br><br>\n";
@@ -585,7 +589,8 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                     out << " none";
                 } else {
                     for (const auto& id_and_visitor : _visitorThread[i].second) {
-                        out << " " << id_and_visitor.second << " (" << id_and_visitor.first << ")";
+                        out << " " << xml_content_escaped(id_and_visitor.second)
+                            << " (" << id_and_visitor.first << ")";
                     }
                 }
                 out << "<br>\n";
@@ -596,7 +601,8 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             for (const auto& enqueued : _visitorQueue) {
                 auto& cmd = enqueued._command;
                 assert(cmd);
-                out << "<li>" << cmd->getInstanceId() << " - "
+                out << "<li>"
+                    << xml_content_escaped(cmd->getInstanceId()) << " - "
                     << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
                     << vespalib::count_ms(enqueued._deadline - now) << " ms\n";
             }
@@ -619,7 +625,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                         << "<td>" << entry.second.id << "</td>"
                         << "<td>" << entry.second.timestamp << "</td>"
                         << "<td>" << vespalib::count_ms(entry.second.timeout) << "</td>"
-                        << "<td>" << entry.second.destination << "</td>"
+                        << "<td>" << xml_content_escaped(entry.second.destination) << "</td>"
                         << "</tr>\n";
                 }
                 out << "</table>\n";
@@ -632,13 +638,13 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             << ", variable = " << _maxVariableConcurrentVisitors
             << ", waiting visitors " << _visitorQueue.size() << "<br>\n";
     }
-        // Only one can access status at a time as _statusRequest only holds
-        // answers from one request at a time
+    // Only one can access status at a time as _statusRequest only holds
+    // answers from one request at a time
     std::unique_lock sync(_statusLock);
-        // Send all subrequests
+    // Send all sub-requests
     uint32_t parts = _visitorThread.size();
     for (uint32_t i=0; i<parts; ++i) {
-        std::shared_ptr<RequestStatusPage> cmd(new RequestStatusPage(path));
+        auto cmd = std::make_shared<RequestStatusPage>(path);
         std::ostringstream token;
         token << "Visitor thread " << i;
         cmd->setSortToken(token.str());
@@ -648,7 +654,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     _statusCond.wait(sync, [&]() { return (_statusRequest.size() >= parts);});
     std::sort(_statusRequest.begin(), _statusRequest.end(), StatusReqSorter());
 
-        // Create output
+    // Create output
     for (uint32_t i=0; i<_statusRequest.size(); ++i) {
         out << "<h2>" << _statusRequest[i]->getSortToken()
             << "</h2>\n" << _statusRequest[i]->getStatus() << "\n";
