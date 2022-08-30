@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/output.h>
 #include "rawbuf.h"
+#include <vespa/vespalib/data/output.h>
 
 namespace search {
 
-class SlimeOutputRawBufAdapter : public ::vespalib::Output
+class SlimeOutputRawBufAdapter : public vespalib::Output
 {
 private:
     RawBuf &_buf;

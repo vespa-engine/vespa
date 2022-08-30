@@ -3,6 +3,7 @@
 #include "querytermdata.h"
 #include "searchenvironment.h"
 #include "searchvisitor.h"
+#include "matching_elements_filler.h"
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -17,8 +18,8 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/fnet/databuffer.h>
-#include "matching_elements_filler.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -92,7 +93,7 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
         LOG(debug, "Can not make an multivalue attribute out of %s with data type '%s' (%s)",
             name.c_str(), ndt->getName().c_str(), fv.className());
     }
-    return AttributeVector::SP();
+    return {};
 }
 
 AttributeVector::SP
@@ -108,7 +109,7 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
     } else {
         LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.className());
     }
-    return AttributeVector::SP();
+    return {};
 }
 
 SearchVisitor::SummaryGenerator::SummaryGenerator() :
@@ -117,7 +118,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
     _docsumState(_callback),
     _docsumFilter(),
     _docsumWriter(nullptr),
-    _rawBuf(4_Ki)
+    _buf(4_Ki)
 {
 }
 
@@ -128,12 +129,20 @@ vespalib::ConstBufferRef
 SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
 {
     if (_docsumWriter != nullptr) {
-        _rawBuf.reset();
         _docsumState._args.setResultClassName(summaryClass);
-        uint32_t docsumLen = _docsumWriter->WriteDocsum(lid, &_docsumState, _docsumFilter.get(), &_rawBuf);
-        return vespalib::ConstBufferRef(_rawBuf.GetDrainPos(), docsumLen);
+        vespalib::Slime slime;
+        vespalib::slime::SlimeInserter inserter(slime);
+        _docsumWriter->WriteDocsum(lid, &_docsumState, _docsumFilter.get(), inserter);
+
+        _buf.reset();
+        vespalib::WritableMemory magicId = _buf.reserve(4);
+        memcpy(magicId.data, &search::docsummary::SLIME_MAGIC_ID, 4);
+        _buf.commit(4);
+        vespalib::slime::BinaryFormat::encode(slime, _buf);
+        vespalib::Memory mem = _buf.obtain();
+        return {mem.data, mem.size};
     }
-    return vespalib::ConstBufferRef();
+    return {};
 }
 
 void SearchVisitor::HitsResultPreparator::execute(vespalib::Identifiable & obj)
@@ -612,10 +621,10 @@ SearchVisitor::registerAdditionalFields(const std::vector<vsm::DocsumTools::Fiel
     for (const vsm::DocsumTools::FieldSpec & spec : docsumSpec) {
         fieldList.push_back(spec.getOutputName());
         const std::vector<vespalib::string> & inputNames = spec.getInputNames();
-        for (size_t j = 0; j < inputNames.size(); ++j) {
-            fieldList.push_back(inputNames[j]);
-            if (PositionDataType::isZCurveFieldName(inputNames[j])) {
-                fieldList.emplace_back(PositionDataType::cutZCurveFieldName(inputNames[j]));
+        for (const auto & name : inputNames) {
+            fieldList.push_back(name);
+            if (PositionDataType::isZCurveFieldName(name)) {
+                fieldList.emplace_back(PositionDataType::cutZCurveFieldName(name));
             }
         }
     }
@@ -732,7 +741,7 @@ SearchVisitor::setupAttributeVectors()
 
 void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
     vespalib::string attrName(fieldPath.front().getName());
-    for (FieldPath::const_iterator ft(fieldPath.begin() + 1), fmt(fieldPath.end()); ft != fmt; ft++) {
+    for (auto ft(fieldPath.begin() + 1), fmt(fieldPath.end()); ft != fmt; ft++) {
         attrName.append(".");
         attrName.append((*ft)->getName());
     }
@@ -855,7 +864,7 @@ private:
 
 bool
 SearchVisitor::compatibleDocumentTypes(const document::DocumentType& typeA,
-                                       const document::DocumentType& typeB) const
+                                       const document::DocumentType& typeB)
 {
     if (&typeA == &typeB) {
         return true;

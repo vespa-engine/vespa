@@ -6,29 +6,18 @@
 #include "i_docsum_store_document.h"
 #include "keywordextractor.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumwriter");
 
-using namespace vespalib::slime::convenience;
 using vespalib::Issue;
+using vespalib::slime::ObjectInserter;
+using vespalib::Memory;
 
 namespace search::docsummary {
-
-uint32_t
-IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)
-{
-    const uint32_t preUsed = buf.GetUsedLen();
-    const uint32_t magic = SLIME_MAGIC_ID;
-    buf.append(&magic, sizeof(magic));
-    SlimeOutputRawBufAdapter adapter(buf);
-    vespalib::slime::BinaryFormat::encode(slime, adapter);
-    return (buf.GetUsedLen() - preUsed);
-}
 
 DynamicDocsumWriter::ResolveClassInfo
 DynamicDocsumWriter::resolveClassInfo(vespalib::stringref outputClassName) const
@@ -61,7 +50,7 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
 
 void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
-                                  IDocsumStore *docinfos, vespalib::slime::Inserter& topInserter)
+                                  IDocsumStore *docinfos, Inserter& topInserter)
 {
     if (rci.mustSkip || rci.outputClass == nullptr) {
         // Use empty docsum when illegal docsum class has been requested
@@ -172,14 +161,11 @@ DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *sta
 }
 
 
-uint32_t
-DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsumStore *docinfos, search::RawBuf *target)
+void
+DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsumStore *docinfos, Inserter& inserter)
 {
-    vespalib::Slime slime;
-    vespalib::slime::SlimeInserter inserter(slime);
     ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName());
     insertDocsum(rci, docid, state, docinfos, inserter);
-    return slime2RawBuf(slime, *target);
 }
 
 }

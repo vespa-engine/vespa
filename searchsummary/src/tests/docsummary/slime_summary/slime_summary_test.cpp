@@ -17,11 +17,12 @@
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/searchlib/util/rawbuf.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib::slime::convenience;
 using namespace search::docsummary;
+using vespalib::slime::BinaryFormat;
 using search::MatchingElements;
 using document::ByteFieldValue;
 using document::DataType;
@@ -49,15 +50,12 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     DocsumFixture();
     ~DocsumFixture() override;
     void getDocsum(Slime &slime) {
-        uint32_t classId;
-        search::RawBuf buf(4_Ki);
-        writer->WriteDocsum(1u, &state, this, &buf);
-        ASSERT_GREATER(buf.GetUsedLen(), sizeof(classId));
-        memcpy(&classId, buf.GetDrainPos(), sizeof(classId));
-        buf.Drain(sizeof(classId));
-        EXPECT_EQUAL(classId, SLIME_MAGIC_ID);
-        EXPECT_GREATER(vespalib::slime::BinaryFormat
-                       ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
+        Slime slimeOut;
+        SlimeInserter inserter(slimeOut);
+        writer->WriteDocsum(1u, &state, this, inserter);
+        vespalib::SmartBuffer buf(4_Ki);
+        BinaryFormat::encode(slimeOut, buf);
+        EXPECT_GREATER(BinaryFormat::decode(buf.obtain(), slime), 0u);
     }
     uint32_t getNumDocs() const override { return 2; }
     std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) override {
