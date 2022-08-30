@@ -20,12 +20,12 @@ public:
             const char *fieldName,
             const vespalib::string& inputField);
 protected:
-    explicit JuniperDFW(juniper::Juniper * juniper);
+    explicit JuniperDFW(const juniper::Juniper * juniper);
     ~JuniperDFW() override;
 
     vespalib::string                 _input_field_name;
     std::unique_ptr<juniper::Config> _juniperConfig;
-    juniper::Juniper                *_juniper;
+    const juniper::Juniper          *_juniper;
 private:
     bool IsGenerated() const override { return false; }
     JuniperDFW(const JuniperDFW &);
@@ -39,7 +39,7 @@ public:
     bool Init(const char *fieldName,
               const vespalib::string& inputField) override;
 protected:
-    explicit JuniperTeaserDFW(juniper::Juniper * juniper) : JuniperDFW(juniper) { }
+    explicit JuniperTeaserDFW(const juniper::Juniper * juniper) : JuniperDFW(juniper) { }
 };
 
 
@@ -49,7 +49,7 @@ class DynamicTeaserDFW : public JuniperTeaserDFW
                                        vespalib::stringref input,
                                        GetDocsumsState *state) const;
 public:
-    explicit DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
+    explicit DynamicTeaserDFW(const juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
 
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) const override;

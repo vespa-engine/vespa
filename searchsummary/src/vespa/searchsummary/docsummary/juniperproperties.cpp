@@ -84,7 +84,7 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
 }
 
 const char *
-JuniperProperties::GetProperty(const char *name, const char *def)
+JuniperProperties::GetProperty(const char *name, const char *def) const
 {
     auto it = _properties.find(name);
     return it != _properties.end() ? it->second.c_str() : def;

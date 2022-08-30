@@ -11,7 +11,7 @@ class PropReader : public IJuniperProperties
 {
 public:
     PropReader(const char* filename);
-    const char* GetProperty(const char* name, const char* def = NULL) override;
+    const char* GetProperty(const char* name, const char* def = nullptr) const override;
     void UpdateProperty(const char* name, const char* value);
     ~PropReader() {}
 protected:

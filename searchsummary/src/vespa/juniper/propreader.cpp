@@ -80,7 +80,7 @@ void PropReader::Process(const char* filename)
 }
 
 
-const char* PropReader::GetProperty(const char* name, const char* def)
+const char* PropReader::GetProperty(const char* name, const char* def) const
 {
     const char*  v = _keymap.Lookup(name, def);
     LOG(debug, "Parameter lookup :%s: value :%s:", name, v);

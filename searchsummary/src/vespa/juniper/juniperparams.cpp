@@ -102,7 +102,7 @@ size_t MatcherParams::StemMinLength() const { return _stem_min; }
 size_t MatcherParams::StemMaxExtend() const { return _stem_extend; }
 
 
-MatcherParams& MatcherParams::SetWordFolder(Fast_WordFolder* wordfolder)
+MatcherParams& MatcherParams::SetWordFolder(const Fast_WordFolder* wordfolder)
 {
     _wordfolder = wordfolder;
     return *this;

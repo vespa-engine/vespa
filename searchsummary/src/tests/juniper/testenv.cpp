@@ -106,9 +106,9 @@ PropertyMap::set(const char *name, const char *value)
 
 
 const char *
-PropertyMap::GetProperty(const char* name, const char* def)
+PropertyMap::GetProperty(const char* name, const char* def) const
 {
-    std::map<std::string, std::string>::iterator res = _map.find(std::string(name));
+    std::map<std::string, std::string>::const_iterator res = _map.find(std::string(name));
     if (res != _map.end()) {
         return res->second.c_str();
     }

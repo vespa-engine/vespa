@@ -6,8 +6,6 @@
 
 namespace search::docsummary {
 
-class IDocsumEnvironment;
-
 class SummaryFeaturesDFW : public SimpleDFW
 {
 public:

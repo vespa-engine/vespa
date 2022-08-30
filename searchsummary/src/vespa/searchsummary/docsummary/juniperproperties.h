@@ -26,7 +26,7 @@ public:
     /**
      * Constructs a juniper property object with default values set.
      */
-    JuniperProperties(const vespa::config::search::summary::JuniperrcConfig &cfg);
+    explicit JuniperProperties(const vespa::config::search::summary::JuniperrcConfig &cfg);
 
     ~JuniperProperties() override;
 
@@ -38,7 +38,7 @@ public:
     void configure(const vespa::config::search::summary::JuniperrcConfig &cfg);
 
     // Inherit doc from IJuniperProperties.
-    const char *GetProperty(const char *name, const char *def) override;
+    const char *GetProperty(const char *name, const char *def) const override;
 };
 
 }

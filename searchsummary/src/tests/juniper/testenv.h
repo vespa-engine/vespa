@@ -57,7 +57,7 @@ public:
     PropertyMap();
     ~PropertyMap();
     PropertyMap &set(const char *name, const char *value);
-    const char* GetProperty(const char* name, const char* def = NULL) override;
+    const char* GetProperty(const char* name, const char* def = nullptr) const override;
 };
 
 

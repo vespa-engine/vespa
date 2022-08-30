@@ -19,7 +19,7 @@ using vespalib::IllegalArgumentException;
 
 namespace search::docsummary {
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, IDocsumEnvironment& env)
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env)
     : _use_v8_geo_positions(use_v8_geo_positions),
       _env(env),
       _matching_elems_fields(std::make_shared<MatchingElementsFields>())

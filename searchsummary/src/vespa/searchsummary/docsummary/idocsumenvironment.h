@@ -14,7 +14,7 @@ class IDocsumEnvironment {
 public:
     virtual const search::IAttributeManager * getAttributeManager() const = 0;
     virtual vespalib::string lookupIndex(const vespalib::string & s) const = 0;
-    virtual juniper::Juniper * getJuniper() = 0;
+    virtual const juniper::Juniper * getJuniper() const = 0;
     virtual ~IDocsumEnvironment() = default;
 };
 

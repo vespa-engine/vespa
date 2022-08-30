@@ -96,8 +96,8 @@ public:
      */
     ~Juniper();
 
-    Fast_WordFolder & getWordFolder() { return *_wordfolder; }
-    IJuniperProperties & getProp() { return *_props; }
+    const Fast_WordFolder & getWordFolder() const noexcept { return *_wordfolder; }
+    const IJuniperProperties & getProp() const noexcept { return *_props; }
     QueryModifier & getModifier() { return *_modifier; }
 
     /** Create a result processing configuration of Juniper for subsequent use
@@ -111,7 +111,7 @@ public:
      *  NULL if an error occurred.
      */
 
-    std::unique_ptr<Config> CreateConfig(const char* config_name = "juniper");
+    std::unique_ptr<Config> CreateConfig(const char* config_name = "juniper") const;
     /** Allocate a query handle for the given query for subsequent calls to Analyse
      *  for different hits. Performs the necessary per query processing for Juniper.
      * @param query A query to start result processing for.
@@ -122,7 +122,7 @@ public:
      *   to the query language.
      * @return A unique pointer to a QueryHandle.
      */
-    std::unique_ptr<QueryHandle> CreateQueryHandle(const IQuery& query, const char* juniperoptions);
+    std::unique_ptr<QueryHandle> CreateQueryHandle(const IQuery& query, const char* juniperoptions) const;
 
     /** Add an rewriter for all terms that are prefixed with the given index.
      *  When Juniper encounter a term in the query tagged with this index,
