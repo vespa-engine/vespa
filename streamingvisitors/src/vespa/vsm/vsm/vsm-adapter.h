@@ -77,8 +77,9 @@ private:
     DocsumTools &operator=(const DocsumTools &);
 
 public:
-    DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer);
+    DocsumTools();
     ~DocsumTools();
+    void set_writer(std::unique_ptr<DynamicDocsumWriter> writer);
     void setJuniper(std::unique_ptr<juniper::Juniper> juniper) { _juniper = std::move(juniper); }
     const ResultConfig *getResultConfig() const { return _writer->GetResultConfig(); }
     DynamicDocsumWriter *getDocsumWriter() const { return _writer.get(); }
