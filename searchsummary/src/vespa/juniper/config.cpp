@@ -10,7 +10,7 @@
 namespace juniper
 {
 
-Config::Config(const char* config_name, Juniper & juniper) :
+Config::Config(const char* config_name, const Juniper & juniper) :
     _docsumparams(),
     _matcherparams(),
     _sumconf(nullptr),

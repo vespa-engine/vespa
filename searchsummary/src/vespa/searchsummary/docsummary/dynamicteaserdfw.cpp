@@ -286,7 +286,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     return rc;
 }
 
-JuniperDFW::JuniperDFW(juniper::Juniper * juniper)
+JuniperDFW::JuniperDFW(const juniper::Juniper * juniper)
     : _input_field_name(),
       _juniperConfig(),
       _juniper(juniper)

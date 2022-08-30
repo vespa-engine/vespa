@@ -67,7 +67,7 @@ public:
     MatcherParams& SetStemMaxExtend(size_t stem_extend);
     size_t StemMaxExtend() const;
 
-    MatcherParams& SetWordFolder(Fast_WordFolder* wordfolder);
+    MatcherParams& SetWordFolder(const Fast_WordFolder* wordfolder);
     const Fast_WordFolder* WordFolder() const noexcept { return _wordfolder; }
 
     MatcherParams& SetProximityFactor(double factor);
@@ -79,7 +79,7 @@ private:
     size_t _max_match_candidates;
     size_t _stem_min;
     size_t _stem_extend;
-    Fast_WordFolder* _wordfolder; // The wordfolder object needed as 1st parameter to folderfun
+    const Fast_WordFolder* _wordfolder; // The wordfolder object needed as 1st parameter to folderfun
     double _proximity_factor;
 };
 

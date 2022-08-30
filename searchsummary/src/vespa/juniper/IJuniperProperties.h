@@ -15,7 +15,7 @@ public:
      *  @param def A default value for the property if not found in configuration
      *  @return The value of the property or @param def if no such property is set
      */
-    virtual const char* GetProperty(const char* name, const char* def = nullptr) = 0;
+    virtual const char* GetProperty(const char* name, const char* def = nullptr) const = 0;
 
-    virtual ~IJuniperProperties() {};
+    virtual ~IJuniperProperties() = default;
 };

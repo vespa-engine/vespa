@@ -9,7 +9,7 @@ using vespa::config::search::vsm::VsmfieldsConfig;
 
 namespace vsm {
 
-DynamicDocsumConfig::DynamicDocsumConfig(search::docsummary::IDocsumEnvironment& env, search::docsummary::DynamicDocsumWriter* writer, std::shared_ptr<VsmfieldsConfig> vsm_fields_config)
+DynamicDocsumConfig::DynamicDocsumConfig(const search::docsummary::IDocsumEnvironment& env, search::docsummary::DynamicDocsumWriter* writer, std::shared_ptr<VsmfieldsConfig> vsm_fields_config)
     : Parent(env, writer),
       _vsm_fields_config(std::move(vsm_fields_config))
 {

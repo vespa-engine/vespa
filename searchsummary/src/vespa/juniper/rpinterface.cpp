@@ -73,12 +73,12 @@ Juniper::~Juniper()
 {
 }
 
-std::unique_ptr<Config> Juniper::CreateConfig(const char* config_name)
+std::unique_ptr<Config> Juniper::CreateConfig(const char* config_name) const
 {
     return std::unique_ptr<Config>(new Config(config_name, *this));
 }
 
-std::unique_ptr<QueryHandle> Juniper::CreateQueryHandle(const IQuery& fquery, const char* juniperoptions)
+std::unique_ptr<QueryHandle> Juniper::CreateQueryHandle(const IQuery& fquery, const char* juniperoptions) const
 {
     return std::make_unique<QueryHandle>(fquery, juniperoptions, *_modifier);
 }

@@ -45,7 +45,7 @@ public:
 
         const search::IAttributeManager * getAttributeManager() const override { return _attributeMgr.get(); }
         vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }
-        juniper::Juniper * getJuniper() override { return _juniperConfig.get(); }
+        const juniper::Juniper * getJuniper() const override { return _juniperConfig.get(); }
     };
 
 private:

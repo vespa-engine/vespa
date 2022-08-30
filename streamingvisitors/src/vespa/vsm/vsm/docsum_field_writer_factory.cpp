@@ -35,7 +35,7 @@ void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_con
 
 }
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, IDocsumEnvironment& env, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
     : search::docsummary::DocsumFieldWriterFactory(use_v8_geo_positions, env),
       _vsm_fields_config(vsm_fields_config)
 {

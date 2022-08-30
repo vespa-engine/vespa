@@ -16,7 +16,7 @@ class Juniper;
 class Config
 {
 public:
-    Config(const char* config_name, Juniper & juniper);
+    Config(const char* config_name, const Juniper & juniper);
     ~Config();
     const char* GetProp(const char* name, const char* def);
 
@@ -26,7 +26,7 @@ public:
 
 private:
     std::string _config_name;
-    Juniper   & _juniper;
+    const Juniper& _juniper;
 
     Config(Config &);
     Config &operator=(Config &);

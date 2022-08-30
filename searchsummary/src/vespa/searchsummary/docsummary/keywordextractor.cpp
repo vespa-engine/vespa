@@ -17,7 +17,7 @@ bool useful(search::ParseItem::ItemCreator creator)
 }
 
 
-KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
+KeywordExtractor::KeywordExtractor(const IDocsumEnvironment * env)
     : _env(env),
       _legalPrefixes(),
       _legalIndexes()

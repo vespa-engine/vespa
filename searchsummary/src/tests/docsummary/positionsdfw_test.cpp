@@ -53,7 +53,7 @@ struct MyEnvironment : IDocsumEnvironment {
 
     const IAttributeManager *getAttributeManager() const override { return attribute_man; }
     string lookupIndex(const string &s) const override { return s; }
-    juniper::Juniper *getJuniper() override { return 0; }
+    const juniper::Juniper *getJuniper() const override { return nullptr; }
 };
 
 class MyAttributeContext : public IAttributeContext {
