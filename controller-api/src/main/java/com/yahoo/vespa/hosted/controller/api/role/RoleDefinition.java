@@ -71,10 +71,6 @@ public enum RoleDefinition {
                   Policy.applicationManager,
                   Policy.keyRevokal,
                   Policy.paymentInstrumentRead,
-                  Policy.paymentInstrumentUpdate,
-                  Policy.paymentInstrumentDelete,
-                  Policy.paymentInstrumentCreate,
-                  Policy.planUpdate,
                   Policy.billingInformationRead,
                   Policy.accessRequests
             ),
