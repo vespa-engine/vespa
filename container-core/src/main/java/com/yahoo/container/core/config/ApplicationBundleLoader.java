@@ -18,11 +18,8 @@ import java.util.logging.Logger;
 /**
  * Manages the set of installed and active/inactive bundles.
  *
- * TODO: This class and the CollisionHook currently only handles a "current" and "previous" generation.
- *       In order to correctly handle rapid reconfiguration and hence multiple generations, we need to
- *       consider the graph generation number for each bundle.
- *
  * @author gjoranv
+ * @author Tony Vaagenes
  */
 public class ApplicationBundleLoader {
 
@@ -120,7 +117,7 @@ public class ApplicationBundleLoader {
     }
 
     private Map<FileReference, Bundle> installWithFileDistribution(Set<FileReference> bundlesToInstall,
-                                                                   FileAcquirerBundleInstaller bundleInstaller) {
+                                                    FileAcquirerBundleInstaller bundleInstaller) {
         var newBundles = new LinkedHashMap<FileReference, Bundle>();
 
         for (FileReference reference : bundlesToInstall) {
