@@ -47,6 +47,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     StructDataType  int_pair_type;
     DocumentType    doc_type;
     GetDocsumsState state;
+    bool            fail_get_mapped_docsum;
+    bool            empty_get_mapped_docsum;
     DocsumFixture();
     ~DocsumFixture() override;
     void getDocsum(Slime &slime) {
@@ -60,6 +62,12 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     uint32_t getNumDocs() const override { return 2; }
     std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) override {
         EXPECT_EQUAL(1u, docid);
+        if (fail_get_mapped_docsum) {
+            return {};
+        }
+        if (empty_get_mapped_docsum) {
+            return std::make_unique<DocsumStoreDocument>(std::unique_ptr<Document>());
+        }
         auto doc = std::make_unique<Document>(doc_type, DocumentId("id:test:test::0"));
         doc->setValue("int_field", IntFieldValue(4));
         doc->setValue("short_field", ShortFieldValue(2));
@@ -89,7 +97,9 @@ DocsumFixture::DocsumFixture()
     : writer(),
       int_pair_type("int_pair"),
       doc_type("test"),
-      state(*this)
+      state(*this),
+      fail_get_mapped_docsum(false),
+      empty_get_mapped_docsum(false)
 {
     auto config = std::make_unique<ResultConfig>();
     ResultClass *cfg = config->AddResultClass("default", 0);
@@ -140,6 +150,31 @@ TEST_FF("require that docsum can be written as slime", DocsumFixture(), Slime())
     EXPECT_EQUAL(f2.get()["longdata_field"].asData().make_string(), std::string("long_data"));
     EXPECT_EQUAL(f2.get()["int_pair_field"]["foo"].asLong(), 1u);
     EXPECT_EQUAL(f2.get()["int_pair_field"]["bar"].asLong(), 2u);
+}
+
+TEST_FF("require that unknown summary class gives empty slime", DocsumFixture(), Slime())
+{
+    f1.state._args.setResultClassName("unknown");
+    f1.getDocsum(f2);
+    EXPECT_TRUE(f2.get().valid());
+    EXPECT_EQUAL(vespalib::slime::NIX::ID, f2.get().type().getId());
+}
+
+TEST_FF("require that failure to retrieve docsum store document gives empty slime", DocsumFixture(), Slime())
+{
+    f1.fail_get_mapped_docsum = true;
+    f1.getDocsum(f2);
+    EXPECT_TRUE(f2.get().valid());
+    EXPECT_EQUAL(vespalib::slime::NIX::ID, f2.get().type().getId());
+}
+
+TEST_FF("require that empty docsum store document gives empty object", DocsumFixture(), Slime())
+{
+    f1.empty_get_mapped_docsum = true;
+    f1.getDocsum(f2);
+    EXPECT_TRUE(f2.get().valid());
+    EXPECT_EQUAL(vespalib::slime::OBJECT::ID, f2.get().type().getId());
+    EXPECT_EQUAL(0u, f2.get().fields());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
