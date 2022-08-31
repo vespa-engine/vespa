@@ -478,8 +478,7 @@ std::string Matcher::GetLog()
 }
 
 
-SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches,
-					int surround_len)
+SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len)
 {
     // No point in processing this document if no keywords found at all:
     if (TotalHits() <= 0) return NULL;

@@ -32,8 +32,8 @@ public:
     // Constructor that builds a description that can later be used to create
     // a suitable query in context / query highlight for the given matcher
     // in its current status:
-    SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, int max_matches,
-                int surround_len);
+    SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, int max_matches, int surround_len);
+    ~SummaryDesc();
 
     /* Return a highlight tagged summary string
      * from this summary description

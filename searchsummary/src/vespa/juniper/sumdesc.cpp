@@ -325,6 +325,7 @@ SummaryDesc::SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length,
     locate_accidential_matches();
 }
 
+SummaryDesc::~SummaryDesc() = default;
 
 
 void SummaryDesc::locate_accidential_matches()
