@@ -29,33 +29,35 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
 
     @Override
     protected String variablePartXml() {
-        return "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>\n" +
-
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
-               "    <binding>http://*/application/v4/*</binding>\n" +
-               "  </handler>\n" +
-
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v1</binding>\n" +
-               "    <binding>http://*/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
-
-               "  <http>\n" +
-               "    <server id='default' port='8080' />\n" +
-               "    <filtering>\n" +
-               "      <request-chain id='default'>\n" +
-               "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
-               "        <binding>http://*/*</binding>\n" +
-               "      </request-chain>\n" +
-               "    </filtering>\n" +
-               "  </http>\n";
+        return """
+                 <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>
+                 <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>
+                 
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>
+                   <binding>http://localhost/application/v4/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>
+                   <binding>http://localhost/zone/v1</binding>
+                   <binding>http://localhost/zone/v1/*</binding>
+                 </handler>
+                 
+                 <http>
+                   <server id='default' port='8080' />
+                   <filtering>
+                     <request-chain id='default'>
+                       <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>
+                       <binding>http://localhost/*</binding>
+                     </request-chain>
+                   </filtering>
+                 </http>
+               """;
     }
 
-    protected static final String accessDenied = "{\n" +
-                                                 "  \"code\" : 403,\n" +
-                                                 "  \"message\" : \"Access denied\"\n" +
-                                                 "}";
+    protected static final String accessDenied = """
+                                                 {
+                                                   "code" : 403,
+                                                   "message" : "Access denied"
+                                                 }""";
 
     protected RequestBuilder request(String path) { return new RequestBuilder(path, Request.Method.GET); }
     protected RequestBuilder request(String path, Request.Method method) { return new RequestBuilder(path, method); }

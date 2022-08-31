@@ -1,4 +1,4 @@
-<deployment version='1.0' athenz-domain="vespa.vespa.tenants.vespa" athenz-service="debug">
+<deployment version='1.0'>
     <notifications>
         <email role="author" />
     </notifications>

@@ -83,7 +83,7 @@ public class DeploymentPlayground extends ControllerContainerTest {
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(readDeploymentXml());
         Map<String, DeploymentContext> instances = new LinkedHashMap<>();
         for (var instance : applicationPackage.deploymentSpec().instances())
-              instances.put(instance.name().value(), deploymentTester.newDeploymentContext("gemini", "core", instance.name().value()));
+              instances.put(instance.name().value(), deploymentTester.newDeploymentContext("demo", "app", instance.name().value()));
 
         instances.values().iterator().next().submit(applicationPackage);
 
@@ -154,7 +154,7 @@ public class DeploymentPlayground extends ControllerContainerTest {
                     instances.keySet().removeIf(not(names::contains));
                     names.removeIf(instances.keySet()::contains);
                     for (String name : names)
-                        instances.put(name, deploymentTester.newDeploymentContext("gemini", "core", name));
+                        instances.put(name, deploymentTester.newDeploymentContext("demo", "app", name));
                 }
             }
             catch (Throwable t) {
@@ -277,49 +277,50 @@ public class DeploymentPlayground extends ControllerContainerTest {
 
     @Override
     protected String variablePartXml() {
-        return "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
-
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
-               "    <binding>http://*/application/v4/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
-               "    <binding>http://*/athenz/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v1</binding>\n" +
-               "    <binding>http://*/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
-
-               "  <http>\n" +
-               "    <server id='default' port='8080' />\n" +
-               "    <filtering>\n" +
-               "      <request-chain id='default'>\n" +
-               "        <filter id='com.yahoo.jdisc.http.filter.security.cors.CorsPreflightRequestFilter'>\n" +
-               "          <config name=\"jdisc.http.filter.security.cors.cors-filter\">" +
-               "            <allowedUrls>\n" +
-               "              <item>http://localhost:3000</item>\n" +
-               "              <item>http://localhost:8080</item>\n" +
-               "            </allowedUrls>\n" +
-               "          </config>\n" +
-               "        </filter>\n" +
-               "        <filter id='com.yahoo.vespa.hosted.controller.restapi.playground.AllowingFilter'/>\n" +
-               "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
-               "        <binding>http://*/*</binding>\n" +
-               "      </request-chain>\n" +
-               "      <response-chain id='responses'>\n" +
-               "        <filter id='com.yahoo.jdisc.http.filter.security.cors.CorsResponseFilter'>\n" +
-               "          <config name=\"jdisc.http.filter.security.cors.cors-filter\">" +
-               "            <allowedUrls>\n" +
-               "              <item>http://localhost:3000</item>\n" +
-               "              <item>http://localhost:8080</item>\n" +
-               "            </allowedUrls>\n" +
-               "          </config>\n" +
-               "        </filter>\n" +
-               "        <binding>http://*/*</binding>\n" +
-               "      </response-chain>\n" +
-               "    </filtering>\n" +
-               "  </http>\n";
+        return """
+                 <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>
+                 <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>
+                 
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>
+                   <binding>http://localhost/application/v4/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>
+                   <binding>http://localhost/athenz/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>
+                   <binding>http://localhost/zone/v1</binding>
+                   <binding>http://localhost/zone/v1/*</binding>
+                 </handler>
+                 
+                 <http>
+                   <server id='default' port='8080' />
+                   <filtering>
+                     <request-chain id='default'>
+                       <filter id='com.yahoo.jdisc.http.filter.security.cors.CorsPreflightRequestFilter'>
+                         <config name="jdisc.http.filter.security.cors.cors-filter">
+                           <allowedUrls>
+                             <item>http://localhost:3000</item>
+                             <item>http://localhost:8080</item>
+                           </allowedUrls>
+                         </config>
+                       </filter>
+                       <filter id='com.yahoo.vespa.hosted.controller.restapi.playground.AllowingFilter'/>
+                       <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>
+                       <binding>http://localhost/*</binding>
+                     </request-chain>
+                     <response-chain id='responses'>
+                       <filter id='com.yahoo.jdisc.http.filter.security.cors.CorsResponseFilter'>
+                         <config name="jdisc.http.filter.security.cors.cors-filter">            <allowedUrls>
+                             <item>http://localhost:3000</item>
+                             <item>http://localhost:8080</item>
+                           </allowedUrls>
+                         </config>
+                       </filter>
+                       <binding>http://localhost/*</binding>
+                     </response-chain>
+                   </filtering>
+                 </http>
+               """;
     }
 
 }

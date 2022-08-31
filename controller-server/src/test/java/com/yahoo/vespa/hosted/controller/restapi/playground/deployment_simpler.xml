@@ -1,4 +1,4 @@
-<deployment version='1.0' athenz-domain="vespa.vespa.tenants.vespa" athenz-service="debug">
+<deployment version='1.0'>
 
     <instance id="alpha"> <!-- Runs system and stress tests -->
         <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
