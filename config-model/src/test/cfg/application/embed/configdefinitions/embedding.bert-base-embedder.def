@@ -1,3 +1,6 @@
+# Copy of this Vespa config stored here because Vespa config definitions are not
+# available in unit tests, and are needed (by DomConfigPayloadBuilder.parseLeaf)
+# Alternativ ely, we could make that not need it as it is not strictly necessaery.
 
 namespace=embedding
 

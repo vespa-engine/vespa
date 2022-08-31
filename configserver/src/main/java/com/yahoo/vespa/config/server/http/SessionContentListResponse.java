@@ -11,7 +11,6 @@ import java.util.List;
  * Represents a request for listing files within an application package.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 class SessionContentListResponse extends SlimeJsonResponse {
 

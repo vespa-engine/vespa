@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class NodeVectorTest {
 

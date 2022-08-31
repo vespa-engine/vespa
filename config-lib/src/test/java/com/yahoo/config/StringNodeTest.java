@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author hmusum
- * @since 5.1.7
  */
 public class StringNodeTest {
 

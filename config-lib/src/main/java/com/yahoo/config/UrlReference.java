@@ -11,6 +11,7 @@ import java.util.Objects;
  */
 public final class UrlReference {
 
+    /** Either the url or, if downloaded, the absolute path to the downloaded file. */
     private final String value;
 
     public UrlReference(String value) {

@@ -25,8 +25,7 @@ public class SessionContentHandler extends SessionHandler {
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
-    public SessionContentHandler(Context ctx,
-                                 ApplicationRepository applicationRepository) {
+    public SessionContentHandler(Context ctx, ApplicationRepository applicationRepository) {
         super(ctx, applicationRepository);
     }
 

@@ -2,6 +2,7 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.tensor.Tensor;
@@ -22,10 +23,8 @@ public class BertBaseEmbedderTest {
         assumeTrue(OnnxEvaluator.isRuntimeAvailable(modelPath));
 
         BertBaseEmbedderConfig.Builder builder = new BertBaseEmbedderConfig.Builder();
-        builder.tokenizerVocabPath(new FileReference(vocabPath));
-        builder.tokenizerVocabUrl(new UrlReference(""));
-        builder.transformerModelPath(new FileReference(modelPath));
-        builder.transformerModelUrl(new UrlReference(""));
+        builder.tokenizerVocab(ModelReference.fromPath(vocabPath));
+        builder.transformerModel(ModelReference.fromPath(modelPath));
         BertBaseEmbedder embedder = new BertBaseEmbedder(builder.build());
 
         TensorType destType = TensorType.fromSpec("tensor<float>(x[7])");

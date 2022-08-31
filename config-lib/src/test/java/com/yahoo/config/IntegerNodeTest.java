@@ -9,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class IntegerNodeTest {
+
     @Test
     void testSetValue() {
         IntegerNode n = new IntegerNode();
@@ -19,4 +19,5 @@ public class IntegerNodeTest {
         assertTrue(n.setValue("10"));
         assertEquals(10, n.value().intValue());
     }
+
 }

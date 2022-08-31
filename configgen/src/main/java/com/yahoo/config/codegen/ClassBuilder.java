@@ -7,6 +7,6 @@ package com.yahoo.config.codegen;
 public interface ClassBuilder {
 
     /** Generate config class file(s). */
-    public void createConfigClasses();
+    void createConfigClasses();
 
 }

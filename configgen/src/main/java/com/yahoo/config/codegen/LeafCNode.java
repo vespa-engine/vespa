@@ -74,8 +74,7 @@ public abstract class LeafCNode extends CNode {
     }
 
     @Override
-    protected void setLeaf(String name, DefLine defLine, String comment)
-            throws IllegalArgumentException {
+    protected void setLeaf(String name, DefLine defLine, String comment) throws IllegalArgumentException {
         DefLine.Type type = defLine.getType();
         // TODO: why the !is... conditions?
         if (!isMap && !isArray && isInitialized) {
@@ -101,8 +100,7 @@ public abstract class LeafCNode extends CNode {
             checkDefaultValue(defaultValue);
             setDefaultValue(defaultValue);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException
-                    ("Invalid default value", e);
+            throw new IllegalArgumentException("Invalid default value", e);
         }
     }
 

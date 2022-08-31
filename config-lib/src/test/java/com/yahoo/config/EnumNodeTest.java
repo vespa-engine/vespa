@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Ulf Lilleengen
  */
 public class EnumNodeTest {
+
     private static class MyNode extends EnumNode<MyNode.Enum> {
         public enum Enum { ONE, TWO }
         public final static Enum ONE = Enum.ONE;
@@ -39,4 +40,5 @@ public class EnumNodeTest {
         assertEquals("ONE", n.toString());
         assertFalse(n.doSetValue("THREE"));
     }
+
 }

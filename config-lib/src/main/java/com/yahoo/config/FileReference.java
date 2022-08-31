@@ -2,6 +2,7 @@
 package com.yahoo.config;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -19,6 +20,8 @@ public final class FileReference {
     private final String value;
 
     public FileReference(String value) {
+        if (Path.of(value).normalize().startsWith(".."))
+            throw new IllegalArgumentException("Path may not start with '..' but got '" + value + "'");
         this.value = Objects.requireNonNull(value);
     }
 

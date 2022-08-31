@@ -45,6 +45,7 @@ refwithdef reference default=":parent:" restart
 fileVal file restart
 pathVal path restart
 urlVal url
+modelVal model
 
 boolarr[] bool restart
 intarr[] int restart
@@ -56,6 +57,7 @@ refarr[] reference restart
 fileArr[] file restart
 pathArr[] path restart
 urlArr[] url
+modelArr[] model
 
 #This is a map of ints.
 intMap{} int restart
@@ -63,6 +65,7 @@ stringMap{} string restart
 filemap{} file restart
 pathMap{} path restart
 urlMap{} url
+modelMap{} model
 
 # A basic struct
 basicStruct.foo string default="basic" restart

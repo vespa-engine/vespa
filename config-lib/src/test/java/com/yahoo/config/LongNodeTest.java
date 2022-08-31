@@ -9,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class LongNodeTest {
+
     @Test
     void testSetValue() {
         LongNode n = new LongNode();
@@ -19,4 +19,5 @@ public class LongNodeTest {
         assertTrue(n.setValue("10"));
         assertEquals(10L, n.value().longValue());
     }
+
 }

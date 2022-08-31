@@ -957,7 +957,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static void addConfiguredComponents(DeployState deployState, ContainerCluster<? extends Container> cluster,
                                                 Element parent, String componentName) {
         for (Element component : XML.getChildren(parent, componentName)) {
-            component = ModelConfigTransformer.transform(deployState, component);
+            ModelIdResolver.resolveModelIds(component, deployState.isHosted());
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, component));
         }
     }

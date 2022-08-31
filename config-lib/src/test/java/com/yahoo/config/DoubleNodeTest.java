@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class DoubleNodeTest {
+
     @Test
     void testSetValue() {
         DoubleNode n = new DoubleNode();
@@ -20,4 +20,5 @@ public class DoubleNodeTest {
         assertTrue(n.doSetValue("3.14"));
         assertEquals(3.14, n.value(), 0.001);
     }
+
 }

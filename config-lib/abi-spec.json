@@ -272,7 +272,8 @@
       "public static java.util.Map asNodeMap(java.util.Map, com.yahoo.config.LeafNode)",
       "public static java.util.Map asFileNodeMap(java.util.Map)",
       "public static java.util.Map asPathNodeMap(java.util.Map)",
-      "public static java.util.Map asUrlNodeMap(java.util.Map)"
+      "public static java.util.Map asUrlNodeMap(java.util.Map)",
+      "public static java.util.Map asModelNodeMap(java.util.Map)"
     ],
     "fields": []
   },
@@ -287,7 +288,8 @@
       "public java.util.List asList()",
       "public static com.yahoo.config.LeafNodeVector createFileNodeVector(java.util.Collection)",
       "public static com.yahoo.config.LeafNodeVector createPathNodeVector(java.util.Collection)",
-      "public static com.yahoo.config.LeafNodeVector createUrlNodeVector(java.util.Collection)"
+      "public static com.yahoo.config.LeafNodeVector createUrlNodeVector(java.util.Collection)",
+      "public static com.yahoo.config.LeafNodeVector createModelNodeVector(java.util.Collection)"
     ],
     "fields": []
   },
@@ -305,6 +307,51 @@
       "public java.lang.String toString()",
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.ModelNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.ModelReference)",
+      "public com.yahoo.config.ModelReference value()",
+      "public java.lang.String getValue()",
+      "public java.lang.String toString()",
+      "protected boolean doSetValue(java.lang.String)",
+      "public com.yahoo.config.ModelReference getModelReference()",
+      "public static java.util.List toModelReferences(java.util.List)",
+      "public static java.util.Map toModelReferenceMap(java.util.Map)",
+      "public bridge synthetic java.lang.Object value()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.ModelReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public java.util.Optional modelId()",
+      "public java.util.Optional url()",
+      "public java.util.Optional path()",
+      "public com.yahoo.config.ModelReference withModelId(java.util.Optional)",
+      "public com.yahoo.config.ModelReference withUrl(java.util.Optional)",
+      "public com.yahoo.config.ModelReference withPath(java.util.Optional)",
+      "public java.lang.String value()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public static com.yahoo.config.ModelReference fromModelId(java.lang.String)",
+      "public static com.yahoo.config.ModelReference fromUrl(java.lang.String)",
+      "public static com.yahoo.config.ModelReference fromPath(java.lang.String)",
+      "public static com.yahoo.config.ModelReference valueOf(java.lang.String)"
     ],
     "fields": []
   },

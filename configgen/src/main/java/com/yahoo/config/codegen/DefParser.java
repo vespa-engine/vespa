@@ -210,7 +210,7 @@ public class DefParser {
                 sb.append(" = ").append(((LeafCNode)root).getDefaultValue().getValue());
             }
         }
-        System.out.println(sb.toString());
+        System.out.println(sb);
         if (!root.getComment().isEmpty()) {
             String comment = root.getComment();
             if (comment.contains("\n")) {

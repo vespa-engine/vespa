@@ -11,12 +11,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 
 /**
  * A BERT Base compatible embedder. This embedder uses a WordPiece embedder to
@@ -60,20 +57,10 @@ public class BertBaseEmbedder implements Embedder {
         options.setInterOpThreads(modifyThreadCount(config.onnxInterOpThreads()));
         options.setIntraOpThreads(modifyThreadCount(config.onnxIntraOpThreads()));
 
-        String tokenizerFile = pathOrUrl(config.tokenizerVocabPath(), config.tokenizerVocabUrl());
-        String modelFile = pathOrUrl(config.transformerModelPath(), config.transformerModelUrl());
-
-        tokenizer = new WordPieceEmbedder.Builder(tokenizerFile).build();
-        evaluator = new OnnxEvaluator(modelFile, options);
+        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().value()).build();
+        evaluator = new OnnxEvaluator(config.transformerModel().value(), options);
 
         validateModel();
-    }
-
-    private String pathOrUrl(Path path, File url) {
-        if (path.endsWith("services.xml")) {
-            return url.getAbsolutePath();
-        }
-        return path.toAbsolutePath().toString();
     }
 
     private void validateModel() {

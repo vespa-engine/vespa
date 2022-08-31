@@ -117,10 +117,10 @@ public final class Utf8 {
     /**
      * Decode a UTF-8 string.
      *
-     * @param utf8 The bytes to decode.
+     * @param utf8 the bytes to decode
      * @return Utf8 encoded array
      */
-    public static String toString(byte [] utf8) {
+    public static String toString(byte[] utf8) {
         // This is just wrapper for String::new. Pre-Java 9 this had a more efficient approach for ASCII-onlu strings.
         return new String(utf8, StandardCharsets.UTF_8);
     }

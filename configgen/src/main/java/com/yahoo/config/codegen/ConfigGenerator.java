@@ -167,6 +167,8 @@ public class ConfigGenerator {
             return name + " = LeafNodeVector.createPathNodeVector(builder." + name + ");";
         } else if (child instanceof UrlLeaf && isArray) {
             return name + " = LeafNodeVector.createUrlNodeVector(builder." + name + ");";
+        } else if (child instanceof ModelLeaf && isArray) {
+            return name + " = LeafNodeVector.createModelNodeVector(builder." + name + ");";
         } else if (child instanceof LeafCNode && isArray) {
             return name + " = new LeafNodeVector<>(builder." + name + ", new " + className + "());";
         } else if (child instanceof FileLeaf && isMap) {
@@ -175,6 +177,8 @@ public class ConfigGenerator {
             return name + " = LeafNodeMaps.asPathNodeMap(builder." + name + ");";
         } else if (child instanceof UrlLeaf && isMap) {
             return name + " = LeafNodeMaps.asUrlNodeMap(builder." + name + ");";
+        } else if (child instanceof ModelLeaf && isMap) {
+            return name + " = LeafNodeMaps.asModelNodeMap(builder." + name + ");";
         } else if (child instanceof LeafCNode && isMap) {
             return name + " = LeafNodeMaps.asNodeMap(builder." + name + ", new " + className + "());";
         } else if (child instanceof InnerCNode && isArray) {
@@ -399,6 +403,8 @@ public class ConfigGenerator {
             return "PathNode";
         } else if (node instanceof UrlLeaf) {
             return "UrlNode";
+        } else if (node instanceof ModelLeaf) {
+            return "ModelNode";
         } else if (node instanceof IntegerLeaf) {
             return "IntegerNode";
         } else if (node instanceof LongLeaf) {
@@ -427,6 +433,8 @@ public class ConfigGenerator {
             return "Path";
         } else if (node instanceof UrlLeaf) {
             return "File";
+        } else if (node instanceof ModelLeaf) {
+            return "ModelReference";
         } else if (node instanceof IntegerLeaf) {
             return "int";
         } else if (node instanceof LongLeaf) {
@@ -434,7 +442,7 @@ public class ConfigGenerator {
         } else if (node instanceof StringLeaf) {
             return "String";
         } else {
-            throw new IllegalStateException("Cannot determine user data type for node"); // should not occur
+            throw new IllegalStateException("Cannot determine user data type for node '" + node + "'"); // should not occur
         }
     }
 

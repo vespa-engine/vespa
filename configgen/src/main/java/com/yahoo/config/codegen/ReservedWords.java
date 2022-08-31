@@ -44,7 +44,7 @@ public class ReservedWords {
     private static final HashMap<String, String> allKeyWords;
 
     static {
-        allKeyWords = new HashMap<String, String>();
+        allKeyWords = new HashMap<>();
         for (String s : cKeywords) {
             allKeyWords.put(s, "C");
         }

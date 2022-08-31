@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.yahoo.foo.StructtypesConfig.Simple.Gender.Enum.FEMALE;
 import static com.yahoo.test.FunctionTestConfig.BasicStruct;
@@ -34,10 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
- * @since 5.1.11
  */
-public class ConfigInstanceBuilderTest
-{
+public class ConfigInstanceBuilderTest {
 
     @Test
     void struct_values_can_be_set_without_declaring_a_new_struct_builder() {
@@ -170,6 +169,9 @@ public class ConfigInstanceBuilderTest
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
                 urlVal(new UrlReference("http://docs.vespa.ai")).
+                modelVal(new ModelReference(Optional.empty(),
+                                            Optional.empty(),
+                                            Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -408,4 +410,5 @@ public class ConfigInstanceBuilderTest
                 report.toString().contains("function-test.myStructMap{one} with value \n")
         );
     }
+
 }

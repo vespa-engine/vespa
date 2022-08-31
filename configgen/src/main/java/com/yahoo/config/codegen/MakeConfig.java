@@ -98,9 +98,9 @@ public class MakeConfig {
     static class Exceptions {
 
         /**
-         * <p>Returns a use friendly error message string which includes information from all nested exceptions.
+         * Returns a use friendly error message string which includes information from all nested exceptions.
          *
-         * <p>The form of this string is
+         * The form of this string is
          * <code>e.getMessage(): e.getCause().getMessage(): e.getCause().getCause().getMessage()...</code>
          * In addition, some heuristics are used to clean up common cases where exception nesting causes bad messages.
          */

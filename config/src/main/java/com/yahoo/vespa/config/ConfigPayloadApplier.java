@@ -4,12 +4,12 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
-import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -22,12 +22,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -35,7 +34,9 @@ import static java.util.logging.Level.INFO;
  *
  * TODO: This can be refactored a lot, since many of the reflection methods are duplicated
  *
- * @author Ulf Lilleengen, hmusum, Tony Vaagenes
+ * @author Ulf Lilleengen
+ * @author hmusum
+ * @author Tony Vaagenes
  */
 public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
@@ -54,7 +55,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         this.rootBuilder = builder;
         this.pathAcquirer = pathAcquirer;
         this.urlDownloader = urlDownloader;
-        debug("rootBuilder=" + rootBuilder);
     }
 
     public void applyPayload(ConfigPayload payload) {
@@ -63,7 +63,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             handleValue(payload.getSlime().get());
         } catch (Exception e) {
             throw new RuntimeException("Not able to create config builder for payload:" + payload.toString() +
-                    ", " + Exceptions.toMessageString(e), e);
+                                       ", " + Exceptions.toMessageString(e), e);
         }
     }
 
@@ -89,27 +89,19 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void handleARRAY(Inspector inspector) {
-        trace("Array");
-        inspector.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int idx, Inspector inspector) {
-                handleArrayEntry(idx, inspector);
-            }
-        });
+        inspector.traverse((ArrayTraverser)(int index, Inspector value) -> handleArrayEntry(index, value));
     }
 
     private void handleArrayEntry(int idx, Inspector inspector) {
         try {
-            trace("entry, idx=" + idx);
-            trace("top of stack=" + stack.peek().toString());
             String name = stack.peek().nameStack().peek();
-            if (inspector.type().equals(Type.OBJECT)) {
+            if (inspector.type() == Type.OBJECT) {
                 NamedBuilder builder = createBuilder(stack.peek(), name);
                 if (builder == null) return;  // Ignore non-existent struct array class
                 stack.push(builder);
             }
             handleValue(inspector);
-            if (inspector.type().equals(Type.OBJECT)) {
+            if (inspector.type() == Type.OBJECT) {
                 stack.peek().nameStack().pop();
             }
         } catch (Exception e) {
@@ -118,37 +110,24 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void handleOBJECT(Inspector inspector) {
-        trace("Object");
-        printStack();
-
-        inspector.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                handleObjectEntry(name, inspector);
-            }
-        });
-
-        trace("Should pop a builder from stack");
+        inspector.traverse((String name, Inspector value) -> handleObjectEntry(name, value));
         NamedBuilder builder = stack.pop();
-        printStack();
 
         // Need to set e.g struct(Struct.Builder) here
-        if (!stack.empty()) {
-            trace("builder= " + builder);
+        if ( ! stack.empty()) {
             try {
                 invokeSetter(stack.peek().builder, builder.peekName(), builder.builder);
             } catch (Exception e) {
                 throw new RuntimeException("Could not set '" + builder.peekName() +
-                        "' for value '" + builder.builder() + "'", e);
+                                           "' for value '" + builder.builder() + "'", e);
             }
         }
     }
 
     private void handleObjectEntry(String name, Inspector inspector) {
         try {
-            trace("field, name=" + name);
             NamedBuilder parentBuilder = stack.peek();
-            if (inspector.type().equals(Type.OBJECT)) {
+            if (inspector.type() == Type.OBJECT) {
                 if (isMapField(parentBuilder, name)) {
                     parentBuilder.nameStack().push(name);
                     handleMap(inspector);
@@ -159,9 +138,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
                     if (builder == null) return;  // Ignore non-existent struct class
                     stack.push(builder);
                 }
-            } else if (inspector.type().equals(Type.ARRAY)) {
+            } else if (inspector.type() == Type.ARRAY) {
                 for (int i = 0; i < inspector.children(); i++) {
-                    trace("Pushing " + name);
                     parentBuilder.nameStack().push(name);
                 }
             } else {  // leaf
@@ -174,19 +152,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void handleMap(Inspector inspector) {
-        inspector.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                switch (inspector.type()) {
-                case OBJECT:
-                    handleInnerMap(name, inspector);
-                    break;
-                case ARRAY:
-                    throw new IllegalArgumentException("Never herd of array inside maps before");
-                default:
-                    setMapLeafValue(name, getValueFromInspector(inspector));
-                    break;
-                }
+        inspector.traverse((String name, Inspector value) -> {
+            switch (value.type()) {
+                case OBJECT -> handleInnerMap(name, value);
+                case ARRAY -> throw new IllegalArgumentException("Never heard of array inside maps before");
+                default -> setMapLeafValue(name, value);
             }
         });
     }
@@ -197,12 +167,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             throw new RuntimeException("Missing map builder (this should never happen): " + stack.peek());
         setMapLeafValue(name, builder.builder());
         stack.push(builder);
-        inspector.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                handleObjectEntry(name, inspector);
-            }
-        });
+        inspector.traverse((ObjectTraverser) (key, value) -> handleObjectEntry(key, value));
         stack.pop();
     }
 
@@ -210,21 +175,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         NamedBuilder parent = stack.peek();
         ConfigBuilder builder = parent.builder();
         String methodName = parent.peekName();
-        //trace("class to obtain method from: " + builder.getClass().getName());
         try {
-            // Need to convert reference into actual path if 'path' type is used
-            if (isPathField(builder, methodName)) {
-                FileReference wrappedPath = resolvePath((String)value);
-                invokeSetter(builder, methodName, key, wrappedPath);
-
-            // Need to convert url into actual file if 'url' type is used
-            } else if (isUrlField(builder, methodName)) {
-                UrlReference url = resolveUrl((String)value);
-                invokeSetter(builder, methodName, key, url);
-
-            } else {
-                invokeSetter(builder, methodName, key, value);
-            }
+            invokeSetter(builder, methodName, key, resolveValue(builder, methodName, value));
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Name: " + methodName + ", value '" + value + "'", e);
         } catch (NoSuchMethodException e) {
@@ -246,46 +198,20 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         Object builder = parentBuilder.builder();
         Object newBuilder = getBuilderForStruct(name, builder.getClass().getDeclaringClass());
         if (newBuilder == null) return null;
-        trace("New builder for " + name + "=" + newBuilder);
-        trace("Pushing builder for " + name + "=" + newBuilder + " onto stack");
         return new NamedBuilder((ConfigBuilder) newBuilder, name);
     }
 
     private void handleLeafValue(Inspector value) {
-        trace("String ");
-        printStack();
         NamedBuilder peek = stack.peek();
-        trace("popping name stack");
         String name = peek.nameStack().pop();
-        printStack();
         ConfigBuilder builder = peek.builder();
-        trace("name=" + name + ",builder=" + builder + ",value=" + value.toString());
         setValueForLeafNode(builder, name, value);
     }
 
     // Sets values for leaf nodes (uses private accessors that take string as argument)
     private void setValueForLeafNode(Object builder, String methodName, Inspector value) {
         try {
-            // Need to convert reference into actual path if 'path' type is used
-            if (isPathField(builder, methodName)) {
-                FileReference wrappedPath = resolvePath(Utf8.toString(value.asUtf8()));
-                invokeSetter(builder, methodName, wrappedPath);
-
-            // Need to convert url into actual file if 'url' type is used
-            } else if (isUrlField(builder, methodName)) {
-                String url = Utf8.toString(value.asUtf8());
-                if (url == null || url.length() == 0) {
-                    invokeSetter(builder, methodName, "");
-                } else  {
-                    UrlReference urlref = resolveUrl(Utf8.toString(value.asUtf8()));
-                    invokeSetter(builder, methodName, urlref);
-                }
-
-
-            } else {
-                Object object = getValueFromInspector(value);
-                invokeSetter(builder, methodName, object);
-            }
+            invokeSetter(builder, methodName, resolveValue(builder, methodName, value));
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Name: " + methodName + ", value '" + value + "'", e);
         } catch (NoSuchMethodException e) {
@@ -293,27 +219,44 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         }
     }
 
+    private Object resolveValue(Object builder, String methodName, Object rawValue) {
+        if (rawValue instanceof ConfigBuilder) // Value in a map
+            return rawValue;
+        Inspector value = (Inspector)rawValue;
+        if (isPathField(builder, methodName))
+            return resolvePath(value.asString());
+        else if (isUrlField(builder, methodName))
+            return value.asString().isEmpty() ? "" : resolveUrl(value.asString());
+        else if (isModelField(builder, methodName))
+            return value.asString().isEmpty() ? "" : resolveModel(value.asString());
+        else
+            return getValueFromInspector(value);
+    }
+
     private FileReference resolvePath(String value) {
-        Path path = pathAcquirer.getPath(newFileReference(value));
-        return newFileReference(path.toString());
+        Path path = pathAcquirer.getPath(new FileReference(value));
+        return new FileReference(path.toString());
     }
 
     private UrlReference resolveUrl(String url) {
-        if (urlDownloader == null) {
-            return new UrlReference(url);  // assuming config server - just return the actual url.
-        }
+        if (! canResolveUrls()) // assuming config server - keep the url
+            return new UrlReference(url);
         File file = urlDownloader.waitFor(new UrlReference(url), 60 * 60);
         return new UrlReference(file.getAbsolutePath());
     }
 
-    private FileReference newFileReference(String fileReference) {
-        try {
-            Constructor<FileReference> constructor = FileReference.class.getDeclaredConstructor(String.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(fileReference);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed invoking FileReference constructor.", e);
-        }
+    private boolean canResolveUrls() {
+        return urlDownloader != null && urlDownloader.isValid();
+    }
+
+    private ModelReference resolveModel(String modelStringValue) {
+        var model = ModelReference.valueOf(modelStringValue);
+        // Resolve any of url and path present, in priority order
+        if (model.url().isPresent() && canResolveUrls())
+            model = model.withUrl(Optional.of(resolveUrl(model.url().get().value())));
+        else if (model.path().isPresent())
+            model = model.withPath(Optional.of(resolvePath(model.path().get().value())));
+        return model;
     }
 
     private final Map<String, Method> methodCache = new HashMap<>();
@@ -335,7 +278,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         }
         Method method = builder.getClass().getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
-        trace("method=" + method + ",params=" + params);
         return method;
     }
 
@@ -353,7 +295,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private Object getValueFromInspector(Inspector inspector) {
         switch (inspector.type()) {
             case STRING:
-                return Utf8.toString(inspector.asUtf8());
+                return inspector.asString();
             case LONG:
                 return String.valueOf(inspector.asLong());
             case DOUBLE:
@@ -383,6 +325,12 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private boolean isUrlField(Object builder, String methodName) {
         // Urls are stored as UrlReference in Builder.
         return isFieldType(urlFieldSet, builder, methodName, UrlReference.class);
+    }
+
+    private final Set<String> modelFieldSet = new HashSet<>();
+    private boolean isModelField(Object builder, String methodName) {
+        // Models are stored as ModelReference in Builder.
+        return isFieldType(modelFieldSet, builder, methodName, ModelReference.class);
     }
 
     private boolean isFieldType(Set<String> fieldSet, Object builder, String methodName, java.lang.reflect.Type type) {
@@ -419,14 +367,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private String capitalize(String name) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(name.substring(0, 1).toUpperCase()).append(name.substring(1));
-        return sb.toString();
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     private Constructor<?> lookupBuilderForStruct(String structName, String name, Class<?> currentClass) {
-        final String currentClassName = currentClass.getName();
-        trace("structName=" + structName + ", name=" + name + ",current class=" + currentClassName);
+        String currentClassName = currentClass.getName();
         Class<?> structClass = getInnerClass(currentClass, currentClassName + "$" + structName);
         if (structClass == null) {
             log.info("Could not find nested class '" + currentClassName + "$" + structName +
@@ -449,17 +394,16 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     /**
-     * Finds a nested class with the given <code>name</code>name in <code>clazz</code>
+     * Finds a nested class with the given <code>name</code>name in <code>clazz</code>.
+     *
      * @param clazz a Class
      * @param name a name
      * @return class found, or null if no class is found
      */
     private Class<?> getInnerClass(Class<?> clazz, String name) {
         for (Class<?> cls : clazz.getDeclaredClasses()) {
-            if (cls.getName().equals(name)) {
-                trace("Found class " + cls.getName());
+            if (cls.getName().equals(name))
                 return cls;
-            }
         }
         return null;
     }
@@ -472,37 +416,24 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private Object getBuilderForStruct(String name, Class<?> currentClass) {
         String structName = capitalize(name);
         String key = constructorCacheKey(structName, name, currentClass);
-        Constructor<?> ctor = constructorCache.get(key);
-        if (ctor == null) {
-            ctor = lookupBuilderForStruct(structName, name, currentClass);
-            if (ctor == null) return null;
-            constructorCache.put(key, ctor);
+        Constructor<?> constructor = constructorCache.get(key);
+        if (constructor == null) {
+            constructor = lookupBuilderForStruct(structName, name, currentClass);
+            if (constructor == null) return null;
+            constructorCache.put(key, constructor);
         }
-        Object builder;
         try {
-            builder = ctor.newInstance();
+            return constructor.newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("Could not create class '" + "'" + ctor.getDeclaringClass().getName() + "'");
+            throw new RuntimeException("Could not create class '" + "'" + constructor.getDeclaringClass().getName() + "'");
         }
-        return builder;
-    }
-
-    private void debug(String message) {
-        log.log(FINE, () -> message);
-    }
-
-    private void trace(String message) {
-        log.log(FINEST, () -> message);
-    }
-
-    private void printStack() {
-        trace("stack=" + stack.toString());
     }
 
     /**
      * A class that holds a builder and a stack of names
      */
     private static class NamedBuilder {
+
         private final ConfigBuilder builder;
         private final Stack<String> names = new Stack<>(); // if empty, the builder is the root builder
 
@@ -529,9 +460,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(builder() == null ? "null" : builder.toString()).append(" names=").append(names);
-            return sb.toString();
+            return builder() == null ? "null" : builder.toString() + " names=" + names;
         }
     }
 

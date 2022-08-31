@@ -13,30 +13,22 @@ public class DefaultValue {
      // The variable type. Always set UNLESS the value is null.
     private DefLine.Type type = null;
 
-    /**
-     * Null value
-     */
+    /** Null value. */
     public DefaultValue() {
     }
 
-    /**
-     * A default value with the given value and type.
-     */
+    /** A default value with the given value and type. */
     public DefaultValue(String value, DefLine.Type type) {
         this.value = value;
         this.type = type;
     }
 
-    /**
-     * Returns the toString of the default value.
-     */
+    /** Returns the toString of the default value. */
     public String getValue() {
         return value;
     }
 
-    /**
-     * Returns the string representation of this value
-     */
+    /** Returns the string representation of this value. */
     public String getStringRepresentation() {
         if (value == null)
             return "null";
@@ -60,7 +52,7 @@ public class DefaultValue {
                     sb.append(c);
                 }
             }
-            return "\"" + sb.toString() + "\"";
+            return "\"" + sb + "\"";
         }
     }
 

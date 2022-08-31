@@ -701,6 +701,10 @@ public class ConfigDefinition {
 
     public Map<String, PathDef> getPathDefs() { return pathDefs; }
 
+    public Map<String, UrlDef> getUrlDefs() { return urlDefs; }
+
+    public Map<String, ModelDef> getModelDefs() { return modelDefs; }
+
     public Map<String, InnerArrayDef> getInnerArrayDefs() {
         return innerArrayDefs;
     }
