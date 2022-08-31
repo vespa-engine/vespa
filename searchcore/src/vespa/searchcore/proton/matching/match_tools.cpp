@@ -187,8 +187,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
-                              SplitUnpackingIterators::check(_queryEnv.getProperties(), rankSetup.split_unpacking_iterators()),
-                              DelayUnpackingIterators::check(_queryEnv.getProperties(), rankSetup.delay_unpacking_iterators()));
+                              SplitUnpackingIterators::check(_queryEnv.getProperties(), rankSetup.split_unpacking_iterators()));
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());

@@ -269,98 +269,58 @@ std::string delayed_split_query_tree_dump =
 
 //-----------------------------------------------------------------------------
 
-Node::UP optimize(Node::UP root, bool white_list, bool split, bool delay) {
-    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list, split, delay);
+Node::UP optimize(Node::UP root, bool white_list, bool split) {
+    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list, split);
 }
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_phrase(), false, false, false));
-    std::string actual2 = dump_query(*optimize(make_phrase(), false, true, false));
-    std::string actual3 = dump_query(*optimize(make_phrase(), true, false, false));
+    std::string actual1 = dump_query(*optimize(make_phrase(), false, false));
+    std::string actual2 = dump_query(*optimize(make_phrase(), false, true));
+    std::string actual3 = dump_query(*optimize(make_phrase(), true, false));
     std::string expect = plain_phrase_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
     EXPECT_EQ(actual3, expect);
 }
 
-TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_delayed) {
-    std::string actual1 = dump_query(*optimize(make_phrase(), false, false, true));
-    std::string actual2 = dump_query(*optimize(make_phrase(), false, true, true));
-    std::string actual3 = dump_query(*optimize(make_phrase(), true, false, true));
-    std::string expect = delayed_phrase_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-    EXPECT_EQ(actual3, expect);
-}
-
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_split) {
-    std::string actual1 = dump_query(*optimize(make_phrase(), true, true, true));
-    std::string actual2 = dump_query(*optimize(make_phrase(), true, true, false));
+    std::string actual1 = dump_query(*optimize(make_phrase(), true, true));
     std::string expect = split_phrase_dump;
     EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
 }
 
 //-----------------------------------------------------------------------------
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_same_element(), false, false, false));
-    std::string actual2 = dump_query(*optimize(make_same_element(), false, true, false));
-    std::string actual3 = dump_query(*optimize(make_same_element(), true, false, false));
+    std::string actual1 = dump_query(*optimize(make_same_element(), false, false));
+    std::string actual2 = dump_query(*optimize(make_same_element(), false, true));
+    std::string actual3 = dump_query(*optimize(make_same_element(), true, false));
     std::string expect = plain_same_element_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
     EXPECT_EQ(actual3, expect);
 }
 
-TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_delayed) {
-    std::string actual1 = dump_query(*optimize(make_same_element(), false, false, true));
-    std::string actual2 = dump_query(*optimize(make_same_element(), false, true, true));
-    std::string actual3 = dump_query(*optimize(make_same_element(), true, false, true));
-    std::string expect = delayed_same_element_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-    EXPECT_EQ(actual3, expect);
-}
-
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_split) {
-    std::string actual1 = dump_query(*optimize(make_same_element(), true, true, true));
-    std::string actual2 = dump_query(*optimize(make_same_element(), true, true, false));
+    std::string actual1 = dump_query(*optimize(make_same_element(), true, true));
     std::string expect = split_same_element_dump;
     EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
 }
 
 //-----------------------------------------------------------------------------
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, false, false));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, false, false));
+    std::string actual1 = dump_query(*optimize(make_query_tree(), false, false));
+    std::string actual2 = dump_query(*optimize(make_query_tree(), true, false));
     std::string expect = plain_query_tree_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
 }
 
-TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_delayed) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, false, true));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, false, true));
-    std::string expect = delayed_query_tree_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-}
-
 TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_split) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, true, false));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, true, false));
+    std::string actual1 = dump_query(*optimize(make_query_tree(), false, true));
+    std::string actual2 = dump_query(*optimize(make_query_tree(), true, true));
     std::string expect = split_query_tree_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-}
-
-TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_delayed_and_split) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, true, true));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, true, true));
-    std::string expect = delayed_split_query_tree_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
 }
