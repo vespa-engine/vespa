@@ -11,6 +11,6 @@ add_custom_command(OUTPUT ${GODIR}/bin/vespa-logfmt ${GODIR}/bin/vespa-deploy
 
 add_custom_target(vespalog_logfmt ALL DEPENDS ${GODIR}/bin/vespa-logfmt)
 
-install(PROGRAMS ${GODIR}/bin/vespa-logfmt DESTINATION bin)
-install(PROGRAMS ${GODIR}/bin/vespa-deploy DESTINATION bin)
 install(PROGRAMS ${GODIR}/bin/script-utils DESTINATION libexec/vespa)
+install_symlink(libexec/vespa/script-utils bin/vespa-logfmt)
+install_symlink(libexec/vespa/script-utils bin/vespa-deploy)
