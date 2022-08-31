@@ -1,0 +1,39 @@
+<deployment version='1.0'>
+
+    <instance id="beta"> <!-- Runs system and production tests -->
+        <test />
+        <staging />
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' />
+        <prod>
+            <region>us-west-1</region>
+            <delay hours='1' />
+            <test>us-west-1</test>
+        </prod>
+    </instance>
+
+    <instance id="prod5">
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' />
+        <prod>
+            <region>us-west-1</region>
+            <delay hours='8' />
+            <test>us-west-1</test>
+        </prod>
+    </instance>
+
+    <instance id="prod25">
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' />
+        <prod>
+            <region>us-west-1</region>
+            <delay hours='8' />
+            <test>us-west-1</test>
+        </prod>
+    </instance>
+
+    <instance id="prod100">
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' />
+        <prod>
+            <region>us-west-1</region>
+        </prod>
+    </instance>
+
+</deployment>

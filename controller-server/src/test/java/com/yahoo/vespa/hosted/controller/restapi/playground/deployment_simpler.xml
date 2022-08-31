@@ -1,0 +1,30 @@
+<deployment version='1.0'>
+
+    <instance id="alpha"> <!-- Runs system and stress tests -->
+        <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+        <test />
+        <staging />
+        <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+    </instance>
+
+    <instance id="beta">
+        <!-- Consider allowing risk based rollout with when-failing ... -->
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' min-risk='3' max-risk='12' max-idle-hours='8' />
+        <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+        <prod>
+            <region>us-west-1</region>
+            <delay hours='1' />
+            <test>us-west-1</test>
+        </prod>
+    </instance>
+
+    <instance id="prod">
+        <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' min-risk='6' max-risk='12' max-idle-hours='32' />
+        <!--block-change  version="false" days="thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+        <!--block-change revision="false" days="sun,mon,tue,wed,fri,sat" hours="0-23" time-zone="UTC"/-->
+        <prod>
+            <region>us-west-1</region>
+        </prod>
+    </instance>
+
+</deployment>

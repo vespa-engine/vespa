@@ -1,0 +1,67 @@
+<deployment version='1.0'>
+    <notifications>
+        <email role="author" />
+    </notifications>
+
+    <parallel>
+        <instance id="omega"> <!-- Eats extra system tests -->
+            <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+            <test />
+            <staging />
+            <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+        </instance>
+
+        <steps>
+            <parallel>
+                <instance id="alpha-1"> <!-- Runs one third of the system and staging tests -->
+                    <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+                    <test />
+                    <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                </instance>
+
+                <instance id="alpha-2"> <!-- Runs one third of the system and staging tests -->
+                    <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+                    <test />
+                    <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                </instance>
+
+                <instance id="alpha-3"> <!-- Runs one third of the system and staging tests -->
+                    <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+                    <test />
+                    <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                </instance>
+            </parallel>
+
+            <instance id="alpha-4"> <!-- Runs one third of the system and staging tests -->
+                <upgrade policy='conservative' revision-target='next' revision-change='when-failing' rollout='separate' />
+                <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                <prod>
+                    <region>us-east-3</region>
+                    <test>us-east-3</test>
+                    <region>us-west-1</region>
+                </prod>
+            </instance>
+
+            <instance id="beta">
+                <!-- Consider allowing risk based rollout with when-failing ... -->
+                <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' min-risk='3' max-risk='12' max-idle-hours='8' />
+                <!--block-change revision="false" days="sun,mon,tue,thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                <prod>
+                    <region>us-west-1</region>
+                    <delay hours='1' />
+                    <test>us-west-1</test>
+                </prod>
+            </instance>
+
+            <instance id="prod">
+                <upgrade policy='conservative' revision-target='next' revision-change='when-clear' rollout='separate' min-risk='6' max-risk='12' max-idle-hours='32' />
+                <!--block-change  version="false" days="thu,fri,sat" hours="0-23" time-zone="UTC"/-->
+                <!--block-change revision="false" days="sun,mon,tue,wed,fri,sat" hours="0-23" time-zone="UTC"/-->
+                <prod>
+                    <region>us-west-1</region>
+                </prod>
+            </instance>
+        </steps>
+    </parallel>
+
+</deployment>

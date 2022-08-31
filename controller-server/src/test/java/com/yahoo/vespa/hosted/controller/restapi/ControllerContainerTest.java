@@ -45,73 +45,77 @@ public class ControllerContainerTest {
     public void stopContainer() { container.close(); }
 
     private String controllerServicesXml() {
-        return "<container version='1.0'>\n" +
-               "  <config name=\"container.handler.threadpool\">\n" +
-               "    <maxthreads>10</maxthreads>\n" +
-               "  </config> \n" +
-               "  <config name=\"cloud.config.configserver\">\n" +
-               "    <system>" + system().value() + "</system>\n" +
-               "  </config> \n" +
-               "  <config name=\"vespa.hosted.rotation.config.rotations\">\n" +
-               "    <rotations>\n" +
-               "      <item key=\"rotation-id-1\">rotation-fqdn-1</item>\n" +
-               "      <item key=\"rotation-id-2\">rotation-fqdn-2</item>\n" +
-               "      <item key=\"rotation-id-3\">rotation-fqdn-3</item>\n" +
-               "      <item key=\"rotation-id-4\">rotation-fqdn-4</item>\n" +
-               "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
-               "    </rotations>\n" +
-               "  </config>\n" +
-               "  " +
-               "<accesslog type='disabled'/>\n" +
-               "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
-               "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
-               "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
-               "    <binding>http://*/deployment/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
-               "    <binding>http://*/badge/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.CliApiHandler'>\n" +
-               "    <binding>http://*/cli/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
-               "    <binding>http://*/controller/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
-               "    <binding>http://*/os/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v2</binding>\n" +
-               "    <binding>http://*/zone/v2/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.configserver.ConfigServerApiHandler'>\n" +
-               "    <binding>http://*/configserver/v1</binding>\n" +
-               "    <binding>http://*/configserver/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
-               "    <binding>http://*/flags/v1</binding>\n" +
-               "    <binding>http://*/flags/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
-               "    <binding>http://*/user/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.routing.RoutingApiHandler'>\n" +
-               "    <binding>http://*/routing/v1/*</binding>\n" +
-               "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.changemanagement.ChangeManagementApiHandler'>\n" +
-               "    <binding>http://*/changemanagement/v1/*</binding>\n" +
-               "  </handler>\n" +
-               variablePartXml() +
-               "</container>";
+        return """
+               <container version='1.0'>
+                 <config name="container.handler.threadpool">
+                   <maxthreads>10</maxthreads>
+                 </config>
+                 <config name="cloud.config.configserver">
+                   <system>%s</system>
+                 </config>
+                 <config name="vespa.hosted.rotation.config.rotations">
+                   <rotations>
+                     <item key="rotation-id-1">rotation-fqdn-1</item>
+                     <item key="rotation-id-2">rotation-fqdn-2</item>
+                     <item key="rotation-id-3">rotation-fqdn-3</item>
+                     <item key="rotation-id-4">rotation-fqdn-4</item>
+                     <item key="rotation-id-5">rotation-fqdn-5</item>
+                   </rotations>
+                 </config>
+               
+                 <accesslog type='disabled'/>
+               
+                 <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>
+                 <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>
+                 <component id='com.yahoo.vespa.curator.mock.MockCurator'/>
+                 <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>
+                 <component id='com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock'/>
+                 <component id='com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock'/>
+                 <component id='com.yahoo.vespa.hosted.controller.Controller'/>
+                 <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>
+                 <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>
+                 <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>
+                 <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>
+               
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>
+                   <binding>http://localhost/deployment/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>
+                   <binding>http://localhost/badge/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.CliApiHandler'>
+                   <binding>http://localhost/cli/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>
+                   <binding>http://localhost/controller/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>
+                   <binding>http://localhost/os/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>
+                   <binding>http://localhost/zone/v2</binding>
+                   <binding>http://localhost/zone/v2/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.configserver.ConfigServerApiHandler'>
+                   <binding>http://localhost/configserver/v1</binding>
+                   <binding>http://localhost/configserver/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>
+                   <binding>http://localhost/flags/v1</binding>
+                   <binding>http://localhost/flags/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>
+                   <binding>http://localhost/user/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.routing.RoutingApiHandler'>
+                   <binding>http://localhost/routing/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.changemanagement.ChangeManagementApiHandler'>
+                   <binding>http://localhost/changemanagement/v1/*</binding>
+                 </handler>
+               %s
+               </container>
+               """.formatted(system().value(), variablePartXml());
     }
 
     protected SystemName system() {
@@ -123,14 +127,14 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
 
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
-               "    <binding>http://*/application/v4/*</binding>\n" +
+               "    <binding>http://localhost/application/v4/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
-               "    <binding>http://*/athenz/v1/*</binding>\n" +
+               "    <binding>http://localhost/athenz/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v1</binding>\n" +
-               "    <binding>http://*/zone/v1/*</binding>\n" +
+               "    <binding>http://localhost/zone/v1</binding>\n" +
+               "    <binding>http://localhost/zone/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +
@@ -140,7 +144,7 @@ public class ControllerContainerTest {
                "        <filter id='com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock'/>\n" +
                "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleFilter'/>\n" +
                "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
-               "        <binding>http://*/*</binding>\n" +
+               "        <binding>http://localhost/*</binding>\n" +
                "      </request-chain>\n" +
                "    </filtering>\n" +
                "  </http>\n";
