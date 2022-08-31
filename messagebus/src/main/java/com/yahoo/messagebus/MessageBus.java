@@ -17,6 +17,7 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.protect.Process;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
+import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.HashMap;
 import java.util.List;
@@ -151,6 +152,8 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         net.attach(this);
         if ( ! net.net().waitUntilReady(120)) {
             Process.dumpThreads();
+            String fn = "var/crash/java_pid." + ProcessHandle.current().pid() + ".hprof";
+            Process.dumpHeap(Defaults.getDefaults().underVespaHome(fn), true);
             throw new IllegalStateException("Network failed to become ready in time.");
         }
 
