@@ -703,25 +703,9 @@ SearchVisitor::setupDocsumObjects()
        for (const IAttributeVector * v : ds->_attributes) {
            if (v != nullptr) {
                vespalib::string name(v->getName());
-               vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(name);
-               if ( fid != StringFieldIdTMap::npos ) {
-                   AttributeGuard::UP attr(_attrMan.getAttribute(name));
-                   if (attr->valid()) {
-                       size_t index(_attributeFields.size());
-                       for (size_t j(0); j < index; j++) {
-                           if (_attributeFields[j]._field == fid) {
-                               index = j;
-                           }
-                        }
-                        if (index == _attributeFields.size()) {
-                            _attributeFields.emplace_back(fid, std::move(attr));
-                        }
-                   } else {
-                       LOG(warning, "Attribute '%s' is not valid", name.c_str());
-                   }
-               } else {
-                   LOG(warning, "No field with name '%s'. Odd ....", name.c_str());
-               }
+               auto msg = vespalib::make_string("Illegal config: Docsum field writer using attribute vector '%s' configured for streaming search", name.c_str());
+               LOG(error, "%s", msg.c_str());
+               throw vespalib::IllegalStateException(msg);
            }
        }
     } else {
