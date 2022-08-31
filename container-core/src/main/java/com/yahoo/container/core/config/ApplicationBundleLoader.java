@@ -29,7 +29,7 @@ public class ApplicationBundleLoader {
     private static final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
 
     // The active bundles for the current application generation.
-    private final Map<FileReference, Bundle> activeBundles = new LinkedHashMap<>();
+    private final Map<FileReference, Bundle> reference2Bundle = new LinkedHashMap<>();
 
     // The bundles that are obsolete from the previous generation, but kept in case the generation is reverted.
     private Map<FileReference, Bundle> obsoleteBundles = Map.of();
@@ -58,7 +58,7 @@ public class ApplicationBundleLoader {
         osgi.allowDuplicateBundles(bundlesToUninstall);
 
         bundlesFromNewGeneration = installBundles(newFileReferences);
-        BundleStarter.startBundles(activeBundles.values());
+        BundleStarter.startBundles(reference2Bundle.values());
         log.info(installedBundlesMessage());
 
         return bundlesToUninstall;
@@ -70,8 +70,8 @@ public class ApplicationBundleLoader {
      * be done by the Deconstructor as they may still be needed by components from the failed gen.
      */
     public synchronized Collection<Bundle> revertToPreviousGeneration() {
-        activeBundles.putAll(obsoleteBundles);
-        bundlesFromNewGeneration.forEach(activeBundles::remove);
+        reference2Bundle.putAll(obsoleteBundles);
+        bundlesFromNewGeneration.forEach(reference2Bundle::remove);
         Collection<Bundle> ret = bundlesFromNewGeneration.values();
 
         // For correct operation of the CollisionHook (more specifically its FindHook implementation), the set of
@@ -93,10 +93,10 @@ public class ApplicationBundleLoader {
      * Returns the map of bundles that are not needed by the new application generation.
      */
     private Map<FileReference, Bundle> removeObsoleteBundles(List<FileReference> newReferences) {
-        Map<FileReference, Bundle> obsoleteReferences = new LinkedHashMap<>(activeBundles);
+        Map<FileReference, Bundle> obsoleteReferences = new LinkedHashMap<>(reference2Bundle);
         newReferences.forEach(obsoleteReferences::remove);
 
-        obsoleteReferences.forEach(activeBundles::remove);
+        obsoleteReferences.forEach(reference2Bundle::remove);
         return obsoleteReferences;
     }
 
@@ -107,7 +107,7 @@ public class ApplicationBundleLoader {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
 
         // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
-        bundlesToInstall.removeAll(activeBundles.keySet());
+        bundlesToInstall.removeAll(reference2Bundle.keySet());
 
         if (bundlesToInstall.isEmpty()) return Map.of();
 
@@ -134,7 +134,7 @@ public class ApplicationBundleLoader {
                 if (bundles.size() > 1  && osgi.hasFelixFramework()) {
                     throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install bundles from disk.");
                 }
-                activeBundles.put(reference, bundles.get(0));
+                reference2Bundle.put(reference, bundles.get(0));
                 newBundles.put(reference, bundles.get(0));
             }
             catch(Exception e) {
@@ -155,7 +155,7 @@ public class ApplicationBundleLoader {
 
     // Only for testing
     List<FileReference> getActiveFileReferences() {
-        return new ArrayList<>(activeBundles.keySet());
+        return new ArrayList<>(reference2Bundle.keySet());
     }
 
 }
