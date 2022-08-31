@@ -53,8 +53,7 @@ public:
                    const vespalib::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv,
-                   bool split_unpacking_iterators = false,
-                   bool delay_unpacking_iterators = false);
+                   bool split_unpacking_iterators = false);
 
     /**
      * Extract query terms from the query tree; to be used to build

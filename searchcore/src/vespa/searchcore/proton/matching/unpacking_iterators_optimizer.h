@@ -14,8 +14,7 @@ namespace proton::matching {
 struct UnpackingIteratorsOptimizer {
     static search::query::Node::UP optimize(search::query::Node::UP root,
                                             bool has_white_list,
-                                            bool split_unpacking_iterators,
-                                            bool delay_unpacking_iterators);
+                                            bool split_unpacking_iterators);
 };
 
 }

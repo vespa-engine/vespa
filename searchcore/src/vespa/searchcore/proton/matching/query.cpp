@@ -164,7 +164,7 @@ Query::~Query() = default;
 bool
 Query::buildTree(vespalib::stringref stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv,
-                 bool split_unpacking_iterators, bool delay_unpacking_iterators)
+                 bool split_unpacking_iterators)
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
@@ -173,7 +173,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
         _query_tree->accept(prefixSameElementSubIndexes);
         exchange_location_nodes(location, _query_tree, _locations);
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
-                bool(_whiteListBlueprint), split_unpacking_iterators, delay_unpacking_iterators);
+                bool(_whiteListBlueprint), split_unpacking_iterators);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
         return true;

@@ -322,12 +322,6 @@ bool SplitUnpackingIterators::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
-const vespalib::string DelayUnpackingIterators::NAME("vespa.matching.delay_unpacking_iterators");
-const bool DelayUnpackingIterators::DEFAULT_VALUE(false);
-bool DelayUnpackingIterators::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
 const vespalib::string TermwiseLimit::NAME("vespa.matching.termwise_limit");
 const double TermwiseLimit::DEFAULT_VALUE(1.0);
 
