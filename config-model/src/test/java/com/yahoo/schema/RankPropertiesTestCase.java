@@ -8,7 +8,6 @@ import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import com.yahoo.search.query.ranking.RankProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -82,7 +81,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDefaultRankProperties() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry(), new TestProperties().setPhraseOptimization("split delay"));
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry(), new TestProperties().setPhraseOptimization("split"));
         builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",
@@ -107,15 +106,13 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
         builder.build(true);
         Schema schema = builder.getSchema();
         List<RankProfile.RankProperty> props = rankProfileRegistry.get(schema, "a").getRankProperties();
-        assertEquals(2, props.size());
+        assertEquals(1, props.size());
         assertEquals(new RankProfile.RankProperty("vespa.matching.split_unpacking_iterators","true"), props.get(0));
-        assertEquals(new RankProfile.RankProperty("vespa.matching.delay_unpacking_iterators","true"), props.get(1));
 
         props = rankProfileRegistry.get(schema, "b").getRankProperties();
-        assertEquals(3, props.size());
+        assertEquals(2, props.size());
         assertEquals(new RankProfile.RankProperty("vespa.matching.split_unpacking_iterators","true"), props.get(0));
-        assertEquals(new RankProfile.RankProperty("vespa.matching.delay_unpacking_iterators","true"), props.get(1));
-        assertEquals(new RankProfile.RankProperty("query(a)","2000"), props.get(2));
+        assertEquals(new RankProfile.RankProperty("query(a)","2000"), props.get(1));
     }
 
     @Test

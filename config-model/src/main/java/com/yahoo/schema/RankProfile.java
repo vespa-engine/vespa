@@ -161,9 +161,8 @@ public class RankProfile implements Cloneable {
         this.deployLogger = deployLogger;
         if (deployProperties.featureFlags().phraseOptimization().contains("split")) {
             addRankProperty(new RankProperty("vespa.matching.split_unpacking_iterators", "true"));
-        }
-        if (deployProperties.featureFlags().phraseOptimization().contains("delay")) {
-            addRankProperty(new RankProperty("vespa.matching.delay_unpacking_iterators", "true"));
+        } else if (deployProperties.featureFlags().phraseOptimization().contains("off")) {
+            addRankProperty(new RankProperty("vespa.matching.split_unpacking_iterators", "false"));
         }
     }
 

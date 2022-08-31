@@ -71,9 +71,9 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag PHRASE_OPTIMIZATION = defineStringFlag(
-            "phrase-optimization", "",
+            "phrase-optimization", "split",
             List.of("baldersheim"), "2022-08-28", "2023-01-01",
-            "Select phase optimization, valid values are 'delay', 'spilt' or both",
+            "Select phase optimization, valid values are 'split', 'off'.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
