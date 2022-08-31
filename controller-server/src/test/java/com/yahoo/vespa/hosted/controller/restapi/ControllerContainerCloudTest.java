@@ -32,7 +32,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         return """
                  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>
                  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>
-                 
+               
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>
                    <binding>http://localhost/application/v4/*</binding>
                  </handler>
@@ -40,7 +40,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
                    <binding>http://localhost/zone/v1</binding>
                    <binding>http://localhost/zone/v1/*</binding>
                  </handler>
-                 
+               
                  <http>
                    <server id='default' port='8080' />
                    <filtering>

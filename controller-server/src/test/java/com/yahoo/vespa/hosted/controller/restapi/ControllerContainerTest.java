@@ -62,9 +62,9 @@ public class ControllerContainerTest {
                      <item key="rotation-id-5">rotation-fqdn-5</item>
                    </rotations>
                  </config>
-                
+               
                  <accesslog type='disabled'/>
-                 
+               
                  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>
                  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>
                  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>
@@ -76,7 +76,7 @@ public class ControllerContainerTest {
                  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>
-                 
+               
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>
                    <binding>http://localhost/deployment/v1/*</binding>
                  </handler>

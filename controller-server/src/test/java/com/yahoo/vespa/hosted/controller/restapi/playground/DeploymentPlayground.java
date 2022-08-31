@@ -280,7 +280,7 @@ public class DeploymentPlayground extends ControllerContainerTest {
         return """
                  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>
                  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>
-                 
+               
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>
                    <binding>http://localhost/application/v4/*</binding>
                  </handler>
@@ -291,7 +291,7 @@ public class DeploymentPlayground extends ControllerContainerTest {
                    <binding>http://localhost/zone/v1</binding>
                    <binding>http://localhost/zone/v1/*</binding>
                  </handler>
-                 
+               
                  <http>
                    <server id='default' port='8080' />
                    <filtering>
