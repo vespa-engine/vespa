@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.component.Version;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -11,16 +12,12 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class OsRelease {
+public record OsRelease(Version version, Tag tag, Instant taggedAt) {
 
-    private final Version version;
-    private final Tag tag;
-    private final Instant taggedAt;
-
-    public OsRelease(Version version, Tag tag, Instant taggedAt) {
-        this.version = Objects.requireNonNull(version);
-        this.tag = Objects.requireNonNull(tag);
-        this.taggedAt = Objects.requireNonNull(taggedAt);
+    public OsRelease {
+        Objects.requireNonNull(version);
+        Objects.requireNonNull(tag);
+        Objects.requireNonNull(taggedAt);
     }
 
     /** The version number */
@@ -38,22 +35,14 @@ public class OsRelease {
         return taggedAt;
     }
 
+    /** Returns the age of this at given instant */
+    public Duration age(Instant instant) {
+        return Duration.between(taggedAt, instant);
+    }
+
     @Override
     public String toString() {
         return "os release " + version + ", tagged " + tag + " at " + taggedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OsRelease osRelease = (OsRelease) o;
-        return version.equals(osRelease.version) && tag == osRelease.tag && taggedAt.equals(osRelease.taggedAt);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(version, tag, taggedAt);
     }
 
     /** Known release tags */
