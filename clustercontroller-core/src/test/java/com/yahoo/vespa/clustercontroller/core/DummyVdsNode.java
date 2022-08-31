@@ -100,7 +100,7 @@ public class DummyVdsNode {
                             log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
-                                r.request.returnValues().add(new StringValue("No host info in dummy implementation"));
+                                r.request.returnValues().add(new StringValue(hostInfo));
                             }
                             r.request.returnRequest();
                             it.remove();
@@ -416,7 +416,7 @@ public class DummyVdsNode {
                     log.log(Level.FINE, () -> "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
                     req.returnValues().add(new StringValue(nodeState.serialize()));
                     if (req.methodName().equals("getnodestate3")) {
-                        req.returnValues().add(new StringValue("Dummy node host info"));
+                        req.returnValues().add(new StringValue(hostInfo));
                     }
                     ++immediateStateReplies;
                 }
