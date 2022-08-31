@@ -99,8 +99,14 @@ public class HandlersConfigurerDi {
 
         @Override
         public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
-            log.info("Installing bundles from the latest application");
+            log.info("Installing bundles from the latest application.");
             return applicationBundleLoader.useBundles(new ArrayList<>(bundles));
+        }
+
+        @Override
+        public Collection<Bundle> revertApplicationBundles() {
+            log.info("Reverting to bundles from the previous generation.");
+            return applicationBundleLoader.revertToPreviousGeneration();
         }
     }
 

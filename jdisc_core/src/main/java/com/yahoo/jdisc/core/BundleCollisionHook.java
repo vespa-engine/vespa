@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
  * @author gjoranv
  */
 public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
-    private static Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
+    private static final Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
 
     private ServiceRegistration<?> registration;
-    private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
+    private final Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
 
     public void start(BundleContext context) {
         if (registration != null) {
@@ -50,11 +50,10 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
     }
 
     /**
-     * Adds a collection of bundles to the allowed duplicates.
-     * Also clears any previous allowed duplicates of the new allowed duplicates.
+     * Sets a collection of bundles to allow duplicates for.
      */
     synchronized void allowDuplicateBundles(Collection<Bundle> bundles) {
-        allowedDuplicates.values().removeAll(bundles.stream().map(BsnVersion::new).collect(Collectors.toSet()));
+        allowedDuplicates.clear();
         for (var bundle : bundles) {
             allowedDuplicates.put(bundle, new BsnVersion(bundle));
         }
@@ -90,7 +89,7 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
     /**
      * Filters out the set of bundles that should not be visible to the bundle associated with the given context.
      * If the given context represents one of the allowed duplicates, this method filters out all bundles
-     * that are duplicates of the allowed duplicates. Otherwise this method filters out the allowed duplicates,
+     * that are duplicates of the allowed duplicates. Otherwise, this method filters out the allowed duplicates,
      * so they are not visible to other bundles.
      */
     @Override
