@@ -28,6 +28,7 @@ class GetDocsumsState;
 class IDocsumEnvironment;
 class KeywordExtractor;
 class DocsumFieldWriterState;
+class ResultClass;
 
 class GetDocsumsStateCallback
 {
@@ -61,6 +62,7 @@ public:
     } _dynteaser;
 
 
+    const ResultClass* _summary_class; // Summary class used for output for indexed search
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
 private:
@@ -91,6 +93,8 @@ public:
 
     const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
     vespalib::Stash& get_stash() noexcept { return _stash; }
+    void set_summary_class(const ResultClass* summary_class) { _summary_class = summary_class; }
+    const ResultClass* get_summary_class() const noexcept { return _summary_class; }
 };
 
 }

@@ -698,7 +698,7 @@ SearchVisitor::setupDocsumObjects()
     _summaryGenerator.setFilter(std::move(docsumFilter));
     if (_vsmAdapter->getDocsumTools().get()) {
         GetDocsumsState * ds(&_summaryGenerator.getDocsumState());
-        _vsmAdapter->getDocsumTools()->getDocsumWriter()->InitState(_attrMan, ds);
+        _vsmAdapter->getDocsumTools()->getDocsumWriter()->InitState(_attrMan, ds, nullptr);
        _summaryGenerator.setDocsumWriter(*_vsmAdapter->getDocsumTools()->getDocsumWriter());
        for (const IAttributeVector * v : ds->_attributes) {
            if (v != nullptr) {

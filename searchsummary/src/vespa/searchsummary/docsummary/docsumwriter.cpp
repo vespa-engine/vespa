@@ -56,6 +56,8 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         // Use empty docsum when illegal docsum class has been requested
         return;
     }
+    // Check that summary class is unchanged for indexed search
+    assert(state->get_summary_class() == nullptr || state->get_summary_class() == rci.outputClass);
     if (rci.allGenerated) {
         // generate docsum entry on-the-fly
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
@@ -146,8 +148,12 @@ DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumField
 
 
 void
-DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState *state)
+DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState *state, const ResolveClassInfo* rci)
 {
+    if (rci != nullptr) {
+        // Indexed search uses only one summary class for a request
+        state->set_summary_class(rci->outputClass);
+    }
     state->_kwExtractor = _keywordExtractor.get();
     state->_attrCtx = attrMan.createContext();
     state->_attributes.resize(_overrideTable.size());

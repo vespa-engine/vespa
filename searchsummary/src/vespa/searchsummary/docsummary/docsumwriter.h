@@ -37,7 +37,7 @@ public:
     };
 
     virtual ~IDocsumWriter() = default;
-    virtual void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
+    virtual void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state, const ResolveClassInfo* rci) = 0;
     virtual void WriteDocsum(uint32_t docid, GetDocsumsState *state,
                              IDocsumStore *docinfos, Inserter & target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
@@ -67,7 +67,7 @@ public:
     const ResultConfig *GetResultConfig() { return _resultConfig.get(); }
 
     bool Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer);
-    void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) override;
+    void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state, const ResolveClassInfo* rci) override;
     void WriteDocsum(uint32_t docid, GetDocsumsState *state,
                      IDocsumStore *docinfos, Inserter & inserter) override;
 

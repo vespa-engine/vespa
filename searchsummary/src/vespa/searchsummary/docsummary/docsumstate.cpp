@@ -26,6 +26,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _kwExtractor(nullptr),
       _callback(callback),
       _dynteaser(),
+      _summary_class(nullptr),
       _attrCtx(),
       _attributes(),
       _stash(),
