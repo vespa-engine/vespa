@@ -67,7 +67,11 @@ public class Container {
         this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
     }
 
-    // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
+    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor) {
+        this(subscriberFactory, configId, destructor, new Osgi() {
+        });
+    }
+
     public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
@@ -79,9 +83,7 @@ public class Container {
                 log.log(Level.WARNING, String.format(
                         "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
                         newGraph.generation()), e);
-
-                Collection<Bundle> newBundlesFromFailedGen = osgi.revertApplicationBundles();
-                deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
+                deconstructFailedGraph(oldGraph, newGraph);
                 throw e;
             }
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
@@ -166,7 +168,7 @@ public class Container {
         return componentGraph;
     }
 
-    private void deconstructFailedGraph(ComponentGraph currentGraph, ComponentGraph failedGraph, Collection<Bundle> bundlesFromFailedGraph) {
+    private void deconstructFailedGraph(ComponentGraph currentGraph, ComponentGraph failedGraph) {
         Set<Object> currentComponents = Collections.newSetFromMap(new IdentityHashMap<>(currentGraph.size()));
         currentComponents.addAll(currentGraph.allConstructedComponentsAndProviders());
 
@@ -174,7 +176,7 @@ public class Container {
         for (Object component : failedGraph.allConstructedComponentsAndProviders()) {
             if (!currentComponents.contains(component)) unusedComponents.add(component);
         }
-        destructor.deconstruct(failedGraph.generation(), unusedComponents, bundlesFromFailedGraph);
+        destructor.deconstruct(failedGraph.generation(), unusedComponents, List.of());
     }
 
     private Runnable createPreviousGraphDeconstructionTask(ComponentGraph oldGraph,

@@ -9,14 +9,13 @@ import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 
 /**
  * This interface has default implementations of all methods, to allow using it
  * for testing, instead of mocking or a test implementation.
- *
- * TODO: remove test code from this interface.
  *
  * @author gjoranv
  * @author Tony Vaagenes
@@ -25,6 +24,7 @@ import static java.util.Collections.emptySet;
 public interface Osgi {
 
     default void installPlatformBundles(Collection<String> bundlePaths) {
+        //System.out.println("installPlatformBundles " + bundlePaths);
     }
 
     /**
@@ -32,21 +32,12 @@ public interface Osgi {
      * and therefore should be scheduled for uninstalling.
      */
     default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
-        return emptySet();
-    }
-
-    /**
-     * To be used when a new application generation fails, e.g. during component construction.
-     * Reverts all state related to application bundles to the previous generation.
-     *
-     * Returns the set of bundles that was exclusively used by the new generation,
-     * and therefore should be scheduled for uninstalling.
-     */
-    default Collection<Bundle> revertApplicationBundles() {
+        //System.out.println("useBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
         return emptySet();
     }
 
     default Class<?> resolveClass(BundleInstantiationSpecification spec) {
+        //System.out.println("resolving class " + spec.classId);
         try {
             return Class.forName(spec.classId.getName());
         } catch (ClassNotFoundException e) {
@@ -55,6 +46,7 @@ public interface Osgi {
     }
 
     default Bundle getBundle(ComponentSpecification spec) {
+        //System.out.println("resolving bundle " + spec);
         return new MockBundle();
     }
 }

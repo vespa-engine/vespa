@@ -34,7 +34,7 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
     private static final Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
 
     private ServiceRegistration<?> registration;
-    private final Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
+    private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
 
     public void start(BundleContext context) {
         if (registration != null) {
@@ -50,10 +50,11 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
     }
 
     /**
-     * Sets a collection of bundles to allow duplicates for.
+     * Adds a collection of bundles to the allowed duplicates.
+     * Also clears any previous allowed duplicates of the new allowed duplicates.
      */
     synchronized void allowDuplicateBundles(Collection<Bundle> bundles) {
-        allowedDuplicates.clear();
+        allowedDuplicates.values().removeAll(bundles.stream().map(BsnVersion::new).collect(Collectors.toSet()));
         for (var bundle : bundles) {
             allowedDuplicates.put(bundle, new BsnVersion(bundle));
         }
