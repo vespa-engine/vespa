@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +70,7 @@ public class ApplicationBundleLoaderTest {
         assertEquals(BUNDLE_1.getSymbolicName(), osgi.getCurrentBundles().get(0).getSymbolicName());
         assertEquals(BUNDLE_2.getSymbolicName(), osgi.getCurrentBundles().get(1).getSymbolicName());
 
+
         // Both file references are active
         assertEquals(2, bundleLoader.getActiveFileReferences().size());
         assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
@@ -100,27 +100,6 @@ public class ApplicationBundleLoaderTest {
         assertEquals(BUNDLE_2_REF, bundleLoader.getActiveFileReferences().get(0));
     }
 
-
-    @Test
-    void previous_generation_can_be_restored_after_a_failed_reconfig() {
-        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
-        assertEquals(BUNDLE_1.getSymbolicName(), obsoleteBundles.iterator().next().getSymbolicName());
-
-        // Revert to the previous generation, as will be done upon a failed reconfig.
-        Collection<Bundle> bundlesToUninstall = bundleLoader.revertToPreviousGeneration();
-
-        assertEquals(1, bundlesToUninstall.size());
-        assertEquals(BUNDLE_2.getSymbolicName(), bundlesToUninstall.iterator().next().getSymbolicName());
-
-        // Both bundles are still current, until the bundle from the failed gen will be uninstalled.
-        // Uninstalling is handled by the Deconstructor, not included in this test setup.
-        assertEquals(2, osgi.getCurrentBundles().size());
-
-        // Only the bundle-1 file reference is active, bundle-2 is removed.
-        assertEquals(1, bundleLoader.getActiveFileReferences().size());
-        assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
-    }
 
     private static Map<String, Bundle> testBundles() {
         return Map.of(BUNDLE_1_REF.value(), BUNDLE_1,
