@@ -778,6 +778,7 @@ fi
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
+%exclude %{_prefix}/libexec/vespa/script-utils
 %exclude %{_prefix}/libexec/vespa/find-pid
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
@@ -842,6 +843,7 @@ fi
 %dir %{_prefix}/libexec
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/common-env.sh
+%{_prefix}/libexec/vespa/script-utils
 %{_prefix}/libexec/vespa/find-pid
 %{_prefix}/libexec/vespa/vespa-curl-wrapper
 
