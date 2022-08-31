@@ -1139,6 +1139,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         public NodeListener getNodeStateUpdateListener() { return FleetController.this; }
     };
 
+    // For testing only
     public void waitForCompleteCycle(Duration timeout) {
         Instant endTime = Instant.now().plus(timeout);
         synchronized (monitor) {
@@ -1151,7 +1152,11 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                         throw new IllegalStateException("Timed out waiting for cycle to complete. Not completed after " + timeout);
                     if ( !isRunning() )
                         throw new IllegalStateException("Fleetcontroller not running. Will never complete cycles");
-                    try{ monitor.wait(100); } catch (InterruptedException e) {}
+                    try {
+                        monitor.wait(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             } finally {
                 waitingForCycle = false;

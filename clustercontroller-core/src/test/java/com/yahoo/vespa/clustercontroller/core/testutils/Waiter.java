@@ -117,6 +117,7 @@ public interface Waiter {
                         if (allowWait)
                             data.getMonitor().wait(wt == null ? WaitTask.defaultTaskFrequencyMillis : Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
                     } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
