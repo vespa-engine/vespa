@@ -8,6 +8,7 @@
 #include "Matcher.h"
 #include "config.h"
 #include "appender.h"
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.result");
@@ -18,9 +19,9 @@ namespace juniper {
 class SummaryImpl : public Summary
 {
 public:
-    explicit SummaryImpl() : _text("") {}
+    explicit SummaryImpl() : _text() {}
     explicit SummaryImpl(const std::string& t) : _text(t) {}
-    ~SummaryImpl() {}
+    ~SummaryImpl() override = default;
     const char* Text() const override { return _text.c_str(); }
     size_t Length() const override { return _text.size(); }
     std::string _text;
@@ -96,9 +97,7 @@ Result::Result(const Config& config, QueryHandle& qhandle,
     }
 }
 
-Result::~Result()
-{
-}
+Result::~Result() = default;
 
 
 long Result::GetRelevancy()
@@ -158,13 +157,12 @@ Summary* Result::GetTeaser(const Config* alt_config)
         ucs4_t          *dst_end  = dst + TOKEN_DSTLEN;
         const Fast_WordFolder *folder   = _config->_matcherparams.WordFolder();
 
-        text.reserve(_dynsum_len*2);
+        text.reserve(std::min(4_Ki, size_t(_dynsum_len*2)));
         if (src_end - src <= _dynsum_len) {
             a.append(text, src, src_end - src);
             src = src_end; // ensure while loop not run
         }
-        while (src < src_end)
-        {
+        while (src < src_end) {
             const char *startpos;
             size_t tokenLen;
             const char *old_src = src;
