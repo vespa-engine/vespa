@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
+import com.google.inject.Guice;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.di.IntConfig;
 import com.yahoo.config.test.TestConfig;
@@ -10,20 +11,16 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleCompo
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.osgi.framework.Bundle;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Tony Vaagenes
@@ -89,28 +86,6 @@ public class ContainerTest extends ContainerTestBase {
         assertNotNull(ComponentGraph.getNode(newGraph, "id2"));
 
         container.shutdownConfigRetriever();
-    }
-
-    @Test
-    void bundle_from_previous_generation_is_uninstalled_when_not_used_in_the_new_generation() {
-        ComponentEntry component1 = new ComponentEntry("component1", SimpleComponent.class);
-        ComponentEntry component2 = new ComponentEntry("component2", SimpleComponent.class);
-
-        writeBootstrapConfigsWithBundles(List.of("bundle-1"), List.of(component1));
-        Container container = newContainer(dirConfigSource);
-        ComponentGraph graph = getNewComponentGraph(container);
-
-        // bundle-1 is installed
-        assertEquals(1, osgi.getBundles().length);
-        assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
-
-        writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(component2));
-        container.reloadConfig(2);
-        getNewComponentGraph(container, graph);
-
-        // bundle-1 is kept, bundle-2 has been uninstalled
-        assertEquals(1, osgi.getBundles().length);
-        assertEquals("bundle-2", osgi.getBundles()[0].getSymbolicName());
     }
 
     //@Test TODO
@@ -201,34 +176,6 @@ public class ContainerTest extends ContainerTestBase {
             fail("Expected IllegalArgumentException");
         }
         assertEquals(1, currentGraph.generation());
-    }
-
-    @Test
-    void bundle_from_failing_generation_is_uninstalled() {
-        ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
-        ComponentEntry throwingComponentEntry = new ComponentEntry("throwingComponent", ComponentThrowingExceptionInConstructor.class);
-
-        writeBootstrapConfigsWithBundles(List.of("bundle-1"), List.of(simpleComponentEntry));
-        Container container = newContainer(dirConfigSource);
-        ComponentGraph currentGraph = getNewComponentGraph(container);
-
-        // bundle-1 is installed
-        assertEquals(1, osgi.getBundles().length);
-        assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
-
-        writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(throwingComponentEntry));
-        container.reloadConfig(2);
-        try {
-            currentGraph = getNewComponentGraph(container, currentGraph);
-            fail("Expected exception");
-        } catch (ComponentConstructorException ignored) {
-            // Expected, do nothing
-        }
-        assertEquals(1, currentGraph.generation());
-
-        // bundle-1 is kept, bundle-2 has been uninstalled
-        assertEquals(1, osgi.getBundles().length);
-        assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
     }
 
     @Test
@@ -354,6 +301,38 @@ public class ContainerTest extends ContainerTestBase {
         public void deconstruct() {
             deconstructed = true;
         }
+    }
+
+    public static class TestDeconstructor implements ComponentDeconstructor {
+        @Override
+        public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
+            components.forEach(component -> {
+                if (component instanceof DestructableComponent) {
+                    DestructableComponent vespaComponent = (DestructableComponent) component;
+                    vespaComponent.deconstruct();
+                }
+            });
+            if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
+        }
+    }
+
+    private static Container newContainer(DirConfigSource dirConfigSource,
+                                          ComponentDeconstructor deconstructor) {
+        return new Container(new CloudSubscriberFactory(dirConfigSource.configSource), dirConfigSource.configId(), deconstructor);
+    }
+
+    private static Container newContainer(DirConfigSource dirConfigSource) {
+        return newContainer(dirConfigSource, new TestDeconstructor());
+    }
+
+    ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(oldGraph, Guice.createInjector(), true);
+        result.oldComponentsCleanupTask().run();
+        return result.newGraph();
+    }
+
+    ComponentGraph getNewComponentGraph(Container container) {
+        return container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true).newGraph();
     }
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {

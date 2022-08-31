@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * @author gjoranv
  */
-public class TestBundle extends MockBundle {
+class TestBundle extends MockBundle {
 
     private static final BundleRevision revision = new TestBundleRevision();
 
@@ -24,7 +24,7 @@ public class TestBundle extends MockBundle {
 
     boolean started = false;
 
-    public TestBundle(String symbolicName) {
+    TestBundle(String symbolicName) {
         this.symbolicName = symbolicName;
     }
 
