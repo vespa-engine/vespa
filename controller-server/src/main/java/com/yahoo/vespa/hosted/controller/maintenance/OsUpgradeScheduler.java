@@ -79,13 +79,19 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return hourOfDay >= startHour && hourOfDay <= 12 && dayOfWeek < 5;
     }
 
-    /** Returns the earliest time an upgrade can be scheduled on the day of instant, in given system */
+    /** Returns the earliest time, at or after instant, an upgrade can be scheduled */
     private static Instant schedulingInstant(Instant instant, SystemName system) {
-        instant = instant.truncatedTo(ChronoUnit.DAYS);
+        ChronoUnit schedulingResolution = ChronoUnit.HOURS;
         while (!canTriggerAt(instant, system.isCd())) {
-            instant = instant.plus(Duration.ofHours(1));
+            instant = instant.truncatedTo(schedulingResolution)
+                             .plus(schedulingResolution.getDuration());
         }
         return instant;
+    }
+
+    /** Returns the remaining cool-down period relative to releaseAge */
+    private static Duration remainingCooldownOf(Duration cooldown, Duration releaseAge) {
+        return releaseAge.compareTo(cooldown) < 0 ? cooldown.minus(releaseAge) : Duration.ZERO;
     }
 
     private interface Release {
@@ -123,7 +129,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         public Optional<Change> change(Version currentVersion, Instant instant) {
             OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
             if (!release.version().isAfter(currentVersion)) return Optional.empty();
-            Instant scheduleAt = schedulingInstant(release.taggedAt().plus(cooldown()), system);
+            Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
+            Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
             return Optional.of(new Change(release.version(), Duration.ZERO, scheduleAt));
         }
 
@@ -165,24 +172,19 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
                 predicatedInstant = predicatedInstant.plus(Duration.ofDays(1));
                 version = findVersion(predicatedInstant, currentVersion);
             }
-            Duration cooldown = remainingCooldownAt(instant, version);
+            Duration cooldown = remainingCooldownOf(cooldown(), version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
             return Optional.of(new Change(version.version(), upgradeBudget(), schedulingInstant));
         }
 
-        private Duration upgradeBudget() {
-            return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
-        }
-
-        private Duration remainingCooldownAt(Instant instant, CalendarVersion version) {
-            Duration minAge = system.isCd()
+        private Duration cooldown() {
+            return system.isCd()
                     ? Duration.ofDays(1)                          // CD: Give new releases some time to propagate
                     : Duration.ofDays(7 - RELEASE_DAY.ordinal()); // non-CD: Wait until start of the following week
-            Duration age = version.age(instant);
-            if (age.compareTo(minAge) < 0) {
-                return minAge.minus(age);
-            }
-            return Duration.ZERO;
+        }
+
+        private Duration upgradeBudget() {
+            return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */
@@ -211,10 +213,9 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
                                            date);
             }
 
-            /** Returns the age of this at given instant, in whole days */
+            /** Returns the age of this at given instant */
             private Duration age(Instant instant) {
-                return Duration.between(date.atStartOfDay().toInstant(ZoneOffset.UTC),
-                                        instant.truncatedTo(ChronoUnit.DAYS));
+                return Duration.between(date.atStartOfDay().toInstant(ZoneOffset.UTC), instant);
             }
 
         }
