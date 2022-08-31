@@ -280,11 +280,11 @@ TEST("test stuff") {
         }
         { // vespa.matching.split_unpacking_iterators
             EXPECT_EQUAL(matching::SplitUnpackingIterators::NAME, vespalib::string("vespa.matching.split_unpacking_iterators"));
-            EXPECT_EQUAL(matching::SplitUnpackingIterators::DEFAULT_VALUE, false);
+            EXPECT_TRUE(matching::SplitUnpackingIterators::DEFAULT_VALUE);
             Properties p;
-            EXPECT_EQUAL(matching::SplitUnpackingIterators::check(p), false);
-            p.add("vespa.matching.split_unpacking_iterators", "true");
-            EXPECT_EQUAL(matching::SplitUnpackingIterators::check(p), true);
+            EXPECT_TRUE(matching::SplitUnpackingIterators::check(p));
+            p.add("vespa.matching.split_unpacking_iterators", "false");
+            EXPECT_FALSE(matching::SplitUnpackingIterators::check(p));
         }
         { // vespa.matching.delay_unpacking_iterators
             EXPECT_EQUAL(matching::DelayUnpackingIterators::NAME, vespalib::string("vespa.matching.delay_unpacking_iterators"));
