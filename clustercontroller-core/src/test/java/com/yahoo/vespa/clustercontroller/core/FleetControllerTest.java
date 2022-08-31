@@ -111,53 +111,53 @@ public abstract class FleetControllerTest implements Waiter {
         testName = name;
     }
 
-    static protected FleetControllerOptions defaultOptions(String clusterName) {
+    static protected FleetControllerOptions.Builder defaultOptions(String clusterName) {
         return defaultOptions(clusterName, DEFAULT_NODE_COUNT);
     }
 
-    static protected FleetControllerOptions defaultOptions(String clusterName, int nodeCount) {
+    static protected FleetControllerOptions.Builder defaultOptions(String clusterName, int nodeCount) {
         return defaultOptions(clusterName, IntStream.range(0, nodeCount)
                                                     .mapToObj(i -> new ConfiguredNode(i, false))
                                                     .collect(Collectors.toSet()));
     }
 
-    static protected FleetControllerOptions defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
-        var opts = new FleetControllerOptions(clusterName, nodes);
-        opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
-        return opts;
+    static protected FleetControllerOptions.Builder defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
+        var builder = new FleetControllerOptions.Builder(clusterName, nodes);
+        builder.enableTwoPhaseClusterStateActivation(true); // Enable by default, tests can explicitly disable.
+        return builder;
     }
 
-    void setUpSystem(FleetControllerOptions options) throws Exception {
+    void setUpSystem(FleetControllerOptions.Builder builder) throws Exception {
         log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
-        this.options = options;
-        if (options.zooKeeperServerAddress != null) {
+        if (builder.zooKeeperServerAddress() != null) {
             zooKeeperServer = new ZooKeeperTestServer();
-            this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-            log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
+            builder.setZooKeeperServerAddress(zooKeeperServer.getAddress());
+            log.log(Level.FINE, "Set up new zookeeper server at " + zooKeeperServer.getAddress());
         }
-        this.options.slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
+        builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
+        this.options = builder.build();
     }
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         var log = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
+        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
         var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 timer,
-                options.fleetControllerIndex,
-                options.nodeStateRequestTimeoutMS,
-                options.nodeStateRequestTimeoutEarliestPercentage,
-                options.nodeStateRequestTimeoutLatestPercentage,
-                options.nodeStateRequestRoundTripTimeMaxSeconds);
+                options.fleetControllerIndex(),
+                options.nodeStateRequestTimeoutMS(),
+                options.nodeStateRequestTimeoutEarliestPercentage(),
+                options.nodeStateRequestTimeoutLatestPercentage(),
+                options.nodeStateRequestRoundTripTimeMaxSeconds());
         var lookUp = new SlobrokClient(context, timer);
         lookUp.setSlobrokConnectionSpecs(new String[0]);
-        var rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress, timer);
+        var rpcServer = new RpcServer(timer, timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
 
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
         // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
@@ -166,7 +166,7 @@ public abstract class FleetControllerTest implements Waiter {
 
         var stateGenerator = new StateChangeHandler(context, timer, log);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
-        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
 
         var status = new StatusHandler.ContainerStatusPageServer();
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp,
@@ -175,13 +175,15 @@ public abstract class FleetControllerTest implements Waiter {
         return controller;
     }
 
-    protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
-        if (slobrok == null) setUpSystem(options);
+    protected FleetControllerOptions setUpFleetController(boolean useFakeTimer, FleetControllerOptions.Builder builder) throws Exception {
+        if (slobrok == null) setUpSystem(builder);
+        options = builder.build();
         if (fleetController == null) {
             fleetController = createFleetController(useFakeTimer, options);
         } else {
             throw new Exception("called setUpFleetcontroller but it was already setup");
         }
+        return options;
     }
 
     void stopFleetController() throws Exception {
@@ -214,9 +216,9 @@ public abstract class FleetControllerTest implements Waiter {
     protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         for (int nodeIndex : nodeIndexes) {
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, true, nodeIndex));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), true, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, false, nodeIndex));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), false, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
         }
     }
@@ -232,9 +234,9 @@ public abstract class FleetControllerTest implements Waiter {
         nodes = new ArrayList<>();
         final boolean distributor = true;
         for (ConfiguredNode configuredNode : configuredNodes) {
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, distributor, configuredNode.index()));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), distributor, configuredNode.index()));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, !distributor, configuredNode.index()));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), !distributor, configuredNode.index()));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
         }
         return nodes;

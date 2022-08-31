@@ -30,8 +30,8 @@ import java.util.logging.Logger;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Responsible for doing RPC requests to VDS nodes.
- This class is not thread-safe.
+ * Responsible for doing RPC requests to storage nodes.
+ * This class is not thread-safe.
  */
 public class RPCCommunicator implements Communicator {
 
@@ -56,7 +56,6 @@ public class RPCCommunicator implements Communicator {
 
     public static Supervisor createRealSupervisor() {
         return new Supervisor(new Transport("rpc-communicator")).setDropEmptyBuffers(true);
-
     }
 
     public RPCCommunicator(Supervisor supervisor,
@@ -95,17 +94,16 @@ public class RPCCommunicator implements Communicator {
 
     @Override
     public void propagateOptions(FleetControllerOptions options) {
-        checkArgument(options.nodeStateRequestTimeoutMS > 0);
-        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage >= 0);
-        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage <= 100);
-        checkArgument(options.nodeStateRequestTimeoutLatestPercentage
-                      >= options.nodeStateRequestTimeoutEarliestPercentage);
-        checkArgument(options.nodeStateRequestTimeoutLatestPercentage <= 100);
-        checkArgument(options.nodeStateRequestRoundTripTimeMaxSeconds >= 0);
-        this.nodeStateRequestTimeoutIntervalMax = Duration.ofMillis(options.nodeStateRequestTimeoutMS);
-        this.nodeStateRequestTimeoutIntervalStartPercentage = options.nodeStateRequestTimeoutEarliestPercentage;
-        this.nodeStateRequestTimeoutIntervalStopPercentage = options.nodeStateRequestTimeoutLatestPercentage;
-        this.nodeStateRequestRoundTripTimeMax = Duration.ofSeconds(options.nodeStateRequestRoundTripTimeMaxSeconds);
+        checkArgument(options.nodeStateRequestTimeoutMS() > 0);
+        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage() >= 0);
+        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage() <= 100);
+        checkArgument(options.nodeStateRequestTimeoutLatestPercentage() >= options.nodeStateRequestTimeoutEarliestPercentage());
+        checkArgument(options.nodeStateRequestTimeoutLatestPercentage() <= 100);
+        checkArgument(options.nodeStateRequestRoundTripTimeMaxSeconds() >= 0);
+        this.nodeStateRequestTimeoutIntervalMax = Duration.ofMillis(options.nodeStateRequestTimeoutMS());
+        this.nodeStateRequestTimeoutIntervalStartPercentage = options.nodeStateRequestTimeoutEarliestPercentage();
+        this.nodeStateRequestTimeoutIntervalStopPercentage = options.nodeStateRequestTimeoutLatestPercentage();
+        this.nodeStateRequestRoundTripTimeMax = Duration.ofSeconds(options.nodeStateRequestRoundTripTimeMaxSeconds());
     }
 
     @Override

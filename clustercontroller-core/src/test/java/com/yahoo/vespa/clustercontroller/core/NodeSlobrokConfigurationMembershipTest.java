@@ -2,50 +2,55 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.Timeout;
 import java.util.Set;
 import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Timeout(30)
 public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest {
 
     private final Set<Integer> nodeIndices = asIntSet(0, 1, 2, 3);
-    private final int foreignNode = 6;
+    private final int foreignNodeIndex = 6;
 
-    private void setUpClusterWithForeignNode(Set<Integer> validIndices, final int foreignNodeIndex) throws Exception {
-        final Set<ConfiguredNode> configuredNodes = asConfiguredNodes(validIndices);
-        FleetControllerOptions options = optionsForConfiguredNodes(configuredNodes);
+    private FleetControllerOptions setUpClusterWithForeignNode(Set<Integer> validIndices) throws Exception {
+        Set<ConfiguredNode> configuredNodes = asConfiguredNodes(validIndices);
+        FleetControllerOptions.Builder options = optionsForConfiguredNodes(configuredNodes);
         setUpFleetController(true, options);
         Set<Integer> nodesWithStranger = new TreeSet<>(validIndices);
         nodesWithStranger.add(foreignNodeIndex);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodesWithStranger);
+        return options.build();
     }
 
-    private FleetControllerOptions optionsForConfiguredNodes(Set<ConfiguredNode> configuredNodes) {
-        FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
-        options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
-        options.nodeStateRequestTimeoutMS = 10000 * 60 * 1000;
-        options.maxTransitionTime = transitionTimes(0);
-        return options;
+    private FleetControllerOptions.Builder optionsForConfiguredNodes(Set<ConfiguredNode> configuredNodes) {
+        return defaultOptions("mycluster", configuredNodes)
+                .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
+                .setNodeStateRequestTimeoutMS(10000 * 60 * 1000)
+                .setMaxTransitionTime(NodeType.DISTRIBUTOR, 0)
+                .setMaxTransitionTime(NodeType.STORAGE, 0);
     }
 
     @Test
     void testSlobrokNodeOutsideConfiguredIndexSetIsNotIncludedInCluster() throws Exception {
-        setUpClusterWithForeignNode(nodeIndices, foreignNode);
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNode));
+        setUpClusterWithForeignNode(nodeIndices);
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex));
     }
 
     @Test
     void testNodeSetReconfigurationForcesFreshSlobrokFetch() throws Exception {
-        setUpClusterWithForeignNode(nodeIndices, foreignNode);
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNode));
+        var options = setUpClusterWithForeignNode(nodeIndices);
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex));
 
         // If we get a configuration with the node present, we have to accept it into
         // cluster. If we do not re-fetch state from slobrok we risk racing
-        nodeIndices.add(foreignNode);
-        options.nodes = asConfiguredNodes(nodeIndices);
+        nodeIndices.add(foreignNodeIndex);
+        var a = FleetControllerOptions.Builder.copy(options);
+        a.setNodes(asConfiguredNodes(nodeIndices));
+        options = a.build();
         fleetController.updateOptions(options);
         // Need to treat cluster as having 6 nodes due to ideal state algo semantics.
         // Note that we do not use subsetWaiter here since we want node 6 included.
@@ -54,9 +59,9 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
 
     @Test
     void test_removed_retired_node_is_not_included_in_state() throws Exception {
-        final Set<ConfiguredNode> configuredNodes = asConfiguredNodes(nodeIndices);
-        FleetControllerOptions options = optionsForConfiguredNodes(configuredNodes);
-        setUpFleetController(true, options);
+        Set<ConfiguredNode> configuredNodes = asConfiguredNodes(nodeIndices);
+        FleetControllerOptions.Builder builder = optionsForConfiguredNodes(configuredNodes);
+        options = setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeIndices);
 
         waitForState("version:\\d+ distributor:4 storage:4");
@@ -64,13 +69,19 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         // Update options with 1 node config-retired
         assertTrue(configuredNodes.remove(new ConfiguredNode(0, false)));
         configuredNodes.add(new ConfiguredNode(0, true));
-        options.nodes = configuredNodes;
+
+        builder = FleetControllerOptions.Builder.copy(options);
+        builder.setNodes(configuredNodes);
+        options = builder.build();
         fleetController.updateOptions(options);
 
         waitForState("version:\\d+ distributor:4 storage:4 .0.s:r");
 
         // Now remove the retired node entirely from config
         assertTrue(configuredNodes.remove(new ConfiguredNode(0, true)));
+        builder = FleetControllerOptions.Builder.copy(options);
+        builder.setNodes(configuredNodes);
+        options = builder.build();
         fleetController.updateOptions(options);
 
         // The previously retired node should now be marked as down, as it no longer

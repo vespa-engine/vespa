@@ -228,11 +228,11 @@ public class StateChangeHandler {
     }
 
     void reconfigureFromOptions(FleetControllerOptions options) {
-        setMaxPrematureCrashes(options.maxPrematureCrashes);
-        setStableStateTimePeriod(options.stableStateTimePeriod);
-        setMaxInitProgressTime(options.maxInitProgressTime);
-        setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
-        setMaxTransitionTime(options.maxTransitionTime);
+        setMaxPrematureCrashes(options.maxPrematureCrashes());
+        setStableStateTimePeriod(options.stableStateTimePeriod());
+        setMaxInitProgressTime(options.maxInitProgressTime());
+        setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod());
+        setMaxTransitionTime(options.maxTransitionTime());
     }
 
     // TODO too many hidden behavior dependencies between this and the actually

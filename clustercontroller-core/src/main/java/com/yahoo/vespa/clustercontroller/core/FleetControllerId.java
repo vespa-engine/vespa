@@ -13,7 +13,7 @@ public class FleetControllerId {
     private final int index;
 
     public static FleetControllerId fromOptions(FleetControllerOptions options) {
-        return new FleetControllerId(options.clusterName, options.fleetControllerIndex);
+        return new FleetControllerId(options.clusterName(), options.fleetControllerIndex());
     }
 
     public FleetControllerId(String clusterName, int index) {

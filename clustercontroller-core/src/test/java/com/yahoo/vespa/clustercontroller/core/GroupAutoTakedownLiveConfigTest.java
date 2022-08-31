@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -9,39 +10,39 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
-    private static FleetControllerOptions createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
-        options.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount()));
-        options.minNodeRatioPerGroup = minNodeRatio;
-        options.maxTransitionTime = transitionTimes(0);
-        return options;
+    private static FleetControllerOptions.Builder createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
+        return defaultOptions("mycluster")
+                .setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder))
+                .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())))
+                .setMinNodeRatioPerGroup(minNodeRatio)
+                .setMaxTransitionTime(NodeType.DISTRIBUTOR, 0)
+                .setMaxTransitionTime(NodeType.STORAGE, 0);
     }
 
     private void updateConfigLive(FleetControllerOptions newOptions) {
         this.fleetController.updateOptions(newOptions);
     }
 
-    private void reconfigureWithMinNodeRatio(double minNodeRatio) {
-        FleetControllerOptions newOptions = this.options.clone();
-        newOptions.minNodeRatioPerGroup = minNodeRatio;
-        updateConfigLive(newOptions);
+    private void reconfigureWithMinNodeRatio(FleetControllerOptions options, double minNodeRatio) {
+        FleetControllerOptions.Builder newOptions = FleetControllerOptions.Builder.copy(options);
+        newOptions.setMinNodeRatioPerGroup(minNodeRatio);
+        updateConfigLive(newOptions.build());
     }
 
-    private void reconfigureWithDistribution(DistributionBuilder.GroupBuilder groupBuilder) {
-        FleetControllerOptions newOptions = this.options.clone();
-        newOptions.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount()));
-        newOptions.storageDistribution = DistributionBuilder.forHierarchicCluster(groupBuilder);
-        updateConfigLive(newOptions);
+    private void reconfigureWithDistribution(FleetControllerOptions options, DistributionBuilder.GroupBuilder groupBuilder) {
+        FleetControllerOptions.Builder builder =
+                FleetControllerOptions.Builder.copy(options)
+                                              .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())))
+                                              .setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
+        updateConfigLive(builder.build());
     }
 
-    private void setUp3x3ClusterWithMinNodeRatio(double minNodeRatio) throws Exception {
-        FleetControllerOptions options = createOptions(
-                        DistributionBuilder.withGroups(3).eachWithNodeCount(3),
-                minNodeRatio);
+    private FleetControllerOptions setUp3x3ClusterWithMinNodeRatio(double minNodeRatio) throws Exception {
+        FleetControllerOptions.Builder options = createOptions(DistributionBuilder.withGroups(3).eachWithNodeCount(3), minNodeRatio);
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, 9);
         waitForState("version:\\d+ distributor:9 storage:9");
+        return options.build();
     }
 
     private void takeDownContentNode(int index) {
@@ -62,28 +63,28 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     @Test
     void min_ratio_live_reconfig_immediately_takes_effect() throws Exception {
         // Initially, arbitrarily many nodes may be down in a group.
-        setUp3x3ClusterWithMinNodeRatio(0.0);
+        var options = setUp3x3ClusterWithMinNodeRatio(0.0);
         takeDownContentNode(3);
         waitForStateExcludingNodeSubset("version:\\d+ distributor:9 storage:9 .3.s:d", asIntSet(3));
 
-        reconfigureWithMinNodeRatio(0.67);
+        reconfigureWithMinNodeRatio(options, 0.67);
         waitForStateExcludingNodeSubset("version:\\d+ distributor:9 storage:9 .3.s:d .4.s:d .5.s:d", asIntSet(3));
 
-        reconfigureWithMinNodeRatio(0.0);
+        reconfigureWithMinNodeRatio(options, 0.0);
         // Aaaand back up again!
         waitForStateExcludingNodeSubset("version:\\d+ distributor:9 storage:9 .3.s:d", asIntSet(3));
     }
 
     @Test
     void live_distribution_config_changes_trigger_cluster_state_change() throws Exception {
-        setUp3x3ClusterWithMinNodeRatio(0.65);
+        var options = setUp3x3ClusterWithMinNodeRatio(0.65);
         takeDownContentNode(6);
 
         // Not enough nodes down to trigger group take-down yet
         waitForStateExcludingNodeSubset("version:\\d+ distributor:9 storage:9 .6.s:d", asIntSet(6));
         // Removing a node from the same group as node 6 will dip it under the configured threshold,
         // taking down the entire group. In this case we configure out node 8.
-        reconfigureWithDistribution(DistributionBuilder.withGroupNodes(3, 3, 2));
+        reconfigureWithDistribution(options, DistributionBuilder.withGroupNodes(3, 3, 2));
         waitForStateExcludingNodeSubset("version:\\d+ distributor:8 storage:6", asIntSet(6, 8));
     }
 }

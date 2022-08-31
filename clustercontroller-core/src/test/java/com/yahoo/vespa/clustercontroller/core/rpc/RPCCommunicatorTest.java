@@ -23,7 +23,6 @@ import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
 import com.yahoo.vespa.clustercontroller.core.Timer;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -79,11 +77,11 @@ public class RPCCommunicatorTest {
     @Test
     void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
         final RPCCommunicator communicator = new RPCCommunicator(RPCCommunicator.createRealSupervisor(), null /* Timer */, INDEX, 1, 1, 100, 0);
-        FleetControllerOptions fleetControllerOptions = new FleetControllerOptions(null /*clustername*/, Set.of(new ConfiguredNode(0, false)));
-        fleetControllerOptions.nodeStateRequestTimeoutEarliestPercentage = 100;
-        fleetControllerOptions.nodeStateRequestTimeoutLatestPercentage = 100;
-        fleetControllerOptions.nodeStateRequestTimeoutMS = NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS;
-        communicator.propagateOptions(fleetControllerOptions);
+        FleetControllerOptions.Builder builder = new FleetControllerOptions.Builder(null /*clustername*/, Set.of(new ConfiguredNode(0, false)));
+        builder.setNodeStateRequestTimeoutEarliestPercentage(100);
+        builder.setNodeStateRequestTimeoutLatestPercentage(100);
+        builder.setNodeStateRequestTimeoutMS(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS);
+        communicator.propagateOptions(builder.build());
         long timeOutMs = communicator.generateNodeStateRequestTimeout().toMillis();
         assertEquals(timeOutMs, NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS);
     }

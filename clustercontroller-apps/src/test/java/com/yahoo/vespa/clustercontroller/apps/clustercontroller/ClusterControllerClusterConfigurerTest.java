@@ -66,11 +66,11 @@ public class ClusterControllerClusterConfigurerTest {
                 null
         );
         assertNotNull(configurer.getOptions());
-        assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup, 0.01);
-        assertTrue(configurer.getOptions().clusterFeedBlockEnabled);
-        assertEquals(0.5, configurer.getOptions().clusterFeedBlockLimit.get("foo"), 0.01);
-        assertEquals(0.7, configurer.getOptions().clusterFeedBlockLimit.get("bar"), 0.01);
-        assertEquals(0.05, configurer.getOptions().clusterFeedBlockNoiseLevel, 0.001);
+        assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup(), 0.01);
+        assertTrue(configurer.getOptions().clusterFeedBlockEnabled());
+        assertEquals(0.5, configurer.getOptions().clusterFeedBlockLimit().get("foo"), 0.01);
+        assertEquals(0.7, configurer.getOptions().clusterFeedBlockLimit().get("bar"), 0.01);
+        assertEquals(0.05, configurer.getOptions().clusterFeedBlockNoiseLevel(), 0.001);
 
         try {
             zookeepersConfig.zookeeperserverlist("");

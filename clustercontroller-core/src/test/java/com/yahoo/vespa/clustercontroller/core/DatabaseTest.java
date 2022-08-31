@@ -28,9 +28,9 @@ public class DatabaseTest extends FleetControllerTest {
     @Test
     void testWantedStatesInZooKeeper() throws Exception {
         startingTest("DatabaseTest::testWantedStatesInZooKeeper");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.zooKeeperServerAddress = "127.0.0.1";
-        setUpFleetController(true, options);
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        builder.setZooKeeperServerAddress("127.0.0.1");
+        setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         log.info("WAITING FOR STABLE SYSTEM");
         waitForStableSystem();
@@ -82,11 +82,11 @@ public class DatabaseTest extends FleetControllerTest {
     @Test
     void testWantedStateOfUnknownNode() throws Exception {
         startingTest("DatabaseTest::testWantedStatesOfUnknownNode");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.minRatioOfDistributorNodesUp = 0;
-        options.minRatioOfStorageNodesUp = 0;
-        options.zooKeeperServerAddress = "localhost";
-        setUpFleetController(true, options);
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+                .setMinRatioOfDistributorNodesUp(0)
+                .setMinRatioOfStorageNodesUp(0)
+                .setZooKeeperServerAddress("localhost");
+        setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 

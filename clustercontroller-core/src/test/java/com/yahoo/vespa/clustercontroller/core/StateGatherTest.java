@@ -27,16 +27,16 @@ public class StateGatherTest extends FleetControllerTest {
     void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
         Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
         startingTest("StateGatherTest::testOverlappingGetNodeStateRequests");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.nodeStateRequestTimeoutMS = 10 * 60 * 1000;
-        // Force actual message timeout to be lower than request timeout.
-        options.nodeStateRequestTimeoutEarliestPercentage = 80;
-        options.nodeStateRequestTimeoutLatestPercentage = 80;
-        setUpFleetController(true, options);
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+                .setNodeStateRequestTimeoutMS(10 * 60 * 1000)
+                // Force actual message timeout to be lower than request timeout.
+                .setNodeStateRequestTimeoutEarliestPercentage(80)
+                .setNodeStateRequestTimeoutLatestPercentage(80);
+        setUpFleetController(true, builder);
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
-        DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);
-        DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, false, 0);
+        DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), true, 0);
+        DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), false, 0);
         dnode.connect();
         snode.connect();
 
