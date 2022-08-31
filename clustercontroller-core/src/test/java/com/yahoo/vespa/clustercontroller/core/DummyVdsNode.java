@@ -383,7 +383,7 @@ public class DummyVdsNode {
              if (r.request.parameters().size() > 2 && r.request.parameters().get(2).asInt32() == index) {
                  log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state reply from controller " + index + " as we received new one");
                  r.request.returnValues().add(new StringValue(nodeState.serialize()));
-                 r.request.returnValues().add(new StringValue("No host info from dummy implementation"));
+                 r.request.returnValues().add(new StringValue(hostInfo));
                  r.request.returnRequest();
                  it.remove();
                  ++outdatedStateReplies;
