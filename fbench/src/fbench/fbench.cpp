@@ -340,7 +340,7 @@ FBench::Main(int argc, char *argv[])
 {
     // parameters with default values.
     int numClients  = 10;
-    int cycleTime   = 1000;
+    int cycleTime   = 0;
     int byteLimit   = 0;
     int ignoreCount = 0;
     int seconds     = 60;
