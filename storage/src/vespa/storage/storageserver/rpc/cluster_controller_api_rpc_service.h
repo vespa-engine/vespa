@@ -36,7 +36,6 @@ public:
 
     void RPC_getNodeState2(FRT_RPCRequest* req);
     void RPC_setSystemState2(FRT_RPCRequest* req);
-    void RPC_getCurrentTime(FRT_RPCRequest* req);
     void RPC_setDistributionStates(FRT_RPCRequest* req);
     void RPC_activateClusterStateVersion(FRT_RPCRequest* req);
 private:
