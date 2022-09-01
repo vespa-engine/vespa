@@ -33,7 +33,7 @@ KeywordExtractor::IsLegalIndexName(const char *idxName) const
     return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
 
-KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix)
+KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix) noexcept
     : _prefix(prefix)
 {
 }
