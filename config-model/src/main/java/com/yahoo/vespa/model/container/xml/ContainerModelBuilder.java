@@ -1037,7 +1037,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
      private static class JvmOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+-]+");
+        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
         // debug port will not be available in hosted, don't allow
         private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
 
