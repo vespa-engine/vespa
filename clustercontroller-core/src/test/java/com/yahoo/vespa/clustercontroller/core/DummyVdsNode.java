@@ -33,6 +33,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static ai.vespa.validation.Validation.requireAtLeast;
+
 /**
  *
  * Used to fake a node in VDS, such that we can test the fleetcontroller without dummy interface for talking to
@@ -118,14 +120,15 @@ public class DummyVdsNode {
         }
     };
 
-    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String[] slobrokConnectionSpecs, String clusterName, boolean distributor, int index) throws Exception {
+    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String[] slobrokConnectionSpecs, String clusterName,
+                        NodeType nodeType, int index) throws Exception {
         this.timer = timer;
         this.slobrokConnectionSpecs = slobrokConnectionSpecs;
         this.clusterName = clusterName;
-        type = distributor ? NodeType.DISTRIBUTOR : NodeType.STORAGE;
+        type = nodeType;
         this.index = index;
         this.nodeState = new NodeState(type, State.UP);
-        this.stateCommunicationVersion = options.stateCommunicationVersion;
+        this.stateCommunicationVersion = requireAtLeast(options.stateCommunicationVersion, "state communication version cannot be less than 2", 2);
         messageResponder.start();
         nodeState.setStartTimestamp(timer.getCurrentTimeInMillis() / 1000);
     }
@@ -299,14 +302,6 @@ public class DummyVdsNode {
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 0 = OK");
         supervisor.addMethod(m);
 
-        m = new Method("getnodestate", "", "issi", this::rpc_getNodeState);
-        m.methodDesc("Get nodeState of a node");
-        m.returnDesc(0, "returnCode", "Returncode of request. Should be 1 = OK");
-        m.returnDesc(1, "returnMessage", "Textual error message if returncode is not ok.");
-        m.returnDesc(2, "nodeState", "The node state of the given node");
-        m.returnDesc(3, "progress", "Progress in percent of node initialization");
-        supervisor.addMethod(m);
-
         m = new Method("setsystemstate", "s", "is", this::rpc_setSystemState);
         m.methodDesc("Set system state of entire system");
         m.paramDesc(0, "systemState", "new systemstate");
@@ -359,21 +354,6 @@ public class DummyVdsNode {
             log.log(Level.FINEST, () -> "Dummy node " + this + " got old type handle connect message.");
             req.returnValues().add(new Int32Value(0));
             negotiatedHandle = true;
-        }
-    }
-
-    private void rpc_getNodeState(Request req) {
-        synchronized(timer) {
-            if (!negotiatedHandle) {
-                req.setError(75000, "Connection not bound to a handle");
-                return;
-            }
-            String stateString = nodeState.serialize(-1, true);
-            log.log(Level.FINE, () -> "Dummy node " + this + " got old type get node state request, answering: " + stateString);
-            req.returnValues().add(new Int32Value(1));
-            req.returnValues().add(new StringValue(""));
-            req.returnValues().add(new StringValue(stateString));
-            req.returnValues().add(new Int32Value(0));
         }
     }
 

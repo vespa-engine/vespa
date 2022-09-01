@@ -13,7 +13,7 @@ public class NoZooKeeperTest extends FleetControllerTest {
         // Null is the default for zooKeeperServerAddress
         FleetControllerOptions.Builder builder = defaultOptions("mycluster");
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         assertTrue(nodes.get(0).isDistributor());

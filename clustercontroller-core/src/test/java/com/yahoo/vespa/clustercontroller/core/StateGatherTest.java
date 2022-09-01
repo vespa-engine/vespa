@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
@@ -35,8 +36,8 @@ public class StateGatherTest extends FleetControllerTest {
         setUpFleetController(true, builder);
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
-        DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), true, 0);
-        DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), false, 0);
+        DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), NodeType.DISTRIBUTOR, 0);
+        DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), NodeType.STORAGE, 0);
         dnode.connect();
         snode.connect();
 
