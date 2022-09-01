@@ -10,9 +10,9 @@ public class NoZooKeeperTest extends FleetControllerTest {
     @Test
     void testWantedStatesInZooKeeper() throws Exception {
         startingTest("NoZooKeeperTest::testWantedStatesInZooKeeper");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.zooKeeperServerAddress = null;
-        setUpFleetController(true, options);
+        // Null is the default for zooKeeperServerAddress
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 

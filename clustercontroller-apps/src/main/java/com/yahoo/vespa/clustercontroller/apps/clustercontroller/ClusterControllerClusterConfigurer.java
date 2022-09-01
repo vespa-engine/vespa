@@ -55,69 +55,62 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
                                                     SlobroksConfig slobroksConfig,
                                                     ZookeepersConfig zookeepersConfig) {
         Distribution distribution = new Distribution(distributionConfig);
-        FleetControllerOptions options = new FleetControllerOptions(fleetcontrollerConfig.cluster_name(), distribution.getNodes());
-        options.setStorageDistribution(distribution);
-        configure(options, fleetcontrollerConfig);
-        configure(options, slobroksConfig);
-        configure(options, zookeepersConfig);
-        return options;
+        FleetControllerOptions.Builder builder = new FleetControllerOptions.Builder(fleetcontrollerConfig.cluster_name(), distribution.getNodes());
+        builder.setStorageDistribution(distribution);
+        configure(builder, fleetcontrollerConfig);
+        configure(builder, slobroksConfig);
+        configure(builder, zookeepersConfig);
+        return builder.build();
     }
 
-    private static void configure(FleetControllerOptions options, FleetcontrollerConfig config) {
-        options.clusterName = config.cluster_name();
-        options.fleetControllerIndex = config.index();
-        options.fleetControllerCount = config.fleet_controller_count();
-        options.zooKeeperSessionTimeout = (int) (config.zookeeper_session_timeout() * 1000);
-        options.masterZooKeeperCooldownPeriod = (int) (config.master_zookeeper_cooldown_period() * 1000);
-        options.stateGatherCount = config.state_gather_count();
-        options.rpcPort = config.rpc_port();
-        options.httpPort = config.http_port();
-        options.maxTransitionTime.put(NodeType.STORAGE, config.storage_transition_time());
-        options.maxTransitionTime.put(NodeType.DISTRIBUTOR, config.distributor_transition_time());
-        options.maxInitProgressTime = config.init_progress_time();
-        options.statePollingFrequency = config.state_polling_frequency();
-        options.maxPrematureCrashes = config.max_premature_crashes();
-        options.stableStateTimePeriod = config.stable_state_time_period();
-        options.eventLogMaxSize = config.event_log_max_size();
-        options.eventNodeLogMaxSize = config.event_node_log_max_size();
-        options.minDistributorNodesUp = config.min_distributors_up_count();
-        options.minStorageNodesUp = config.min_storage_up_count();
-        options.minRatioOfDistributorNodesUp = config.min_distributor_up_ratio();
-        options.minRatioOfStorageNodesUp = config.min_storage_up_ratio();
-        options.cycleWaitTime = (int) (config.cycle_wait_time() * 1000);
-        options.minTimeBeforeFirstSystemStateBroadcast = (int) (config.min_time_before_first_system_state_broadcast() * 1000);
-        options.nodeStateRequestTimeoutMS = (int) (config.get_node_state_request_timeout() * 1000);
-        options.showLocalSystemStatesInEventLog = config.show_local_systemstates_in_event_log();
-        options.minTimeBetweenNewSystemStates = config.min_time_between_new_systemstates();
-        options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
-        options.distributionBits = config.ideal_distribution_bits();
-        options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
-        options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
-        options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
-        options.minMergeCompletionRatio = config.min_merge_completion_ratio();
-        options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
-        options.clusterFeedBlockEnabled = config.enable_cluster_feed_block();
-        options.clusterFeedBlockLimit = Map.copyOf(config.cluster_feed_block_limit());
-        options.clusterFeedBlockNoiseLevel = config.cluster_feed_block_noise_level();
+    private static void configure(FleetControllerOptions.Builder builder, FleetcontrollerConfig config) {
+        builder.setClusterName(config.cluster_name());
+        builder.setIndex(config.index());
+        builder.setCount(config.fleet_controller_count());
+        builder.setZooKeeperSessionTimeout((int) (config.zookeeper_session_timeout() * 1000));
+        builder.setMasterZooKeeperCooldownPeriod((int) (config.master_zookeeper_cooldown_period() * 1000));
+        builder.setStateGatherCount(config.state_gather_count());
+        builder.setRpcPort(config.rpc_port());
+        builder.setHttpPort(config.http_port());
+        builder.setMaxTransitionTime(NodeType.STORAGE, config.storage_transition_time());
+        builder.setMaxTransitionTime(NodeType.DISTRIBUTOR, config.distributor_transition_time());
+        builder.setMaxInitProgressTime(config.init_progress_time());
+        builder.setStatePollingFrequency(config.state_polling_frequency());
+        builder.setMaxPrematureCrashes(config.max_premature_crashes());
+        builder.setStableStateTimePeriod(config.stable_state_time_period());
+        builder.setEventLogMaxSize(config.event_log_max_size());
+        builder.setEventNodeLogMaxSize(config.event_node_log_max_size());
+        builder.setMinDistributorNodesUp(config.min_distributors_up_count());
+        builder.setMinStorageNodesUp(config.min_storage_up_count());
+        builder.setMinRatioOfDistributorNodesUp(config.min_distributor_up_ratio());
+        builder.setMinRatioOfStorageNodesUp(config.min_storage_up_ratio());
+        builder.setCycleWaitTime((int) (config.cycle_wait_time() * 1000));
+        builder.setMinTimeBeforeFirstSystemStateBroadcast((int) (config.min_time_before_first_system_state_broadcast() * 1000));
+        builder.setNodeStateRequestTimeoutMS((int) (config.get_node_state_request_timeout() * 1000));
+        builder.setShowLocalSystemStatesInEventLog(config.show_local_systemstates_in_event_log());
+        builder.setMinTimeBetweenNewSystemStates(config.min_time_between_new_systemstates());
+        builder.setMaxSlobrokDisconnectGracePeriod((int) (config.max_slobrok_disconnect_grace_period() * 1000));
+        builder.setDistributionBits(config.ideal_distribution_bits());
+        builder.setMinNodeRatioPerGroup(config.min_node_ratio_per_group());
+        builder.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
+        builder.setClusterHasGlobalDocumentTypes(config.cluster_has_global_document_types());
+        builder.setMinMergeCompletionRatio(config.min_merge_completion_ratio());
+        builder.enableTwoPhaseClusterStateActivation(config.enable_two_phase_cluster_state_transitions());
+        builder.setClusterFeedBlockEnabled(config.enable_cluster_feed_block());
+        builder.setClusterFeedBlockLimit(Map.copyOf(config.cluster_feed_block_limit()));
+        builder.setClusterFeedBlockNoiseLevel(config.cluster_feed_block_noise_level());
     }
 
-    private static void configure(FleetControllerOptions options, SlobroksConfig config) {
+    private static void configure(FleetControllerOptions.Builder builder, SlobroksConfig config) {
         String[] specs = new String[config.slobrok().size()];
         for (int i = 0; i < config.slobrok().size(); i++) {
             specs[i] = config.slobrok().get(i).connectionspec();
         }
-        options.slobrokConnectionSpecs = specs;
+        builder.setSlobrokConnectionSpecs(specs);
     }
 
-    private static void configure(FleetControllerOptions options, ZookeepersConfig config) {
-        options.zooKeeperServerAddress = verifyZooKeeperAddress(config.zookeeperserverlist());
-    }
-
-    private static String verifyZooKeeperAddress(String zooKeeperServerAddress) {
-        if (zooKeeperServerAddress == null || "".equals(zooKeeperServerAddress)) {
-            throw new IllegalArgumentException("zookeeper server address must be set, was '" + zooKeeperServerAddress + "'");
-        }
-        return zooKeeperServerAddress;
+    private static void configure(FleetControllerOptions.Builder builder, ZookeepersConfig config) {
+        builder.setZooKeeperServerAddress(config.zookeeperserverlist());
     }
 
 }

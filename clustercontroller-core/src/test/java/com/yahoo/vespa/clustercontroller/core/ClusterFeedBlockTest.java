@@ -44,21 +44,21 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private void initialize(FleetControllerOptions options) throws Exception {
         List<Node> nodes = new ArrayList<>();
-        for (int i = 0; i < options.nodes.size(); ++i) {
+        for (int i = 0; i < options.nodes().size(); ++i) {
             nodes.add(new Node(NodeType.STORAGE, i));
             nodes.add(new Node(NodeType.DISTRIBUTOR, i));
         }
 
         var context = new TestFleetControllerContext(options);
         communicator = new DummyCommunicator(nodes, timer);
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         var eventLog = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
+        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
         var stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress, timer);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
         var stateGenerator = new StateChangeHandler(context, timer, eventLog);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
-        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
         var status = new StatusHandler.ContainerStatusPageServer();
         ctrl = new FleetController(context, timer, eventLog, cluster, stateGatherer, communicator, status, null, communicator, database,
                                    stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
@@ -69,7 +69,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     }
 
     private void markAllNodesAsUp(FleetControllerOptions options) throws Exception {
-        for (int i = 0; i < options.nodes.size(); ++i) {
+        for (int i = 0; i < options.nodes().size(); ++i) {
             communicator.setNodeState(new Node(NodeType.STORAGE, i), State.UP, "");
             communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, i), State.UP, "");
         }
@@ -84,15 +84,13 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         super.tearDown();
     }
 
-    private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits,
-                                                        double clusterFeedBlockNoiseLevel) {
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT));
-        options.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT));
-        options.clusterFeedBlockEnabled = true;
-        options.clusterFeedBlockLimit = Map.copyOf(feedBlockLimits);
-        options.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
-        return options;
+    private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
+        return defaultOptions("mycluster")
+                .setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT))
+                .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)))
+                .setClusterFeedBlockEnabled(true)
+                .setClusterFeedBlockLimit(feedBlockLimits)
+                .setClusterFeedBlockNoiseLevel(clusterFeedBlockNoiseLevel).build();
     }
 
     private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits) {

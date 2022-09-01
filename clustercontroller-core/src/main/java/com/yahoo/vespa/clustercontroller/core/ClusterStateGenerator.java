@@ -112,14 +112,14 @@ public class ClusterStateGenerator {
          */
         static Params fromOptions(FleetControllerOptions opts) {
             return new Params()
-                    .maxPrematureCrashes(opts.maxPrematureCrashes)
-                    .minStorageNodesUp(opts.minStorageNodesUp)
-                    .minDistributorNodesUp(opts.minDistributorNodesUp)
-                    .minRatioOfStorageNodesUp(opts.minRatioOfStorageNodesUp)
-                    .minRatioOfDistributorNodesUp(opts.minRatioOfDistributorNodesUp)
-                    .minNodeRatioPerGroup(opts.minNodeRatioPerGroup)
-                    .idealDistributionBits(opts.distributionBits)
-                    .transitionTimes(opts.maxTransitionTime);
+                    .maxPrematureCrashes(opts.maxPrematureCrashes())
+                    .minStorageNodesUp(opts.minStorageNodesUp())
+                    .minDistributorNodesUp(opts.minDistributorNodesUp())
+                    .minRatioOfStorageNodesUp(opts.minRatioOfStorageNodesUp())
+                    .minRatioOfDistributorNodesUp(opts.minRatioOfDistributorNodesUp())
+                    .minNodeRatioPerGroup(opts.minNodeRatioPerGroup())
+                    .idealDistributionBits(opts.distributionBits())
+                    .transitionTimes(opts.maxTransitionTime());
         }
     }
 

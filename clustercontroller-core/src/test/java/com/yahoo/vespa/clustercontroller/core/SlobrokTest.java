@@ -16,10 +16,10 @@ public class SlobrokTest extends FleetControllerTest {
     @Test
     void testSingleSlobrokRestart() throws Exception {
         startingTest("SlobrokTest::testSingleSlobrokRestart");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.nodeStateRequestTimeoutMS = 60 * 60 * 1000;
-        options.maxSlobrokDisconnectGracePeriod = 60 * 60 * 1000;
-        setUpFleetController(true, options);
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+                .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
+                .setMaxSlobrokDisconnectGracePeriod(60 * 60 * 1000);
+        setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 
@@ -70,10 +70,10 @@ public class SlobrokTest extends FleetControllerTest {
     @Test
     void testNodeTooLongOutOfSlobrok() throws Exception {
         startingTest("SlobrokTest::testNodeTooLongOutOfSlobrok");
-        FleetControllerOptions options = defaultOptions("mycluster");
-        options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
-        options.nodeStateRequestTimeoutMS = 10000 * 60 * 1000;
-        setUpFleetController(true, options);
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+                .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
+                .setNodeStateRequestTimeoutMS(10000 * 60 * 1000);
+        setUpFleetController(true, builder);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 
@@ -95,7 +95,7 @@ public class SlobrokTest extends FleetControllerTest {
         log.log(Level.INFO, "JUMPING TIME. NODE SHOULD BE MARKED DOWN");
         // At this point the fleetcontroller might not have noticed that the node is out of slobrok yet.
         // Thus we keep advancing time another minute such that it should get down.
-        timer.advanceTime(options.nodeStateRequestTimeoutMS + options.maxSlobrokDisconnectGracePeriod);
+        timer.advanceTime(builder.nodeStateRequestTimeoutMS() + builder.maxSlobrokDisconnectGracePeriod());
         waitForState("version:\\d+ distributor:10 .0.s:d storage:10");
     }
 
