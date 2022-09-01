@@ -108,7 +108,7 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
         getNewComponentGraph(container, graph);
 
-        // bundle-1 is kept, bundle-2 has been uninstalled
+        // bundle-2 is installed, bundle-1 has been uninstalled
         assertEquals(1, osgi.getBundles().length);
         assertEquals("bundle-2", osgi.getBundles()[0].getSymbolicName());
     }
