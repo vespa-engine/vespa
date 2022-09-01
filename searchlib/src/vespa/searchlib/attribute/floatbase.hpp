@@ -49,12 +49,6 @@ FloatingPointAttributeTemplate<T>::findFoldedEnums(const char *value) const
 }
 
 template<typename T>
-bool
-FloatingPointAttributeTemplate<T>::isUndefined(DocId doc) const {
-    return attribute::isUndefined(get(doc));
-}
-
-template<typename T>
 long
 FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
     (void) bc;

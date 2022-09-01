@@ -36,7 +36,7 @@ protected:
     using ChangeVector = ChangeVectorT<Change>;
     ChangeVector _changes;
 
-    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
+    vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
@@ -60,8 +60,11 @@ public:
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
     T defaultValue() const { return isMutable() ? 0.0 : attribute::getUndefined<T>(); }
+    bool isUndefined(DocId doc) const override {
+        return attribute::isUndefined(get(doc));
+    }
 protected:
-    FloatingPointAttributeTemplate(const vespalib::string & name);
+    explicit FloatingPointAttributeTemplate(const vespalib::string & name);
     FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);
     ~FloatingPointAttributeTemplate() override;
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
@@ -73,7 +76,6 @@ protected:
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
-    bool isUndefined(DocId doc) const override;
 
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;

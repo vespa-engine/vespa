@@ -11,7 +11,7 @@ namespace search {
 class IntegerAttribute : public NumericAttribute
 {
 public:
-    ~IntegerAttribute();
+    ~IntegerAttribute() override;
     bool update(DocId doc, largeint_t v) {
         return AttributeVector::update(_changes, doc, NumericChangeData<largeint_t>(v));
     }
@@ -58,6 +58,7 @@ public:
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
     T defaultValue() const { return isMutable() ? 0 : attribute::getUndefined<T>(); }
+    bool isUndefined(DocId doc) const override { return attribute::isUndefined(get(doc)); }
 protected:
     IntegerAttributeTemplate(const vespalib::string & name);
     IntegerAttributeTemplate(const vespalib::string & name, const Config & c);
@@ -67,8 +68,6 @@ protected:
     virtual void load_enum_store(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
     virtual void load_posting_lists(LoadedVector&) {}
-
-    bool isUndefined(DocId doc) const override { return get(doc) == attribute::getUndefined<T>(); }
     const Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;

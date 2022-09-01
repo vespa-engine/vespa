@@ -30,7 +30,7 @@ public:
 
     using WeightedSetEnumTag = WeightedSetTag<vespalib::datastore::AtomicEntryRef>;
 
-    virtual ~IMultiValueAttribute() {}
+    virtual ~IMultiValueAttribute() = default;
 
     virtual const IArrayReadView<int8_t>* make_read_view(ArrayTag<int8_t>, vespalib::Stash&) const { return nullptr; }
     virtual const IArrayReadView<int16_t>* make_read_view(ArrayTag<int16_t>, vespalib::Stash&) const { return nullptr; }
