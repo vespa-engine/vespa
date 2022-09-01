@@ -10,7 +10,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -62,8 +61,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         try {
             handleValue(payload.getSlime().get());
         } catch (Exception e) {
-            throw new RuntimeException("Not able to create config builder for payload:" + payload.toString() +
-                                       ", " + Exceptions.toMessageString(e), e);
+            throw new RuntimeException("Not able to create config builder for payload '" + payload.toString() + "'", e);
         }
     }
 

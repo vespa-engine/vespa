@@ -335,6 +335,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(java.nio.file.Path)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional)",
       "public java.util.Optional modelId()",
       "public java.util.Optional url()",

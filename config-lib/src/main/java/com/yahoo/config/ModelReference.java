@@ -15,10 +15,20 @@ import java.util.Optional;
  */
 public class ModelReference {
 
-    // At least one of these are set
+    // Either: If unresolved, at least one of these are set
     private final Optional<String> modelId;
     private final Optional<UrlReference> url;
     private final Optional<FileReference> path;
+
+    // Or: If resolved, this is set
+    private final Path resolved;
+
+    public ModelReference(Path resolved) {
+        this.modelId = Optional.empty();
+        this.url = Optional.empty();
+        this.path = Optional.empty();
+        this.resolved = resolved;
+    }
 
     public ModelReference(Optional<String> modelId,
                           Optional<UrlReference> url,
@@ -28,6 +38,7 @@ public class ModelReference {
         this.modelId = modelId;
         this.url = url;
         this.path = path;
+        this.resolved = null;
     }
 
     public Optional<String> modelId() { return modelId; }
@@ -48,6 +59,9 @@ public class ModelReference {
 
     /** Returns the path to the file containing this model, or null if not available. */
     public Path value() {
+        if (resolved != null)
+            return resolved;
+
         if (url.isPresent() && new File(url.get().value()).exists())
             return Path.of(url.get().value());
         if (path.isPresent())
@@ -92,9 +106,9 @@ public class ModelReference {
         return new ModelReference(Optional.empty(), Optional.empty(), Optional.of(new FileReference(path)));
     }
 
-    /** Creates a model reference having a path only. */
+    /** Creates a model reference resolved to a Path to the local file. */
     public static ModelReference valueOf(Path path) {
-        return fromPath(path.toString());
+        return new ModelReference(path);
     }
 
     /**
@@ -104,12 +118,14 @@ public class ModelReference {
      */
     public static ModelReference valueOf(String s) {
         String[] parts = s.split(" ");
-        if (parts.length != 3)
-            throw new IllegalArgumentException("Expected a config with exactly three space-separated parts, but got '" + s + "'");
-        return new ModelReference(parts[0].equals("") ? Optional.empty() : Optional.of(parts[0]),
-                                  parts[1].equals("") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
-                                  parts[2].equals("") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
-
+        if (parts.length == 1)
+            return new ModelReference(Path.of(s));
+        else if (parts.length == 3)
+            return new ModelReference(parts[0].equals("") ? Optional.empty() : Optional.of(parts[0]),
+                                      parts[1].equals("") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
+                                      parts[2].equals("") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
+        else
+            throw new IllegalArgumentException("Unexpected model string '" + s + "'");
     }
 
 }
