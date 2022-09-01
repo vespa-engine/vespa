@@ -81,14 +81,18 @@ public class BundleCollisionHookIntegrationTest {
     }
 
     @Test
-    public void duplicates_whitelist_can_be_updated_with_additional_bundles() throws Exception {
+    public void duplicates_whitelist_is_reset_upon_each_call() throws Exception {
         Bundle bundleL = startBundle(felix, "cert-l1.jar");
         Bundle bundleMl = startBundle(felix, "cert-ml.jar");
         felix.allowDuplicateBundles(Collections.singleton(bundleL));
         felix.allowDuplicateBundles(Collections.singleton(bundleMl));
 
-        startBundle(felix, "cert-l1-dup.jar");
-        startBundle(felix, "cert-ml-dup.jar");
+        try {
+            startBundle(felix, "cert-l1-dup.jar");
+            fail("Expected exception due to duplicate bundles");
+        } catch (BundleException e) {
+            assertTrue(e.getMessage().contains("Bundle symbolic name and version are not unique"));
+        }
     }
 
     @Test
@@ -97,8 +101,7 @@ public class BundleCollisionHookIntegrationTest {
         Bundle bundleB = startBundle(felix, "cert-b.jar");
 
         // Makes A and B visible to each other
-        felix.allowDuplicateBundles(Set.of(bundleA));
-        felix.allowDuplicateBundles(Set.of(bundleB));
+        felix.allowDuplicateBundles(Set.of(bundleA, bundleB));
 
         List<Bundle> visibleBundles = felix.getBundles(bundleA);
 
@@ -117,8 +120,7 @@ public class BundleCollisionHookIntegrationTest {
         Bundle bundleB = startBundle(felix, "cert-b.jar");
 
         // Makes A and B visible to each other
-        felix.allowDuplicateBundles(Set.of(bundleA));
-        felix.allowDuplicateBundles(Set.of(bundleB));
+        felix.allowDuplicateBundles(Set.of(bundleA, bundleB));
 
         List<Bundle> visibleBundles = felix.getBundles(bundleA);
         assertEquals(3, visibleBundles.size());

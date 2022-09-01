@@ -22,6 +22,7 @@ public interface Osgi {
 
     List<Bundle> install(String absolutePath);
 
+    /** Sets the collection of bundles to allow duplicates for. */
     void allowDuplicateBundles(Collection<Bundle> bundles);
 
     default boolean hasFelixFramework() {
