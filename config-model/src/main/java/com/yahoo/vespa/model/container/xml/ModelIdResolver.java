@@ -35,7 +35,7 @@ public class ModelIdResolver {
         }
     }
 
-    /** Expans a model config value into regular config values. */
+    /** Expands a model config value into regular config values. */
     private static void transformModelValue(Element value) {
         if ( ! value.hasAttribute("model-id")) return;
         value.setAttribute("url", modelIdToUrl(value.getTagName(), value.getAttribute("model-id")));
