@@ -10,6 +10,7 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleCompo
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.osgi.framework.Bundle;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;

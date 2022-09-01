@@ -116,4 +116,22 @@ public class ApplicationBundleLoaderTest {
         assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
     }
 
+    @Test
+    void bundles_are_unaffected_by_failed_reconfig_with_unchanged_bundles() {
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        assertTrue(obsoleteBundles.isEmpty());
+
+        // Revert to the previous generation, as will be done upon a failed reconfig.
+        Collection<Bundle> bundlesToUninstall = bundleLoader.revertToPreviousGeneration();
+
+        assertEquals(0, bundlesToUninstall.size());
+        assertEquals(1, osgi.getCurrentBundles().size());
+
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        assertTrue(obsoleteBundles.isEmpty());
+        assertEquals(1, osgi.getCurrentBundles().size());
+    }
+
 }
