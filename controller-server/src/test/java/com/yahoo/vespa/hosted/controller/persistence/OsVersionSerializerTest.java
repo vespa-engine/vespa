@@ -20,7 +20,7 @@ public class OsVersionSerializerTest {
     void test_serialization() {
         OsVersionSerializer serializer = new OsVersionSerializer();
         Set<OsVersion> osVersions = ImmutableSet.of(
-                new OsVersion(Version.fromString("7.1"), CloudName.defaultName()),
+                new OsVersion(Version.fromString("7.1"), CloudName.DEFAULT),
                 new OsVersion(Version.fromString("7.1"), CloudName.from("foo"))
         );
         Set<OsVersion> serialized = serializer.fromSlime(serializer.toSlime(osVersions));

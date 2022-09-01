@@ -874,7 +874,7 @@ public class ControllerTest {
                 ZoneApiMock.fromId("test.us-west-1"),
                 ZoneApiMock.fromId("staging.us-west-1"),
                 ZoneApiMock.fromId("prod.us-west-1"),
-                ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
+                ZoneApiMock.newBuilder().with(CloudName.AWS).withId("prod.aws-us-east-1").build()
         );
         var context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
@@ -901,6 +901,38 @@ public class ControllerTest {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+        }
+    }
+
+    @Test
+    void testDeployWithGlobalEndpointsInGcp() {
+        tester.controllerTester().zoneRegistry().setZones(
+                ZoneApiMock.fromId("test.us-west-1"),
+                ZoneApiMock.fromId("staging.us-west-1"),
+                ZoneApiMock.newBuilder().with(CloudName.GCP).withId("prod.gcp-us-east1-b").build()
+        );
+        var context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region("gcp-us-east1-b")
+                .endpoint("default", "default") // Contains all regions by default
+                .build();
+
+        try {
+            context.submit(applicationPackage);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'default' in instance 'default' contains a Google Cloud region (gcp-us-east1-b), which is not yet supported", e.getMessage());
+        }
+
+        var applicationPackage2 = new ApplicationPackageBuilder()
+                .region("gcp-us-east1-b")
+                .endpoint("gcp", "default", "gcp-us-east1-b")
+                .build();
+        try {
+            context.submit(applicationPackage2);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'gcp' in instance 'default' contains a Google Cloud region (gcp-us-east1-b), which is not yet supported", e.getMessage());
         }
     }
 

@@ -35,7 +35,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
     public double maintain() {
         controller().zoneRegistry().zones()
                 .reachable()
-                .in(CloudName.from("aws"))
+                .in(CloudName.AWS)
                 .zones().forEach(zone -> {
                     Map<HostName, ApplicationId> applicationOfHosts = getTenantOfParentHosts(zone.getId());
                     int taggedResources = resourceTagger.tagResources(zone, applicationOfHosts);

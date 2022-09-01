@@ -116,13 +116,18 @@ public class ApplicationPackageValidator {
                 var clouds = new HashSet<CloudName>();
                 for (var region : endpoint.regions()) {
                     for (ZoneApi zone : controller.zoneRegistry().zones().all().in(Environment.prod).in(region).zones()) {
+                        if (zone.getCloudName().equals(CloudName.GCP)) {
+                            throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
+                                                               " contains a Google Cloud region (" + region +
+                                                               "), which is not yet supported");
+                        }
                         clouds.add(zone.getCloudName());
                     }
                 }
                 if (clouds.size() != 1) {
                     throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
                                                        " cannot contain regions in different clouds: " +
-                                                       endpoint.regions().stream().sorted().collect(Collectors.toList()));
+                                                       endpoint.regions().stream().sorted().toList());
                 }
             }
         }

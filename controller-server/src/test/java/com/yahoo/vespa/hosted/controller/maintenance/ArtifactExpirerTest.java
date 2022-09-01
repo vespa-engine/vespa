@@ -23,7 +23,7 @@ public class ArtifactExpirerTest {
     void maintain() {
         DeploymentTester tester = new DeploymentTester();
         ArtifactExpirer expirer = new ArtifactExpirer(tester.controller(), Duration.ofDays(1));
-        ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().artifactRegistry(CloudName.defaultName()).orElseThrow();
+        ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().artifactRegistry(CloudName.DEFAULT).orElseThrow();
 
         Instant instant = tester.clock().instant();
         Artifact image0 = new Artifact("image0", "registry.example.com", "vespa/vespa", "7.1", instant, Version.fromString("7.1"));

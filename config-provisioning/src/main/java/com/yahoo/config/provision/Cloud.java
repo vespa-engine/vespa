@@ -45,7 +45,7 @@ public class Cloud {
 
     /** For testing purposes only */
     public static Cloud defaultCloud() {
-        return new Builder().name(CloudName.defaultName()).build();
+        return new Builder().name(CloudName.DEFAULT).build();
     }
 
     public static Builder builder() {
@@ -54,7 +54,7 @@ public class Cloud {
 
     public static class Builder {
 
-        private CloudName name = CloudName.defaultName();
+        private CloudName name = CloudName.DEFAULT;
         private boolean dynamicProvisioning = false;
         private boolean reprovisionToUpgradeOs = false;
         private boolean requireAccessControl = false;

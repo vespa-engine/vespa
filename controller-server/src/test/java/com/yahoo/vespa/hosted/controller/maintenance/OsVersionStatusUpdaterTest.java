@@ -32,14 +32,14 @@ public class OsVersionStatusUpdaterTest {
         for (ZoneApi zone : tester.zoneRegistry().zones().controllerUpgraded().zones()) {
             upgradePolicy = upgradePolicy.upgrade(zone);
         }
-        tester.zoneRegistry().setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy.build());
+        tester.zoneRegistry().setOsUpgradePolicy(CloudName.DEFAULT, upgradePolicy.build());
 
         // Initially empty
         assertSame(OsVersionStatus.empty, tester.controller().osVersionStatus());
 
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
-        CloudName cloud = CloudName.defaultName();
+        CloudName cloud = CloudName.DEFAULT;
         tester.controller().upgradeOsIn(cloud, version1, Duration.ZERO, false);
         statusUpdater.maintain();
 

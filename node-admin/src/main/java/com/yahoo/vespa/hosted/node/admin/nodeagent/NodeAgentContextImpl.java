@@ -262,7 +262,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
                         @Override
                         public CloudName getCloudName() {
-                            return CloudName.defaultName();
+                            return CloudName.DEFAULT;
                         }
 
                         @Override
