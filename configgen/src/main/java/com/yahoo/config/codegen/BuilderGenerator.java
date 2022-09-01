@@ -271,7 +271,7 @@ public class BuilderGenerator {
 
             String bType = builderType(n);
             String stringSetter = "";
-            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType)) {
+            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType) && ! "ModelReference".equals(bType)) {
                 String type = boxedDataType(n);
                 if ("UrlReference".equals(bType))
                     type = bType;

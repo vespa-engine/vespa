@@ -2,6 +2,7 @@
 package com.yahoo.config;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -45,13 +46,13 @@ public class ModelReference {
         return new ModelReference(modelId, url, path);
     }
 
-    /** Returns the path to the file containing this model. */
-    public String value() {
+    /** Returns the path to the file containing this model, or null if not available. */
+    public Path value() {
         if (url.isPresent() && new File(url.get().value()).exists())
-            return new File(url.get().value()).getAbsolutePath();
+            return Path.of(url.get().value());
         if (path.isPresent())
-            return path.get().value();
-        throw new IllegalStateException("No url or path is available");
+            return Path.of(path.get().value());
+        return null;
     }
 
     @Override
@@ -89,6 +90,11 @@ public class ModelReference {
     /** Creates a model reference having a path only. */
     public static ModelReference fromPath(String path) {
         return new ModelReference(Optional.empty(), Optional.empty(), Optional.of(new FileReference(path)));
+    }
+
+    /** Creates a model reference having a path only. */
+    public static ModelReference valueOf(Path path) {
+        return fromPath(path.toString());
     }
 
     /**

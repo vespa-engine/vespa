@@ -319,14 +319,12 @@
     "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.config.ModelReference)",
-      "public com.yahoo.config.ModelReference value()",
       "public java.lang.String getValue()",
       "public java.lang.String toString()",
       "protected boolean doSetValue(java.lang.String)",
       "public com.yahoo.config.ModelReference getModelReference()",
       "public static java.util.List toModelReferences(java.util.List)",
-      "public static java.util.Map toModelReferenceMap(java.util.Map)",
-      "public bridge synthetic java.lang.Object value()"
+      "public static java.util.Map toModelReferenceMap(java.util.Map)"
     ],
     "fields": []
   },
@@ -344,13 +342,14 @@
       "public com.yahoo.config.ModelReference withModelId(java.util.Optional)",
       "public com.yahoo.config.ModelReference withUrl(java.util.Optional)",
       "public com.yahoo.config.ModelReference withPath(java.util.Optional)",
-      "public java.lang.String value()",
+      "public java.nio.file.Path value()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
       "public static com.yahoo.config.ModelReference fromModelId(java.lang.String)",
       "public static com.yahoo.config.ModelReference fromUrl(java.lang.String)",
       "public static com.yahoo.config.ModelReference fromPath(java.lang.String)",
+      "public static com.yahoo.config.ModelReference valueOf(java.nio.file.Path)",
       "public static com.yahoo.config.ModelReference valueOf(java.lang.String)"
     ],
     "fields": []

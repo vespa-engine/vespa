@@ -12,19 +12,19 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class ModelNode extends LeafNode<ModelReference> {
+public class ModelNode extends LeafNode<Path> {
+
+    private final ModelReference reference;
 
     public ModelNode() {
         this.value = null;
+        this.reference = null;
     }
 
     public ModelNode(ModelReference modelReference) {
         super(true);
-        this.value = modelReference;
-    }
-
-    public ModelReference value() {
-        return value;
+        this.value = modelReference.value();
+        this.reference = modelReference;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ModelNode extends LeafNode<ModelReference> {
     }
 
     public ModelReference getModelReference() {
-        return value;
+        return reference;
     }
 
     public static List<ModelReference> toModelReferences(List<ModelNode> modelNodes) {

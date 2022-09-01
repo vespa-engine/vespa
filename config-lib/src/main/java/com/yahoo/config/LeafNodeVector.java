@@ -78,11 +78,11 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         return new LeafNodeVector<>(files, new UrlNode());
     }
 
-    public static LeafNodeVector<ModelReference, ModelNode> createModelNodeVector(Collection<ModelReference> values) {
-        List<ModelReference> models = new ArrayList<>();
+    public static LeafNodeVector<Path, ModelNode> createModelNodeVector(Collection<ModelReference> values) {
+        List<Path> modelPaths = new ArrayList<>();
         for (ModelReference modelReference : values)
-            models.add(modelReference);
-        return new LeafNodeVector<>(models, new ModelNode());
+            modelPaths.add(modelReference.value());
+        return new LeafNodeVector<>(modelPaths, new ModelNode());
     }
 
 }

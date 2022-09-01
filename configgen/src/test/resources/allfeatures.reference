@@ -430,9 +430,6 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
-    private Builder modelVal(String __value) {
-      return modelVal(ModelReference.valueOf(__value));
-    }
 
     public Builder boolarr(Boolean __value) {
       boolarr.add(__value);
@@ -774,7 +771,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   private final LeafNodeVector<FileReference, FileNode> filearr;
   private final LeafNodeVector<Path, PathNode> pathArr;
   private final LeafNodeVector<File, UrlNode> urlArr;
-  private final LeafNodeVector<ModelReference, ModelNode> modelArr;
+  private final LeafNodeVector<Path, ModelNode> modelArr;
   private final Map<String, IntegerNode> intMap;
   private final Map<String, FileNode> pathMap;
   private final Map<String, UrlNode> urlMap;
@@ -972,7 +969,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   /**
    * @return allfeatures.modelVal
    */
-  public ModelReference modelVal() {
+  public Path modelVal() {
     return modelVal.value();
   }
 
@@ -1129,7 +1126,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   /**
    * @return allfeatures.modelArr[]
    */
-  public List<ModelReference> modelArr() {
+  public List<Path> modelArr() {
     return modelArr.asList();
   }
 
@@ -1137,7 +1134,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    * @param i the index of the value to return
    * @return allfeatures.modelArr[]
    */
-  public ModelReference modelArr(int i) {
+  public Path modelArr(int i) {
     return modelArr.get(i).value();
   }
 
@@ -1189,7 +1186,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   /**
    * @return allfeatures.modelMap{}
    */
-  public Map<String, ModelReference> modelMap() {
+  public Map<String, Path> modelMap() {
     return LeafNodeMaps.asValueMap(modelMap);
   }
 
@@ -1197,7 +1194,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    * @param key the key of the value to return
    * @return allfeatures.modelMap{}
    */
-  public ModelReference modelMap(String key) {
+  public Path modelMap(String key) {
     return modelMap.get(key).value();
   }
 

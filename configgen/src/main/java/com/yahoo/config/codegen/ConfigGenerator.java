@@ -434,7 +434,7 @@ public class ConfigGenerator {
         } else if (node instanceof UrlLeaf) {
             return "File";
         } else if (node instanceof ModelLeaf) {
-            return "ModelReference";
+            return "Path";
         } else if (node instanceof IntegerLeaf) {
             return "int";
         } else if (node instanceof LongLeaf) {

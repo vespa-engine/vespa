@@ -57,8 +57,8 @@ public class BertBaseEmbedder implements Embedder {
         options.setInterOpThreads(modifyThreadCount(config.onnxInterOpThreads()));
         options.setIntraOpThreads(modifyThreadCount(config.onnxIntraOpThreads()));
 
-        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().value()).build();
-        evaluator = new OnnxEvaluator(config.transformerModel().value(), options);
+        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
+        evaluator = new OnnxEvaluator(config.transformerModel().toString(), options);
 
         validateModel();
     }
