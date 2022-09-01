@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.plugin;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.text.XML;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -30,14 +32,17 @@ public class CompileVersionMojo extends AbstractVespaMojo {
     protected void doExecute() throws IOException {
         Path output = Paths.get(outputFile).toAbsolutePath();
         OptionalInt allowMajor = majorVersion(new File(project.getBasedir(), "src/main/application/deployment.xml").toPath());
-        String compileVersion = controller.compileVersion(id, allowMajor);
-        if (allowMajor.isPresent()) {
-            getLog().info("Allowing major version " + allowMajor.getAsInt() + ".");
-        }
-        getLog().info("Vespa version to compile against is '" + compileVersion + "'.");
+        allowMajor.ifPresent(major -> getLog().info("Allowing only major version " + major + "."));
+
+        Version compileVersion = Version.fromString(controller.compileVersion(id, allowMajor));
+        if (compileVersion.isAfter(Vtag.currentVersion))
+            throw new IllegalStateException("parent version (" + Vtag.currentVersion.toFullString() + ") should be at least as " +
+                                            "high as the Vespa version to compile against (" + compileVersion.toFullString() + ")");
+
+        getLog().info("Vespa version to compile against is '" + compileVersion.toFullString() + "'.");
         getLog().info("Writing compile version to '" + output + "'.");
         Files.createDirectories(output.getParent());
-        Files.writeString(output, compileVersion);
+        Files.writeString(output, compileVersion.toFullString());
     }
 
     /** Returns the major version declared in given deploymentXml, if any */
