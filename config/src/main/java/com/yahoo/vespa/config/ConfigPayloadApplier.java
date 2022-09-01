@@ -244,7 +244,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private boolean canResolveUrls() {
-        return urlDownloader != null && urlDownloader.isValid();
+        return urlDownloader != null;
     }
 
     private ModelReference resolveModel(String modelStringValue) {
