@@ -28,6 +28,7 @@ public abstract class LeafCNode extends CNode {
                 case "path": return new PathLeaf(parent, name);
                 case "enum": return new EnumLeaf(parent, name, type.enumArray);
                 case "url" : return new UrlLeaf(parent, name);
+                case "model" : return new ModelLeaf(parent, name);
                 default: return null;
             }
         } catch (NumberFormatException e) {
@@ -73,8 +74,7 @@ public abstract class LeafCNode extends CNode {
     }
 
     @Override
-    protected void setLeaf(String name, DefLine defLine, String comment)
-            throws IllegalArgumentException {
+    protected void setLeaf(String name, DefLine defLine, String comment) throws IllegalArgumentException {
         DefLine.Type type = defLine.getType();
         // TODO: why the !is... conditions?
         if (!isMap && !isArray && isInitialized) {
@@ -100,8 +100,7 @@ public abstract class LeafCNode extends CNode {
             checkDefaultValue(defaultValue);
             setDefaultValue(defaultValue);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException
-                    ("Invalid default value", e);
+            throw new IllegalArgumentException("Invalid default value", e);
         }
     }
 
@@ -226,6 +225,17 @@ public abstract class LeafCNode extends CNode {
         @Override
         public String getType() {
             return "url";
+        }
+    }
+
+    public static class ModelLeaf extends NoClassLeafCNode {
+        ModelLeaf(InnerCNode parent, String name) {
+            super(parent, name);
+        }
+
+        @Override
+        public String getType() {
+            return "model";
         }
     }
 

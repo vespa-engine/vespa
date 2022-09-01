@@ -105,12 +105,9 @@ public class JavaClassBuilder implements ClassBuilder {
     }
 
     /**
-     * @param rootDir
-     *            The root directory for the destination path.
-     * @param javaPackage
-     *            The java package
-     * @return the destination path for the generated config file, including the
-     *         given rootDir.
+     * @param rootDir the root directory for the destination path.
+     * @param javaPackage the java package
+     * @return the destination path for the generated config file, including the given rootDir.
      */
     private File getDestPath(File rootDir, String javaPackage) {
         File dir = rootDir;
@@ -141,7 +138,7 @@ public class JavaClassBuilder implements ClassBuilder {
         for (int i = 1;; i++) {
             String candidate = (i < basis.length()) ? basis.substring(0, i)
                     : ReservedWords.INTERNAL_PREFIX + basis + rng.nextInt(Integer.MAX_VALUE);
-            if (usedSymbols.contains(candidate) == false) {
+            if ( ! usedSymbols.contains(candidate)) {
                 return candidate;
             }
         }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.yahoo.test.FunctionTestConfig.BasicStruct;
 import static com.yahoo.test.FunctionTestConfig.Enum_val;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class ConfigInstanceEqualsTest {
+
     FunctionTestConfig config1;
     FunctionTestConfig.Builder builder2;
     FunctionTestConfig config2;
@@ -130,6 +132,9 @@ public class ConfigInstanceEqualsTest {
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
                 urlVal(new UrlReference("http://docs.vespa.ai")).
+                modelVal(new ModelReference(Optional.of("my-model-id"),
+                                            Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                            Optional.empty())).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -140,6 +145,9 @@ public class ConfigInstanceEqualsTest {
                 refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
                 urlArr(new UrlReference("http://docs.vespa.ai")).
+                modelArr(new ModelReference(Optional.empty(),
+                                            Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                            Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
 
                 basicStruct(new BasicStruct.Builder().
                         foo("basicFoo").
@@ -183,4 +191,5 @@ public class ConfigInstanceEqualsTest {
                                 b(-2)));
 
     }
+
 }

@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class FileNodeTest {
 
@@ -23,7 +22,7 @@ public class FileNodeTest {
         assertEquals("foo.txt", n.value().value());
         assertEquals("\"foo.txt\"", n.toString());
 
-        assertEquals("path may not start with '..', but got: foo/../../boo",
+        assertEquals("Path may not start with '..' but got 'foo/../../boo'",
                 assertThrows(IllegalArgumentException.class, () -> new FileNode("foo/../../boo")).getMessage());
     }
 

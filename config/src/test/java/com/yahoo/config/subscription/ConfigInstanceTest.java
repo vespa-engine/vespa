@@ -15,7 +15,8 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ConfigInstanceTest {
-    private ConfigSourceSet sourceSet = new ConfigSourceSet("config-instance-test");
+
+    private final ConfigSourceSet sourceSet = new ConfigSourceSet("config-instance-test");
 
     /**
      * Verifies that the subscriber's configure() method is only

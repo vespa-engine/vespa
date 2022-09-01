@@ -121,6 +121,13 @@ public class DefLineParsingTest {
         assertEquals("url", l.getType().getName());
     }
 
+    @Test
+    void testParseModels() {
+        DefLine l = new DefLine("modelVal model");
+
+        assertEquals("modelVal", l.getName());
+        assertEquals("model", l.getType().getName());
+    }
 
     @Test
     void testParseDefaultInt() {

@@ -29,7 +29,7 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
 
     /**
      * The name of the index this belongs to, or "" (never null) if not specified
-     **/
+     */
     public String getIndexName() {
         return index;
     }

@@ -52,19 +52,19 @@ public class DomConfigPayloadBuilder {
 
     public static ConfigDefinitionKey parseConfigName(Element configE) {
         if (!configE.getNodeName().equals("config")) {
-            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" + configE.getNodeName() + "'.");
+            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" + configE.getNodeName() + "'");
         }
 
         if (!configE.hasAttribute("name")) {
             throw new ConfigurationRuntimeException
-                    ("The 'config' element must have a 'name' attribute that matches the name of the config definition.");
+                    ("The 'config' element must have a 'name' attribute that matches the name of the config definition");
         }
 
         String elementString = configE.getAttribute("name");
         if (!elementString.contains(".")) {
             throw new ConfigurationRuntimeException("The config name '" + elementString +
-                                                            "' contains illegal characters. Only names with the pattern " +
-                                                            namespacePattern.pattern() + "." + namePattern.pattern() + " are legal.");
+                                                    "' contains illegal characters. Only names with the pattern " +
+                                                    namespacePattern.pattern() + "." + namePattern.pattern() + " are legal.");
         }
 
         Tuple2<String, String> t = ConfigUtils.getNameAndNamespaceFromString(elementString);
@@ -73,28 +73,26 @@ public class DomConfigPayloadBuilder {
 
         if (!validName(xmlName)) {
             throw new ConfigurationRuntimeException("The config name '" + xmlName +
-                    "' contains illegal characters. Only names with the pattern " + namePattern.toString() + " are legal.");
+                                                    "' contains illegal characters. Only names with the pattern " +
+                                                    namePattern.toString() + " are legal.");
         }
 
         if (!validNamespace(xmlNamespace)) {
             throw new ConfigurationRuntimeException("The config namespace '" + xmlNamespace +
-                    "' contains illegal characters. Only namespaces with the pattern " + namespacePattern.toString() + " are legal.");
+                                                    "' contains illegal characters. Only namespaces with the pattern " +
+                                                    namespacePattern.toString() + " are legal.");
         }
         return new ConfigDefinitionKey(xmlName, xmlNamespace);
     }
 
     private static boolean validName(String name) {
         if (name == null) return false;
-
-        Matcher m = namePattern.matcher(name);
-        return m.matches();
+        return namePattern.matcher(name).matches();
     }
 
     private static boolean validNamespace(String namespace) {
         if (namespace == null) return false;
-
-        Matcher m = namespacePattern.matcher(namespace);
-        return m.matches();
+        return namespacePattern.matcher(namespace).matches();
     }
 
     private String extractName(Element element) {
@@ -118,12 +116,11 @@ public class DomConfigPayloadBuilder {
         return buf.toString();
     }
 
-    /**
-     * Parse leaf value in an xml tree
-     */
+    /** Parse leaf value in an xml tree. */
     private void parseLeaf(Element element, ConfigPayloadBuilder payloadBuilder, String parentName) {
         String name = extractName(element);
         String value = XML.getValue(element);
+        var definition = payloadBuilder.getConfigDefinition();
         if (value == null) {
             throw new ConfigurationRuntimeException("Element '" + name + "' must have either children or a value");
         }
@@ -136,8 +133,14 @@ public class DomConfigPayloadBuilder {
             } else {
                 payloadBuilder.getArray(parentName).append(value);
             }
-        } else {
-            // leaf scalar, e.g. <intVal>3</intVal>
+        }
+        else if (definition != null && definition.getModelDefs().containsKey(name)) { // model field special syntax
+            String modelString = XML.attribute("model-id", element).orElse("\"\"");
+            modelString += " " + XML.attribute("url", element).orElse("\"\"");
+            modelString += " " + XML.attribute("path", element).orElse("\"\"");
+            payloadBuilder.setField(name, modelString);
+        }
+        else { // leaf value: <myValueName>value</myValue>
             payloadBuilder.setField(name, value);
         }
     }
@@ -196,8 +199,8 @@ public class DomConfigPayloadBuilder {
                 parseComplex(currElem, children, payloadBuilder, parentName);
             }
         } catch (Exception exception) {
-            throw new ConfigurationRuntimeException("Error parsing element at " + XML.getNodePath(currElem, " > ") + ": " +
-                    Exceptions.toMessageString(exception));
+            throw new ConfigurationRuntimeException("Error parsing element at " + XML.getNodePath(currElem, " > ") +
+                                                    ": " + Exceptions.toMessageString(exception));
         }
     }
 

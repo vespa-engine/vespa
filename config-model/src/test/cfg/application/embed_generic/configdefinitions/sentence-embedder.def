@@ -1,12 +1,9 @@
 package=ai.vespa.example.paragraph
 
-# Settings for wordpiece tokenizer
-vocabPath path
-vocabUrl string
+# WordPiece tokenizer vocabulary
+vocab model
 
-# Transformer model settings
-modelPath path
-modelUrl string
+model model
 
 myValue string
 

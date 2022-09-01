@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author gjoranv
- * @since 5.1.17
  */
 public class LeafNodeMaps {
 
@@ -66,6 +65,13 @@ public class LeafNodeMaps {
                     urlReferenceMap.entrySet().stream().collect(
                         Collectors.toMap(Map.Entry::getKey, e -> new UrlNode(e.getValue()))
                     ));
+    }
+
+    public static Map<String, ModelNode> asModelNodeMap(Map<String, ModelReference> modelReferenceMap) {
+        return Collections.unmodifiableMap(
+                modelReferenceMap.entrySet().stream().collect(
+                        Collectors.toMap(Map.Entry::getKey, e -> new ModelNode(e.getValue()))
+                ));
     }
 
 }

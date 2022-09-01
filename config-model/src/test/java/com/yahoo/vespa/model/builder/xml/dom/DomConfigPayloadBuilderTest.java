@@ -130,7 +130,7 @@ public class DomConfigPayloadBuilderTest {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for wrong tag name.");
         } catch (ConfigurationRuntimeException e) {
-            assertEquals("The root element must be 'config', but was 'configs'.", e.getMessage());
+            assertEquals("The root element must be 'config', but was 'configs'", e.getMessage());
         }
     }
 
@@ -142,7 +142,7 @@ public class DomConfigPayloadBuilderTest {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for mismatch between def-name and xml name attribute.");
         } catch (ConfigurationRuntimeException e) {
-            assertEquals("The 'config' element must have a 'name' attribute that matches the name of the config definition.", e.getMessage());
+            assertEquals("The 'config' element must have a 'name' attribute that matches the name of the config definition", e.getMessage());
         }
     }
 

@@ -15,7 +15,7 @@ public class InnerCNode extends CNode {
      * The children of this Node. Mapped using their short name as
      * string. This variable is null only if Node is a leaf Node.
      */
-    private final Map<String, CNode> children = new LinkedHashMap<String, CNode>();
+    private final Map<String, CNode> children = new LinkedHashMap<>();
     private boolean restart = false;
 
     /**
@@ -66,8 +66,7 @@ public class InnerCNode extends CNode {
         } else {
             newChild = LeafCNode.newInstance(type, this, key);
             if (newChild == null)
-                throw new IllegalArgumentException
-                        ("Could not create " + type.name + " " + name);
+                throw new IllegalArgumentException("Could not create " + type.name + " " + name);
         }
         return children.containsKey(newChild.getName())
                 ? children.get(newChild.getName())
@@ -77,6 +76,7 @@ public class InnerCNode extends CNode {
     /**
      * Adds a child to this node with the given type, name and value. Necessary children on the path
      * to the given leaf node will be added as well.
+     *
      * @param name         the full name/path of the node to add.
      * @param defLine      the parsed .def-file line to add.
      * @param comment      comment extracted from the .def-file.

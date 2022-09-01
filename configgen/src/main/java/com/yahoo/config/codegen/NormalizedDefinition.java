@@ -23,7 +23,7 @@ public class NormalizedDefinition {
     // Patterns used for finding ranges in config definitions
     private static final Pattern intPattern = Pattern.compile(".*int.*range.*");
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
-    private MessageDigest md5;
+    private final MessageDigest md5;
 
     String defMd5 = null;
     List<String> normalizedContent = null;
@@ -61,8 +61,8 @@ public class NormalizedDefinition {
      * </ul>
      * The supplied list is changed in-place
      *
-     * @param line  A config definition line
-     * @return  a normalized config definition line
+     * @param line a config definition line
+     * @return a normalized config definition line
      */
     public static String normalize(String line) {
         //System.out.println("before line=" + line + ";");
@@ -150,7 +150,8 @@ public class NormalizedDefinition {
     }
 
     /**
-     * Replaces sequences of spaces with 1 space, unless inside quotes. Public for testing;
+     * Replaces sequences of spaces with 1 space, unless inside quotes. Public for testing.
+     *
      * @param str String to strip spaces from
      * @return String with spaces stripped
      */
@@ -186,6 +187,7 @@ public class NormalizedDefinition {
         return normalizedContent;
     }
 
+    @Override
     public String toString() {
     	StringBuilder builder = new StringBuilder();
     	for (String line : normalizedContent) {

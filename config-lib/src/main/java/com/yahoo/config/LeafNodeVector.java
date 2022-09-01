@@ -13,7 +13,6 @@ import java.util.List;
  * A vector of leaf nodes.
  *
  * @author gjoranv
- * @since 5.1.4
  */
 public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVector<NODE> {
 
@@ -79,5 +78,11 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         return new LeafNodeVector<>(files, new UrlNode());
     }
 
+    public static LeafNodeVector<Path, ModelNode> createModelNodeVector(Collection<ModelReference> values) {
+        List<Path> modelPaths = new ArrayList<>();
+        for (ModelReference modelReference : values)
+            modelPaths.add(modelReference.value());
+        return new LeafNodeVector<>(modelPaths, new ModelNode());
+    }
 
 }

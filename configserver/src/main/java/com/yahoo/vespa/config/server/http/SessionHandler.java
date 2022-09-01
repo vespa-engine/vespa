@@ -29,7 +29,7 @@ public class SessionHandler extends HttpHandler {
      * Set to make sure that timeout for the handler is higher than any timeouts used inside the handler (e.g. zookeeper barrier timeout)
      * Setting this too low will lead to a response with status code 504 and empty response body.
      */
-     @Override
+    @Override
     public Duration getTimeout() {
         return Duration.ofSeconds(applicationRepository.configserverConfig().zookeeper().barrierTimeout()).plus(Duration.ofSeconds(30));
     }

@@ -1,16 +1,21 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.slime.*;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Helper class for building Slime config payloads, while supporting referring to payloads with their indices. The
  * builder does not care about config field types. This is resolved by the actual config type consumer created
  * from the Slime tree.
  *
- * TODO: Add toString
  * @author Ulf Lilleengen
  */
 public class ConfigPayloadBuilder {
@@ -33,9 +38,9 @@ public class ConfigPayloadBuilder {
     }
 
     /**
-     * Construct a payload builder with a leaf value
+     * Construct a payload builder with a leaf value.
      *
-     * @param value The value of this leaf.
+     * @param value the value of this leaf
      */
     private ConfigPayloadBuilder(String value) {
         this(null, value);
@@ -172,11 +177,9 @@ public class ConfigPayloadBuilder {
     /**
      * Get the value of this field, if any.
      *
-     * @return value of field, null if this is not a leaf.
+     * @return value of field, null if this is not a leaf
      */
-    public String getValue() {
-        return value;
-    }
+    public String getValue() { return value; }
 
     public void setValue(String value) {
         this.value = value;
@@ -209,6 +212,7 @@ public class ConfigPayloadBuilder {
     }
 
     public class MapBuilder {
+
         private final Map<String, ConfigPayloadBuilder> elements = new LinkedHashMap<>();
         private final ConfigDefinition configDefinition;
         private final String name;
@@ -266,6 +270,11 @@ public class ConfigPayloadBuilder {
      */
     private enum ArrayMode {
         INDEX, APPEND
+    }
+
+    @Override
+    public String toString() {
+        return "config builder of " + getConfigDefinition();
     }
 
     /**
@@ -450,26 +459,12 @@ public class ConfigPayloadBuilder {
 
         private static void decode(Slime slime, String name, Inspector inspector, ConfigPayloadBuilder builder) {
             switch (inspector.type()) {
-                case STRING:
-                    builder.setField(name, inspector.asString());
-                    break;
-                case LONG:
-                    builder.setField(name, String.valueOf(inspector.asLong()));
-                    break;
-                case DOUBLE:
-                    builder.setField(name, String.valueOf(inspector.asDouble()));
-                    break;
-                case BOOL:
-                    builder.setField(name, String.valueOf(inspector.asBool()));
-                    break;
-                case OBJECT:
-                    ConfigPayloadBuilder objectBuilder = builder.getObject(name);
-                    decodeObject(slime, objectBuilder, inspector);
-                    break;
-                case ARRAY:
-                    ConfigPayloadBuilder.Array array = builder.getArray(name);
-                    decodeArray(slime, array, inspector);
-                    break;
+                case STRING -> builder.setField(name, inspector.asString());
+                case LONG -> builder.setField(name, String.valueOf(inspector.asLong()));
+                case DOUBLE -> builder.setField(name, String.valueOf(inspector.asDouble()));
+                case BOOL -> builder.setField(name, String.valueOf(inspector.asBool()));
+                case OBJECT -> decodeObject(slime, builder.getObject(name), inspector);
+                case ARRAY -> decodeArray(slime, builder.getArray(name), inspector);
             }
         }
 
@@ -479,8 +474,10 @@ public class ConfigPayloadBuilder {
         }
 
         private static class BuilderObjectTraverser implements ObjectTraverser {
+
             private final ConfigPayloadBuilder builder;
             private final Slime slime;
+
             public BuilderObjectTraverser(Slime slime, ConfigPayloadBuilder builder) {
                 this.slime = slime;
                 this.builder = builder;
@@ -490,11 +487,14 @@ public class ConfigPayloadBuilder {
             public void field(String name, Inspector inspector) {
                 decode(slime, name, inspector, builder);
             }
+
         }
 
         private static class BuilderArrayTraverser implements ArrayTraverser {
+
             private final Array array;
             private final Slime slime;
+
             public BuilderArrayTraverser(Slime slime, Array array) {
                 this.array = array;
                 this.slime = slime;
@@ -503,14 +503,13 @@ public class ConfigPayloadBuilder {
             @Override
             public void entry(int idx, Inspector inspector) {
                 switch (inspector.type()) {
-                    case STRING:
-                        array.append(inspector.asString());
-                        break;
-                    case OBJECT:
-                        decodeObject(slime, array.append(), inspector);
-                        break;
+                    case STRING -> array.append(inspector.asString());
+                    case OBJECT -> decodeObject(slime, array.append(), inspector);
                 }
             }
+
         }
+
     }
+
 }

@@ -4,6 +4,7 @@ package com.yahoo.config.codegen;
 import com.yahoo.config.codegen.LeafCNode.FileLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
 import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
+import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -270,11 +271,11 @@ public class BuilderGenerator {
 
             String bType = builderType(n);
             String stringSetter = "";
-            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType)) {
+            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType) && ! "ModelReference".equals(bType)) {
                 String type = boxedDataType(n);
                 if ("UrlReference".equals(bType))
                     type = bType;
-                stringSetter = String.format("\nprivate Builder %s(String %svalue) {\n" + //
+                stringSetter = String.format("\nprivate Builder %s(String %svalue) {\n" +
                         "  return %s(%s.valueOf(%svalue));\n" + //
                         "}", name, INTERNAL_PREFIX, name, type, INTERNAL_PREFIX);
             }
@@ -282,9 +283,9 @@ public class BuilderGenerator {
             String getNullGuard = bType.equals(boxedBuilderType(n)) ? String.format(
                     "\nif (%svalue == null) throw new IllegalArgumentException(\"Null value is not allowed.\");", INTERNAL_PREFIX) : "";
 
-            return String.format("public Builder %s(%s %svalue) {%s\n" + //
+            return String.format("public Builder %s(%s %svalue) {%s\n" +
                     "  %s = %svalue;\n" + //
-                    "%s", name, bType, INTERNAL_PREFIX, getNullGuard, name, INTERNAL_PREFIX, signalInitialized) + //
+                    "%s", name, bType, INTERNAL_PREFIX, getNullGuard, name, INTERNAL_PREFIX, signalInitialized) +
                     "  return this;" + "\n}\n" + stringSetter;
         }
     }
@@ -312,6 +313,12 @@ public class BuilderGenerator {
             return name + "(" + nodeClass(child) + ".toUrlReferenceMap(config." + name + "));";
         } else if (child instanceof UrlLeaf) {
             return name + "(config." + name + ".getUrlReference());";
+        } else if (child instanceof ModelLeaf && isArray) {
+            return name + "(" + nodeClass(child) + ".toModelReferences(config." + name + "));";
+        } else if (child instanceof ModelLeaf && isMap) {
+            return name + "(" + nodeClass(child) + ".toModelReferenceMap(config." + name + "));";
+        } else if (child instanceof ModelLeaf) {
+            return name + "(config." + name + ".getModelReference());";
         } else if (child instanceof LeafCNode) {
             return name + "(config." + name + "());";
         } else if (child instanceof InnerCNode && isArray) {
@@ -403,6 +410,8 @@ public class BuilderGenerator {
             return "FileReference";
         } else if (node instanceof UrlLeaf) {
             return "UrlReference";
+        } else if (node instanceof ModelLeaf) {
+            return "ModelReference";
         } else if (node instanceof LeafCNode && (node.isArray || node.isMap)) {
             return boxedDataType(node);
         } else {
@@ -417,6 +426,8 @@ public class BuilderGenerator {
             return "FileReference";
         } else if (node instanceof UrlLeaf) {
             return "UrlReference";
+        } else if (node instanceof ModelLeaf) {
+            return "ModelReference";
         } else {
             return boxedDataType(node);
         }

@@ -28,7 +28,7 @@ public class ConfigDefinition {
     private final String namespace;
     ConfigDefinition parent = null;
 
-    // TODO Strings without default are null, could be not OK.
+    // TODO: Strings without default are null, could be not OK.
     private final Map<String, StringDef> stringDefs = new LinkedHashMap<>();
     private final Map<String, BoolDef> boolDefs = new LinkedHashMap<>();
     private final Map<String, IntDef> intDefs = new LinkedHashMap<>();
@@ -39,6 +39,7 @@ public class ConfigDefinition {
     private final Map<String, FileDef> fileDefs = new LinkedHashMap<>();
     private final Map<String, PathDef> pathDefs = new LinkedHashMap<>();
     private final Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
+    private final Map<String, ModelDef> modelDefs = new LinkedHashMap<>();
     private final Map<String, StructDef> structDefs = new LinkedHashMap<>();
     private final Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<>();
     private final Map<String, ArrayDef> arrayDefs = new LinkedHashMap<>();
@@ -99,6 +100,8 @@ public class ConfigDefinition {
             verifyPath(id);
         } else if (urlDefs.containsKey(id)) {
             verifyUrl(id);
+        } else if (modelDefs.containsKey(id)) {
+            verifyModel(id);
         } else if (boolDefs.containsKey(id)) {
             verifyBool(id, val);
         } else if (intDefs.containsKey(id)) {
@@ -550,6 +553,11 @@ public class ConfigDefinition {
         }
     }
 
+    /** A value which may be either an url or a path. */
+    public static class ModelDef {
+
+    }
+
     public void addEnumDef(String id, EnumDef def) {
         enumDefs.put(id, def);
     }
@@ -655,6 +663,10 @@ public class ConfigDefinition {
         urlDefs.put(url, new UrlDef(defVal));
     }
 
+    public void addModelDef(String modelName) {
+        modelDefs.put(modelName, new ModelDef());
+    }
+
     public void addUrlDef(String url) {
         urlDefs.put(url, new UrlDef(null));
     }
@@ -688,6 +700,10 @@ public class ConfigDefinition {
     }
 
     public Map<String, PathDef> getPathDefs() { return pathDefs; }
+
+    public Map<String, UrlDef> getUrlDefs() { return urlDefs; }
+
+    public Map<String, ModelDef> getModelDefs() { return modelDefs; }
 
     public Map<String, InnerArrayDef> getInnerArrayDefs() {
         return innerArrayDefs;
@@ -855,6 +871,11 @@ public class ConfigDefinition {
     private void verifyUrl(String id) {
         if ( ! urlDefs.containsKey(id))
             throw new IllegalArgumentException("No such url in " + verifyWarning(id));
+    }
+
+    private void verifyModel(String field) {
+        if ( ! modelDefs.containsKey(field))
+            throw new IllegalArgumentException("No such model in " + verifyWarning(field));
     }
 
     private void verifyBool(String id) {

@@ -8,9 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class BooleanNodeTest {
+
     @Test
     void testSetValue() {
         BooleanNode n = new BooleanNode();
@@ -21,4 +21,5 @@ public class BooleanNodeTest {
         assertFalse(n.doSetValue("FALSEa"));
         assertFalse(n.doSetValue("aFALSE"));
     }
+
 }

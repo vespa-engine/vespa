@@ -40,6 +40,7 @@ refwithdef reference default=":parent:"
 fileVal file
 pathVal path
 urlVal url
+modelVal model
 
 boolarr[] bool
 intarr[] int
@@ -51,10 +52,12 @@ refarr[] reference
 filearr[] file
 pathArr[] path
 urlArr[] url
+modelArr[] model
 
 intMap{} int
 pathMap{} file
 urlMap{} url
+modelMap{} model
 
 # A basic struct
 basic_struct.foo string default="foo"

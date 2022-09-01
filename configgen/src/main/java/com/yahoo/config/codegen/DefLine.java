@@ -251,7 +251,7 @@ public class DefLine {
                 } else if (whitespaceMatcher.matches()) {
                     break;
                 } else {
-                    throw new IllegalArgumentException(name + " contains unexpected character");
+                    throw new IllegalArgumentException("'" + name + "' contains an unexpected character");
                 }
             }
         }

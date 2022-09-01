@@ -33,6 +33,7 @@ public class JavaClassBuilderTest {
                         "pathArr[] path\n" + //
                         "u url\n" + //
                         "urlArr[] url\n" + //
+                        "modelArr[] model\n" + //
                         "f file\n" + //
                         "fileArr[] file\n" + //
                         "i int default=0\n" + //

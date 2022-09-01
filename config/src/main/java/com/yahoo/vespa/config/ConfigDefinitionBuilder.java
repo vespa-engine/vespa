@@ -69,41 +69,37 @@ public class ConfigDefinitionBuilder {
                     addNode(def, (LeafCNode.PathLeaf) node);
                 } else if (node instanceof LeafCNode.UrlLeaf) {
                     addNode(def, (LeafCNode.UrlLeaf) node);
+                } else if (node instanceof LeafCNode.ModelLeaf) {
+                    addNode(def, (LeafCNode.ModelLeaf) node);
                 } else if (node instanceof LeafCNode.StringLeaf) {
                     addNode(def, (LeafCNode.StringLeaf) node);
                 } else if (node instanceof LeafCNode.EnumLeaf) {
                     addNode(def, (LeafCNode.EnumLeaf) node);
                 } else {
-                    System.err.println("Unknown node type for node with name " + name);
+                    System.err.println("Unknown node type for node with name '" + name + "'");
                 }
             }
         } else {
             ConfigDefinition newDef;
             if (node.isArray) {
                 if (node.getChildren() != null && node.getChildren().length > 0) {
-                    //System.out.println("\tAdding inner array node " + name);
                     newDef = def.innerArrayDef(name);
                     for (CNode childNode : node.getChildren()) {
-                        //System.out.println("\tChild node " + childNode.getName());
                         addNode(newDef, childNode);
                     }
                 }
             } else if (node.isMap) {
-                //System.out.println("Adding struct map node " + name);
                 newDef = def.structMapDef(name);
                 if (node.getChildren() != null && node.getChildren().length > 0) {
                     for (CNode childNode : node.getChildren()) {
-                        //System.out.println("\tChild node " + childNode.getName());
                         addNode(newDef, childNode);
                     }
                 }
 
             } else {
-                //System.out.println("Adding struct node " + name);
                 newDef = def.structDef(name);
                 if (node.getChildren() != null && node.getChildren().length > 0) {
                     for (CNode childNode : node.getChildren()) {
-                        //System.out.println("\tChild node " + childNode.getName());
                         addNode(newDef, childNode);
                     }
                 }
@@ -184,6 +180,10 @@ public class ConfigDefinitionBuilder {
         }
     }
 
+    private static void addNode(ConfigDefinition def, LeafCNode.ModelLeaf leaf) {
+        def.addModelDef(leaf.getName());
+    }
+
     private static void addNode(ConfigDefinition def, LeafCNode.EnumLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addEnumDef(leaf.getName(), Arrays.asList(leaf.getLegalValues()), leaf.getDefaultValue().getValue());
@@ -202,4 +202,5 @@ public class ConfigDefinitionBuilder {
         sb.delete(length - 2, length);
         return sb.toString();
     }
+
 }

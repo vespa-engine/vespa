@@ -28,7 +28,7 @@ public class DefParserTest {
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertNotNull(root);
         CNode[] children = root.getChildren();
-        assertEquals(34, children.length);
+        assertEquals(37, children.length);
 
         int numGrandChildren = 0;
         int numGreatGrandChildren = 0;
@@ -70,7 +70,7 @@ public class DefParserTest {
     void testMd5Sum() throws IOException {
         File defFile = new File(DEF_NAME);
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
-        assertEquals("f901bdc5c96e7005130399c63f247823", root.defMd5);
+        assertEquals("0501f9e2c4ecc8c283e100e0b1178ca4", root.defMd5);
     }
 
     @Test
@@ -194,7 +194,7 @@ public class DefParserTest {
     @Test
     void testIllegalCharacterInName() {
         assertLineFails("a-b int",
-                "a-b contains unexpected character");
+                "'a-b' contains an unexpected character");
     }
 
     @Test
