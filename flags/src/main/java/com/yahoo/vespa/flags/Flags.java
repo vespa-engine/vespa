@@ -339,13 +339,6 @@ public class Flags {
                 "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_SERVER_OCSP_STAPLING = defineFeatureFlag(
-            "enable-server-ocsp-stapling", false,
-            List.of("bjorncs"), "2021-12-17", "2022-09-01",
-            "Enable server OCSP stapling for jdisc containers",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
             List.of("hmusum"), "2022-01-06", "2022-10-01",
