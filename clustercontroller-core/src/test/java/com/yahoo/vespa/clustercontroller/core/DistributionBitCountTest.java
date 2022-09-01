@@ -7,12 +7,14 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class DistributionBitCountTest extends FleetControllerTest {
 
     private FleetControllerOptions setUpSystem(String testName) throws Exception {

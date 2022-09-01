@@ -5,11 +5,13 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Set;
 import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 @Timeout(30)
 public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest {
 

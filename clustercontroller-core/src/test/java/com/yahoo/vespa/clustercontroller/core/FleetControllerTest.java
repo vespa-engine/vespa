@@ -26,9 +26,6 @@ import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestWatcher;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author Håkon Humberset
  */
-@ExtendWith(FleetControllerTest.CleanupZookeeperLogsOnSuccess.class)
 public abstract class FleetControllerTest implements Waiter {
 
     private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
@@ -79,31 +75,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-    }
-
-    public static class CleanupZookeeperLogsOnSuccess implements TestWatcher {
-
-        public CleanupZookeeperLogsOnSuccess() {}
-
-        @Override
-        public void testFailed(ExtensionContext context, Throwable cause) {
-            System.err.println("TEST FAILED - NOT cleaning up zookeeper directory");
-            shutdownZooKeeper(context, false);
-        }
-
-        @Override
-        public void testSuccessful(ExtensionContext context) {
-            System.err.println("TEST SUCCEEDED - cleaning up zookeeper directory");
-            shutdownZooKeeper(context, true);
-        }
-
-        private void shutdownZooKeeper(ExtensionContext ctx, boolean cleanupZooKeeperDir) {
-            FleetControllerTest test = (FleetControllerTest) ctx.getTestInstance().orElseThrow();
-            if (test.zooKeeperServer != null) {
-                test.zooKeeperServer.shutdown(cleanupZooKeeperDir);
-                test.zooKeeperServer = null;
-            }
-        }
     }
 
     protected void startingTest(String name) {

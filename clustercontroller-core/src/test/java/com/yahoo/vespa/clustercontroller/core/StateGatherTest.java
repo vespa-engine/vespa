@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -10,6 +11,7 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class StateGatherTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(StateGatherTest.class.getName());

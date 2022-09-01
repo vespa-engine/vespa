@@ -5,10 +5,12 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class RpcVersionAutoDowngradeTest extends FleetControllerTest {
 
     private void setUpFakeCluster(int nodeRpcVersion) throws Exception {

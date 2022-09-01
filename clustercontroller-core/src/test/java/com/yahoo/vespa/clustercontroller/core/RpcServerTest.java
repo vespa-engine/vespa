@@ -22,6 +22,7 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author humbe
  */
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class RpcServerTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(RpcServerTest.class.getName());

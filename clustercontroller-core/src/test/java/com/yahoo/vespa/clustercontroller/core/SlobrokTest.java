@@ -3,12 +3,14 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class SlobrokTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(SlobrokTest.class.getName());
