@@ -32,8 +32,8 @@ public:
      * @param children the search objects we are and'ing
      *        this object takes ownership of the children.
      **/
-    MultiSearch(Children children);
-    virtual ~MultiSearch() override;
+    explicit MultiSearch(Children children);
+    ~MultiSearch() override;
     const Children & getChildren() const { return _children; }
     virtual bool isAnd() const { return false; }
     virtual bool isAndNot() const { return false; }
@@ -42,7 +42,7 @@ public:
     virtual bool needUnpack(size_t index) const { (void) index; return true; }
     void initRange(uint32_t beginId, uint32_t endId) override;
 protected:
-    MultiSearch() {}
+    MultiSearch();
     void doUnpack(uint32_t docid) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:

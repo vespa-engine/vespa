@@ -36,7 +36,7 @@ protected:
 public:
     typedef std::shared_ptr<Searchable> SP;
 
-    Searchable() {}
+    Searchable() = default;
 
     /**
      * Create a blueprint searching a set of fields. The default
@@ -51,7 +51,7 @@ public:
     virtual Blueprint::UP createBlueprint(const IRequestContext & requestContext,
                                           const FieldSpecList &fields,
                                           const search::query::Node &term);
-    virtual ~Searchable() {}
+    virtual ~Searchable() = default;
 };
 
 }

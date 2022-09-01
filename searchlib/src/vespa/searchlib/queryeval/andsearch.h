@@ -23,7 +23,7 @@ public:
     AndSearch & estimate(uint32_t est) { _estimate = est; return *this; }
     uint32_t estimate() const { return _estimate; }
 protected:
-    AndSearch(Children children);
+    explicit AndSearch(Children children);
     void doUnpack(uint32_t docid) override;
     UP andWith(UP filter, uint32_t estimate) override;
     UP offerFilterToChildren(UP filter, uint32_t estimate);
