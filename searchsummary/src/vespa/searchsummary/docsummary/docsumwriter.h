@@ -37,8 +37,6 @@ public:
 
     virtual ~IDocsumWriter() = default;
     virtual void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
-    virtual void WriteDocsum(uint32_t docid, GetDocsumsState *state,
-                             IDocsumStore *docinfos, Inserter & target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
                               IDocsumStore *docinfos, Inserter & target) = 0;
     virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const = 0;
@@ -67,9 +65,6 @@ public:
 
     bool Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer);
     void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) override;
-    void WriteDocsum(uint32_t docid, GetDocsumsState *state,
-                     IDocsumStore *docinfos, Inserter & inserter) override;
-
     void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState *state,
                       IDocsumStore *docinfos, Inserter & inserter) override;
 

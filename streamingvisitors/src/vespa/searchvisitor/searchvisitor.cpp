@@ -16,6 +16,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -112,28 +113,63 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
     return {};
 }
 
-SearchVisitor::SummaryGenerator::SummaryGenerator() :
-    HitsAggregationResult::SummaryGenerator(),
-    _callback(),
-    _docsumState(_callback),
-    _docsumFilter(),
-    _docsumWriter(nullptr),
-    _buf(4_Ki)
+SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
+    : _state(callback),
+      _resolve_class_info(resolve_class_info)
+{
+}
+
+SearchVisitor::StreamingDocsumsState::~StreamingDocsumsState() = default;
+
+SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManager& attr_manager)
+    : HitsAggregationResult::SummaryGenerator(),
+      _callback(),
+      _docsum_states(),
+      _docsumFilter(),
+      _docsumWriter(nullptr),
+      _buf(4_Ki),
+      _dump_features(),
+      _location(),
+      _stack_dump(),
+      _attr_manager(attr_manager)
 {
 }
 
 SearchVisitor::SummaryGenerator::~SummaryGenerator() = default;
 
+SearchVisitor::StreamingDocsumsState&
+SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::string& summary_class)
+{
+    auto itr = _docsum_states.find(summary_class);
+    if (itr != _docsum_states.end()) {
+        return *itr->second;
+    }
+    auto rci = _docsumWriter->resolveClassInfo(summary_class);
+    auto state = std::make_unique<StreamingDocsumsState>(_callback, rci);
+    auto &ds = state->get_state();
+    ds._args.setResultClassName(summary_class);
+    if (_dump_features.has_value()) {
+        ds._args.dumpFeatures(_dump_features.value());
+    }
+    if (_location.has_value()) {
+        ds._args.setLocation(_location.value());
+    }
+    if (_stack_dump.has_value()) {
+        ds._args.SetStackDump(_stack_dump.value().size(), _stack_dump.value().data());
+    }
+    _docsumWriter->InitState(_attr_manager, &ds);
+    auto insres = _docsum_states.insert(std::make_pair(summary_class, std::move(state)));
+    return *insres.first->second;
+}
 
 vespalib::ConstBufferRef
 SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
 {
     if (_docsumWriter != nullptr) {
-        _docsumState._args.setResultClassName(summaryClass);
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        _docsumWriter->WriteDocsum(lid, &_docsumState, _docsumFilter.get(), inserter);
-
+        auto& sds = get_streaming_docsums_state(summaryClass);
+        _docsumWriter->insertDocsum(sds.get_resolve_class_info(), lid, &sds.get_state(), _docsumFilter.get(), inserter);
         _buf.reset();
         vespalib::WritableMemory magicId = _buf.reserve(4);
         memcpy(magicId.data, &search::docsummary::SLIME_MAGIC_ID, 4);
@@ -197,10 +233,10 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _docTypeMapping(),
     _fieldSearchSpecMap(),
     _snippetModifierManager(),
-    _summaryGenerator(),
     _summaryClass("default"),
     _attrMan(),
     _attrCtx(_attrMan.createContext()),
+    _summaryGenerator(_attrMan),
     _groupingList(),
     _attributeFields(),
     _sortList(),
@@ -245,7 +281,7 @@ void SearchVisitor::init(const Parameters & params)
     int queryFlags = params.get("queryflags", 0);
     if (queryFlags) {
         bool dumpFeatures = (queryFlags & QFLAG_DUMP_FEATURES) != 0;
-        _summaryGenerator.getDocsumState()._args.dumpFeatures(dumpFeatures);
+        _summaryGenerator.set_dump_features(dumpFeatures);
         _rankController.setDumpFeatures(dumpFeatures);
         LOG(debug, "QFLAG_DUMP_FEATURES: %s", _rankController.getDumpFeatures() ? "true" : "false");
     }
@@ -281,7 +317,7 @@ void SearchVisitor::init(const Parameters & params)
     if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
-        _summaryGenerator.getDocsumState()._args.setLocation(valueRef);
+        _summaryGenerator.set_location(valueRef);
     }
 
     Parameters::ValueRef searchClusterBlob;
@@ -306,7 +342,7 @@ void SearchVisitor::init(const Parameters & params)
 
             int stackCount = 0;
             if (params.get("querystackcount", stackCount)) {
-                _summaryGenerator.getDocsumState()._args.SetStackDump(queryBlob.size(), (const char*)queryBlob.data());
+                _summaryGenerator.set_stack_dump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
             } else {
                 LOG(warning, "Request without query stack count");
             }
@@ -697,17 +733,7 @@ SearchVisitor::setupDocsumObjects()
     docsumFilter->setSnippetModifiers(_snippetModifierManager.getModifiers());
     _summaryGenerator.setFilter(std::move(docsumFilter));
     if (_vsmAdapter->getDocsumTools().get()) {
-        GetDocsumsState * ds(&_summaryGenerator.getDocsumState());
-        _vsmAdapter->getDocsumTools()->getDocsumWriter()->InitState(_attrMan, ds);
-       _summaryGenerator.setDocsumWriter(*_vsmAdapter->getDocsumTools()->getDocsumWriter());
-       for (const IAttributeVector * v : ds->_attributes) {
-           if (v != nullptr) {
-               vespalib::string name(v->getName());
-               auto msg = vespalib::make_string("Illegal config: Docsum field writer using attribute vector '%s' configured for streaming search", name.c_str());
-               LOG(error, "%s", msg.c_str());
-               throw vespalib::IllegalStateException(msg);
-           }
-       }
+        _summaryGenerator.setDocsumWriter(*_vsmAdapter->getDocsumTools()->getDocsumWriter());
     } else {
         LOG(warning, "No docsum tools available");
     }

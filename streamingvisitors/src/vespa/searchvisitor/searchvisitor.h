@@ -384,23 +384,41 @@ private:
     typedef std::vector< GroupingEntry > GroupingList;
     typedef std::vector<vsm::StorageDocument::UP> DocumentVector;
 
+    class StreamingDocsumsState {
+        using ResolveClassInfo = search::docsummary::IDocsumWriter::ResolveClassInfo;
+        GetDocsumsState  _state;
+        ResolveClassInfo _resolve_class_info;
+    public:
+        StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info);
+        ~StreamingDocsumsState();
+        GetDocsumsState& get_state() noexcept { return _state; }
+        const ResolveClassInfo& get_resolve_class_info() const noexcept { return _resolve_class_info; }
+    };
+
     class SummaryGenerator : public HitsAggregationResult::SummaryGenerator
     {
     public:
-        SummaryGenerator();
+        SummaryGenerator(const search::IAttributeManager& attr_manager);
         ~SummaryGenerator() override;
-        GetDocsumsState & getDocsumState() { return _docsumState; }
         vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
         void setDocsumCache(const vsm::IDocSumCache & cache) { _docsumFilter->setDocSumStore(cache); }
         void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
         vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass) override;
+        void set_dump_features(bool dump_features) { _dump_features = dump_features; }
+        void set_location(const vespalib::string& location) { _location = location; }
+        void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
     private:
+        StreamingDocsumsState& get_streaming_docsums_state(const vespalib::string& summary_class);
         vsm::GetDocsumsStateCallback            _callback;
-        GetDocsumsState                         _docsumState;
+        vespalib::hash_map<vespalib::string, std::unique_ptr<StreamingDocsumsState>> _docsum_states;
         std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
         search::docsummary::IDocsumWriter     * _docsumWriter;
         vespalib::SmartBuffer                   _buf;
+        std::optional<bool>                     _dump_features;
+        std::optional<vespalib::string>         _location;
+        std::optional<std::vector<char>>        _stack_dump;
+        const search::IAttributeManager&        _attr_manager;
     };
 
     class HitsResultPreparator : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
@@ -432,10 +450,10 @@ private:
     vsm::DocumentTypeMapping                _docTypeMapping;
     vsm::FieldSearchSpecMap                 _fieldSearchSpecMap;
     vsm::SnippetModifierManager             _snippetModifierManager;
-    SummaryGenerator                        _summaryGenerator;
     vespalib::string                        _summaryClass;
     search::AttributeManager                _attrMan;
     search::attribute::IAttributeContext::UP _attrCtx;
+    SummaryGenerator                        _summaryGenerator;
     GroupingList                            _groupingList;
     std::vector<AttrInfo>                   _attributeFields;
     search::common::SortSpec                _sortSpec;
