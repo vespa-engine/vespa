@@ -15,7 +15,7 @@ namespace search::attribute {
 template <typename MultiValueType>
 class IMultiValueReadView {
 public:
-    virtual ~IMultiValueReadView() {}
+    virtual ~IMultiValueReadView() = default;
     virtual vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const = 0;
 };
 
@@ -43,4 +43,4 @@ using IArrayEnumReadView = IArrayReadView<vespalib::datastore::AtomicEntryRef>;
  */
 using IWeightedSetEnumReadView = IWeightedSetReadView<vespalib::datastore::AtomicEntryRef>;
 
-};
+}
