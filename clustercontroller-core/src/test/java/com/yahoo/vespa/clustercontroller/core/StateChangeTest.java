@@ -1038,7 +1038,7 @@ public class StateChangeTest extends FleetControllerTest {
         startingTest("StateChangeTest::testDontTagFailingSetSystemStateOk()");
         FleetControllerOptions.Builder options = defaultOptions("mycluster", createNodes(10));
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);
@@ -1116,7 +1116,7 @@ public class StateChangeTest extends FleetControllerTest {
         startingTest("StateChangeTest::testSetAllTimestampsAfterDowntime");
         FleetControllerOptions.Builder options = defaultOptions("mycluster", createNodes(10));
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);

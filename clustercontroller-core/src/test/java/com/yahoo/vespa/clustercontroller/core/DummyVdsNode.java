@@ -120,11 +120,12 @@ public class DummyVdsNode {
         }
     };
 
-    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String[] slobrokConnectionSpecs, String clusterName, boolean distributor, int index) throws Exception {
+    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String[] slobrokConnectionSpecs, String clusterName,
+                        NodeType nodeType, int index) throws Exception {
         this.timer = timer;
         this.slobrokConnectionSpecs = slobrokConnectionSpecs;
         this.clusterName = clusterName;
-        type = distributor ? NodeType.DISTRIBUTOR : NodeType.STORAGE;
+        type = nodeType;
         this.index = index;
         this.nodeState = new NodeState(type, State.UP);
         this.stateCommunicationVersion = requireAtLeast(options.stateCommunicationVersion, "state communication version cannot be less than 2", 2);

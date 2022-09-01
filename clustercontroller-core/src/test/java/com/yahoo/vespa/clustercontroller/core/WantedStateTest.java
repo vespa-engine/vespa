@@ -12,7 +12,7 @@ public class WantedStateTest extends FleetControllerTest {
     void testSettingStorageNodeMaintenanceAndBack() throws Exception {
         startingTest("WantedStateTest::testSettingStorageNodeMaintenanceAndBack()");
         setUpFleetController(true, defaultOptions("mycluster"));
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         setWantedState(nodes.get(1), State.MAINTENANCE, null);
@@ -26,7 +26,7 @@ public class WantedStateTest extends FleetControllerTest {
     void testOverridingWantedStateOtherReason() throws Exception {
         startingTest("WantedStateTest::testOverridingWantedStateOtherReason()");
         setUpFleetController(true, defaultOptions("mycluster"));
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         setWantedState(nodes.get(1), State.MAINTENANCE, "Foo");

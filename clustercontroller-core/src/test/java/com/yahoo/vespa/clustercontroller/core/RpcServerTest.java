@@ -84,7 +84,7 @@ public class RpcServerTest extends FleetControllerTest {
         try {
             startingTest("RpcServerTest::testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork");
             setUpFleetController(true, defaultOptions("mycluster"));
-            setUpVdsNodes(true, new DummyVdsNodeOptions());
+            setUpVdsNodes(true);
             waitForStableSystem();
         } catch (Throwable t) {
         }
@@ -96,7 +96,7 @@ public class RpcServerTest extends FleetControllerTest {
         startingTest("RpcServerTest::testGetSystemState");
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         assertTrue(nodes.get(0).isDistributor());
@@ -166,7 +166,7 @@ public class RpcServerTest extends FleetControllerTest {
         builder.setMaxInitProgressTime(30000);
         builder.setStableStateTimePeriod(60000);
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         setWantedNodeState(State.DOWN, NodeType.DISTRIBUTOR, 2);
@@ -490,7 +490,7 @@ public class RpcServerTest extends FleetControllerTest {
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         int rpcPort = fleetController.getRpcPort();
@@ -518,7 +518,7 @@ public class RpcServerTest extends FleetControllerTest {
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         int rpcPort = fleetController.getRpcPort();

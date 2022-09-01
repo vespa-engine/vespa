@@ -8,6 +8,11 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
  * over regular RPC.
  */
 public class DummyVdsNodeOptions {
-    // 0 - 4.1, 1 - 4.2-5.0.10, 2 - 5.0.11+, 3 - 6.220+, 4 - 7.24+
+    // Rpc method versions and which Vespa versions supports each version:
+    // 0 - 4.1
+    // 1 - 4.2-5.0.10
+    // 2 - 5.0.11+
+    // 3 - 6.220+
+    // 4 - 7.24+
     int stateCommunicationVersion = RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION;
 }

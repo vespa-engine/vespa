@@ -222,7 +222,7 @@ public class MasterElectionTest extends FleetControllerTest {
         setUpFleetController(3, false, options);
         // Currently need to have content nodes present for the cluster controller to even bother
         // attempting to persisting its cluster state version to ZK.
-        setUpVdsNodes(false, new DummyVdsNodeOptions());
+        setUpVdsNodes(false);
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
@@ -454,7 +454,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 .setMinDistributorNodesUp(0)
                 .setMinStorageNodesUp(1);
         setUpFleetController(3, false, builder);
-        setUpVdsNodes(false, new DummyVdsNodeOptions());
+        setUpVdsNodes(false);
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
@@ -499,7 +499,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 .setMinTimeBeforeFirstSystemStateBroadcast(100000);
         boolean useFakeTimer = false;
         setUpFleetController(3, useFakeTimer, builder);
-        setUpVdsNodes(false, new DummyVdsNodeOptions());
+        setUpVdsNodes(false);
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForMaster(0);
         waitForStableSystem();
@@ -542,7 +542,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 .setMasterZooKeeperCooldownPeriod(1)
                 .setMinTimeBeforeFirstSystemStateBroadcast(100000);
         setUpFleetController(3, false, builder);
-        setUpVdsNodes(false, new DummyVdsNodeOptions());
+        setUpVdsNodes(false);
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForMaster(0);
         waitForStableSystem();

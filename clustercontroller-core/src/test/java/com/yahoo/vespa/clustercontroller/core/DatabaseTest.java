@@ -31,7 +31,7 @@ public class DatabaseTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder = defaultOptions("mycluster");
         builder.setZooKeeperServerAddress("127.0.0.1");
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         log.info("WAITING FOR STABLE SYSTEM");
         waitForStableSystem();
 
@@ -87,7 +87,7 @@ public class DatabaseTest extends FleetControllerTest {
                 .setMinRatioOfStorageNodesUp(0)
                 .setZooKeeperServerAddress("localhost");
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         // Populate map of wanted states we should have

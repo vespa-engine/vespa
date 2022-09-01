@@ -20,7 +20,7 @@ public class SlobrokTest extends FleetControllerTest {
                 .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 60 * 1000);
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         int version = fleetController.getSystemState().getVersion();
@@ -74,7 +74,7 @@ public class SlobrokTest extends FleetControllerTest {
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
                 .setNodeStateRequestTimeoutMS(10000 * 60 * 1000);
         setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(true);
         waitForStableSystem();
 
         int version = fleetController.getSystemState().getVersion();
