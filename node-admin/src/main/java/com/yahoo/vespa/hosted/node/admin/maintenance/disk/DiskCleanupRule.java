@@ -16,16 +16,5 @@ public interface DiskCleanupRule {
         LOWEST, LOW, MEDIUM, HIGH, HIGHEST
     }
 
-    class PrioritizedFileAttributes {
-        private final FileFinder.FileAttributes fileAttributes;
-        private final Priority priority;
-
-        public PrioritizedFileAttributes(FileFinder.FileAttributes fileAttributes, Priority priority) {
-            this.fileAttributes = fileAttributes;
-            this.priority = priority;
-        }
-
-        public Priority priority() { return priority; }
-        public FileFinder.FileAttributes fileAttributes() { return fileAttributes; }
-    }
+    record PrioritizedFileAttributes(FileFinder.FileAttributes fileAttributes, Priority priority) { }
 }

@@ -104,17 +104,7 @@ public class DefaultEnvWriter {
         return newDefaultEnvLines;
     }
 
-    private static class Operation {
-        final String action;
-        final String name;
-        final String value;
-
-        Operation(String action, String name, String value) {
-            this.action = action;
-            this.name = name;
-            this.value = value;
-        }
-
+    private record Operation(String action, String name, String value) {
         String toLine() {
             if (action.equals("unset")) {
                 return "unset " + name;

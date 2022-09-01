@@ -65,37 +65,11 @@ public class Container extends PartialContainer {
     }
 
     /** The network of a container */
-    public static class Network {
-
-        private final String name;
-        private final String ipv4Address;
-
+    public record Network(String name, String ipv4Address) {
         public Network(String name, String ipv4Address) {
             this.name = Objects.requireNonNull(name);
             this.ipv4Address = Objects.requireNonNull(ipv4Address);
         }
-
-        public String name() {
-            return name;
-        }
-
-        public String ipv4Address() {
-            return ipv4Address;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Network network = (Network) o;
-            return name.equals(network.name) && ipv4Address.equals(network.ipv4Address);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, ipv4Address);
-        }
-
     }
 
 }

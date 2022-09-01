@@ -8,38 +8,13 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RegistryCredentials {
+public record RegistryCredentials(String username, String password) {
 
     public static final RegistryCredentials none = new RegistryCredentials("", "");
-
-    private final String username;
-    private final String password;
 
     public RegistryCredentials(String username, String password) {
         this.username = Objects.requireNonNull(username);
         this.password = Objects.requireNonNull(password);
-    }
-
-    public String username() {
-        return username;
-    }
-
-    public String password() {
-        return password;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RegistryCredentials that = (RegistryCredentials) o;
-        return username.equals(that.username) &&
-               password.equals(that.password);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(username, password);
     }
 
     @Override
