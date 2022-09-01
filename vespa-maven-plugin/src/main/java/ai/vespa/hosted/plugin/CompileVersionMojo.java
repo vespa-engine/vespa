@@ -36,7 +36,8 @@ public class CompileVersionMojo extends AbstractVespaMojo {
 
         Version compileVersion = Version.fromString(controller.compileVersion(id, allowMajor));
         if (compileVersion.isAfter(Vtag.currentVersion))
-            compileVersion = Vtag.currentVersion;
+            throw new IllegalStateException("parent version (" + Vtag.currentVersion.toFullString() + ") should be at least as " +
+                                            "high as the Vespa version to compile against (" + compileVersion.toFullString() + ")");
 
         getLog().info("Vespa version to compile against is '" + compileVersion.toFullString() + "'.");
         getLog().info("Writing compile version to '" + output + "'.");
