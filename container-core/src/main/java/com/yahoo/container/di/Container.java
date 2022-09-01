@@ -194,7 +194,7 @@ public class Container {
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
-        return osgi.useApplicationBundles(applicationBundlesConfig.bundles());
+        return osgi.useApplicationBundles(applicationBundlesConfig.bundles(), getComponentsGeneration());
     }
 
     private ComponentGraph createComponentGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,

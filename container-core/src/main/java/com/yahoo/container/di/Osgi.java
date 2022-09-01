@@ -28,10 +28,14 @@ public interface Osgi {
     }
 
     /**
-     * Returns the set of bundles that is not used by the current application generation,
+     * Returns the set of bundles that is not needed by the new application generation,
      * and therefore should be scheduled for uninstalling.
+     *
+     * @param bundles The bundles for the new application.
+     * @param generation The generation number of the new application.
+     * @return the set of bundles that is not needed by the new application generation,
      */
-    default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
+    default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles, long generation) {
         return emptySet();
     }
 

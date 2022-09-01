@@ -65,7 +65,7 @@ public class TestOsgi extends MockOsgi implements com.yahoo.container.di.Osgi {
     }
 
     @Override
-    public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
+    public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles, long generation) {
         return bundleLoader.useBundles(new ArrayList<>(bundles));
     }
 

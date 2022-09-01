@@ -128,7 +128,6 @@ public class ApplicationBundleLoaderTest {
         assertEquals(0, bundlesToUninstall.size());
         assertEquals(1, osgi.getCurrentBundles().size());
 
-        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertTrue(obsoleteBundles.isEmpty());
         assertEquals(1, osgi.getCurrentBundles().size());
