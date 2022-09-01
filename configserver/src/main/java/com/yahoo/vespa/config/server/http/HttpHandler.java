@@ -35,25 +35,20 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         log.log(Level.FINE, () -> request.getMethod() + " " + request.getUri().toString());
         try {
-            switch (request.getMethod()) {
-                case POST:
-                    return handlePOST(request);
-                case GET:
-                    return handleGET(request);
-                case PUT:
-                    return handlePUT(request);
-                case DELETE:
-                    return handleDELETE(request);
-                default:
-                    return createErrorResponse(request.getMethod());
-            }
+            return switch (request.getMethod()) {
+                case POST -> handlePOST(request);
+                case GET -> handleGET(request);
+                case PUT -> handlePUT(request);
+                case DELETE -> handleDELETE(request);
+                default -> createErrorResponse(request.getMethod());
+            };
         } catch (NotFoundException | com.yahoo.vespa.config.server.NotFoundException e) {
             return HttpErrorResponse.notFoundError(getMessage(e, request));
         } catch (ActivationConflictException e) {
             return HttpErrorResponse.conflictWhenActivating(getMessage(e, request));
         } catch (InvalidApplicationException e) {
             return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
         } catch (NodeAllocationException e) {
             return HttpErrorResponse.nodeAllocationFailure(getMessage(e, request));
