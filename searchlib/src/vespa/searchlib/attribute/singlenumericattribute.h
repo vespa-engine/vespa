@@ -44,7 +44,7 @@ public:
     explicit SingleValueNumericAttribute(const vespalib::string & baseFileName);  // Only for testing
     SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c);
 
-    ~SingleValueNumericAttribute() final;
+    ~SingleValueNumericAttribute() override;
 
     uint32_t getValueCount(DocId doc) const override {
         if (doc >= B::getNumDocs()) {
