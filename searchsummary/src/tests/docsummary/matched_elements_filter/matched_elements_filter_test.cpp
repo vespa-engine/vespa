@@ -3,11 +3,13 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue//document.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -67,6 +69,7 @@ private:
     StructDataType::UP _elem_type;
     ArrayDataType _array_type;
     MapDataType _map_type;
+    WeightedSetDataType _wset_type;
 
     StructFieldValue::UP make_elem_value(const std::string& name, int weight) const {
         auto result = std::make_unique<StructFieldValue>(*_elem_type);
@@ -81,11 +84,13 @@ public:
           _doc_type("test"),
           _elem_type(make_struct_elem_type()),
           _array_type(*_elem_type),
-          _map_type(*DataType::STRING, *_elem_type)
+          _map_type(*DataType::STRING, *_elem_type),
+          _wset_type(*DataType::STRING, false, false)
     {
         _doc_type.addField(Field("array", _array_type));
         _doc_type.addField(Field("map", _map_type));
         _doc_type.addField(Field("map2", _map_type));
+        _doc_type.addField(Field("wset", _wset_type));
 
         auto* result_class = _config.AddResultClass("test", class_id);
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
@@ -116,6 +121,13 @@ public:
             MapFieldValue map2_value(_map_type);
             map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
             doc->setValue("map2", map2_value);
+        }
+        {
+            WeightedSetFieldValue wset_value(_wset_type);
+            wset_value.add(StringFieldValue("a"), 13);
+            wset_value.add(StringFieldValue("b"), 15);
+            wset_value.add(StringFieldValue("c"), 17);
+            doc->setValue("wset", wset_value);
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
@@ -240,6 +252,16 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
                                       "{'key':'b','value':{'name':'b','weight':5}},"
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
     expect_filtered("map", {0, 1, 100}, "[]");
+}
+
+TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
+{
+    expect_filtered("wset", {}, "[]");
+    expect_filtered("wset", {0}, "[{'item':'a','weight':13}]");
+    expect_filtered("wset", {1}, "[{'item':'b','weight':15}]");
+    expect_filtered("wset", {2}, "[{'item':'c','weight':17}]");
+    expect_filtered("wset", {0, 1, 2}, "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
+    expect_filtered("wset", {0, 1, 100}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)
