@@ -62,7 +62,7 @@ public class DefaultEnvWriter {
             return false;
         } else {
             context.log(logger, "Updating " + defaultEnvFile.toString());
-            Path tempFile = Paths.get(defaultEnvFile.toString() + ".tmp");
+            Path tempFile = Paths.get(defaultEnvFile + ".tmp");
             uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
             uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
             return true;

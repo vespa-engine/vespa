@@ -57,7 +57,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
+            throw new OrchestratorException("Failed to suspend " + hostName + ": " + e);
         } catch (ConnectionException e) {
             throw ConvergenceException.ofTransient("Failed to suspend " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
@@ -70,7 +70,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private static ConfigServerApi.RetryPolicy<UpdateHostResponse> createRetryPolicyForSuspend() {
-        return new ConfigServerApi.RetryPolicy<UpdateHostResponse>() {
+        return new ConfigServerApi.RetryPolicy<>() {
             @Override
             public boolean tryNextConfigServer(URI configServerEndpoint, UpdateHostResponse response) {
                 HostStateChangeDenialReason reason = response.reason();
@@ -103,7 +103,7 @@ public class OrchestratorImpl implements Orchestrator {
                                        parentHostName, hostnames);
             batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class, params);
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
+            throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e);
         } catch (ConnectionException e) {
             throw ConvergenceException.ofTransient("Failed to batch suspend for " + parentHostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
@@ -124,7 +124,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to resume " + hostName + ": " + e.toString());
+            throw new OrchestratorException("Failed to resume " + hostName + ": " + e);
         } catch (ConnectionException e) {
             throw ConvergenceException.ofTransient("Failed to resume " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {

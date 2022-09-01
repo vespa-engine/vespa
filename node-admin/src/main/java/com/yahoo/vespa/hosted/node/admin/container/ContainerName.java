@@ -36,12 +36,10 @@ public class ContainerName implements Comparable<ContainerName> {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (!(o instanceof ContainerName)) {
+    public boolean equals(Object o) {
+        if (!(o instanceof ContainerName other)) {
             return false;
         }
-
-        final ContainerName other = (ContainerName) o;
 
         return Objects.equals(name, other.name);
     }

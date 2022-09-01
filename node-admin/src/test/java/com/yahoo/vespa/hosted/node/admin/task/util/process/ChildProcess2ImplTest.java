@@ -100,7 +100,7 @@ public class ChildProcess2ImplTest {
 
         when(processApi.waitFor(anyLong(), any())).thenReturn(true);
 
-        Files.write(temporaryFile, "1234567890123".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(temporaryFile, "1234567890123");
 
         try (ChildProcess2Impl child =
                 new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {
@@ -130,7 +130,7 @@ public class ChildProcess2ImplTest {
 
         when(processApi.waitFor(anyLong(), any())).thenReturn(false);
 
-        Files.write(temporaryFile, "1234567890123".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(temporaryFile, "1234567890123");
 
         try (ChildProcess2Impl child =
                 new ChildProcess2Impl(commandLine, processApi, temporaryFile, timer)) {

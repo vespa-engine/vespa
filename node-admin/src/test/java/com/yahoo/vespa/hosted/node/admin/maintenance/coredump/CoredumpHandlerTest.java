@@ -174,14 +174,14 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    void cant_get_metadata_if_no_core_file() throws IOException {
+    void cant_get_metadata_if_no_core_file() {
         assertThrows(IllegalStateException.class, () -> {
             coredumpHandler.getMetadata(context, context.paths().of("/fake/path"), Map::of);
         });
     }
 
     @Test
-    void fails_to_get_core_file_if_only_compressed() throws IOException {
+    void fails_to_get_core_file_if_only_compressed() {
         assertThrows(IllegalStateException.class, () -> {
             ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
             Files.createDirectories(coredumpDirectory);

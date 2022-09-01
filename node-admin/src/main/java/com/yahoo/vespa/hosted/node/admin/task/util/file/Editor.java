@@ -104,7 +104,7 @@ public class Editor {
             return false;
         }
 
-        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff.toString();
+        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff;
         logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;

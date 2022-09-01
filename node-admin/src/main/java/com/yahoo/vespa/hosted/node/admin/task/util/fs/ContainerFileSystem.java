@@ -68,7 +68,7 @@ public class ContainerFileSystem extends FileSystem {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         throw new UnsupportedOperationException();
     }
 

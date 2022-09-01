@@ -138,11 +138,10 @@ public class NodeAttributes {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (!(o instanceof NodeAttributes)) {
+    public boolean equals(Object o) {
+        if (!(o instanceof NodeAttributes other)) {
             return false;
         }
-        final NodeAttributes other = (NodeAttributes) o;
 
         return Objects.equals(hostId, other.hostId)
                 && Objects.equals(restartGeneration, other.restartGeneration)

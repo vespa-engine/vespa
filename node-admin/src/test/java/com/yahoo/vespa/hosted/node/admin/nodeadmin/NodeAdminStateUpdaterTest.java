@@ -58,7 +58,7 @@ public class NodeAdminStateUpdaterTest {
         mockNodeRepo(NodeState.active, 4);
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
                 .map(NodeSpec::hostname)
-                .collect(Collectors.toList());
+                .toList();
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(hostHostname.value());
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));

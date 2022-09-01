@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import java.util.logging.Level;
-
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public interface TaskContext {
