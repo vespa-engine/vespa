@@ -16,7 +16,7 @@ public:
     {
         vespalib::string  _prefix;
     public:
-        explicit IndexPrefix(const char *prefix);
+        explicit IndexPrefix(const char *prefix) noexcept;
         ~IndexPrefix();
         bool Match(const char *idxName) const;
         const vespalib::string& get_prefix() const noexcept { return _prefix; }
