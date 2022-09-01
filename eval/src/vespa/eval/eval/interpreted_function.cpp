@@ -58,7 +58,13 @@ InterpretedFunction::State::init(const LazyParams &params_in) {
 }
 
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
-    : _state(ifun._factory)
+  : _state(ifun._factory)
+{
+}
+
+InterpretedFunction::ProfiledContext::ProfiledContext(const InterpretedFunction &ifun)
+  : context(ifun),
+    cost(ifun.program_size(), std::make_pair(size_t(0), duration::zero()))
 {
 }
 
@@ -104,6 +110,24 @@ InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
     state.init(params);
     while (state.program_offset < _program.size()) {
         _program[state.program_offset++].perform(state);
+    }
+    assert(state.stack.size() == 1);
+    return state.stack.back();
+}
+
+const Value &
+InterpretedFunction::eval(ProfiledContext &pctx, const LazyParams &params) const
+{
+    auto &ctx = pctx.context;                            // Profiling
+    State &state = ctx._state;
+    state.init(params);
+    while (state.program_offset < _program.size()) {
+        auto pos = state.program_offset;                 // Profiling
+        auto before = steady_clock::now();               // Profiling
+        _program[state.program_offset++].perform(state);
+        auto after = steady_clock::now();                // Profiling
+        ++pctx.cost[pos].first;                          // Profiling
+        pctx.cost[pos].second += (after - before);       // Profiling
     }
     assert(state.stack.size() == 1);
     return state.stack.back();

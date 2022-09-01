@@ -7,6 +7,7 @@
 #include "node_types.h"
 #include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace vespalib::eval {
 
@@ -69,6 +70,11 @@ public:
         explicit Context(const InterpretedFunction &ifun);
         uint32_t if_cnt() const { return _state.if_cnt; }
     };
+    struct ProfiledContext {
+        Context context;
+        std::vector<std::pair<size_t,duration>> cost;
+        ProfiledContext(const InterpretedFunction &ifun);
+    };
     using op_function = void (*)(State &, uint64_t);
     class Instruction {
     private:
@@ -111,6 +117,7 @@ public:
     ~InterpretedFunction();
     size_t program_size() const { return _program.size(); }
     const Value &eval(Context &ctx, const LazyParams &params) const;
+    const Value &eval(ProfiledContext &ctx, const LazyParams &params) const;
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 
