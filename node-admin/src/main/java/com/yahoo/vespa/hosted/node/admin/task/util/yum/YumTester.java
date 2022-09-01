@@ -65,14 +65,12 @@ public class YumTester extends Yum {
         /** Mock the return value of the converge(TaskContext) method for this operation (true iff system was modified) */
         public YumTester andReturn(boolean value) {
             if (value) return execute("Success");
-            switch (commandType) {
-                case deleteVersionLock:
-                case installFixed:
-                case install: return execute("Nothing to do");
-                case upgrade: return execute("No packages marked for update");
-                case remove: return execute("No Packages marked for removal");
-                default: throw new IllegalArgumentException("Unknown command type: " + commandType);
-            }
+            return switch (commandType) {
+                case deleteVersionLock, installFixed, install -> execute("Nothing to do");
+                case upgrade -> execute("No packages marked for update");
+                case remove -> execute("No Packages marked for removal");
+                default -> throw new IllegalArgumentException("Unknown command type: " + commandType);
+            };
         }
 
         private YumTester execute(String output) {

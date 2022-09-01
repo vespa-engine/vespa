@@ -335,12 +335,8 @@ public class CommandLine {
         for (int i = 0; i < argument.length(); ++i) {
             char c = argument.charAt(i);
             switch (c) {
-                case '"':
-                case '\\':
-                    doubleQuoteEscaped.append("\\").append(c);
-                    break;
-                default:
-                    doubleQuoteEscaped.append(c);
+                case '"', '\\' -> doubleQuoteEscaped.append("\\").append(c);
+                default -> doubleQuoteEscaped.append(c);
             }
         }
 

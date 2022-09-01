@@ -207,59 +207,59 @@ public class RealNodeRepository implements NodeRepository {
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
         if (diskSpeed == null) return NodeResources.DiskSpeed.getDefault();
-        switch (diskSpeed) {
-            case "fast": return NodeResources.DiskSpeed.fast;
-            case "slow": return NodeResources.DiskSpeed.slow;
-            case "any": return NodeResources.DiskSpeed.any;
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
-        }
+        return switch (diskSpeed) {
+            case "fast" -> NodeResources.DiskSpeed.fast;
+            case "slow" -> NodeResources.DiskSpeed.slow;
+            case "any" -> NodeResources.DiskSpeed.any;
+            default -> throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
+        };
     }
 
     private static NodeResources.StorageType storageTypeFromString(String storageType) {
         if (storageType == null) return NodeResources.StorageType.getDefault();
-        switch (storageType) {
-            case "remote": return NodeResources.StorageType.remote;
-            case "local": return NodeResources.StorageType.local;
-            case "any": return NodeResources.StorageType.any;
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
-        }
+        return switch (storageType) {
+            case "remote" -> NodeResources.StorageType.remote;
+            case "local" -> NodeResources.StorageType.local;
+            case "any" -> NodeResources.StorageType.any;
+            default -> throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
+        };
     }
 
     private static NodeResources.Architecture architectureFromString(String architecture) {
         if (architecture == null) return NodeResources.Architecture.getDefault();
-        switch (architecture) {
-            case "arm64": return NodeResources.Architecture.arm64;
-            case "x86_64": return NodeResources.Architecture.x86_64;
-            case "any": return NodeResources.Architecture.any;
-            default: throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
-        }
+        return switch (architecture) {
+            case "arm64" -> NodeResources.Architecture.arm64;
+            case "x86_64" -> NodeResources.Architecture.x86_64;
+            case "any" -> NodeResources.Architecture.any;
+            default -> throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
+        };
     }
 
     private static String toString(NodeResources.DiskSpeed diskSpeed) {
-        switch (diskSpeed) {
-            case fast : return "fast";
-            case slow : return "slow";
-            case any  : return "any";
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
-        }
+        return switch (diskSpeed) {
+            case fast -> "fast";
+            case slow -> "slow";
+            case any -> "any";
+            default -> throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
+        };
     }
 
     private static String toString(NodeResources.StorageType storageType) {
-        switch (storageType) {
-            case remote : return "remote";
-            case local  : return "local";
-            case any    : return "any";
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
-        }
+        return switch (storageType) {
+            case remote -> "remote";
+            case local -> "local";
+            case any -> "any";
+            default -> throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
+        };
     }
 
     private static String toString(NodeResources.Architecture architecture) {
-        switch (architecture) {
-            case arm64 : return "arm64";
-            case x86_64 : return "x86_64";
-            case any    : return "any";
-            default: throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
-        }
+        return switch (architecture) {
+            case arm64 -> "arm64";
+            case x86_64 -> "x86_64";
+            case any -> "any";
+            default -> throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
+        };
     }
 
     private static NodeRepositoryNode nodeRepositoryNodeFromAddNode(AddNode addNode) {
