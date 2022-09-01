@@ -61,7 +61,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *resCfg = rci.outputClass->GetEntry(i);
             const DocsumFieldWriter *writer = _overrideTable[resCfg->_enumValue].get();
-            if (! writer->isDefaultValue(docid, state)) {
+            if (state->_args.needField(resCfg->_bindname) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->_bindname.data(), resCfg->_bindname.size());
                 ObjectInserter inserter(docsum, field_name);
                 writer->insertField(docid, nullptr, state, resCfg->_type, inserter);
@@ -77,6 +77,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
+            if ( ! state->_args.needField(outCfg->_bindname)) continue;
             const DocsumFieldWriter *writer = _overrideTable[outCfg->_enumValue].get();
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);

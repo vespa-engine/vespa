@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "getdocsumargs.h"
+#include <vespa/vespalib/stllike/hash_set_insert.hpp>
 
 namespace search::docsummary {
 
@@ -11,7 +12,8 @@ GetDocsumArgs::GetDocsumArgs()
       _stackDump(),
       _location(),
       _timeout(30s),
-      _highlightTerms()
+      _highlightTerms(),
+      _fields()
 { }
 
 
@@ -27,6 +29,7 @@ GetDocsumArgs::initFromDocsumRequest(const engine::DocsumRequest &req)
     _locations_possible = true;
     _timeout            = req.getTimeLeft();
     _highlightTerms     = req.propertiesMap.highlightTerms();
+    _fields             = FieldSet(req.getFields().begin(), req.getFields().end());
 }
 
 void
@@ -34,6 +37,11 @@ GetDocsumArgs::SetStackDump(uint32_t stackDumpLen, const char *stackDump)
 {
     _stackDump.resize(stackDumpLen);
     memcpy(&_stackDump[0], stackDump, _stackDump.size());
+}
+
+bool
+GetDocsumArgs::needField(vespalib::stringref field) const {
+    return _fields.empty() || _fields.contains(field);
 }
 
 }

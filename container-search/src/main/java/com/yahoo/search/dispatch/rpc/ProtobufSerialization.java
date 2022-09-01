@@ -33,6 +33,7 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
@@ -130,6 +131,7 @@ public class ProtobufSerialization {
     static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
                                                                            String serverId,
                                                                            String summaryClass,
+                                                                           Set<String> fields,
                                                                            boolean includeQueryData,
                                                                            double requestTimeout) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
@@ -138,6 +140,9 @@ public class ProtobufSerialization {
 
         if (summaryClass != null) {
             builder.setSummaryClass(summaryClass);
+        }
+        if (fields != null) {
+            builder.addAllFields(fields);
         }
 
         var documentDb = query.getModel().getDocumentDb();
