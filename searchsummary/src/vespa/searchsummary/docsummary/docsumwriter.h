@@ -27,11 +27,10 @@ class IDocsumWriter
 public:
     using Inserter = vespalib::slime::Inserter;
     struct ResolveClassInfo {
-        bool mustSkip;
         bool allGenerated;
         const ResultClass *outputClass;
         ResolveClassInfo()
-            : mustSkip(false), allGenerated(false),
+            : allGenerated(false),
               outputClass(nullptr)
         { }
     };

@@ -36,15 +36,14 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
     if (oC == nullptr) {
         Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
                       vespalib::string(summaryClass).c_str());
-        result.mustSkip = true;
     } else {
-        result.outputClass = oC;
         const ResultClass::DynamicInfo *rcInfo = oC->getDynamicInfo();
         if (rcInfo->_generateCnt == oC->GetNumEntries()) {
             LOG_ASSERT(rcInfo->_overrideCnt == rcInfo->_generateCnt);
             result.allGenerated = true;
         }
     }
+    result.outputClass = oC;
     return result;
 }
 
@@ -52,7 +51,7 @@ void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
                                   IDocsumStore *docinfos, Inserter& topInserter)
 {
-    if (rci.mustSkip || rci.outputClass == nullptr) {
+    if (rci.outputClass == nullptr) {
         // Use empty docsum when illegal docsum class has been requested
         return;
     }
