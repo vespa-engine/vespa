@@ -106,6 +106,28 @@ public class YqlFieldAndSourceTestCase {
     }
 
     @Test
+    final void testWithOnlyAttributeNoClassRequested() {
+        final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD2);
+        Result result = execution.search(query);
+        execution.fill(result, null);
+        assertEquals(1, result.getConcreteHitCount());
+        assertFalse(result.hits().get(0).isFilled(THIRD_OPTION));
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+    }
+
+    @Test
+    final void testWithOnlyDiskfieldNoClassRequested() {
+        final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD3);
+        Result result = execution.search(query);
+        execution.fill(result, null);
+        assertEquals(1, result.getConcreteHitCount());
+        assertFalse(result.hits().get(0).isFilled(THIRD_OPTION));
+        assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+    }
+
+    @Test
     final void testWithOnlyDiskfieldCorrectClassRequested() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD3);
         Result result = execution.search(query);

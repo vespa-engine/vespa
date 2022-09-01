@@ -60,24 +60,27 @@ public class FieldFiller extends Searcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
-        execution.fill(result, summaryClass);
-
         Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
-
-        if (summaryFields.isEmpty() || summaryClass == null ||
-            result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
+        if (summaryFields.isEmpty() || result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
+            // no special handling:
+            execution.fill(result, summaryClass);
             return;
         }
-
+        if (summaryClass != null) {
+            // always fill requested class:
+            execution.fill(result, summaryClass);
+            if (hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
+                // no more was needed:
+                return;
+            }
+        }
+        // we need more:
         if (intersectionOfAttributes.containsAll(summaryFields)) {
-            if (! SORTABLE_ATTRIBUTES_SUMMARY_CLASS.equals(summaryClass)) {
-                execution.fill(result, SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
-            }
+            // only attributes needed:
+            execution.fill(result, SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
         } else {
-            // Yes, summaryClass may be SORTABLE_ATTRIBUTES_SUMMARY_CLASS here
-            if ( ! hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
-                execution.fill(result, null);
-            }
+            // fetch all summary fields:
+            execution.fill(result, null);
         }
     }
 
