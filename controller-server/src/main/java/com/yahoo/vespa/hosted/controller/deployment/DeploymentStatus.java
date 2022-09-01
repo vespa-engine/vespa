@@ -169,8 +169,11 @@ public class DeploymentStatus {
         return allJobs.groupingBy(job -> job.id().application());
     }
 
-    /** Returns a change potentially with a compatible platform added, if required for the change to roll out to the given instance. */
+    /** Returns change potentially with a compatibility platform added, if required for the change to roll out to the given instance. */
     public Change withCompatibilityPlatform(Change change, InstanceName instance) {
+        if (change.revision().isEmpty())
+            return change;
+
         Optional<Version> compileVersion = change.revision()
                                                  .map(application.revisions()::get)
                                                  .flatMap(ApplicationVersion::compileVersion);
@@ -184,11 +187,9 @@ public class DeploymentStatus {
             return targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy())
                     .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
                     .filter(compatibleWithCompileVersion)
-                    .map(change::with)
-                    .filter(newChange -> instanceSteps().get(instance).readyAt(newChange)
-                                               .map(readyAt -> ! readyAt.isAfter(now))
-                                               .orElse(false))
-                    .findFirst().orElse(Change.empty());
+                    .findFirst()
+                    .map(platform -> change.withoutPin().with(platform))
+                    .orElse(change);
         }
         return change;
     }

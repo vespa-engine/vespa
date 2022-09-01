@@ -2207,6 +2207,22 @@ public class DeploymentTriggerTest {
                 .deploy();
         assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+
+        // The new app enters a platform block window, and is pinned to the old platform;
+        // the new submission overrides both those settings, as the new revision should roll out regardless.
+        tester.atMondayMorning();
+        tester.deploymentTrigger().forceChange(newApp.instanceId(), Change.empty().withPin());
+        newApp.submit(new ApplicationPackageBuilder().compileVersion(version2)
+                                                     .systemTest()
+                                                     .blockChange(false, true, "mon", "0-23", "UTC")
+                                                     .region("us-east-3")
+                                                     .build());
+        RevisionId newRevision = newApp.lastSubmission().get();
+
+        assertEquals(Change.of(newRevision).with(version2), newApp.instance().change());
+        newApp.deploy();
+        assertEquals(version2, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version2, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
     }
 
     @Test
