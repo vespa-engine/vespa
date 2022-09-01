@@ -27,6 +27,12 @@ public:
               _generateCnt(0)
         {
         }
+        void update_override_counts(bool generated) noexcept {
+            ++_overrideCnt;
+            if (generated) {
+                ++_generateCnt;
+            }
+        }
     };
 
 private:
@@ -40,7 +46,7 @@ private:
     NameIdMap                  _nameMap;     // fieldname -> entry index
     util::StringEnum          &_fieldEnum;   // fieldname -> f.n. enum value [SHARED]
     std::vector<int>           _enumMap;     // fieldname enum value -> entry index
-    DynamicInfo               *_dynInfo;     // fields overridden and generated
+    DynamicInfo                _dynInfo;     // fields overridden and generated
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
     bool                       _omit_summary_features;
@@ -62,22 +68,13 @@ public:
      **/
     ~ResultClass();
 
-
     /**
-     * Attach dynamic field data to this result class.
+     * Obtain reference to dynamic field data for this result class.
      *
-     * @param data pointer to dynamic field data.
+     * @return reference to dynamic field data.
      **/
-    void setDynamicInfo(DynamicInfo *data) { _dynInfo = data; }
-
-
-    /**
-     * Obtain pointer to dynamic field data attached to this result class.
-     *
-     * @return pointer to dynamic field data.
-     **/
-    DynamicInfo *getDynamicInfo() const { return _dynInfo; }
-
+    DynamicInfo& getDynamicInfo() noexcept { return _dynInfo; }
+    const DynamicInfo& getDynamicInfo() const noexcept { return _dynInfo; }
 
     /**
      * Obtain the number of config entries (size of the

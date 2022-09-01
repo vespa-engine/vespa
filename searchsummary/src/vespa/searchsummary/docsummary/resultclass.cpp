@@ -13,7 +13,7 @@ ResultClass::ResultClass(const char *name, util::StringEnum & fieldEnum)
       _nameMap(),
       _fieldEnum(fieldEnum),
       _enumMap(),
-      _dynInfo(nullptr),
+      _dynInfo(),
       _omit_summary_features(false)
 { }
 
