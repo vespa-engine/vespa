@@ -162,12 +162,4 @@ DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsStat
     }
 }
 
-
-void
-DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsumStore *docinfos, Inserter& inserter)
-{
-    ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName());
-    insertDocsum(rci, docid, state, docinfos, inserter);
-}
-
 }

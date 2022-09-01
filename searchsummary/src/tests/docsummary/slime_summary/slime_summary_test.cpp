@@ -54,7 +54,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     void getDocsum(Slime &slime) {
         Slime slimeOut;
         SlimeInserter inserter(slimeOut);
-        writer->WriteDocsum(1u, &state, this, inserter);
+        auto rci = writer->resolveClassInfo(state._args.getResultClassName());
+        writer->insertDocsum(rci, 1u, &state, this, inserter);
         vespalib::SmartBuffer buf(4_Ki);
         BinaryFormat::encode(slimeOut, buf);
         EXPECT_GREATER(BinaryFormat::decode(buf.obtain(), slime), 0u);
