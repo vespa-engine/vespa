@@ -54,6 +54,7 @@ import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -167,6 +168,45 @@ public class DeploymentStatus {
     public Map<ApplicationId, JobList> instanceJobs() {
         return allJobs.groupingBy(job -> job.id().application());
     }
+
+    /** Returns change potentially with a compatibility platform added, if required for the change to roll out to the given instance. */
+    public Change withCompatibilityPlatform(Change change, InstanceName instance) {
+        if (change.revision().isEmpty())
+            return change;
+
+        Optional<Version> compileVersion = change.revision()
+                                                 .map(application.revisions()::get)
+                                                 .flatMap(ApplicationVersion::compileVersion);
+
+        // If the revision requires a certain platform for compatibility, add that here.
+        VersionCompatibility compatibility = versionCompatibility.apply(instance);
+        Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
+        if (   application.productionDeployments().isEmpty() // TODO: replace with adding this for test jobs when needed
+            || application.productionDeployments().getOrDefault(instance, List.of()).stream()
+                     .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
+            return targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy())
+                    .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
+                    .filter(compatibleWithCompileVersion)
+                    .findFirst()
+                    .map(platform -> change.withoutPin().with(platform))
+                    .orElse(change);
+        }
+        return change;
+    }
+
+    /** Returns target versions for given confidence, by descending version number. */
+    public static List<Version> targetsForPolicy(VersionStatus versions, Version systemVersion, DeploymentSpec.UpgradePolicy policy) {
+        if (policy == DeploymentSpec.UpgradePolicy.canary)
+            return List.of(systemVersion);
+
+        VespaVersion.Confidence target = policy == DeploymentSpec.UpgradePolicy.defaultPolicy ? VespaVersion.Confidence.normal : VespaVersion.Confidence.high;
+        return versions.deployableVersions().stream()
+                       .filter(version -> version.confidence().equalOrHigherThan(target))
+                       .map(VespaVersion::versionNumber)
+                       .sorted(reverseOrder())
+                       .collect(Collectors.toList());
+    }
+
 
     /**
      * The set of jobs that need to run for the changes of each instance of the application to be considered complete,

@@ -91,53 +91,14 @@ public class DeploymentTrigger {
                                             && acceptNewRevision(status, instanceName, outstanding.revision().get());
                 application = application.with(instanceName,
                                                instance -> withRemainingChange(instance,
-                                                                               withCompatibilityPlatform((deployOutstanding ? outstanding
-                                                                                                                            : Change.empty())
-                                                                                                                 .onTopOf(instance.change()),
-                                                                                                         status,
+                                                                               status.withCompatibilityPlatform((deployOutstanding ? outstanding
+                                                                                                                                   : Change.empty())
+                                                                                                                        .onTopOf(instance.change()),
                                                                                                          instanceName),
                                                                                status));
             }
             applications().store(application);
         });
-    }
-
-    /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
-    private Change withCompatibilityPlatform(Change revisionChange, DeploymentStatus status, InstanceName instance) {
-        Optional<Version> compileVersion = revisionChange.revision()
-                                                         .map(status.application().revisions()::get)
-                                                         .flatMap(ApplicationVersion::compileVersion);
-
-        // If the outstanding revision requires a certain platform for compatibility, add that here.
-        VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
-        Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
-        if (   status.application().productionDeployments().isEmpty()
-            || status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
-                     .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
-            return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
-                    .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
-                    .filter(compatibleWithCompileVersion)
-                    .map(revisionChange::with)
-                    .filter(change -> status.instanceSteps().get(instance).readyAt(change)
-                                            .map(readyAt -> ! readyAt.isAfter(controller.clock().instant()))
-                                            .orElse(false))
-                    .findFirst().orElse(Change.empty());
-        }
-        return revisionChange;
-    }
-
-    /** Returns target versions for given confidence, by descending version number. */
-    public List<Version> targetsForPolicy(VersionStatus versions, DeploymentSpec.UpgradePolicy policy) {
-        Version systemVersion = controller.systemVersion(versions);
-        if (policy == DeploymentSpec.UpgradePolicy.canary)
-            return List.of(systemVersion);
-
-        VespaVersion.Confidence target = policy == DeploymentSpec.UpgradePolicy.defaultPolicy ? VespaVersion.Confidence.normal : VespaVersion.Confidence.high;
-        return versions.deployableVersions().stream()
-                       .filter(version -> version.confidence().equalOrHigherThan(target))
-                       .map(VespaVersion::versionNumber)
-                       .sorted(reverseOrder())
-                       .collect(Collectors.toList());
     }
 
     /**
@@ -159,7 +120,6 @@ public class DeploymentTrigger {
 
     /**
      * Finds and triggers jobs that can and should run but are currently not, and returns the number of triggered jobs.
-     *
      * Only one job per type is triggered each run for test jobs, since their environments have limited capacity.
      */
     public TriggerResult triggerReadyJobs() {

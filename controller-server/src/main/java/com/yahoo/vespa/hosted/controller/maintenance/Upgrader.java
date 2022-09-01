@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
@@ -105,7 +106,7 @@ public class Upgrader extends ControllerMaintainer {
                                                                                                    .not().upgradingTo(targetAndNewer);
 
         Map<ApplicationId, Version> targets = new LinkedHashMap<>();
-        for (Version version : controller().applications().deploymentTrigger().targetsForPolicy(versionStatus, policy)) {
+        for (Version version : DeploymentStatus.targetsForPolicy(versionStatus, controller().systemVersion(versionStatus), policy)) {
             targetAndNewer.add(version);
             InstanceList eligible = eligibleForVersion(remaining, version, targetMajorVersion);
             InstanceList outdated = cancellationCriterion.apply(eligible);
