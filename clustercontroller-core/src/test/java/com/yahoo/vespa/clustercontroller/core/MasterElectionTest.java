@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(FleetControllerTest.CleanupZookeeperLogsOnSuccess.class)
-@Timeout(20)
+@Timeout(120)
 public class MasterElectionTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
