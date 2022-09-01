@@ -1,19 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.config;
 
-import com.yahoo.config.FileReference;
-import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
-import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.osgi.Osgi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1;
+import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1_REF;
+import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_2;
+import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_2_REF;
+import static com.yahoo.container.core.config.BundleTestUtil.testBundles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,20 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ApplicationBundleLoaderTest {
 
-    private static final FileReference BUNDLE_1_REF = new FileReference("bundle-1");
-    private static final Bundle BUNDLE_1 = new TestBundle(BUNDLE_1_REF.value());
-    private static final FileReference BUNDLE_2_REF = new FileReference("bundle-2");
-    private static final Bundle BUNDLE_2 = new TestBundle(BUNDLE_2_REF.value());
-
     private ApplicationBundleLoader bundleLoader;
     private TestOsgi osgi;
 
     @BeforeEach
     public void setup() {
         osgi = new TestOsgi(testBundles());
-        var bundleInstaller = new TestBundleInstaller(MockFileAcquirer.returnFile(null));
-
-        bundleLoader = new ApplicationBundleLoader(osgi, bundleInstaller);
+        bundleLoader = osgi.bundleLoader();
     }
 
     @Test
@@ -120,24 +113,6 @@ public class ApplicationBundleLoaderTest {
         // Only the bundle-1 file reference is active, bundle-2 is removed.
         assertEquals(1, bundleLoader.getActiveFileReferences().size());
         assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
-    }
-
-    private static Map<String, Bundle> testBundles() {
-        return Map.of(BUNDLE_1_REF.value(), BUNDLE_1,
-                      BUNDLE_2_REF.value(), BUNDLE_2);
-    }
-
-    static class TestBundleInstaller extends FileAcquirerBundleInstaller {
-
-        TestBundleInstaller(FileAcquirer fileAcquirer) {
-            super(fileAcquirer);
-        }
-
-        @Override
-        public List<Bundle> installBundles(FileReference reference, Osgi osgi) {
-            return osgi.install(reference.value());
-        }
-
     }
 
 }
