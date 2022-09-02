@@ -494,6 +494,19 @@ TEST_F(DocsumRequestTest, require_that_geo_location_is_converted) {
     EXPECT_EQ(request.location, "x,y");
 }
 
+TEST_F(DocsumRequestTest, require_that_field_list_is_empty_by_default) {
+    convert();
+    EXPECT_TRUE(request.getFields().empty());
+}
+TEST_F(DocsumRequestTest, require_that_field_list_is_converted) {
+    proto.add_fields("f1");
+    proto.add_fields("f2");
+    convert();
+    EXPECT_EQ(2u, request.getFields().size());
+    EXPECT_EQ("f1", request.getFields()[0]);
+    EXPECT_EQ("f2", request.getFields()[1]);
+}
+
 TEST_F(DocsumRequestTest, require_that_query_tree_blob_is_converted) {
     proto.set_query_tree_blob("query-tree-blob");
     convert();
@@ -518,7 +531,7 @@ struct DocsumReplyTest : ProtoConverterTest {
     DocsumReply reply;
     Converter::ProtoDocsumReply proto;
     void convert() { Converter::docsum_reply_to_proto(reply, proto); }
-    DocsumReplyTest(std::unique_ptr<Slime> slime_in)
+    explicit DocsumReplyTest(std::unique_ptr<Slime> slime_in)
         : slime(*slime_in), reply(std::move(slime_in))
     {}
     DocsumReplyTest() : DocsumReplyTest(std::make_unique<Slime>()) {}
