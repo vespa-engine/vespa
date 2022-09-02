@@ -50,7 +50,6 @@ private:
     std::unique_ptr<ResultConfig>                         _resultConfig;
     std::unique_ptr<KeywordExtractor>                     _keywordExtractor;
     uint32_t                                              _numFieldWriterStates;
-    std::vector<ResultClass::DynamicInfo>                 _classInfoTable;
     std::vector<std::unique_ptr<const DocsumFieldWriter>> _overrideTable;
 
     ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;

@@ -37,9 +37,9 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
         Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
                       vespalib::string(summaryClass).c_str());
     } else {
-        const ResultClass::DynamicInfo *rcInfo = oC->getDynamicInfo();
-        if (rcInfo->_generateCnt == oC->GetNumEntries()) {
-            LOG_ASSERT(rcInfo->_overrideCnt == rcInfo->_generateCnt);
+        const ResultClass::DynamicInfo &rcInfo = oC->getDynamicInfo();
+        if (rcInfo._generateCnt == oC->GetNumEntries()) {
+            LOG_ASSERT(rcInfo._overrideCnt == rcInfo._generateCnt);
             result.allGenerated = true;
         }
     }
@@ -97,14 +97,8 @@ DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, s
     : _resultConfig(std::move(config)),
       _keywordExtractor(std::move(extractor)),
       _numFieldWriterStates(0),
-      _classInfoTable(_resultConfig->GetNumResultClasses()),
       _overrideTable(_resultConfig->GetFieldNameEnum().GetNumEntries())
 {
-    uint32_t i = 0;
-    for (auto & result_class : *_resultConfig) {
-        result_class.setDynamicInfo(&(_classInfoTable[i++]));
-    }
-    LOG_ASSERT(i == _resultConfig->GetNumResultClasses());
 }
 
 
@@ -131,12 +125,10 @@ DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumField
         ++_numFieldWriterStates;
     }
 
+    bool generated = writer_ptr->IsGenerated();
     for (auto & result_class : *_resultConfig) {
         if (result_class.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
-            ResultClass::DynamicInfo *info = result_class.getDynamicInfo();
-            info->_overrideCnt++;
-            if (writer_ptr->IsGenerated())
-                info->_generateCnt++;
+            result_class.getDynamicInfo().update_override_counts(generated);
         }
     }
 
