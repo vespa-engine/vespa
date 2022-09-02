@@ -23,13 +23,13 @@ public class ModelNode extends LeafNode<Path> {
 
     public ModelNode(ModelReference modelReference) {
         super(true);
-        this.value = modelReference.value();
+        this.value = modelReference.value(); // The resolved value, or null if not resolved
         this.reference = modelReference;
     }
 
     @Override
     public String getValue() {
-        return value.toString();
+        return reference.toString();
     }
 
     @Override
