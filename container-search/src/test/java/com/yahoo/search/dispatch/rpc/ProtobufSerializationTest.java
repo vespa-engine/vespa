@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,13 +61,13 @@ public class ProtobufSerializationTest {
     @Test
     void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", true, 0.5);
+        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5);
         builder.setTimeout(0);
         var hit = new FastHit();
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
 
-        assertEquals(46, bytes.length);
+        assertEquals(56, bytes.length);
     }
 
     private String contentsOf(ByteString property) {

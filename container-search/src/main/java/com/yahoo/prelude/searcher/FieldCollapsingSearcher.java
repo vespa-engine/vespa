@@ -14,7 +14,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -32,7 +31,7 @@ public class FieldCollapsingSearcher extends Searcher {
     private static final CompoundName collapseSummaryName = new CompoundName("collapse.summary");
 
     /** Maximum number of queries to send next searcher */
-    private final int maxQueries = 4;
+    private static final int maxQueries = 4;
 
     /**
      * The max number of hits that will be preserved per unique
@@ -49,16 +48,7 @@ public class FieldCollapsingSearcher extends Searcher {
 
     /** Create this searcher using default values for all settings */
     public FieldCollapsingSearcher() {
-        this((String) null);
-    }
-
-    /**
-     * Creates a collapser
-     *
-     * @param collapseField the default field to collapse on, or null to not collapse as default
-     */
-    public FieldCollapsingSearcher(String collapseField) {
-        this(1, 2.0, collapseField);
+        this(1, 2.0);
     }
 
     @Inject
@@ -78,9 +68,8 @@ public class FieldCollapsingSearcher extends Searcher {
      * @param extraFactor the percentage by which to scale up the
      *        requested number of hits, to allow some hits to be removed
      *        without refetching
-     * @param collapseField the field to collapse on. This is currently <b>ignored</b>.
      */
-    public FieldCollapsingSearcher(int collapseSize, double extraFactor, String collapseField) {
+    public FieldCollapsingSearcher(int collapseSize, double extraFactor) {
         init(collapseSize, extraFactor);
     }
 
@@ -158,14 +147,11 @@ public class FieldCollapsingSearcher extends Searcher {
      */
     private void collapse(Result result, Map<String, Integer> knownCollapses,
                           Result resultSource, String collapseField, int collapseSize) {
-        for (Iterator<Hit> it = resultSource.hits().iterator(); it.hasNext();) {
-            Hit unknownHit = it.next();
-
-            if (!(unknownHit instanceof FastHit)) {
+        for (Hit unknownHit : resultSource.hits()) {
+            if (!(unknownHit instanceof FastHit hit)) {
                 result.hits().add(unknownHit);
                 continue;
             }
-            FastHit hit = (FastHit) unknownHit;
             Object peek = hit.getField(collapseField);
             String collapseId = peek != null ? peek.toString() : null;
             if (collapseId == null) {

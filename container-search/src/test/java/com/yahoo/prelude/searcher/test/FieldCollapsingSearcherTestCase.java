@@ -2,7 +2,6 @@
 package com.yahoo.prelude.searcher.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.WordItem;
@@ -14,7 +13,6 @@ import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.GroupList;
 import com.yahoo.search.grouping.result.LongId;
 import com.yahoo.search.grouping.result.RootId;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
@@ -42,7 +40,7 @@ public class FieldCollapsingSearcherTestCase {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
 
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         ZeroHitsControl checker = new ZeroHitsControl();
         chained.put(collapse, checker);
 
@@ -58,7 +56,7 @@ public class FieldCollapsingSearcherTestCase {
     void testFieldCollapsingWithoutHitsHugeOffset() {
         Map<Searcher, Searcher> chained = new HashMap<>();
 
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         ZeroHitsControl checker = new ZeroHitsControl();
         chained.put(collapse, checker);
 
@@ -75,7 +73,7 @@ public class FieldCollapsingSearcherTestCase {
         Map<Searcher, Searcher> chained = new HashMap<>();
 
         // Set up
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
@@ -112,7 +110,7 @@ public class FieldCollapsingSearcherTestCase {
     void testFieldCollapsingTwoPhase() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
         // Caveat: Collapse is set to false, because that's what the
@@ -181,7 +179,7 @@ public class FieldCollapsingSearcherTestCase {
     void testCollapsingLargeCollection() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher(4, 2.0, "amid");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher(4, 2.0);
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
@@ -226,7 +224,7 @@ public class FieldCollapsingSearcherTestCase {
     void testCollapsingDispersedCollection() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher(1, 2.0, "amid");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher(1, 2.0);
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
@@ -260,7 +258,7 @@ public class FieldCollapsingSearcherTestCase {
     void testQueryTransformAndCollapsing() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         Searcher messUp = new QueryMessupSearcher();
 
@@ -298,7 +296,7 @@ public class FieldCollapsingSearcherTestCase {
     void testFieldCollapsingTwoPhaseSelectSummary() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
         // Caveat: Collapse is set to false, because that's what the
@@ -348,7 +346,7 @@ public class FieldCollapsingSearcherTestCase {
     @Test
     void testFieldCollapsingWithGrouping() {
         // Set up
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         Chain<Searcher> chain = new Chain<>(collapse, new AddAggregationStyleGroupingResultSearcher(), docsource);
 
@@ -434,7 +432,7 @@ public class FieldCollapsingSearcherTestCase {
             Group root = new Group(new RootId(0), new Relevance(1));
             GroupList groupList = new GroupList(label);
             root.add(groupList);
-            Group value = new Group(new LongId(37l), new Relevance(2.11));
+            Group value = new Group(new LongId(37L), new Relevance(2.11));
             groupList.add(value);
             return root;
         }

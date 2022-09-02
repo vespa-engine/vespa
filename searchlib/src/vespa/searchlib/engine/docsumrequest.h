@@ -15,25 +15,28 @@ public:
     using UP = std::unique_ptr<DocsumRequest>;
     using SP = std::shared_ptr<DocsumRequest>;
     using Source = LazySource<DocsumRequest>;
+    using FieldList = std::vector<vespalib::string>;
 
     class Hit {
     public:
         Hit() noexcept : gid(), docid(0) {}
-        Hit(const document::GlobalId & gid_) noexcept : gid(gid_), docid(0) {}
+        explicit Hit(const document::GlobalId & gid_) noexcept : gid(gid_), docid(0) {}
 
         document::GlobalId gid;
         mutable uint32_t  docid; // converted in backend
     };
 
-public:
     vespalib::string  resultClassName;
-public:
     std::vector<Hit>  hits;
     std::vector<char> sessionId;
 
     DocsumRequest();
-    DocsumRequest(RelativeTime relativeTime);
+    explicit DocsumRequest(RelativeTime relativeTime);
     ~DocsumRequest() override;
+    const FieldList & getFields() const { return _fields; }
+    void setFields(FieldList fields) { _fields = std::move(fields); }
+private:
+    FieldList _fields;
 };
 
 }
