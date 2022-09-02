@@ -66,9 +66,9 @@ public class Container extends PartialContainer {
 
     /** The network of a container */
     public record Network(String name, String ipv4Address) {
-        public Network(String name, String ipv4Address) {
-            this.name = Objects.requireNonNull(name);
-            this.ipv4Address = Objects.requireNonNull(ipv4Address);
+        public Network {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(ipv4Address);
         }
     }
 
