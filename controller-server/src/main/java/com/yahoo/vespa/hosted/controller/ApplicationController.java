@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
@@ -57,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValid
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -71,6 +74,7 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
@@ -99,7 +103,10 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.low;
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -304,56 +311,69 @@ public class ApplicationController {
     }
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
-    public Version oldestInstalledPlatform(TenantAndApplicationId id) {
-        return controller.jobController().deploymentStatus(requireApplication(id)).jobs()
-                         .production().asList().stream()
+    public Optional<Version> oldestInstalledPlatform(Application application) {
+        return controller.jobController().deploymentStatus(application).jobs()
+                         .production().asList()
+                         .stream()
                          .map(this::oldestInstalledPlatform)
                          .flatMap(Optional::stream)
-                         .min(naturalOrder())
-                         .orElse(controller.readSystemVersion());
+                         .min(naturalOrder());
     }
 
     /**
-     * Returns the preferred Vespa version to compile against, for the given application, on an optionally restricted major.
-     *
-     * A target major may be specified as an argument; or it may be set specifically for the application;
-     * or in general, for all applications; the first such specification wins.
-     *
+     * Returns the preferred Vespa version to compile against, for the given application, optionally restricted to a major.
+     * <p>
      * The returned version is not newer than the oldest deployed platform for the application, unless
      * the target major differs from the oldest deployed platform, in which case it is not newer than
      * the oldest available platform version on that major instead.
-     *
+     * <p>
      * The returned version is compatible with a platform version available in the system.
-     *
+     * <p>
      * A candidate is sought first among versions with non-broken confidence, then among those with forgotten confidence.
-     *
+     * <p>
      * The returned version is the latest in the relevant candidate set.
-     *
+     * <p>
      * If no such version exists, an {@link IllegalArgumentException} is thrown.
      */
     public Version compileVersion(TenantAndApplicationId id, OptionalInt wantedMajor) {
 
+        // todo jonmv: kill secondary overrides
+        //             allow non-existent apps
+        //             require confidence as usual
         // Read version status, and pick out target platforms we could run the compiled package on.
-        OptionalInt targetMajor = firstNonEmpty(wantedMajor, requireApplication(id).majorVersion(), targetMajorVersion());
+        Optional<Application> application = getApplication(id);
+        Optional<Version> oldestInstalledPlatform = application.flatMap(this::oldestInstalledPlatform);
         VersionStatus versionStatus = controller.readVersionStatus();
-        Version systemVersion = controller.systemVersion(versionStatus);
-        Version oldestInstalledPlatform = oldestInstalledPlatform(id);
+        UpgradePolicy policy = application.flatMap(app -> app.deploymentSpec().instances().stream()
+                                                             .map(DeploymentInstanceSpec::upgradePolicy)
+                                                             .max(naturalOrder()))
+                                          .orElse(UpgradePolicy.defaultPolicy);
+        Confidence targetConfidence = switch (policy) {
+            case canary -> broken;
+            case defaultPolicy -> normal;
+            case conservative -> high;
+        };
 
         // Target platforms are all versions not older than the oldest installed platform, unless forcing a major version change.
-        // Only major version specified in deployment spec is enough to force a downgrade, while all sources may force an upgrade.
-        Predicate<Version> isTargetPlatform =    targetMajor.isEmpty()
-                                              || targetMajor.getAsInt() == oldestInstalledPlatform.getMajor()
-                                              || wantedMajor.isEmpty() && targetMajor.getAsInt() <= oldestInstalledPlatform.getMajor()
-                                              ? version -> ! version.isBefore(oldestInstalledPlatform)
-                                              : version -> targetMajor.getAsInt() == version.getMajor();
-        Set<Version> platformVersions = versionStatus.versions().stream()
+        // Only platforms not older than the system version, and with appropriate confidence, are considered targets.
+        Predicate<Version> isTargetPlatform = wantedMajor.isEmpty() && oldestInstalledPlatform.isEmpty()
+                                            ? __ -> true
+                                            : wantedMajor.isEmpty() || wantedMajor.getAsInt() == oldestInstalledPlatform.get().getMajor()
+                                            ? version -> ! version.isBefore(oldestInstalledPlatform.get())
+                                            : version -> wantedMajor.getAsInt() == version.getMajor();
+        Set<Version> platformVersions = versionStatus.deployableVersions().stream()
+                                                     .filter(version -> version.confidence().equalOrHigherThan(targetConfidence))
                                                      .map(VespaVersion::versionNumber)
-                                                     .filter(version -> ! version.isAfter(systemVersion))
                                                      .filter(isTargetPlatform)
                                                      .collect(toSet());
+        oldestInstalledPlatform.ifPresent(fallback -> {
+            if (wantedMajor.isEmpty() || wantedMajor.getAsInt() == fallback.getMajor())
+                platformVersions.add(fallback);
+        });
+
         if (platformVersions.isEmpty())
             throw new IllegalArgumentException("this system has no available versions" +
-                                               (targetMajor.isPresent() ? " on specified major: " + targetMajor.getAsInt() : ""));
+                                               (wantedMajor.isPresent() ? " on specified major: " + wantedMajor.getAsInt() : ""));
 
         // The returned compile version must be compatible with at least one target platform.
         // If it is incompatible with any of the current platforms, the system will trigger a platform change.
@@ -361,10 +381,11 @@ public class ApplicationController {
         // and the oldest current platform, unless the two are incompatible, in which case only the target matters.
         VersionCompatibility compatibility = versionCompatibility(id.defaultInstance()); // Wrong id level >_<
         Version oldestTargetPlatform = platformVersions.stream().min(naturalOrder()).get();
-        Version newestVersion =    compatibility.accept(oldestInstalledPlatform, oldestTargetPlatform)
-                                && oldestInstalledPlatform.isBefore(oldestTargetPlatform)
-                                ? oldestInstalledPlatform
-                                : oldestTargetPlatform;
+        Version newestVersion =    oldestInstalledPlatform.isPresent()
+                                && compatibility.accept(oldestInstalledPlatform.get(), oldestTargetPlatform)
+                                && oldestInstalledPlatform.get().isBefore(oldestTargetPlatform)
+                              ? oldestInstalledPlatform.get()
+                              : oldestTargetPlatform;
         Predicate<Version> systemCompatible = version ->    ! version.isAfter(newestVersion)
                                                          &&   platformVersions.stream().anyMatch(platform -> compatibility.accept(platform, version));
 
@@ -386,7 +407,7 @@ public class ApplicationController {
         if (unknown.isPresent()) return unknown.get();
 
         throw new IllegalArgumentException("no suitable, released compile version exists" +
-                                           (targetMajor.isPresent() ? " for specified major: " + targetMajor.getAsInt() : ""));
+                                           (wantedMajor.isPresent() ? " for specified major: " + wantedMajor.getAsInt() : ""));
     }
 
     private OptionalInt firstNonEmpty(OptionalInt... choices) {

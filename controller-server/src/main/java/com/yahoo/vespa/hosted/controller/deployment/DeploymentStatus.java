@@ -185,7 +185,7 @@ public class DeploymentStatus {
             || application.productionDeployments().getOrDefault(instance, List.of()).stream()
                      .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
             return targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy())
-                    .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
+                    .stream() // Pick the latest platform with appropriate confidence, which is compatible with the compile version.
                     .filter(compatibleWithCompileVersion)
                     .findFirst()
                     .map(platform -> change.withoutPin().with(platform))

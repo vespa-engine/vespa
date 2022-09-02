@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1130,12 +1132,16 @@ public class ControllerTest {
         // No deployments result in system version
         Version version0 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version0);
+        tester.upgrader().overrideConfidence(version0, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
         context.submit(applicationPackage).deploy();
 
         // System is upgraded
         Version version1 = Version.fromString("7.2");
         tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().overrideConfidence(version1, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
 
         // Application is upgraded and compile version is bumped
@@ -1143,9 +1149,21 @@ public class ControllerTest {
         context.deployPlatform(version1);
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
 
+        DeploymentContext legacyApp = tester.newDeploymentContext("avoid", "gc", "default").submit().deploy();
+
         // A new major is released to the system
         Version version2 = Version.fromString("8.0");
         tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals("this system has no available versions on specified major: 8",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.applications().compileVersion(application, OptionalInt.of(8)))
+                             .getMessage());
+
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(8)));
 
@@ -1153,37 +1171,60 @@ public class ControllerTest {
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
 
-        // Default major version is set to 8.
-        tester.applications().setTargetMajorVersion(OptionalInt.of(8));
+        // The only version on major 8 has low confidence.
+        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
-        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals("this system has no available versions on specified major: 8",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.applications().compileVersion(application, OptionalInt.of(8)))
+                             .getMessage());
 
-        // Application sets target major to 7.
-        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(7)));
+        // Version on major 8 has normal confidence.
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
 
-        // Application sets target major to 8.
-        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(8)));
-        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
-        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
-
-        // Application upgrades to major 8; only major version from deployment spec should cause a downgrade.
+        // Application upgrades to major 8; major version from deployment spec should cause a downgrade.
         context.submit(new ApplicationPackageBuilder().region("us-west-1").compileVersion(version2).build()).deploy();
-        tester.applications().setTargetMajorVersion(OptionalInt.empty());
-        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(null)));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
 
-        // Default major version across all apps should not cause a downgrade.
-        tester.applications().setTargetMajorVersion(OptionalInt.of(7));
+        // Reduced confidence should not cause a downgrade.
+        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
 
-        // Default major version for specific app should not cause a downgrade.
-        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(7)));
+        // All versions on new major having broken confidence makes it all fail for upgraded apps, but this shouldn't happen in practice.
+        tester.upgrader().overrideConfidence(version2, Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals("no suitable, released compile version exists",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.applications().compileVersion(application, OptionalInt.empty()))
+                             .getMessage());
+        assertEquals("no suitable, released compile version exists for specified major: 8",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.applications().compileVersion(application, OptionalInt.of(8)))
+                             .getMessage());
+
+        // Major versions are not incompatible anymore, so the old compile version should work again.
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of(), String.class);
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // Simply reduced confidence shouldn't cause any changes.
+        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
     }
 
     @Test

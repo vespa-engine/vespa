@@ -52,7 +52,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances that aren't pinned to an earlier major version than the given one.
+     * Returns the subset of instances that have a deployment on the given major, or specify it in deployment spec.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
