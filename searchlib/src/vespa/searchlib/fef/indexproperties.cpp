@@ -173,6 +173,11 @@ namespace onsummary {
 
 namespace mutate {
 
+const vespalib::string AllowQueryOverride::NAME("vespa.mutate.allow_query_override");
+bool AllowQueryOverride::check(const Properties &props) {
+    return lookupBool(props, NAME, false);
+}
+
 namespace on_match {
 
     const vespalib::string Attribute::NAME("vespa.mutate.on_match.attribute");
