@@ -50,7 +50,6 @@ private:
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
     bool                       _omit_summary_features;
-    size_t                     _num_field_writer_states;
 
 public:
     typedef std::unique_ptr<ResultClass> UP;
@@ -96,11 +95,8 @@ public:
      * @return true(success)/false(fail)
      * @param name the name of the field to add.
      * @param type the type of the field to add.
-     * @param docsum_field_writer field writer for writing field
      **/
-    bool AddConfigEntry(const char *name, ResType type, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
     bool AddConfigEntry(const char *name, ResType type);
-
 
 
     /**
@@ -173,8 +169,6 @@ public:
     bool omit_summary_features() const {
         return _omit_summary_features;
     }
-
-    size_t get_num_field_writer_states() const noexcept { return _num_field_writer_states; }
 };
 
 }

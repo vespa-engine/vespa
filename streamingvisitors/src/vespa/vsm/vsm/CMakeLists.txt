@@ -9,6 +9,7 @@ vespa_add_library(vsm_vsmbase OBJECT
     slimefieldwriter.cpp
     snippetmodifier.cpp
     vsm-adapter.cpp
+    docsumconfig.cpp
     DEPENDS
     vsm_vconfig
 )

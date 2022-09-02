@@ -35,7 +35,6 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -77,19 +76,6 @@ using vespalib::Slime;
 using namespace vespalib::slime;
 
 namespace proton {
-
-class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
-{
-public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) override {
-        (void) fieldName;
-        (void) overrideName;
-        (void) argument;
-        (void) rc;
-        return {};
-    }
-
-};
 
 class DirMaker
 {
@@ -1135,8 +1121,7 @@ Fixture::Fixture()
     std::string cfgId("summary");
     _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
         cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
-    auto docsum_field_writer_factory = std::make_unique<MockDocsumFieldWriterFactory>();
-    _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str(), *docsum_field_writer_factory);
+    _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
 }
 
 Fixture::~Fixture() = default;

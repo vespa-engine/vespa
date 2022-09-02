@@ -8,7 +8,6 @@
 
 namespace search::docsummary {
 
-class IDocsumFieldWriterFactory;
 class ResultClass;
 
 /**
@@ -177,7 +176,7 @@ public:
      * @return true(success)/false(fail)
      * @param configId reference on server
      **/
-    bool ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory);
+    bool ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId);
 };
 
 }
