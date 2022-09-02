@@ -12,9 +12,9 @@ public record RegistryCredentials(String username, String password) {
 
     public static final RegistryCredentials none = new RegistryCredentials("", "");
 
-    public RegistryCredentials(String username, String password) {
-        this.username = Objects.requireNonNull(username);
-        this.password = Objects.requireNonNull(password);
+    public RegistryCredentials {
+        Objects.requireNonNull(username);
+        Objects.requireNonNull(password);
     }
 
     @Override
