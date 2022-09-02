@@ -218,11 +218,11 @@ public class MetricsReporterTest {
         assertFalse(context.instance().change().hasTargets(), "Change deployed");
 
         // New versions is released and upgrade fails in test environments
-        Version version = Version.fromString("7.1");
+        Version version = Version.fromString("6.2");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         context.failDeployment(systemTest)
-                .failDeployment(stagingTest);
+               .failDeployment(stagingTest);
         reporter.maintain();
         assertEquals(2, getDeploymentsFailingUpgrade(context.instanceId()));
 
@@ -529,7 +529,7 @@ public class MetricsReporterTest {
         context.submit(pkg).completeRollout();
 
         // System is upgraded, triggering upgrade of application
-        tester.controllerTester().upgradeSystem(Version.fromString("7.0"));
+        tester.controllerTester().upgradeSystem(Version.fromString("6.2"));
         tester.upgrader().maintain();
 
         // Start production job for upgrade, without completing it

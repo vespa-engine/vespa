@@ -238,16 +238,6 @@ public class ApplicationController {
         return curator.readApplications(false);
     }
 
-    /** Returns the target major version for applications not specifying one */
-    public OptionalInt targetMajorVersion() {
-        return curator.readTargetMajorVersion().map(OptionalInt::of).orElse(OptionalInt.empty());
-    }
-
-    /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
-    public void setTargetMajorVersion(OptionalInt targetMajorVersion) {
-        curator.writeTargetMajorVersion(targetMajorVersion);
-    }
-
     /**
      * Returns a snapshot of all readable applications. Unlike {@link ApplicationController#asList()} this ignores
      * applications that cannot currently be read (e.g. due to serialization issues) and may return an incomplete
@@ -337,9 +327,6 @@ public class ApplicationController {
      */
     public Version compileVersion(TenantAndApplicationId id, OptionalInt wantedMajor) {
 
-        // todo jonmv: kill secondary overrides
-        //             allow non-existent apps
-        //             require confidence as usual
         // Read version status, and pick out target platforms we could run the compiled package on.
         Optional<Application> application = getApplication(id);
         Optional<Version> oldestInstalledPlatform = application.flatMap(this::oldestInstalledPlatform);
@@ -378,11 +365,13 @@ public class ApplicationController {
         // The returned compile version must be compatible with at least one target platform.
         // If it is incompatible with any of the current platforms, the system will trigger a platform change.
         // The returned compile version should also be at least as old as both the oldest target platform version,
-        // and the oldest current platform, unless the two are incompatible, in which case only the target matters.
+        // and the oldest current platform, unless the two are incompatible, in which case only the target matters,
+        // or there are no installed platforms, in which case we prefer the newest target platform.
         VersionCompatibility compatibility = versionCompatibility(id.defaultInstance()); // Wrong id level >_<
         Version oldestTargetPlatform = platformVersions.stream().min(naturalOrder()).get();
-        Version newestVersion =    oldestInstalledPlatform.isPresent()
-                                && compatibility.accept(oldestInstalledPlatform.get(), oldestTargetPlatform)
+        Version newestVersion = oldestInstalledPlatform.isEmpty()
+                              ? platformVersions.stream().max(naturalOrder()).get()
+                              :    compatibility.accept(oldestInstalledPlatform.get(), oldestTargetPlatform)
                                 && oldestInstalledPlatform.get().isBefore(oldestTargetPlatform)
                               ? oldestInstalledPlatform.get()
                               : oldestTargetPlatform;
@@ -985,15 +974,6 @@ public class ApplicationController {
     private void verifyAthenzServiceCanBeLaunchedBy(AthenzIdentity configServerAthenzIdentity, AthenzService athenzService) {
         if ( ! ((AthenzFacade) accessControl).canLaunch(configServerAthenzIdentity, athenzService))
             throw new IllegalArgumentException("Not allowed to launch Athenz service " + athenzService.getFullName());
-    }
-
-    /** Returns the latest known version within the given major, which is not newer than the system version. */
-    public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
-        VersionStatus versions = controller.readVersionStatus();
-        return versions.deployableVersions().stream()
-                       .map(VespaVersion::versionNumber)
-                       .filter(version -> version.getMajor() == targetMajorVersion)
-                       .max(naturalOrder());
     }
 
     /** Extract deployment warnings metric from deployment result */

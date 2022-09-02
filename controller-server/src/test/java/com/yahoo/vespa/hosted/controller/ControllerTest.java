@@ -1150,6 +1150,7 @@ public class ControllerTest {
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
 
         DeploymentContext legacyApp = tester.newDeploymentContext("avoid", "gc", "default").submit().deploy();
+        TenantAndApplicationId newApp = TenantAndApplicationId.from("new", "app");
 
         // A new major is released to the system
         Version version2 = Version.fromString("8.0");
@@ -1166,10 +1167,14 @@ public class ControllerTest {
         tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(8)));
+        assertEquals(version2, tester.applications().compileVersion(newApp, OptionalInt.empty()));
 
         // The new major is marked as incompatible with older compile versions
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
+        assertEquals(version2, tester.applications().compileVersion(newApp, OptionalInt.empty()));
 
         // The only version on major 8 has low confidence.
         tester.upgrader().overrideConfidence(version2, Confidence.low);
@@ -1180,13 +1185,12 @@ public class ControllerTest {
                      assertThrows(IllegalArgumentException.class,
                                   () -> tester.applications().compileVersion(application, OptionalInt.of(8)))
                              .getMessage());
+        assertEquals(version1, tester.applications().compileVersion(newApp, OptionalInt.empty()));
+        assertEquals(version1, tester.applications().compileVersion(newApp, OptionalInt.empty()));
 
-        // Version on major 8 has normal confidence.
+        // Version on major 8 has normal confidence again
         tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
-        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
-        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
 
         // Application upgrades to major 8; major version from deployment spec should cause a downgrade.
         context.submit(new ApplicationPackageBuilder().region("us-west-1").compileVersion(version2).build()).deploy();

@@ -19,7 +19,6 @@ public class UpgraderResponse extends SlimeJsonResponse {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setDouble("upgradesPerMinute", upgrader.upgradesPerMinute());
-        upgrader.targetMajorVersion().ifPresent(v -> root.setLong("targetMajorVersion", v));
 
         Cursor array = root.setArray("confidenceOverrides");
         upgrader.confidenceOverrides().forEach((version, confidence) -> {

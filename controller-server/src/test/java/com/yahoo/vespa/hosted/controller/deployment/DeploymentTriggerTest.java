@@ -164,7 +164,7 @@ public class DeploymentTriggerTest {
 
         app.submit(applicationPackage).deploy();
 
-        Change upgrade = Change.of(new Version("7.8.9"));
+        Change upgrade = Change.of(new Version("6.8.9"));
         tester.controllerTester().upgradeSystem(upgrade.platform().get());
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest);
@@ -209,7 +209,7 @@ public class DeploymentTriggerTest {
         app.runJob(productionUsCentral1).runJob(productionUsWest1).runJob(productionUsEast3);
         assertEquals(Change.empty(), app.instance().change());
 
-        tester.controllerTester().upgradeSystem(new Version("8.9"));
+        tester.controllerTester().upgradeSystem(new Version("6.9"));
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest);
         tester.clock().advance(Duration.ofMinutes(1));
@@ -545,7 +545,7 @@ public class DeploymentTriggerTest {
                 .region("us-east-3")
                 .build();
         var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
-        tester.controllerTester().upgradeSystem(new Version("9.8.7"));
+        tester.controllerTester().upgradeSystem(new Version("6.8.7"));
         tester.upgrader().maintain();
 
         tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsWest1,
@@ -1118,9 +1118,8 @@ public class DeploymentTriggerTest {
         DeploymentContext alpha = tester.newDeploymentContext("t", "a", "alpha");
         DeploymentContext beta = tester.newDeploymentContext("t", "a", "beta");
         alpha.submit(applicationPackage).deploy();
-        Optional<RevisionId> revision1 = alpha.lastSubmission();
 
-        Version version1 = new Version("7.1");
+        Version version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().run();
         alpha.runJob(systemTest).runJob(stagingTest);
@@ -1204,7 +1203,7 @@ public class DeploymentTriggerTest {
 
         // Application starts upgrade, but is confidence is broken cancelled after first zone. Tests won't run.
         Version version0 = app.application().oldestDeployedPlatform().get();
-        Version version1 = Version.fromString("7.7");
+        Version version1 = Version.fromString("6.7");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
 
@@ -1385,7 +1384,7 @@ public class DeploymentTriggerTest {
         assertEquals(List.of(), tester.jobs().active());
 
         tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside revision block window for second, conservative instance.
-        Version version = Version.fromString("8.1");
+        Version version = Version.fromString("6.2");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         assertEquals(Change.of(version), app1.instance().change());
@@ -1495,7 +1494,7 @@ public class DeploymentTriggerTest {
 
         // Platform rolls through first production zone.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
+        var version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
@@ -1529,7 +1528,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app.instance().change());
 
         // New upgrade fails in staging-test, and revision to fix it is submitted.
-        var version2 = new Version("7.2");
+        var version2 = new Version("6.3");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().maintain();
         app.runJob(systemTest).failDeployment(stagingTest);
@@ -1561,7 +1560,7 @@ public class DeploymentTriggerTest {
 
         // Platform rolls through first production zone.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
+        var version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
@@ -1611,7 +1610,7 @@ public class DeploymentTriggerTest {
 
         // Platform rolls through first production zone.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
+        var version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
@@ -1837,8 +1836,8 @@ public class DeploymentTriggerTest {
 
         // A version releases, but when the first upgrade has gotten through alpha, beta, and gamma, a newer version has high confidence.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
-        var version2 = new Version("7.2");
+        var version1 = new Version("6.2");
+        var version2 = new Version("6.3");
         tester.controllerTester().upgradeSystem(version1);
 
         tester.upgrader().maintain();
@@ -1869,7 +1868,7 @@ public class DeploymentTriggerTest {
 
         // Platform rolls through first production zone.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
+        var version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
@@ -1914,7 +1913,7 @@ public class DeploymentTriggerTest {
 
         // Platform rolls through first production zone.
         var version0 = tester.controller().readSystemVersion();
-        var version1 = new Version("7.1");
+        var version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
@@ -1979,7 +1978,7 @@ public class DeploymentTriggerTest {
 
         // Manually deploy to east again, then upgrade the system.
         app.runJob(productionUsEast3, cdPackage);
-        var version = new Version("7.1");
+        var version = new Version("6.2");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         // System and staging tests both require unknown versions, and are broken.
@@ -2039,11 +2038,11 @@ public class DeploymentTriggerTest {
         conservative.runJob(productionEuWest1)
                 .runJob(testEuWest1);
 
-        tester.controllerTester().upgradeSystem(new Version("7.7.7"));
+        tester.controllerTester().upgradeSystem(new Version("6.7.7"));
         tester.upgrader().maintain();
 
         canary.runJob(systemTest)
-                .runJob(stagingTest);
+              .runJob(stagingTest);
         tester.upgrader().maintain();
         conservative.runJob(productionEuWest1)
                 .runJob(testEuWest1);
@@ -2055,7 +2054,7 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext().submit().deploy();
 
         // Start upgrade, then receive new submission.
-        Version version1 = new Version("7.8.9");
+        Version version1 = new Version("6.8.9");
         RevisionId build1 = app.lastSubmission().get();
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
@@ -2104,8 +2103,8 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
         var appToAvoidVersionGC = tester.newDeploymentContext("g", "c", "default").submit().deploy();
 
-        Version version2 = new Version("7.8.9");
-        Version version3 = new Version("8.9.10");
+        Version version2 = new Version("6.8.9");
+        Version version3 = new Version("6.9.10");
         tester.controllerTester().upgradeSystem(version2);
         tester.deploymentTrigger().forceChange(appToAvoidVersionGC.instanceId(), Change.of(version2));
         appToAvoidVersionGC.deployPlatform(version2);
@@ -2256,10 +2255,9 @@ public class DeploymentTriggerTest {
         ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
         DeploymentContext tests = tester.newDeploymentContext("tenant", "application", "tests");
         DeploymentContext main = tester.newDeploymentContext("tenant", "application", "main");
-        Version version1 = new Version("7");
+        Version version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         tests.submit(appPackage);
-        Optional<RevisionId> revision1 = tests.lastSubmission();
         JobId systemTestJob = new JobId(tests.instanceId(), systemTest);
         JobId stagingTestJob = new JobId(tests.instanceId(), stagingTest);
         JobId mainJob = new JobId(main.instanceId(), productionUsEast3);
@@ -2286,10 +2284,10 @@ public class DeploymentTriggerTest {
         assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
 
         // Versions 2 and 3 become available.
-        // Tests instance fails on 2, then update to 3.
+        // Tests instance fails on 2, then updates to 3.
         // Version 2 should not be a target for either instance.
         // Version 2 should also not be possible to set as a forced target for the tests instance.
-        Version version2 = new Version("8");
+        Version version2 = new Version("6.3");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().run();
         tester.triggerJobs();
@@ -2299,7 +2297,7 @@ public class DeploymentTriggerTest {
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
         assertEquals(2, tests.deploymentStatus().jobsToRun().get(systemTestJob).size());
 
-        Version version3 = new Version("9");
+        Version version3 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version3);
         tests.runJob(systemTest)            // Success in default cloud.
                 .failDeployment(systemTest);   // Failure in centauri cloud.

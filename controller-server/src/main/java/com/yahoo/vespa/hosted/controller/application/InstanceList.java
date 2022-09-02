@@ -52,15 +52,18 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances that have a deployment on the given major, or specify it in deployment spec.
+     * Returns the subset of instances whose application have a deployment on the given major, or specify it in deployment spec.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
-     * @param defaultMajorVersion the default major version to assume for applications not specifying one
      */
-    public InstanceList allowingMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
-        return matching(id -> targetMajorVersion <= application(id).deploymentSpec().majorVersion()
-                                                                   .orElse(application(id).majorVersion()
-                                                                                          .orElse(defaultMajorVersion)));
+    public InstanceList allowingMajorVersion(int targetMajorVersion) {
+        return matching(id -> {
+            Application application = application(id);
+            return application.deploymentSpec().majorVersion().map(allowed -> targetMajorVersion <= allowed)
+                              .orElseGet(() -> application.productionDeployments().values().stream()
+                                                          .flatMap(List::stream)
+                                                          .anyMatch(deployment -> targetMajorVersion <= deployment.version().getMajor()));
+        });
     }
 
     /** Returns the subset of instances that are allowed to upgrade to the given version at the given time */

@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -663,116 +664,49 @@ public class UpgraderTest {
         Version version = Version.fromString("6.2");
         tester.controllerTester().upgradeSystem(version);
 
-        ApplicationPackage version6ApplicationPackage = new ApplicationPackageBuilder().majorVersion(6)
-                .region("us-west-1")
-                .build();
+        ApplicationPackageBuilder builder = new ApplicationPackageBuilder().region("us-west-1").majorVersion(7);
+        ApplicationPackage defaultPackage = new ApplicationPackageBuilder().region("us-west-1").build();
 
         // Setup applications
-        var canary0 = createAndDeploy("canary0", "canary");
-        var default0 = tester.newDeploymentContext().submit(version6ApplicationPackage).deploy();
+        var canaryApp = tester.newDeploymentContext("canary", "app", "default").submit(builder.upgradePolicy("canary").build()).deploy();
+        var defaultApp = tester.newDeploymentContext("normal", "app", "default").submit(builder.upgradePolicy("default").build()).deploy();
+        var conservativeApp = tester.newDeploymentContext("conservative", "app", "default").submit(builder.upgradePolicy("conservative").build()).deploy();
+        var lazyApp = tester.newDeploymentContext().submit(defaultPackage).deploy();
 
-        // New major version is released
+        // New major version is released; more apps upgrade with increasing confidence.
         version = Version.fromString("7.0");
         tester.controllerTester().upgradeSystem(version);
-        tester.upgrader().maintain();
-        assertEquals(version, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
-        tester.triggerJobs();
-
-        // ... canary upgrade to it
-        assertEquals(2, tester.jobs().active().size());
-        canary0.deployPlatform(version);
-        assertEquals(0, tester.jobs().active().size());
+        tester.upgrader().overrideConfidence(version, Confidence.broken);
         tester.controllerTester().computeVersionStatus();
-
-        // The other application does not because it has pinned to major version 6
         tester.upgrader().maintain();
-        tester.triggerJobs();
-        assertEquals(0, tester.jobs().active().size());
-    }
+        assertEquals(Change.of(version), canaryApp.instance().change());
+        assertEquals(Change.empty(), defaultApp.instance().change());
+        assertEquals(Change.empty(), conservativeApp.instance().change());
+        assertEquals(Change.empty(), lazyApp.instance().change());
 
-    @Test
-    void testPinningMajorVersionInApplication() {
-        Version version = Version.fromString("6.2");
-        tester.controllerTester().upgradeSystem(version);
-
-        // Setup applications
-        var canary0 = createAndDeploy("canary", "canary");
-        var default0 = tester.newDeploymentContext().submit().deploy();
-        tester.applications().lockApplicationOrThrow(default0.application().id(),
-                a -> tester.applications().store(a.withMajorVersion(6)));
-        assertEquals(OptionalInt.of(6), default0.application().majorVersion());
-
-        // New major version is released
-        version = Version.fromString("7.0");
-        tester.controllerTester().upgradeSystem(version);
-        assertEquals(version, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
-        tester.upgrader().maintain();
-        tester.triggerJobs();
-
-        // ... canary upgrade to it
-        assertEquals(2, tester.jobs().active().size());
-        canary0.deployPlatform(version);
-        assertEquals(0, tester.jobs().active().size());
+        tester.upgrader().overrideConfidence(version, Confidence.low);
         tester.controllerTester().computeVersionStatus();
-
-        // The other application does not because it has pinned to major version 6
         tester.upgrader().maintain();
-        tester.triggerJobs();
-        assertEquals(0, tester.jobs().active().size());
-    }
+        assertEquals(Change.of(version), canaryApp.instance().change());
+        assertEquals(Change.empty(), defaultApp.instance().change());
+        assertEquals(Change.empty(), conservativeApp.instance().change());
+        assertEquals(Change.empty(), lazyApp.instance().change());
 
-    @Test
-    void testPinningMajorVersionInUpgrader() {
-        Version version = Version.fromString("6.2");
-        tester.controllerTester().upgradeSystem(version);
-
-        ApplicationPackage version7CanaryApplicationPackage = new ApplicationPackageBuilder()
-                .majorVersion(7)
-                .upgradePolicy("canary")
-                .region("us-west-1")
-                .build();
-        ApplicationPackage version7DefaultApplicationPackage = new ApplicationPackageBuilder()
-                .majorVersion(7)
-                .upgradePolicy("default")
-                .region("us-west-1")
-                .build();
-
-        // Setup applications
-        var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default").submit(version7CanaryApplicationPackage).deploy();
-        var default0 = tester.newDeploymentContext("tenant1", "default0", "default").submit(version7DefaultApplicationPackage).deploy();
-        var default1 = tester.newDeploymentContext("tenant1", "default1", "default").submit(DeploymentContext.applicationPackage()).deploy();
-
-        // New major version is released, but we don't want to upgrade to it yet
-        tester.upgrader().setTargetMajorVersion(OptionalInt.of(6));
-        version = Version.fromString("7.0");
-        tester.controllerTester().upgradeSystem(version);
-        assertEquals(version, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
-        tester.upgrader().maintain();
-        tester.triggerJobs();
-
-        // ... canary upgrade to it because it explicitly wants 7
-        assertEquals(2, tester.jobs().active().size());
-        canary0.deployPlatform(version);
-        assertEquals(0, tester.jobs().active().size());
+        tester.upgrader().overrideConfidence(version, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
-
-        // default0 upgrades, but not default1
         tester.upgrader().maintain();
-        tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
-        default0.deployPlatform(version);
+        assertEquals(Change.of(version), canaryApp.instance().change());
+        assertEquals(Change.of(version), defaultApp.instance().change());
+        assertEquals(Change.empty(), conservativeApp.instance().change());
+        assertEquals(Change.empty(), lazyApp.instance().change());
 
-        // Nothing more happens ...
+        tester.upgrader().overrideConfidence(version, Confidence.high);
+        tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
-        tester.triggerJobs();
-        assertEquals(0, tester.jobs().active().size());
-
-        // Now we want to upgrade the latest application
-        tester.upgrader().setTargetMajorVersion(OptionalInt.empty());
-        tester.upgrader().maintain();
-        tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
-        default1.deployPlatform(version);
+        assertEquals(Change.of(version), canaryApp.instance().change());
+        assertEquals(Change.of(version), defaultApp.instance().change());
+        assertEquals(Change.of(version), conservativeApp.instance().change());
+        assertEquals(Change.empty(), lazyApp.instance().change());
     }
 
     @Test
@@ -955,9 +889,6 @@ public class UpgraderTest {
         Version version0 = Version.fromString("6.1");
         tester.controllerTester().upgradeSystem(version0);
 
-        // Apps target 6 by default
-        tester.upgrader().setTargetMajorVersion(OptionalInt.of(6));
-
         // All applications deploy on current version
         var app1 = createAndDeploy("app1", "default");
         var app2 = createAndDeploy("app2", "default");
@@ -979,10 +910,10 @@ public class UpgraderTest {
         Version version2 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version2);
 
-        // App 2 is allowed on new major and upgrades
-        tester.controller().applications().lockApplicationIfPresent(app2.application().id(), app -> tester.applications().store(app.withMajorVersion(7)));
+        // App 2 has upgrade to new platform triggered
+        tester.deploymentTrigger().forceChange(app2.instanceId(), Change.of(version2));
         tester.upgrader().maintain();
-        assertEquals(version2, app2.instance().change().platform().orElseThrow());
+        assertEquals(Change.of(version2), app2.instance().change());
 
         // App 1 is unpinned and upgrades to latest 6
         tester.controller().applications().lockApplicationIfPresent(app1.application().id(), app ->
@@ -1004,7 +935,7 @@ public class UpgraderTest {
         app.failDeployment(systemTest);
 
         // New version is not targeted.
-        Version version1 = new Version("7");
+        Version version1 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version1);
         assertEquals(Change.of(revision1.get()), app.instance().change());
 
