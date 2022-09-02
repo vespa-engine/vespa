@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resultconfig.h"
-#include "docsum_field_writer.h"
-#include "docsum_field_writer_factory.h"
 #include "resultclass.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -101,7 +99,7 @@ bool ResultConfig::wantedV8geoPositions() {
 }
 
 bool
-ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
+ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId)
 {
     bool rc = true;
     Reset();
@@ -131,20 +129,10 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
         for (unsigned int j = 0; rc && (j < cfg_class.fields.size()); j++) {
             const char *fieldtype = cfg_class.fields[j].type.c_str();
             const char *fieldname = cfg_class.fields[j].name.c_str();
-            vespalib::string override_name = cfg_class.fields[j].command;
-            vespalib::string source_name = cfg_class.fields[j].source;
             auto res_type = ResTypeUtils::get_res_type(fieldtype);
             LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg_class.name.c_str(), fieldname, fieldtype);
             if (res_type != RES_BAD) {
-                std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
-                if (!override_name.empty()) {
-                    docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname, override_name, source_name, rc);
-                    if (!rc) {
-                        LOG(error, "%s override operation failed during initialization", override_name.c_str());
-                        break;
-                    }
-                }
-                rc = resClass->AddConfigEntry(fieldname, res_type, std::move(docsum_field_writer));
+                rc = resClass->AddConfigEntry(fieldname, res_type);
             } else {
                 LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg_class.name.c_str(), j, fieldtype);
                 rc = false;
