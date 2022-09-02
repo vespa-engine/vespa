@@ -11,6 +11,11 @@ public class TensorParserTestCase {
     @Test
     public void testEmpty() {
         assertEquals(Tensor.Builder.of(TensorType.empty).cell(1).build(), Tensor.from("tensor():{{}:1}"));
+        assertEquals(Tensor.Builder.of(TensorType.empty).cell(10).build(), Tensor.from("10.0"));
+        assertEquals(Tensor.Builder.of(TensorType.empty).cell(10).build(), Tensor.from(TensorType.empty, "10.0"));
+        // looks like a hex string, but should not be interpreted as such:
+        assertEquals(Tensor.Builder.of(TensorType.empty).cell(10).build(), Tensor.from("0000000000000010"));
+        assertEquals(Tensor.Builder.of(TensorType.empty).cell(10).build(), Tensor.from(TensorType.empty, "0000000000000010"));
     }
 
     @Test
@@ -81,6 +86,46 @@ public class TensorParserTestCase {
                                    .cell( 5.0, 2, 0, 0)
                                    .cell(-6.0, 2, 1, 0).build(),
                      Tensor.from("tensor( x[3],y[2],z[1]) : [1.0, 2.0, 3.0 , 4.0, 5, -6.0]"));
+
+        var int8TT = TensorType.fromSpec("tensor<int8>(x[2],y[3])");
+
+        assertEquals("binary tensor A",
+                     Tensor.Builder.of(int8TT)
+                     .cell(1, 0, 0)
+                     .cell(20, 0, 1)
+                     .cell(127, 0, 2)
+                     .cell(-1, 1, 0)
+                     .cell(50, 1, 1)
+                     .cell(-128, 1, 2).build(),
+                     Tensor.from(int8TT, "01147FFF3280"));
+
+        assertEquals("binary tensor B",
+                     Tensor.Builder.of(int8TT)
+                     .cell(26.0, 0, 0)
+                     .cell(0.0, 0, 1)
+                     .cell(31.0, 0, 2)
+                     .cell(-68.0, 1, 0)
+                     .cell(-98.0, 1, 1)
+                     .cell(-34.0, 1, 2).build(),
+                     Tensor.from(int8TT, "1a001fbc9ede"));
+
+        assertEquals("binary tensor C",
+                     Tensor.Builder.of(int8TT)
+                     .cell(16, 0, 0)
+                     .cell(32, 0, 1)
+                     .cell(48, 0, 2)
+                     .cell(-16, 1, 0)
+                     .cell(-32, 1, 1)
+                     .cell(-64, 1, 2).build(),
+                     Tensor.from(int8TT, "102030F0E0C0"));
+
+        var floatTT = TensorType.fromSpec("tensor<float>(x[3])");
+        assertEquals("float tensor hexdump",
+                     Tensor.Builder.of(floatTT)
+                     .cell(0, 0)
+                     .cell(1.25, 1)
+                     .cell(-19.125, 2).build(),
+                     Tensor.from(floatTT, "000000003FA00000c1990000"));
     }
 
     @Test

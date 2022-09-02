@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
+
 /**
  * @author bratseth
  */
@@ -59,6 +61,9 @@ class TensorParser {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
         }
         else {
+            var t = maybeFromBinaryValueString(valueString, type, dimensionOrder);
+            if (t.isPresent()) { return t.get(); }
+
             if (explicitType.isPresent() && ! explicitType.get().equals(TensorType.empty))
                 throw new IllegalArgumentException("Got a zero-dimensional tensor value ('" + tensorString +
                                                    "') where type " + explicitType.get() + " is required");
@@ -115,6 +120,42 @@ class TensorParser {
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
+        }
+    }
+
+    private static Optional<Tensor> maybeFromBinaryValueString(
+            String valueString,
+            Optional<TensorType> optType,
+            List<String> dimensionOrder)
+    {
+        if (optType.isEmpty() || dimensionOrder != null) {
+            return Optional.empty();
+        }
+        var type = optType.get();
+        long sz = 1;
+        for (var d : type.dimensions()) {
+                sz *= d.size().orElse(0L);
+        }
+        if (sz == 0
+            || type.dimensions().size() == 0
+            || valueString.length() < sz * 2
+            || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
+        {
+            return Optional.empty();
+        }
+        try {
+            double[] values = decodeHexString(valueString, type.valueType());
+            if (values.length != sz) {
+                return Optional.empty();
+            }
+            var builder = IndexedTensor.Builder.of(type);
+            var dib = (IndexedTensor.DirectIndexBuilder) builder;
+            for (int i = 0; i < sz; ++i) {
+                dib.cellByDirectIndex(i, values[i]);
+            }
+            return Optional.of(builder.build());
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 
