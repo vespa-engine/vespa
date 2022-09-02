@@ -32,7 +32,7 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
 
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
-        if (isHttpsRequest(request)
+        if (isRequest(request)
                 && !isRequestToWhitelistedBinding(request)
                 && !isClientAuthenticated(servletRequest)) {
             servletResponse.sendError(
@@ -55,8 +55,8 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
         return mapping;
     }
 
-    private boolean isHttpsRequest(Request request) {
-        return request.getDispatcherType() == DispatcherType.REQUEST && request.getScheme().equalsIgnoreCase("https");
+    private boolean isRequest(Request request) {
+        return request.getDispatcherType() == DispatcherType.REQUEST;
     }
 
     private boolean isRequestToWhitelistedBinding(Request jettyRequest) {
