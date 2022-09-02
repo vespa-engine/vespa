@@ -80,30 +80,6 @@ void ClusterControllerApiRpcService::register_server_methods(SharedRpcResources&
     rb.MethodDesc("Explicitly activates an already prepared cluster state version");
     rb.ParamDesc("activate_version", "Expected cluster state version to activate");
     rb.ReturnDesc("actual_version", "Cluster state version that was prepared on the node prior to receiving RPC");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("getcurrenttime", "", "lis", FRT_METHOD(ClusterControllerApiRpcService::RPC_getCurrentTime), this);
-    rb.RequestAccessFilter(make_cc_api_capability_filter());
-    rb.MethodDesc("Get current time on this node");
-    rb.ReturnDesc("seconds", "Current time in seconds since epoch");
-    rb.ReturnDesc("nanoseconds", "additional nanoseconds since epoch");
-    rb.ReturnDesc("hostname", "Host name");
-}
-
-// TODO remove? is this used by anyone?
-void ClusterControllerApiRpcService::RPC_getCurrentTime(FRT_RPCRequest* req) {
-    if (_closed) {
-        LOG(debug, "Not handling RPC call getCurrentTime() as we have closed");
-        req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
-        return;
-    }
-    //TODO Should we unify on std::chrono here too ?
-    struct timespec t;
-    clock_gettime(CLOCK_REALTIME, &t);
-    req->GetReturn()->AddInt64(t.tv_sec);
-    req->GetReturn()->AddInt32(t.tv_nsec);
-    vespalib::string hostname = vespalib::HostName::get();
-    req->GetReturn()->AddString(hostname.c_str());
-    // all handled, will return immediately
 }
 
 void ClusterControllerApiRpcService::detach_and_forward_to_enqueuer(

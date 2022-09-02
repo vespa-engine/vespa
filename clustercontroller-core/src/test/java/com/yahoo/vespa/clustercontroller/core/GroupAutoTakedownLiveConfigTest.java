@@ -3,11 +3,13 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.NodeType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
     private static FleetControllerOptions.Builder createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {

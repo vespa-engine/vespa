@@ -3,9 +3,11 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.State;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class WantedStateTest extends FleetControllerTest {
 
     @Test

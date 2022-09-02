@@ -13,6 +13,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class DatabaseTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(DatabaseTest.class.getName());

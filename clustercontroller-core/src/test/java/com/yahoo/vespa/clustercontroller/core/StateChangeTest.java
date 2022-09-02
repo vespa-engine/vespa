@@ -16,6 +16,7 @@ import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class StateChangeTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(StateChangeTest.class.getName());

@@ -13,6 +13,7 @@ import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourc
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private static final int NODE_COUNT = 3;
