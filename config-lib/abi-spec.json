@@ -347,9 +347,6 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
-      "public static com.yahoo.config.ModelReference fromModelId(java.lang.String)",
-      "public static com.yahoo.config.ModelReference fromUrl(java.lang.String)",
-      "public static com.yahoo.config.ModelReference fromPath(java.lang.String)",
       "public static com.yahoo.config.ModelReference valueOf(java.nio.file.Path)",
       "public static com.yahoo.config.ModelReference valueOf(java.lang.String)"
     ],

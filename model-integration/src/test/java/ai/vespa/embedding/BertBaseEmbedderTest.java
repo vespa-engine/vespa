@@ -23,8 +23,8 @@ public class BertBaseEmbedderTest {
         assumeTrue(OnnxEvaluator.isRuntimeAvailable(modelPath));
 
         BertBaseEmbedderConfig.Builder builder = new BertBaseEmbedderConfig.Builder();
-        builder.tokenizerVocab(ModelReference.fromPath(vocabPath));
-        builder.transformerModel(ModelReference.fromPath(modelPath));
+        builder.tokenizerVocab(ModelReference.valueOf(vocabPath));
+        builder.transformerModel(ModelReference.valueOf(modelPath));
         BertBaseEmbedder embedder = new BertBaseEmbedder(builder.build());
 
         TensorType destType = TensorType.fromSpec("tensor<float>(x[7])");

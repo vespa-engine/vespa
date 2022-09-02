@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
@@ -59,14 +58,7 @@ public class ModelReference {
 
     /** Returns the path to the file containing this model, or null if not available. */
     public Path value() {
-        if (resolved != null)
-            return resolved;
-
-        if (url.isPresent() && new File(url.get().value()).exists())
-            return Path.of(url.get().value());
-        if (path.isPresent())
-            return Path.of(path.get().value());
-        return null;
+        return resolved;
     }
 
     @Override
@@ -86,24 +78,10 @@ public class ModelReference {
     /** Returns this on the format accepted by valueOf */
     @Override
     public String toString() {
-        return modelId.orElse("") + " " +
-               url.map(v -> v.value()).orElse("") + " " +
-               path.map(v -> v.value()).orElse("");
-    }
-
-    /** Creates a model reference having a model id only. */
-    public static ModelReference fromModelId(String modelId) {
-        return new ModelReference(Optional.of(modelId), Optional.empty(), Optional.empty());
-    }
-
-    /** Creates a model reference having a url only. */
-    public static ModelReference fromUrl(String url) {
-        return new ModelReference(Optional.empty(), Optional.of(new UrlReference(url)), Optional.empty());
-    }
-
-    /** Creates a model reference having a path only. */
-    public static ModelReference fromPath(String path) {
-        return new ModelReference(Optional.empty(), Optional.empty(), Optional.of(new FileReference(path)));
+        if (resolved != null) return resolved.toString();
+        return modelId.orElse("\"\"") + " " +
+               url.map(v -> v.value()).orElse("\"\"") + " " +
+               path.map(v -> v.value()).orElse("\"\"");
     }
 
     /** Creates a model reference resolved to a Path to the local file. */
@@ -121,9 +99,9 @@ public class ModelReference {
         if (parts.length == 1)
             return new ModelReference(Path.of(s));
         else if (parts.length == 3)
-            return new ModelReference(parts[0].equals("") ? Optional.empty() : Optional.of(parts[0]),
-                                      parts[1].equals("") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
-                                      parts[2].equals("") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
+            return new ModelReference(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
+                                      parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
+                                      parts[2].equals("\"\"") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
         else
             throw new IllegalArgumentException("Unexpected model string '" + s + "'");
     }
