@@ -11,78 +11,28 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 /**
  * @author bratseth
  */
 public class ConfigPayloadApplierTest {
 
     @Test
-    public void testAllConfigApplierReferenceTypes() {
-        var configBuilder = new ResolvedTypesConfig.Builder();
-        var applier = new ConfigPayloadApplier<>(configBuilder, new MockAcquirer(), new MockDownloader());
-
-        var inputConfig = new ResolvedTypesConfig.Builder();
-        inputConfig.myPath(new FileReference("myPath.txt"));
-        inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(new ModelReference(Optional.empty(),
-                                               Optional.of(new UrlReference("myUrl.txt")),
-                                               Optional.of(new FileReference("myPath.txt"))));
-        applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
-        var config = configBuilder.build();
-
-        assertEndsWith("resolvedPath/myPath.txt", config.myPath().toString());
-        assertEndsWith("resolvedUrl/myUrl.txt", config.myUrl().toString());
-        assertEndsWith("resolvedUrl/myUrl.txt", config.myModel().toString());
-    }
-
-    @Test
-    public void testModelWithUrlOnly() {
-        var configBuilder = new ResolvedTypesConfig.Builder();
-        var applier = new ConfigPayloadApplier<>(configBuilder, new MockAcquirer(), new MockDownloader());
-
-        var inputConfig = new ResolvedTypesConfig.Builder();
-        inputConfig.myPath(new FileReference("myPath.txt"));
-        inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(ModelReference.valueOf("my-id myUrl.txt \"\""));
-        applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
-        var config = configBuilder.build();
-
-        assertEndsWith("resolvedUrl/myUrl.txt", config.myModel().toString());
-    }
-
-    @Test
-    public void testModelWithPathOnly() {
-        var configBuilder = new ResolvedTypesConfig.Builder();
-        var applier = new ConfigPayloadApplier<>(configBuilder, new MockAcquirer(), new MockDownloader());
-
-        var inputConfig = new ResolvedTypesConfig.Builder();
-        inputConfig.myPath(new FileReference("myPath.txt"));
-        inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(ModelReference.valueOf("my-id \"\" myPath.txt"));
-        applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
-        var config = configBuilder.build();
-
-        assertEndsWith("resolvedPath/myPath.txt", config.myModel().toString());
-    }
-
-    private void assertEndsWith(String ending, String string) {
-        String assertingThat = "'" + string + "' ends with '" + ending + "'";
-        try {
-            assertEquals(assertingThat, ending, string.substring(string.length() - ending.length()));
-        }
-        catch (StringIndexOutOfBoundsException e) {
-            fail(assertingThat);
-        }
+    public void testConfigApplier() {
+        var applier = new ConfigPayloadApplier<>(new ResolvedTypesConfig.Builder(), new MockAcquirer(), new MockDownloader());
+        var config = new ResolvedTypesConfig.Builder();
+        config.myPath(new FileReference("mock/myPath.txt"));
+        config.myUrl(new UrlReference("mock/myUrl.txt"));
+        config.myModel(new ModelReference(Optional.empty(),
+                                          Optional.of(new UrlReference("mockPath/myPath.txt")),
+                                          Optional.of(new FileReference("mockUrl/myUrl.txt"))));
+        applier.applyPayload(ConfigPayload.fromInstance(config.build()));
     }
 
     private static class MockAcquirer implements ConfigTransformer.PathAcquirer {
 
         @Override
         public Path getPath(FileReference fileReference) {
-            return Path.of("resolvedPath", fileReference.value());
+            return Path.of("mockPath", fileReference.value());
         }
 
     }
@@ -91,7 +41,7 @@ public class ConfigPayloadApplierTest {
 
         @Override
         public File waitFor(UrlReference urlReference, long timeout) {
-            return new File("resolvedUrl", urlReference.value());
+            return new File("mockUrl", urlReference.value());
         }
 
     }
