@@ -157,7 +157,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
     if (_stack_dump.has_value()) {
         ds._args.SetStackDump(_stack_dump.value().size(), _stack_dump.value().data());
     }
-    _docsumWriter->InitState(_attr_manager, &ds);
+    _docsumWriter->InitState(_attr_manager, ds, state->get_resolve_class_info());
     auto insres = _docsum_states.insert(std::make_pair(summary_class, std::move(state)));
     return *insres.first->second;
 }
