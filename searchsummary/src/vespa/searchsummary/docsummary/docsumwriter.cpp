@@ -60,7 +60,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *resCfg = rci.outputClass->GetEntry(i);
-            const DocsumFieldWriter *writer = _overrideTable[resCfg->_enumValue].get();
+            const DocsumFieldWriter *writer = resCfg->_docsum_field_writer.get();
             if (state->_args.needField(resCfg->_bindname) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->_bindname.data(), resCfg->_bindname.size());
                 ObjectInserter inserter(docsum, field_name);
@@ -78,7 +78,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
             if ( ! state->_args.needField(outCfg->_bindname)) continue;
-            const DocsumFieldWriter *writer = _overrideTable[outCfg->_enumValue].get();
+            const DocsumFieldWriter *writer = outCfg->_docsum_field_writer.get();
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
@@ -96,60 +96,31 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
 
 DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<KeywordExtractor> extractor)
     : _resultConfig(std::move(config)),
-      _keywordExtractor(std::move(extractor)),
-      _numFieldWriterStates(0),
-      _overrideTable(_resultConfig->GetFieldNameEnum().GetNumEntries())
+      _keywordExtractor(std::move(extractor))
 {
 }
 
 
 DynamicDocsumWriter::~DynamicDocsumWriter() = default;
 
-bool
-DynamicDocsumWriter::Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer)
-{
-    uint32_t fieldEnumValue = _resultConfig->GetFieldNameEnum().Lookup(fieldName);
-
-    if (fieldEnumValue >= _overrideTable.size() || _overrideTable[fieldEnumValue]) {
-        if (fieldEnumValue >= _overrideTable.size()) {
-            LOG(warning, "cannot override docsum field '%s'; undefined field name", fieldName);
-        } else if (_overrideTable[fieldEnumValue] != nullptr) {
-            LOG(warning, "cannot override docsum field '%s'; already overridden", fieldName);
-        }
-        return false;
-    }
-
-    writer->setIndex(fieldEnumValue);
-    auto writer_ptr = writer.get();
-    _overrideTable[fieldEnumValue] = std::move(writer);
-    if (writer_ptr->setFieldWriterStateIndex(_numFieldWriterStates)) {
-        ++_numFieldWriterStates;
-    }
-
-    bool generated = writer_ptr->IsGenerated();
-    for (auto & result_class : *_resultConfig) {
-        if (result_class.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
-            result_class.getDynamicInfo().update_override_counts(generated);
-        }
-    }
-
-    return true;
-}
-
-
 void
-DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState *state)
+DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci)
 {
-    state->_kwExtractor = _keywordExtractor.get();
-    state->_attrCtx = attrMan.createContext();
-    state->_attributes.resize(_overrideTable.size());
-    state->_fieldWriterStates.resize(_numFieldWriterStates);
-    for (size_t i(0); i < state->_attributes.size(); i++) {
-        const DocsumFieldWriter *fw = _overrideTable[i].get();
+    state._kwExtractor = _keywordExtractor.get();
+    state._attrCtx = attrMan.createContext();
+    auto result_class = rci.outputClass;
+    if (result_class == nullptr) {
+        return;
+    }
+    size_t num_entries = result_class->GetNumEntries();
+    state._attributes.resize(num_entries);
+    state._fieldWriterStates.resize(result_class->get_num_field_writer_states());
+    for (size_t i(0); i < num_entries; i++) {
+        const DocsumFieldWriter *fw = result_class->GetEntry(i)->_docsum_field_writer.get();
         if (fw) {
             const vespalib::string & attributeName = fw->getAttributeName();
             if (!attributeName.empty()) {
-                state->_attributes[i] = state->_attrCtx->getAttribute(attributeName);
+                state._attributes[i] = state._attrCtx->getAttribute(attributeName);
             }
         }
     }
