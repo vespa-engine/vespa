@@ -20,6 +20,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fnet/databuffer.h>
 
 #include <vespa/log/log.h>
@@ -125,6 +126,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
     : HitsAggregationResult::SummaryGenerator(),
       _callback(),
       _docsum_states(),
+      _summaryFields(),
       _docsumFilter(),
       _docsumWriter(nullptr),
       _buf(4_Ki),
@@ -138,8 +140,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
 SearchVisitor::SummaryGenerator::~SummaryGenerator() = default;
 
 SearchVisitor::StreamingDocsumsState&
-SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::string& summary_class)
-{
+SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::string& summary_class) {
     auto itr = _docsum_states.find(summary_class);
     if (itr != _docsum_states.end()) {
         return *itr->second;
@@ -148,6 +149,9 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
     auto state = std::make_unique<StreamingDocsumsState>(_callback, rci);
     auto &ds = state->get_state();
     ds._args.setResultClassName(summary_class);
+    for (const auto &field: _summaryFields) {
+        ds._args.add_field(field);
+    }
     if (_dump_features.has_value()) {
         ds._args.dumpFeatures(_dump_features.value());
     }
@@ -262,6 +266,13 @@ void SearchVisitor::init(const Parameters & params)
     if ( params.lookup("summaryclass", valueRef) ) {
         _summaryClass = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Received summary class: %s", _summaryClass.c_str());
+    }
+    if ( params.lookup("summary-fields", valueRef) ) {
+        vespalib::StringTokenizer fieldTokenizer(valueRef, " ");
+        for (const auto & field : fieldTokenizer) {
+            _summaryGenerator.add_summary_field(field);
+            LOG(debug, "Received field: %s", vespalib::string(field).c_str());
+        }
     }
 
     size_t wantedSummaryCount(10);

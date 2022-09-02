@@ -398,7 +398,7 @@ private:
     class SummaryGenerator : public HitsAggregationResult::SummaryGenerator
     {
     public:
-        SummaryGenerator(const search::IAttributeManager& attr_manager);
+        explicit SummaryGenerator(const search::IAttributeManager& attr_manager);
         ~SummaryGenerator() override;
         vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
@@ -408,10 +408,12 @@ private:
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
         void set_location(const vespalib::string& location) { _location = location; }
         void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
+        void add_summary_field(vespalib::stringref field) { _summaryFields.emplace_back(field); }
     private:
         StreamingDocsumsState& get_streaming_docsums_state(const vespalib::string& summary_class);
         vsm::GetDocsumsStateCallback            _callback;
         vespalib::hash_map<vespalib::string, std::unique_ptr<StreamingDocsumsState>> _docsum_states;
+        std::vector<vespalib::string>           _summaryFields;
         std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
         search::docsummary::IDocsumWriter     * _docsumWriter;
         vespalib::SmartBuffer                   _buf;

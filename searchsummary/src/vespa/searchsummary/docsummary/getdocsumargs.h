@@ -19,7 +19,7 @@ private:
     vespalib::string   _location;
     vespalib::duration _timeout;
     fef::Properties    _highlightTerms;
-    FieldSet          _fields;
+    FieldSet           _fields;
 public:
     GetDocsumArgs();
     GetDocsumArgs(const GetDocsumArgs &) = delete;
@@ -47,6 +47,7 @@ public:
 
     const fef::Properties &highlightTerms() const { return _highlightTerms; }
     bool needField(vespalib::stringref field) const;
+    void add_field(vespalib::stringref field);
 };
 
 }

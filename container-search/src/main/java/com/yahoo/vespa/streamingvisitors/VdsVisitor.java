@@ -13,7 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
 import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.io.GrowableByteBuffer;
-import java.util.logging.Level;
+
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -31,13 +31,14 @@ import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A visitor data handler that performs a query in VDS with the
@@ -156,6 +157,10 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             params.setLibraryParameter("summaryclass", query.getPresentation().getSummary());
         } else {
             params.setLibraryParameter("summaryclass", "default");
+        }
+        Set<String> summaryFields = query.getPresentation().getSummaryFields();
+        if (summaryFields != null && !summaryFields.isEmpty()) {
+            params.setLibraryParameter("summary-fields", String.join(" ", summaryFields));
         }
         params.setLibraryParameter("summarycount", String.valueOf(query.getOffset() + query.getHits()));
         params.setLibraryParameter("rankprofile", query.getRanking().getProfile());
@@ -411,8 +416,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         for (Grouping g : groupings) {
             g.postMerge();
         }
-        Grouping[] array = groupings.toArray(new Grouping[groupings.size()]);
-        return Arrays.asList(array);
+        return new ArrayList<>(groupings);
     }
 
 }
