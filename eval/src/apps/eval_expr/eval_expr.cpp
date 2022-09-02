@@ -16,6 +16,7 @@
 #include <vespa/eval/eval/compile_tensor_function.h>
 #include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 
 #include <histedit.h>
 
@@ -28,6 +29,8 @@ using vespalib::Slime;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::Inspector;
 using vespalib::slime::Cursor;
+
+using CostProfile = std::vector<std::pair<size_t,vespalib::duration>>;
 
 const auto &factory = FastValueBuilderFactory::get();
 
@@ -50,7 +53,7 @@ int usage(const char *self) {
     fprintf(stderr, "  using single letter symbols ('a' through 'z'). Quote expressions to\n");
     fprintf(stderr, "  make sure they become separate parameters. The --verbose option may\n");
     fprintf(stderr, "  be specified to get more detailed informaion about how the various\n");
-    fprintf(stderr, "  expressions are optimized.\n");
+    fprintf(stderr, "  expressions are optimized and executed.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "example: %s \"2+2\" \"a+2\" \"a+b\"\n", self);
     fprintf(stderr, "  (a=4, b=6, c=10)\n");
@@ -93,14 +96,16 @@ private:
     bool                          _verbose;
     vespalib::string              _error;
     CTFMetaData                   _meta;
+    CostProfile                   _cost;
 
     void clear_state() {
         _error.clear();
         _meta = CTFMetaData();
+        _cost.clear();
     }
 
 public:
-    Context() : _param_names(), _param_types(), _param_values(), _param_refs(), _verbose(), _meta() {}
+    Context() : _param_names(), _param_types(), _param_values(), _param_refs(), _verbose(), _meta(), _cost() {}
     ~Context();
 
     void verbose(bool value) { _verbose = value; }
@@ -130,15 +135,25 @@ public:
         vespalib::Stash stash;
         const TensorFunction &plain_fun = make_tensor_function(factory, fun->root(), types, stash);
         const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, stash);
-        InterpretedFunction ifun(factory, optimized, _verbose ? &_meta : nullptr);
-        InterpretedFunction::Context ctx(ifun);
-        auto result = factory.copy(ifun.eval(ctx, params));
+        Value::UP result;
+        if (_verbose) {
+            InterpretedFunction ifun(factory, optimized, &_meta);
+            REQUIRE_EQ(_meta.steps.size(), ifun.program_size());
+            InterpretedFunction::ProfiledContext ctx(ifun);
+            result = factory.copy(ifun.eval(ctx, params));
+            _cost = ctx.cost;
+        } else {
+            InterpretedFunction ifun(factory, optimized, nullptr);
+            InterpretedFunction::Context ctx(ifun);
+            result = factory.copy(ifun.eval(ctx, params));
+        }
         REQUIRE_EQ(result->type(), res_type);
         return result;
     }
 
     const vespalib::string &error() const { return _error; }
     const CTFMetaData &meta() const { return _meta; }
+    const CostProfile &cost() const { return _cost; }
 
     void save(const vespalib::string &name, Value::UP value) {
         REQUIRE(value);
@@ -175,7 +190,7 @@ void print_error(const vespalib::string &error) {
     fprintf(stderr, "error: %s\n", error.c_str());
 }
 
-void print_value(const Value &value, const vespalib::string &name, const CTFMetaData &meta) {
+void print_value(const Value &value, const vespalib::string &name, const CTFMetaData &meta, const CostProfile &cost) {
     bool with_name = !name.empty();
     bool with_meta = !meta.steps.empty();
     auto spec = spec_from_value(value);
@@ -185,9 +200,12 @@ void print_value(const Value &value, const vespalib::string &name, const CTFMeta
         } else {
             fprintf(stderr, "meta-data:\n");
         }
-        for (const auto &step: meta.steps) {
-            fprintf(stderr, "  class: %s\n", step.class_name.c_str());
-            fprintf(stderr, "    symbol: %s\n", step.symbol_name.c_str());
+        const auto &steps = meta.steps;
+        for (size_t i = 0; i < steps.size(); ++i) {
+            fprintf(stderr, "  class: %s\n", steps[i].class_name.c_str());
+            fprintf(stderr, "    symbol: %s\n", steps[i].symbol_name.c_str());
+            fprintf(stderr, "    count: %zu\n", cost[i].first);
+            fprintf(stderr, "    time_us: %g\n", vespalib::count_ns(cost[i].second)/1000.0);
         }
     }
     if (with_name) {
@@ -340,7 +358,7 @@ int interactive_mode(Context &ctx) {
             }
         }
         if (auto value = ctx.eval(expr)) {
-            print_value(*value, name, ctx.meta());
+            print_value(*value, name, ctx.meta(), ctx.cost());
             if (!name.empty()) {
                 ctx.save(name, std::move(value));
             }
@@ -398,12 +416,12 @@ int main(int argc, char **argv) {
     for (int i = expr_idx; i < argc; ++i) {
         if (auto value = ctx.eval(argv[i])) {
             if (expr_cnt > 1) {
-                print_value(*value, name, ctx.meta());
+                print_value(*value, name, ctx.meta(), ctx.cost());
                 ctx.save(name, std::move(value));
                 ++name[0];
             } else {
                 vespalib::string no_name;
-                print_value(*value, no_name, ctx.meta());
+                print_value(*value, no_name, ctx.meta(), ctx.cost());
             }
         } else {
             print_error(ctx.error());
