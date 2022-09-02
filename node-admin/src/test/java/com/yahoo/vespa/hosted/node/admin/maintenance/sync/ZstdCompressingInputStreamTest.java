@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ZstdCompressingInputStreamTest {
 
     @Test
-    void compression_test() throws Exception {
+    void compression_test() {
         Random rnd = new Random();
         byte[] data = new byte[(int) (100_000 * (10 + rnd.nextDouble()))];
         rnd.nextBytes(data);

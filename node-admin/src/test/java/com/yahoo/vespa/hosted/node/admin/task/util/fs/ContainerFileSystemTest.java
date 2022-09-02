@@ -60,7 +60,7 @@ class ContainerFileSystemTest {
 
         unixPath.setOwnerId(500).setGroupId(200);
         assertOwnership(containerPath, 500, 200, 10500, 11200);
-        Files.write(containerPath, " world".getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+        Files.writeString(containerPath, " world", StandardOpenOption.APPEND);
         assertOwnership(containerPath, 500, 200, 10500, 11200); // Owner should not have been updated as the file already existed
 
         assertEquals("hello world", unixPath.readUtf8File());

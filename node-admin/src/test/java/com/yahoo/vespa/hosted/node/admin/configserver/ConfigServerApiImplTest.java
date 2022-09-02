@@ -60,8 +60,8 @@ public class ConfigServerApiImplTest {
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
 
             switch (mockReturnCode) {
-                case FAIL_RETURN_CODE: throw new RuntimeException("FAIL");
-                case TIMEOUT_RETURN_CODE: throw new SocketTimeoutException("read timed out");
+                case FAIL_RETURN_CODE -> throw new RuntimeException("FAIL");
+                case TIMEOUT_RETURN_CODE -> throw new SocketTimeoutException("read timed out");
             }
 
             BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, mockReturnCode, null);

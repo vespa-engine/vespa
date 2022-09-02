@@ -67,24 +67,21 @@ class TemplateParser {
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
 
             switch (type) {
-                case "else":
+                case "else" -> {
                     if (!sentinels.contains(Sentinel.ELSE))
                         throw new BadTemplateException(startOfType, "Stray 'else'");
                     parseEndDirective();
                     return Optional.of(Sentinel.ELSE);
-                case "end":
+                }
+                case "end" -> {
                     if (!sentinels.contains(Sentinel.END))
                         throw new BadTemplateException(startOfType, "Stray 'end'");
                     parseEndDirective();
                     return Optional.of(Sentinel.END);
-                case "if":
-                    parseIfSection(sectionList);
-                    break;
-                case "list":
-                    parseListSection(sectionList);
-                    break;
-                default:
-                    throw new BadTemplateException(startOfType, "Unknown section '" + type + "'");
+                }
+                case "if" -> parseIfSection(sectionList);
+                case "list" -> parseListSection(sectionList);
+                default -> throw new BadTemplateException(startOfType, "Unknown section '" + type + "'");
             }
         }
 

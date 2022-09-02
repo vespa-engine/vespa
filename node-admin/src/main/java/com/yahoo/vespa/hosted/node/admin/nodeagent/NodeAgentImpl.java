@@ -547,7 +547,7 @@ public class NodeAgentImpl implements NodeAgent {
         StringBuilder builder = new StringBuilder();
         appendIfDifferent(builder, "state", lastNode, node, NodeSpec::state);
         if (builder.length() > 0) {
-            context.log(logger, Level.INFO, "Changes to node: " + builder.toString());
+            context.log(logger, Level.INFO, "Changes to node: " + builder);
         }
     }
 

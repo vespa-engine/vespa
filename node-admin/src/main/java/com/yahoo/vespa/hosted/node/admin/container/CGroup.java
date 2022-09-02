@@ -64,15 +64,11 @@ public interface CGroup {
 
         long parseValueV1(String value) {
             long longValue = Long.parseLong(value);
-            switch (this) {
-                case THROTTLED_TIME_USEC:
-                case TOTAL_USAGE_USEC:
-                    return longValue / 1000; // Value in ns
-                case USER_USAGE_USEC:
-                case SYSTEM_USAGE_USEC:
-                    return userHzToMicroSeconds(longValue);
-                default: return longValue;
-            }
+            return switch (this) {
+                case THROTTLED_TIME_USEC, TOTAL_USAGE_USEC -> longValue / 1000; // Value in ns
+                case USER_USAGE_USEC, SYSTEM_USAGE_USEC -> userHzToMicroSeconds(longValue);
+                default -> longValue;
+            };
         }
 
         long parseValueV2(String value) {

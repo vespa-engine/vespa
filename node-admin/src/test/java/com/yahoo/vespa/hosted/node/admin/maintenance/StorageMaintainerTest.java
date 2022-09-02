@@ -141,7 +141,7 @@ public class StorageMaintainerTest {
     }
 
     @Test
-    void not_run_if_not_enough_used() throws IOException {
+    void not_run_if_not_enough_used() {
         NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
@@ -152,7 +152,7 @@ public class StorageMaintainerTest {
     }
 
     @Test
-    void deletes_correct_amount() throws IOException {
+    void deletes_correct_amount() {
         NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();

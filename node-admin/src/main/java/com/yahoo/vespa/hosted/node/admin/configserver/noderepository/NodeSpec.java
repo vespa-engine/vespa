@@ -294,9 +294,7 @@ public class NodeSpec {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NodeSpec)) return false;
-
-        NodeSpec that = (NodeSpec) o;
+        if (!(o instanceof NodeSpec that)) return false;
 
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(id, that.id) &&

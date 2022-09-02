@@ -123,7 +123,7 @@ public class AclMaintainer {
         }
 
         private void writeUtf8Content(String content) throws IOException {
-            Files.write(path, content.getBytes(StandardCharsets.UTF_8));
+            Files.writeString(path, content);
         }
 
         private String absolutePath() {

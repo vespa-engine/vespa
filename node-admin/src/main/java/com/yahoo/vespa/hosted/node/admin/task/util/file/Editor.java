@@ -75,15 +75,12 @@ public class Editor {
             }
 
             switch (edit.getType()) {
-                case REPLACE:
+                case REPLACE -> {
                     modified = true;
                     maybeRemove(diff, line);
-                    break;
-                case NONE:
-                    newLines.add(line);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown EditType " + edit.getType());
+                }
+                case NONE -> newLines.add(line);
+                default -> throw new IllegalArgumentException("Unknown EditType " + edit.getType());
             }
 
             if (!edit.appendLines().isEmpty()) {
@@ -104,7 +101,7 @@ public class Editor {
             return false;
         }
 
-        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff.toString();
+        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff;
         logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;
