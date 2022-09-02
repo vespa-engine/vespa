@@ -22,6 +22,8 @@ private:
     FieldSet          _fields;
 public:
     GetDocsumArgs();
+    GetDocsumArgs(const GetDocsumArgs &) = delete;
+    GetDocsumArgs & operator=(const GetDocsumArgs &) = delete;
     ~GetDocsumArgs();
 
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
@@ -36,8 +38,8 @@ public:
     vespalib::duration getTimeout() const { return _timeout; }
 
     const vespalib::string & getResultClassName()      const { return _resultClassName; }
-    const vespalib::stringref getStackDump()           const {
-        return vespalib::stringref(&_stackDump[0], _stackDump.size());
+    vespalib::stringref getStackDump() const {
+        return {&_stackDump[0], _stackDump.size()};
     }
 
     void dumpFeatures(bool v) { _dumpFeatures = v; }

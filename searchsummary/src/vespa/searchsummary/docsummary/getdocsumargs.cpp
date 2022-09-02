@@ -16,7 +16,6 @@ GetDocsumArgs::GetDocsumArgs()
       _fields()
 { }
 
-
 GetDocsumArgs::~GetDocsumArgs() = default;
 
 void

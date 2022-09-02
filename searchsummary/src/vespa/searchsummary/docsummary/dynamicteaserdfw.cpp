@@ -42,11 +42,10 @@ struct QueryItem
     search::SimpleQueryStackDumpIterator *_si;
     const ExplicitItemData *_data;
     QueryItem() : _si(nullptr), _data(nullptr) {}
-    QueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
-    QueryItem(ExplicitItemData *data) : _si(nullptr), _data(data) {}
-private:
-    QueryItem(const QueryItem&);
-    QueryItem& operator= (const QueryItem&);
+    explicit QueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
+    explicit QueryItem(ExplicitItemData *data) : _si(nullptr), _data(data) {}
+    QueryItem(const QueryItem&) = delete;
+    QueryItem& operator= (const QueryItem&) = delete;
 };
 }
 
@@ -57,10 +56,11 @@ public:
     juniper::IQueryVisitor *_visitor;
     juniper::QueryItem _item;
 
-    TermVisitor(juniper::IQueryVisitor *visitor) :
-        _visitor(visitor), _item() {}
-
-    virtual void visitProperty(const Property::Value &key, const Property &values) override;
+    explicit TermVisitor(juniper::IQueryVisitor *visitor)
+        : _visitor(visitor),
+          _item()
+    {}
+    void visitProperty(const Property::Value &key, const Property &values) override;
 
 };
 
@@ -303,7 +303,7 @@ JuniperDFW::Init(
 {
     bool rc = true;
     _juniperConfig = _juniper->CreateConfig(fieldName);
-    if (_juniperConfig.get() == nullptr) {
+    if ( ! _juniperConfig) {
         LOG(warning, "could not create juniper config for field '%s'", fieldName);
         rc = false;
     }
@@ -365,9 +365,9 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
     }
 
     if (teaser != nullptr) {
-        return vespalib::string(teaser->Text(), teaser->Length());
+        return {teaser->Text(), teaser->Length()};
     } else {
-        return vespalib::string();
+        return {};
     }
 }
 
