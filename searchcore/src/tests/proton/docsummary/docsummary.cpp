@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
-#include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -81,13 +80,12 @@ namespace proton {
 class DirMaker
 {
 public:
-    DirMaker(const vespalib::string & dir) :
+    explicit DirMaker(const vespalib::string & dir) :
         _dir(dir)
     {
         std::filesystem::create_directory(std::filesystem::path(dir));
     }
-    ~DirMaker()
-    {
+    ~DirMaker() {
         std::filesystem::remove_all(std::filesystem::path(_dir));
     }
 private:
@@ -106,7 +104,7 @@ public:
     search::LogDocumentStore _str;
     uint64_t _serialNum;
 
-    BuildContext(const Schema &schema)
+    explicit BuildContext(const Schema &schema)
         : _dmk("summary"),
           _bld(schema),
           _repo(std::make_shared<DocumentTypeRepo>(_bld.getDocumentType())),
@@ -125,9 +123,7 @@ public:
     {
     }
 
-    ~BuildContext()
-    {
-    }
+    ~BuildContext();
 
     void
     endDocument(uint32_t docId)
@@ -136,6 +132,8 @@ public:
         _str.write(_serialNum++, docId, *doc);
     }
 };
+
+BuildContext::~BuildContext() = default;
 
 namespace {
 
@@ -193,7 +191,7 @@ public:
     AttributeWriter::UP _aw;
     ISummaryAdapter::SP _sa;
 
-    DBContext(const std::shared_ptr<const DocumentTypeRepo> &repo, const char *docTypeName)
+    DBContext(std::shared_ptr<const DocumentTypeRepo> repo, const char *docTypeName)
         : _dmk(docTypeName),
           _fileHeaderContext(),
           _summaryExecutor(8, 128_Ki),
@@ -205,7 +203,7 @@ public:
           _spec(TEST_PATH("")),
           _configMgr(_spec, getDocTypeName()),
           _documenttypesConfig(std::make_shared<DocumenttypesConfig>()),
-          _repo(repo),
+          _repo(std::move(repo)),
           _tuneFileDocumentDB(std::make_shared<TuneFileDocumentDB>()),
           _hwInfo(),
           _ddb(),
@@ -232,14 +230,7 @@ public:
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());
         _sa = _ddb->getReadySubDB()->getSummaryAdapter();
     }
-    ~DBContext()
-    {
-        _sa.reset();
-        _aw.reset();
-        _ddb.reset();
-        std::filesystem::remove_all(std::filesystem::path("tmp"));
-        std::filesystem::remove_all(std::filesystem::path("tmpdb"));
-    }
+    ~DBContext() override;
 
     void
     put(const document::Document &doc, const search::DocumentIdT lid)
@@ -284,6 +275,15 @@ public:
         }
     }
 };
+
+DBContext::~DBContext()
+{
+    _sa.reset();
+    _aw.reset();
+    _ddb.reset();
+    std::filesystem::remove_all(std::filesystem::path("tmp"));
+    std::filesystem::remove_all(std::filesystem::path("tmpdb"));
+}
 
 class Fixture
 {
@@ -495,9 +495,9 @@ TEST("requireThatDocsumRequestIsProcessed")
 
     DocsumRequest req;
     req.resultClassName = "class1";
-    req.hits.push_back(DocsumRequest::Hit(gid2));
-    req.hits.push_back(DocsumRequest::Hit(gid4));
-    req.hits.push_back(DocsumRequest::Hit(gid9));
+    req.hits.emplace_back(gid2);
+    req.hits.emplace_back(gid4);
+    req.hits.emplace_back(gid9);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{a:20}}, {docsum:{a:40}}, {} ]}", *rep));
 }
@@ -522,7 +522,7 @@ TEST("requireThatRewritersAreUsed")
 
     DocsumRequest req;
     req.resultClassName = "class2";
-    req.hits.push_back(DocsumRequest::Hit(gid1));
+    req.hits.emplace_back(gid1);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{aa:20}} ]}", *rep));
 }
@@ -549,7 +549,7 @@ TEST("requireThatSummariesTimeout")
     req.setTimeout(vespalib::duration::zero());
     EXPECT_TRUE(req.expired());
     req.resultClassName = "class2";
-    req.hits.push_back(DocsumRequest::Hit(gid1));
+    req.hits.emplace_back(gid1);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     const auto & root = rep->root();
     const auto & field = root["errors"];
@@ -659,8 +659,8 @@ TEST("requireThatAttributesAreUsed")
 
     DocsumRequest req;
     req.resultClassName = "class3";
-    req.hits.push_back(DocsumRequest::Hit(gid2));
-    req.hits.push_back(DocsumRequest::Hit(gid3));
+    req.hits.emplace_back(gid2);
+    req.hits.emplace_back(gid3);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
 
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{"
@@ -704,7 +704,7 @@ TEST("requireThatAttributesAreUsed")
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
-    req3.hits.push_back(DocsumRequest::Hit(gid3));
+    req3.hits.emplace_back(gid3);
     DocsumReply::UP rep3 = dc._ddb->getDocsums(req3);
     EXPECT_TRUE(assertSlime("{docsums:[{docsum:{bj:x01020178017901016101624010000000000000}}]}", *rep3));
 }
@@ -734,7 +734,7 @@ const std::string TERM_ORIG = "\357\277\271";
 const std::string TERM_INDEX = "\357\277\272";
 const std::string TERM_END = "\357\277\273";
 const std::string TERM_SEP = "\037";
-const std::string TERM_EMPTY = "";
+const std::string TERM_EMPTY;
 namespace
 {
 const std::string empty;
@@ -983,7 +983,7 @@ TEST("requireThatPositionsAreUsed")
 
     DocsumRequest req;
     req.resultClassName = "class5";
-    req.hits.push_back(DocsumRequest::Hit(gid1));
+    req.hits.emplace_back(gid1);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_TRUE(assertSlime("{docsums:["
                             "{docsum:{sp2:1047758"
