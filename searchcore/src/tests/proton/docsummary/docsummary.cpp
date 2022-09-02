@@ -570,6 +570,41 @@ addField(Schema & s,
     s.addAttributeField(Schema::AttributeField(name, dtype, ctype, tensor_spec));
 }
 
+void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string & json) {
+    Schema s;
+    addField(s, "ba", schema::DataType::INT32, CollectionType::SINGLE);
+    addField(s, "bb", schema::DataType::FLOAT, CollectionType::SINGLE);
+
+    BuildContext bc(s);
+    DBContext dc(bc._repo, getDocTypeName());
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
+                   startAttributeField("ba").
+                   addInt(10).
+                   endField().
+                   startAttributeField("bb").
+                   addFloat(10.1250).
+                   endField().
+                   endDocument(),
+           1);
+
+    DocsumRequest req;
+    req.resultClassName = "class6";
+    req.hits.emplace_back(gid1);
+    req.setFields(fields);
+    DocsumReply::UP rep = dc._ddb->getDocsums(req);
+    EXPECT_TRUE(assertSlime(json, *rep));
+}
+
+TEST("requireThatFieldListIsHonoured")
+{
+    verifyFieldListHonoured({}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
+    verifyFieldListHonoured({"ba","bb"}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
+    verifyFieldListHonoured({"ba"}, "{docsums:[ {docsum:{ba:10}} ]}");
+    verifyFieldListHonoured({"bb"}, "{docsums:[ {docsum:{bb:10.1250}} ]}");
+    verifyFieldListHonoured({"unknown"}, "{docsums:[ {docsum:{}} ]}");
+    verifyFieldListHonoured({"ba", "unknown"}, "{docsums:[ {docsum:{ba:10}} ]}");
+}
+
 TEST("requireThatAttributesAreUsed")
 {
     Schema s;
