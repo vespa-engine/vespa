@@ -84,21 +84,6 @@ public class ModelReference {
                path.map(v -> v.value()).orElse("\"\"");
     }
 
-    /** Creates a model reference having a model id only. */
-    public static ModelReference fromModelId(String modelId) {
-        return new ModelReference(Optional.of(modelId), Optional.empty(), Optional.empty());
-    }
-
-    /** Creates a model reference having a url only. */
-    public static ModelReference fromUrl(String url) {
-        return new ModelReference(Optional.empty(), Optional.of(new UrlReference(url)), Optional.empty());
-    }
-
-    /** Creates a model reference having a path only. */
-    public static ModelReference fromPath(String path) {
-        return new ModelReference(Optional.empty(), Optional.empty(), Optional.of(new FileReference(path)));
-    }
-
     /** Creates a model reference resolved to a Path to the local file. */
     public static ModelReference valueOf(Path path) {
         return new ModelReference(path);
