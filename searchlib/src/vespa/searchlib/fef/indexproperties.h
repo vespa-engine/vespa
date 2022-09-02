@@ -167,6 +167,14 @@ namespace execute::onsummary {
     };
 }
 
+namespace mutate {
+    //TODO Remove October 2022
+    struct AllowQueryOverride {
+        static const vespalib::string NAME;
+        static bool check(const Properties &props);
+    };
+}
+
 namespace mutate::on_match {
     struct Attribute {
         static const vespalib::string NAME;

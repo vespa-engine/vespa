@@ -71,7 +71,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _mutateOnMatch(),
       _mutateOnFirstPhase(),
       _mutateOnSecondPhase(),
-      _mutateOnSummary()
+      _mutateOnSummary(),
+      _mutateAllowQueryOverride(false)
 { }
 
 RankSetup::~RankSetup() = default;
@@ -129,6 +130,7 @@ RankSetup::configure()
     _mutateOnSecondPhase._operation = mutate::on_second_phase::Operation::lookup(_indexEnv.getProperties());
     _mutateOnSummary._attribute = mutate::on_summary::Attribute::lookup(_indexEnv.getProperties());
     _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
+    _mutateAllowQueryOverride = mutate::AllowQueryOverride::check(_indexEnv.getProperties());
 }
 
 void

@@ -49,22 +49,22 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
 DegradationParams
 extractDegradationParams(const RankSetup &rankSetup, const Properties &rankProperties)
 {
-    return DegradationParams(DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute()),
-                             DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
-                             !DegradationAscendingOrder::lookup(rankProperties, rankSetup.isDegradationOrderAscending()),
-                             DegradationMaxFilterCoverage::lookup(rankProperties, rankSetup.getDegradationMaxFilterCoverage()),
-                             DegradationSamplePercentage::lookup(rankProperties, rankSetup.getDegradationSamplePercentage()),
-                             DegradationPostFilterMultiplier::lookup(rankProperties, rankSetup.getDegradationPostFilterMultiplier()));
+    return { DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute()),
+             DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
+             !DegradationAscendingOrder::lookup(rankProperties, rankSetup.isDegradationOrderAscending()),
+             DegradationMaxFilterCoverage::lookup(rankProperties, rankSetup.getDegradationMaxFilterCoverage()),
+             DegradationSamplePercentage::lookup(rankProperties, rankSetup.getDegradationSamplePercentage()),
+             DegradationPostFilterMultiplier::lookup(rankProperties, rankSetup.getDegradationPostFilterMultiplier())};
 
 }
 
 DiversityParams
 extractDiversityParams(const RankSetup &rankSetup, const Properties &rankProperties)
 {
-    return DiversityParams(DiversityAttribute::lookup(rankProperties, rankSetup.getDiversityAttribute()),
-                           DiversityMinGroups::lookup(rankProperties, rankSetup.getDiversityMinGroups()),
-                           DiversityCutoffFactor::lookup(rankProperties, rankSetup.getDiversityCutoffFactor()),
-                           AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())));
+    return { DiversityAttribute::lookup(rankProperties, rankSetup.getDiversityAttribute()),
+             DiversityMinGroups::lookup(rankProperties, rankSetup.getDiversityMinGroups()),
+             DiversityCutoffFactor::lookup(rankProperties, rankSetup.getDiversityCutoffFactor()),
+             AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())) };
 }
 
 } // namespace proton::matching::<unnamed>
@@ -267,20 +267,32 @@ MatchToolsFactory::createOnFirstPhaseTask() const {
     const auto & op = _rankSetup.getMutateOnFirstPhase();
     // Note that combining onmatch in query with first-phase is not a bug.
     // It is intentional, as the semantics of onmatch in query are identical to on-first-phase.
-    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
-                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    if (_rankSetup.allowMutateQueryOverride()) {
+        return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                          execute::onmatch::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    } else {
+        return createTask(op._attribute, op._operation);
+    }
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSecondPhaseTask() const {
     const auto & op = _rankSetup.getMutateOnSecondPhase();
-    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
-                      execute::onrerank::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    if (_rankSetup.allowMutateQueryOverride()) {
+        return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                          execute::onrerank::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    } else {
+        return createTask(op._attribute, op._operation);
+    }
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSummaryTask() const {
     const auto & op = _rankSetup.getMutateOnSummary();
-    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
-                      execute::onsummary::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    if (_rankSetup.allowMutateQueryOverride()) {
+        return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                          execute::onsummary::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    } else {
+        return createTask(op._attribute, op._operation);
+    }
 }
 
 bool

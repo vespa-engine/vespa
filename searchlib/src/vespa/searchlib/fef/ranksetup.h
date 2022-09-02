@@ -82,6 +82,7 @@ private:
     MutateOperation          _mutateOnFirstPhase;
     MutateOperation          _mutateOnSecondPhase;
     MutateOperation          _mutateOnSummary;
+    bool                     _mutateAllowQueryOverride;
 
     void compileAndCheckForErrors(BlueprintResolver &bp);
 public:
@@ -467,6 +468,8 @@ public:
     const MutateOperation & getMutateOnFirstPhase() const { return _mutateOnFirstPhase; }
     const MutateOperation & getMutateOnSecondPhase() const { return _mutateOnSecondPhase; }
     const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
+
+    bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
 };
 
 }
