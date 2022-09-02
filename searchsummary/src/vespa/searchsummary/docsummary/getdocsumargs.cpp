@@ -43,4 +43,9 @@ GetDocsumArgs::needField(vespalib::stringref field) const {
     return _fields.empty() || _fields.contains(field);
 }
 
+void
+GetDocsumArgs::add_field(vespalib::stringref field) {
+    _fields.insert(field);
+}
+
 }
