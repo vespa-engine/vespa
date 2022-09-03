@@ -302,8 +302,10 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
     attributeAspectDelayer.setup(oldCfg.getAttributesConfig(), oldCfg.getSummarymapConfig(),
                                  n.getAttributesConfig(), n.getSummaryConfig(), n.getSummarymapConfig(),
                                  oldIndexschemaInspector, inspector);
-    bool delayedAttributeAspects = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
-                                   (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
+    bool attributes_config_changed = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig());
+    bool summarymap_config_changed = (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
+    bool summary_config_changed = (n.getSummaryConfig() != *attributeAspectDelayer.getSummaryConfig());
+    bool delayedAttributeAspects = (attributes_config_changed || summarymap_config_changed || summary_config_changed);
     if (!delayedAttributeAspects) {
         return newCfg;
     }
@@ -314,9 +316,9 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._rankingExpressions,
                    n._onnxModels,
                    n._indexschema,
-                   attributeAspectDelayer.getAttributesConfig(),
-                   n._summary,
-                   attributeAspectDelayer.getSummarymapConfig(),
+                   (attributes_config_changed ? attributeAspectDelayer.getAttributesConfig() : n._attributes),
+                   (summary_config_changed ? attributeAspectDelayer.getSummaryConfig() : n._summary),
+                   (summarymap_config_changed ? attributeAspectDelayer.getSummarymapConfig() : n._summarymap),
                    n._juniperrc,
                    n._documenttypes,
                    n._repo,
