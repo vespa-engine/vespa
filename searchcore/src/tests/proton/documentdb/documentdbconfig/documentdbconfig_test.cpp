@@ -103,6 +103,7 @@ public:
     }
     MyConfigBuilder &addSummary(bool hasField) {
         SummaryConfigBuilder builder;
+        builder.defaultsummaryid = 0;
         builder.classes.resize(1);
         builder.classes.back().id = 0;
         builder.classes.back().name = "default";
@@ -142,7 +143,7 @@ struct Fixture {
           replayCfg(),
           nullCfg()
     {
-        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(true).build();
+        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(false).build();
         fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().

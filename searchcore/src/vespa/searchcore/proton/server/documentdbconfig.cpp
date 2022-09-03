@@ -216,6 +216,25 @@ emptyConfig(std::shared_ptr<Config> config)
     return config;
 }
 
+template <>
+std::shared_ptr<SummaryConfig>
+emptyConfig(std::shared_ptr<SummaryConfig> config)
+{
+    auto  empty(std::make_shared<SummaryConfigBuilder>());
+    if (config) {
+        empty->usev8geopositions = config->usev8geopositions;
+    }
+    empty->defaultsummaryid = 0;
+    empty->classes.emplace_back();
+    auto& default_summary_class = empty->classes.back();
+    default_summary_class.id = 0;
+    default_summary_class.name = "default";
+    if (!config || *config != *empty) {
+        return empty;
+    }
+    return config;
+}
+
 }
 
 
@@ -232,7 +251,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 std::make_shared<OnnxModels>(),
                 o._indexschema,
                 o._attributes,
-                o._summary,
+                emptyConfig(o._summary),
                 std::make_shared<SummarymapConfig>(),
                 o._juniperrc,
                 o._documenttypes,
