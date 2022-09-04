@@ -9,6 +9,8 @@
 
 namespace proton::matching {
 
+class RangeQueryLocator;
+
 class LimitedSearch : public search::queryeval::SearchIterator {
 public:
     LimitedSearch(SearchIterator::UP first, SearchIterator::UP second) :
@@ -83,19 +85,21 @@ struct DiversityParams {
 };
 
 struct DegradationParams {
-    DegradationParams(const vespalib::string &attribute_, size_t max_hits_, bool descending_,
+    DegradationParams(const vespalib::string &attribute_, uint32_t field_id_, size_t max_hits_, bool descending_,
                       double max_filter_coverage_, double sample_percentage_, double post_filter_multiplier_)
         : attribute(attribute_),
-          max_hits(max_hits_),
+          field_id(field_id_),
           descending(descending_),
+          max_hits(max_hits_),
           max_filter_coverage(max_filter_coverage_),
           sample_percentage(sample_percentage_),
           post_filter_multiplier(post_filter_multiplier_)
     { }
     bool enabled() const { return !attribute.empty() && (max_hits > 0); }
     vespalib::string attribute;
-    size_t           max_hits;
+    uint32_t         field_id;
     bool             descending;
+    size_t           max_hits;
     double           max_filter_coverage;
     double           sample_percentage;
     double           post_filter_multiplier;
@@ -131,12 +135,15 @@ private:
     AttributeLimiter          _limiter_factory;
     Coverage                  _coverage;
 
+
 public:
     MatchPhaseLimiter(uint32_t docIdLimit,
+                      const RangeQueryLocator & rangeQueryLocator,
                       search::queryeval::Searchable &searchable_attributes,
                       search::queryeval::IRequestContext & requestContext,
                       const DegradationParams & degradation,
                       const DiversityParams & diversity);
+    ~MatchPhaseLimiter() override;
     bool is_enabled() const override { return true; }
     bool was_limited() const override { return _limiter_factory.was_used(); }
     size_t sample_hits_per_thread(size_t num_threads) const override {

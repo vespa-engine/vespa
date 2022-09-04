@@ -1,13 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/matching/match_phase_limiter.h>
+#include <vespa/searchcore/proton/matching/rangequerylocator.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -24,6 +30,8 @@ using search::queryeval::AndSearchStrict;
 using search::queryeval::termAsString;
 using search::queryeval::FakeRequestContext;
 using search::fef::TermFieldMatchDataArray;
+using search::attribute::BasicType;
+using search::attribute::Config;
 
 //-----------------------------------------------------------------------------
 
@@ -88,6 +96,16 @@ struct MockSearchable : Searchable {
         ++create_cnt;
         return std::make_unique<MockBlueprint>(field, termAsString(term));
     }
+};
+
+class MockRangeLocator : public RangeQueryLocator {
+public:
+    RangeLimitMetaInfo locate(uint32_t field_id) const override {
+        (void) field_id;
+        return {};
+    }
+
+public:
 };
 
 //-----------------------------------------------------------------------------
@@ -160,12 +178,14 @@ TEST("require that max group size is calculated correctly") {
 
 TEST("require that the attribute limiter works correctly") {
     FakeRequestContext requestContext;
+    MockRangeLocator rangeLocator;
     for (int i = 0; i <= 7; ++i) {
         bool descending = (i & 1) != 0;
         bool strict     = (i & 2) != 0;
         bool diverse    = (i & 4) != 0;
         MockSearchable searchable;
-        AttributeLimiter limiter(searchable, requestContext, "limiter_attribute", descending, "category", 10.0, AttributeLimiter::LOOSE);
+        AttributeLimiter limiter(rangeLocator, searchable, requestContext, "limiter_attribute", 0, descending,
+                                 "category", 10.0, AttributeLimiter::LOOSE);
         EXPECT_EQUAL(0u, searchable.create_cnt);
         EXPECT_FALSE(limiter.was_used());
         SearchIterator::UP s1 = limiter.create_search(42, diverse ? 3 : 42, strict);
@@ -215,8 +235,9 @@ TEST("require that no limiter has no behavior") {
 TEST("require that the match phase limiter may chose not to limit the query") {
     FakeRequestContext requestContext;
     MockSearchable searchable;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
-                                  DegradationParams("limiter_attribute", 1000, true, 1.0, 0.2, 1.0),
+    MockRangeLocator rangeLocator;
+    MatchPhaseLimiter yes_limiter(10000, rangeLocator, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 0, 1000, true, 1.0, 0.2, 1.0),
                                   DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
@@ -234,10 +255,11 @@ struct MaxFilterCoverageLimiterFixture {
 
     FakeRequestContext requestContext;
     MockSearchable searchable;
+    MockRangeLocator rangeLocator;
 
     MatchPhaseLimiter::UP getMaxFilterCoverageLimiter() {
-        auto yes_limiter = std::make_unique<MatchPhaseLimiter>(10000, searchable, requestContext,
-                                                               DegradationParams("limiter_attribute", 10000, true, 0.05, 1.0, 1.0),
+        auto yes_limiter = std::make_unique<MatchPhaseLimiter>(10000, rangeLocator, searchable, requestContext,
+                                                               DegradationParams("limiter_attribute", 0, 10000, true, 0.05, 1.0, 1.0),
                                                                DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
         MaybeMatchPhaseLimiter &limiter = *yes_limiter;
         EXPECT_TRUE(limiter.is_enabled());
@@ -286,8 +308,9 @@ void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
 TEST("require that the match phase limiter is able to pre-limit the query") {
     FakeRequestContext requestContext;
     MockSearchable searchable;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
-                                  DegradationParams("limiter_attribute", 500, true, 1.0, 0.2, 1.0),
+    MockRangeLocator rangeLocator;
+    MatchPhaseLimiter yes_limiter(10000, rangeLocator, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 0, 500, true, 1.0, 0.2, 1.0),
                                   DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
@@ -341,8 +364,9 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
 TEST("require that the match phase limiter is able to post-limit the query") {
     MockSearchable searchable;
     FakeRequestContext requestContext;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
-                                  DegradationParams("limiter_attribute", 1500, true, 1.0, 0.2, 1.0),
+    MockRangeLocator rangeLocator;
+    MatchPhaseLimiter yes_limiter(10000, rangeLocator, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 0, 1500, true, 1.0, 0.2, 1.0),
                                   DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
@@ -373,8 +397,9 @@ void verifyDiversity(AttributeLimiter::DiversityCutoffStrategy strategy)
 {
     MockSearchable searchable;
     FakeRequestContext requestContext;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
-                                  DegradationParams("limiter_attribute", 500, true, 1.0, 0.2, 1.0),
+    MockRangeLocator rangeLocator;
+    MatchPhaseLimiter yes_limiter(10000, rangeLocator, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 0, 500, true, 1.0, 0.2, 1.0),
                                   DiversityParams("category", 10, 13.1, strategy));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
@@ -399,6 +424,48 @@ TEST("require that the match phase limiter can use loose diversity") {
 
 TEST("require that the match phase limiter can use strict diversity") {
     verifyDiversity(AttributeLimiter::STRICT);
+}
+
+struct RangeLimitFixture {
+    RangeLimitFixture()
+        : attrSearchable(),
+          attrManager(),
+          attributeContext(attrManager.createContext()),
+          requestContext(attributeContext.get()),
+          a1FieldSpec("a1", 1, 1)
+    {
+        attrManager.addAttribute(search::AttributeFactory::createAttribute(a1FieldSpec.getName(), Config(BasicType("int64"))));
+    }
+    search::AttributeBlueprintFactory attrSearchable;
+    search::attribute::test::MockAttributeManager attrManager;
+    search::attribute::IAttributeContext::UP attributeContext;
+    FakeRequestContext requestContext;
+    FieldSpec a1FieldSpec;
+};
+
+TEST_F("require that RangeLocator locates range from attribute blueprint", RangeLimitFixture) {
+    search::query::SimpleNumberTerm term("[7;100]", "a1", 0, search::query::Weight(1));
+    Blueprint::UP bp = f.attrSearchable.createBlueprint(f.requestContext, f.a1FieldSpec, term);
+    LocateRangeItemFromQuery locator(*bp);
+    EXPECT_FALSE(locator.locate(0).valid());
+    EXPECT_TRUE(locator.locate(1).valid());
+    RangeLimitMetaInfo rangeInfo = locator.locate(1);
+    EXPECT_EQUAL("7", rangeInfo.low());
+    EXPECT_EQUAL("100", rangeInfo.high());
+
+    MockSearchable mockSearchable;
+    MatchPhaseLimiter yes_limiter(10000, locator, mockSearchable, f.requestContext,
+                                  DegradationParams("a1", f.a1FieldSpec.getFieldId(), 500, true, 1.0, 0.2, 1.0),
+                                  DiversityParams());
+    MaybeMatchPhaseLimiter &limiter = yes_limiter;
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
+    limiter.updateDocIdSpaceEstimate(1000, 9000);
+    EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
+    auto *strict_and = dynamic_cast<LimitedSearch*>(search.get());
+    ASSERT_TRUE(strict_and != nullptr);
+    const auto *ms1 = dynamic_cast<const MockSearch*>(&strict_and->getFirst());
+    ASSERT_TRUE(ms1 != nullptr);
+    EXPECT_EQUAL("[7;100;-5000]", ms1->term);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

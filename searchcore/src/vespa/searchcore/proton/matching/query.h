@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "rangequerylocator.h"
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -17,7 +18,7 @@ namespace proton::matching {
 class ViewResolver;
 class ISearchContext;
 
-class Query
+class Query : public RangeQueryLocator
 {
 private:
     using Blueprint = search::queryeval::Blueprint;
@@ -31,7 +32,7 @@ public:
     using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
 
     Query();
-    ~Query();
+    ~Query() override;
     /**
      * Use the given blueprint as white list node in the blueprint
      * tree. The search iterator created by this blueprint should
@@ -129,7 +130,7 @@ public:
      * @return estimate of hits produced.
      */
     Blueprint::HitEstimate estimate() const;
-
+    RangeLimitMetaInfo locate(uint32_t field_id) const override;
     const Blueprint * peekRoot() const { return _blueprint.get(); }
 };
 

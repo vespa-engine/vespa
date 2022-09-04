@@ -32,6 +32,7 @@ namespace {
 
 using search::fef::Properties;
 using search::fef::RankSetup;
+using search::fef::IIndexEnvironment;
 
 bool contains_all(const HandleRecorder::HandleMap &old_map,
                   const HandleRecorder::HandleMap &new_map)
@@ -47,9 +48,12 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
 }
 
 DegradationParams
-extractDegradationParams(const RankSetup &rankSetup, const Properties &rankProperties)
+extractDegradationParams(const RankSetup &rankSetup, const IIndexEnvironment & indexEnv, const Properties &rankProperties)
 {
-    return { DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute()),
+    vespalib::string attribute = DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute());
+    const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(attribute);
+    uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
+    return { attribute, field_id,
              DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
              !DegradationAscendingOrder::lookup(rankProperties, rankSetup.isDegradationOrderAscending()),
              DegradationMaxFilterCoverage::lookup(rankProperties, rankSetup.getDegradationMaxFilterCoverage()),
@@ -207,11 +211,11 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
-        DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
+        DegradationParams degradationParams = extractDegradationParams(_rankSetup, indexEnv, rankProperties);
 
         if (degradationParams.enabled()) {
             trace.addEvent(5, "Setup match phase limiter");
-            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), _query, searchContext.getAttributes(),
                                                                  _requestContext, degradationParams, _diversityParams);
         }
     }
@@ -359,3 +363,4 @@ template void AttributeOperationTask::run(std::vector<uint32_t >) const;
 template void AttributeOperationTask::run(AttributeOperation::FullResult) const;
 
 }
+

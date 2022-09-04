@@ -117,15 +117,23 @@ class AttributeFieldBlueprint : public SimpleLeafBlueprint
 {
 private:
     ISearchContext::UP _search_context;
+    enum Type {INT, FLOAT, OTHER};
+    Type _type;
 
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
                             QueryTermSimple::UP term, const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
-          _search_context(attribute.createSearchContext(std::move(term), params))
+          _search_context(attribute.createSearchContext(std::move(term), params)),
+          _type(OTHER)
     {
         uint32_t estHits = _search_context->approximateHits();
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
+        if (attribute.isFloatingPointType()) {
+            _type = FLOAT;
+        } else if (attribute.isIntegerType()) {
+            _type = INT;
+        }
     }
 
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
@@ -180,6 +188,7 @@ public:
     const attribute::ISearchContext *get_attribute_search_context() const override {
         return _search_context.get();
     }
+    bool getRange(vespalib::string &from, vespalib::string &to) const override;
 };
 
 void
@@ -533,6 +542,29 @@ DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const
     } else {
         return std::make_unique<queryeval::EmptySearch>();
     }
+}
+
+bool
+AttributeFieldBlueprint::getRange(vespalib::string &from, vespalib::string &to) const {
+    if (_type == INT) {
+        Int64Range range = _search_context->getAsIntegerTerm();
+        char buf[32];
+        auto res = std::to_chars(buf, buf + sizeof(buf), range.lower(), 10);
+        from = vespalib::stringref(buf, res.ptr - buf);
+        res = std::to_chars(buf, buf + sizeof(buf), range.upper(), 10);
+        to = vespalib::stringref(buf, res.ptr - buf);
+        return true;
+    } else if (_type == FLOAT) {
+        double lower(0), upper(0);
+        _search_context->queryTerm()->getAsDoubleTerm(lower, upper);
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%g", lower);
+        from = buf;
+        snprintf(buf, sizeof(buf), "%g", upper);
+        to = buf;
+        return true;
+    }
+    return false;
 }
 
 //-----------------------------------------------------------------------------

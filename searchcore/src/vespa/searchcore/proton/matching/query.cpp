@@ -322,4 +322,10 @@ Query::createSearch(MatchData &md) const
     return _blueprint->createSearch(md, true);
 }
 
+RangeLimitMetaInfo
+Query::locate(uint32_t field_id) const {
+    LocateRangeItemFromQuery locator(*_blueprint);
+    return locator.locate(field_id);
+}
+
 }
