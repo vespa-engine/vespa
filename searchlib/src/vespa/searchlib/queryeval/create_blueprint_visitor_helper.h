@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "searchable.h"
+#include "field_spec.h"
 #include "termasstring.h"
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/queryvisitor.h>
@@ -12,13 +12,17 @@
 
 namespace search::queryeval {
 
+class IRequestContext;
+class Searchable;
+class Blueprint;
+
 class CreateBlueprintVisitorHelper : public query::QueryVisitor
 {
 private:
     const IRequestContext & _requestContext;
     Searchable            & _searchable;
     FieldSpec               _field;
-    Blueprint::UP           _result;
+    std::unique_ptr<Blueprint>  _result;
 
 protected:
     const IRequestContext & getRequestContext() const { return _requestContext; }
@@ -30,7 +34,7 @@ public:
     template <typename T>
     void setResult(std::unique_ptr<T> result) { _result = std::move(result); }
 
-    Blueprint::UP getResult();
+    std::unique_ptr<Blueprint> getResult();
 
     const FieldSpec &getField() const { return _field; }
 

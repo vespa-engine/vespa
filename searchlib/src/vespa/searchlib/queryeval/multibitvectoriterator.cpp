@@ -5,8 +5,6 @@
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::queryeval {

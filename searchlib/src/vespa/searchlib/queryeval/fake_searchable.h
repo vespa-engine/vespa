@@ -4,8 +4,7 @@
 
 #include "searchable.h"
 #include "fake_result.h"
-
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
 #include <map>
 
 namespace search::queryeval {
@@ -65,10 +64,11 @@ public:
                               const FakeResult &result);
 
     using Searchable::createBlueprint;
-    Blueprint::UP createBlueprint(const IRequestContext & requestContext,
-                                  const FieldSpec &field,
-                                  const search::query::Node &term) override;
-    ~FakeSearchable();
+    std::unique_ptr<queryeval::Blueprint>
+    createBlueprint(const IRequestContext & requestContext,
+                    const FieldSpec &field,
+                    const search::query::Node &term) override;
+    ~FakeSearchable() override;
 };
 
 }

@@ -11,6 +11,7 @@
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
@@ -328,8 +329,7 @@ Fixture::readWork(uint32_t cnt)
         FieldSpec field(fieldName, fieldId, handle);
         FieldSpecList fields;
         fields.add(field);
-        Blueprint::UP result = index.createBlueprint(requestContext,
-                                                     fields, term);
+        Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
         if (!EXPECT_TRUE(result.get() != 0)) {
             LOG(error, "Did not get blueprint");
             break;

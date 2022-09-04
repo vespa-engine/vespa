@@ -4,11 +4,7 @@
 
 #include "match_phase_limit_calculator.h"
 #include "attribute_limiter.h"
-
-#include <vespa/searchlib/queryeval/searchable.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <atomic>
 
 namespace proton::matching {
@@ -52,7 +48,7 @@ struct MaybeMatchPhaseLimiter {
     virtual SearchIterator::UP maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs, Cursor * trace) = 0;
     virtual void updateDocIdSpaceEstimate(size_t searchedDocIdSpace, size_t remainingDocIdSpace) = 0;
     virtual size_t getDocIdSpaceEstimate() const = 0;
-    virtual ~MaybeMatchPhaseLimiter() {}
+    virtual ~MaybeMatchPhaseLimiter() = default;
 };
 
 /**
@@ -113,7 +109,7 @@ class MatchPhaseLimiter : public MaybeMatchPhaseLimiter
 private:
     class Coverage {
     public:
-        Coverage(uint32_t docIdLimit) :
+        explicit Coverage(uint32_t docIdLimit) :
             _docIdLimit(docIdLimit),
             _searched(0)
         { }
@@ -139,7 +135,8 @@ public:
     MatchPhaseLimiter(uint32_t docIdLimit,
                       search::queryeval::Searchable &searchable_attributes,
                       search::queryeval::IRequestContext & requestContext,
-                      DegradationParams degradation, DiversityParams diversity);
+                      const DegradationParams & degradation,
+                      const DiversityParams & diversity);
     bool is_enabled() const override { return true; }
     bool was_limited() const override { return _limiter_factory.was_used(); }
     size_t sample_hits_per_thread(size_t num_threads) const override {

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "searchable.h"
+#include "blueprint.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 
 namespace search::fef { class TermFieldMatchData; }
@@ -16,11 +16,10 @@ class DotProductBlueprint : public ComplexLeafBlueprint
     std::vector<int32_t>    _weights;
     std::vector<Blueprint*> _terms;
 
-    DotProductBlueprint(const DotProductBlueprint &); // disabled
-    DotProductBlueprint &operator=(const DotProductBlueprint &); // disabled
-
 public:
-    DotProductBlueprint(const FieldSpec &field);
+    explicit DotProductBlueprint(const FieldSpec &field);
+    DotProductBlueprint(const DotProductBlueprint &) = delete;
+    DotProductBlueprint &operator=(const DotProductBlueprint &) = delete;
     ~DotProductBlueprint() override;
 
     // used by create visitor
@@ -29,9 +28,7 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    SearchIteratorUP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

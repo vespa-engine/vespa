@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>

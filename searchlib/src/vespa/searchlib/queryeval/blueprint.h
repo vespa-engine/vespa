@@ -259,12 +259,12 @@ private:
     void updateState() const;
 
 protected:
-    void notifyChange() override final;
+    void notifyChange() final;
     virtual State calculateState() const = 0;
 
 public:
     StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
-    const State &getState() const override final {
+    const State &getState() const final {
         if (_stale) {
             updateState();
         }
@@ -296,7 +296,7 @@ protected:
     // conflicting collections of field specs.
     FieldSpecBaseList mixChildrenFields() const;
 
-    State calculateState() const override final;
+    State calculateState() const final;
 
     virtual bool isPositive(size_t index) const { (void) index; return true; }
 
@@ -309,9 +309,9 @@ public:
     IntermediateBlueprint();
     ~IntermediateBlueprint() override;
 
-    void setDocIdLimit(uint32_t limit) override final;
+    void setDocIdLimit(uint32_t limit) final;
 
-    void optimize(Blueprint* &self) override final;
+    void optimize(Blueprint* &self) final;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -333,7 +333,7 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
-    void freeze() override final;
+    void freeze() final;
 
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
     bool isIntermediate() const override { return true; }
@@ -346,7 +346,7 @@ private:
     State _state;
 
 protected:
-    void optimize(Blueprint* &self) override final;
+    void optimize(Blueprint* &self) final;
     void setEstimate(HitEstimate est);
     void set_cost_tier(uint32_t value);
     void set_allow_termwise_eval(bool value);
@@ -356,10 +356,10 @@ protected:
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
 public:
     ~LeafBlueprint() override;
-    const State &getState() const override final { return _state; }
-    void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
+    const State &getState() const final { return _state; }
+    void setDocIdLimit(uint32_t limit) final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(const ExecuteInfo &execInfo) override;
-    void freeze() override final;
+    void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const = 0;
@@ -367,14 +367,14 @@ public:
 
 // for leaf nodes representing a single term
 struct SimpleLeafBlueprint : LeafBlueprint {
-    SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), true) {}
-    SimpleLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, true) {}
+    explicit SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), true) {}
+    explicit SimpleLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, true) {}
 };
 
 // for leaf nodes representing more complex structures like wand/phrase
 struct ComplexLeafBlueprint : LeafBlueprint {
-    ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), false) {}    
-    ComplexLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, false) {}
+    explicit ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), false) {}
+    explicit ComplexLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, false) {}
 };
 
 //-----------------------------------------------------------------------------
