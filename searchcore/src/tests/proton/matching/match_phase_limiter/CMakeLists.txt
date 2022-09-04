@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_match_phase_limiter_test_app TEST
     match_phase_limiter_test.cpp
     DEPENDS
     searchcore_matching
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_match_phase_limiter_test_app COMMAND searchcore_match_phase_limiter_test_app)

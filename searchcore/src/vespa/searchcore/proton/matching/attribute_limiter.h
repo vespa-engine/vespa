@@ -17,7 +17,9 @@ namespace search::queryeval {
 namespace search::fef { class MatchData; }
 
 namespace proton::matching {
-    
+
+class RangeQueryLocator;
+
 /**
  * This class is responsible for creating attribute-based search
  * iterators that are used to limit the search space. Each search
@@ -30,7 +32,8 @@ class AttributeLimiter
 {
 public:
     enum DiversityCutoffStrategy { LOOSE, STRICT};
-    AttributeLimiter(search::queryeval::Searchable &searchable_attributes,
+    AttributeLimiter(const RangeQueryLocator & _rangeQueryLocator,
+                     search::queryeval::Searchable &searchable_attributes,
                      const search::queryeval::IRequestContext & requestContext,
                      const vespalib::string &attribute_name, bool descending,
                      const vespalib::string &diversity_attribute,
@@ -44,6 +47,7 @@ public:
 private:
     search::queryeval::Searchable                      & _searchable_attributes;
     const search::queryeval::IRequestContext           & _requestContext;
+    const RangeQueryLocator                            & _rangeQueryLocator;
     vespalib::string                                     _attribute_name;
     bool                                                 _descending;
     vespalib::string                                     _diversity_attribute;

@@ -2,6 +2,7 @@
 
 #include "match_tools.h"
 #include "querynodes.h"
+#include "rangequerylocator.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
@@ -32,6 +33,7 @@ namespace {
 
 using search::fef::Properties;
 using search::fef::RankSetup;
+using search::fef::IIndexEnvironment;
 
 bool contains_all(const HandleRecorder::HandleMap &old_map,
                   const HandleRecorder::HandleMap &new_map)
@@ -47,9 +49,9 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
 }
 
 DegradationParams
-extractDegradationParams(const RankSetup &rankSetup, const Properties &rankProperties)
+extractDegradationParams(const RankSetup &rankSetup, const vespalib::string & attribute, const Properties &rankProperties)
 {
-    return { DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute()),
+    return { attribute,
              DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
              !DegradationAscendingOrder::lookup(rankProperties, rankSetup.isDegradationOrderAscending()),
              DegradationMaxFilterCoverage::lookup(rankProperties, rankSetup.getDegradationMaxFilterCoverage()),
@@ -207,12 +209,17 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
-        DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
+        vespalib::string attribute = DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute());
+        DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);
+        const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(attribute);
+        uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
+        _rangeLocator = std::make_unique<LocateRangeItemFromQuery>(*_query.peekRoot(), field_id);
 
         if (degradationParams.enabled()) {
             trace.addEvent(5, "Setup match phase limiter");
-            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
-                                                                 _requestContext, degradationParams, _diversityParams);
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), *_rangeLocator,
+                                                                 searchContext.getAttributes(), _requestContext,
+                                                                 degradationParams, _diversityParams);
         }
     }
     if ( ! _match_limiter) {

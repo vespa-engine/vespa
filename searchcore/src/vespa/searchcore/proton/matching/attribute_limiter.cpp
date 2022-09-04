@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_limiter.h"
+#include "rangequerylocator.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/searchable.h>
@@ -16,7 +17,8 @@ using vespalib::make_string_short::fmt;
 
 namespace proton::matching {
 
-AttributeLimiter::AttributeLimiter(Searchable &searchable_attributes,
+AttributeLimiter::AttributeLimiter(const RangeQueryLocator & rangeQueryLocator,
+                                   Searchable &searchable_attributes,
                                    const IRequestContext & requestContext,
                                    const string &attribute_name,
                                    bool descending,
@@ -25,6 +27,7 @@ AttributeLimiter::AttributeLimiter(Searchable &searchable_attributes,
                                    DiversityCutoffStrategy diversityCutoffStrategy)
     : _searchable_attributes(searchable_attributes),
       _requestContext(requestContext),
+      _rangeQueryLocator(rangeQueryLocator),
       _attribute_name(attribute_name),
       _descending(descending),
       _diversity_attribute(diversity_attribute),
@@ -80,8 +83,9 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool st
     search::fef::MatchDataLayout layout;
     auto my_handle = layout.allocTermField(my_field_id);
     if ( ! _blueprint ) {
+        RangeLimitMetaInfo rangeInfo = _rangeQueryLocator.locate();
         const uint32_t no_unique_id = 0;
-        string range_spec = fmt("[;;%s%zu", (_descending)? "-" : "", want_hits);
+        string range_spec = fmt("[%s;%s;%s%zu", rangeInfo.low().c_str(), rangeInfo.high().c_str(), _descending? "-" : "", want_hits);
         if (max_group_size < want_hits) {
             size_t cutoffGroups = (_diversityCutoffFactor*want_hits)/max_group_size;
             range_spec.append(fmt(";%s;%zu;%zu;%s]", _diversity_attribute.c_str(), max_group_size,

@@ -63,6 +63,7 @@ public:
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;
+    DoubleRange getAsDoubleTerm() const override;
     const QueryTermUCS4 * queryTerm() const override;
     const vespalib::string& attributeName() const override;
 

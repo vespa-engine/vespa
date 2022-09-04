@@ -25,5 +25,6 @@ private:
 };
 
 using Int64Range = Range<int64_t>;
+using DoubleRange = Range<double>;
 
 } // namespace search

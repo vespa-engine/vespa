@@ -27,7 +27,10 @@ public:
     NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange=false);
 protected:
     Int64Range getRange() const {
-        return Int64Range(static_cast<int64_t>(_low), static_cast<int64_t>(_high));
+        return {static_cast<int64_t>(_low), static_cast<int64_t>(_high)};
+    }
+    DoubleRange getDoubleRange() const {
+        return {static_cast<double>(_low), static_cast<double>(_high)};
     }
     bool isValid() const { return _valid; }
     bool match(T v) const { return (_low <= v) && (v <= _high); }
