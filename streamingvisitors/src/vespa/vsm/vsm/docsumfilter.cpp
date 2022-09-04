@@ -68,12 +68,16 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
             assert((uint32_t) entry_idx < _result_class.GetNumEntries());
             return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
         }
-        const document::Field & field = _document->getField(field_name);
-        auto value(field.getDataType().createFieldValue());
-        if (value) {
-            if (_document->getValue(field, *value)) {
-                return DocsumStoreFieldValue(std::move(value));
+        try {
+            const document::Field & field = _document->getField(field_name);
+            auto value(field.getDataType().createFieldValue());
+            if (value) {
+                if (_document->getValue(field, *value)) {
+                    return DocsumStoreFieldValue(std::move(value));
+                }
             }
+        } catch (document::FieldNotFoundException&) {
+            // Field was not found in document type. Return empty value.
         }
     }
     return {};
@@ -96,12 +100,16 @@ DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name,
             _docsum_filter.insert_summary_field(entry_idx, _vsm_document, inserter);
             return;
         }
-        const document::Field & field = _document->getField(field_name);
-        auto value(field.getDataType().createFieldValue());
-        if (value) {
-            if (_document->getValue(field, *value)) {
-                SummaryFieldConverter::insert_summary_field(*value, inserter);
+        try {
+            const document::Field & field = _document->getField(field_name);
+            auto value(field.getDataType().createFieldValue());
+            if (value) {
+                if (_document->getValue(field, *value)) {
+                    SummaryFieldConverter::insert_summary_field(*value, inserter);
+                }
             }
+        } catch (document::FieldNotFoundException&) {
+            // Field was not found in document type. Don't insert anything.
         }
     }
 }

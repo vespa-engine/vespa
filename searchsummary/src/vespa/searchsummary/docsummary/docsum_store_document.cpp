@@ -3,6 +3,7 @@
 #include "docsum_store_document.h"
 #include "check_undefined_value_visitor.h"
 #include "summaryfieldconverter.h"
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -23,8 +24,12 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
         const document::Field& field = _document->getField(field_name);
         auto value(field.getDataType().createFieldValue());
         if (value) {
-            if (_document->getValue(field, *value)) {
-                return DocsumStoreFieldValue(std::move(value));
+            try {
+                if (_document->getValue(field, *value)) {
+                    return DocsumStoreFieldValue(std::move(value));
+                }
+            } catch (document::FieldNotFoundException&) {
+                // Field was not found in document type. Return empty value.
             }
         }
     }
@@ -45,9 +50,13 @@ DocsumStoreDocument::get_juniper_input(const vespalib::string& field_name) const
 void
 DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
 {
-    auto field_value = get_field_value(field_name);
-    if (field_value) {
-        SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+    try {
+        auto field_value = get_field_value(field_name);
+        if (field_value) {
+            SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+        }
+    } catch (document::FieldNotFoundException&) {
+        // Field was not found in document type. Don't insert anything.
     }
 }
 
