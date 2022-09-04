@@ -70,6 +70,8 @@ private:
     ArrayDataType _array_type;
     MapDataType _map_type;
     WeightedSetDataType _wset_type;
+    bool _empty_values;
+    bool _skip_set_values;
 
     StructFieldValue::UP make_elem_value(const std::string& name, int weight) const {
         auto result = std::make_unique<StructFieldValue>(*_elem_type);
@@ -85,7 +87,9 @@ public:
           _elem_type(make_struct_elem_type()),
           _array_type(*_elem_type),
           _map_type(*DataType::STRING, *_elem_type),
-          _wset_type(*DataType::STRING, false, false)
+          _wset_type(*DataType::STRING, false, false),
+          _empty_values(false),
+          _skip_set_values(false)
     {
         _doc_type.addField(Field("array", _array_type));
         _doc_type.addField(Field("map", _map_type));
@@ -105,32 +109,50 @@ public:
         auto doc = std::make_unique<Document>(_doc_type, DocumentId("id:test:test::0"));
         {
             ArrayFieldValue array_value(_array_type);
-            array_value.append(make_elem_value("a", 3));
-            array_value.append(make_elem_value("b", 5));
-            array_value.append(make_elem_value("c", 7));
-            doc->setValue("array", array_value);
+            if (!_empty_values) {
+                array_value.append(make_elem_value("a", 3));
+                array_value.append(make_elem_value("b", 5));
+                array_value.append(make_elem_value("c", 7));
+            }
+            if (!_skip_set_values) {
+                doc->setValue("array", array_value);
+            }
         }
         {
             MapFieldValue map_value(_map_type);
-            map_value.put(StringFieldValue("a"), *make_elem_value("a", 3));
-            map_value.put(StringFieldValue("b"), *make_elem_value("b", 5));
-            map_value.put(StringFieldValue("c"), *make_elem_value("c", 7));
-            doc->setValue("map", map_value);
+            if (!_empty_values) {
+                map_value.put(StringFieldValue("a"), *make_elem_value("a", 3));
+                map_value.put(StringFieldValue("b"), *make_elem_value("b", 5));
+                map_value.put(StringFieldValue("c"), *make_elem_value("c", 7));
+            }
+            if (!_skip_set_values) {
+                doc->setValue("map", map_value);
+            }
         }
         {
             MapFieldValue map2_value(_map_type);
-            map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
-            doc->setValue("map2", map2_value);
+            if (!_empty_values) {
+                map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
+            }
+            if (!_skip_set_values) {
+                doc->setValue("map2", map2_value);
+            }
         }
         {
             WeightedSetFieldValue wset_value(_wset_type);
-            wset_value.add(StringFieldValue("a"), 13);
-            wset_value.add(StringFieldValue("b"), 15);
-            wset_value.add(StringFieldValue("c"), 17);
-            doc->setValue("wset", wset_value);
+            if (!_empty_values) {
+                wset_value.add(StringFieldValue("a"), 13);
+                wset_value.add(StringFieldValue("b"), 15);
+                wset_value.add(StringFieldValue("c"), 17);
+            }
+            if (!_skip_set_values) {
+                doc->setValue("wset", wset_value);
+            }
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
+    void set_empty_values() { _empty_values = true; }
+    void set_skip_set_values() { _skip_set_values = true; }
 };
 
 DocsumStore::~DocsumStore() = default;
@@ -218,7 +240,9 @@ public:
         EXPECT_EQ(exp.slime, act);
     }
     const MatchingElementsFields& fields() const { return *_fields; }
-};
+    void set_empty_values() { _doc_store.set_empty_values(); }
+    void set_skip_set_values() { _doc_store.set_skip_set_values(); }
+ };
 
 MatchedElementsFilterTest::~MatchedElementsFilterTest() = default;
 
@@ -232,6 +256,10 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
                                         "{'name':'b','weight':5},"
                                         "{'name':'c','weight':7}]");
     expect_filtered("array", {0, 1, 100}, "[]");
+    set_empty_values();
+    expect_filtered("array", {}, "[]");
+    set_skip_set_values();
+    expect_filtered("array", {}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
@@ -252,6 +280,10 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
                                       "{'key':'b','value':{'name':'b','weight':5}},"
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
     expect_filtered("map", {0, 1, 100}, "[]");
+    set_empty_values();
+    expect_filtered("map", {}, "[]");
+    set_skip_set_values();
+    expect_filtered("map", {}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
@@ -262,6 +294,10 @@ TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
     expect_filtered("wset", {2}, "[{'item':'c','weight':17}]");
     expect_filtered("wset", {0, 1, 2}, "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
     expect_filtered("wset", {0, 1, 100}, "[]");
+    set_empty_values();
+    expect_filtered("wset", {}, "[]");
+    set_skip_set_values();
+    expect_filtered("wset", {}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)
