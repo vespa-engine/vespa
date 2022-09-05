@@ -98,9 +98,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     private int prematureCrashCount = 0;
 
-    /** Remember last time we adjusted version, such that if we had multiple requests pending when we did, we can avoid printing error right after. */
-    private long adjustedVersionTime = 0;
-
     private HostInfo hostInfo = HostInfo.createHostInfo("{}");
 
     private Group group;
@@ -380,29 +377,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public long getTimeForNextStateRequestAttempt() {
         return nextAttemptTime;
-    }
-
-    /** @return True if we demoted communication version so this can be valid error. */
-    public boolean notifyNoSuchMethodError(String methodName, Timer timer) {
-        if (methodName.equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)) {
-            if (version == RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION) {
-                downgradeToRpcVersion(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_VERSION, methodName, timer);
-                return true;
-            } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
-                log.log(Level.FINE, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
-                return true;
-            }
-        }
-        log.log(Level.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
-        return false;
-    }
-
-    private void downgradeToRpcVersion(int newVersion, String methodName, Timer timer) {
-        log.log(Level.FINE, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
-                toString(), methodName, newVersion));
-        version = newVersion;
-        nextAttemptTime = 0;
-        adjustedVersionTime = timer.getCurrentTimeInMillis();
     }
 
     public Target getConnection() {

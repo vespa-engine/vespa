@@ -958,7 +958,7 @@ public class StateChangeTest extends FleetControllerTest {
         builder.setMinTimeBeforeFirstSystemStateBroadcast(3 * 60 * 1000);
         setUpSystem(builder);
         boolean useFakeTimer = true;
-        setUpVdsNodes(useFakeTimer, new DummyVdsNodeOptions(), true);
+        setUpVdsNodes(useFakeTimer, true);
         // Leave one node down to avoid sending cluster state due to having seen all node states.
         for (int i = 0; i < nodes.size(); ++i) {
             if (i != 3) {
@@ -1006,7 +1006,7 @@ public class StateChangeTest extends FleetControllerTest {
         boolean useFakeTimer = true;
         setUpSystem(builder);
 
-        setUpVdsNodes(useFakeTimer, new DummyVdsNodeOptions(), true);
+        setUpVdsNodes(useFakeTimer, true);
 
         for (DummyVdsNode node : nodes) {
             node.connect();

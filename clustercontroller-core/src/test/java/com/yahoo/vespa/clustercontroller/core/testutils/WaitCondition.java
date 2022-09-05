@@ -128,7 +128,7 @@ public interface WaitCondition {
                 if (!match) {
                     return "Node " + node + " state mismatch.\n  wanted: " + pattern + "\n  is:     " + node.getClusterStateBundle().toString();
                 }
-                if (node.getStateCommunicationVersion() > 0 && !node.hasPendingGetNodeStateRequest()) {
+                if (!node.hasPendingGetNodeStateRequest()) {
                     return "Node " + node + " has not received another get node state request yet";
                 }
             }

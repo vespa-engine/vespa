@@ -37,9 +37,8 @@ public class StateGatherTest extends FleetControllerTest {
                 .setNodeStateRequestTimeoutLatestPercentage(80);
         setUpFleetController(true, builder);
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
-        DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
-        DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), NodeType.DISTRIBUTOR, 0);
-        DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, builder.clusterName(), NodeType.STORAGE, 0);
+        DummyVdsNode dnode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.DISTRIBUTOR, 0);
+        DummyVdsNode snode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.STORAGE, 0);
         dnode.connect();
         snode.connect();
 

@@ -42,7 +42,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     private FleetControllerOptions setUp3x3ClusterWithMinNodeRatio(double minNodeRatio) throws Exception {
         FleetControllerOptions.Builder options = createOptions(DistributionBuilder.withGroups(3).eachWithNodeCount(3), minNodeRatio);
         setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, 9);
+        setUpVdsNodes(true, false, 9);
         waitForState("version:\\d+ distributor:9 storage:9");
         return options.build();
     }

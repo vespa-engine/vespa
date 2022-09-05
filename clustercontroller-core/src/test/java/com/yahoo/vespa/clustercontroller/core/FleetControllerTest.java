@@ -173,28 +173,28 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected void setUpVdsNodes(boolean useFakeTimer) throws Exception {
-        setUpVdsNodes(useFakeTimer, new DummyVdsNodeOptions(), false);
+        setUpVdsNodes(useFakeTimer, false);
     }
-    protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected) throws Exception {
-        setUpVdsNodes(useFakeTimer, options, startDisconnected, DEFAULT_NODE_COUNT);
+    protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected) throws Exception {
+        setUpVdsNodes(useFakeTimer, startDisconnected, DEFAULT_NODE_COUNT);
     }
-    protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, int nodeCount) throws Exception {
+    protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected, int nodeCount) throws Exception {
         TreeSet<Integer> nodeIndexes = new TreeSet<>();
         for (int i = 0; i < nodeCount; ++i)
             nodeIndexes.add(this.nodes.size()/2 + i); // divide by 2 because there are 2 nodes (storage and distributor) per index
-        setUpVdsNodes(useFakeTimer, options, startDisconnected, nodeIndexes);
+        setUpVdsNodes(useFakeTimer, startDisconnected, nodeIndexes);
     }
-    protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions nodeOptions, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
+    protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
         for (int nodeIndex : nodeIndexes) {
-            nodes.add(createNode(useFakeTimer, nodeOptions, startDisconnected, DISTRIBUTOR, nodeIndex));
-            nodes.add(createNode(useFakeTimer, nodeOptions, startDisconnected, STORAGE, nodeIndex));
+            nodes.add(createNode(useFakeTimer, startDisconnected, DISTRIBUTOR, nodeIndex));
+            nodes.add(createNode(useFakeTimer, startDisconnected, STORAGE, nodeIndex));
         }
     }
 
-    private DummyVdsNode createNode(boolean useFakeTimer, DummyVdsNodeOptions nodeOptions, boolean startDisconnected,
+    private DummyVdsNode createNode(boolean useFakeTimer, boolean startDisconnected,
                                     NodeType nodeType, int nodeIndex) throws Exception {
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
-        DummyVdsNode node = new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), nodeOptions, connectionSpecs,
+        DummyVdsNode node = new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), connectionSpecs,
                                              options.clusterName(), nodeType, nodeIndex);
         if ( ! startDisconnected)
             node.connect();
@@ -208,11 +208,11 @@ public abstract class FleetControllerTest implements Waiter {
      * As two dummy nodes are created for each configured node - one distributor and one storage node -
      * the returned list is twice as large as configuredNodes.
      */
-    protected List<DummyVdsNode> setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, List<ConfiguredNode> configuredNodes) throws Exception {
+    protected List<DummyVdsNode> setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected, List<ConfiguredNode> configuredNodes) throws Exception {
         nodes = new ArrayList<>();
         for (ConfiguredNode configuredNode : configuredNodes) {
-            nodes.add(createNode(useFakeTimer, options, startDisconnected, DISTRIBUTOR, configuredNode.index()));
-            nodes.add(createNode(useFakeTimer, options, startDisconnected, STORAGE, configuredNode.index()));
+            nodes.add(createNode(useFakeTimer, startDisconnected, DISTRIBUTOR, configuredNode.index()));
+            nodes.add(createNode(useFakeTimer, startDisconnected, STORAGE, configuredNode.index()));
         }
         return nodes;
     }
