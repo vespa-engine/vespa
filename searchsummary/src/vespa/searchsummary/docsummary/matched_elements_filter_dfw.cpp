@@ -76,6 +76,9 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
     assert(converted->isLiteral());
     auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
     vespalib::stringref buf = literal.getValueRef();
+    if (buf.empty()) {
+        return;
+    }
     Slime input_field_as_slime;
     BinaryFormat::decode(vespalib::Memory(buf.data(), buf.size()), input_field_as_slime);
     inject(input_field_as_slime.get(), target);
