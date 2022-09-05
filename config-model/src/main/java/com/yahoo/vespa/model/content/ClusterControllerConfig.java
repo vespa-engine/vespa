@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -22,11 +23,13 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
         private final String clusterName;
         private final ModelElement clusterElement;
         private final ResourceLimits resourceLimits;
+        private final int clusterControllerStateGatherCount;
 
-        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits) {
+        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits, ModelContext.FeatureFlags featureFlags) {
             this.clusterName = clusterName;
             this.clusterElement = clusterElement;
             this.resourceLimits = resourceLimits;
+            this.clusterControllerStateGatherCount = featureFlags.clusterControllerStateGatherCount();
         }
 
         @Override
@@ -52,13 +55,15 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
                         tuning.childAsDouble("min-storage-up-ratio"),
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        resourceLimits);
+                        resourceLimits,
+                        clusterControllerStateGatherCount);
             } else {
                 return new ClusterControllerConfig(ancestor, clusterName,
                         null, null, null, null, null, null,
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        resourceLimits);
+                        resourceLimits,
+                        clusterControllerStateGatherCount);
             }
         }
     }
@@ -73,9 +78,10 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
     private final Integer minSplitBits;
     private final Double minNodeRatioPerGroup;
     private final ResourceLimits resourceLimits;
+    private final int clusterControllerStateGatherCount;
 
     // TODO refactor; too many args
-    private ClusterControllerConfig(AbstractConfigProducer parent,
+    private ClusterControllerConfig(AbstractConfigProducer<?> parent,
                                     String clusterName,
                                     Duration initProgressTime,
                                     Duration transitionTime,
@@ -85,7 +91,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
                                     Double minStorageUpRatio,
                                     Integer minSplitBits,
                                     Double minNodeRatioPerGroup,
-                                    ResourceLimits resourceLimits) {
+                                    ResourceLimits resourceLimits,
+                                    int clusterControllerStateGatherCount) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -98,6 +105,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
         this.minSplitBits = minSplitBits;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
         this.resourceLimits = resourceLimits;
+        this.clusterControllerStateGatherCount = clusterControllerStateGatherCount;
     }
 
     @Override
@@ -140,6 +148,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
             builder.min_node_ratio_per_group(minNodeRatioPerGroup);
         }
         resourceLimits.getConfig(builder);
+        builder.state_gather_count(clusterControllerStateGatherCount);
     }
 
 }

@@ -27,7 +27,8 @@ public class FleetControllerClusterTest {
                                                    new ClusterResourceLimits.Builder(false,
                                                                                      featureFlags.resourceLimitDisk(),
                                                                                      featureFlags.resourceLimitMemory())
-                                                           .build(clusterElement).getClusterControllerLimits())
+                                                           .build(clusterElement).getClusterControllerLimits(),
+                                                   new TestProperties().featureFlags())
                 .build(root.getDeployState(), root, clusterElement.getXml());
     }
 

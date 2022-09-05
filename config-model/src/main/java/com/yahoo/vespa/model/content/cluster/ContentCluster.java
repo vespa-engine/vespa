@@ -127,7 +127,8 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                     .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(clusterId,
                                                                             contentElement,
-                                                                            resourceLimits.getClusterControllerLimits())
+                                                                            resourceLimits.getClusterControllerLimits(),
+                                                                            deployState.featureFlags())
                     .build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
                                                         globallyDistributedDocuments,

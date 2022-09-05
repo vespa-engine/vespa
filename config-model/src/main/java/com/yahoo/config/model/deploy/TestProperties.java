@@ -154,7 +154,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
     @Override public String phraseOptimization() { return phraseOptimization; }
 
-
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
         return this;
