@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vsm-adapter.hpp"
-#include "docsumconfig.h"
+#include "docsum_field_writer_factory.h"
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
@@ -144,16 +144,18 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     // create new docsum tools
     auto docsumTools = std::make_unique<DocsumTools>();
 
-    // configure juniper (used when configuring DynamicDocsumConfig)
+    // configure juniper (used by search::docsummary::DocsumFieldWriterFactory)
     _juniperProps = std::make_unique<JuniperProperties>(*juniperrc);
     auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
     docsumTools->setJuniper(std::move(juniper));
 
     // init result config
     auto resCfg = std::make_unique<ResultConfig>();
-    if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *_fieldsCfg.get());
+    if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }
+    docsum_field_writer_factory.reset();
 
     // init keyword extractor
     auto kwExtractor = std::make_unique<KeywordExtractor>(nullptr);
@@ -164,10 +166,6 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     // create dynamic docsum writer
     auto writer = std::make_unique<DynamicDocsumWriter>(std::move(resCfg), std::move(kwExtractor));
     docsumTools->set_writer(std::move(writer));
-
-    // configure dynamic docsum writer
-    DynamicDocsumConfig dynDocsumConfig(*docsumTools, docsumTools->getDocsumWriter(), _fieldsCfg.get());
-    dynDocsumConfig.configure(*summaryMap.get());
 
     // configure new docsum tools
     if (docsumTools->obtainFieldNames(vsmSummary)) {

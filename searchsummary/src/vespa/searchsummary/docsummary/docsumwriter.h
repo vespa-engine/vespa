@@ -36,7 +36,7 @@ public:
     };
 
     virtual ~IDocsumWriter() = default;
-    virtual void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
+    virtual void InitState(const search::IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
                               IDocsumStore *docinfos, Inserter & target) = 0;
     virtual ResolveClassInfo resolveClassInfo(vespalib::stringref outputClassName) const = 0;
@@ -49,8 +49,6 @@ class DynamicDocsumWriter : public IDocsumWriter
 private:
     std::unique_ptr<ResultConfig>                         _resultConfig;
     std::unique_ptr<KeywordExtractor>                     _keywordExtractor;
-    uint32_t                                              _numFieldWriterStates;
-    std::vector<std::unique_ptr<const DocsumFieldWriter>> _overrideTable;
 
     ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;
 
@@ -62,8 +60,7 @@ public:
 
     const ResultConfig *GetResultConfig() { return _resultConfig.get(); }
 
-    bool Override(const char *fieldName, std::unique_ptr<DocsumFieldWriter> writer);
-    void InitState(const search::IAttributeManager & attrMan, GetDocsumsState *state) override;
+    void InitState(const search::IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci) override;
     void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState *state,
                       IDocsumStore *docinfos, Inserter & inserter) override;
 
