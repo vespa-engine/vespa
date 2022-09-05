@@ -107,6 +107,8 @@ public class NodeRepositoryNode {
     private String exclusiveTo;
     @JsonProperty("switchHostname")
     private String switchHostname;
+    @JsonProperty("cloudAccount")
+    private String cloudAccount;
 
     public String getUrl() {
         return url;
@@ -438,6 +440,13 @@ public class NodeRepositoryNode {
         this.switchHostname = switchHostname;
     }
 
+    public String getCloudAccount() {
+        return cloudAccount;
+    }
+
+    public void setCloudAccount(String cloudAccount) {
+        this.cloudAccount = cloudAccount;
+    }
 
     // --- Helper methods for code that (wrongly) consume this directly
 
@@ -497,6 +506,7 @@ public class NodeRepositoryNode {
                ", reservedTo='" + reservedTo + '\'' +
                ", exclusiveTo='" + exclusiveTo + '\'' +
                ", switchHostname='" + switchHostname + '\'' +
+               ", cloudAccount='" + cloudAccount + '\'' +
                '}';
     }
 
