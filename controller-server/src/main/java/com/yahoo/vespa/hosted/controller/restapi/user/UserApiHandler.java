@@ -101,6 +101,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/user/v1/user")) return userMetadata(request);
+        if (path.matches("/user/v1/find")) return userMetadataFromUserId(request.getProperty("email"));
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
@@ -133,6 +134,18 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
             RoleDefinition.hostedSupporter,
             RoleDefinition.hostedAccountant);
 
+    private HttpResponse userMetadataFromUserId(String email) {
+        var maybeUser = users.findUser(email);
+
+        if (maybeUser.isPresent()) {
+            var user = maybeUser.get();
+            var roles = users.listRoles(new UserId(user.email()));
+            return renderUserMetaData(user, Set.copyOf(roles));
+        }
+
+        return ErrorResponse.notFoundError("Could not find user: " + email);
+    }
+
     private HttpResponse userMetadata(HttpRequest request) {
         User user;
         if (request.getJDiscRequest().context().get(User.ATTRIBUTE_NAME) instanceof User) {
@@ -146,6 +159,10 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
+        return renderUserMetaData(user, roles);
+    }
+
+    private HttpResponse renderUserMetaData(User user, Set<Role> roles) {
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
                 .flatMap(role -> filterTenantRoles(role).stream())
                 .distinct()
@@ -156,7 +173,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         List<Role> operatorRoles = roles.stream()
                 .filter(role -> hostedOperators.contains(role.definition()))
                 .sorted(Comparator.comparing(Role::definition))
-                .collect(Collectors.toList());
+                .toList();
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
