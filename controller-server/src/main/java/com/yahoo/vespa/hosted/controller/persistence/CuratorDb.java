@@ -274,7 +274,7 @@ public class CuratorDb {
     }
 
     public void clearTargetMajor() {
-        curator.delete(root.append("ugprader").append("targetMajorVersion"));
+        curator.delete(root.append("upgrader").append("targetMajorVersion"));
     }
 
     public VersionStatus readVersionStatus() {
