@@ -137,7 +137,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 if (host.state() != mutex.node().state()) return;
                 host = mutex.node();
                 // First mark the host as wantToDeprovision so that if hostProvisioner fails, this host
-                // * wont get new nodes allocated to it
+                // * won't get new nodes allocated to it
                 // * will be selected as excess on next iteration of this maintainer
                 nodeRepository().nodes().deprovision(host.hostname(), Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
                 hostProvisioner.deprovision(host);

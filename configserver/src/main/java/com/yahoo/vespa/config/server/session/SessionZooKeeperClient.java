@@ -325,6 +325,8 @@ public class SessionZooKeeperClient {
         if (cloudAccount.isPresent()) {
             byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(CloudAccountSerializer.toSlime(cloudAccount.get())));
             curator.set(cloudAccountPath(), data);
+        } else {
+            curator.delete(cloudAccountPath());
         }
     }
 
