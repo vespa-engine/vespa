@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "searchable.h"
+#include "blueprint.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vector>
 
@@ -18,12 +18,11 @@ class WeightedSetTermBlueprint : public ComplexLeafBlueprint
     std::vector<int32_t>    _weights;
     std::vector<Blueprint*> _terms;
 
-    WeightedSetTermBlueprint(const WeightedSetTermBlueprint &); // disabled
-    WeightedSetTermBlueprint &operator=(const WeightedSetTermBlueprint &); // disabled
-
 public:
     WeightedSetTermBlueprint(const FieldSpec &field);
-    ~WeightedSetTermBlueprint();
+    WeightedSetTermBlueprint(const WeightedSetTermBlueprint &) = delete;
+    WeightedSetTermBlueprint &operator=(const WeightedSetTermBlueprint &) = delete;
+    ~WeightedSetTermBlueprint() override;
 
     // used by create visitor
     // matches signature in dot product blueprint for common blueprint

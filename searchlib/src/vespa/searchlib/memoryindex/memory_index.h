@@ -60,11 +60,6 @@ private:
     vespalib::hash_set<uint32_t> _indexedDocs; // documents in memory index
     const uint64_t      _staticMemoryFootprint;
 
-    MemoryIndex(const MemoryIndex &) = delete;
-    MemoryIndex(MemoryIndex &&) = delete;
-    MemoryIndex &operator=(const MemoryIndex &) = delete;
-    MemoryIndex &operator=(MemoryIndex &&) = delete;
-
     void updateMaxDocId(uint32_t docId) {
         if (docId > _maxDocId) {
             _maxDocId = docId;
@@ -99,7 +94,11 @@ public:
                 ISequencedTaskExecutor& invertThreads,
                 ISequencedTaskExecutor& pushThreads);
 
-    ~MemoryIndex();
+    MemoryIndex(const MemoryIndex &) = delete;
+    MemoryIndex(MemoryIndex &&) = delete;
+    MemoryIndex &operator=(const MemoryIndex &) = delete;
+    MemoryIndex &operator=(MemoryIndex &&) = delete;
+    ~MemoryIndex() override;
 
     const index::Schema &getSchema() const { return _schema; }
 
@@ -141,13 +140,14 @@ public:
     void dump(index::IndexBuilder &indexBuilder);
 
     // Implements Searchable
-    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
-                                             const queryeval::FieldSpec &field,
-                                             const query::Node &term) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
+                                                          const queryeval::FieldSpec &field,
+                                                          const query::Node &term) override;
 
-    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
-                                             const queryeval::FieldSpecList &fields,
-                                             const query::Node &term) override {
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
+                                                          const queryeval::FieldSpecList &fields,
+                                                          const query::Node &term) override
+    {
         return queryeval::Searchable::createBlueprint(requestContext, fields, term);
     }
 

@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include "searchable.h"
-#include "irequestcontext.h"
+#include "blueprint.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 
 namespace search::fef { class TermFieldMatchData; }

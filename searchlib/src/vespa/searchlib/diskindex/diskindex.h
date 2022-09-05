@@ -133,13 +133,13 @@ public:
      */
     BitVector::UP readBitVector(const LookupResult &lookupRes) const;
 
-    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
-                                             const queryeval::FieldSpec &field,
-                                             const query::Node &term) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
+                                                          const queryeval::FieldSpec &field,
+                                                          const query::Node &term) override;
 
-    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
-                                             const queryeval::FieldSpecList &fields,
-                                             const query::Node &term) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
+                                                          const queryeval::FieldSpecList &fields,
+                                                          const query::Node &term) override;
 
     /**
      * Get the size on disk of this index.

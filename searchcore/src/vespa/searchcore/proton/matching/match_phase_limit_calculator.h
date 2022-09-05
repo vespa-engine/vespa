@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "isearchcontext.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
+#include <algorithm>
 
 namespace proton::matching {
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "searchable.h"
+#include "blueprint.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 
 namespace search::fef { class TermFieldMatchData; }
@@ -23,7 +23,7 @@ public:
     SameElementBlueprint(const vespalib::string &field_name_in, bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
-    ~SameElementBlueprint();
+    ~SameElementBlueprint() override;
 
     // no match data
     bool isWhiteList() const override { return true; }

@@ -3,15 +3,13 @@
 #include "match_phase_limiter.h"
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_phase_limiter");
 
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::IRequestContext;
-using search::queryeval::AndSearchStrict;
-using search::queryeval::NoUnpack;
 
 namespace proton::matching {
 
@@ -70,7 +68,8 @@ LimitedSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 
 MatchPhaseLimiter::MatchPhaseLimiter(uint32_t docIdLimit, Searchable &searchable_attributes,
                                      IRequestContext & requestContext,
-                                     DegradationParams degradation, DiversityParams diversity)
+                                     const DegradationParams & degradation,
+                                     const DiversityParams &diversity)
     : _postFilterMultiplier(degradation.post_filter_multiplier),
       _maxFilterCoverage(degradation.max_filter_coverage),
       _calculator(degradation.max_hits, diversity.min_groups, degradation.sample_percentage),

@@ -2,14 +2,16 @@
 
 #pragma once
 
-#include "field_spec.h"
-#include "blueprint.h"
-#include <vespa/searchlib/queryeval/irequestcontext.h>
-#include <vector>
+#include <memory>
 
 namespace search::query { class Node; }
 
 namespace search::queryeval {
+
+class Blueprint;
+class IRequestContext;
+class FieldSpec;
+class FieldSpecList;
 
 /**
  * Abstract class extended by components to expose content that can be
@@ -29,9 +31,9 @@ protected:
      * @param field the field to search
      * @param term the query tree term
      **/
-    virtual Blueprint::UP createBlueprint(const IRequestContext & requestContext,
-                                          const FieldSpec &field,
-                                          const search::query::Node &term) = 0;
+    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
+                                                       const FieldSpec &field,
+                                                       const search::query::Node &term) = 0;
 
 public:
     typedef std::shared_ptr<Searchable> SP;
@@ -48,9 +50,9 @@ public:
      * @param fields the set of fields to search
      * @param term the query tree term
      **/
-    virtual Blueprint::UP createBlueprint(const IRequestContext & requestContext,
-                                          const FieldSpecList &fields,
-                                          const search::query::Node &term);
+    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
+                                                       const FieldSpecList &fields,
+                                                       const search::query::Node &term);
     virtual ~Searchable() = default;
 };
 

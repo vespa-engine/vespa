@@ -3,8 +3,11 @@
 #include <vespa/searchcore/proton/matching/match_phase_limiter.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
+#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -14,6 +17,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::Blueprint;
 using search::queryeval::SimpleLeafBlueprint;
+using search::queryeval::IRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::AndSearchStrict;
@@ -78,9 +82,9 @@ struct MockBlueprint : SimpleLeafBlueprint {
 
 struct MockSearchable : Searchable {
     size_t create_cnt = 0;
-    virtual Blueprint::UP createBlueprint(const search::queryeval::IRequestContext & requestContext,
-                                          const FieldSpec &field,
-                                          const search::query::Node &term) override
+    Blueprint::UP createBlueprint(const IRequestContext & requestContext,
+                                  const FieldSpec &field,
+                                  const search::query::Node &term) override
     {
         (void) requestContext;
         ++create_cnt;
