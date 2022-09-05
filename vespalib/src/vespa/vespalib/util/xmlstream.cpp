@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "xmlstream.hpp"
+#include "string_escape.h"
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -42,64 +43,16 @@ namespace {
         return vec;
     }
 
-    std::vector<bool> getEscapedXmlCharacters() {
-        std::vector<bool> vec(256, false);
-        for (uint32_t i=0; i<32; ++i) {
-            vec[i] = true;
-        }
-        vec['\n'] = false;
-        vec['<'] = true;
-        vec['>'] = true;
-        vec['&'] = true;
-        return vec;
-    }
-
     std::vector<bool> legalIdentifierFirstChar(
             getLegalIdentifierFirstCharacters());
     std::vector<bool> legalIdentifierChars = getLegalIdentifierCharacters();
     std::vector<bool> binaryChars = getBinaryCharacters();
-    std::vector<bool> escapedXmlChars = getEscapedXmlCharacters();
 
     bool containsBinaryCharacters(const std::string& s) {
         for (int i=0, n=s.size(); i<n; ++i) {
             if (binaryChars[static_cast<uint8_t>(s[i])]) return true;
         }
         return false;
-    }
-
-    const std::string xmlAttributeEscape(const std::string& s) {
-        vespalib::asciistream ost;
-        for (uint32_t i=0, n=s.size(); i<n; ++i) {
-            if (s[i] == '"' || s[i] == '\n'
-                || escapedXmlChars[static_cast<uint8_t>(s[i])])
-            {
-                if      (s[i] == '<') ost << "&lt;";
-                else if (s[i] == '>') ost << "&gt;";
-                else if (s[i] == '&') ost << "&amp;";
-                else if (s[i] == '"') ost << "&quot;";
-                else {
-                    ost << "&#" << (int) s[i] << ";";
-                }
-            } else {
-                ost << s[i];
-            }
-        }
-        return ost.str();
-    }
-
-    void writeEscaped(std::ostream& out, const std::string& s) {
-        for (uint32_t i=0, n=s.size(); i<n; ++i) {
-            if (escapedXmlChars[static_cast<uint8_t>(s[i])]) {
-                if      (s[i] == '<') out << "&lt;";
-                else if (s[i] == '>') out << "&gt;";
-                else if (s[i] == '&') out << "&amp;";
-                else {
-                    out << "&#" << (int) s[i] << ";";
-                }
-            } else {
-                out << s[i];
-            }
-        }
     }
 
     void writeBase64Encoded(std::ostream& out, const std::string& s) {
@@ -290,7 +243,7 @@ XmlOutputStream::flush(bool endTag)
          it != _cachedAttributes.end(); ++it)
     {
         _wrappedStream << ' ' << it->getName() << "=\""
-                       << xmlAttributeEscape(it->getValue()) << '"';
+                       << xml_attribute_escaped(it->getValue()) << '"';
     }
     _cachedAttributes.clear();
     if (_cachedContent.empty() && endTag) {
@@ -325,7 +278,7 @@ XmlOutputStream::flush(bool endTag)
             }
             switch (_cachedContentType) {
                 case XmlContent::ESCAPED: {
-                    writeEscaped(_wrappedStream, it->getContent());
+                    write_xml_content_escaped(_wrappedStream, it->getContent());
                     break;
                 }
                 case XmlContent::BASE64: {

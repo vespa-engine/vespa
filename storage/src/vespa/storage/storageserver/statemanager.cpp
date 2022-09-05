@@ -9,9 +9,9 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <fstream>
@@ -99,19 +99,20 @@ void
 StateManager::reportHtmlStatus(std::ostream& out,
                                const framework::HttpUrlPath& path) const
 {
+    using vespalib::xml_content_escaped;
     (void) path;
     {
         std::lock_guard lock(_stateLock);
-        const auto &baseLineClusterState = _systemState->getBaselineClusterState();
+        const auto& baseLineClusterState = _systemState->getBaselineClusterState();
         out << "<h1>Current system state</h1>\n"
-            << "<code>" << baseLineClusterState->toString(true) << "</code>\n"
+            << "<code>" << xml_content_escaped(baseLineClusterState->toString(true)) << "</code>\n"
             << "<h1>Current node state</h1>\n"
             << "<code>" << baseLineClusterState->getNodeState(lib::Node(
                         _component.getNodeType(), _component.getIndex())
                                                      ).toString(true)
             << "</code>\n"
             << "<h1>Reported node state</h1>\n"
-            << "<code>" << _nodeState->toString(true) << "</code>\n"
+            << "<code>" << xml_content_escaped(_nodeState->toString(true)) << "</code>\n"
             << "<h1>Pending state requests</h1>\n"
             << _queuedStateRequests.size() << "\n"
             << "<h1>System state history</h1>\n"
@@ -119,7 +120,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<th>Received at time</th><th>State</th></tr>\n";
         for (auto it = _systemStateHistory.rbegin(); it != _systemStateHistory.rend(); ++it) {
             out << "<tr><td>" << it->first << "</td><td>"
-                << *it->second->getBaselineClusterState() << "</td></tr>\n";
+                << xml_content_escaped(it->second->getBaselineClusterState()->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
     }
