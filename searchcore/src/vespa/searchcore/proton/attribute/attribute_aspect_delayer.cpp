@@ -113,11 +113,11 @@ class AttributeAspectConfigRewriter
     bool should_delay_remove_attribute_aspect(const vespalib::string& name) const;
     bool calculate_fast_access(const AttributesConfig::Attribute& new_attribute_config) const;
     void mark_delayed_add_attribute_aspect(const vespalib::string& name) { _delayed_add_attribute_aspect.insert(name); }
-    bool get_delayed_add_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect.find(name) != _delayed_add_attribute_aspect.end(); }
+    bool is_delayed_add_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect.find(name) != _delayed_add_attribute_aspect.end(); }
     void mark_delayed_add_attribute_aspect_struct(const vespalib::string& name) { _delayed_add_attribute_aspect_struct.insert(name); }
-    bool get_delayed_add_attribute_aspect_struct(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect_struct.find(name) != _delayed_add_attribute_aspect_struct.end(); }
+    bool is_delayed_add_attribute_aspect_struct(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect_struct.find(name) != _delayed_add_attribute_aspect_struct.end(); }
     void mark_delayed_remove_attribute_aspect(const vespalib::string& name) { _delayed_remove_attribute_aspect.insert(name); }
-    bool get_delayed_remove_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_remove_attribute_aspect.find(name) != _delayed_remove_attribute_aspect.end(); }
+    bool is_delayed_remove_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_remove_attribute_aspect.find(name) != _delayed_remove_attribute_aspect.end(); }
 public:
     AttributeAspectConfigRewriter(const AttributesConfig& old_attributes_config,
                                   const AttributesConfig& new_attributes_config,
@@ -243,7 +243,7 @@ void
 AttributeAspectConfigRewriter::build_attributes_config(AttributesConfigBuilder& attributes_config_builder) const
 {
     for (const auto &newAttr : _new_attributes_config.attribute) {
-        if (get_delayed_add_attribute_aspect(newAttr.name)) {
+        if (is_delayed_add_attribute_aspect(newAttr.name)) {
             // Delay addition of attribute aspect
         } else {
             attributes_config_builder.attribute.emplace_back(newAttr);
@@ -251,7 +251,7 @@ AttributeAspectConfigRewriter::build_attributes_config(AttributesConfigBuilder& 
         }
     }
     for (const auto &oldAttr : _old_attributes_config.attribute) {
-        if (get_delayed_remove_attribute_aspect(oldAttr.name)) {
+        if (is_delayed_remove_attribute_aspect(oldAttr.name)) {
             // Delay removal of attribute aspect
             attributes_config_builder.attribute.emplace_back(oldAttr);
         }
@@ -267,15 +267,15 @@ AttributeAspectConfigRewriter::build_summary_map_config(const SummarymapConfig& 
     KnownSummaryFields knownSummaryFields(new_summary_config);
     for (const auto &override : new_summarymap_config.override) {
         if (override.command == attribute_dfw_string) {
-            if (!get_delayed_add_attribute_aspect(source_field(override))) {
+            if (!is_delayed_add_attribute_aspect(source_field(override))) {
                 summarymap_config_builder.override.emplace_back(override);
             }
         } else if (override.command == attribute_combiner_dfw_string) {
-            if (!get_delayed_add_attribute_aspect_struct(source_field(override))) {
+            if (!is_delayed_add_attribute_aspect_struct(source_field(override))) {
                 summarymap_config_builder.override.emplace_back(override);
             }
         } else if (override.command == matched_attribute_elements_filter_dfw_string) {
-            if (!get_delayed_add_attribute_aspect_struct(source_field(override))) {
+            if (!is_delayed_add_attribute_aspect_struct(source_field(override))) {
                 summarymap_config_builder.override.emplace_back(override);
             } else {
                 SummarymapConfig::Override mutated_override(override);
@@ -288,7 +288,7 @@ AttributeAspectConfigRewriter::build_summary_map_config(const SummarymapConfig& 
     }
     for (const auto &override : old_summarymap_config.override) {
         if (override.command == attribute_dfw_string) {
-            if (get_delayed_remove_attribute_aspect(source_field(override)) && knownSummaryFields.known(override.field)) {
+            if (is_delayed_remove_attribute_aspect(source_field(override)) && knownSummaryFields.known(override.field)) {
                 summarymap_config_builder.override.emplace_back(override);
             }
         }
@@ -303,29 +303,29 @@ AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig& new_sum
     for (auto &summary_class : summary_config_builder.classes) {
         for (auto &summary_field : summary_class.fields) {
             if (summary_field.command == attribute_dfw_string) {
-                if (get_delayed_add_attribute_aspect(source_field(summary_field))) {
+                if (is_delayed_add_attribute_aspect(source_field(summary_field))) {
                     remove_docsum_field_rewriter(summary_field);
                 }
             } else if (summary_field.command == attribute_combiner_dfw_string) {
-                if (get_delayed_add_attribute_aspect_struct(source_field(summary_field))) {
+                if (is_delayed_add_attribute_aspect_struct(source_field(summary_field))) {
                     remove_docsum_field_rewriter(summary_field);
                 }
             } else if (summary_field.command == matched_attribute_elements_filter_dfw_string) {
-                if (get_delayed_add_attribute_aspect_struct(source_field(summary_field)) ||
-                    get_delayed_add_attribute_aspect(source_field(summary_field))) {
+                if (is_delayed_add_attribute_aspect_struct(source_field(summary_field)) ||
+                    is_delayed_add_attribute_aspect(source_field(summary_field))) {
                     summary_field.command = matched_elements_filter_dfw_string;
                 }
             } else if (summary_field.command == matched_elements_filter_dfw_string) {
-                if (get_delayed_remove_attribute_aspect(source_field(summary_field))) {
+                if (is_delayed_remove_attribute_aspect(source_field(summary_field))) {
                     summary_field.command = matched_attribute_elements_filter_dfw_string;
                 }
             } else if (summary_field.command == "") {
-                if (get_delayed_remove_attribute_aspect(summary_field.name)) {
+                if (is_delayed_remove_attribute_aspect(summary_field.name)) {
                     summary_field.command = attribute_dfw_string;
                     summary_field.source = summary_field.name;
                 }
             } else if (summary_field.command == copy_dfw_string) {
-                if (get_delayed_remove_attribute_aspect(source_field(summary_field))) {
+                if (is_delayed_remove_attribute_aspect(source_field(summary_field))) {
                     summary_field.command = attribute_dfw_string;
                     summary_field.source = source_field(summary_field);
                 }
