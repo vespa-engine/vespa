@@ -217,12 +217,13 @@ public class ModelContextImpl implements ModelContext {
         private final boolean mbus_dispatch_on_encode;
         private final int mbus_threads;
         private final int mbus_network_threads;
-        private int mbus_java_num_targets;
-        private int mbus_java_events_before_wakeup;
-        private int mbus_cpp_num_targets;
-        private int mbus_cpp_events_before_wakeup;
-        private int rpc_num_targets;
-        private int rpc_events_before_wakeup;
+        private final int mbus_java_num_targets;
+        private final int mbus_java_events_before_wakeup;
+        private final int mbus_cpp_num_targets;
+        private final int mbus_cpp_events_before_wakeup;
+        private final int rpc_num_targets;
+        private final int rpc_events_before_wakeup;
+        private final int clusterControllerStateGatherCount;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -282,6 +283,7 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
             this.phraseOptimization = flagValue(source, appId, version, Flags.PHRASE_OPTIMIZATION);
+            this.clusterControllerStateGatherCount = flagValue(source, appId, version, Flags.CLUSTER_CONTROLLER_STATE_GATHER_COUNT);
         }
 
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
@@ -349,6 +351,7 @@ public class ModelContextImpl implements ModelContext {
             return defVal;
         }
         @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
+        @Override public int clusterControllerStateGatherCount() { return clusterControllerStateGatherCount; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
