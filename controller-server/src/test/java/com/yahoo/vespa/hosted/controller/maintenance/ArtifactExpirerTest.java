@@ -27,35 +27,43 @@ public class ArtifactExpirerTest {
 
         Instant instant = tester.clock().instant();
         Artifact image0 = new Artifact("image0", "registry.example.com", "vespa/vespa", "7.1", instant, Version.fromString("7.1"));
-        Artifact image1 = new Artifact("image1", "registry.example.com", "vespa/vespa", "7.2-amd64", instant, Version.fromString("7.2"));
-        Artifact image2 = new Artifact("image2", "registry.example.com", "vespa/vespa", "7.4-amd64", instant, Version.fromString("7.4"));
+        Artifact image1 = new Artifact("image1", "registry.example.com", "vespa/vespa", "7.2.42-amd64", instant, Version.fromString("7.2.42"));
+        Artifact image2 = new Artifact("image2", "registry.example.com", "vespa/vespa", "7.2.42.a-amd64", instant, Version.fromString("7.2.42.a"));
+        Artifact image3 = new Artifact("image3", "registry.example.com", "vespa/vespa", "7.4-amd64", instant, Version.fromString("7.4"));
         registry.add(image0)
                 .add(image1)
-                .add(image2);
+                .add(image2)
+                .add(image3);
 
         // Make one image active
         tester.controllerTester().upgradeSystem(image1.version());
 
         // Nothing is expired initially
         expirer.maintain();
-        assertEquals(List.of(image0, image1, image2), registry.list());
+        assertEquals(List.of(image0, image1, image2, image3), registry.list());
 
-        // Nothing happens as not enough time has passed since image creation
+        // Nothing is expired as not enough time has passed since image creation
         tester.clock().advance(Duration.ofDays(1));
         expirer.maintain();
-        assertEquals(List.of(image0, image1, image2), registry.list());
+        assertEquals(List.of(image0, image1, image2, image3), registry.list());
 
         // Enough time passes to expire unused image
         tester.clock().advance(Duration.ofDays(13).plus(Duration.ofSeconds(1)));
         expirer.maintain();
-        assertEquals(List.of(image1, image2), registry.list());
+        assertEquals(List.of(image1, image2, image3), registry.list());
 
-        // A new version becomes active. The active and future version are kept
-        Artifact image3 = new Artifact("image3", "registry.example.com", "vespa/vespa", "7.3-arm64", tester.clock().instant(), Version.fromString("7.3"));
-        registry.add(image3);
-        tester.controllerTester().upgradeSystem(image3.version());
+        // A new version becomes is published and controllers upgrade. This version, the system version + its unofficial
+        // version and future versions are all kept
+        Artifact image4 = new Artifact("image4", "registry.example.com", "vespa/vespa", "7.3.0-arm64", tester.clock().instant(), Version.fromString("7.3.0"));
+        registry.add(image4);
+        tester.controllerTester().upgradeController(image4.version());
         expirer.maintain();
-        assertEquals(List.of(image3, image2), registry.list());
+        assertEquals(List.of(image1, image2, image4, image3), registry.list());
+
+        // The system upgrades, only the active and future version are kept
+        tester.controllerTester().upgradeSystem(image4.version());
+        expirer.maintain();
+        assertEquals(List.of(image4, image3), registry.list());
     }
 
 }

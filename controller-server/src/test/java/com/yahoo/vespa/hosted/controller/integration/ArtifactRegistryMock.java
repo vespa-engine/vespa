@@ -8,7 +8,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -22,6 +21,7 @@ public class ArtifactRegistryMock implements ArtifactRegistry {
     private final Map<String, Artifact> images = new HashMap<>();
 
     public ArtifactRegistryMock add(Artifact image) {
+        if (images.containsKey(image.id())) throw new IllegalArgumentException("Image with ID '" + image.id() + "' already exists");
         images.put(image.id(), image);
         return this;
     }
@@ -33,7 +33,7 @@ public class ArtifactRegistryMock implements ArtifactRegistry {
 
     @Override
     public List<Artifact> list() {
-        return images.values().stream().sorted(comparator).collect(Collectors.toUnmodifiableList());
+        return images.values().stream().sorted(comparator).toList();
     }
 
 }
