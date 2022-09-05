@@ -70,20 +70,26 @@ public class Container {
     // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
     public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
+            ComponentGraph newGraph;
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
-            newGraph.reuseNodes(oldGraph);
+            try {
+                newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
+                newGraph.reuseNodes(oldGraph);
+            } catch (Throwable t) {
+                log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
+                osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
+                throw t;
+            }
             try {
                 constructComponents(newGraph);
             } catch (Throwable e) {
-                log.log(Level.WARNING, String.format(
-                        "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
-                        newGraph.generation()), e);
-
-                Collection<Bundle> newBundlesFromFailedGen = osgi.revertApplicationBundles();
+                log.warning("Failed to construct components for generation '" + newGraph.generation() + "' - scheduling partial graph for deconstruction");
+                Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
                 deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
                 throw e;
             }
+            // TODO: take obsoleteBundles as return value here!
+            osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
             return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
@@ -194,7 +200,7 @@ public class Container {
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
-        return osgi.useApplicationBundles(applicationBundlesConfig.bundles(), getComponentsGeneration());
+        return osgi.useApplicationBundles(applicationBundlesConfig.bundles(), getBootstrapGeneration());
     }
 
     private ComponentGraph createComponentGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,

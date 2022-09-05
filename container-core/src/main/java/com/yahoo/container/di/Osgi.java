@@ -24,10 +24,14 @@ import static java.util.Collections.emptySet;
  */
 public interface Osgi {
 
+    enum GenerationStatus { SUCCESS, FAILURE }
+
     default void installPlatformBundles(Collection<String> bundlePaths) {
     }
 
     /**
+     * TODO: return void and let all obsolete bundles be returned by completeBundleGeneration
+     *
      * Returns the set of bundles that is not needed by the new application generation,
      * and therefore should be scheduled for uninstalling.
      *
@@ -40,13 +44,14 @@ public interface Osgi {
     }
 
     /**
-     * To be used when a new application generation fails, e.g. during component construction.
-     * Reverts all state related to application bundles to the previous generation.
+     * If the current generation is a failure, all state related to application bundles is reverted to
+     * the previous generation. The set of bundles that was exclusively needed by the new generation,
+     * and therefore should be scheduled for uninstalling, is returned.
      *
-     * Returns the set of bundles that was exclusively used by the new generation,
-     * and therefore should be scheduled for uninstalling.
+     * @param status The success or failure of the new generation
+     * @return The set of bundles that are no longer needed by the latest good generation.
      */
-    default Collection<Bundle> revertApplicationBundles() {
+    default Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
         return emptySet();
     }
 

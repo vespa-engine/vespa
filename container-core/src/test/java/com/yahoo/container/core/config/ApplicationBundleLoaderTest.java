@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.config;
 
+import com.yahoo.container.di.Osgi.GenerationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
@@ -15,6 +16,7 @@ import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_2;
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_2_REF;
 import static com.yahoo.container.core.config.BundleTestUtil.testBundles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -47,8 +49,28 @@ public class ApplicationBundleLoaderTest {
     }
 
     @Test
+    void generation_must_be_marked_complete_before_using_new_bundles() {
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        assertThrows(IllegalStateException.class,
+                     () -> bundleLoader.useBundles(List.of(BUNDLE_1_REF)));
+    }
+
+    @Test
+    void no_bundles_are_marked_obsolete_upon_reconfig_with_unchanged_bundles() {
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+
+        // No bundles are obsolete
+        assertTrue(obsoleteBundles.isEmpty());
+    }
+
+    @Test
     void new_bundle_can_be_installed_in_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
         Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
 
         // No bundles are obsolete
@@ -73,6 +95,8 @@ public class ApplicationBundleLoaderTest {
     @Test
     void unused_bundle_is_marked_obsolete_after_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
         Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
 
         // The returned set of obsolete bundles contains bundle-1
@@ -97,11 +121,13 @@ public class ApplicationBundleLoaderTest {
     @Test
     void previous_generation_can_be_restored_after_a_failed_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
         Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
         assertEquals(BUNDLE_1.getSymbolicName(), obsoleteBundles.iterator().next().getSymbolicName());
 
         // Revert to the previous generation, as will be done upon a failed reconfig.
-        Collection<Bundle> bundlesToUninstall = bundleLoader.revertToPreviousGeneration();
+        Collection<Bundle> bundlesToUninstall = bundleLoader.completeGeneration(GenerationStatus.FAILURE);
 
         assertEquals(1, bundlesToUninstall.size());
         assertEquals(BUNDLE_2.getSymbolicName(), bundlesToUninstall.iterator().next().getSymbolicName());
@@ -117,18 +143,17 @@ public class ApplicationBundleLoaderTest {
     }
 
     @Test
-    void bundles_are_unaffected_by_failed_reconfig_with_unchanged_bundles() {
+    void bundles_from_committed_config_generation_are_not_uninstalled_upon_future_failed_reconfig() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
-        assertTrue(obsoleteBundles.isEmpty());
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
         // Revert to the previous generation, as will be done upon a failed reconfig.
-        Collection<Bundle> bundlesToUninstall = bundleLoader.revertToPreviousGeneration();
+        Collection<Bundle> bundlesToUninstall = bundleLoader.completeGeneration(GenerationStatus.FAILURE);
 
         assertEquals(0, bundlesToUninstall.size());
         assertEquals(1, osgi.getCurrentBundles().size());
 
-        obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         assertTrue(obsoleteBundles.isEmpty());
         assertEquals(1, osgi.getCurrentBundles().size());
     }

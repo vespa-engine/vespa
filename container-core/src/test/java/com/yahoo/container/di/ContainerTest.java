@@ -10,13 +10,13 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleCompo
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.osgi.framework.Bundle;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -252,7 +252,7 @@ public class ContainerTest extends ContainerTestBase {
         try {
             newGraph.get(1, TimeUnit.SECONDS);
             fail("Expected waiting for new config.");
-        } catch (Exception ignored) {
+        } catch (TimeoutException ignored) {
             // expect to time out
         }
 

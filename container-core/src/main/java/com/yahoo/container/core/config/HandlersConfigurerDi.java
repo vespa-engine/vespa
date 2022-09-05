@@ -104,9 +104,8 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public Collection<Bundle> revertApplicationBundles() {
-            log.info("Reverting to bundles from the previous generation.");
-            return applicationBundleLoader.revertToPreviousGeneration();
+        public Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+            return applicationBundleLoader.completeGeneration(status);
         }
     }
 

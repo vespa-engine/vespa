@@ -2,6 +2,7 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.container.di.Osgi.GenerationStatus;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
@@ -37,8 +38,11 @@ public class ApplicationBundleLoader {
     // The bundles that exclusively belong to the current application generation.
     private Map<FileReference, Bundle> bundlesFromNewGeneration = Map.of();
 
+    private boolean readyForNewBundles = true;
+
     private final Osgi osgi;
     private final FileAcquirerBundleInstaller bundleInstaller;
+
 
     public ApplicationBundleLoader(Osgi osgi, FileAcquirerBundleInstaller bundleInstaller) {
         this.osgi = osgi;
@@ -48,8 +52,12 @@ public class ApplicationBundleLoader {
     /**
      * Installs the given set of bundles and returns the set of bundles that is no longer used
      * by the application, and should therefore be scheduled for uninstall.
+     *
+     * TODO: return void, and instead return the bundles to remove from completeGeneration()
      */
     public synchronized Set<Bundle> useBundles(List<FileReference> newFileReferences) {
+        if (! readyForNewBundles)
+            throw new IllegalStateException("Bundles must be committed or reverted before using new bundles.");
 
         obsoleteBundles = removeObsoleteBundles(newFileReferences);
         Set<Bundle> bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
@@ -61,7 +69,32 @@ public class ApplicationBundleLoader {
         BundleStarter.startBundles(activeBundles.values());
         log.info(installedBundlesMessage());
 
+        readyForNewBundles = false;
+
         return bundlesToUninstall;
+    }
+
+    public synchronized Collection<Bundle> completeGeneration(GenerationStatus status) {
+        Collection<Bundle> ret = List.of();
+        if (readyForNewBundles) return ret;
+
+        if (status == GenerationStatus.SUCCESS) {
+            commitBundles();
+        } else {
+            ret = revertToPreviousGeneration();
+        }
+        readyForNewBundles = true;
+        return ret;
+    }
+
+    /**
+     * Commit to the current set of bundles. Must be called after the component graph creation proved successful,
+     * to prevent uninstalling bundles unintentionally upon a future call to {@link #revertToPreviousGeneration()}.
+     */
+    private void commitBundles() {
+        bundlesFromNewGeneration = Map.of();
+        obsoleteBundles = Map.of();
+        readyForNewBundles = true;
     }
 
     /**
@@ -69,7 +102,9 @@ public class ApplicationBundleLoader {
      * exclusively belongs to the latest (failed) application generation. Uninstalling must
      * be done by the Deconstructor as they may still be needed by components from the failed gen.
      */
-    public synchronized Collection<Bundle> revertToPreviousGeneration() {
+    private Collection<Bundle> revertToPreviousGeneration() {
+        log.info("Reverting to previous generation with bundles: " + obsoleteBundles);
+        log.info("Bundles from latest generation will be removed: " + bundlesFromNewGeneration);
         activeBundles.putAll(obsoleteBundles);
         bundlesFromNewGeneration.forEach(activeBundles::remove);
         Collection<Bundle> ret = bundlesFromNewGeneration.values();
@@ -83,6 +118,7 @@ public class ApplicationBundleLoader {
         bundlesFromNewGeneration = Map.of();
         obsoleteBundles = Map.of();
 
+        readyForNewBundles = true;
         return ret;
     }
 

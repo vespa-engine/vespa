@@ -70,8 +70,8 @@ public class TestOsgi extends MockOsgi implements com.yahoo.container.di.Osgi {
     }
 
     @Override
-    public Collection<Bundle> revertApplicationBundles() {
-        return bundleLoader.revertToPreviousGeneration();
+    public Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+        return bundleLoader.completeGeneration(status);
     }
 
     public void removeBundle(Bundle bundle) {
