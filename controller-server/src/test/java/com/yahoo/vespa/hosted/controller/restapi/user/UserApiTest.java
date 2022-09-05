@@ -10,8 +10,6 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.jdisc.http.filter.security.misc.User;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement;
-import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -251,27 +249,6 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                     Role.reader(TenantName.from("sandbox"))))
                             .user(user),
                     new File("user-with-applications-cloud.json"));
-        }
-    }
-
-    @Test
-    void findUser() {
-        try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
-            ContainerTester tester = new ContainerTester(container, responseFiles);
-            ((InMemoryFlagSource) tester.controller().flagSource())
-                    .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
-            Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
-            User user = new User("dev@domail", "Joe Developer", "dev", null);
-
-            Role developer = Role.developer(TenantName.from("scoober"));
-            tester.userManagement().createRole(developer);
-            tester.userManagement().addToRoles(new UserId("dev@domail"), Set.of(developer));
-
-            tester.assertResponse(request("/user/v1/find?email=dev@domail")
-                    .roles(operator)
-                    .user(user),
-                    """
-                            {"isPublic":true,"isCd":false,"hasTrialCapacity":true,"user":{"name":"dev@domail","email":"dev@domail","verified":false},"tenants":{"scoober":{"supported":false,"roles":["developer"]}},"flags":[{"id":"enable-public-signup-flow","rules":[{"value":false}]}]}""");
         }
     }
 

@@ -90,8 +90,6 @@ enum PathGroup {
 
     accountant("/billing/v2/accountant/{*}"),
 
-    userSearch("/user/v1/find"),
-
     applicationKeys(Matcher.tenant,
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/key/"),
