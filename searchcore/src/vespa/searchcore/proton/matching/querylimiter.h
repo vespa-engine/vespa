@@ -17,7 +17,7 @@ public:
     class Token {
     public:
         typedef std::unique_ptr<Token> UP;
-        virtual ~Token() { }
+        virtual ~Token() = default;
     };
 public:
     QueryLimiter();
@@ -31,7 +31,9 @@ private:
         QueryLimiter & _limiter;
     public:
         LimitedToken(const Doom & doom, QueryLimiter & limiter);
-        virtual ~LimitedToken();
+        LimitedToken(const NoLimitToken &) = delete;
+        LimitedToken & operator =(const NoLimitToken &) = delete;
+        ~LimitedToken() override;
     };
     void grabToken(const Doom & doom);
     void releaseToken();

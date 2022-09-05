@@ -25,7 +25,7 @@ private:
     virtual int32_t onFind(DocId docId, int32_t elementId) const = 0;
 
 public:
-    virtual ~ISearchContext() {}
+    virtual ~ISearchContext() = default;
 
     virtual unsigned int approximateHits() const = 0;
 

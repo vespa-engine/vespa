@@ -52,7 +52,7 @@ inject(Node::UP query, Node::UP to_inject) {
     if (auto * my_and = dynamic_cast<search::query::And *>(query.get())) {
         my_and->append(std::move(to_inject));
     } else  if (dynamic_cast<search::query::Rank *>(query.get()) || dynamic_cast<search::query::AndNot *>(query.get())) {
-        search::query::Intermediate & root = static_cast<search::query::Intermediate &>(*query);
+        auto & root = static_cast<search::query::Intermediate &>(*query);
         root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {
         auto new_root = std::make_unique<ProtonAnd>();
@@ -82,7 +82,7 @@ find_location_terms(Node *tree) {
     return locations;
 }
 
-GeoLocationSpec parse_location_string(string str) {
+GeoLocationSpec parse_location_string(const string & str) {
     GeoLocationSpec empty;
     if (str.empty()) {
         return empty;

@@ -3,7 +3,6 @@
 #include "base.h"
 #include "query_term_simple.h"
 #include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/locale/c.h>
 #include <cmath>
@@ -314,7 +313,7 @@ QueryTermSimple::getClassName() const
 void
 visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search::QueryTermSimple *obj)
 {
-    if (obj != 0) {
+    if (obj != nullptr) {
         self.openStruct(name, obj->getClassName());
         obj->visitMembers(self);
         self.closeStruct();

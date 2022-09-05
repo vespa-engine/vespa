@@ -72,7 +72,7 @@ public:
     }
 
     AttributeGuard::UP getAttribute(const string &) const override {
-        return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
+        return std::make_unique<AttributeGuard>(_attribute_vector);
     }
 
     std::unique_ptr<attribute::AttributeReadGuard>

@@ -153,7 +153,7 @@ public:
                                       .diversityCutoffStrict(diversityCutoffStrict))
     {}
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
+    SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict);
     }
@@ -406,22 +406,7 @@ public:
         }
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override
-    {
-        assert(tfmda.size() == 1);
-        assert(getState().numFields() == 1);
-        if (_terms.empty()) {
-            return std::make_unique<queryeval::EmptySearch>();
-        }
-        std::vector<DocumentWeightIterator> iterators;
-        const size_t numChildren = _terms.size();
-        iterators.reserve(numChildren);
-        for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
-            _attr.create(r.posting_idx, iterators);
-        }
-        bool field_is_filter = getState().fields()[0].isFilter();
-        return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
-    }
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override;
 
     std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
@@ -432,6 +417,26 @@ public:
         }
     }
 };
+
+template <typename SearchType>
+SearchIterator::UP
+DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const
+{
+    assert(tfmda.size() == 1);
+    assert(getState().numFields() == 1);
+    if (_terms.empty()) {
+        return std::make_unique<queryeval::EmptySearch>();
+    }
+    std::vector<DocumentWeightIterator> iterators;
+    const size_t numChildren = _terms.size();
+    iterators.reserve(numChildren);
+    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+        _attr.create(r.posting_idx, iterators);
+    }
+    bool field_is_filter = getState().fields()[0].isFilter();
+    return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
+}
+
 
 template <typename SearchType>
 DirectWeightedSetBlueprint<SearchType>::~DirectWeightedSetBlueprint() = default;
