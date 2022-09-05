@@ -257,9 +257,9 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
                                         "{'name':'c','weight':7}]");
     expect_filtered("array", {0, 1, 100}, "[]");
     set_empty_values();
-    expect_filtered("array", {}, "[]");
+    expect_filtered("array", {}, "null");
     set_skip_set_values();
-    expect_filtered("array", {}, "[]");
+    expect_filtered("array", {}, "null");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
@@ -281,9 +281,9 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
     expect_filtered("map", {0, 1, 100}, "[]");
     set_empty_values();
-    expect_filtered("map", {}, "[]");
+    expect_filtered("map", {}, "null");
     set_skip_set_values();
-    expect_filtered("map", {}, "[]");
+    expect_filtered("map", {}, "null");
 }
 
 TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
@@ -295,9 +295,9 @@ TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
     expect_filtered("wset", {0, 1, 2}, "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
     expect_filtered("wset", {0, 1, 100}, "[]");
     set_empty_values();
-    expect_filtered("wset", {}, "[]");
+    expect_filtered("wset", {}, "null");
     set_skip_set_values();
-    expect_filtered("wset", {}, "[]");
+    expect_filtered("wset", {}, "null");
 }
 
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)

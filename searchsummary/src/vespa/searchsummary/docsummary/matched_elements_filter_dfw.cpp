@@ -77,7 +77,6 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
     auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
     vespalib::stringref buf = literal.getValueRef();
     if (buf.empty()) {
-        target.insertArray(0);
         return;
     }
     Slime input_field_as_slime;
@@ -95,8 +94,6 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
         filter_matching_elements_in_input_field_while_converting_to_slime(*field_value, get_matching_elements(docid, *state), target);
-    } else {
-        target.insertArray(0);
     }
 }
 
