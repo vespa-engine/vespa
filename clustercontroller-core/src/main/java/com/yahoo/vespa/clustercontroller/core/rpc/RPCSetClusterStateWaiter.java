@@ -30,13 +30,7 @@ public class RPCSetClusterStateWaiter implements RequestWaiter {
     public SetClusterStateRequest.Reply getReply(Request req) {
         NodeInfo info = request.getNodeInfo();
 
-        if (req.methodName().equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)
-                || req.methodName().equals(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME)) {
-            if (req.isError() && req.errorCode() == ErrorCode.NO_SUCH_METHOD) {
-                if (info.notifyNoSuchMethodError(req.methodName(), timer)) {
-                    return new SetClusterStateRequest.Reply(Communicator.TRANSIENT_ERROR, "Trying lower version");
-                }
-            }
+        if (req.methodName().equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)) {
             if (req.isError()) {
                 return new SetClusterStateRequest.Reply(req.errorCode(), req.errorMessage());
             } else if (!req.checkReturnTypes("")) {

@@ -37,14 +37,17 @@ public class RPCCommunicator implements Communicator {
 
     public static final Logger log = Logger.getLogger(RPCCommunicator.class.getName());
 
+    // Rpc method versions and Vespa versions which supports each version:
+    // 0 - 4.1
+    // 1 - 4.2-5.0.10
+    // 2 - 5.0.11-8.48.3
+    // 3 - 6.220+
+    // 4 - 7.24+
     public static final int ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION = 4;
     public static final String ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME = "activate_cluster_state_version";
 
     public static final int SET_DISTRIBUTION_STATES_RPC_VERSION = 3;
     public static final String SET_DISTRIBUTION_STATES_RPC_METHOD_NAME = "setdistributionstates";
-
-    public static final int LEGACY_SET_SYSTEM_STATE2_RPC_VERSION = 2;
-    public static final String LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME = "setsystemstate2";
 
     private final Timer timer;
     private final Supervisor supervisor;
@@ -121,7 +124,7 @@ public class RPCCommunicator implements Communicator {
         req.parameters().add(new Int32Value(fleetControllerIndex));
 
         RPCGetNodeStateRequest stateRequest = new RPCGetNodeStateRequest(node, req);
-        RPCGetNodeStateWaiter waiter = new RPCGetNodeStateWaiter(stateRequest, externalWaiter, timer);
+        RPCGetNodeStateWaiter waiter = new RPCGetNodeStateWaiter(stateRequest, externalWaiter);
 
         Duration requestTimeout = nodeStateRequestTimeoutIntervalMax.plus(nodeStateRequestRoundTripTimeMax);
 
@@ -140,20 +143,13 @@ public class RPCCommunicator implements Communicator {
             log.log(Level.FINE, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
-        int nodeVersion = node.getVersion();
-        Request req;
-        if (nodeVersion <= 2) {
-            req = new Request(LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME);
-            req.parameters().add(new StringValue(baselineState.toString(false)));
-        } else {
-            req = new Request(SET_DISTRIBUTION_STATES_RPC_METHOD_NAME);
-            SlimeClusterStateBundleCodec codec = new SlimeClusterStateBundleCodec();
-            EncodedClusterStateBundle encodedBundle = codec.encode(stateBundle);
-            Values v = req.parameters();
-            v.add(new Int8Value(encodedBundle.getCompression().type().getCode()));
-            v.add(new Int32Value(encodedBundle.getCompression().uncompressedSize()));
-            v.add(new DataValue(encodedBundle.getCompression().data()));
-        }
+        Request req = new Request(SET_DISTRIBUTION_STATES_RPC_METHOD_NAME);
+        SlimeClusterStateBundleCodec codec = new SlimeClusterStateBundleCodec();
+        EncodedClusterStateBundle encodedBundle = codec.encode(stateBundle);
+        Values v = req.parameters();
+        v.add(new Int8Value(encodedBundle.getCompression().type().getCode()));
+        v.add(new Int32Value(encodedBundle.getCompression().uncompressedSize()));
+        v.add(new DataValue(encodedBundle.getCompression().data()));
 
         log.log(Level.FINE, () -> String.format("Sending '%s' RPC to %s for state version %d",
                 req.methodName(), node.getRpcAddress(), stateBundle.getVersion()));

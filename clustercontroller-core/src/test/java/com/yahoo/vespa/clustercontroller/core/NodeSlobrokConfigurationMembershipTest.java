@@ -24,7 +24,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         setUpFleetController(true, options);
         Set<Integer> nodesWithStranger = new TreeSet<>(validIndices);
         nodesWithStranger.add(foreignNodeIndex);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodesWithStranger);
+        setUpVdsNodes(true, false, nodesWithStranger);
         return options.build();
     }
 
@@ -64,7 +64,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         Set<ConfiguredNode> configuredNodes = asConfiguredNodes(nodeIndices);
         FleetControllerOptions.Builder builder = optionsForConfiguredNodes(configuredNodes);
         options = setUpFleetController(true, builder);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeIndices);
+        setUpVdsNodes(true, false, nodeIndices);
 
         waitForState("version:\\d+ distributor:4 storage:4");
 

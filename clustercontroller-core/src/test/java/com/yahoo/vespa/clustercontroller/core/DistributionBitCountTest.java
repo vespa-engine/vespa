@@ -26,7 +26,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
         builder.setDistributionBits(17);
         setUpFleetController(false, builder);
         startingTest(testName);
-        List<DummyVdsNode> nodes = setUpVdsNodes(false, new DummyVdsNodeOptions(), true, configuredNodes);
+        List<DummyVdsNode> nodes = setUpVdsNodes(false, true, configuredNodes);
         for (DummyVdsNode node : nodes) {
             node.setNodeState(new NodeState(node.getType(), State.UP).setMinUsedBits(20));
             node.connect();

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.rpc;
 
-import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.jrt.Supervisor;
@@ -156,32 +155,6 @@ public class RPCCommunicatorTest {
 
         ClusterStateBundle receivedBundle = RPCUtil.decodeStateBundleFromSetDistributionStatesRequest(req);
         assertEquals(receivedBundle, sentBundle);
-    }
-
-    @Test
-    void set_distribution_states_v3_rpc_auto_downgrades_to_v2_on_unknown_method_error() {
-        var f = new Fixture<SetClusterStateRequest>();
-        var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
-        var sentBundle = ClusterStateBundleUtil.makeBundle("version:123 distributor:3 storage:3");
-        f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
-
-        RequestWaiter waiter = f.receivedWaiter.get();
-        assertNotNull(waiter);
-        Request req = f.receivedRequest.get();
-        assertNotNull(req);
-
-        req.setError(ErrorCode.NO_SUCH_METHOD, "que?");
-        waiter.handleRequestDone(req);
-
-        // This would normally be done in processResponses(), but that code path is not invoked in this test.
-        cf.cluster().getNodeInfo(Node.ofStorage(1)).setClusterStateBundleVersionAcknowledged(123, false);
-
-        f.receivedRequest.set(null);
-        // Now when we try again, we should have been downgraded to the legacy setsystemstate2 RPC
-        f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
-        req = f.receivedRequest.get();
-        assertNotNull(req);
-        assertEquals(req.methodName(), RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME);
     }
 
     @Test
