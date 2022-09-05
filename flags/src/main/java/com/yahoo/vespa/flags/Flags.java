@@ -495,6 +495,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag CLUSTER_CONTROLLER_STATE_GATHER_COUNT = defineIntFlag(
+            "cluster-controller-state-gather-count", 2,
+            List.of("hmusum"), "2022-09-05", "2022-11-01",
+            "Count of how many cluster controllers should gather node state (range: [1, # of cluster controllers])",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
