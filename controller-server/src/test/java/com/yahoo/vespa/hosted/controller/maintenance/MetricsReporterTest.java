@@ -356,9 +356,9 @@ public class MetricsReporterTest {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneId.from("prod.eu-west-1");
-        var cloud = CloudName.defaultName();
+        var cloud = CloudName.DEFAULT;
         tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.builder().upgrade(ZoneApiMock.from(zone)).build());
-        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1), CloudName.defaultName());
+        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1), CloudName.DEFAULT);
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
         );
         tester.configServer().bootstrap(List.of(zone), SystemApplication.configServerHost, SystemApplication.tenantHost);

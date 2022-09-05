@@ -86,7 +86,7 @@ public class ZoneApiMock implements ZoneApi {
         private SystemName systemName = SystemName.defaultSystem();
         private ZoneId id = ZoneId.defaultId();
         private ZoneId virtualId = null;
-        private CloudName cloudName = CloudName.defaultName();
+        private CloudName cloudName = CloudName.DEFAULT;
         private String cloudNativeRegionName = id.region().value();
 
         public Builder with(ZoneId id) {

@@ -2417,7 +2417,7 @@ public class DeploymentTriggerTest {
         existing.add(ZoneApiMock.newBuilder().withCloud("pink-clouds").withId("test.zone").build());
         zones.setZones(existing);
 
-        JobType defaultSystemTest = JobType.systemTest(zones, CloudName.defaultName());
+        JobType defaultSystemTest = JobType.systemTest(zones, CloudName.DEFAULT);
         JobType pinkSystemTest = JobType.systemTest(zones, CloudName.from("pink-clouds"));
 
         // Job name is identity, used for looking up run history, etc..

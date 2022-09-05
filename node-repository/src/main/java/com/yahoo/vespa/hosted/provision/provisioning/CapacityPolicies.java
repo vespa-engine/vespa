@@ -127,14 +127,14 @@ public class CapacityPolicies {
 
     // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
-        return (zone.getCloud().name().equals(CloudName.from("gcp")))
+        return (zone.getCloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 4, 50, 0.3);
     }
 
     // The lowest amount resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
-        return (zone.getCloud().name().equals(CloudName.from("gcp")))
+        return (zone.getCloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);
     }

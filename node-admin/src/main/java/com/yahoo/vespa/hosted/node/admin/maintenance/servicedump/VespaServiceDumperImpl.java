@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -61,7 +62,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     @Override
     public void processServiceDumpRequest(NodeAgentContext context) {
-        if (context.zone().getCloudName().value().equals("gcp")) return;
+        if (context.zone().getCloudName().equals(CloudName.GCP)) return;
 
         Instant startedAt = clock.instant();
         NodeSpec nodeSpec = context.node();

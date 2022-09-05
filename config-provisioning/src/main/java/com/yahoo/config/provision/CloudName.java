@@ -14,18 +14,12 @@ import java.util.regex.Pattern;
 public class CloudName extends PatternedStringWrapper<CloudName> {
 
     private static final Pattern pattern = Pattern.compile("[a-z]([a-z0-9-]*[a-z0-9])*");
-    private static final CloudName defaultCloud = from("default");
+    public static final CloudName AWS = from("aws");
+    public static final CloudName GCP = from("gcp");
+    public static final CloudName DEFAULT = from("default");
 
     private CloudName(String cloud) {
         super(cloud, pattern, "cloud name");
-    }
-
-    public boolean isDefault() {
-        return equals(defaultCloud);
-    }
-
-    public static CloudName defaultName() {
-        return defaultCloud;
     }
 
     public static CloudName from(String cloud) {

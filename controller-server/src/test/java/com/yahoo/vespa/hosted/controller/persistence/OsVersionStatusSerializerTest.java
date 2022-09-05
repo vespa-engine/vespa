@@ -29,11 +29,11 @@ public class OsVersionStatusSerializerTest {
         Version version2 = Version.fromString("7.2");
         Map<OsVersion, List<NodeVersion>> versions = new LinkedHashMap<>();
 
-        versions.put(new OsVersion(version1, CloudName.defaultName()), List.of(
+        versions.put(new OsVersion(version1, CloudName.DEFAULT), List.of(
                 new NodeVersion(HostName.of("node1"), ZoneId.from("prod", "us-west"), version1, version2, Optional.of(Instant.ofEpochMilli(11))),
                 new NodeVersion(HostName.of("node2"), ZoneId.from("prod", "us-east"), version1, version2, Optional.of(Instant.ofEpochMilli(22)))
         ));
-        versions.put(new OsVersion(version2, CloudName.defaultName()), List.of(
+        versions.put(new OsVersion(version2, CloudName.DEFAULT), List.of(
                 new NodeVersion(HostName.of("node3"), ZoneId.from("prod", "us-west"), version2, version2, Optional.of(Instant.ofEpochMilli(33))),
                 new NodeVersion(HostName.of("node4"), ZoneId.from("prod", "us-east"), version2, version2, Optional.of(Instant.ofEpochMilli(44)))
         ));

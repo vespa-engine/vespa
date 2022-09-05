@@ -23,7 +23,7 @@ public class OsVersionTargetSerializerTest {
     void serialization() {
         OsVersionTargetSerializer serializer = new OsVersionTargetSerializer(new OsVersionSerializer());
         Set<OsVersionTarget> targets = ImmutableSet.of(
-                new OsVersionTarget(new OsVersion(Version.fromString("7.1"), CloudName.defaultName()), Duration.ZERO, Instant.ofEpochMilli(123)),
+                new OsVersionTarget(new OsVersion(Version.fromString("7.1"), CloudName.DEFAULT), Duration.ZERO, Instant.ofEpochMilli(123)),
                 new OsVersionTarget(new OsVersion(Version.fromString("7.1"), CloudName.from("foo")), Duration.ofDays(1), Instant.ofEpochMilli(456))
         );
         Set<OsVersionTarget> serialized = serializer.fromSlime(serializer.toSlime(targets));
