@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Management of {@link UserId}s as members of {@link Role}s.
@@ -41,7 +40,4 @@ public interface UserManagement {
 
     /** Returns all roles */
     List<Role> listRoles();
-
-    /** Find a user with all attributes */
-    Optional<User> findUser(String email);
 }

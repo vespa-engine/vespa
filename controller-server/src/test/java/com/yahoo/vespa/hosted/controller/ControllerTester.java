@@ -344,7 +344,7 @@ public final class ControllerTester {
     private TenantName createCloudTenant(String tenantName) {
         TenantName tenant = TenantName.from(tenantName);
         TenantSpec spec = new CloudTenantSpec(tenant, "token");
-        controller().tenants().create(spec, new Auth0Credentials(new SimplePrincipal("dev-" + tenantName), Set.of(Role.administrator(tenant))));
+        controller().tenants().create(spec, new Auth0Credentials(new SimplePrincipal("dev"), Set.of(Role.administrator(tenant))));
         return tenant;
     }
 

@@ -16,7 +16,6 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 
 import java.io.File;
@@ -63,10 +62,6 @@ public class ContainerTester {
 
     public ServiceRegistryMock serviceRegistry() {
         return (ServiceRegistryMock) container.components().getComponent(ServiceRegistryMock.class.getName());
-    }
-
-    public MockUserManagement userManagement() {
-        return (MockUserManagement) container.components().getComponent(MockUserManagement.class.getName());
     }
 
     public void authorize(AthenzDomain tenantDomain, AthenzIdentity identity, ApplicationAction action, ApplicationName application) {
