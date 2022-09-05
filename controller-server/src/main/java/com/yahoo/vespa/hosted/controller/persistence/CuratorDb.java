@@ -686,10 +686,6 @@ public class CuratorDb {
         return root.append("upgrader").append("upgradesPerMinute");
     }
 
-    private static Path targetMajorVersionPath() {
-        return root.append("upgrader").append("targetMajorVersion");
-    }
-
     private static Path confidenceOverridesPath() {
         return root.append("upgrader").append("confidenceOverrides");
     }
