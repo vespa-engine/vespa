@@ -277,6 +277,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .tenantSecretStores(session.getTenantSecretStores());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
+            session.getCloudAccount().ifPresent(params::cloudAccount);
 
             return params.build();
         });
