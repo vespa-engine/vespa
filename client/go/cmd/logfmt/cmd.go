@@ -2,17 +2,16 @@
 // vespa-logfmt command
 // Author: arnej
 
-package main
+package logfmt
 
 import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
-	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
 )
 
 func NewLogfmtCmd() *cobra.Command {
 	var (
-		curOptions logfmt.Options = logfmt.NewOptions()
+		curOptions Options = NewOptions()
 	)
 	cmd := &cobra.Command{
 		Use:   "vespa-logfmt",
@@ -21,7 +20,7 @@ func NewLogfmtCmd() *cobra.Command {
 and converts it to something human-readable`,
 		Version: build.Version,
 		Run: func(cmd *cobra.Command, args []string) {
-			logfmt.RunLogfmt(&curOptions, args)
+			RunLogfmt(&curOptions, args)
 		},
 	}
 	cmd.Flags().VarP(&curOptions.ShowLevels, "level", "l", "turn levels on/off\n")

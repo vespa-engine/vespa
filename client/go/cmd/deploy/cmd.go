@@ -2,7 +2,7 @@
 // vespa-deploy command
 // Author: arnej
 
-package main
+package deploy
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
-	"github.com/vespa-engine/vespa/client/go/cmd/deploy"
 )
 
 func reallySimpleHelp(cmd *cobra.Command, args []string) {
@@ -19,7 +18,7 @@ func reallySimpleHelp(cmd *cobra.Command, args []string) {
 
 func NewDeployCmd() *cobra.Command {
 	var (
-		curOptions deploy.Options
+		curOptions Options
 	)
 	cobra.EnableCommandSorting = false
 	cmd := &cobra.Command{
@@ -64,15 +63,15 @@ Try 'vespa-deploy help <command>' to get more help`,
 	return cmd
 }
 
-func newUploadCmd(opts *deploy.Options) *cobra.Command {
+func newUploadCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "upload <application package>",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts.Command = deploy.CmdUpload
+			opts.Command = CmdUpload
 			if opts.Verbose {
 				fmt.Printf("upload %v [%v]\n", opts, args)
 			}
-			err := deploy.RunUpload(opts, args)
+			err := RunUpload(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 				os.Exit(1)
@@ -85,15 +84,15 @@ func newUploadCmd(opts *deploy.Options) *cobra.Command {
 	return cmd
 }
 
-func newPrepareCmd(opts *deploy.Options) *cobra.Command {
+func newPrepareCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "prepare [<session_id> | <application package>]",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts.Command = deploy.CmdPrepare
+			opts.Command = CmdPrepare
 			if opts.Verbose {
 				fmt.Printf("prepare %v [%v]\n", opts, args)
 			}
-			err := deploy.RunPrepare(opts, args)
+			err := RunPrepare(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 				os.Exit(1)
@@ -105,15 +104,15 @@ func newPrepareCmd(opts *deploy.Options) *cobra.Command {
 	return cmd
 }
 
-func newActivateCmd(opts *deploy.Options) *cobra.Command {
+func newActivateCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "activate [<session_id>]",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts.Command = deploy.CmdActivate
+			opts.Command = CmdActivate
 			if opts.Verbose {
 				fmt.Printf("activate %v [%v]\n", opts, args)
 			}
-			err := deploy.RunActivate(opts, args)
+			err := RunActivate(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 				os.Exit(1)
@@ -125,15 +124,15 @@ func newActivateCmd(opts *deploy.Options) *cobra.Command {
 	return cmd
 }
 
-func newFetchCmd(opts *deploy.Options) *cobra.Command {
+func newFetchCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "fetch <output directory>",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts.Command = deploy.CmdFetch
+			opts.Command = CmdFetch
 			if opts.Verbose {
 				fmt.Printf("fetch %v [%v]\n", opts, args)
 			}
-			err := deploy.RunFetch(opts, args)
+			err := RunFetch(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 				os.Exit(1)
