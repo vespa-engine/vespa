@@ -29,10 +29,12 @@ class AttributeAspectDelayer
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
     using SummarymapConfigBuilder = vespa::config::search::internal::InternalSummarymapType;
     using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
+    using SummaryConfigBuilder = vespa::config::search::internal::InternalSummaryType;
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
 
     std::shared_ptr<AttributesConfigBuilder> _attributesConfig;
     std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
+    std::shared_ptr<SummaryConfigBuilder>    _summaryConfig;
 
 public:
     AttributeAspectDelayer();
@@ -52,6 +54,7 @@ public:
 
     std::shared_ptr<AttributesConfig> getAttributesConfig() const;
     std::shared_ptr<SummarymapConfig> getSummarymapConfig() const;
+    std::shared_ptr<SummaryConfig> getSummaryConfig() const;
 };
 
 } // namespace proton
