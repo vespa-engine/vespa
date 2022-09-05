@@ -85,7 +85,11 @@ public record VersionStatus(List<VespaVersion> versions) {
 
     /** Returns whether given version is active in this system */
     public boolean isActive(Version version) {
-        return version(version) != null;
+        if (version(version) != null) return true;
+        // Occasionally we may deploy unofficial versions of a given Vespa version, i.e. given the version 8.42.1,
+        // an unofficial version 8.42.1.a may exist. Count such versions as active if their root version is active
+        Version rootVersion = new Version(version.getMajor(), version.getMinor(), version.getMicro());
+        return version(rootVersion) != null;
     }
 
     /** Create the empty version status */
