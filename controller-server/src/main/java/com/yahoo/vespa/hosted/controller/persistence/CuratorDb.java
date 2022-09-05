@@ -269,17 +269,6 @@ public class CuratorDb {
         curator.set(upgradesPerMinutePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
     }
 
-    public Optional<Integer> readTargetMajorVersion() {
-        return read(targetMajorVersionPath(), ByteBuffer::wrap).map(ByteBuffer::getInt);
-    }
-
-    public void writeTargetMajorVersion(OptionalInt targetMajorVersion) {
-        if (targetMajorVersion.isPresent())
-            curator.set(targetMajorVersionPath(), ByteBuffer.allocate(Integer.BYTES).putInt(targetMajorVersion.getAsInt()).array());
-        else
-            curator.delete(targetMajorVersionPath());
-    }
-
     public void writeVersionStatus(VersionStatus status) {
         curator.set(versionStatusPath(), asJson(versionStatusSerializer.toSlime(status)));
     }
@@ -695,10 +684,6 @@ public class CuratorDb {
 
     private static Path upgradesPerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
-    }
-
-    private static Path targetMajorVersionPath() {
-        return root.append("upgrader").append("targetMajorVersion");
     }
 
     private static Path confidenceOverridesPath() {

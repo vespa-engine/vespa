@@ -384,7 +384,6 @@ public class VersionStatusTest {
 
         // A new major version is released and all canaries upgrade
         Version version4 = new Version("7.1");
-        tester.controller().applications().setTargetMajorVersion(OptionalInt.of(version3.getMajor())); // Previous remains the default
         tester.controllerTester().upgradeSystem(version4);
         tester.upgrader().maintain();
         tester.triggerJobs();

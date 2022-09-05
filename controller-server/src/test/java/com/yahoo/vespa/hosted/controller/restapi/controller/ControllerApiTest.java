@@ -93,18 +93,6 @@ public class ControllerApiTest extends ControllerContainerTest {
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
                 200);
 
-        // Set target major version
-        tester.assertResponse(
-                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":6}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"targetMajorVersion\":6,\"confidenceOverrides\":[]}",
-                200);
-
-        // Clear target major version
-        tester.assertResponse(
-                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":null}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
-                200);
-
         // Override confidence
         tester.assertResponse(
                 operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "broken", Request.Method.POST),

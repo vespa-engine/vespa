@@ -156,7 +156,6 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        String targetMajorVersionField = "targetMajorVersion";
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
@@ -164,9 +163,6 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
-        } else if (inspect.field(targetMajorVersionField).valid()) {
-            int target = (int) inspect.field(targetMajorVersionField).asLong();
-            upgrader.setTargetMajorVersion(target == 0 ? OptionalInt.empty() : OptionalInt.of(target)); // 0 is the default value
         } else {
             return ErrorResponse.badRequest("No such modifiable field(s)");
         }

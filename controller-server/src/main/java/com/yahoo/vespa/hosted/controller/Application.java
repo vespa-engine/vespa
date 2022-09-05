@@ -173,7 +173,7 @@ public class Application {
     /**
      * Returns the oldest platform version this has deployed in a permanent zone (not test or staging).
      *
-     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(TenantAndApplicationId)},
+     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(Application)},
      * but this checks only what the controller has deployed to the production zones, while that checks the node repository
      * to see what's actually installed on each node. Thus, this is the right choice for, e.g., target Vespa versions for
      * new deployments, while that is the right choice for version to compile against.

@@ -61,17 +61,16 @@ public class Upgrader extends ControllerMaintainer {
         VersionStatus versionStatus = controller().readVersionStatus();
         cancelBrokenUpgrades(versionStatus);
 
-        OptionalInt targetMajorVersion = targetMajorVersion();
         DeploymentStatusList deploymentStatuses = deploymentStatuses(versionStatus);
         for (UpgradePolicy policy : UpgradePolicy.values())
-            updateTargets(versionStatus, deploymentStatuses, policy, targetMajorVersion);
+            updateTargets(versionStatus, deploymentStatuses, policy);
 
         return 1.0;
     }
 
     private DeploymentStatusList deploymentStatuses(VersionStatus versionStatus) {
         return controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
-                                                                       .withProjectId(),
+                                                                              .withProjectId(),
                                                                versionStatus);
     }
 
@@ -94,7 +93,7 @@ public class Upgrader extends ControllerMaintainer {
         }
     }
 
-    private void updateTargets(VersionStatus versionStatus, DeploymentStatusList deploymentStatuses, UpgradePolicy policy, OptionalInt targetMajorVersion) {
+    private void updateTargets(VersionStatus versionStatus, DeploymentStatusList deploymentStatuses, UpgradePolicy policy) {
         InstanceList instances = instances(deploymentStatuses);
         InstanceList remaining = instances.with(policy);
         Instant failureThreshold = controller().clock().instant().minus(DeploymentTrigger.maxFailingRevisionTime);
@@ -108,7 +107,7 @@ public class Upgrader extends ControllerMaintainer {
         Map<ApplicationId, Version> targets = new LinkedHashMap<>();
         for (Version version : DeploymentStatus.targetsForPolicy(versionStatus, controller().systemVersion(versionStatus), policy)) {
             targetAndNewer.add(version);
-            InstanceList eligible = eligibleForVersion(remaining, version, targetMajorVersion);
+            InstanceList eligible = eligibleForVersion(remaining, version);
             InstanceList outdated = cancellationCriterion.apply(eligible);
             cancelUpgradesOf(outdated.upgrading(), "Upgrading to outdated versions");
 
@@ -135,11 +134,10 @@ public class Upgrader extends ControllerMaintainer {
         }
     }
 
-    private InstanceList eligibleForVersion(InstanceList instances, Version version,
-                                            OptionalInt targetMajorVersion) {
+    private InstanceList eligibleForVersion(InstanceList instances, Version version) {
         Change change = Change.of(version);
         return instances.not().failingOn(version)
-                        .allowingMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
+                        .allowingMajorVersion(version.getMajor())
                         .compatibleWithPlatform(version, controller().applications()::versionCompatibility)
                         .not().hasCompleted(change) // Avoid rescheduling change for instances without production steps.
                         .onLowerVersionThan(version)
@@ -180,16 +178,6 @@ public class Upgrader extends ControllerMaintainer {
         if (n < 0)
             throw new IllegalArgumentException("Upgrades per minute must be >= 0, got " + n);
         curator.writeUpgradesPerMinute(n);
-    }
-
-    /** Returns the target major version for applications not specifying one */
-    public OptionalInt targetMajorVersion() {
-        return controller().applications().targetMajorVersion();
-    }
-
-    /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
-    public void setTargetMajorVersion(OptionalInt targetMajorVersion) {
-        controller().applications().setTargetMajorVersion(targetMajorVersion);
     }
 
     /** Override confidence for given version. This will cause the computed confidence to be ignored */
