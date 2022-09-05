@@ -328,6 +328,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
     addEmptyFile(snapDir, "ranking-expressions.cfg");
     addEmptyFile(snapDir, "onnx-models.cfg");
     addEmptyFile(snapDir, "imported-fields.cfg");
+    addEmptyFile(snapDir, "summarymap.cfg");
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
