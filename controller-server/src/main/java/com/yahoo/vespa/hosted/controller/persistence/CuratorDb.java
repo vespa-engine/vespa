@@ -273,6 +273,10 @@ public class CuratorDb {
         curator.set(versionStatusPath(), asJson(versionStatusSerializer.toSlime(status)));
     }
 
+    public void clearTargetMajor() {
+        curator.delete(root.append("ugprader").append("targetMajorVersion"));
+    }
+
     public VersionStatus readVersionStatus() {
         return readSlime(versionStatusPath()).map(versionStatusSerializer::fromSlime).orElseGet(VersionStatus::empty);
     }
