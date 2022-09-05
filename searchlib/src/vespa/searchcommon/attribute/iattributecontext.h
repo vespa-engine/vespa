@@ -12,9 +12,9 @@ namespace search::attribute {
  **/
 class IAttributeContext : public IAttributeExecutor {
 public:
-    typedef vespalib::string string;
+    using string = vespalib::string;
     /** Convenience typedefs **/
-    typedef std::unique_ptr<IAttributeContext> UP;
+    using UP = std::unique_ptr<IAttributeContext>;
 
     /**
      * Returns the attribute vector with the given name.
@@ -48,7 +48,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IAttributeContext() {}
+    virtual ~IAttributeContext() = default;
 };
 
 }

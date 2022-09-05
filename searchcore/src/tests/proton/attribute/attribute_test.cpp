@@ -149,7 +149,7 @@ public:
     {
         setup(1);
     }
-    ~AttributeWriterTest();
+    ~AttributeWriterTest() override;
     void setup(uint32_t threads) {
         _aw.reset();
         _attributeFieldWriterReal = std::make_unique<ForegroundTaskExecutor>(threads);

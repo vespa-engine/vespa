@@ -61,7 +61,7 @@ public:
     ProtonTermData & operator = (const ProtonTermData &);
     ProtonTermData(ProtonTermData &&) = default;
     ProtonTermData & operator = (ProtonTermData &&) = default;
-    ~ProtonTermData();
+    ~ProtonTermData() override;
     void resolveFromChildren(const std::vector<search::query::Node *> &children);
     void allocateTerms(search::fef::MatchDataLayout &mdl);
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
@@ -93,9 +93,9 @@ struct ProtonTermBase : public Base,
     }
 
     // ITermData interface
-    uint32_t getPhraseLength() const override final { return numTerms<Base>(*this); }
-    search::query::Weight getWeight() const override final { return Base::getWeight(); }
-    uint32_t getUniqueId() const override final { return Base::getId(); }
+    uint32_t getPhraseLength() const final { return numTerms<Base>(*this); }
+    search::query::Weight getWeight() const final { return Base::getWeight(); }
+    uint32_t getUniqueId() const final { return Base::getId(); }
 };
 
 template <typename Base>

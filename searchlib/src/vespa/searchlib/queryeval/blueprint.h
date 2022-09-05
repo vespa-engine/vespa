@@ -169,7 +169,7 @@ protected:
 public:
     class IPredicate {
     public:
-        virtual ~IPredicate() {}
+        virtual ~IPredicate() = default;
         virtual bool check(const Blueprint & bp) const = 0;
     };
 

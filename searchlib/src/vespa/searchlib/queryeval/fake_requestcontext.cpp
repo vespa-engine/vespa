@@ -6,6 +6,11 @@
 
 namespace search::queryeval {
 
+FakeRequestContext::FakeRequestContext()
+    : FakeRequestContext(nullptr)
+{
+}
+
 FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, vespalib::steady_time softDoom, vespalib::steady_time hardDoom)
     : _clock(std::make_unique<vespalib::TestClock>()),
       _doom(_clock->clock(), softDoom, hardDoom, false),

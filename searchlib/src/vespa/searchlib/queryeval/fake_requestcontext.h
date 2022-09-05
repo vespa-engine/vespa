@@ -19,10 +19,11 @@ namespace search::queryeval {
 class FakeRequestContext : public IRequestContext
 {
 public:
-    FakeRequestContext(attribute::IAttributeContext * context = nullptr,
+    FakeRequestContext();
+    FakeRequestContext(attribute::IAttributeContext * context,
                        vespalib::steady_time soft=vespalib::steady_time::max(),
                        vespalib::steady_time hard=vespalib::steady_time::max());
-    ~FakeRequestContext();
+    ~FakeRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext

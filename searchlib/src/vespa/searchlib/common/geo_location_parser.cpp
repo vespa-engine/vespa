@@ -2,7 +2,6 @@
 
 #include "geo_location_parser.h"
 #include <limits>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 
