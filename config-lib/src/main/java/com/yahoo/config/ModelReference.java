@@ -92,7 +92,7 @@ public class ModelReference {
     /**
      * Creates a model reference from a three-part string on the form
      * <code>modelId url path</code>
-     * Each of the elements are either a value not containing space, or empty represented by "".
+     * Each of the elements is either a value not containing space, or empty represented by "".
      */
     public static ModelReference valueOf(String s) {
         String[] parts = s.split(" ");

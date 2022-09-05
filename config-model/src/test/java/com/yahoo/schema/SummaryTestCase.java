@@ -63,9 +63,10 @@ public class SummaryTestCase {
         ApplicationBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
-        assertEquals("summary field 'foo2' in document summary 'foobar' references source field 'ondisk', " +
-                "which is not an attribute: Using this summary will cause disk accesses. " +
-                "Set 'from-disk' on this summary class to silence this warning.",
+        assertEquals("In schema 'disksummary', document summary 'foobar': " +
+                     "Fields [foo2] references non-attribute fields: " +
+                     "Using this summary will cause disk accesses. " +
+                     "Set 'from-disk' on this summary class to silence this warning.",
                 logger.entries.get(0).message);
     }
 

@@ -11,7 +11,9 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
@@ -38,6 +40,7 @@ public class SummaryDiskAccessValidator extends Processor {
 
         for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField summaryField : summary.getSummaryFields().values()) {
+                Set<String> implicitDiskFields = new LinkedHashSet<>();
                 for (SummaryField.Source source : summaryField.getSources()) {
                     ImmutableSDField field = schema.getField(source.getName());
                     if (field == null)
@@ -45,13 +48,16 @@ public class SummaryDiskAccessValidator extends Processor {
                     if (field == null && ! source.getName().equals(SummaryClass.DOCUMENT_ID_FIELD))
                         throw new IllegalArgumentException(summaryField + " in " + summary + " references " +
                                                            source + ", but this field does not exist");
-                    if ( ! isInMemory(field, summaryField) && ! summary.isFromDisk()) {
-                        deployLogger.logApplicationPackage(Level.WARNING, summaryField + " in " + summary + " references " +
-                                                                          source + ", which is not an attribute: Using this " +
-                                                                          "summary will cause disk accesses. " +
-                                                                          "Set 'from-disk' on this summary class to silence this warning.");
-                    }
+                    if ( ! isInMemory(field, summaryField) && ! summary.isFromDisk())
+                        implicitDiskFields.add(summaryField.getName());
                 }
+                if ( ! implicitDiskFields.isEmpty())
+                    deployLogger.logApplicationPackage(Level.WARNING, "In " + schema + ", " + summary +
+                                                                      ": Fields " + implicitDiskFields + " references " +
+                                                                      "non-attribute fields: Using this " +
+                                                                      "summary will cause disk accesses. " +
+                                                                      "Set 'from-disk' on this summary class to silence this warning.");
+
             }
         }
     }
