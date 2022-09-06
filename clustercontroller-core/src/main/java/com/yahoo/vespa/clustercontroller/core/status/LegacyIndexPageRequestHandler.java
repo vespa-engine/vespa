@@ -212,8 +212,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             slobrokspecs += options.slobrokConnectionSpecs()[i];
         }
         sb.append("<h1>Current config</h1>\n")
-          .append("<p>Fleet controller config id: ").append(options.fleetControllerConfigId() == null ? null : options.fleetControllerConfigId().replaceAll("\n", "<br>\n")).append("</p>\n")
-          .append("<p>Slobrok config id: ").append(options.slobrokConfigId() == null ? null : options.slobrokConfigId().replaceAll("\n", "<br>\n")).append("</p>\n")
           .append("<table border=\"1\" cellspacing=\"0\"><tr><th>Property</th><th>Value</th></tr>\n");
 
         sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(options.clusterName()).append("</td></tr>");
