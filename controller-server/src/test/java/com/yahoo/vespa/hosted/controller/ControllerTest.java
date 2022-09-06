@@ -1166,7 +1166,12 @@ public class ControllerTest {
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().overrideConfidence(version0, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
+        assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals("this system has no available versions on specified major: 8",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.applications().compileVersion(application, OptionalInt.of(8)))
+                             .getMessage());
         context.submit(applicationPackage).deploy();
 
         // System is upgraded
