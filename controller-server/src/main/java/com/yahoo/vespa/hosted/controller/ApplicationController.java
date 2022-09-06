@@ -347,10 +347,10 @@ public class ApplicationController {
         // Target platforms are all versions not older than the oldest installed platform, unless forcing a major version change.
         // Only platforms not older than the system version, and with appropriate confidence, are considered targets.
         Predicate<Version> isTargetPlatform = wantedMajor.isEmpty() && oldestInstalledPlatform.isEmpty()
-                                            ? __ -> true
-                                            : wantedMajor.isEmpty() || wantedMajor.getAsInt() == oldestInstalledPlatform.get().getMajor()
-                                            ? version -> ! version.isBefore(oldestInstalledPlatform.get())
-                                            : version -> wantedMajor.getAsInt() == version.getMajor();
+                                            ? __ -> true                                                    // No preferences for version: any platform version is ok.
+                                            : wantedMajor.isEmpty() || (oldestInstalledPlatform.isPresent() && wantedMajor.getAsInt() == oldestInstalledPlatform.get().getMajor())
+                                            ? version -> ! version.isBefore(oldestInstalledPlatform.get())  // Major empty, or on same as oldest: ensure not a platform downgrade.
+                                            : version -> wantedMajor.getAsInt() == version.getMajor();      // Major specified, and not on same as oldest (possibly empty): any on that major.
         Set<Version> platformVersions = versionStatus.deployableVersions().stream()
                                                      .filter(version -> version.confidence().equalOrHigherThan(targetConfidence))
                                                      .map(VespaVersion::versionNumber)
