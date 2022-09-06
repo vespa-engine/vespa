@@ -19,6 +19,7 @@ LOG_SETUP(".proton.matching.match_thread");
 namespace proton::matching {
 
 using search::queryeval::SearchIterator;
+using search::fef::BlueprintResolver;
 using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;
@@ -455,10 +456,12 @@ MatchThread::run()
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
     if (first_phase_profiler) {
-        first_phase_profiler->report(trace->createCursor("first_phase_profiling"));
+        first_phase_profiler->report(trace->createCursor("first_phase_profiling"),
+                                     [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });
     }
     if (second_phase_profiler) {
-        second_phase_profiler->report(trace->createCursor("second_phase_profiling"));
+        second_phase_profiler->report(trace->createCursor("second_phase_profiling"),
+                                      [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });
     }
 }
 

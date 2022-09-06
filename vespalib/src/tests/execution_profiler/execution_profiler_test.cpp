@@ -40,46 +40,27 @@ void foo(Profiler &profiler) {
     fox(profiler);
     profiler.complete();
 }
-    
-const Inspector *find_child(const Inspector &arr, const std::pair<vespalib::string,size_t> &entry) {
-    struct MyArrayTraverser : public vespalib::slime::ArrayTraverser {
-        const Inspector *node = nullptr;
-        const std::pair<vespalib::string,size_t> &needle;
-        MyArrayTraverser(const std::pair<vespalib::string,size_t> &needle_in) : needle(needle_in) {}
-        void entry(size_t, const Inspector &obj) override {
-            if ((obj["name"].asString().make_string() == needle.first) &&
-                (obj["count"].asLong() == int64_t(needle.second)))
-            {
-                assert(node == nullptr);
-                node = &obj;
-            }
+
+template <typename PathPos>
+bool find_path(const Inspector &self, PathPos pos, PathPos end, bool first = false) {
+    const Inspector &children = first ? self["roots"] : self["children"];
+    if (pos == end) {
+        return (children.entries() == 0);
+    }
+    auto needle = *pos++;
+    for (size_t i = 0; i < children.entries(); ++i) {
+        if ((children[i]["name"].asString().make_string() == needle.first) &&
+            (children[i]["count"].asLong() == needle.second) &&
+            (find_path(children[i], pos, end)))
+        {
+            return true;
         }
-    };
-    MyArrayTraverser traverser(entry);
-    arr.traverse(traverser);
-    return traverser.node;
+    }
+    return false;
 }
 
-bool verify_path(const Inspector &root, const std::vector<std::pair<vespalib::string,size_t>> &path) {    
-    const Inspector *pos = &root;
-    bool first = true;
-    for (const auto &entry: path) {
-        if (first) {
-            pos = find_child((*pos)["roots"], entry);
-        } else {
-            pos = find_child((*pos)["children"], entry);
-        }
-        first = false;
-        if (pos == nullptr) {
-            fprintf(stderr, "could not find entry [%s, %zu]\n", entry.first.c_str(), entry.second);
-            return false;
-        }
-    }
-    if ((*pos)["roots"].valid() || (*pos)["children"].valid()) {
-        fprintf(stderr, "path too shallow\n");
-        return false;
-    }
-    return true;
+bool find_path(const Slime &slime, const std::vector<std::pair<vespalib::string,int64_t>> &path) {
+    return find_path(slime.get(), path.begin(), path.end(), true);
 }
 
 TEST(ExecutionProfilerTest, resolve_names) {
@@ -101,7 +82,7 @@ TEST(ExecutionProfilerTest, empty_report) {
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
     EXPECT_EQ(slime["roots"].entries(), 0);
-    EXPECT_TRUE(verify_path(slime.get(), {}));
+    EXPECT_TRUE(find_path(slime, {}));
 }
 
 TEST(ExecutionProfilerTest, perform_dummy_profiling) {
@@ -116,14 +97,14 @@ TEST(ExecutionProfilerTest, perform_dummy_profiling) {
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
     EXPECT_EQ(slime["roots"].entries(), 4);
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"bar", 3}, {"baz", 6}, {"fox", 18}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"bar", 3}, {"fox", 6}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"baz", 3}, {"fox", 9}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"fox", 3}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"bar", 3}, {"baz", 6}, {"fox", 18}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"bar", 3}, {"fox", 6}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"baz", 3}, {"fox", 9}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"fox", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}, {"baz", 6}, {"fox", 18}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}, {"fox", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"baz", 3}, {"fox", 9}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"fox", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"bar", 3}, {"baz", 6}, {"fox", 18}}));
+    EXPECT_TRUE(find_path(slime, {{"bar", 3}, {"fox", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"baz", 3}, {"fox", 9}}));
+    EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
 }
 
 TEST(ExecutionProfilerTest, perform_shallow_dummy_profiling) {
@@ -138,14 +119,41 @@ TEST(ExecutionProfilerTest, perform_shallow_dummy_profiling) {
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
     EXPECT_EQ(slime["roots"].entries(), 4);
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"bar", 3}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"bar", 3}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"baz", 3}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"foo", 3}, {"fox", 3}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"bar", 3}, {"baz", 6}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"bar", 3}, {"fox", 6}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"baz", 3}, {"fox", 9}}));
-    EXPECT_TRUE(verify_path(slime.get(), {{"fox", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"baz", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"fox", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"bar", 3}, {"baz", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"bar", 3}, {"fox", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"baz", 3}, {"fox", 9}}));
+    EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
+}
+
+TEST(ExecutionProfilerTest, with_name_mapping) {
+    Profiler profiler(64);
+    for (int i = 0; i < 3; ++i) {
+        foo(profiler);
+        bar(profiler);
+        baz(profiler);
+        fox(profiler);
+    }
+    Slime slime;
+    profiler.report(slime.setObject(), [](const vespalib::string &name)noexcept->vespalib::string {
+                                           if ((name == "foo") || (name == "bar")) {
+                                               return "magic";
+                                           }
+                                           return name;
+                                       });
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["roots"].entries(), 4);
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"magic", 3}, {"baz", 6}, {"fox", 18}}));
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"magic", 3}, {"fox", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"baz", 3}, {"fox", 9}}));
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"fox", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"baz", 6}, {"fox", 18}}));
+    EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"fox", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"baz", 3}, {"fox", 9}}));
+    EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -6,6 +6,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <functional>
 
 namespace vespalib {
 
@@ -24,6 +25,7 @@ namespace slime { struct Cursor; }
 class ExecutionProfiler {
 public:
     using TaskId = uint32_t;
+    using NameMapper = std::function<vespalib::string(const vespalib::string &)>;
 private:
     using NodeId = uint32_t;
     using Edges = vespalib::hash_map<TaskId, NodeId>;
@@ -44,6 +46,7 @@ private:
         Frame(NodeId node_in) noexcept
           : node(node_in), start(steady_clock::now()) {}
     };
+    struct ReportContext;
 
     size_t _max_depth;
     std::vector<vespalib::string> _names;
@@ -55,8 +58,8 @@ private:
 
     duration get_children_time(const Edges &edges) const;
     std::vector<NodeId> get_sorted_children(const Edges &edges) const;
-    void render_node(slime::Cursor &obj, NodeId node) const;
-    void render_children(slime::Cursor &arr, const Edges &edges) const;
+    void render_node(slime::Cursor &obj, NodeId node, ReportContext &ctx) const;
+    void render_children(slime::Cursor &arr, const Edges &edges, ReportContext &ctx) const;
 
     void track_start(TaskId task);
     void track_complete();
@@ -75,7 +78,7 @@ public:
             track_complete();
         }
     }
-    void report(slime::Cursor &obj) const;
+    void report(slime::Cursor &obj, const NameMapper & = [](const vespalib::string &name) noexcept { return name; }) const;
 };
 
 }

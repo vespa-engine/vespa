@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "execution_profiler.h"
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <cassert>
 
@@ -13,6 +14,20 @@ double as_ms(duration d) {
 }
 
 }
+
+struct ExecutionProfiler::ReportContext {
+    const ExecutionProfiler::NameMapper &name_mapper;
+    vespalib::hash_map<vespalib::string,vespalib::string> name_cache;
+    ReportContext(const ExecutionProfiler::NameMapper &name_mapper_in, size_t num_names)
+      : name_mapper(name_mapper_in), name_cache(num_names * 2) {}
+    const vespalib::string &resolve_name(const vespalib::string &name) {
+        auto pos = name_cache.find(name);
+        if (pos == name_cache.end()) {
+            pos = name_cache.insert(std::make_pair(name, name_mapper(name))).first;
+        }
+        return pos->second;
+    }
+};
 
 duration
 ExecutionProfiler::get_children_time(const Edges &edges) const
@@ -39,24 +54,24 @@ ExecutionProfiler::get_sorted_children(const Edges &edges) const
 }
 
 void
-ExecutionProfiler::render_node(slime::Cursor &obj, NodeId node) const
+ExecutionProfiler::render_node(slime::Cursor &obj, NodeId node, ReportContext &ctx) const
 {
-    obj.setString("name", _names[_nodes[node].task]);
+    obj.setString("name", ctx.resolve_name(_names[_nodes[node].task]));
     obj.setLong("count", _nodes[node].count);
     obj.setDouble("total_time_ms", as_ms(_nodes[node].total_time));
     if (!_nodes[node].children.empty()) {
         auto children_time = get_children_time(_nodes[node].children);
         obj.setDouble("self_time_ms", as_ms(_nodes[node].total_time - children_time));
-        render_children(obj.setArray("children"), _nodes[node].children);
+        render_children(obj.setArray("children"), _nodes[node].children, ctx);
     }
 }
 
 void
-ExecutionProfiler::render_children(slime::Cursor &arr, const Edges &edges) const
+ExecutionProfiler::render_children(slime::Cursor &arr, const Edges &edges, ReportContext &ctx) const
 {
     auto children = get_sorted_children(edges);
     for (NodeId child: children) {
-        render_node(arr.addObject(), child);
+        render_node(arr.addObject(), child, ctx);
     }
 }
 
@@ -111,11 +126,12 @@ ExecutionProfiler::resolve(const vespalib::string &name)
 }
 
 void
-ExecutionProfiler::report(slime::Cursor &obj) const
+ExecutionProfiler::report(slime::Cursor &obj, const NameMapper &name_mapper) const
 {
+    ReportContext ctx(name_mapper, std::min(_names.size(), _nodes.size()));
     obj.setDouble("total_time_ms", as_ms(get_children_time(_roots)));
     if (!_roots.empty()) {
-        render_children(obj.setArray("roots"), _roots);
+        render_children(obj.setArray("roots"), _roots, ctx);
     }
 }
 
