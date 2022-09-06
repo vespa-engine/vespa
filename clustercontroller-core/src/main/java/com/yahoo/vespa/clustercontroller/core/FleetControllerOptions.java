@@ -41,7 +41,6 @@ public class FleetControllerOptions {
 
     private final String zooKeeperServerAddress;
 
-    private final int statePollingFrequency;
     /**
      * Max amount of time to keep a node, that has previously been available
      * in steady state, in maintenance mode, while node is unreachable, before setting it down.
@@ -142,7 +141,6 @@ public class FleetControllerOptions {
                                    int zooKeeperSessionTimeout,
                                    int masterZooKeeperCooldownPeriod,
                                    String zooKeeperServerAddress,
-                                   int statePollingFrequency,
                                    Map<NodeType, Integer> maxTransitionTime,
                                    int maxInitProgressTime,
                                    int maxPrematureCrashes,
@@ -185,7 +183,6 @@ public class FleetControllerOptions {
         this.zooKeeperSessionTimeout = zooKeeperSessionTimeout;
         this.masterZooKeeperCooldownPeriod = masterZooKeeperCooldownPeriod;
         this.zooKeeperServerAddress = zooKeeperServerAddress;
-        this.statePollingFrequency = statePollingFrequency;
         this.maxTransitionTime = maxTransitionTime;
         this.maxInitProgressTime = maxInitProgressTime;
         this.maxPrematureCrashes = maxPrematureCrashes;
@@ -269,10 +266,6 @@ public class FleetControllerOptions {
 
     public String zooKeeperServerAddress() {
         return zooKeeperServerAddress;
-    }
-
-    public int statePollingFrequency() {
-        return statePollingFrequency;
     }
 
     public Map<NodeType, Integer> maxTransitionTime() {
@@ -412,7 +405,6 @@ public class FleetControllerOptions {
         private int zooKeeperSessionTimeout = 5 * 60 * 1000;
         private int masterZooKeeperCooldownPeriod = 15 * 1000;
         private String zooKeeperServerAddress = null;
-        private int statePollingFrequency = 5000;
         private Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
         private int maxInitProgressTime = 5000;
         private int maxPrematureCrashes = 4;
@@ -524,11 +516,6 @@ public class FleetControllerOptions {
                 throw new IllegalArgumentException("zookeeper server address must be set, was '" + zooKeeperServerAddress + "'");
             }
             this.zooKeeperServerAddress = zooKeeperServerAddress;
-            return this;
-        }
-
-        public Builder setStatePollingFrequency(int statePollingFrequency) {
-            this.statePollingFrequency = statePollingFrequency;
             return this;
         }
 
@@ -721,7 +708,6 @@ public class FleetControllerOptions {
                                               zooKeeperSessionTimeout,
                                               masterZooKeeperCooldownPeriod,
                                               zooKeeperServerAddress,
-                                              statePollingFrequency,
                                               maxTransitionTime,
                                               maxInitProgressTime,
                                               maxPrematureCrashes,
@@ -768,7 +754,6 @@ public class FleetControllerOptions {
             builder.zooKeeperSessionTimeout = options.zooKeeperSessionTimeout;
             builder.masterZooKeeperCooldownPeriod = options.masterZooKeeperCooldownPeriod;
             builder.zooKeeperServerAddress = options.zooKeeperServerAddress;
-            builder.statePollingFrequency = options.statePollingFrequency;
             builder.maxTransitionTime = Map.copyOf(options.maxTransitionTime);
             builder.maxInitProgressTime = options.maxInitProgressTime;
             builder.maxPrematureCrashes = options.maxPrematureCrashes;

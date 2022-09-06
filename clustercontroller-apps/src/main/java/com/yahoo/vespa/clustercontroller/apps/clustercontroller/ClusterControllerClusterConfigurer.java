@@ -75,7 +75,6 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
         builder.setMaxTransitionTime(NodeType.STORAGE, config.storage_transition_time());
         builder.setMaxTransitionTime(NodeType.DISTRIBUTOR, config.distributor_transition_time());
         builder.setMaxInitProgressTime(config.init_progress_time());
-        builder.setStatePollingFrequency(config.state_polling_frequency());
         builder.setMaxPrematureCrashes(config.max_premature_crashes());
         builder.setStableStateTimePeriod(config.stable_state_time_period());
         builder.setEventLogMaxSize(config.event_log_max_size());

@@ -496,7 +496,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             ((SlobrokClient) nodeLookup).setSlobrokConnectionSpecs(options.slobrokConnectionSpecs());
         }
         eventLog.setMaxSize(options.eventLogMaxSize(), options.eventNodeLogMaxSize());
-        cluster.setPollingFrequency(options.statePollingFrequency());
         cluster.setDistribution(options.storageDistribution());
         cluster.setNodes(options.nodes(), databaseContext.getNodeStateUpdateListener());
         database.setZooKeeperAddress(options.zooKeeperServerAddress(), databaseContext);
