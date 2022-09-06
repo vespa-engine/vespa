@@ -15,14 +15,6 @@ type VespaTlsConfig struct {
 		CaCertificates string `json:"ca-certificates"`
 		Certificates   string `json:"certificates"`
 	} `json:"files"`
-	AuthorizedPeers []struct {
-		RequiredCredentials []struct {
-			Field     string `json:"field"`
-			MustMatch string `json:"must-match"`
-		} `json:"required-credentials"`
-		Name         string   `json:"name"`
-		Capabilities []string `json:"capabilities"`
-	} `json:"authorized-peers"`
 }
 
 func LoadTlsConfig() (*VespaTlsConfig, error) {
