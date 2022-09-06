@@ -8,7 +8,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
@@ -73,13 +72,13 @@ public:
         return *this;
     }
     MyConfigBuilder &addRankingExpression() {
-        auto expr_list = RankingExpressions().add("my_expr", "my_file");
-        _builder.rankingExpressions(make_shared<RankingExpressions>(expr_list));
+        _builder.rankingExpressions(make_shared<RankingExpressions>(std::move(RankingExpressions().add("my_expr", "my_file"))));
         return *this;
     }
     MyConfigBuilder &addOnnxModel() {
-        OnnxModels::Vector models = {{"my_model_name", "my_model_file"}};
-        _builder.onnxModels(make_shared<OnnxModels>(models));
+        OnnxModels::Vector models;
+        models.emplace_back("my_model_name", "my_model_file");
+        _builder.onnxModels(make_shared<OnnxModels>(std::move(models)));
         return *this;
     }
     MyConfigBuilder &addImportedField() {
@@ -175,7 +174,7 @@ struct DelayAttributeAspectFixture {
     Schema::SP schema;
     ConfigSP attrCfg;
     ConfigSP noAttrCfg;
-    DelayAttributeAspectFixture(bool hasDocField)
+    explicit DelayAttributeAspectFixture(bool hasDocField)
         : schema(make_shared<Schema>()),
           attrCfg(),
           noAttrCfg()

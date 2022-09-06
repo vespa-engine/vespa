@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchcore/proton/matching/ranking_expressions.h>
+#include <vespa/searchcore/proton/matching/onnx_models.h>
 
 using namespace proton::matching;
 using search::fef::FieldInfo;
@@ -33,16 +34,33 @@ RankingExpressions make_expressions() {
 
 OnnxModels make_models() {
     OnnxModels::Vector list;
-    list.emplace_back(OnnxModel("model1", "path1").input_feature("input1","feature1").output_name("output1", "out1"));
+    list.emplace_back(std::move(OnnxModel("model1", "path1").input_feature("input1","feature1").output_name("output1", "out1")));
     list.emplace_back(OnnxModel("model2", "path2"));
-    return OnnxModels(list);
+    return {std::move(list)};
 }
 
-struct MyConstantValueRepo : public IConstantValueRepo {
-    virtual ConstantValue::UP getConstant(const vespalib::string &) const override {
-        return ConstantValue::UP();
+struct MyRankingAssetsRepo : public IRankingAssetsRepo {
+    RankingExpressions _expressions;
+    OnnxModels _onnxModels;
+    MyRankingAssetsRepo(RankingExpressions expressions, OnnxModels onnxModels)
+        : _expressions(std::move(expressions)),
+          _onnxModels(std::move(onnxModels))
+    {}
+    ~MyRankingAssetsRepo() override;
+    ConstantValue::UP getConstant(const vespalib::string &) const override {
+        return {};
+    }
+
+    vespalib::string getExpression(const vespalib::string & name) const override {
+        return _expressions.loadExpression(name);
+    }
+
+    const OnnxModel *getOnnxModel(const vespalib::string & name) const override {
+        return _onnxModels.getModel(name);
     }
 };
+
+MyRankingAssetsRepo::~MyRankingAssetsRepo() = default;
 
 Schema::UP
 buildSchema()
@@ -60,19 +78,19 @@ buildEmptySchema()
 }
 
 struct Fixture {
-    MyConstantValueRepo repo;
+    MyRankingAssetsRepo repo;
     Schema::UP schema;
     IndexEnvironment env;
-    Fixture(Schema::UP schema_)
-        : repo(),
+    explicit Fixture(Schema::UP schema_)
+        : repo(make_expressions(), make_models()),
           schema(std::move(schema_)),
-          env(7, *schema, Properties(), repo, make_expressions(), make_models())
+          env(7, *schema, Properties(), repo)
     {
     }
     const FieldInfo *assertField(size_t idx,
                                  const vespalib::string &name,
                                  DataType dataType,
-                                 CollectionType collectionType) {
+                                 CollectionType collectionType) const {
         const FieldInfo *field = env.getField(idx);
         ASSERT_TRUE(field != nullptr);
         EXPECT_EQUAL(field, env.getFieldByName(name));
@@ -85,7 +103,7 @@ struct Fixture {
     void assertHiddenAttributeField(size_t idx,
                                     const vespalib::string &name,
                                     DataType dataType,
-                                    CollectionType collectionType) {
+                                    CollectionType collectionType) const {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
         EXPECT_FALSE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::HIDDEN_ATTRIBUTE);
@@ -94,7 +112,7 @@ struct Fixture {
     void assertAttributeField(size_t idx,
                               const vespalib::string &name,
                               DataType dataType,
-                              CollectionType collectionType) {
+                              CollectionType collectionType) const {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
         EXPECT_TRUE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::ATTRIBUTE);

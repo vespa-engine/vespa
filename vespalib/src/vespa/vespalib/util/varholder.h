@@ -13,10 +13,10 @@ class VarHolder
     mutable std::mutex  _lock;
 public:
     VarHolder() : _v(), _lock() {}
-    explicit VarHolder(const T &v) : _v(v), _lock() {}
+    explicit VarHolder(T v) : _v(std::move(v)), _lock() {}
     VarHolder(const VarHolder &) = delete;
     VarHolder & operator = (const VarHolder &) = delete;
-    ~VarHolder() {}
+    ~VarHolder();
 
     void set(const T &v) {
         T old;
@@ -34,5 +34,8 @@ public:
         return _v;
     }
 };
+
+template <typename T>
+VarHolder<T>::~VarHolder() = default;
 
 }

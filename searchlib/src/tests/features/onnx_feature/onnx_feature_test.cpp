@@ -61,14 +61,14 @@ struct OnnxFeatureTest : ::testing::Test {
         factory.addPrototype(std::make_shared<OnnxBlueprint>("onnx"));
         factory.addPrototype(std::make_shared<OnnxBlueprint>("onnxModel"));
     }
-    ~OnnxFeatureTest();
+    ~OnnxFeatureTest() override;
     void add_expr(const vespalib::string &name, const vespalib::string &expr) {
         vespalib::string feature_name = expr_feature(name);
         vespalib::string expr_name = feature_name + ".rankingScript";
         indexEnv.getProperties().add(expr_name, expr);
     }
-    void add_onnx(const OnnxModel &model) {
-        indexEnv.addOnnxModel(model);
+    void add_onnx(OnnxModel model) {
+        indexEnv.addOnnxModel(std::move(model));
     }
     bool try_compile(const vespalib::string &seed) {
         resolver->addSeed(seed);
@@ -84,16 +84,16 @@ struct OnnxFeatureTest : ::testing::Test {
     void compile(const vespalib::string &seed) {
         ASSERT_TRUE(try_compile(seed));
     }
-    TensorSpec get(const vespalib::string &feature, uint32_t docid) {
+    TensorSpec get(const vespalib::string &feature, uint32_t docid) const {
         auto result = program.get_all_features(false);
         for (size_t i = 0; i < result.num_features(); ++i) {
             if (result.name_of(i) == feature) {
                 return TensorSpec::from_value(result.resolve(i).as_object(docid));
             }
         }
-        return TensorSpec("error");
+        return {"error"};
     }
-    TensorSpec get(uint32_t docid) {
+    TensorSpec get(uint32_t docid) const {
         auto result = program.get_seeds(false);
         EXPECT_EQ(1u, result.num_features());
         return TensorSpec::from_value(result.resolve(0).as_object(docid));
@@ -153,11 +153,11 @@ TEST_F(OnnxFeatureTest, strange_input_and_output_names_are_normalized) {
 TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
     add_expr("my_first_input", "tensor<float>(a[2]):[10,20]");
     add_expr("my_second_input", "tensor<float>(a[2]):[5,10]");
-    add_onnx(OnnxModel("custom_names", strange_names_model)
+    add_onnx(std::move(OnnxModel("custom_names", strange_names_model)
              .input_feature("input:0", "rankingExpression(my_first_input)")
              .input_feature("input/1", "rankingExpression(my_second_input)")
              .output_name("foo/bar", "my_first_output")
-             .output_name("-baz:0", "my_second_output"));
+             .output_name("-baz:0", "my_second_output")));
     compile(onnx_feature("custom_names"));
     auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
     auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
@@ -169,7 +169,7 @@ TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
 TEST_F(OnnxFeatureTest, fragile_model_can_be_evaluated) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[2]):[docid,10]");
-    add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(true));
+    add_onnx(std::move(OnnxModel("fragile", fragile_model).dry_run_on_setup(true)));
     EXPECT_TRUE(try_compile(onnx_feature("fragile")));
     EXPECT_EQ(get(1), TensorSpec::from_expr("tensor<float>(d0[2]):[2,15]"));
     EXPECT_EQ(get(3), TensorSpec::from_expr("tensor<float>(d0[2]):[6,15]"));
@@ -185,7 +185,7 @@ struct MyIssues : Issue::Handler {
 TEST_F(OnnxFeatureTest, broken_model_evaluates_to_all_zeros) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[3]):[docid,10,31515]");
-    add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(false));
+    add_onnx(std::move(OnnxModel("fragile", fragile_model).dry_run_on_setup(false)));
     EXPECT_TRUE(try_compile(onnx_feature("fragile")));
     MyIssues my_issues;
     EXPECT_EQ(my_issues.list.size(), 0);
@@ -199,7 +199,7 @@ TEST_F(OnnxFeatureTest, broken_model_evaluates_to_all_zeros) {
 TEST_F(OnnxFeatureTest, broken_model_fails_with_dry_run) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[3]):[docid,10,31515]");
-    add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(true));
+    add_onnx(std::move(OnnxModel("fragile", fragile_model).dry_run_on_setup(true)));
     EXPECT_FALSE(try_compile(onnx_feature("fragile")));
 }
 

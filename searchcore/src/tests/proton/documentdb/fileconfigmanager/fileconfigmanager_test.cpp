@@ -115,11 +115,13 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
     RankingConstants::Vector constants = {{"my_name", "my_type", "my_path"}};
     builder.rankingConstants(std::make_shared<RankingConstants>(constants));
 
-    auto expr_list = RankingExpressions().add("my_expr", "my_file");
-    builder.rankingExpressions(std::make_shared<RankingExpressions>(expr_list));
+    auto expr_list = std::make_shared<RankingExpressions>();
+    expr_list->add("my_expr", "my_file");
+    builder.rankingExpressions(expr_list);
 
-    OnnxModels::Vector models = {{"my_model_name", "my_model_file"}};
-    builder.onnxModels(std::make_shared<OnnxModels>(models));
+    OnnxModels::Vector models;
+    models.emplace_back("my_model_name", "my_model_file");
+    builder.onnxModels(std::make_shared<OnnxModels>(std::move(models)));
 
     ImportedFieldsConfigBuilder importedFields;
     importedFields.attribute.resize(1);

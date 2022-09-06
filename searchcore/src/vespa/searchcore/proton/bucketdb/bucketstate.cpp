@@ -146,8 +146,6 @@ BucketState::operator+=(const BucketState &rhs)
 {
     for (uint32_t i = 0; i < COUNTS; ++i) {
         _docCount[i] += rhs._docCount[i];
-    }
-    for (uint32_t i = 0; i < COUNTS; ++i) {
         _docSizes[i] += rhs._docSizes[i];
     }
 
@@ -167,14 +165,10 @@ BucketState::operator-=(const BucketState &rhs)
 {
     for (uint32_t i = 0; i < COUNTS; ++i) {
         assert(_docCount[i] >= rhs._docCount[i]);
-    }
-    for (uint32_t i = 0; i < COUNTS; ++i) {
         assert(_docSizes[i] >= rhs._docSizes[i]);
     }
     for (uint32_t i = 0; i < COUNTS; ++i) {
         _docCount[i] -= rhs._docCount[i];
-    }
-    for (uint32_t i = 0; i < COUNTS; ++i) {
         _docSizes[i] -= rhs._docSizes[i];
     }
     switch (_checksumType) {
@@ -210,11 +204,9 @@ BucketState::operator storage::spi::BucketInfo() const
 
     using BucketInfo = storage::spi::BucketInfo;
 
-    return BucketInfo(getChecksum(),
-                      documentCount, docSizes,
-                      entryCount, entrySizes,
-                      notReady > 0 ? BucketInfo::NOT_READY : BucketInfo::READY,
-                      _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
+    return {getChecksum(), documentCount, uint32_t(docSizes), entryCount, uint32_t(entrySizes),
+            notReady > 0 ? BucketInfo::NOT_READY : BucketInfo::READY,
+            _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE};
 }
 
 }

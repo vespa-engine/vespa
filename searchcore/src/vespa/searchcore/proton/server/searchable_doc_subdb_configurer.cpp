@@ -89,7 +89,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
                              SearchViewHolder &searchView,
                              FeedViewHolder &feedView,
                              matching::QueryLimiter &queryLimiter,
-                             matching::ConstantValueRepo &constantValueRepo,
+                             matching::RankingAssetsRepo &constantValueRepo,
                              const vespalib::Clock &clock,
                              const vespalib::string &subDbName,
                              uint32_t distributionKey) :
@@ -105,13 +105,11 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
 
 SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() = default;
 
-Matchers::UP
+std::shared_ptr<Matchers>
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
-                                             const RankProfilesConfig &cfg,
-                                             const RankingExpressions &rankingExpressions,
-                                             const OnnxModels &onnxModels)
+                                             const RankProfilesConfig &cfg)
 {
-    auto newMatchers = std::make_unique<Matchers>(_clock, _queryLimiter, _constantValueRepo);
+    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, _constantValueRepo);
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
         search::fef::Properties properties;
@@ -119,9 +117,9 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
             properties.add(property.name, property.value);
         }
         // schema instance only used during call.
-        auto profptr = std::make_shared<Matcher>(*schema, properties, _clock, _queryLimiter, _constantValueRepo,
-                                                 rankingExpressions, onnxModels, _distributionKey);
-        newMatchers->add(name, profptr);
+        auto profptr = std::make_shared<Matcher>(*schema, std::move(properties), _clock, _queryLimiter,
+                                                 _constantValueRepo, _distributionKey);
+        newMatchers->add(name, std::move(profptr));
     }
     return newMatchers;
 }
@@ -185,11 +183,10 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     SearchView::SP searchView = _searchView.get();
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
-        _constantValueRepo.reconfigure(newConfig.getRankingConstants());
-        Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(),
-                                                  newConfig.getRankProfilesConfig(),
-                                                  newConfig.getRankingExpressions(),
-                                                  newConfig.getOnnxModels());
+        _constantValueRepo.reconfigure(newConfig.getRankingConstantsSP(),
+                                       newConfig.getRankingExpressionsSP(),
+                                       newConfig.getOnnxModelsSP());
+        Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(), newConfig.getRankProfilesConfig());
         matchers = newMatchers;
         shouldMatchViewChange = true;
     }

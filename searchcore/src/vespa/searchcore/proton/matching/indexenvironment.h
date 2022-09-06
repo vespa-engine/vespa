@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include "onnx_models.h"
-#include "ranking_expressions.h"
-#include "i_constant_value_repo.h"
+#include "i_ranking_assets_repo.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -26,9 +24,7 @@ private:
     FieldNameMap                        _fieldNames;
     std::vector<search::fef::FieldInfo> _fields;
     mutable FeatureMotivation           _motivation;
-    const IConstantValueRepo           &_constantValueRepo;
-    RankingExpressions                  _rankingExpressions;
-    OnnxModels                          _onnxModels;
+    const IRankingAssetsRepo           &_constantValueRepo;
     uint32_t                            _distributionKey;
 
 
@@ -53,10 +49,10 @@ public:
      **/
     IndexEnvironment(uint32_t distributionKey,
                      const search::index::Schema &schema,
-                     const search::fef::Properties &props,
-                     const IConstantValueRepo &constantValueRepo,
-                     RankingExpressions rankingExpressions,
-                     OnnxModels onnxModels);
+                     search::fef::Properties props,
+                     const IRankingAssetsRepo &constantValueRepo);
+    ~IndexEnvironment() override;
+
 
     const search::fef::Properties &getProperties() const override;
     uint32_t getNumFields() const override;
@@ -72,10 +68,13 @@ public:
     vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
         return _constantValueRepo.getConstant(name);
     }
-    vespalib::string getRankingExpression(const vespalib::string &name) const override;
+    vespalib::string getRankingExpression(const vespalib::string &name) const override {
+        return _constantValueRepo.getExpression(name);
+    }
 
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override;
-    ~IndexEnvironment() override;
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override {
+        return _constantValueRepo.getOnnxModel(name);
+    }
 };
 
 }

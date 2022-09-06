@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/matching/constant_value_repo.h>
+#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -43,7 +43,7 @@ private:
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;
     matching::QueryLimiter      &_queryLimiter;
-    matching::ConstantValueRepo &_constantValueRepo;
+    matching::RankingAssetsRepo &_constantValueRepo;
     const vespalib::Clock       &_clock;
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
@@ -69,16 +69,14 @@ public:
                                  SearchViewHolder &searchView,
                                  FeedViewHolder &feedView,
                                  matching::QueryLimiter &queryLimiter,
-                                 matching::ConstantValueRepo &constantValueRepo,
+                                 matching::RankingAssetsRepo &constantValueRepo,
                                  const vespalib::Clock &clock,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);
     ~SearchableDocSubDBConfigurer();
 
-    Matchers::UP createMatchers(const search::index::Schema::SP &schema,
-                                const vespa::config::search::RankProfilesConfig &cfg,
-                                const proton::matching::RankingExpressions &rankingExpressions,
-                                const proton::matching::OnnxModels &onnxModels);
+    Matchers::SP createMatchers(const search::index::Schema::SP &schema,
+                                const vespa::config::search::RankProfilesConfig &cfg);
 
     void reconfigureIndexSearchable();
 

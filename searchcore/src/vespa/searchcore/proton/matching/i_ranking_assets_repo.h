@@ -4,15 +4,18 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
+namespace search::fef { class OnnxModel; }
 namespace proton::matching {
 
 /**
  * Interface for retrieving a named constant rank value to be used by features in the rank framework.
  * If the given value is not found a nullptr should be returned.
  */
-struct IConstantValueRepo {
+struct IRankingAssetsRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const = 0;
-    virtual ~IConstantValueRepo() {}
+    virtual vespalib::string getExpression(const vespalib::string &name) const = 0;
+    virtual const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const = 0;
+    virtual ~IRankingAssetsRepo() = default;
 };
 
 }

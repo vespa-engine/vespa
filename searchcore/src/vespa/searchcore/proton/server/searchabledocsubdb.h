@@ -16,7 +16,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
-#include <vespa/searchcore/proton/matching/constant_value_repo.h>
+#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -69,7 +69,7 @@ private:
     vespalib::VarHolder<SearchableFeedView::SP> _rFeedView;
     vespalib::eval::ConstantTensorLoader        _tensorLoader;
     vespalib::eval::ConstantValueCache          _constantValueCache;
-    matching::ConstantValueRepo                 _constantValueRepo;
+    matching::RankingAssetsRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
     vespalib::Executor                         &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
