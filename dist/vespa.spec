@@ -123,8 +123,13 @@ BuildRequires: gmock-devel
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-%if %{?fedora} >= 35 && ! 0%{?amzn2022}
+%if 0%{?amzn2022}
+BuildRequires: maven-amazon-corretto17
+%define _java_home /usr/lib/jvm/java-17-amazon-corretto
+%else
+%if %{?fedora} >= 35
 BuildRequires: maven-openjdk17
+%endif
 %endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
@@ -132,7 +137,7 @@ BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?amzn2022}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 13.0.0
+BuildRequires: llvm-devel >= 14.0.5
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -181,7 +186,12 @@ BuildRequires: re2-devel
 %endif
 BuildRequires: zlib-devel
 BuildRequires: libicu-devel
+%if 0%{?amzn2022}
+BuildRequires: java-17-amazon-corretto-devel
+BuildRequires: java-17-amazon-corretto
+%else
 BuildRequires: java-17-openjdk-devel
+%endif
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: git
@@ -254,7 +264,7 @@ Requires: gtest
 %if 0%{?fedora}
 Requires: gtest
 %if 0%{?amzn2022}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 13
@@ -294,7 +304,12 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
+%if 0%{?amzn2022}
+Requires: java-17-amazon-corretto-devel
+Requires: java-17-amazon-corretto
+%else
 Requires: java-17-openjdk-devel
+%endif
 Requires: perl
 Requires: perl-Getopt-Long
 Requires(pre): shadow-utils
@@ -370,7 +385,7 @@ Requires: protobuf
 %if 0%{?fedora}
 Requires: protobuf
 %if 0%{?amzn2022}
-Requires: llvm-libs >= 13.0.0
+Requires: llvm-libs >= 14.0.5
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 13.0.0
