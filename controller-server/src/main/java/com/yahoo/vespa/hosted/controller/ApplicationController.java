@@ -159,6 +159,9 @@ public class ApplicationController {
                                                         controller.serviceRegistry().endpointCertificateProvider(),
                                                         controller.serviceRegistry().endpointCertificateValidator());
 
+        // TODO: remove after release
+        curator.clearTargetMajor();
+
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
