@@ -59,6 +59,7 @@ echo "No javadoc available for module" > container-spifly/src/main/javadoc/READM
 # Workaround for broken nexus-staging-maven-plugin instead of swapping JDK
 export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
 export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
+export FACTORY_VESPA_VERSION=$VESPA_RELEASE
 ./bootstrap.sh
 
 COMMON_MAVEN_OPTS="$VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
