@@ -66,6 +66,7 @@ min_time_between_new_systemstates int default=10000
 
 ## Sets how many milliseconds to wait between each state poll for old nodes
 ## requiring state polling. (4.1 or older)
+## TODO: Not used, remove in Vespa 9
 state_polling_frequency int default=5000
 
 ## The maximum amount of premature crashes a node is allowed to have in a row

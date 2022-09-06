@@ -232,7 +232,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<tr><td><nobr>Slobrok mirror backoff policy</nobr></td><td align=\"right\">").append(options.slobrokBackOffPolicy() == null ? "default" : "overridden").append("</td></tr>");
 
         sb.append("<tr><td><nobr>Node state request timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.nodeStateRequestTimeoutMS())).append("</td></tr>");
-        sb.append("<tr><td><nobr>VDS 4.1 node state polling frequency</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.statePollingFrequency())).append("</td></tr>");
         sb.append("<tr><td><nobr>Maximum distributor transition time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.maxTransitionTime().get(NodeType.DISTRIBUTOR))).append("</td></tr>");
         sb.append("<tr><td><nobr>Maximum storage transition time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.maxTransitionTime().get(NodeType.STORAGE))).append("</td></tr>");
         sb.append("<tr><td><nobr>Maximum initialize without progress time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.maxInitProgressTime())).append("</td></tr>");
