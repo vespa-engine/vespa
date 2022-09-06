@@ -16,7 +16,6 @@ class DocsumFieldWriter;
 struct ResConfigEntry {
     ResType          _type;
     vespalib::string _bindname;
-    int              _enumValue;
     std::unique_ptr<DocsumFieldWriter> _docsum_field_writer;
     ResConfigEntry() noexcept;
     ~ResConfigEntry();

@@ -35,7 +35,6 @@ private:
     typedef vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>> IdMap;
     uint32_t                    _defaultSummaryId;
     bool                        _useV8geoPositions;
-    search::util::StringEnum    _fieldEnum;
     IdMap                       _classLookup;
     NameMap                     _nameLookup; // name -> class id
 
@@ -153,23 +152,6 @@ public:
      * @return number of result classes.
      **/
     uint32_t GetNumResultClasses() const { return _classLookup.size(); }
-
-
-    /**
-     * Obtain the string enumeration object that holds the mapping from
-     * field name to field name enumerated value.
-     *
-     * @return field name enumeration.
-     **/
-    const search::util::StringEnum & GetFieldNameEnum() const { return _fieldEnum; }
-
-
-    /**
-     * This method calls the CreateEnumMap on all result classes held by
-     * this object. This is needed in order to look up fields by field
-     * name enumerated value.
-     **/
-    void CreateEnumMaps();
 
     /**
      * Read config that has been fetched from configserver.

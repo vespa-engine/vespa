@@ -8,12 +8,10 @@
 
 namespace search::docsummary {
 
-ResultClass::ResultClass(const char *name, util::StringEnum & fieldEnum)
+ResultClass::ResultClass(const char *name)
     : _name(name),
       _entries(),
       _nameMap(),
-      _fieldEnum(fieldEnum),
-      _enumMap(),
       _dynInfo(),
       _omit_summary_features(false),
       _num_field_writer_states(0)
@@ -39,8 +37,6 @@ ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<Docs
     ResConfigEntry e;
     e._type      = type;
     e._bindname  = name;
-    e._enumValue = _fieldEnum.Add(name);
-    assert(e._enumValue >= 0);
     if (docsum_field_writer) {
         docsum_field_writer->setIndex(_entries.size());
         bool generated = docsum_field_writer->IsGenerated();
@@ -58,19 +54,6 @@ bool
 ResultClass::AddConfigEntry(const char *name, ResType type)
 {
     return AddConfigEntry(name, type, {});
-}
-
-void
-ResultClass::CreateEnumMap()
-{
-    _enumMap.resize(_fieldEnum.GetNumEntries());
-
-    for (int & value : _enumMap) {
-        value = -1;
-    }
-    for (uint32_t i(0); i < _entries.size(); i++) {
-        _enumMap[_entries[i]._enumValue] = i;
-    }
 }
 
 }
