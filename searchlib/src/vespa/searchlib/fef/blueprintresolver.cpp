@@ -281,9 +281,9 @@ BlueprintResolver::describe_feature(const vespalib::string &name)
     {
         auto param = parser->parameters()[0];
         param = param.substr(0, param.find("@"));
-        return fmt("function '%s'", param.c_str());
+        return fmt("function %s", param.c_str());
     }
-    return fmt("rank feature '%s'", name.c_str());
+    return fmt("rank feature %s", name.c_str());
 }
 
 void
