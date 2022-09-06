@@ -27,7 +27,6 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <map>
 #include <thread>
 
@@ -58,7 +57,6 @@ struct DoctypeFixture {
     OnnxModelsConfigBuilder onnxModelsBuilder;
     IndexschemaConfigBuilder indexschemaBuilder;
     SummaryConfigBuilder summaryBuilder;
-    SummarymapConfigBuilder summarymapBuilder;
     JuniperrcConfigBuilder juniperrcBuilder;
     ImportedFieldsConfigBuilder importedFieldsBuilder;
 };
@@ -118,7 +116,6 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->onnxModelsBuilder);
         set.addBuilder(db.configid, &fixture->indexschemaBuilder);
         set.addBuilder(db.configid, &fixture->summaryBuilder);
-        set.addBuilder(db.configid, &fixture->summarymapBuilder);
         set.addBuilder(db.configid, &fixture->juniperrcBuilder);
         set.addBuilder(db.configid, &fixture->importedFieldsBuilder);
         return dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
@@ -155,7 +152,6 @@ struct ConfigTestFixture {
                 fixture->rankProfilesBuilder == dbc->getRankProfilesConfig() &&
                 fixture->indexschemaBuilder == dbc->getIndexschemaConfig() &&
                 fixture->summaryBuilder == dbc->getSummaryConfig() &&
-                fixture->summarymapBuilder == dbc->getSummarymapConfig() &&
                 fixture->juniperrcBuilder == dbc->getJuniperrcConfig());
     }
 
@@ -272,7 +268,7 @@ TEST_FF("require that documentdb config manager subscribes for config",
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(10u, keySet.size());
+    ASSERT_EQUAL(9u, keySet.size());
     ASSERT_TRUE(f1.configEqual("typea", getDocumentDBConfig(f1, f2)));
 }
 

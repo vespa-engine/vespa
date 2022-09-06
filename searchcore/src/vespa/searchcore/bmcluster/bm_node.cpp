@@ -20,7 +20,6 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/bucket/bucketspace.h>
@@ -121,7 +120,6 @@ using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::SummaryConfig;
-using vespa::config::search::SummarymapConfig;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::ProtonConfigBuilder;
 using vespa::config::search::summary::JuniperrcConfig;
@@ -193,7 +191,6 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             indexschema,
             attributes,
             summary,
-            std::make_shared<SummarymapConfig>(),
             std::make_shared<JuniperrcConfig>(),
             document_types,
             repo,

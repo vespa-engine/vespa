@@ -29,7 +29,6 @@ SearchEnvironment::Env::createKeySet(const vespalib::string & configId)
     config::ConfigKeySet set;
     set.add<vespa::config::search::vsm::VsmfieldsConfig,
             vespa::config::search::SummaryConfig,
-            vespa::config::search::SummarymapConfig,
             vespa::config::search::vsm::VsmsummaryConfig,
             vespa::config::search::summary::JuniperrcConfig,
             vespa::config::search::RankProfilesConfig>(configId);

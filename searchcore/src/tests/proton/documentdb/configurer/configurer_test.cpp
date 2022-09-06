@@ -209,7 +209,7 @@ Fixture::initViewSet(ViewSet &views)
     IndexSearchable::SP indexSearchable;
     auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create
-                                 (summaryMgr->createSummarySetup(SummaryConfig(), SummarymapConfig(),
+                                 (summaryMgr->createSummarySetup(SummaryConfig(),
                                                                  JuniperrcConfig(), views.repo, attrMgr),
                                   std::move(matchView)));
     views.feedView.set(
@@ -554,7 +554,7 @@ TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFi
 TEST_F("require that we can reconfigure summary manager", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
-    ReconfigParams params(CCR().setSummarymapChanged(true));
+    ReconfigParams params(CCR().setSummaryChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver);
 
@@ -641,7 +641,6 @@ TEST("require that maintenance controller should change if some config has chang
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setIndexschemaChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setAttributesChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSummaryChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSummarymapChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setJuniperrcChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumenttypesChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
@@ -677,7 +676,6 @@ TEST("require that subdbs should change if relevant config changed")
     TEST_DO(assertSubDbsShouldChange(CCR().setDocumenttypesChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setDocumentTypeRepoChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setSummaryChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setSummarymapChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setJuniperrcChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setAttributesChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setImportedFieldsChanged(true)));

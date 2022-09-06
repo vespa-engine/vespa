@@ -11,7 +11,6 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/retriever/configretriever.h>
@@ -68,7 +67,6 @@ DocumentDBConfigManager::createConfigKeySet() const
             IndexschemaConfig,
             AttributesConfig,
             SummaryConfig,
-            SummarymapConfig,
             JuniperrcConfig,
             ImportedFieldsConfig>(_configId);
     return set;
@@ -291,7 +289,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     using OnnxModelsConfigSP = std::shared_ptr<vespa::config::search::core::OnnxModelsConfig>;
     using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
-    using SummarymapConfigSP = DocumentDBConfig::SummarymapConfigSP;
     using JuniperrcConfigSP = DocumentDBConfig::JuniperrcConfigSP;
     using ImportedFieldsConfigSP = DocumentDBConfig::ImportedFieldsConfigSP;
     using MaintenanceConfigSP = DocumentDBConfig::MaintenanceConfigSP;
@@ -392,7 +389,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     }
     AttributesConfigSP newAttributesConfig = snapshot.getConfig<AttributesConfig>(_configId);
     SummaryConfigSP newSummaryConfig = snapshot.getConfig<SummaryConfig>(_configId);
-    SummarymapConfigSP newSummarymapConfig = snapshot.getConfig<SummarymapConfig>(_configId);
     JuniperrcConfigSP newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     ImportedFieldsConfigSP newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
 
@@ -411,7 +407,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
                                  newIndexschemaConfig,
                                  filterImportedAttributes(newAttributesConfig),
                                  newSummaryConfig,
-                                 newSummarymapConfig,
                                  newJuniperrcConfig,
                                  _bootstrapConfig->getDocumenttypesConfigSP(),
                                  _bootstrapConfig->getDocumentTypeRepoSP(),

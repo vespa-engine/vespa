@@ -5,7 +5,6 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
@@ -21,7 +20,6 @@ using search::docsummary::IDocsumEnvironment;
 using search::docsummary::JuniperProperties;
 
 using vespa::config::search::SummaryConfig;
-using vespa::config::search::SummarymapConfig;
 using vespa::config::search::summary::JuniperrcConfig;
 
 namespace config { class ConfigSnapshot; }

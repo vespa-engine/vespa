@@ -7,7 +7,6 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -101,7 +100,7 @@ public:
         _builder.attributes(make_shared<AttributesConfig>(builder));
         return *this;
     }
-    MyConfigBuilder &addSummary(bool hasField) {
+    MyConfigBuilder &addSummary(bool hasField, bool has_attribute) {
         SummaryConfigBuilder builder;
         builder.defaultsummaryid = 0;
         builder.classes.resize(1);
@@ -111,16 +110,12 @@ public:
             builder.classes.back().fields.resize(1);
             builder.classes.back().fields.back().name = "my_attribute";
             builder.classes.back().fields.back().type = "integer";
+            if (has_attribute) {
+                builder.classes.back().fields.back().command = "attribute";
+                builder.classes.back().fields.back().source = "my_attribute";
+            }
         }
         _builder.summary(make_shared<SummaryConfig>(builder));
-        return *this;
-    }
-    MyConfigBuilder &addSummarymap() {
-        SummarymapConfigBuilder builder;
-        builder.override.resize(1);
-        builder.override.back().field = "my_attribute";
-        builder.override.back().command = "attribute";
-        _builder.summarymap(make_shared<SummarymapConfig>(builder));
         return *this;
     }
     ConfigSP build() {
@@ -143,15 +138,14 @@ struct Fixture {
           replayCfg(),
           nullCfg()
     {
-        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(false).build();
+        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(false, false).build();
         fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
                                                    addRankingExpression().
                                                    addOnnxModel().
                                                    addImportedField().
-                                                   addSummary(true).
-                                                   addSummarymap().
+                                                   addSummary(true, true).
                                                    build();
         replayCfg = DocumentDBConfig::makeReplayConfig(fullCfg);
     }
@@ -186,30 +180,29 @@ struct DelayAttributeAspectFixture {
                                                    addRankingExpression().
                                                    addOnnxModel().
                                                    addImportedField().
-                                                   addSummary(true).
-                                                   addSummarymap().
+                                                   addSummary(true, true).
                                                    build();
         noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
                          addRankingConstant().
                          addRankingExpression().
                          addOnnxModel().
                          addImportedField().
-                         addSummary(hasDocField).
+                         addSummary(hasDocField, false).
                          build();
     }
 
     void assertDelayedConfig(const DocumentDBConfig &testCfg) {
         EXPECT_FALSE(noAttrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
-        EXPECT_FALSE(noAttrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_FALSE(noAttrCfg->getSummaryConfig() == testCfg.getSummaryConfig());
         EXPECT_TRUE(attrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
-        EXPECT_TRUE(attrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_TRUE(attrCfg->getSummaryConfig() == testCfg.getSummaryConfig());
         EXPECT_TRUE(testCfg.getDelayedAttributeAspects());
     }
     void assertNotDelayedConfig(const DocumentDBConfig &testCfg) {
         EXPECT_TRUE(noAttrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
-        EXPECT_TRUE(noAttrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_TRUE(noAttrCfg->getSummaryConfig() == testCfg.getSummaryConfig());
         EXPECT_FALSE(attrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
-        EXPECT_FALSE(attrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_FALSE(attrCfg->getSummaryConfig() == testCfg.getSummaryConfig());
         EXPECT_FALSE(testCfg.getDelayedAttributeAspects());
     }
 };

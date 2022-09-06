@@ -20,7 +20,6 @@ ReconfigParams::configHasChanged() const
             _res.indexschemaChanged ||
             _res.attributesChanged ||
             _res.summaryChanged ||
-            _res.summarymapChanged ||
             _res.juniperrcChanged ||
             _res.documenttypesChanged ||
             _res.documentTypeRepoChanged ||
@@ -59,7 +58,7 @@ ReconfigParams::shouldAttributeManagerChange() const
 bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
-    return  _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged
+    return  _res.summaryChanged || _res.juniperrcChanged
             || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged;
 }
 
