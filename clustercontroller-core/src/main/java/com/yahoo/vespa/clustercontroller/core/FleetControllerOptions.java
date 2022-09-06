@@ -21,9 +21,6 @@ import java.util.TreeSet;
  */
 public class FleetControllerOptions {
 
-    private final String fleetControllerConfigId;
-    private final String slobrokConfigId;
-
     private final String clusterName;
     private final int fleetControllerIndex;
     private final int fleetControllerCount;
@@ -134,9 +131,7 @@ public class FleetControllerOptions {
 
     private final double clusterFeedBlockNoiseLevel;
 
-    private FleetControllerOptions(String fleetControllerConfigId,
-                                   String slobrokConfigId,
-                                   String clusterName,
+    private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
                                    int fleetControllerCount,
                                    int stateGatherCount,
@@ -179,8 +174,6 @@ public class FleetControllerOptions {
                                    boolean clusterFeedBlockEnabled,
                                    Map<String, Double> clusterFeedBlockLimit,
                                    double clusterFeedBlockNoiseLevel) {
-        this.fleetControllerConfigId = fleetControllerConfigId;
-        this.slobrokConfigId = slobrokConfigId;
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -232,12 +225,6 @@ public class FleetControllerOptions {
 
     public long storageNodeMaxTransitionTimeMs() {
         return maxTransitionTime.getOrDefault(NodeType.STORAGE, 10_000);
-    }
-
-    public String fleetControllerConfigId() {return fleetControllerConfigId;}
-
-    public String slobrokConfigId() {
-        return slobrokConfigId;
     }
 
     public String clusterName() {
@@ -414,8 +401,6 @@ public class FleetControllerOptions {
 
     public static class Builder {
 
-        private String fleetControllerConfigId;
-        private String slobrokConfigId;
         private String clusterName;
         private int index = 0;
         private int count = 1;
@@ -725,9 +710,7 @@ public class FleetControllerOptions {
         }
 
         public FleetControllerOptions build() {
-            return new FleetControllerOptions(fleetControllerConfigId,
-                                              slobrokConfigId,
-                                              clusterName,
+            return new FleetControllerOptions(clusterName,
                                               index,
                                               count,
                                               stateGatherCount,
@@ -774,8 +757,6 @@ public class FleetControllerOptions {
 
         public static Builder copy(FleetControllerOptions options) {
             Builder builder = new Builder(options.clusterName(), options.nodes());
-            builder.fleetControllerConfigId = options.fleetControllerConfigId;
-            builder.slobrokConfigId = options.slobrokConfigId;
             builder.clusterName = options.clusterName;
             builder.index = options.fleetControllerIndex;
             builder.count = options.fleetControllerCount;
