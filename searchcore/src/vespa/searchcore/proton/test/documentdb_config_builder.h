@@ -19,7 +19,6 @@ private:
     DocumentDBConfig::IndexschemaConfigSP _indexschema;
     DocumentDBConfig::AttributesConfigSP _attributes;
     DocumentDBConfig::SummaryConfigSP _summary;
-    DocumentDBConfig::SummarymapConfigSP _summarymap;
     DocumentDBConfig::JuniperrcConfigSP _juniperrc;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypes;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
@@ -72,10 +71,6 @@ public:
     }
     DocumentDBConfigBuilder &summary(const DocumentDBConfig::SummaryConfigSP &summary_in) {
         _summary = summary_in;
-        return *this;
-    }
-    DocumentDBConfigBuilder &summarymap(const DocumentDBConfig::SummarymapConfigSP &summarymap_in) {
-        _summarymap = summarymap_in;
         return *this;
     }
     DocumentDBConfig::SP build();

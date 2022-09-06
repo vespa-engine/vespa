@@ -11,7 +11,6 @@ struct DummySummaryManager : public ISummaryManager
 {
     ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &,
-                       const vespa::config::search::SummarymapConfig &,
                        const vespa::config::search::summary::JuniperrcConfig &,
                        const std::shared_ptr<const document::DocumentTypeRepo> &,
                        const std::shared_ptr<search::IAttributeManager> &) override {

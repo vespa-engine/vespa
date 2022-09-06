@@ -32,7 +32,6 @@ public:
     public:
         SummarySetup(const vespalib::string & baseDir,
                      const vespa::config::search::SummaryConfig & summaryCfg,
-                     const vespa::config::search::SummarymapConfig & summarymapCfg,
                      const vespa::config::search::summary::JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
                      search::IDocumentStore::SP docStore,
@@ -71,7 +70,6 @@ public:
 
     ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
-                       const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                        const search::IAttributeManager::SP &attributeMgr) override;

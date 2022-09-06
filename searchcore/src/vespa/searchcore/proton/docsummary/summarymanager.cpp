@@ -81,7 +81,7 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared
 
 SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
-             const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
+             const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
              std::shared_ptr<const DocumentTypeRepo> repo)
     : _docsumWriter(),
@@ -106,7 +106,6 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
     docsum_field_writer_factory.reset();
 
     _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<KeywordExtractor>());
-    (void) summarymapCfg;
 }
 
 IDocsumStore::UP
@@ -117,11 +116,11 @@ SummaryManager::SummarySetup::createDocsumStore()
 
 
 ISummaryManager::ISummarySetup::SP
-SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const SummarymapConfig & summarymapCfg,
+SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
                                    const JuniperrcConfig & juniperCfg, const std::shared_ptr<const DocumentTypeRepo> &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
-    return std::make_shared<SummarySetup>(_baseDir, summaryCfg, summarymapCfg,
+    return std::make_shared<SummarySetup>(_baseDir, summaryCfg,
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 

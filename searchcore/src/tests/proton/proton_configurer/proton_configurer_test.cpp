@@ -6,7 +6,6 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -54,7 +53,6 @@ struct DBConfigFixture {
     RankProfilesConfigBuilder _rankProfilesBuilder;
     IndexschemaConfigBuilder _indexschemaBuilder;
     SummaryConfigBuilder _summaryBuilder;
-    SummarymapConfigBuilder _summarymapBuilder;
     JuniperrcConfigBuilder _juniperrcBuilder;
     ImportedFieldsConfigBuilder _importedFieldsBuilder;
 
@@ -97,7 +95,6 @@ struct DBConfigFixture {
              std::make_shared<IndexschemaConfig>(_indexschemaBuilder),
              std::make_shared<AttributesConfig>(_attributesBuilder),
              std::make_shared<SummaryConfig>(_summaryBuilder),
-             std::make_shared<SummarymapConfig>(_summarymapBuilder),
              std::make_shared<JuniperrcConfig>(_juniperrcBuilder),
              documentTypes,
              repo,

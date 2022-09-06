@@ -8,7 +8,6 @@ namespace document { class DocumentType; }
 namespace vespa::config::search::internal {
 class InternalAttributesType;
 class InternalIndexschemaType;
-class InternalSummarymapType;
 class InternalSummaryType;
 }
 
@@ -27,13 +26,10 @@ class AttributeAspectDelayer
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
     using DocumentType = document::DocumentType;
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
-    using SummarymapConfigBuilder = vespa::config::search::internal::InternalSummarymapType;
-    using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
     using SummaryConfigBuilder = vespa::config::search::internal::InternalSummaryType;
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
 
     std::shared_ptr<AttributesConfigBuilder> _attributesConfig;
-    std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
     std::shared_ptr<SummaryConfigBuilder>    _summaryConfig;
 
 public:
@@ -45,15 +41,12 @@ public:
      * config before applying new config when system is online.
      */
     void setup(const AttributesConfig &oldAttributesConfig,
-               const SummarymapConfig &oldSummarymapConfig,
                const AttributesConfig &newAttributesConfig,
                const SummaryConfig &newSummaryConfig,
-               const SummarymapConfig &newSummarymapConfig,
                const IIndexschemaInspector &oldIndexschemaInspector,
                const IDocumentTypeInspector &inspector);
 
     std::shared_ptr<AttributesConfig> getAttributesConfig() const;
-    std::shared_ptr<SummarymapConfig> getSummarymapConfig() const;
     std::shared_ptr<SummaryConfig> getSummaryConfig() const;
 };
 

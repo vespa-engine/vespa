@@ -40,7 +40,6 @@
 #include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/searchdatatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/json_format.h>
@@ -90,8 +89,6 @@ using document::WeightedSetFieldValue;
 using search::index::Schema;
 using search::linguistics::SPANTREE_NAME;
 using search::linguistics::TERM;
-using vespa::config::search::SummarymapConfig;
-using vespa::config::search::SummarymapConfigBuilder;
 using vespalib::Slime;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -136,7 +133,6 @@ FieldBlock::~FieldBlock() = default;
 
 class Test : public vespalib::TestApp {
     std::unique_ptr<Schema> _schema;
-    std::unique_ptr<SummarymapConfigBuilder> _summarymap;
     std::shared_ptr<const DocumentTypeRepo>      _documentRepo;
     const DocumentType       *_documentType;
     document::FixedTypeRepo   _fixedRepo;
@@ -286,7 +282,6 @@ Test::Main()
 
 void Test::setUp() {
     _schema = std::make_unique<Schema>();
-    _summarymap = std::make_unique<SummarymapConfigBuilder>();
 }
 
 void Test::tearDown() {

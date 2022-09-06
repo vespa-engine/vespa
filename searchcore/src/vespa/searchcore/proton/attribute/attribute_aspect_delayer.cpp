@@ -3,7 +3,6 @@
 #include "attribute_aspect_delayer.h"
 #include <vespa/config-attributes.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
@@ -19,8 +18,6 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::SummaryConfig;
 using vespa::config::search::SummaryConfigBuilder;
-using vespa::config::search::SummarymapConfig;
-using vespa::config::search::SummarymapConfigBuilder;
 
 namespace proton {
 
@@ -40,39 +37,6 @@ bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Confi
 {
     return isUpdateableInMemoryOnly(name, cfg) &&
             !indexschemaInspector.isStringIndex(name);
-}
-
-class KnownSummaryFields
-{
-    vespalib::hash_set<vespalib::string> _fields;
-
-public:
-    KnownSummaryFields(const SummaryConfig &summaryConfig);
-    ~KnownSummaryFields();
-
-    bool known(const vespalib::string &fieldName) const {
-        return _fields.find(fieldName) != _fields.end();
-    }
-};
-
-KnownSummaryFields::KnownSummaryFields(const SummaryConfig &summaryConfig)
-    : _fields()
-{
-    for (const auto &summaryClass : summaryConfig.classes) {
-        for (const auto &summaryField : summaryClass.fields) {
-            _fields.insert(summaryField.name);
-        }
-    }
-}
-
-KnownSummaryFields::~KnownSummaryFields() = default;
-
-vespalib::string source_field(const SummarymapConfig::Override &override) {
-    if (override.arguments == "") {
-        return override.field;
-    } else {
-        return override.arguments;
-    }
 }
 
 vespalib::string
@@ -126,10 +90,6 @@ public:
     ~AttributeAspectConfigRewriter();
     void calculate_delayed_attribute_aspects();
     void build_attributes_config(AttributesConfigBuilder& attributes_config_builder) const;
-    void build_summary_map_config(const SummarymapConfig& old_summarymap_config,
-                                  const SummarymapConfig& new_summarymap_config,
-                                  const SummaryConfig& new_summary_config,
-                                  SummarymapConfigBuilder& summary_map_config_builder) const;
     void build_summary_config(const SummaryConfig& new_summary_config,
                               SummaryConfigBuilder& summary_config_builder) const;
 };
@@ -259,43 +219,6 @@ AttributeAspectConfigRewriter::build_attributes_config(AttributesConfigBuilder& 
 }
 
 void
-AttributeAspectConfigRewriter::build_summary_map_config(const SummarymapConfig& old_summarymap_config,
-                                                        const SummarymapConfig& new_summarymap_config,
-                                                        const SummaryConfig& new_summary_config,
-                                                        SummarymapConfigBuilder& summarymap_config_builder) const
-{
-    KnownSummaryFields knownSummaryFields(new_summary_config);
-    for (const auto &override : new_summarymap_config.override) {
-        if (override.command == attribute_dfw_string) {
-            if (!is_delayed_add_attribute_aspect(source_field(override))) {
-                summarymap_config_builder.override.emplace_back(override);
-            }
-        } else if (override.command == attribute_combiner_dfw_string) {
-            if (!is_delayed_add_attribute_aspect_struct(source_field(override))) {
-                summarymap_config_builder.override.emplace_back(override);
-            }
-        } else if (override.command == matched_attribute_elements_filter_dfw_string) {
-            if (!is_delayed_add_attribute_aspect_struct(source_field(override))) {
-                summarymap_config_builder.override.emplace_back(override);
-            } else {
-                SummarymapConfig::Override mutated_override(override);
-                mutated_override.command = matched_elements_filter_dfw_string;
-                summarymap_config_builder.override.emplace_back(mutated_override);
-            }
-        } else {
-            summarymap_config_builder.override.emplace_back(override);
-        }
-    }
-    for (const auto &override : old_summarymap_config.override) {
-        if (override.command == attribute_dfw_string) {
-            if (is_delayed_remove_attribute_aspect(source_field(override)) && knownSummaryFields.known(override.field)) {
-                summarymap_config_builder.override.emplace_back(override);
-            }
-        }
-    }
-}
-
-void
 AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig& new_summary_config,
                                                     SummaryConfigBuilder& summary_config_builder) const
 {
@@ -338,7 +261,6 @@ AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig& new_sum
 
 AttributeAspectDelayer::AttributeAspectDelayer()
     : _attributesConfig(std::make_shared<AttributesConfigBuilder>()),
-      _summarymapConfig(std::make_shared<SummarymapConfigBuilder>()),
       _summaryConfig(std::make_shared<SummaryConfigBuilder>())
 {
 }
@@ -353,12 +275,6 @@ AttributeAspectDelayer::getAttributesConfig() const
     return _attributesConfig;
 }
 
-std::shared_ptr<AttributeAspectDelayer::SummarymapConfig>
-AttributeAspectDelayer::getSummarymapConfig() const
-{
-    return _summarymapConfig;
-}
-
 std::shared_ptr<AttributeAspectDelayer::SummaryConfig>
 AttributeAspectDelayer::getSummaryConfig() const
 {
@@ -367,10 +283,8 @@ AttributeAspectDelayer::getSummaryConfig() const
 
 void
 AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
-                             const SummarymapConfig &oldSummarymapConfig,
                              const AttributesConfig &newAttributesConfig,
                              const SummaryConfig &newSummaryConfig,
-                             const SummarymapConfig &newSummarymapConfig,
                              const IIndexschemaInspector &oldIndexschemaInspector,
                              const IDocumentTypeInspector &inspector)
 {
@@ -379,10 +293,6 @@ AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
                                                oldIndexschemaInspector,
                                                inspector);
     cfg_rewriter.build_attributes_config(*_attributesConfig);
-    cfg_rewriter.build_summary_map_config(oldSummarymapConfig,
-                                          newSummarymapConfig,
-                                          newSummaryConfig,
-                                          *_summarymapConfig);
     cfg_rewriter.build_summary_config(newSummaryConfig,
                                       *_summaryConfig);
 }

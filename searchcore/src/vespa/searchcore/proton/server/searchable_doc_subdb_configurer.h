@@ -18,7 +18,6 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 

@@ -6,7 +6,6 @@
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -25,7 +24,6 @@ using namespace vespa::config::search;
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
-using vespa::config::search::SummarymapConfig;
 using vespa::config::search::core::RankingConstantsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
 
@@ -39,7 +37,6 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       indexschemaChanged(false),
       attributesChanged(false),
       summaryChanged(false),
-      summarymapChanged(false),
       juniperrcChanged(false),
       documenttypesChanged(false),
       documentTypeRepoChanged(false),
@@ -62,7 +59,6 @@ DocumentDBConfig::DocumentDBConfig(
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
                const SummaryConfigSP &summary,
-               const SummarymapConfigSP &summarymap,
                const JuniperrcConfigSP &juniperrc,
                const DocumenttypesConfigSP &documenttypes,
                const std::shared_ptr<const DocumentTypeRepo> &repo,
@@ -85,7 +81,6 @@ DocumentDBConfig::DocumentDBConfig(
       _indexschema(indexschema),
       _attributes(attributes),
       _summary(summary),
-      _summarymap(summarymap),
       _juniperrc(juniperrc),
       _documenttypes(documenttypes),
       _repo(repo),
@@ -113,7 +108,6 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _indexschema(cfg._indexschema),
       _attributes(cfg._attributes),
       _summary(cfg._summary),
-      _summarymap(cfg._summarymap),
       _juniperrc(cfg._juniperrc),
       _documenttypes(cfg._documenttypes),
       _repo(cfg._repo),
@@ -140,7 +134,6 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
            equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(), rhs._attributes.get()) &&
            equals<SummaryConfig>(_summary.get(), rhs._summary.get()) &&
-           equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get()) &&
            equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get()) &&
            equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get()) &&
            _repo.get() == rhs._repo.get() &&
@@ -165,7 +158,6 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.indexschemaChanged = !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged = !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
     retval.summaryChanged = !equals<SummaryConfig>(_summary.get(), rhs._summary.get());
-    retval.summarymapChanged = !equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get());
     retval.juniperrcChanged = !equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get());
     retval.documenttypesChanged = !equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get());
     retval.documentTypeRepoChanged = _repo.get() != rhs._repo.get();
@@ -191,7 +183,6 @@ DocumentDBConfig::valid() const
            _indexschema &&
            _attributes &&
            _summary &&
-           _summarymap &&
            _juniperrc &&
            _documenttypes &&
            _repo &&
@@ -252,7 +243,6 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._indexschema,
                 o._attributes,
                 emptyConfig(o._summary),
-                std::make_shared<SummarymapConfig>(),
                 o._juniperrc,
                 o._documenttypes,
                 o._repo,
@@ -296,7 +286,6 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _indexschema,
             attributes,
             _summary,
-            _summarymap,
             _juniperrc,
             _documenttypes,
             _repo,
@@ -318,13 +307,12 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
     AttributeAspectDelayer attributeAspectDelayer;
     DocumentTypeInspector inspector(*oldCfg.getDocumentType(), *n.getDocumentType());
     IndexschemaInspector oldIndexschemaInspector(oldCfg.getIndexschemaConfig());
-    attributeAspectDelayer.setup(oldCfg.getAttributesConfig(), oldCfg.getSummarymapConfig(),
-                                 n.getAttributesConfig(), n.getSummaryConfig(), n.getSummarymapConfig(),
+    attributeAspectDelayer.setup(oldCfg.getAttributesConfig(),
+                                 n.getAttributesConfig(), n.getSummaryConfig(),
                                  oldIndexschemaInspector, inspector);
     bool attributes_config_changed = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig());
-    bool summarymap_config_changed = (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
     bool summary_config_changed = (n.getSummaryConfig() != *attributeAspectDelayer.getSummaryConfig());
-    bool delayedAttributeAspects = (attributes_config_changed || summarymap_config_changed || summary_config_changed);
+    bool delayedAttributeAspects = (attributes_config_changed || summary_config_changed);
     if (!delayedAttributeAspects) {
         return newCfg;
     }
@@ -337,7 +325,6 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._indexschema,
                    (attributes_config_changed ? attributeAspectDelayer.getAttributesConfig() : n._attributes),
                    (summary_config_changed ? attributeAspectDelayer.getSummaryConfig() : n._summary),
-                   (summarymap_config_changed ? attributeAspectDelayer.getSummarymapConfig() : n._summarymap),
                    n._juniperrc,
                    n._documenttypes,
                    n._repo,

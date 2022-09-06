@@ -2,7 +2,6 @@
 
 #include "documentdb_config_builder.h"
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
@@ -20,7 +19,6 @@ using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::SummaryConfig;
-using vespa::config::search::SummarymapConfig;
 using vespa::config::search::summary::JuniperrcConfig;
 using vespa::config::search::ImportedFieldsConfig;
 using proton::ThreadingServiceConfig;
@@ -39,7 +37,6 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _indexschema(std::make_shared<IndexschemaConfig>()),
       _attributes(std::make_shared<AttributesConfig>()),
       _summary(std::make_shared<SummaryConfig>()),
-      _summarymap(std::make_shared<SummarymapConfig>()),
       _juniperrc(std::make_shared<JuniperrcConfig>()),
       _documenttypes(std::make_shared<DocumenttypesConfig>()),
       _repo(std::make_shared<document::DocumentTypeRepo>()),
@@ -64,7 +61,6 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _indexschema(cfg.getIndexschemaConfigSP()),
       _attributes(cfg.getAttributesConfigSP()),
       _summary(cfg.getSummaryConfigSP()),
-      _summarymap(cfg.getSummarymapConfigSP()),
       _juniperrc(cfg.getJuniperrcConfigSP()),
       _documenttypes(cfg.getDocumenttypesConfigSP()),
       _repo(cfg.getDocumentTypeRepoSP()),
@@ -93,7 +89,6 @@ DocumentDBConfigBuilder::build()
             _indexschema,
             _attributes,
             _summary,
-            _summarymap,
             _juniperrc,
             _documenttypes,
             _repo,

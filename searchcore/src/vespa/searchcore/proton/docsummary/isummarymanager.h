@@ -9,7 +9,6 @@
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -45,7 +44,6 @@ public:
 
     virtual ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
-                       const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                        const std::shared_ptr<search::IAttributeManager> &attributeMgr) = 0;

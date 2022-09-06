@@ -127,7 +127,6 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "(re-)configure VSM (docsum tools)");
 
     std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>());
-    std::shared_ptr<SummarymapConfig>   summaryMap(snapshot.getConfig<SummarymapConfig>());
     std::shared_ptr<VsmsummaryConfig>   vsmSummary(snapshot.getConfig<VsmsummaryConfig>());
     std::shared_ptr<JuniperrcConfig>    juniperrc(snapshot.getConfig<JuniperrcConfig>());
 
@@ -137,7 +136,6 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "configureFields(): Size of cfg fieldspec: %zd", _fieldsCfg.get()->fieldspec.size()); // UlfC: debugging
     LOG(debug, "configureFields(): Size of cfg documenttype: %zd", _fieldsCfg.get()->documenttype.size()); // UlfC: debugging
     LOG(debug, "configureSummary(): Size of cfg classes: %zd", summary->classes.size()); // UlfC: debugging
-    LOG(debug, "configureSummaryMap(): Size of cfg override: %zd", summaryMap->override.size()); // UlfC: debugging
     LOG(debug, "configureVsmSummary(): Size of cfg fieldmap: %zd", vsmSummary->fieldmap.size()); // UlfC: debugging
     LOG(debug, "configureVsmSummary(): outputclass='%s'", vsmSummary->outputclass.c_str()); // UlfC: debugging
 
