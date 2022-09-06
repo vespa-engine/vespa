@@ -35,33 +35,6 @@ Source0:        vespa-%{version}.tar.gz
 %if 0%{?centos} || 0%{?rocky}
 BuildRequires: epel-release
 %endif
-%if 0%{?centos}
-%if 0%{?el7} && ! 0%{?amzn2}
-BuildRequires: centos-release-scl
-%endif
-%endif
-%if 0%{?el7}
-%if 0%{?amzn2}
-BuildRequires: gcc10-c++
-BuildRequires: libatomic10-devel
-BuildRequires: gcc10-binutils
-BuildRequires: maven
-%define _use_mvn_wrapper 1
-%define _java_home /usr/lib/jvm/java-11-amazon-corretto.%{?_arch}
-BuildRequires: python3-pytest
-%else
-BuildRequires: devtoolset-11-gcc-c++
-BuildRequires: devtoolset-11-libasan-devel
-BuildRequires: devtoolset-11-libatomic-devel
-BuildRequires: devtoolset-11-binutils
-BuildRequires: rh-maven35
-%define _devtoolset_enable /opt/rh/devtoolset-11/enable
-%define _rhmaven35_enable /opt/rh/rh-maven35/enable
-BuildRequires: python36-pytest
-%endif
-BuildRequires: vespa-pybind11-devel
-BuildRequires: python3-devel
-%endif
 %if 0%{?el8}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %if 0%{?_centos_stream}
@@ -102,20 +75,6 @@ BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
 BuildRequires: glibc-langpack-en
-%endif
-%if 0%{?el7}
-BuildRequires: cmake3
-BuildRequires: llvm7.0-devel
-BuildRequires: vespa-boost-devel >= 1.76.0-1
-BuildRequires: vespa-gtest = 1.11.0
-%define _use_vespa_gtest 1
-BuildRequires: vespa-icu-devel >= 65.1.0-1
-BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel = 1.12.1
-BuildRequires: vespa-openssl-devel >= 1.1.1o-1
-%define _use_vespa_openssl 1
-BuildRequires: vespa-protobuf-devel = 3.19.1
-BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
@@ -164,8 +123,13 @@ BuildRequires: gmock-devel
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-%if %{?fedora} >= 35 && ! 0%{?amzn2022}
+%if 0%{?amzn2022}
+BuildRequires: maven-amazon-corretto17
+%define _java_home /usr/lib/jvm/java-17-amazon-corretto
+%else
+%if %{?fedora} >= 35
 BuildRequires: maven-openjdk17
+%endif
 %endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
@@ -173,7 +137,7 @@ BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?amzn2022}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 13.0.0
+BuildRequires: llvm-devel >= 14.0.5
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -207,16 +171,8 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
-%if 0%{?el7} && 0%{?amzn2}
-BuildRequires: vespa-xxhash-devel = 0.8.0
-%define _use_vespa_xxhash 1
-BuildRequires: vespa-openblas-devel = 0.3.18
-%define _use_vespa_openblas 1
-BuildRequires: vespa-re2-devel = 20210801
-%define _use_vespa_re2 1
-%else
 BuildRequires: xxhash-devel >= 0.8.0
-%if 0%{?el7} || 0%{?el8}
+%if 0%{?el8}
 BuildRequires: vespa-openblas-devel = 0.3.18
 %define _use_vespa_openblas 1
 %else
@@ -228,24 +184,17 @@ BuildRequires: vespa-re2-devel = 20210801
 %else
 BuildRequires: re2-devel
 %endif
-%endif
 BuildRequires: zlib-devel
-%if ! 0%{?el7}
 BuildRequires: libicu-devel
-%endif
-%if 0%{?el7} && 0%{?amzn2}
+%if 0%{?amzn2022}
+BuildRequires: java-17-amazon-corretto-devel
 BuildRequires: java-17-amazon-corretto
 %else
 BuildRequires: java-17-openjdk-devel
 %endif
 BuildRequires: rpm-build
 BuildRequires: make
-%if 0%{?el7} && ! 0%{?amzn2}
-BuildRequires: rh-git227
-%define _rhgit227_enable /opt/rh/rh-git227/enable
-%else
 BuildRequires: git
-%endif
 BuildRequires: golang
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
@@ -276,15 +225,9 @@ Requires: perl-Net-INET6Glue
 %endif
 Requires: perl-Pod-Usage
 Requires: perl-URI
-%if ! 0%{?el7}
 Requires: valgrind
-%endif
-%if (0%{?el7} && 0%{?amzn2})
-Requires: vespa-xxhash = 0.8.0
-%else
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
-%endif
 Requires: gdb
 Requires: hostname
 Requires: perf
@@ -294,17 +237,6 @@ Requires: net-tools
 Requires: unzip
 Requires: zlib
 Requires: zstd
-%if 0%{?el7}
-Requires: llvm7.0
-%if ! 0%{?amzn2}
-Requires: vespa-telegraf >= 1.1.1-1
-Requires: vespa-valgrind >= 3.17.0-1
-%endif
-Requires: vespa-gtest = 1.11.0
-%define _vespa_llvm_version 7
-%define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
-%define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
-%endif
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
@@ -332,7 +264,7 @@ Requires: gtest
 %if 0%{?fedora}
 Requires: gtest
 %if 0%{?amzn2022}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 13
@@ -372,7 +304,8 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
-%if 0%{?el7} && 0%{?amzn2}
+%if 0%{?amzn2022}
+Requires: java-17-amazon-corretto-devel
 Requires: java-17-amazon-corretto
 %else
 Requires: java-17-openjdk-devel
@@ -392,24 +325,20 @@ Summary: Vespa - The open big data serving engine - base C++ libraries
 %if 0%{?centos} || 0%{?rocky}
 Requires: epel-release
 %endif
-%if 0%{?amzn2}
-Requires: vespa-xxhash = 0.8.0
-%else
 Requires: xxhash-libs >= 0.8.0
-%endif
-%if 0%{?el7} || 0%{?el8}
+%if 0%{?el8}
 Requires: vespa-openssl >= 1.1.1o-1
 %else
 Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
-%if 0%{?el8} || 0%{?el7}
+%if 0%{?el8}
 Requires: vespa-openblas = 0.3.18
 %else
 Requires: openblas-serial
 %endif
-%if 0%{?amzn2} || 0%{?amzn2022}
+%if 0%{?amzn2022}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
@@ -427,14 +356,8 @@ Vespa - The open big data serving engine - base C++ libraries
 Summary: Vespa - The open big data serving engine - C++ libraries
 
 Requires: %{name}-base-libs = %{version}-%{release}
-%if 0%{?el7}
-Requires: llvm7.0-libs
-Requires: vespa-icu >= 65.1.0-1
-Requires: vespa-protobuf = 3.19.1
-%else
 Requires: libicu
-%endif
-%if 0%{?el7} || 0%{?el8}
+%if 0%{?el8}
 Requires: vespa-openssl >= 1.1.1o-1
 %else
 Requires: openssl-libs
@@ -462,7 +385,7 @@ Requires: protobuf
 %if 0%{?fedora}
 Requires: protobuf
 %if 0%{?amzn2022}
-Requires: llvm-libs >= 13.0.0
+Requires: llvm-libs >= 14.0.5
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 13.0.0
@@ -543,9 +466,6 @@ Summary: Vespa - The open big data serving engine - ann-benchmark
 
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
-%if 0%{?el7}
-Requires: python3
-%endif
 %if 0%{?el8}
 Requires: python36
 %endif
@@ -634,7 +554,7 @@ rm -rf %{buildroot}
 
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
-%if 0%{?source_base:1} && ! (0%{?amzn2} || 0%{?el7})
+%if 0%{?source_base:1}
 find %{buildroot} -exec file {} \; | grep ': ELF ' | cut -d: -f1 | xargs --no-run-if-empty -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
 %endif
 %else
@@ -642,11 +562,6 @@ make install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
 mkdir -p %{buildroot}/usr/share
 cp -a client/go/share/* %{buildroot}/usr/share
-%endif
-# Otherwise installation may fail for find-debuginfo.sh/dwz:
-# dwz: dwz.c:9899: read_dwarf: Assertion `data != ((void *)0) && data->d_buf != ((void *)0)' failed.
-%if 0%{?el7}
-strip %{buildroot}%{_prefix}/bin/vespa
 %endif
 
 %if %{_create_vespa_service}
