@@ -77,7 +77,8 @@ public class Container {
                 newGraph.reuseNodes(oldGraph);
             } catch (Throwable t) {
                 log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
-                osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
+                Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
+                deconstructComponentsAndBundles(getBootstrapGeneration(), newBundlesFromFailedGen, List.of());
                 throw t;
             }
             try {
@@ -180,7 +181,11 @@ public class Container {
         for (Object component : failedGraph.allConstructedComponentsAndProviders()) {
             if (!currentComponents.contains(component)) unusedComponents.add(component);
         }
-        destructor.deconstruct(failedGraph.generation(), unusedComponents, bundlesFromFailedGraph);
+        deconstructComponentsAndBundles(failedGraph.generation(), bundlesFromFailedGraph, unusedComponents);
+    }
+
+    private void deconstructComponentsAndBundles(long generation, Collection<Bundle> bundlesFromFailedGraph, List<Object> unusedComponents) {
+        destructor.deconstruct(generation, unusedComponents, bundlesFromFailedGraph);
     }
 
     private Runnable createPreviousGraphDeconstructionTask(ComponentGraph oldGraph,
@@ -272,7 +277,8 @@ public class Container {
     public void shutdown(ComponentGraph graph) {
         shutdownConfigRetriever();
         if (graph != null) {
-            scheduleGraphForDeconstruction(graph);
+            // As we are shutting down, there is no need to uninstall bundles.
+            deconstructComponentsAndBundles(graph.generation(), List.of(), graph.allConstructedComponentsAndProviders());
             destructor.shutdown();
         }
     }
@@ -284,11 +290,6 @@ public class Container {
     // Reload config manually, when subscribing to non-configserver sources
     public void reloadConfig(long generation) {
         subscriberFactory.reloadActiveSubscribers(generation);
-    }
-
-    private void scheduleGraphForDeconstruction(ComponentGraph graph) {
-        // This is only used for shutdown and cleanup of failed graph, so no need to uninstall any bundles.
-        destructor.deconstruct(graph.generation(), graph.allConstructedComponentsAndProviders(), List.of());
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
