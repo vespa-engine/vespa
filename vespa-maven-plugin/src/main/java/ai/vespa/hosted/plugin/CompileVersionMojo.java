@@ -2,10 +2,11 @@
 package ai.vespa.hosted.plugin;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.text.XML;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.w3c.dom.Element;
 
 import java.io.File;
@@ -35,9 +36,18 @@ public class CompileVersionMojo extends AbstractVespaMojo {
         allowMajor.ifPresent(major -> getLog().info("Allowing only major version " + major + "."));
 
         Version compileVersion = Version.fromString(controller.compileVersion(id, allowMajor));
-        if (compileVersion.isAfter(Vtag.currentVersion))
-            throw new IllegalStateException("parent version (" + Vtag.currentVersion.toFullString() + ") should be at least as " +
-                                            "high as the Vespa version to compile against (" + compileVersion.toFullString() + ")");
+
+        MavenProject current = project;
+        while (current.getParent() != null && current.getParent().getParentArtifact() != null)
+            current = current.getParent();
+
+        Version parentVersion;
+        Artifact parentArtifact = current.getParentArtifact();
+        if (parentArtifact != null && parentArtifact.getGroupId().matches("(com\\.yahoo\\.vespa|ai\\.vespa)(\\..+)?")) {
+            parentVersion = Version.fromString(parentArtifact.getVersion());
+            if (parentVersion.compareTo(compileVersion) < 0)
+                throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
+        }
 
         getLog().info("Vespa version to compile against is '" + compileVersion.toFullString() + "'.");
         getLog().info("Writing compile version to '" + output + "'.");
