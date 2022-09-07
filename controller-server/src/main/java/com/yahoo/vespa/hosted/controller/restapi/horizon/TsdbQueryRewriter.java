@@ -40,7 +40,12 @@ public class TsdbQueryRewriter {
             JsonNode execution = executionGraph.get(i);
 
             // Will be handled by rewriteFilters()
-            if (execution.has("filterId") && filterExists(root, execution.get("filterId").asText())) continue;
+            if (execution.has("filterId")) {
+                if (filterExists(root, execution.get("filterId").asText()))
+                    continue;
+                else
+                    throw new IllegalArgumentException("Invalid filterId: " + execution.get("filterId").asText());
+            }
 
             rewriteFilter((ObjectNode) execution, tenantNames, operator, systemName);
         }
