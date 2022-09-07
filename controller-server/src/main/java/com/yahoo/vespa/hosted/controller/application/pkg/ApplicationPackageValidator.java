@@ -98,7 +98,7 @@ public class ApplicationPackageValidator {
                     if (!controller.zoneRegistry().hasZone(ZoneId.from(environment, region))) {
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                     }
-                    Optional<CloudAccount> cloudAccount = spec.cloudAccount(environment, region);
+                    Optional<CloudAccount> cloudAccount = spec.cloudAccount(environment, zone.region());
                     if (cloudAccount.isPresent() && !controller.zoneRegistry().hasZone(ZoneId.from(environment, region), cloudAccount.get())) {
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec is not configured for " +
                                                            "use in cloud account '" + cloudAccount.get().value() +
@@ -195,7 +195,7 @@ public class ApplicationPackageValidator {
         for (var spec : deploymentSpec.instances()) {
             for (var zone : spec.zones()) {
                 if (!zone.environment().isProduction()) continue;
-                Optional<CloudAccount> cloudAccount = spec.cloudAccount(zone.environment(), zone.region().get());
+                Optional<CloudAccount> cloudAccount = spec.cloudAccount(zone.environment(), zone.region());
                 if (cloudAccount.isEmpty()) continue;
                 if (validAccounts.contains(cloudAccount.get())) continue;
                 throw new IllegalArgumentException("Cloud account '" + cloudAccount.get().value() +
