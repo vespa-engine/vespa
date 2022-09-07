@@ -9,8 +9,6 @@ namespace search {
 
 class FileKit
 {
-private:
-    static bool _syncFiles;
 public:
     static bool createStamp(const vespalib::string &name);
     static bool hasStamp(const vespalib::string &name);
