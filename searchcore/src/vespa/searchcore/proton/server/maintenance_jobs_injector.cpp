@@ -39,7 +39,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
                                                    bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
                                                    clusterStateChangedNotifier, calc && calc->nodeRetired(), bucketSpace);
-        controller.registerJobInMasterThread(trackJob(std::move(tracker), std::move(job)));
+        controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }
 
