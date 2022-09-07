@@ -22,7 +22,7 @@ private:
 
 
 public:
-    using JuniperrcConfig = vespa::config::search::summary::internal::InternalJuniperrcType;;
+    using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;;
     /**
      * Constructs a juniper property object with default values set.
      */

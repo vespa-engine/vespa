@@ -39,7 +39,7 @@ private:
     void Clean();
 
 public:
-    using SummaryConfig = vespa::config::search::internal::InternalSummaryType;
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     class iterator {
     public:
         iterator(IdMap::iterator it) : _it(it) { }

@@ -18,8 +18,8 @@ namespace proton {
 class ISummaryManager
 {
 public:
-    using SummaryConfig = vespa::config::search::internal::InternalSummaryType;
-    using JuniperrcConfig = vespa::config::search::summary::internal::InternalJuniperrcType;
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
+    using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;
     ISummaryManager(const ISummaryManager &) = delete;
     ISummaryManager & operator = (const ISummaryManager &) = delete;
     /**
