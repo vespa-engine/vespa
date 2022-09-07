@@ -218,7 +218,7 @@ public class NodesSpecification {
                                                                                            .map(content -> new ModelElement(content).child("nodes"))
                                                                                            .filter(nodes -> nodes != null && nodes.stringAttribute("count") != null)
                                                                                            .map(nodes -> from(nodes, context))
-                                                                                           .collect(toList());
+                                                                                           .toList();
         return new NodesSpecification(new ClusterResources(count, 1, resources),
                                       new ClusterResources(count, 1, resources),
                                       true,
@@ -335,35 +335,35 @@ public class NodesSpecification {
 
     private static NodeResources.DiskSpeed parseOptionalDiskSpeed(String diskSpeedString) {
         if (diskSpeedString == null) return NodeResources.DiskSpeed.getDefault();
-        switch (diskSpeedString) {
-            case "fast" : return NodeResources.DiskSpeed.fast;
-            case "slow" : return NodeResources.DiskSpeed.slow;
-            case "any"  : return NodeResources.DiskSpeed.any;
-            default: throw new IllegalArgumentException("Illegal disk-speed value '" + diskSpeedString +
-                                                        "': Legal values are 'fast', 'slow' and 'any')");
-        }
+        return switch (diskSpeedString) {
+            case "fast" -> NodeResources.DiskSpeed.fast;
+            case "slow" -> NodeResources.DiskSpeed.slow;
+            case "any" -> NodeResources.DiskSpeed.any;
+            default -> throw new IllegalArgumentException("Illegal disk-speed value '" + diskSpeedString +
+                                                          "': Legal values are 'fast', 'slow' and 'any')");
+        };
     }
 
     private static NodeResources.StorageType parseOptionalStorageType(String storageTypeString) {
         if (storageTypeString == null) return NodeResources.StorageType.getDefault();
-        switch (storageTypeString) {
-            case "remote" : return NodeResources.StorageType.remote;
-            case "local"  : return NodeResources.StorageType.local;
-            case "any"    : return NodeResources.StorageType.any;
-            default: throw new IllegalArgumentException("Illegal storage-type value '" + storageTypeString +
-                                                        "': Legal values are 'remote', 'local' and 'any')");
-        }
+        return switch (storageTypeString) {
+            case "remote" -> NodeResources.StorageType.remote;
+            case "local" -> NodeResources.StorageType.local;
+            case "any" -> NodeResources.StorageType.any;
+            default -> throw new IllegalArgumentException("Illegal storage-type value '" + storageTypeString +
+                                                          "': Legal values are 'remote', 'local' and 'any')");
+        };
     }
 
     private static NodeResources.Architecture parseOptionalArchitecture(String architecture) {
         if (architecture == null) return NodeResources.Architecture.getDefault();
-        switch (architecture) {
-            case "x86_64" : return NodeResources.Architecture.x86_64;
-            case "arm64"  : return NodeResources.Architecture.arm64;
-            case "any"    : return NodeResources.Architecture.any;
-            default: throw new IllegalArgumentException("Illegal architecture value '" + architecture +
-                                                        "': Legal values are 'x86_64', 'arm64' and 'any')");
-        }
+        return switch (architecture) {
+            case "x86_64" -> NodeResources.Architecture.x86_64;
+            case "arm64" -> NodeResources.Architecture.arm64;
+            case "any" -> NodeResources.Architecture.any;
+            default -> throw new IllegalArgumentException("Illegal architecture value '" + architecture +
+                                                          "': Legal values are 'x86_64', 'arm64' and 'any')");
+        };
     }
 
     /**
@@ -424,8 +424,7 @@ public class NodesSpecification {
     private static Optional<Element> findParentByTag(String tag, Element element) {
         Node parent = element.getParentNode();
         if (parent == null) return Optional.empty();
-        if ( ! (parent instanceof Element)) return Optional.empty();
-        Element parentElement = (Element) parent;
+        if ( ! (parent instanceof Element parentElement)) return Optional.empty();
         if (parentElement.getTagName().equals(tag)) return Optional.of(parentElement);
         return findParentByTag(tag, parentElement);
     }
