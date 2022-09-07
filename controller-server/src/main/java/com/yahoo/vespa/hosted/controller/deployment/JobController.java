@@ -582,6 +582,7 @@ public class JobController {
     private void validate(TenantAndApplicationId id, Submission submission) {
         validateTests(id, submission);
         validateParentVersion(id, submission);
+        validateMajorVersion(id, submission);
     }
 
     private void validateTests(TenantAndApplicationId id, Submission submission) {
@@ -608,6 +609,19 @@ public class JobController {
                 controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
         });
    }
+
+    private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
+        submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
+            if (explicitMajor < 8)
+                controller.notificationsDb().setNotification(NotificationSource.from(id),
+                                                             Type.applicationPackage,
+                                                             Notification.Level.warning,
+                                                             "Vespa 7 will soon be end of life, upgrade to Vespa 8 now:" +
+                                                             "https://cloud.vespa.ai/en/vespa8-release-notes.html");
+            else
+                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.applicationPackage);
+        });
+    }
 
     private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
         TenantAndApplicationId id = application.get().id();
