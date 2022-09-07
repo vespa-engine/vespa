@@ -24,6 +24,8 @@ StepExceptInstance =
     Endpoints? &
     Test? &
     Staging? &
+    Dev? &
+    Perf? &
     Prod*
 
 PrimitiveStep =
@@ -99,6 +101,14 @@ Staging = element staging {
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
    text
+}
+
+Dev = element dev {
+   attribute cloud-account { xsd:string }?
+}
+
+Perf = element perf {
+   attribute cloud-account { xsd:string }?
 }
 
 Prod = element prod {

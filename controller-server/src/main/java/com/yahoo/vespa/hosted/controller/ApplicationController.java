@@ -59,7 +59,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValid
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -632,7 +631,7 @@ public class ApplicationController {
                                                                    .collect(toList());
             Optional<CloudAccount> cloudAccount = applicationPackage.deploymentSpec()
                                                                     .instance(application.instance())
-                                                                    .flatMap(spec -> spec.cloudAccount(zone.environment(), zone.region()));
+                                                                    .flatMap(spec -> spec.cloudAccount(zone.environment(), Optional.of(zone.region())));
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,

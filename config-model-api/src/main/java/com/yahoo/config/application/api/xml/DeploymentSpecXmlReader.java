@@ -57,6 +57,8 @@ public class DeploymentSpecXmlReader {
     private static final String instanceTag = "instance";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
+    private static final String devTag = "dev";
+    private static final String perfTag = "perf";
     private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
@@ -234,11 +236,12 @@ public class DeploymentSpecXmlReader {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
+                    // A production test
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
                 }
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
-            case stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
+            case devTag, perfTag, stagingTag:
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag).stream())
@@ -433,7 +436,11 @@ public class DeploymentSpecXmlReader {
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 readActive(regionTag), athenzService, testerFlavor,
-                                stringAttribute(cloudAccountAttribute, regionTag).map(CloudAccount::new));
+                                readCloudAccount(regionTag));
+    }
+
+    private Optional<CloudAccount> readCloudAccount(Element tag) {
+        return stringAttribute(cloudAccountAttribute, tag).map(CloudAccount::new);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
