@@ -7,7 +7,7 @@ namespace search::docsummary {
 
 ResConfigEntry::ResConfigEntry() noexcept
     : _type(RES_BAD),
-      _bindname(),
+      _name(),
       _docsum_field_writer()
 {
 }

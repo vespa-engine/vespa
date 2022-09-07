@@ -35,8 +35,8 @@ ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<Docs
 
     _nameMap[name] = _entries.size();
     ResConfigEntry e;
-    e._type      = type;
-    e._bindname  = name;
+    e._type = type;
+    e._name = name;
     if (docsum_field_writer) {
         docsum_field_writer->setIndex(_entries.size());
         bool generated = docsum_field_writer->IsGenerated();
