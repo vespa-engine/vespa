@@ -2222,6 +2222,32 @@ public class DeploymentTriggerTest {
         newApp.deploy();
         assertEquals(version2, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version2, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+
+        // New app compiles against old major, and downgrades when a pin is also applied.
+        newApp.submit(new ApplicationPackageBuilder().compileVersion(version1)
+                                                     .systemTest()
+                                                     .region("us-east-3")
+                                                     .build());
+        newRevision = newApp.lastSubmission().get();
+
+        assertEquals(Change.of(newRevision).with(version1), newApp.instance().change());
+        tester.triggerJobs();
+        newApp.assertNotRunning(systemTest); // Without a pin, the platform won't downgrade, and 8 is incompatible with compiled 7.
+
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(newRevision).with(version1), newApp.instance().change());
+        tester.upgrader().run();
+        assertEquals(Change.of(newRevision).with(version1), newApp.instance().change());
+
+        tester.deploymentTrigger().forceChange(newApp.instanceId(), newApp.instance().change().withPin());
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(newRevision).with(version1).withPin(), newApp.instance().change());
+        tester.upgrader().run();
+        assertEquals(Change.of(newRevision).with(version1).withPin(), newApp.instance().change());
+
+        newApp.deploy();
+        assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
     }
 
     @Test

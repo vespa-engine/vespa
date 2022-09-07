@@ -178,18 +178,18 @@ public class DeploymentStatus {
                                                  .map(application.revisions()::get)
                                                  .flatMap(ApplicationVersion::compileVersion);
 
-        // If the revision requires a certain platform for compatibility, add that here.
+        // If the revision requires a certain platform for compatibility, add that here, unless we're already deploying a compatible platform.
         VersionCompatibility compatibility = versionCompatibility.apply(instance);
         Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
+        if (change.platform().map(compatibleWithCompileVersion::test).orElse(false))
+            return change;
+
         if (   application.productionDeployments().isEmpty() // TODO: replace with adding this for test jobs when needed
             || application.productionDeployments().getOrDefault(instance, List.of()).stream()
-                     .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
-            return targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy())
-                    .stream() // Pick the latest platform with appropriate confidence, which is compatible with the compile version.
-                    .filter(compatibleWithCompileVersion)
-                    .findFirst()
-                    .map(platform -> change.withoutPin().with(platform))
-                    .orElse(change);
+                          .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
+            for (Version platform : targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy()))
+                if (compatibleWithCompileVersion.test(platform))
+                    return change.withoutPin().with(platform);
         }
         return change;
     }
