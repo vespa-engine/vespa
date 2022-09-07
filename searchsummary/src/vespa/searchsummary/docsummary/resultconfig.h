@@ -4,7 +4,7 @@
 
 #include "res_type_utils.h"
 #include <vespa/config-summary.h>
-#include <vespa/searchlib/util/stringenum.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace search::docsummary {
 
