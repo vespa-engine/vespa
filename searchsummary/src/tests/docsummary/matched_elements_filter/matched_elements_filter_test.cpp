@@ -100,7 +100,6 @@ public:
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
         EXPECT_TRUE(result_class->AddConfigEntry("map", ResType::RES_JSONSTRING));
         EXPECT_TRUE(result_class->AddConfigEntry("map2", ResType::RES_JSONSTRING));
-        _config.CreateEnumMaps();
     }
     ~DocsumStore();
     const ResultConfig& get_config() const { return _config; }

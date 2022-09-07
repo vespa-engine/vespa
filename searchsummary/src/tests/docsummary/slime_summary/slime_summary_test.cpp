@@ -117,7 +117,6 @@ DocsumFixture::DocsumFixture()
     EXPECT_TRUE(cfg->AddConfigEntry("longdata_field", RES_LONG_DATA));
     EXPECT_TRUE(cfg->AddConfigEntry("int_pair_field", RES_JSONSTRING));
     config->set_default_result_class_id(0);
-    config->CreateEnumMaps();
     writer = std::make_unique<DynamicDocsumWriter>(std::move(config), std::unique_ptr<KeywordExtractor>());
     int_pair_type.addField(Field("foo", *DataType::INT));
     int_pair_type.addField(Field("bar", *DataType::INT));
