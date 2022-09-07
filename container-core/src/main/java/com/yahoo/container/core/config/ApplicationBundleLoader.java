@@ -2,40 +2,47 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.container.di.Osgi.GenerationStatus;
 import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Manages the set of installed and active/inactive bundles.
  *
+ * TODO: This class and the CollisionHook currently only handles a "current" and "previous" generation.
+ *       In order to correctly handle rapid reconfiguration and hence multiple generations, we need to
+ *       consider the graph generation number for each bundle.
+ *
  * @author gjoranv
- * @author Tony Vaagenes
  */
 public class ApplicationBundleLoader {
 
     private static final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
 
-    /**
-     * Map of file refs of active bundles (not scheduled for uninstall) to the installed bundle.
-     *
-     * Used to:
-     * 1. Avoid installing already installed bundles. Just an optimization, installing the same bundle location is a NOP
-     * 2. Start bundles (all are started every time)
-     * 3. Calculate the set of bundles to uninstall
-     */
-    private final Map<FileReference, Bundle> reference2Bundle = new LinkedHashMap<>();
+    // The active bundles for the current application generation.
+    private final Map<FileReference, Bundle> activeBundles = new LinkedHashMap<>();
+
+    // The bundles that are obsolete from the previous generation, but kept in case the generation is reverted.
+    private Map<FileReference, Bundle> obsoleteBundles = Map.of();
+
+    // The bundles that exclusively belong to the current application generation.
+    private Map<FileReference, Bundle> bundlesFromNewGeneration = Map.of();
+
+    private boolean readyForNewBundles = true;
 
     private final Osgi osgi;
     private final FileAcquirerBundleInstaller bundleInstaller;
+
 
     public ApplicationBundleLoader(Osgi osgi, FileAcquirerBundleInstaller bundleInstaller) {
         this.osgi = osgi;
@@ -45,57 +52,113 @@ public class ApplicationBundleLoader {
     /**
      * Installs the given set of bundles and returns the set of bundles that is no longer used
      * by the application, and should therefore be scheduled for uninstall.
+     *
+     * TODO: return void, and instead return the bundles to remove from completeGeneration()
      */
     public synchronized Set<Bundle> useBundles(List<FileReference> newFileReferences) {
+        if (! readyForNewBundles)
+            throw new IllegalStateException("Bundles must be committed or reverted before using new bundles.");
 
-        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newFileReferences);
-        Set<Bundle> bundlesToUninstall = getObsoleteBundles(obsoleteReferences);
+        obsoleteBundles = removeObsoleteBundles(newFileReferences);
+        Set<Bundle> bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
         log.info("Bundles to schedule for uninstall: " + bundlesToUninstall);
 
         osgi.allowDuplicateBundles(bundlesToUninstall);
-        removeInactiveFileReferences(obsoleteReferences);
 
-        installBundles(newFileReferences);
-        BundleStarter.startBundles(reference2Bundle.values());
+        bundlesFromNewGeneration = installBundles(newFileReferences);
+        BundleStarter.startBundles(activeBundles.values());
         log.info(installedBundlesMessage());
+
+        readyForNewBundles = false;
 
         return bundlesToUninstall;
     }
 
-    private Set<FileReference> getObsoleteFileReferences(List<FileReference> newReferences) {
-        Set<FileReference> obsoleteReferences = new HashSet<>(reference2Bundle.keySet());
-        obsoleteReferences.removeAll(newReferences);
+    public synchronized Collection<Bundle> completeGeneration(GenerationStatus status) {
+        Collection<Bundle> ret = List.of();
+        if (readyForNewBundles) return ret;
+
+        if (status == GenerationStatus.SUCCESS) {
+            commitBundles();
+        } else {
+            ret = revertToPreviousGeneration();
+        }
+        readyForNewBundles = true;
+        return ret;
+    }
+
+    /**
+     * Commit to the current set of bundles. Must be called after the component graph creation proved successful,
+     * to prevent uninstalling bundles unintentionally upon a future call to {@link #revertToPreviousGeneration()}.
+     */
+    private void commitBundles() {
+        bundlesFromNewGeneration = Map.of();
+        obsoleteBundles = Map.of();
+        readyForNewBundles = true;
+    }
+
+    /**
+     * Restores state from the previous application generation and returns the set of bundles that
+     * exclusively belongs to the latest (failed) application generation. Uninstalling must
+     * be done by the Deconstructor as they may still be needed by components from the failed gen.
+     */
+    private Collection<Bundle> revertToPreviousGeneration() {
+        log.info("Reverting to previous generation with bundles: " + obsoleteBundles);
+        log.info("Bundles from latest generation will be removed: " + bundlesFromNewGeneration);
+        activeBundles.putAll(obsoleteBundles);
+        bundlesFromNewGeneration.forEach(activeBundles::remove);
+        Collection<Bundle> ret = bundlesFromNewGeneration.values();
+
+        // For correct operation of the CollisionHook (more specifically its FindHook implementation), the set of
+        // allowed duplicates must reflect the next set of bundles to uninstall, which is now the bundles from the
+        // failed generation.
+        osgi.allowDuplicateBundles(ret);
+
+        // Clear restore info in case this method is called multiple times, for some reason.
+        bundlesFromNewGeneration = Map.of();
+        obsoleteBundles = Map.of();
+
+        readyForNewBundles = true;
+        return ret;
+    }
+
+    /**
+     * Calculates the set of bundles that are not needed by the new application generation and
+     * removes them from the map of active bundles.
+     *
+     * Returns the map of bundles that are not needed by the new application generation.
+     */
+    private Map<FileReference, Bundle> removeObsoleteBundles(List<FileReference> newReferences) {
+        Map<FileReference, Bundle> obsoleteReferences = new LinkedHashMap<>(activeBundles);
+        newReferences.forEach(obsoleteReferences::remove);
+
+        obsoleteReferences.forEach(activeBundles::remove);
         return obsoleteReferences;
     }
 
     /**
-     * Returns the bundles that will not be retained by the new application generation.
+     * Returns the set of new bundles that were installed.
      */
-    private Set<Bundle> getObsoleteBundles(Set<FileReference> obsoleteReferences) {
-        return obsoleteReferences.stream().map(reference2Bundle::get).collect(Collectors.toSet());
-    }
-
-    private void removeInactiveFileReferences(Set<FileReference> fileReferencesToRemove) {
-        fileReferencesToRemove.forEach(reference2Bundle::remove);
-    }
-
-    private void installBundles(List<FileReference> references) {
+    private Map<FileReference, Bundle> installBundles(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
 
         // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
-        bundlesToInstall.removeAll(reference2Bundle.keySet());
+        bundlesToInstall.removeAll(activeBundles.keySet());
 
-        if (!bundlesToInstall.isEmpty()) {
-            if (bundleInstaller.hasFileDistribution()) {
-                installWithFileDistribution(bundlesToInstall, bundleInstaller);
-            } else {
-                log.warning("Can't retrieve bundles since file distribution is disabled.");
-            }
+        if (bundlesToInstall.isEmpty()) return Map.of();
+
+        if (bundleInstaller.hasFileDistribution()) {
+            return installWithFileDistribution(bundlesToInstall, bundleInstaller);
+        } else {
+            log.warning("Can't retrieve bundles since file distribution is disabled.");
+            return Map.of();
         }
     }
 
-    private void installWithFileDistribution(Set<FileReference> bundlesToInstall,
-                                             FileAcquirerBundleInstaller bundleInstaller) {
+    private Map<FileReference, Bundle> installWithFileDistribution(Set<FileReference> bundlesToInstall,
+                                                                   FileAcquirerBundleInstaller bundleInstaller) {
+        var newBundles = new LinkedHashMap<FileReference, Bundle>();
+
         for (FileReference reference : bundlesToInstall) {
             try {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
@@ -107,12 +170,14 @@ public class ApplicationBundleLoader {
                 if (bundles.size() > 1  && osgi.hasFelixFramework()) {
                     throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install bundles from disk.");
                 }
-                reference2Bundle.put(reference, bundles.get(0));
+                activeBundles.put(reference, bundles.get(0));
+                newBundles.put(reference, bundles.get(0));
             }
             catch(Exception e) {
                 throw new RuntimeException("Could not install bundle with reference '" + reference + "'", e);
             }
         }
+        return newBundles;
     }
 
     private String installedBundlesMessage() {
@@ -126,7 +191,7 @@ public class ApplicationBundleLoader {
 
     // Only for testing
     List<FileReference> getActiveFileReferences() {
-        return new ArrayList<>(reference2Bundle.keySet());
+        return new ArrayList<>(activeBundles.keySet());
     }
 
 }
