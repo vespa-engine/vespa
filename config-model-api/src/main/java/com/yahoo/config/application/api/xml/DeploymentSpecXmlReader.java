@@ -483,42 +483,42 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeploymentSpec.UpgradePolicy readUpgradePolicy(String policy) {
-        switch (policy) {
-            case "canary": return DeploymentSpec.UpgradePolicy.canary;
-            case "default": return DeploymentSpec.UpgradePolicy.defaultPolicy;
-            case "conservative": return DeploymentSpec.UpgradePolicy.conservative;
-            default: throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
-                                                        "Must be one of 'canary', 'default', 'conservative'");
-        }
+        return switch (policy) {
+            case "canary" -> UpgradePolicy.canary;
+            case "default" -> UpgradePolicy.defaultPolicy;
+            case "conservative" -> UpgradePolicy.conservative;
+            default -> throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                          "Must be one of 'canary', 'default', 'conservative'");
+        };
     }
 
     private DeploymentSpec.RevisionChange readRevisionChange(String revision) {
-        switch (revision) {
-            case "when-clear": return DeploymentSpec.RevisionChange.whenClear;
-            case "when-failing": return DeploymentSpec.RevisionChange.whenFailing;
-            case "always": return DeploymentSpec.RevisionChange.always;
-            default: throw new IllegalArgumentException("Illegal upgrade revision change policy '" + revision + "': " +
-                                                        "Must be one of 'always', 'when-failing', 'when-clear'");
-        }
+        return switch (revision) {
+            case "when-clear" -> RevisionChange.whenClear;
+            case "when-failing" -> RevisionChange.whenFailing;
+            case "always" -> RevisionChange.always;
+            default -> throw new IllegalArgumentException("Illegal upgrade revision change policy '" + revision + "': " +
+                                                          "Must be one of 'always', 'when-failing', 'when-clear'");
+        };
     }
 
     private DeploymentSpec.RevisionTarget readRevisionTarget(String revision) {
-        switch (revision) {
-            case "next": return DeploymentSpec.RevisionTarget.next;
-            case "latest": return DeploymentSpec.RevisionTarget.latest;
-            default: throw new IllegalArgumentException("Illegal upgrade revision target '" + revision + "': " +
-                                                        "Must be one of 'next', 'latest'");
-        }
+        return switch (revision) {
+            case "next" -> RevisionTarget.next;
+            case "latest" -> RevisionTarget.latest;
+            default -> throw new IllegalArgumentException("Illegal upgrade revision target '" + revision + "': " +
+                                                          "Must be one of 'next', 'latest'");
+        };
     }
 
     private DeploymentSpec.UpgradeRollout readUpgradeRollout(String rollout) {
-        switch (rollout) {
-            case "separate": return DeploymentSpec.UpgradeRollout.separate;
-            case "leading": return DeploymentSpec.UpgradeRollout.leading;
-            case "simultaneous": return DeploymentSpec.UpgradeRollout.simultaneous;
-            default: throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
-                                                        "Must be one of 'separate', 'leading', 'simultaneous'");
-        }
+        return switch (rollout) {
+            case "separate" -> UpgradeRollout.separate;
+            case "leading" -> UpgradeRollout.leading;
+            case "simultaneous" -> UpgradeRollout.simultaneous;
+            default -> throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
+                                                          "Must be one of 'separate', 'leading', 'simultaneous'");
+        };
     }
 
     private boolean readActive(Element regionTag) {
