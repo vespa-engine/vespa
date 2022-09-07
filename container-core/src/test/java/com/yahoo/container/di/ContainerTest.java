@@ -215,6 +215,31 @@ public class ContainerTest extends ContainerTestBase {
         assertEquals(1, currentGraph.generation());
     }
 
+    @Test
+    void bundle_from_generation_that_throws_in_graph_creation_phase_is_uninstalled() {
+        ComponentEntry simpleComponent = new ComponentEntry("simpleComponent", SimpleComponent.class);
+        ComponentEntry configThrower = new ComponentEntry("configThrower", ComponentThrowingExceptionForMissingConfig.class);
+
+        writeBootstrapConfigsWithBundles(List.of("bundle-1"), List.of(simpleComponent));
+        Container container = newContainer(dirConfigSource);
+        ComponentGraph currentGraph = getNewComponentGraph(container);
+
+        // bundle-1 is installed
+        assertEquals(1, osgi.getBundles().length);
+        assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
+
+        writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(configThrower));
+        dirConfigSource.writeConfig("test", "stringVal \"myString\"");
+        container.reloadConfig(2);
+
+        assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
+        assertEquals(1, currentGraph.generation());
+
+        // bundle-1 is kept, bundle-2 has been uninstalled
+        assertEquals(1, osgi.getBundles().length);
+        assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
+    }
+
     private void assertNewComponentGraphFails(Container container, ComponentGraph currentGraph, Class<? extends RuntimeException> exception) {
         try {
             getNewComponentGraph(container, currentGraph);
