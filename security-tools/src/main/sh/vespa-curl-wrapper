@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-# Uses security-env to call curl with paths to credentials.
+# Uses vespa-security-env to call curl with paths to credentials.
 # This script should be installed in libexec only. It is not public api.
 
 # BEGIN environment bootstrap section
@@ -79,7 +79,7 @@ findhost
 
 set -e
 
-eval $($VESPA_HOME/libexec/vespa/script-utils security-env)
+eval $($VESPA_HOME/bin/vespa-security-env)
 
 CURL_PARAMETERS=("$@")
 

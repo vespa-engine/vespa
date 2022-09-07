@@ -74,6 +74,6 @@ findhost
 
 # END environment bootstrap section
 
-eval $($VESPA_HOME/libexec/vespa/script-utils security-env)
+eval $($VESPA_HOME/bin/vespa-security-env)
 
 exec $VESPA_HOME/libexec/vespa/GetClusterState.pl "$@"
