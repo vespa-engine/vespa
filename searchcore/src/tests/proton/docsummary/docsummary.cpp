@@ -45,6 +45,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config-summary.h>
 #include <filesystem>
 #include <regex>
 

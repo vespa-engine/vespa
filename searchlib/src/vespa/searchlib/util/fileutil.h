@@ -9,47 +9,46 @@
 
 using vespalib::GenericHeader;
 
+namespace search::fileutil {
+
+class LoadedBuffer
+{
+protected:
+    void * _buffer;
+    size_t _size;
+    std::unique_ptr<GenericHeader> _header;
+public:
+    LoadedBuffer(const LoadedBuffer & rhs) = delete;
+    LoadedBuffer & operator =(const LoadedBuffer & rhs) = delete;
+    typedef std::unique_ptr<LoadedBuffer> UP;
+
+    LoadedBuffer(void * buf, size_t sz)
+            : _buffer(buf),
+              _size(sz),
+              _header(nullptr)
+    { }
+
+    virtual ~LoadedBuffer() = default;
+    const void * buffer() const { return _buffer; }
+    const char *  c_str() const { return static_cast<const char *>(_buffer); }
+    size_t size() const { return _size; }
+    bool  empty() const { return _size == 0; }
+    size_t size(size_t elemSize) const { return  _size/elemSize; }
+    const GenericHeader &getHeader() const { return *_header; }
+};
+
+class LoadedMmap : public LoadedBuffer
+{
+    void * _mapBuffer;
+    size_t _mapSize;
+public:
+    explicit LoadedMmap(const vespalib::string &fileName);
+    ~LoadedMmap() override;
+};
+
+}
+
 namespace search {
-
-    namespace fileutil {
-
-        class LoadedBuffer
-        {
-        protected:
-            void * _buffer;
-            size_t _size;
-            std::unique_ptr<GenericHeader> _header;
-        public:
-            LoadedBuffer(const LoadedBuffer & rhs) = delete;
-            LoadedBuffer & operator =(const LoadedBuffer & rhs) = delete;
-            typedef std::unique_ptr<LoadedBuffer> UP;
-
-            LoadedBuffer(void * buf, size_t sz)
-                    : _buffer(buf),
-                      _size(sz),
-                      _header(nullptr)
-            { }
-
-            virtual ~LoadedBuffer() { }
-            const void * buffer() const { return _buffer; }
-            const char *  c_str() const { return static_cast<const char *>(_buffer); }
-            size_t size() const { return _size; }
-            bool  empty() const { return _size == 0; }
-            size_t size(size_t elemSize) const { return  _size/elemSize; }
-            const GenericHeader &getHeader() const { return *_header; }
-        };
-
-        class LoadedMmap : public LoadedBuffer
-        {
-            void * _mapBuffer;
-            size_t _mapSize;
-        public:
-            LoadedMmap(const vespalib::string &fileName);
-
-            virtual ~LoadedMmap();
-        };
-
-    }
 /**
  * Util class with static functions for handling attribute data files.
  **/
@@ -73,29 +72,18 @@ public:
 class FileReaderBase
 {
 public:
-    FileReaderBase(FastOS_FileInterface * file) : _file(file) { }
+    explicit FileReaderBase(FastOS_FileInterface * file) : _file(file) { }
     ssize_t read(void *buf, size_t sz);
 private:
     void handleError(ssize_t numRead, size_t wanted);
     FastOS_FileInterface * _file;
 };
 
-class FileWriterBase
-{
-public:
-    FileWriterBase(FastOS_FileInterface & file) : _file(file) { }
-    ssize_t write(const void *buf, size_t sz);
-protected:
-    void handleError(ssize_t numWritten, size_t wanted);
-private:
-    FastOS_FileInterface & _file;
-};
-
 template <typename T>
 class FileReader : public FileReaderBase
 {
 public:
-    FileReader(FastOS_FileInterface * file) : FileReaderBase(file) { }
+    explicit FileReader(FastOS_FileInterface * file) : FileReaderBase(file) { }
     T readHostOrder() {
         T result;
         read(&result, sizeof(result));
@@ -108,7 +96,7 @@ class SequentialReadModifyWriteInterface
 {
 public:
     typedef T Type;
-    virtual ~SequentialReadModifyWriteInterface() { }
+    virtual ~SequentialReadModifyWriteInterface() = default;
     virtual const T & read() = 0;
     virtual void write(const T & v) = 0;
     virtual bool next() = 0;
@@ -124,8 +112,8 @@ private:
     typedef vespalib::Array<T> Vector;
 public:
     SequentialReadModifyWriteVector();
-    SequentialReadModifyWriteVector(size_t sz);
-    ~SequentialReadModifyWriteVector();
+    explicit SequentialReadModifyWriteVector(size_t sz);
+    ~SequentialReadModifyWriteVector() override;
     const T & read()        override { return (*this)[_rp]; }
     void write(const T & v) override { (*this)[_wp++] = v; }
     bool next()             override { _rp++; return _rp < Vector::size(); }

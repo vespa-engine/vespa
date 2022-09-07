@@ -115,15 +115,6 @@ void FileReaderBase::handleError(ssize_t numRead, size_t wanted)
     }
 }
 
-void FileWriterBase::handleError(ssize_t numRead, size_t wanted)
-{
-    if (numRead == 0) {
-        throw std::runtime_error(vespalib::make_string("Failed writing anything to file %s", _file.GetFileName()));
-    } else {
-        throw std::runtime_error(vespalib::make_string("Partial read(%zd of %zu) of file %s", numRead, wanted, _file.GetFileName()));
-    }
-}
-
 ssize_t
 FileReaderBase::read(void *buf, size_t sz) {
     ssize_t numRead = _file->Read(buf, sz);
@@ -131,15 +122,6 @@ FileReaderBase::read(void *buf, size_t sz) {
         handleError(numRead, sz);
     }
     return numRead;
-}
-
-ssize_t
-FileWriterBase::write(const void *buf, size_t sz) {
-    ssize_t numWritten = _file.Write2(buf, sz);
-    if (numWritten != ssize_t(sz)) {
-        handleError(numWritten, sz);
-    }
-    return numWritten;
 }
 
 }
