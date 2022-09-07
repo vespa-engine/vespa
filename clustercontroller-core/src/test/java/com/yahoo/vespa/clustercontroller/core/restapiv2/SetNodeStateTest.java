@@ -341,6 +341,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         setUp(true);
 
         String wrongUnitMessage = "State can only be set at cluster or node level";
+
         try {
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "").setNewState("user", "down", "testing"));
@@ -349,21 +350,9 @@ public class SetNodeStateTest extends StateRestApiTest {
             assertTrue(e.getMessage().contains(wrongUnitMessage), e.getMessage());
         }
 
-        // ... setting at cluster-level is allowed
-
         try {
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/distributor").setNewState("user", "down", "testing"));
-            fail();
-        } catch (OperationNotSupportedForUnitException e) {
-            assertTrue(e.getMessage().contains(wrongUnitMessage), e.getMessage());
-        }
-
-        // ... setting at node-level is allowed
-
-        try {
-            restAPI.setUnitState(new SetUnitStateRequestImpl(
-                    "music/storage/1/0").setNewState("user", "down", "testing"));
             fail();
         } catch (OperationNotSupportedForUnitException e) {
             assertTrue(e.getMessage().contains(wrongUnitMessage), e.getMessage());
@@ -400,12 +389,6 @@ public class SetNodeStateTest extends StateRestApiTest {
         try {
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/1/0/1").setNewState("user", "down", "testing"));
-            fail();
-        } catch (MissingUnitException e) {
-        }
-        try {
-            restAPI.setUnitState(new SetUnitStateRequestImpl(
-                    "music/storage/1/bar").setNewState("user", "down", "testing"));
             fail();
         } catch (MissingUnitException e) {
         }
@@ -520,7 +503,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     // important to test (and expected to happen) for requests that have dependencies on cluster
     // state version publishing.
     @Test
-    void leadership_loss_fails_set_node_state_request() throws Exception {
+    void leadership_loss_fails_set_node_state_request() {
         Throwable exception = assertThrows(UnknownMasterException.class, () -> {
 
             SetNodeStateRequest request = createDummySetNodeStateRequest();
@@ -538,7 +521,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     }
 
     @Test
-    void deadline_exceeded_fails_set_node_state_request() throws Exception {
+    void deadline_exceeded_fails_set_node_state_request() {
         Throwable exception = assertThrows(DeadlineExceededException.class, () -> {
 
             SetNodeStateRequest request = createDummySetNodeStateRequest();

@@ -4,10 +4,12 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OtherMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class NotMasterTest extends StateRestApiTest {
 
@@ -47,12 +49,6 @@ public class NotMasterTest extends StateRestApiTest {
         }
         try {
             restAPI.getState(new StateRequest("music/storage/1", 0));
-            fail();
-        } catch (UnknownMasterException e) {
-            assertTrue(e.getMessage().contains("No known master cluster controller"), e.getMessage());
-        }
-        try {
-            restAPI.getState(new StateRequest("music/storage/1/0", 0));
             fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage().contains("No known master cluster controller"), e.getMessage());
@@ -109,14 +105,6 @@ public class NotMasterTest extends StateRestApiTest {
         }
         try {
             restAPI.getState(new StateRequest("music/storage/1", 0));
-            fail();
-        } catch (OtherMasterException e) {
-            assertTrue(e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."), e.getMessage());
-            assertEquals("otherhost", e.getHost());
-            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
-        }
-        try {
-            restAPI.getState(new StateRequest("music/storage/1/0", 0));
             fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."), e.getMessage());
