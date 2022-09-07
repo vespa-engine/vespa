@@ -89,7 +89,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
                              SearchViewHolder &searchView,
                              FeedViewHolder &feedView,
                              matching::QueryLimiter &queryLimiter,
-                             matching::RankingAssetsRepo &constantValueRepo,
+                             matching::RankingAssetsRepo &rankingAssetsRepo,
                              const vespalib::Clock &clock,
                              const vespalib::string &subDbName,
                              uint32_t distributionKey) :
@@ -97,7 +97,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
     _searchView(searchView),
     _feedView(feedView),
     _queryLimiter(queryLimiter),
-    _constantValueRepo(constantValueRepo),
+    _rankingAssetsRepo(rankingAssetsRepo),
     _clock(clock),
     _subDbName(subDbName),
     _distributionKey(distributionKey)
@@ -109,7 +109,7 @@ std::shared_ptr<Matchers>
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
                                              const RankProfilesConfig &cfg)
 {
-    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, _constantValueRepo);
+    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, _rankingAssetsRepo);
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
         search::fef::Properties properties;
@@ -118,7 +118,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
         }
         // schema instance only used during call.
         auto profptr = std::make_shared<Matcher>(*schema, std::move(properties), _clock, _queryLimiter,
-                                                 _constantValueRepo, _distributionKey);
+                                                 _rankingAssetsRepo, _distributionKey);
         newMatchers->add(name, std::move(profptr));
     }
     return newMatchers;
@@ -183,7 +183,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     SearchView::SP searchView = _searchView.get();
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
-        _constantValueRepo.reconfigure(newConfig.getRankingConstantsSP(),
+        _rankingAssetsRepo.reconfigure(newConfig.getRankingConstantsSP(),
                                        newConfig.getRankingExpressionsSP(),
                                        newConfig.getOnnxModelsSP());
         Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(), newConfig.getRankProfilesConfig());

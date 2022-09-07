@@ -8,8 +8,8 @@ namespace search::fef { class OnnxModel; }
 namespace proton::matching {
 
 /**
- * Interface for retrieving a named constant rank value to be used by features in the rank framework.
- * If the given value is not found a nullptr should be returned.
+ * Interface for retrieving named constants, expressions and models from ranking.
+ * Empty strings or nullptrs indicates nothing found.
  */
 struct IRankingAssetsRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const = 0;

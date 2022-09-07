@@ -25,7 +25,7 @@ public:
     using SP = std::shared_ptr<Matchers>;
     Matchers(const vespalib::Clock &clock,
              matching::QueryLimiter &queryLimiter,
-             const matching::IRankingAssetsRepo &constantValueRepo);
+             const matching::IRankingAssetsRepo &rankingAssetsRepo);
     Matchers(const Matchers &) = delete;
     Matchers & operator =(const Matchers &) = delete;
     ~Matchers();

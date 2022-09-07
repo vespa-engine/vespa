@@ -13,8 +13,8 @@ namespace proton::matching {
 /**
  * Class that provides access to a configured set of rank constant values.
  *
- * This class maps the symbolic name used by rank features to the file path (where the constant is stored) and its type,
- * and uses a factory to instantiate the actual constant values.
+ * This class maps symbolic names to assets used while setting up rank features blueprints.
+ * A factory is used to instantiate constant values.
  */
 class RankingAssetsRepo : public IRankingAssetsRepo {
 private:

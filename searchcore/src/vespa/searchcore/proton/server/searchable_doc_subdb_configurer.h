@@ -42,7 +42,7 @@ private:
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;
     matching::QueryLimiter      &_queryLimiter;
-    matching::RankingAssetsRepo &_constantValueRepo;
+    matching::RankingAssetsRepo &_rankingAssetsRepo;
     const vespalib::Clock       &_clock;
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
@@ -68,7 +68,7 @@ public:
                                  SearchViewHolder &searchView,
                                  FeedViewHolder &feedView,
                                  matching::QueryLimiter &queryLimiter,
-                                 matching::RankingAssetsRepo &constantValueRepo,
+                                 matching::RankingAssetsRepo &rankingAssetsRepo,
                                  const vespalib::Clock &clock,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);

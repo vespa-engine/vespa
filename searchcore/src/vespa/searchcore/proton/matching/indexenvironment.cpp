@@ -64,13 +64,13 @@ IndexEnvironment::insertField(const search::fef::FieldInfo &field)
 IndexEnvironment::IndexEnvironment(uint32_t distributionKey,
                                    const search::index::Schema &schema,
                                    search::fef::Properties props,
-                                   const IRankingAssetsRepo &constantValueRepo)
+                                   const IRankingAssetsRepo &rankingAssetsRepo)
   : _tableManager(),
     _properties(std::move(props)),
     _fieldNames(),
     _fields(),
     _motivation(UNKNOWN),
-    _constantValueRepo(constantValueRepo),
+    _rankingAssetsRepo(rankingAssetsRepo),
     _distributionKey(distributionKey)
 {
     _tableManager.addFactory(std::make_shared<search::fef::FunctionTableFactory>(256));

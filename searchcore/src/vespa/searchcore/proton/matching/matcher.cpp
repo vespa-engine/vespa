@@ -101,8 +101,8 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 }  // namespace proton::matching::<unnamed>
 
 Matcher::Matcher(const search::index::Schema &schema, Properties props, const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter, const IRankingAssetsRepo &constantValueRepo, uint32_t distributionKey)
-  : _indexEnv(distributionKey, schema, std::move(props), constantValueRepo),
+                 QueryLimiter &queryLimiter, const IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey)
+  : _indexEnv(distributionKey, schema, std::move(props), rankingAssetsRepo),
     _blueprintFactory(),
     _rankSetup(),
     _viewResolver(ViewResolver::createFromSchema(schema)),

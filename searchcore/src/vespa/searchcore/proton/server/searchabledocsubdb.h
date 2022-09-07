@@ -69,7 +69,7 @@ private:
     vespalib::VarHolder<SearchableFeedView::SP> _rFeedView;
     vespalib::eval::ConstantTensorLoader        _tensorLoader;
     vespalib::eval::ConstantValueCache          _constantValueCache;
-    matching::RankingAssetsRepo                 _constantValueRepo;
+    matching::RankingAssetsRepo                 _rankingAssetsRepo;
     SearchableDocSubDBConfigurer                _configurer;
     vespalib::Executor                         &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;

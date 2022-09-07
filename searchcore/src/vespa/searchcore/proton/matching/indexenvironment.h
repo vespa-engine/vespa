@@ -24,7 +24,7 @@ private:
     FieldNameMap                        _fieldNames;
     std::vector<search::fef::FieldInfo> _fields;
     mutable FeatureMotivation           _motivation;
-    const IRankingAssetsRepo           &_constantValueRepo;
+    const IRankingAssetsRepo           &_rankingAssetsRepo;
     uint32_t                            _distributionKey;
 
 
@@ -66,14 +66,14 @@ public:
     uint32_t getDistributionKey() const override { return _distributionKey; }
 
     vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
-        return _constantValueRepo.getConstant(name);
+        return _rankingAssetsRepo.getConstant(name);
     }
     vespalib::string getRankingExpression(const vespalib::string &name) const override {
-        return _constantValueRepo.getExpression(name);
+        return _rankingAssetsRepo.getExpression(name);
     }
 
     const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override {
-        return _constantValueRepo.getOnnxModel(name);
+        return _rankingAssetsRepo.getOnnxModel(name);
     }
 };
 

@@ -86,7 +86,7 @@ public:
      **/
     Matcher(const search::index::Schema &schema, Properties props,
             const vespalib::Clock &clock, QueryLimiter &queryLimiter,
-            const IRankingAssetsRepo &constantValueRepo, uint32_t distributionKey);
+            const IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
 
