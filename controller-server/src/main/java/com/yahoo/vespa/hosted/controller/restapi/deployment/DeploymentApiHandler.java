@@ -14,6 +14,7 @@ import com.yahoo.restapi.UriBuilder;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -174,6 +175,8 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
                                                                                .map(DeploymentInstanceSpec::upgradePolicy)
                                                                                .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
+                      status.application().revisions().last().flatMap(ApplicationVersion::compileVersion)
+                            .ifPresent(compiled -> instanceObject.setString("compileVersion", compiled.toFullString()));
                       Cursor jobsArray = instanceObject.setArray("jobs");
                       status.jobSteps().forEach((job, jobStatus) -> {
                           if ( ! job.application().equals(instance)) return;

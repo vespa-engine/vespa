@@ -37,6 +37,7 @@
           "instance": "default",
           "upgrading": false,
           "upgradePolicy": "default",
+          "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "system-test",
@@ -77,6 +78,7 @@
           "instance": "i2",
           "upgrading": false,
           "upgradePolicy": "default",
+          "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "production-us-west-1"
@@ -184,6 +186,7 @@
           "instance": "default",
           "upgrading": true,
           "upgradePolicy": "default",
+          "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "system-test",
@@ -263,6 +266,7 @@
           "instance": "i1",
           "upgrading": false,
           "upgradePolicy": "default",
+          "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "system-test",
@@ -322,6 +326,7 @@
           "instance": "i2",
           "upgrading": true,
           "upgradePolicy": "default",
+          "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "production-us-west-1",
