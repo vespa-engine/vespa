@@ -27,9 +27,9 @@ using vespalib::make_string_short::fmt;
 
 struct Writer {
     FILE *file;
-    Writer(const std::string &file_name) {
+    explicit Writer(const std::string &file_name) {
         file = fopen(file_name.c_str(), "w");
-        ASSERT_TRUE(file != 0);
+        ASSERT_TRUE(file != nullptr);
     }
     void fmt(const char *format, ...) const
 #ifdef __GNUC__
@@ -63,7 +63,7 @@ struct Attribute {
     ~Attribute();
 };
 
-Attribute::~Attribute() {}
+Attribute::~Attribute() = default;
 
 struct Setup {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
@@ -75,8 +75,8 @@ struct Setup {
     std::map<std::string,OnnxModel>                           onnx_models;
     Setup();
     ~Setup();
-    void add_onnx_model(const OnnxModel &model) {
-        onnx_models.insert_or_assign(model.name(), model);
+    void add_onnx_model(OnnxModel model) {
+        onnx_models.insert_or_assign(model.name(), std::move(model));
     }
     void index(const std::string &name, schema::DataType data_type,
                schema::CollectionType collection_type)
@@ -141,7 +141,7 @@ struct Setup {
     }
     void write_indexschema(const Writer &out) {
         out.fmt("indexfield[%zu]\n", indexes.size());
-        std::map<std::string,std::pair<std::string,std::string> >::const_iterator pos = indexes.begin();
+        auto pos = indexes.begin();
         for (size_t i = 0; pos != indexes.end(); ++pos, ++i) {
             out.fmt("indexfield[%zu].name \"%s\"\n", i, pos->first.c_str());
             out.fmt("indexfield[%zu].datatype %s\n", i, pos->second.first.c_str());
@@ -151,7 +151,7 @@ struct Setup {
     void write_rank_profiles(const Writer &out) {
         out.fmt("rankprofile[%zu]\n", extra_profiles.size() + 1);
         out.fmt("rankprofile[0].name \"default\"\n");
-        std::map<std::string,std::string>::const_iterator pos = properties.begin();
+        auto pos = properties.begin();
         for (size_t i = 0; pos != properties.end(); ++pos, ++i) {
             out.fmt("rankprofile[0].fef.property[%zu]\n", properties.size());
             out.fmt("rankprofile[0].fef.property[%zu].name \"%s\"\n", i, pos->first.c_str());
@@ -258,7 +258,7 @@ Setup::Setup()
 {
     verify_dir();
 }
-Setup::~Setup() {}
+Setup::~Setup() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -279,15 +279,15 @@ struct SimpleSetup : Setup {
 struct OnnxSetup : Setup {
     OnnxSetup() : Setup() {
         add_onnx_model(OnnxModel("simple", TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx")));
-        add_onnx_model(OnnxModel("mapped", TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx"))
+        add_onnx_model(std::move(OnnxModel("mapped", TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx"))
                        .input_feature("query_tensor", "rankingExpression(qt)")
                        .input_feature("attribute_tensor", "rankingExpression(at)")
                        .input_feature("bias_tensor", "rankingExpression(bt)")
-                       .output_name("output", "result"));
-        add_onnx_model(OnnxModel("fragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
-                       .dry_run_on_setup(true));
-        add_onnx_model(OnnxModel("unfragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
-                       .dry_run_on_setup(false));
+                       .output_name("output", "result")));
+        add_onnx_model(std::move(OnnxModel("fragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
+                       .dry_run_on_setup(true)));
+        add_onnx_model(std::move(OnnxModel("unfragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
+                       .dry_run_on_setup(false)));
     }
 };
 

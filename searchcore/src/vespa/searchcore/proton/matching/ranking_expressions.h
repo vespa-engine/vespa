@@ -19,11 +19,13 @@ private:
     std::map<vespalib::string,vespalib::string> _expressions;
 
 public:
-    RankingExpressions();
-    RankingExpressions(RankingExpressions &&rhs);
-    RankingExpressions(const RankingExpressions &rhs);
-    ~RankingExpressions();
     using SP = std::shared_ptr<RankingExpressions>;
+    RankingExpressions();
+    RankingExpressions(RankingExpressions &&rhs) noexcept;
+    RankingExpressions & operator=(RankingExpressions &&rhs) = delete;
+    RankingExpressions(const RankingExpressions &rhs) = delete;
+    RankingExpressions & operator=(const RankingExpressions &rhs) = delete;
+    ~RankingExpressions();
     bool operator==(const RankingExpressions &rhs) const {
         return _expressions == rhs._expressions;
     }

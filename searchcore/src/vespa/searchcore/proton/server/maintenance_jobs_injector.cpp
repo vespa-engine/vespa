@@ -38,8 +38,8 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
         auto job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
                                                    bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
-                                                   clusterStateChangedNotifier, (calc ? calc->nodeRetired() : false), bucketSpace);
-        controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
+                                                   clusterStateChangedNotifier, calc && calc->nodeRetired(), bucketSpace);
+        controller.registerJobInMasterThread(trackJob(std::move(tracker), std::move(job)));
     }
 }
 
@@ -54,11 +54,11 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IBucketModifiedHandler &bucketModifiedHandler,
                     IClusterStateChangedNotifier &clusterStateChangedNotifier,
                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                    const std::shared_ptr<IBucketStateCalculator> &calc,
+                    std::shared_ptr<IBucketStateCalculator> calc,
                     DocumentDBJobTrackers &jobTrackers,
                     IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
-    auto bmj = BucketMoveJob::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
+    auto bmj = BucketMoveJob::create(std::move(calc), controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
                                      bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
                                      bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                                      diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
@@ -118,7 +118,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                         calc, jobTrackers, diskMemUsageNotifier);
 
     controller.registerJobInMasterThread(
-            std::make_unique<SampleAttributeUsageJob>(readyAttributeManager, notReadyAttributeManager,
+            std::make_unique<SampleAttributeUsageJob>(std::move(readyAttributeManager),
+                                                      std::move(notReadyAttributeManager),
                                                       attributeUsageFilter, docTypeName,
                                                       config.getAttributeUsageSampleInterval()));
 }
