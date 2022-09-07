@@ -1514,6 +1514,11 @@ public class DeploymentSpecTest {
     public void cloudAccount() {
         StringReader r = new StringReader(
                 "<deployment version='1.0' cloud-account='100000000000'>" +
+                "    <instance id='alpha'>" +
+                "      <prod cloud-account='800000000000'>" +
+                "          <region>us-east-1</region>" +
+                "      </prod>" +
+                "    </instance>" +
                 "    <instance id='beta' cloud-account='200000000000'>" +
                 "      <staging cloud-account='600000000000'/>" +
                 "      <perf cloud-account='700000000000'/>" +
@@ -1532,6 +1537,7 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertCloudAccount("800000000000", spec.requireInstance("alpha"), Environment.prod, "us-east-1");
         assertCloudAccount("200000000000", spec.requireInstance("beta"), Environment.prod, "us-west-1");
         assertCloudAccount("600000000000", spec.requireInstance("beta"), Environment.staging, "");
         assertCloudAccount("700000000000", spec.requireInstance("beta"), Environment.perf, "");
