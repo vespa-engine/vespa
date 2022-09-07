@@ -2,6 +2,7 @@
 
 #include "snippetmodifier.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/juniper/juniper_separators.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -36,7 +37,7 @@ void
 SnippetModifier::considerSeparator()
 {
     if (_useSep) {
-        _valueBuf->put(_groupSep);
+        _valueBuf->put(_recordSep);
     }
 }
 
@@ -60,7 +61,7 @@ SnippetModifier::reset()
 SnippetModifier::SnippetModifier(const UTF8SubstringSnippetModifier::SP & searcher) :
     _searcher(searcher),
     _valueBuf(new CharBuffer(32)),
-    _groupSep('\x1E'),
+    _recordSep(juniper::separators::record_separator),
     _useSep(false),
     _empty()
 {
@@ -69,7 +70,7 @@ SnippetModifier::SnippetModifier(const UTF8SubstringSnippetModifier::SP & search
 SnippetModifier::SnippetModifier(const UTF8SubstringSnippetModifier::SP & searcher, const CharBuffer::SP & valueBuf) :
     _searcher(searcher),
     _valueBuf(valueBuf),
-    _groupSep('\x1E'),
+    _recordSep(juniper::separators::record_separator),
     _useSep(false),
     _empty()
 {

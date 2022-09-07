@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8substringsnippetmodifier.h"
+#include <vespa/juniper/juniper_separators.h>
 #include <cassert>
 
 using search::byte;
@@ -114,7 +115,7 @@ UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier() :
     _modified(new CharBuffer(32)),
     _offsets(new std::vector<size_t>(32)),
     _readPtr(NULL),
-    _unitSep('\x1F')
+    _unitSep(juniper::separators::unit_separator)
 {
 }
 
@@ -123,7 +124,7 @@ UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier(FieldIdT fId) :
     _modified(new CharBuffer(32)),
     _offsets(new std::vector<size_t>(32)),
     _readPtr(NULL),
-    _unitSep('\x1F')
+    _unitSep(juniper::separators::unit_separator)
 {
 }
 
@@ -134,7 +135,7 @@ UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier(FieldIdT fId,
     _modified(modBuf),
     _offsets(offBuf),
     _readPtr(NULL),
-    _unitSep('\x1F')
+    _unitSep(juniper::separators::unit_separator)
 {
 }
 

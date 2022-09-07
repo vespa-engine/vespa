@@ -3,6 +3,7 @@
 #include "config.h"
 #include "rpinterface.h"
 #include "juniperdebug.h"
+#include "juniper_separators.h"
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include "SummaryConfig.h"
 #include <vespa/vespalib/locale/c.h>
@@ -18,8 +19,8 @@ Config::Config(const char* config_name, const Juniper & juniper) :
     _juniper(juniper)
 {
     std::string separators = "";
-    separators += UNIT_SEPARATOR;
-    separators += GROUP_SEPARATOR;
+    separators += separators::unit_separator_string;
+    separators += separators::group_separator_string;
 
     const char* high_on  = GetProp("dynsum.highlight_on", "<b>");
     const char* high_off = GetProp("dynsum.highlight_off", "</b>");

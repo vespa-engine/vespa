@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "auxTest.h"
+#include <vespa/juniper/juniper_separators.h>
 #include <vespa/fastos/file.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".auxtest");
@@ -394,11 +395,11 @@ void AuxTest::TestUTF8context()
     // some content
     std::string s(char_from_u8(u8"Fast leverer s\u00d8kemotorer og andre nyttige ting for \u00e5 finne frem p\u00e5 "));
     s.append(char_from_u8(u8"internett. Teknologien er basert p\u00e5 \u00c5relang"));
-    s += UNIT_SEPARATOR;
+    s += juniper::separators::unit_separator_string;
     s.append(char_from_u8(u8"norsk innsats og forskning i"));
-    s += GROUP_SEPARATOR;
+    s += juniper::separators::group_separator_string;
     s.append(char_from_u8(u8"trondheimsmilj\u00f8et. M\u00b5ss med denne nye funksjonaliteten for \u00e5 vise frem"));
-    s += UNIT_SEPARATOR;
+    s += juniper::separators::unit_separator_string;
     s.append(char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
@@ -415,8 +416,8 @@ void AuxTest::TestUTF8context()
     _test(m.TotalMatchCnt(3) == 1 && m.ExactMatchCnt(2) == 1);
 
     char separators[3];
-    separators[0] = UNIT_SEPARATOR;
-    separators[1] = GROUP_SEPARATOR;
+    separators[0] = juniper::separators::unit_separator;
+    separators[1] = juniper::separators::group_separator;
     separators[2] = '\0';
 
     if (color_highlight)

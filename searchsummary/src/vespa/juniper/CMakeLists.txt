@@ -7,6 +7,7 @@ vespa_add_library(searchsummary_juniper OBJECT
     mcand.cpp
     keyocc.cpp
     juniperparams.cpp
+    juniper_separators.cpp
     SummaryConfig.cpp
     tokenizer.cpp
     propreader.cpp

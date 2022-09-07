@@ -11,13 +11,6 @@
  *    rpinterface.h
  */
 
-/** The GS character used to separate paragraphs */
-#define GROUP_SEPARATOR   0x1D
-
-/** The US character used to separate words in CJK texts */
-#define UNIT_SEPARATOR    0x1F
-
-
 namespace juniper {
 
 /** class Tokentype Hint as to which type of token this is.

@@ -3,12 +3,15 @@
 #include "query.h"
 #include "matchobject.h"
 #include "juniperdebug.h"
+#include "juniper_separators.h"
 #include "result.h"
 #include "charutil.h"
 #include "wildcard_match.h"
 #include <stack>
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matchobject");
+
+using namespace juniper::separators;
 
 class traverser : public IQueryExprVisitor
 {
@@ -299,14 +302,11 @@ QueryTerm* match_iterator::first_match(Token& token)
     size_t len = token.curlen;
 
     // Check for interlinear annotation, and "lie" to the matchobject
-    if (*term == 0xFFF9) {
-        // 0xFFF9 = Interlinear Annotation ANCHOR
-        // 0xFFFA = Interlinear Annotation SEPARATOR
-        // 0xFFFB = Interlinear Annotation TERMINATOR
+    if (static_cast<char32_t>(*term) == interlinear_annotation_anchor) {
         const ucs4_t *terminator = term + len;
         token.token = ++term;
         // starting annotation, skip to after SEPARATOR
-        while (term < terminator && *term != 0xFFFA) {
+        while (term < terminator && static_cast<char32_t>(*term) != interlinear_annotation_separator) {
             term++;
         }
         const ucs4_t *separator = term;
@@ -315,9 +315,9 @@ QueryTerm* match_iterator::first_match(Token& token)
             token.token = ++term; // skip the SEPARATOR
             QueryTerm *qt;
             // process until TERMINATOR is found
-            while (term < terminator && *term != 0xFFFB) {
+            while (term < terminator && static_cast<char32_t>(*term) != interlinear_annotation_terminator) {
                 // Handle multiple terms in the same annotation, for compound nouns or multiple stems
-                if (*term == ' ' || *term == 0xFFFA) {
+                if (*term == ' ' || static_cast<char32_t>(*term) == interlinear_annotation_separator) {
                     token.curlen = term - token.token;
                     LOG(debug, "recurse A to match token %u..%u len %d", token.token[0], token.token[token.curlen-1], token.curlen);
                     qt = this->first_match(token);
