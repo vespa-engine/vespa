@@ -16,8 +16,8 @@ SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                         const vespalib::string &docTypeName,
                         vespalib::duration interval)
     : IMaintenanceJob("sample_attribute_usage." + docTypeName, vespalib::duration::zero(), interval),
-      _readyAttributeManager(readyAttributeManager),
-      _notReadyAttributeManager(notReadyAttributeManager),
+      _readyAttributeManager(std::move(readyAttributeManager)),
+      _notReadyAttributeManager(std::move(notReadyAttributeManager)),
       _attributeUsageFilter(attributeUsageFilter)
 {
 }
