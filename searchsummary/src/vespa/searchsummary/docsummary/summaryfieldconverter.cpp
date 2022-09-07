@@ -28,6 +28,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -201,15 +202,15 @@ struct SummaryHandler {
         if (annCnt > 1 || (annCnt == 1 && it->second)) {
             annotateSpans(span, it, last);
         } else {
-            out << getSpanString(text, span) << '\037';
+            out << getSpanString(text, span) << juniper::separators::unit_separator_string;
         }
     }
 
     template <typename ForwardIt>
     void annotateSpans(const Span &span, ForwardIt it, ForwardIt last) {
-        out << "\357\277\271"  // ANCHOR
+        out << juniper::separators::interlinear_annotation_anchor_string  // ANCHOR
             << (getSpanString(text, span))
-            << "\357\277\272"; // SEPARATOR
+            << juniper::separators::interlinear_annotation_separator_string; // SEPARATOR
         while (it != last) {
             if (it->second) {
                 out << ensureStringFieldValue(*it->second).getValue();
@@ -220,8 +221,8 @@ struct SummaryHandler {
                 out << " ";
             }
         }
-        out << "\357\277\273"  // TERMINATOR
-            << "\037";
+        out << juniper::separators::interlinear_annotation_terminator_string  // TERMINATOR
+            << juniper::separators::unit_separator_string;
     }
 };
 

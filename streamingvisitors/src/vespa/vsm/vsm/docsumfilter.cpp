@@ -2,6 +2,7 @@
 
 #include "docsumfilter.h"
 #include "slimefieldwriter.h"
+#include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchsummary/docsummary/check_undefined_value_visitor.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
@@ -259,7 +260,7 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
     }
     switch (field_spec.getCommand()) {
     case VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER:
-        _flattenWriter.setSeparator("\x1E"); // record separator (same as juniper uses)
+        _flattenWriter.setSeparator(juniper::separators::record_separator_string);
         break;
     default:
         break;

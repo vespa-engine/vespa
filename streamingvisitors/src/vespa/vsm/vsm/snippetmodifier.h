@@ -18,14 +18,14 @@ namespace vsm {
  * The class implements the FieldModifier interface to modify field values, and the IteratorHandler interface
  * to traverse complex field values. Primitive field values are passed to the underlying searcher that is
  * responsible for modifying the field value by inserting unit separators before and after matches.
- * A group separator is inserted between primitive field values the same way as done by FlattenDocsumWriter.
+ * A record separator is inserted between primitive field values the same way as done by FlattenDocsumWriter.
  **/
 class SnippetModifier : public FieldModifier, public document::fieldvalue::IteratorHandler
 {
 private:
     UTF8SubstringSnippetModifier::SP _searcher;
     CharBuffer::SP                   _valueBuf; // buffer to store the final modified field value
-    char                             _groupSep;
+    char                             _recordSep;
     bool                             _useSep;
     document::FieldPath    _empty;
 

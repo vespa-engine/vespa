@@ -2,12 +2,15 @@
 
 #include "sumdesc.h"
 #include "juniperdebug.h"
+#include "juniper_separators.h"
 #include "Matcher.h"
 #include "appender.h"
 #include <vespa/fastlib/text/unicodeutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.sumdesc");
+
+using namespace juniper::separators;
 
 /** SummaryDesc: A class of objects describing a query highlight
  *  dynamic summary based on the current state of the provided
@@ -29,10 +32,6 @@ char printable_char(char c)
     return c;
 }
 
-constexpr ucs4_t il_ann_anchor = 0xfff9;
-constexpr ucs4_t il_ann_separator = 0xfffa;
-constexpr ucs4_t il_ann_terminator = 0xfffb;
-
 bool wordchar(const unsigned char* s)
 {
     unsigned char c = *s;
@@ -44,13 +43,13 @@ bool wordchar(const unsigned char* s)
     }
 }
 
-bool wordchar_or_il_ann_char(const unsigned char* s, ucs4_t annotation_char)
+bool wordchar_or_il_ann_char(const unsigned char* s, char32_t annotation_char)
 {
     unsigned char c = *s;
     if (c & 0x80) {
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
         return Fast_UnicodeUtil::IsWordChar(u) ||
-            u == annotation_char;
+            static_cast<char32_t>(u) == annotation_char;
     } else {
         return isalnum(c);
     }
@@ -58,12 +57,12 @@ bool wordchar_or_il_ann_char(const unsigned char* s, ucs4_t annotation_char)
 
 bool wordchar_or_il_ann_anchor(const unsigned char* s)
 {
-    return wordchar_or_il_ann_char(s, il_ann_anchor);
+    return wordchar_or_il_ann_char(s, interlinear_annotation_anchor);
 }
 
 bool wordchar_or_il_ann_terminator(const unsigned char* s)
 {
-    return wordchar_or_il_ann_char(s, il_ann_terminator);
+    return wordchar_or_il_ann_char(s, interlinear_annotation_terminator);
 }
 
 bool nonwordchar(const unsigned char* s)
@@ -78,12 +77,12 @@ bool nonwordchar(const unsigned char* s)
 }
 
 bool
-il_ann_char(const unsigned char* s, ucs4_t annotation_char)
+il_ann_char(const unsigned char* s, char32_t annotation_char)
 {
     unsigned char c = *s;
     if (c & 0x80) {
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
-        return u == annotation_char;
+        return static_cast<char32_t>(u) == annotation_char;
     } else {
         return false;
     }
@@ -92,19 +91,19 @@ il_ann_char(const unsigned char* s, ucs4_t annotation_char)
 bool
 il_ann_anchor_char(const unsigned char* s)
 {
-    return il_ann_char(s, il_ann_anchor);
+    return il_ann_char(s, interlinear_annotation_anchor);
 }
 
 bool
 il_ann_separator_char(const unsigned char* s)
 {
-    return il_ann_char(s, il_ann_separator);
+    return il_ann_char(s, interlinear_annotation_separator);
 }
 
 bool
 il_ann_terminator_char(const unsigned char* s)
 {
-    return il_ann_char(s, il_ann_terminator);
+    return il_ann_char(s, interlinear_annotation_terminator);
 }
 
 /* Move backwards/forwards from ptr (no longer than to start) in an
