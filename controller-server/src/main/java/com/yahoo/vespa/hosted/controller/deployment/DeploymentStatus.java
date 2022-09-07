@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
@@ -314,13 +315,23 @@ public class DeploymentStatus {
 
     /** Fall back to the newest, deployable platform, which is compatible with what we want to deploy. */
     public Version fallbackPlatform(Change change, JobId job) {
+        InstanceName instance = job.application().instance();
         Optional<Version> compileVersion = change.revision().map(application.revisions()::get).flatMap(ApplicationVersion::compileVersion);
-        if (compileVersion.isEmpty())
-            return systemVersion;
+        List<Version> targets = targetsForPolicy(versionStatus,
+                                                 systemVersion,
+                                                 application.deploymentSpec().instance(instance)
+                                                            .map(DeploymentInstanceSpec::upgradePolicy)
+                                                            .orElse(UpgradePolicy.defaultPolicy));
 
-        for (VespaVersion version : reversed(versionStatus.deployableVersions()))
-            if (versionCompatibility.apply(job.application().instance()).accept(version.versionNumber(), compileVersion.get()))
-                return version.versionNumber();
+        // Prefer fallback with proper confidence.
+        for (Version target : targets)
+            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target, compileVersion.get()))
+                return target;
+
+        // Try fallback with any confidence.
+        for (VespaVersion target : reversed(versionStatus.deployableVersions()))
+            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target.versionNumber(), compileVersion.get()))
+                return target.versionNumber();
 
         throw new IllegalArgumentException("no legal platform version exists in this system for compile version " + compileVersion.get());
     }

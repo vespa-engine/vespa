@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -38,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -754,9 +756,14 @@ public class JobController {
 
     private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
         // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
-        List<Version> versions = controller.readVersionStatus().deployableVersions().stream()
-                                           .map(VespaVersion::versionNumber)
-                                           .collect(toList());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        Version systemVersion = controller.systemVersion(versionStatus);
+
+        List<Version> versions = new ArrayList<>(List.of(systemVersion));
+        for (VespaVersion version : versionStatus.deployableVersions())
+            if (version.confidence().equalOrHigherThan(Confidence.low))
+                versions.add(version.versionNumber());
+
         instance.map(Instance::deployments)
                 .map(deployments -> deployments.get(id.zoneId()))
                 .map(Deployment::version)

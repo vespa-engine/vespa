@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.vespa.hosted.controller.maintenance.DeploymentUpgrader;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.tes
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
+import static java.util.Collections.copy;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -2275,6 +2277,50 @@ public class DeploymentTriggerTest {
         newApp.deploy();
         assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+    }
+
+    @Test
+    void testInitialDeploymentPlatform() {
+        Version version0 = tester.controllerTester().controller().readSystemVersion();
+        Version version1 = new Version("6.2");
+        Version version2 = new Version("6.3");
+        assertEquals(version0, tester.newDeploymentContext("t", "a1", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().overrideConfidence(version1, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.newDeploymentContext("t", "a2", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().overrideConfidence(version2, Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.newDeploymentContext("t", "a3", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        DeploymentContext dev1 = tester.newDeploymentContext("t", "d1", "default");
+        DeploymentContext dev2 = tester.newDeploymentContext("t", "d2", "default");
+        assertEquals(version1, dev1.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+
+        DeploymentUpgrader devUpgrader = new DeploymentUpgrader(tester.controller(), Duration.ofHours(1));
+        for (int i = 0; i < 24; i++) {
+            tester.clock().advance(Duration.ofHours(1));
+            devUpgrader.run();
+        }
+        dev1.assertNotRunning(JobType.dev("us-east-1"));
+
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.newDeploymentContext("t", "a4", "default").submit().deploy().application().oldestDeployedPlatform().get());
+        assertEquals(version1, dev1.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+        assertEquals(version2, dev2.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+
+        for (int i = 0; i < 24; i++) {
+            tester.clock().advance(Duration.ofHours(1));
+            devUpgrader.run();
+        }
+        dev1.assertRunning(JobType.dev("us-east-1"));
+        dev1.runJob(JobType.dev("us-east-1"));
+        assertEquals(version2, dev1.deployment(ZoneId.from("dev", "us-east-1")).version());
     }
 
     @Test
