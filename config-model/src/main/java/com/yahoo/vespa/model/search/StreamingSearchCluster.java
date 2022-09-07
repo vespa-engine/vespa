@@ -12,7 +12,6 @@ import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
-import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -28,7 +27,6 @@ public class StreamingSearchCluster extends SearchCluster implements
         RankProfilesConfig.Producer,
         VsmsummaryConfig.Producer,
         VsmfieldsConfig.Producer,
-        SummarymapConfig.Producer,
         SummaryConfig.Producer {
 
     private final String storageRouteSpec;
@@ -119,12 +117,6 @@ public class StreamingSearchCluster extends SearchCluster implements
             derivedConfig.getVsmFields().getConfig(builder);
     }
     
-    @Override
-    public void getConfig(SummarymapConfig.Builder builder) {
-        if (derivedConfig.getSummaryMap() != null)
-            derivedConfig.getSummaryMap().getConfig(builder);
-    }
-
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
         if (derivedConfig.getSummaries() != null)

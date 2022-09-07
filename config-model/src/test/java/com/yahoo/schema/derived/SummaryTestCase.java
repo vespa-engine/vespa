@@ -211,10 +211,10 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
 
     @Test
     void commands_that_are_dynamic_and_require_the_query() {
-        assertTrue(SummaryMap.isDynamicCommand("dynamicteaser"));
-        assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()));
-        assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
-        assertFalse(SummaryMap.isDynamicCommand(SummaryTransform.ATTRIBUTE.getName()));
+        assertTrue(SummaryClass.commandRequiringQuery("dynamicteaser"));
+        assertTrue(SummaryClass.commandRequiringQuery(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()));
+        assertTrue(SummaryClass.commandRequiringQuery(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
+        assertFalse(SummaryClass.commandRequiringQuery(SummaryTransform.ATTRIBUTE.getName()));
     }
 
     @Test

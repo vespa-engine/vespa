@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
-import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
@@ -32,7 +31,6 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
         OnnxModelsConfig.Producer,
         IndexschemaConfig.Producer,
         JuniperrcConfig.Producer,
-        SummarymapConfig.Producer,
         SummaryConfig.Producer,
         ImportedFieldsConfig.Producer,
         SchemaInfoConfig.Producer {
@@ -85,8 +83,6 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
     @Override
     public void getConfig(JuniperrcConfig.Builder builder) { derivedCfg.getJuniperrc().getConfig(builder); }
 
-    @Override
-    public void getConfig(SummarymapConfig.Builder builder) { derivedCfg.getSummaryMap().getConfig(builder); }
     @Override
     public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }
 
