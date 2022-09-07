@@ -3,23 +3,17 @@
 
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct DummySummaryManager : public ISummaryManager
 {
     ISummarySetup::SP
-    createSummarySetup(const vespa::config::search::SummaryConfig &,
-                       const vespa::config::search::SummarymapConfig &,
-                       const vespa::config::search::summary::JuniperrcConfig &,
+    createSummarySetup(const SummaryConfig &,
+                       const JuniperrcConfig &,
                        const std::shared_ptr<const document::DocumentTypeRepo> &,
                        const std::shared_ptr<search::IAttributeManager> &) override {
-        return ISummarySetup::SP();
+        return {};
     }
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

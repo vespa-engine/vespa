@@ -5,6 +5,7 @@
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
@@ -13,6 +14,8 @@ using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
 using search::MatchingElements;
 using config::ConfigSnapshot;
+using vespa::config::search::SummaryConfig;
+using vespa::config::search::summary::JuniperrcConfig;
 
 namespace vsm {
 
@@ -35,12 +38,6 @@ void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState& state)
     if (_rankFeatures) { // set the rank features to write to the docsum
         state._rankFeatures = _rankFeatures;
     }
-}
-
-void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDocsumEnvironment * env)
-{
-    (void) state;
-    (void) env;
 }
 
 std::unique_ptr<MatchingElements>
@@ -91,16 +88,16 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 {
     uint32_t defaultSummaryId = getResultConfig()->LookupResultClassId(cfg->outputclass);
     _resultClass = getResultConfig()->LookupResultClass(defaultSummaryId);
-    if (_resultClass != NULL) {
+    if (_resultClass != nullptr) {
         for (uint32_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
             const ResConfigEntry * entry = _resultClass->GetEntry(i);
-            _fieldSpecs.push_back(FieldSpec());
-            _fieldSpecs.back().setOutputName(entry->_bindname);
+            _fieldSpecs.emplace_back();
+            _fieldSpecs.back().setOutputName(entry->_name);
             bool found = false;
             if (cfg) {
                 // check if we have this summary field in the vsmsummary config
                 for (uint32_t j = 0; j < cfg->fieldmap.size() && !found; ++j) {
-                    if (entry->_bindname == cfg->fieldmap[j].summary.c_str()) {
+                    if (entry->_name == cfg->fieldmap[j].summary.c_str()) {
                         for (uint32_t k = 0; k < cfg->fieldmap[j].document.size(); ++k) {
                             _fieldSpecs.back().getInputNames().push_back(cfg->fieldmap[j].document[k].field);
                         }
@@ -111,7 +108,7 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
             }
             if (!found) {
                 // use yourself as input
-                _fieldSpecs.back().getInputNames().push_back(entry->_bindname);
+                _fieldSpecs.back().getInputNames().push_back(entry->_name);
             }
         }
     } else {
@@ -127,7 +124,6 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "(re-)configure VSM (docsum tools)");
 
     std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>());
-    std::shared_ptr<SummarymapConfig>   summaryMap(snapshot.getConfig<SummarymapConfig>());
     std::shared_ptr<VsmsummaryConfig>   vsmSummary(snapshot.getConfig<VsmsummaryConfig>());
     std::shared_ptr<JuniperrcConfig>    juniperrc(snapshot.getConfig<JuniperrcConfig>());
 
@@ -137,7 +133,6 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "configureFields(): Size of cfg fieldspec: %zd", _fieldsCfg.get()->fieldspec.size()); // UlfC: debugging
     LOG(debug, "configureFields(): Size of cfg documenttype: %zd", _fieldsCfg.get()->documenttype.size()); // UlfC: debugging
     LOG(debug, "configureSummary(): Size of cfg classes: %zd", summary->classes.size()); // UlfC: debugging
-    LOG(debug, "configureSummaryMap(): Size of cfg override: %zd", summaryMap->override.size()); // UlfC: debugging
     LOG(debug, "configureVsmSummary(): Size of cfg fieldmap: %zd", vsmSummary->fieldmap.size()); // UlfC: debugging
     LOG(debug, "configureVsmSummary(): outputclass='%s'", vsmSummary->outputclass.c_str()); // UlfC: debugging
 

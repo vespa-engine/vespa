@@ -2,11 +2,12 @@
 #pragma once
 
 #include "idealstateoperation.h"
+#include <vespa/document/base/documentid.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storage/distributor/messagetracker.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/persistence/spi/id_and_timestamp.h>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
 namespace storage::distributor {
@@ -41,18 +42,22 @@ private:
 
     static const char* to_string(Phase phase) noexcept;
 
-    using RemoveCandidateSet = vespalib::hash_set<spi::IdAndTimestamp, spi::IdAndTimestamp::hash>;
+    struct DocIdHasher {
+        size_t operator()(const document::DocumentId& id) const noexcept {
+            return document::GlobalId::hash()(id.getGlobalId());
+        }
+    };
+    using RemoveCandidates = vespalib::hash_map<document::DocumentId, spi::Timestamp, DocIdHasher>;
 
     Phase                         _phase;
     uint32_t                      _cluster_state_version_at_phase1_start_time;
-    uint32_t                      _phase1_replies_received;
-    RemoveCandidateSet            _remove_candidate_set;
+    RemoveCandidates              _remove_candidates;
     std::vector<SequencingHandle> _gc_write_locks;
     std::vector<BucketCopy>       _replica_info;
     uint32_t                      _max_documents_removed;
     bool                          _is_done;
 
-    static RemoveCandidateSet steal_selection_matches_as_set(api::RemoveLocationReply& reply);
+    static RemoveCandidates steal_selection_matches_as_candidates(api::RemoveLocationReply& reply);
 
     void send_current_phase_remove_locations(DistributorStripeMessageSender& sender);
     std::vector<spi::IdAndTimestamp> compile_phase_two_send_set() const;

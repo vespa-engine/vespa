@@ -18,7 +18,6 @@
 
 namespace vespa::config::search::internal {
     class InternalSummaryType;
-    class InternalSummarymapType;
     class InternalRankProfilesType;
     class InternalAttributesType;
     class InternalIndexschemaType;
@@ -46,7 +45,6 @@ public:
         bool indexschemaChanged;
         bool attributesChanged;
         bool summaryChanged;
-        bool summarymapChanged;
         bool juniperrcChanged;
         bool documenttypesChanged;
         bool documentTypeRepoChanged;
@@ -67,7 +65,6 @@ public:
         ComparisonResult &setIndexschemaChanged(bool val) { indexschemaChanged = val; return *this; }
         ComparisonResult &setAttributesChanged(bool val) { attributesChanged = val; return *this; }
         ComparisonResult &setSummaryChanged(bool val) { summaryChanged = val; return *this; }
-        ComparisonResult &setSummarymapChanged(bool val) { summarymapChanged = val; return *this; }
         ComparisonResult &setJuniperrcChanged(bool val) { juniperrcChanged = val; return *this; }
         ComparisonResult &setDocumenttypesChanged(bool val) { documenttypesChanged = val; return *this; }
         ComparisonResult &setDocumentTypeRepoChanged(bool val) { documentTypeRepoChanged = val; return *this; }
@@ -106,8 +103,6 @@ public:
     using OnnxModels = matching::OnnxModels;
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     using SummaryConfigSP = std::shared_ptr<SummaryConfig>;
-    using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
-    using SummarymapConfigSP = std::shared_ptr<SummarymapConfig>;
     using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;
     using JuniperrcConfigSP = std::shared_ptr<JuniperrcConfig>;
     using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
@@ -126,7 +121,6 @@ private:
     IndexschemaConfigSP              _indexschema;
     AttributesConfigSP               _attributes;
     SummaryConfigSP                  _summary;
-    SummarymapConfigSP               _summarymap;
     JuniperrcConfigSP                _juniperrc;
     DocumenttypesConfigSP            _documenttypes;
     std::shared_ptr<const document::DocumentTypeRepo>   _repo;
@@ -166,7 +160,6 @@ public:
                      const IndexschemaConfigSP &indexschema,
                      const AttributesConfigSP &attributes,
                      const SummaryConfigSP &summary,
-                     const SummarymapConfigSP &summarymap,
                      const JuniperrcConfigSP &juniperrc,
                      const DocumenttypesConfigSP &documenttypesConfig,
                      const std::shared_ptr<const document::DocumentTypeRepo> &repo,
@@ -197,7 +190,6 @@ public:
     const IndexschemaConfig &getIndexschemaConfig() const { return *_indexschema; }
     const AttributesConfig &getAttributesConfig() const { return *_attributes; }
     const SummaryConfig &getSummaryConfig() const { return *_summary; }
-    const SummarymapConfig &getSummarymapConfig() const { return *_summarymap; }
     const JuniperrcConfig &getJuniperrcConfig() const { return *_juniperrc; }
     const DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
     const RankProfilesConfigSP &getRankProfilesConfigSP() const { return _rankProfiles; }
@@ -207,7 +199,6 @@ public:
     const IndexschemaConfigSP &getIndexschemaConfigSP() const { return _indexschema; }
     const AttributesConfigSP &getAttributesConfigSP() const { return _attributes; }
     const SummaryConfigSP &getSummaryConfigSP() const { return _summary; }
-    const SummarymapConfigSP &getSummarymapConfigSP() const { return _summarymap; }
     const JuniperrcConfigSP &getJuniperrcConfigSP() const { return _juniperrc; }
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepoSP() const { return _repo; }

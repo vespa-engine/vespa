@@ -5,7 +5,6 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
@@ -20,9 +19,6 @@ using search::docsummary::GetDocsumsState;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::JuniperProperties;
 
-using vespa::config::search::SummaryConfig;
-using vespa::config::search::SummarymapConfig;
-using vespa::config::search::summary::JuniperrcConfig;
 
 namespace config { class ConfigSnapshot; }
 namespace vsm {
@@ -40,12 +36,11 @@ public:
     GetDocsumsStateCallback();
     void FillSummaryFeatures(GetDocsumsState& state) override;
     void FillRankFeatures(GetDocsumsState& state) override;
-    virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
-    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
+    std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
     void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }
     void set_matching_elements_filler(std::unique_ptr<IMatchingElementsFiller> matching_elements_filler);
-    ~GetDocsumsStateCallback();
+    ~GetDocsumsStateCallback() override;
 };
 
 class DocsumTools : public IDocsumEnvironment
@@ -73,12 +68,12 @@ private:
     std::unique_ptr<juniper::Juniper>                     _juniper;
     const ResultClass                                   * _resultClass;
     std::vector<FieldSpec>                                _fieldSpecs;
-    DocsumTools(const DocsumTools &);
-    DocsumTools &operator=(const DocsumTools &);
 
 public:
     DocsumTools();
-    ~DocsumTools();
+    DocsumTools(const DocsumTools &) = delete;
+    DocsumTools &operator=(const DocsumTools &) = delete;
+    ~DocsumTools() override;
     void set_writer(std::unique_ptr<DynamicDocsumWriter> writer);
     void setJuniper(std::unique_ptr<juniper::Juniper> juniper) { _juniper = std::move(juniper); }
     const ResultConfig *getResultConfig() const { return _writer->GetResultConfig(); }

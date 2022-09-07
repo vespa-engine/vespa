@@ -2,6 +2,7 @@
 
 #include "searchenvironment.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchenvironment");
@@ -11,7 +12,7 @@ using vsm::VSMAdapter;
 
 namespace streaming {
 
-__thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap=0;
+__thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
 SearchEnvironment::Env::Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf) :
     _configId(configUri.getConfigId()),
@@ -29,7 +30,6 @@ SearchEnvironment::Env::createKeySet(const vespalib::string & configId)
     config::ConfigKeySet set;
     set.add<vespa::config::search::vsm::VsmfieldsConfig,
             vespa::config::search::SummaryConfig,
-            vespa::config::search::SummarymapConfig,
             vespa::config::search::vsm::VsmsummaryConfig,
             vespa::config::search::summary::JuniperrcConfig,
             vespa::config::search::RankProfilesConfig>(configId);

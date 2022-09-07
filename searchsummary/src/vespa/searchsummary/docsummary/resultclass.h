@@ -5,7 +5,6 @@
 #include "res_config_entry.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchlib/util/stringenum.h>
 
 namespace search::docsummary {
 
@@ -36,16 +35,12 @@ public:
     };
 
 private:
-    ResultClass(const ResultClass &);
-    ResultClass& operator=(const ResultClass &);
-    typedef vespalib::hash_map<vespalib::string, int> NameIdMap;
-    typedef std::vector<ResConfigEntry> Configs;
+    using NameIdMap = vespalib::hash_map<vespalib::string, int>;
+    using Configs = std::vector<ResConfigEntry>;
 
     vespalib::string           _name;        // name of this class
     Configs                    _entries;     // config entries for this result class
     NameIdMap                  _nameMap;     // fieldname -> entry index
-    util::StringEnum          &_fieldEnum;   // fieldname -> f.n. enum value [SHARED]
-    std::vector<int>           _enumMap;     // fieldname enum value -> entry index
     DynamicInfo                _dynInfo;     // fields overridden and generated
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
@@ -53,16 +48,17 @@ private:
     size_t                     _num_field_writer_states;
 
 public:
-    typedef std::unique_ptr<ResultClass> UP;
+    using UP = std::unique_ptr<ResultClass>;
 
     /**
      * Constructor. Assign name and id to this result class. Also gain
      * ref. to shared string enum object and insert into linked list.
      *
      * @param name the name of this result class.
-     * @param fieldEnum shared object used to enumerate field names.
      **/
-    ResultClass(const char *name, util::StringEnum & fieldEnum);
+    explicit ResultClass(const char *name);
+    ResultClass(const ResultClass &) = delete;
+    ResultClass& operator=(const ResultClass &) = delete;
 
     /**
      * Destructor. Delete internal structures.
@@ -101,25 +97,6 @@ public:
     bool AddConfigEntry(const char *name, ResType type, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
     bool AddConfigEntry(const char *name, ResType type);
 
-
-
-    /**
-     * This method may be called to create an internal mapping from
-     * field name enumerated value to field index. When building up a
-     * result configuration possibly containing several result classes,
-     * all field names are enumerated (across all result classes),
-     * assigning a single unique integer value to each field name. This
-     * is done with the StringEnum object given to the
-     * constructor. This way, fastserver components that want to
-     * reference a unique field name may use the enumerated value
-     * instead of the string itself. NOTE: This method must be called in
-     * order to use the GetIndexFromEnumValue method. NOTE2: This method
-     * is called by the ResultConfig::CreateEnumMaps method; no
-     * need to call it directly.
-     **/
-    void CreateEnumMap();
-
-
     /**
      * Obtain the field index from the field name. The field index may
      * be used to look up a config entry in this object, or to look up a
@@ -135,34 +112,12 @@ public:
      **/
     int GetIndexFromName(const char* name) const;
 
-
-    /**
-     * Obtain the field index from the field name enumerated value. The
-     * field index may be used to look up a config entry in this object,
-     * or to look up a result entry in a GeneralResult
-     * object. NOTE: When using the return value from this method to
-     * look up a result entry in a GeneralResult object, make sure
-     * that the GeneralResult object has this object as it's
-     * result class. NOTE2: This method is called by the
-     * GeneralResult::GetEntryFromEnumValue method; no need to
-     * call it directly. NOTE3: You need to call the CreateEnumMap
-     * method before calling this one.
-     *
-     * @return field index or -1 if not found
-     **/
-    int GetIndexFromEnumValue(uint32_t value) const
-    {
-        return (value < _enumMap.size()) ? _enumMap[value] : -1;
-    }
-
-
     /**
      * Obtain config entry by field index.
      *
      * @return config entry or NULL if not found.
      **/
-    const ResConfigEntry *GetEntry(uint32_t offset) const
-    {
+    const ResConfigEntry *GetEntry(uint32_t offset) const {
         return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
 

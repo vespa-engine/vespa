@@ -3,9 +3,11 @@
 #pragma once
 
 #include "res_type_utils.h"
-#include <vespa/config-summary.h>
-#include <vespa/searchlib/util/stringenum.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 
+namespace vespa::config::search::internal {
+    class InternalSummaryType;
+}
 namespace search::docsummary {
 
 class IDocsumFieldWriterFactory;
@@ -28,21 +30,16 @@ class ResultClass;
 class ResultConfig
 {
 private:
-    ResultConfig(const ResultConfig &);
-    ResultConfig& operator=(const ResultConfig &);
-
-    typedef vespalib::hash_map<vespalib::string, uint32_t> NameMap;
-    typedef vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>> IdMap;
+    using NameMap = vespalib::hash_map<vespalib::string, uint32_t>;
+    using IdMap = vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>>;
     uint32_t                    _defaultSummaryId;
-    bool                        _useV8geoPositions;
-    search::util::StringEnum    _fieldEnum;
     IdMap                       _classLookup;
     NameMap                     _nameLookup; // name -> class id
 
     void Clean();
 
 public:
-    bool useV8geoPositions() const { return _useV8geoPositions; }
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     class iterator {
     public:
         iterator(IdMap::iterator it) : _it(it) { }
@@ -69,16 +66,18 @@ public:
         IdMap::const_iterator _it;
     };
 
-    iterator begin() { return iterator(_classLookup.begin()); }
-    iterator   end() { return iterator(_classLookup.end()); }
-    const_iterator begin() const { return const_iterator(_classLookup.begin()); }
-    const_iterator   end() const { return const_iterator(_classLookup.end()); }
+    iterator begin() { return { _classLookup.begin() }; }
+    iterator   end() { return { _classLookup.end() }; }
+    const_iterator begin() const { return { _classLookup.begin() }; }
+    const_iterator   end() const { return { _classLookup.end() }; }
 
     /**
      * Constructor. Create an initially empty result configuration.
      * NOTE: This method simply calls the Init method.
      **/
     ResultConfig();
+    ResultConfig(const ResultConfig &) = delete;
+    ResultConfig& operator=(const ResultConfig &) = delete;
 
     /**
      * Destructor. Delete all internal structures. NOTE: This method
@@ -145,39 +144,13 @@ public:
      **/
     uint32_t LookupResultClassId(const vespalib::string &name) const;
 
-
-    /**
-     * Obtain the number of result classes held by this result
-     * configuration.
-     *
-     * @return number of result classes.
-     **/
-    uint32_t GetNumResultClasses() const { return _classLookup.size(); }
-
-
-    /**
-     * Obtain the string enumeration object that holds the mapping from
-     * field name to field name enumerated value.
-     *
-     * @return field name enumeration.
-     **/
-    const search::util::StringEnum & GetFieldNameEnum() const { return _fieldEnum; }
-
-
-    /**
-     * This method calls the CreateEnumMap on all result classes held by
-     * this object. This is needed in order to look up fields by field
-     * name enumerated value.
-     **/
-    void CreateEnumMaps();
-
     /**
      * Read config that has been fetched from configserver.
      *
      * @return true(success)/false(fail)
      * @param configId reference on server
      **/
-    bool ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory);
+    bool ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory);
 };
 
 }

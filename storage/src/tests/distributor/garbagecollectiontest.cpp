@@ -26,7 +26,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     spi::IdAndTimestamp _e2;
     spi::IdAndTimestamp _e3;
     spi::IdAndTimestamp _e4;
-
+    spi::IdAndTimestamp _e5;
 
     GarbageCollectionOperationTest()
         : _bucket_id(16, 1),
@@ -35,7 +35,8 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
           _e1(DocumentId("id:foo:bar::doc-1"), spi::Timestamp(100)),
           _e2(DocumentId("id:foo:bar::doc-2"), spi::Timestamp(200)),
           _e3(DocumentId("id:foo:bar::doc-3"), spi::Timestamp(300)),
-          _e4(DocumentId("id:foo:bar::doc-4"), spi::Timestamp(400))
+          _e4(DocumentId("id:foo:bar::doc-4"), spi::Timestamp(400)),
+          _e5(DocumentId("id:foo:bar::doc-4"), spi::Timestamp(500)) // Same as e4 but with higher timestamp
     {}
 
     void SetUp() override {
@@ -225,16 +226,16 @@ TEST_F(GarbageCollectionOperationTest, first_phase_sends_enumerate_only_remove_l
     }
 }
 
-TEST_F(GarbageCollectionOperationTest, second_phase_sends_intersection_of_returned_entries_with_feed_pri) {
+TEST_F(GarbageCollectionOperationTest, second_phase_sends_highest_timestamped_union_of_returned_entries_with_feed_pri) {
     enable_two_phase_gc();
     auto op = create_op();
     op->start(_sender, framework::MilliSecTime(0));
     ASSERT_EQ(2, _sender.commands().size());
 
     auto r1 = make_remove_location_reply(*_sender.command(0));
-    r1->set_selection_matches({_e1, _e2, _e3});
+    r1->set_selection_matches({_e1, _e2, _e3, _e5});
     auto r2 = make_remove_location_reply(*_sender.command(1));
-    r2->set_selection_matches({_e2, _e3, _e4}); // e2, e3 in common with r1
+    r2->set_selection_matches({_e2, _e3, _e4});
 
     _sender.commands().clear();
     op->receive(_sender, r1);
@@ -242,7 +243,8 @@ TEST_F(GarbageCollectionOperationTest, second_phase_sends_intersection_of_return
     op->receive(_sender, r2);
     ASSERT_EQ(2u, _sender.commands().size()); // Phase 2 sent
 
-    std::vector<spi::IdAndTimestamp> expected({_e2, _e3});
+    // e5 is same doc as e4, but at a higher timestamp; only e5 entry should be included.
+    std::vector<spi::IdAndTimestamp> expected({_e1, _e2, _e3, _e5});
     for (int i : {0, 1}) {
         auto cmd = as_remove_location_command(_sender.command(i));
         EXPECT_FALSE(cmd->only_enumerate_docs());
@@ -267,47 +269,6 @@ TEST_F(GarbageCollectionOperationTest, no_second_phase_if_first_phase_has_no_res
     EXPECT_NO_FATAL_FAILURE(assert_gc_op_completed_ok_without_second_phase(*op));
 }
 
-TEST_F(GarbageCollectionOperationTest, no_second_phase_if_first_phase_has_results_but_intersection_is_empty) {
-    enable_two_phase_gc();
-    auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
-    ASSERT_EQ(2, _sender.commands().size());
-
-    // No docs in common
-    auto r1 = make_remove_location_reply(*_sender.command(0));
-    r1->set_selection_matches({_e1});
-    auto r2 = make_remove_location_reply(*_sender.command(1));
-    r2->set_selection_matches({_e2});
-
-    _sender.commands().clear();
-    op->receive(_sender, r1);
-    op->receive(_sender, r2);
-
-    EXPECT_NO_FATAL_FAILURE(assert_gc_op_completed_ok_without_second_phase(*op));
-}
-
-// We explicitly test the case where the first reply has an empty result set since we internally
-// establish the baseline candidate set from the first reply. This test case leaks some internal
-// implementation details, but such is life.
-TEST_F(GarbageCollectionOperationTest, no_second_phase_if_first_phase_intersection_empty_first_reply_is_empty_case) {
-    enable_two_phase_gc();
-    auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
-    ASSERT_EQ(2, _sender.commands().size());
-
-    auto r1 = make_remove_location_reply(*_sender.command(0));
-    r1->set_selection_matches({});
-    auto r2 = make_remove_location_reply(*_sender.command(1));
-    r2->set_selection_matches({_e1, _e2, _e3, _e4});
-
-    _sender.commands().clear();
-    op->receive(_sender, r1);
-    op->receive(_sender, r2);
-
-    EXPECT_NO_FATAL_FAILURE(assert_gc_op_completed_ok_without_second_phase(*op));
-}
-
-
 TEST_F(GarbageCollectionOperationTest, db_metrics_and_timestamp_are_updated_on_second_phase_completion) {
     enable_two_phase_gc();
     auto op = create_op();
@@ -317,7 +278,7 @@ TEST_F(GarbageCollectionOperationTest, db_metrics_and_timestamp_are_updated_on_s
     auto r1 = make_remove_location_reply(*_sender.command(0));
     r1->set_selection_matches({_e1, _e2, _e3});
     auto r2 = make_remove_location_reply(*_sender.command(1));
-    r2->set_selection_matches({_e2, _e3, _e4}); // e2, e3 in common with r1
+    r2->set_selection_matches({_e2, _e3, _e4});
 
     _sender.commands().clear();
     op->receive(_sender, r1);
@@ -421,6 +382,7 @@ TEST_F(GarbageCollectionOperationTest, document_level_write_locks_are_checked_an
     _sender.commands().clear();
     op->receive(_sender, r1);
     op->receive(_sender, r2);
+    ASSERT_EQ(2, _sender.commands().size());
 
     // Locks on e1 and e3 are held while GC removes are sent
     auto e1_lock = _operation_sequencer.try_acquire(FixedBucketSpaces::default_space(), _e1.id);

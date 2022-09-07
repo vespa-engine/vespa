@@ -10,7 +10,6 @@
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
@@ -37,7 +36,6 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::SummaryConfig;
-using vespa::config::search::SummarymapConfig;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::summary::JuniperrcConfig;
 using vespa::config::content::core::BucketspacesConfig;
@@ -210,6 +208,23 @@ getFileList(const vespalib::string &snapDir)
     return res;
 }
 
+// add an empty file if it's not already present
+void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
+{
+    vespalib::string path = snapDir + "/" + fileName;
+    if (access(path.c_str(), R_OK) == 0) {
+        // exists OK
+        return;
+    }
+    int fd = creat(path.c_str(), 0444);
+    if (fd < 0) {
+        LOG(error, "Could not create empty file '%s': %s", path.c_str(), strerror(errno));
+        return;
+    }
+    fsync(fd);
+    close(fd);
+}
+
 }
 
 FileConfigManager::FileConfigManager(FNET_Transport & transport,
@@ -274,9 +289,9 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     save(snapDir, snapshot.getIndexschemaConfig());
     save(snapDir, snapshot.getAttributesConfig());
     save(snapDir, snapshot.getSummaryConfig());
-    save(snapDir, snapshot.getSummarymapConfig());
     save(snapDir, snapshot.getJuniperrcConfig());
     save(snapDir, snapshot.getDocumenttypesConfig());
+    addEmptyFile(snapDir, "summarymap.cfg");
 
     bool saveSchemaRes = snapshot.getSchemaSP()->saveToFile(snapDir + "/schema.txt");
     assert(saveSchemaRes);
@@ -294,26 +309,6 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     bool saveValidSnap = _info.save();
     assert(saveValidSnap);
     (void) saveValidSnap;
-}
-
-namespace {
-
-// add an empty file if it's not already present
-void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
-{
-    vespalib::string path = snapDir + "/" + fileName;
-    if (access(path.c_str(), R_OK) == 0) {
-        // exists OK
-        return;
-    }
-    int fd = creat(path.c_str(), 0444);
-    if (fd < 0) {
-        LOG(error, "Could not create empty file '%s': %s", path.c_str(), strerror(errno));
-        return;
-    }
-    close(fd);
-}
-
 }
 
 void

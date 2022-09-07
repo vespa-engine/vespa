@@ -4,8 +4,8 @@
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/config-summary.h>
 #include <atomic>
 
 #include <vespa/log/log.h>
@@ -23,11 +23,9 @@ ResultConfig::Clean()
 
 ResultConfig::ResultConfig()
     : _defaultSummaryId(-1),
-      _useV8geoPositions(false),
       _classLookup(),
       _nameLookup()
 {
-
 }
 
 
@@ -40,7 +38,7 @@ ResultConfig::~ResultConfig()
 void
 ResultConfig::Reset()
 {
-    if (! _classLookup.empty() || _fieldEnum.GetNumEntries() > 0) {
+    if (! _classLookup.empty()) {
         Clean();
     }
 }
@@ -52,7 +50,7 @@ ResultConfig::AddResultClass(const char *name, uint32_t id)
     ResultClass *ret = nullptr;
 
     if (id != NoClassID() && (_classLookup.find(id) == _classLookup.end())) {
-        auto rc = std::make_unique<ResultClass>(name, _fieldEnum);
+        auto rc = std::make_unique<ResultClass>(name);
         ret = rc.get();
         _classLookup[id] = std::move(rc);
         if (_nameLookup.find(name) != _nameLookup.end()) {
@@ -84,14 +82,6 @@ ResultConfig::LookupResultClassId(const vespalib::string &name) const
 }
 
 
-void
-ResultConfig::CreateEnumMaps()
-{
-    for (auto & entry : _classLookup) {
-       entry.second->CreateEnumMap();
-    }
-}
-
 namespace {
 std::atomic<bool> global_useV8geoPositions = false;
 }
@@ -101,13 +91,12 @@ bool ResultConfig::wantedV8geoPositions() {
 }
 
 bool
-ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
+ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
 {
     bool rc = true;
     Reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
-    _useV8geoPositions = cfg.usev8geopositions;
     global_useV8geoPositions = cfg.usev8geopositions;
 
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
@@ -156,9 +145,7 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
             }
         }
     }
-    if (rc) {
-        CreateEnumMaps(); // create mappings needed by TVM
-    } else {
+    if (!rc) {
         Reset();          // FAIL, discard all config
     }
     return rc;

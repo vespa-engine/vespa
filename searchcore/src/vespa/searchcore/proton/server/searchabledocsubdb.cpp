@@ -203,7 +203,6 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     _rSearchView.set(SearchView::create(
                                       getSummaryManager()->createSummarySetup(
                                               configSnapshot.getSummaryConfig(),
-                                              configSnapshot.getSummarymapConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
                                               attrMgr),

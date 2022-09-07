@@ -6,8 +6,7 @@
 
 namespace vespalib { class GenericHeader; }
 
-namespace search
-{
+namespace search {
 
 /*
  * Class to calculate logical file size of a file based on header tags

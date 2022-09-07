@@ -231,7 +231,7 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
                 const ResConfigEntry &entry = *resClass->GetEntry(i);
                 const DocsumTools::FieldSpec & toolsSpec = inputSpecs[i];
                 _fields.push_back(DocsumFieldSpec(entry._type, toolsSpec.getCommand()));
-                LOG(debug, "About to prepare field spec for summary field '%s'", entry._bindname.c_str());
+                LOG(debug, "About to prepare field spec for summary field '%s'", entry._name.c_str());
                 prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap);
             }
             assert(entryCnt == _fields.size());

@@ -219,7 +219,6 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         ISummaryManager::SP sumMgr(_summaryMgr);
         ISummaryManager::ISummarySetup::SP newSumSetup =
             sumMgr->createSummarySetup(newConfig.getSummaryConfig(),
-                                       newConfig.getSummarymapConfig(),
                                        newConfig.getJuniperrcConfig(),
                                        newConfig.getDocumentTypeRepoSP(),
                                        attrMgr);

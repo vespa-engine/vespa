@@ -9,7 +9,6 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
@@ -140,7 +139,6 @@ public:
                         indexschema,
                         attributes,
                         summary,
-                        std::make_shared<SummarymapConfig>(),
                         std::make_shared<JuniperrcConfig>(),
                         _typeCfg,
                         _repo,

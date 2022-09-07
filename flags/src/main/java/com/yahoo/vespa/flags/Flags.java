@@ -86,7 +86,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag KEEP_STORAGE_NODE_UP = defineFeatureFlag(
             "keep-storage-node-up", true,
-            List.of("hakonhall"), "2022-07-07", "2022-09-07",
+            List.of("hakonhall"), "2022-07-07", "2022-10-07",
             "Whether to leave the storage node (with wanted state) UP while the node is permanently down.",
             "Takes effect immediately for nodes transitioning to permanently down.",
             ZONE_ID, APPLICATION_ID);

@@ -6,7 +6,6 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -89,7 +88,6 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());
-    EXPECT_TRUE(exp.getSummarymapConfig() == act.getSummarymapConfig());
     EXPECT_TRUE(exp.getJuniperrcConfig() == act.getJuniperrcConfig());
     EXPECT_TRUE(exp.getImportedFieldsConfig() == act.getImportedFieldsConfig());
     EXPECT_EQUAL(0u, exp.getImportedFieldsConfig().attribute.size());
