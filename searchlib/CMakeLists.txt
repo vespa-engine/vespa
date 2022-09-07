@@ -217,7 +217,6 @@ vespa_define_module(
     src/tests/sort
     src/tests/sortresults
     src/tests/sortspec
-    src/tests/stringenum
     src/tests/tensor/dense_tensor_store
     src/tests/tensor/direct_tensor_store
     src/tests/tensor/distance_functions

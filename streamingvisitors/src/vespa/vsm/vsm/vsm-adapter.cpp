@@ -5,6 +5,7 @@
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
@@ -13,6 +14,8 @@ using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
 using search::MatchingElements;
 using config::ConfigSnapshot;
+using vespa::config::search::SummaryConfig;
+using vespa::config::search::summary::JuniperrcConfig;
 
 namespace vsm {
 
@@ -35,12 +38,6 @@ void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState& state)
     if (_rankFeatures) { // set the rank features to write to the docsum
         state._rankFeatures = _rankFeatures;
     }
-}
-
-void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDocsumEnvironment * env)
-{
-    (void) state;
-    (void) env;
 }
 
 std::unique_ptr<MatchingElements>
@@ -91,10 +88,10 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 {
     uint32_t defaultSummaryId = getResultConfig()->LookupResultClassId(cfg->outputclass);
     _resultClass = getResultConfig()->LookupResultClass(defaultSummaryId);
-    if (_resultClass != NULL) {
+    if (_resultClass != nullptr) {
         for (uint32_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
             const ResConfigEntry * entry = _resultClass->GetEntry(i);
-            _fieldSpecs.push_back(FieldSpec());
+            _fieldSpecs.emplace_back();
             _fieldSpecs.back().setOutputName(entry->_bindname);
             bool found = false;
             if (cfg) {

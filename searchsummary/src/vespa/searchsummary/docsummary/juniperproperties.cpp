@@ -2,8 +2,8 @@
 
 #include "juniperproperties.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
-using vespa::config::search::summary::JuniperrcConfig;
 using vespalib::make_string;
 
 namespace search::docsummary {

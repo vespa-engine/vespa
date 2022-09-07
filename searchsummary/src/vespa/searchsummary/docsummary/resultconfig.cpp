@@ -4,8 +4,8 @@
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/config-summary.h>
 #include <atomic>
 
 #include <vespa/log/log.h>
@@ -23,11 +23,9 @@ ResultConfig::Clean()
 
 ResultConfig::ResultConfig()
     : _defaultSummaryId(-1),
-      _useV8geoPositions(false),
       _classLookup(),
       _nameLookup()
 {
-
 }
 
 
@@ -93,13 +91,12 @@ bool ResultConfig::wantedV8geoPositions() {
 }
 
 bool
-ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
+ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
 {
     bool rc = true;
     Reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
-    _useV8geoPositions = cfg.usev8geopositions;
     global_useV8geoPositions = cfg.usev8geopositions;
 
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {

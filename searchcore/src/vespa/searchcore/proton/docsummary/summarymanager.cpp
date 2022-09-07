@@ -13,6 +13,7 @@
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/config-summary.h>
 
 #include <sstream>
 
@@ -22,8 +23,6 @@ LOG_SETUP(".proton.docsummary.summarymanager");
 using namespace config;
 using namespace document;
 using namespace search::docsummary;
-using namespace vespa::config::search::summary;
-using namespace vespa::config::search;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::compression::CompressionConfig;

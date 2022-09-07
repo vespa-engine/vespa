@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/juniper/IJuniperProperties.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <map>
 
+namespace vespa::config::search::summary::internal {
+    class InternalJuniperrcType;
+}
 namespace search::docsummary {
 
 class JuniperProperties : public IJuniperProperties {
@@ -19,6 +22,7 @@ private:
 
 
 public:
+    using JuniperrcConfig = vespa::config::search::summary::internal::InternalJuniperrcType;;
     /**
      * Constructs a juniper property object with default values set.
      */
@@ -26,7 +30,7 @@ public:
     /**
      * Constructs a juniper property object with default values set.
      */
-    explicit JuniperProperties(const vespa::config::search::summary::JuniperrcConfig &cfg);
+    explicit JuniperProperties(const JuniperrcConfig &cfg);
 
     ~JuniperProperties() override;
 
@@ -35,7 +39,7 @@ public:
      *
      * @param cfg The configuration object.
      */
-    void configure(const vespa::config::search::summary::JuniperrcConfig &cfg);
+    void configure(const JuniperrcConfig &cfg);
 
     // Inherit doc from IJuniperProperties.
     const char *GetProperty(const char *name, const char *def) const override;

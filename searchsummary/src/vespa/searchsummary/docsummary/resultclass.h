@@ -5,7 +5,6 @@
 #include "res_config_entry.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchlib/util/stringenum.h>
 
 namespace search::docsummary {
 
@@ -36,10 +35,8 @@ public:
     };
 
 private:
-    ResultClass(const ResultClass &);
-    ResultClass& operator=(const ResultClass &);
-    typedef vespalib::hash_map<vespalib::string, int> NameIdMap;
-    typedef std::vector<ResConfigEntry> Configs;
+    using NameIdMap = vespalib::hash_map<vespalib::string, int>;
+    using Configs = std::vector<ResConfigEntry>;
 
     vespalib::string           _name;        // name of this class
     Configs                    _entries;     // config entries for this result class
@@ -51,7 +48,7 @@ private:
     size_t                     _num_field_writer_states;
 
 public:
-    typedef std::unique_ptr<ResultClass> UP;
+    using UP = std::unique_ptr<ResultClass>;
 
     /**
      * Constructor. Assign name and id to this result class. Also gain
@@ -59,7 +56,9 @@ public:
      *
      * @param name the name of this result class.
      **/
-    ResultClass(const char *name);
+    explicit ResultClass(const char *name);
+    ResultClass(const ResultClass &) = delete;
+    ResultClass& operator=(const ResultClass &) = delete;
 
     /**
      * Destructor. Delete internal structures.
@@ -118,8 +117,7 @@ public:
      *
      * @return config entry or NULL if not found.
      **/
-    const ResConfigEntry *GetEntry(uint32_t offset) const
-    {
+    const ResConfigEntry *GetEntry(uint32_t offset) const {
         return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
 

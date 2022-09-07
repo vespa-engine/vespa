@@ -31,8 +31,8 @@ public:
         const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
     public:
         SummarySetup(const vespalib::string & baseDir,
-                     const vespa::config::search::SummaryConfig & summaryCfg,
-                     const vespa::config::search::summary::JuniperrcConfig & juniperCfg,
+                     const SummaryConfig & summaryCfg,
+                     const JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
                      search::IDocumentStore::SP docStore,
                      std::shared_ptr<const document::DocumentTypeRepo> repo);
@@ -69,8 +69,8 @@ public:
     searchcorespi::IFlushTarget::List getFlushTargets(vespalib::Executor & summaryService);
 
     ISummarySetup::SP
-    createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
-                       const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
+    createSummarySetup(const SummaryConfig &summaryCfg,
+                       const JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                        const search::IAttributeManager::SP &attributeMgr) override;
 

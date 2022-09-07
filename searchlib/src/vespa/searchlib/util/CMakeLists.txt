@@ -17,7 +17,6 @@ vespa_add_library(searchlib_util OBJECT
     rawbuf.cpp
     slime_output_raw_buf_adapter.cpp
     state_explorer_utils.cpp
-    stringenum.cpp
     url.cpp
     DEPENDS
 )
