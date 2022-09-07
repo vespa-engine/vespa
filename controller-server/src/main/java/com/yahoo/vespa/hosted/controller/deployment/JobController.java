@@ -570,25 +570,7 @@ public class JobController {
             application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedPackages(application, version.get().id());
 
-            TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
-            if (testSummary.problems().isEmpty())
-                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
-            else
-                controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.testPackage,
-                                                             Notification.Level.warning,
-                                                             testSummary.problems());
-
-            submission.applicationPackage().parentVersion().ifPresent(parent -> {
-                if (parent.getMajor() < controller.readSystemVersion().getMajor())
-                    controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                                 Type.submission,
-                                                                 Notification.Level.warning,
-                                                                 "Parent version used to compile the application is on a " +
-                                                                 "lower major version than the current Vespa Cloud version");
-                else
-                    controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
-            });
+            validate(id, submission);
 
             applications.storeWithUpdatedConfig(application, submission.applicationPackage());
             if (application.get().projectId().isPresent())
@@ -596,6 +578,36 @@ public class JobController {
         });
         return version.get();
     }
+
+    private void validate(TenantAndApplicationId id, Submission submission) {
+        validateTests(id, submission);
+        validateParentVersion(id, submission);
+    }
+
+    private void validateTests(TenantAndApplicationId id, Submission submission) {
+        TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
+        if (testSummary.problems().isEmpty())
+            controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
+        else
+            controller.notificationsDb().setNotification(NotificationSource.from(id),
+                                                         Type.testPackage,
+                                                         Notification.Level.warning,
+                                                         testSummary.problems());
+
+    }
+
+    private void validateParentVersion(TenantAndApplicationId id, Submission submission) {
+        submission.applicationPackage().parentVersion().ifPresent(parent -> {
+            if (parent.getMajor() < controller.readSystemVersion().getMajor())
+                controller.notificationsDb().setNotification(NotificationSource.from(id),
+                                                             Type.submission,
+                                                             Notification.Level.warning,
+                                                             "Parent version used to compile the application is on a " +
+                                                             "lower major version than the current Vespa Cloud version");
+            else
+                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
+        });
+   }
 
     private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
         TenantAndApplicationId id = application.get().id();
