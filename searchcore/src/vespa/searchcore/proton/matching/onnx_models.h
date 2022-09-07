@@ -27,11 +27,7 @@ private:
 public:
     using SP = std::shared_ptr<OnnxModels>;
     OnnxModels();
-    OnnxModels(Vector models);
-    OnnxModels(OnnxModels &&) noexcept;
-    OnnxModels & operator=(OnnxModels &&) = delete;
-    OnnxModels(const OnnxModels &) = delete;
-    OnnxModels & operator =(const OnnxModels &) = delete;
+    OnnxModels(const Vector &models);
     ~OnnxModels();
     bool operator==(const OnnxModels &rhs) const;
     const Model *getModel(const vespalib::string &name) const;

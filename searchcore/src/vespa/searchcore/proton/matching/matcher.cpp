@@ -50,14 +50,14 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
-    DocumentMetaData getMetaData(const GlobalId &) const override { return {}; }
+    DocumentMetaData getMetaData(const GlobalId &) const override { return DocumentMetaData(); }
     void getMetaData(const BucketId &, DocumentMetaData::Vector &) const override { }
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }
     uint64_t getCurrentGeneration() const override { return 0; }
-    LidUsageStats getLidUsageStats() const override { return {}; }
-    Blueprint::UP createWhiteListBlueprint() const override { return {}; }
+    LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
+    Blueprint::UP createWhiteListBlueprint() const override { return Blueprint::UP(); }
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
@@ -100,9 +100,10 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 
 }  // namespace proton::matching::<unnamed>
 
-Matcher::Matcher(const search::index::Schema &schema, Properties props, const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter, const IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey)
-  : _indexEnv(distributionKey, schema, std::move(props), rankingAssetsRepo),
+Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
+                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo,
+                 RankingExpressions rankingExpressions, OnnxModels onnxModels, uint32_t distributionKey)
+  : _indexEnv(distributionKey, schema, props, constantValueRepo, std::move(rankingExpressions), std::move(onnxModels)),
     _blueprintFactory(),
     _rankSetup(),
     _viewResolver(ViewResolver::createFromSchema(schema)),
@@ -383,6 +384,11 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
 bool
 Matcher::canProduceSummaryFeatures() const {
     return ! _rankSetup->getSummaryFeatures().empty();
+}
+
+double
+Matcher::get_termwise_limit() const {
+    return _rankSetup->get_termwise_limit();
 }
 
 }

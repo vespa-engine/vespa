@@ -24,27 +24,27 @@ public:
         vespalib::eval::ValueType _type;
         std::unique_ptr<vespalib::eval::Value> _value;
         Constant(vespalib::eval::ValueType type,
-                 std::unique_ptr<vespalib::eval::Value> value)
+                     std::unique_ptr<vespalib::eval::Value> value)
             : _type(std::move(type)), _value(std::move(value))
         { }
-        Constant(Constant &&rhs) noexcept
+        Constant(Constant &&rhs)
             : _type(std::move(rhs._type)),
               _value(std::move(rhs._value))
         {
         }
         const vespalib::eval::ValueType &type() const override { return _type; }
         const vespalib::eval::Value &value() const override { return *_value; }
-        ~Constant() override;
+        ~Constant() { }
     };
 
     struct ConstantRef : vespalib::eval::ConstantValue {
         const Constant &_value;
-        explicit ConstantRef(const Constant &value)
+        ConstantRef(const Constant &value)
             : _value(value)
         { }
         const vespalib::eval::ValueType &type() const override { return _value.type(); }
         const vespalib::eval::Value &value() const override { return _value.value(); }
-        ~ConstantRef() override = default;
+        ~ConstantRef() { }
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
@@ -52,9 +52,7 @@ public:
     using ModelMap = std::map<vespalib::string, OnnxModel>;
 
     IndexEnvironment();
-    IndexEnvironment(const IndexEnvironment &) = delete;
-    IndexEnvironment & operator=(const IndexEnvironment &) = delete;
-    ~IndexEnvironment() override;
+    ~IndexEnvironment();
 
     const Properties &getProperties() const override { return _properties; }
     uint32_t getNumFields() const override { return _fields.size(); }
@@ -92,7 +90,11 @@ public:
     void addRankingExpression(const vespalib::string &name, const vespalib::string &value);
 
     const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
-    void addOnnxModel(OnnxModel model);
+    void addOnnxModel(const OnnxModel &model);
+
+private:
+    IndexEnvironment(const IndexEnvironment &);             // hide
+    IndexEnvironment & operator=(const IndexEnvironment &); // hide
 
 private:
     Properties             _properties;

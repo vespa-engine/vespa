@@ -74,7 +74,7 @@ constexpr uint32_t indexing_thread_stack_size = 128_Ki;
 
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
-    return {WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), size_t(cfg.maxflushed), size_t(cfg.cache.size)};
+    return index::IndexConfig(WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
 }
 
 ReplayThrottlingPolicy
@@ -92,7 +92,7 @@ make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
 class MetricsUpdateHook : public metrics::UpdateHook {
     DocumentDB &_db;
 public:
-    explicit MetricsUpdateHook(DocumentDB &s)
+    MetricsUpdateHook(DocumentDB &s)
         : metrics::UpdateHook("documentdb-hook"),
           _db(s)
     {}
@@ -106,7 +106,7 @@ private:
     const DocumentDB& _doc_db;
 
 public:
-    explicit DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
+    DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
         : _doc_db(doc_db)
     {}
     TransientResourceUsage get_transient_resource_usage() const override {

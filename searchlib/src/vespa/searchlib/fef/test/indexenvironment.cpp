@@ -11,7 +11,6 @@ using vespalib::eval::ValueType;
 IndexEnvironment::IndexEnvironment() = default;
 
 IndexEnvironment::~IndexEnvironment() = default;
-IndexEnvironment::Constant::~Constant() = default;
 
 const FieldInfo *
 IndexEnvironment::getField(uint32_t id) const
@@ -22,9 +21,10 @@ IndexEnvironment::getField(uint32_t id) const
 const FieldInfo *
 IndexEnvironment::getFieldByName(const string &name) const
 {
-    for (const auto & field : _fields) {
-        if (field.name() == name) {
-            return &field;
+    for (std::vector<FieldInfo>::const_iterator it = _fields.begin();
+         it != _fields.end(); ++it) {
+        if (it->name() == name) {
+            return &(*it);
         }
     }
     return nullptr;
@@ -38,7 +38,7 @@ IndexEnvironment::getConstantValue(const vespalib::string &name) const
     if (it != _constants.end()) {
         return std::make_unique<ConstantRef>(it->second);
     } else {
-        return {nullptr};
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 }
 
@@ -47,7 +47,9 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
                                    vespalib::eval::ValueType type,
                                    std::unique_ptr<vespalib::eval::Value> value)
 {
-    auto insertRes = _constants.emplace(name, Constant(std::move(type), std::move(value)));
+    auto insertRes = _constants.emplace(name,
+                                        Constant(std::move(type),
+                                                 std::move(value)));
     assert(insertRes.second); // successful insert
     (void) insertRes;
 }
@@ -79,9 +81,9 @@ IndexEnvironment::getOnnxModel(const vespalib::string &name) const
 }
 
 void
-IndexEnvironment::addOnnxModel(OnnxModel model)
+IndexEnvironment::addOnnxModel(const OnnxModel &model)
 {
-    _models.insert_or_assign(model.name(), std::move(model));
+    _models.insert_or_assign(model.name(), model);
 }
 
 

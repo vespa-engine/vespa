@@ -45,7 +45,7 @@ public:
      *
      * @param executor The executor in which to run all tasks.
      */
-    explicit BucketHandler(vespalib::Executor &executor);
+    BucketHandler(vespalib::Executor &executor);
     ~BucketHandler() override;
 
     void setReadyBucketHandler(documentmetastore::IBucketHandler &ready);

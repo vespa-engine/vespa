@@ -18,10 +18,10 @@ using namespace vespalib::make_string_short;
 
 Matchers::Matchers(const vespalib::Clock &clock,
                    matching::QueryLimiter &queryLimiter,
-                   const matching::IRankingAssetsRepo &rankingAssetsRepo)
+                   const matching::IConstantValueRepo &constantValueRepo)
     : _rpmap(),
       _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), clock, queryLimiter,
-                                          rankingAssetsRepo, -1)),
+                                          constantValueRepo, RankingExpressions(), OnnxModels(), -1)),
       _default()
 { }
 
@@ -67,6 +67,16 @@ Matchers::lookup(const vespalib::string &name) const
         }
     }
     return found->second;
+}
+
+vespalib::string
+Matchers::listMatchers() const {
+    vespalib::string matchers;
+    for (const auto & entry : _rpmap) {
+        matchers += entry.first;
+        matchers += ' ';
+    }
+    return matchers;
 }
 
 } // namespace proton

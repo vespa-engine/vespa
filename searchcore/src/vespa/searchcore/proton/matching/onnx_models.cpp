@@ -1,19 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "onnx_models.h"
-#include <cassert>
+#include <assert.h>
 
 namespace proton::matching {
 
-OnnxModels::OnnxModels() = default;
-OnnxModels::OnnxModels(OnnxModels &&) noexcept = default;
-OnnxModels::~OnnxModels() = default;
-
-OnnxModels::OnnxModels(Vector models)
+OnnxModels::OnnxModels()
     : _models()
 {
-    for (auto &model: models) {
-        _models.emplace(model.name(), std::move(model));
+}
+
+OnnxModels::~OnnxModels() = default;
+
+OnnxModels::OnnxModels(const Vector &models)
+    : _models()
+{
+    for (const auto &model: models) {
+        _models.emplace(model.name(), model);
     }
 }
 

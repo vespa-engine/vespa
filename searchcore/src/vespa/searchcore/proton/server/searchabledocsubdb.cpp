@@ -37,8 +37,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _rFeedView(),
       _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
-      _rankingAssetsRepo(_constantValueCache),
-      _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _rankingAssetsRepo, ctx._clock,
+      _constantValueRepo(_constantValueCache),
+      _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
@@ -194,10 +194,9 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     AttributeManager::SP attrMgr = getAndResetInitAttributeManager();
     const Schema::SP &schema = configSnapshot.getSchemaSP();
     const IIndexManager::SP &indexMgr = getIndexManager();
-    _rankingAssetsRepo.reconfigure(configSnapshot.getRankingConstantsSP(),
-                                   configSnapshot.getRankingExpressionsSP(),
-                                   configSnapshot.getOnnxModelsSP());
-    Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig());
+    _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
+    Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig(),
+                                                       configSnapshot.getRankingExpressions(), configSnapshot.getOnnxModels());
     auto matchView = std::make_shared<MatchView>(std::move(matchers), indexMgr->getSearchable(), attrMgr,
                                                  sessionManager, _metaStoreCtx, _docIdLimit);
     _rSearchView.set(SearchView::create(

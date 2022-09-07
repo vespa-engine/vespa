@@ -152,7 +152,7 @@ struct Fixture
     vespalib::TestClock _clock;
     matching::QueryLimiter _queryLimiter;
     EmptyConstantValueFactory _constantValueFactory;
-    RankingAssetsRepo _constantValueRepo;
+    ConstantValueRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
     std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     ViewSet _views;

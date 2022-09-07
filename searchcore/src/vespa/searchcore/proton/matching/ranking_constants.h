@@ -35,11 +35,7 @@ private:
 public:
     using SP = std::shared_ptr<RankingConstants>;
     RankingConstants();
-    RankingConstants(RankingConstants &&) noexcept;
-    RankingConstants & operator =(RankingConstants &&) = delete;
-    RankingConstants(const RankingConstants &) = delete;
-    RankingConstants & operator =(const RankingConstants &) = delete;
-    explicit RankingConstants(const Vector &constants);
+    RankingConstants(const Vector &constants);
     ~RankingConstants();
     bool operator==(const RankingConstants &rhs) const;
     const Constant *getConstant(const vespalib::string &name) const;
