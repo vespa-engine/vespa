@@ -440,7 +440,7 @@ public class DeploymentSpecXmlReader {
     }
 
     private Optional<CloudAccount> readCloudAccount(Element tag) {
-        return stringAttribute(cloudAccountAttribute, tag).map(CloudAccount::new);
+        return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::new);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
