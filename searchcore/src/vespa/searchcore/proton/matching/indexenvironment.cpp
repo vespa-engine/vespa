@@ -63,14 +63,18 @@ IndexEnvironment::insertField(const search::fef::FieldInfo &field)
 
 IndexEnvironment::IndexEnvironment(uint32_t distributionKey,
                                    const search::index::Schema &schema,
-                                   search::fef::Properties props,
-                                   const IRankingAssetsRepo &rankingAssetsRepo)
+                                   const search::fef::Properties &props,
+                                   const IConstantValueRepo &constantValueRepo,
+                                   RankingExpressions rankingExpressions,
+                                   OnnxModels onnxModels)
   : _tableManager(),
-    _properties(std::move(props)),
+    _properties(props),
     _fieldNames(),
     _fields(),
     _motivation(UNKNOWN),
-    _rankingAssetsRepo(rankingAssetsRepo),
+    _constantValueRepo(constantValueRepo),
+    _rankingExpressions(std::move(rankingExpressions)),
+    _onnxModels(std::move(onnxModels)),
     _distributionKey(distributionKey)
 {
     _tableManager.addFactory(std::make_shared<search::fef::FunctionTableFactory>(256));
@@ -128,6 +132,18 @@ IndexEnvironment::hintFieldAccess(uint32_t ) const { }
 
 void
 IndexEnvironment::hintAttributeAccess(const string &) const { }
+
+vespalib::string
+IndexEnvironment::getRankingExpression(const vespalib::string &name) const
+{
+    return _rankingExpressions.loadExpression(name);
+}
+
+const search::fef::OnnxModel *
+IndexEnvironment::getOnnxModel(const vespalib::string &name) const
+{
+    return _onnxModels.getModel(name);
+}
 
 IndexEnvironment::~IndexEnvironment() = default;
 

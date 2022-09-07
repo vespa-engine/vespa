@@ -210,7 +210,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const HwInfo & hwInfo) {
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .compactCompression(deriveCompression(log.compact.compression))
             .setFileConfig(fileConfig).disableCrcOnRead(chunk.skipcrconread);
-    return {config, logConfig};
+    return LogDocumentStore::Config(config, logConfig);
 }
 
 search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const HwInfo & hwInfo) {
@@ -377,7 +377,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
                 OnnxModels::configure(rc, models.back());
             }
         }
-        newOnnxModels = std::make_shared<OnnxModels>(std::move(models));
+        newOnnxModels = std::make_shared<OnnxModels>(models);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         newIndexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);

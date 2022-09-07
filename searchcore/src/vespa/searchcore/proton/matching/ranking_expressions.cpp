@@ -24,7 +24,8 @@ vespalib::string extract_data(vespalib::Input &input) {
 } // unnamed
 
 RankingExpressions::RankingExpressions() = default;
-RankingExpressions::RankingExpressions(RankingExpressions &&rhs) noexcept = default;
+RankingExpressions::RankingExpressions(RankingExpressions &&rhs) = default;
+RankingExpressions::RankingExpressions(const RankingExpressions &rhs) = default;
 RankingExpressions::~RankingExpressions() = default;
 
 RankingExpressions &

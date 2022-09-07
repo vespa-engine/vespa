@@ -18,7 +18,6 @@
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchcore/proton/matching/ranking_expressions.h>
-#include <vespa/searchcore/proton/matching/onnx_models.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
@@ -33,7 +32,7 @@ using config::ConfigRuntimeException;
 using config::ConfigSubscriber;
 using config::IConfigContext;
 using config::InvalidConfigException;
-using proton::matching::IRankingAssetsRepo;
+using proton::matching::IConstantValueRepo;
 using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 using vespa::config::search::AttributesConfig;
@@ -92,7 +91,7 @@ make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupConfig &myCf
                                       entry.name.c_str(), entry.fileref.c_str()));
         }
     }
-    return OnnxModels(std::move(model_list));
+    return OnnxModels(model_list);
 }
 
 class VerifyRankSetup
@@ -101,7 +100,9 @@ private:
     std::vector<search::fef::Message> _messages;
     bool verify(const search::index::Schema &schema,
                 const search::fef::Properties &props,
-                const IRankingAssetsRepo &repo);
+                const IConstantValueRepo &repo,
+                const RankingExpressions &expressions,
+                const OnnxModels &models);
 
     bool verifyConfig(const VerifyRanksetupConfig &myCfg,
                       const RankProfilesConfig &rankCfg,
@@ -118,28 +119,14 @@ public:
     bool verify(const std::string & configId);
 };
 
-struct DummyRankingAssetsRepo : IRankingAssetsRepo {
+struct DummyConstantValueRepo : IConstantValueRepo {
     const RankingConstantsConfig &cfg;
-    RankingExpressions _expressions;
-    OnnxModels _onnxModels;
-    DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels)
-        : cfg(cfg_in),
-          _expressions(std::move(expressions)),
-          _onnxModels(std::move(onnxModels))
-    {}
+    DummyConstantValueRepo(const RankingConstantsConfig &cfg_in) : cfg(cfg_in) {}
     vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
-
-    vespalib::string getExpression(const vespalib::string & name) const override {
-        return _expressions.loadExpression(name);
-    }
-
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string & name) const override {
-        return _onnxModels.getModel(name);
-    }
 };
 
 vespalib::eval::ConstantValue::UP
-DummyRankingAssetsRepo::getConstant(const vespalib::string &name) const {
+DummyConstantValueRepo::getConstant(const vespalib::string &name) const {
     for (const auto &entry: cfg.constant) {
         if (entry.name == name) {
             try {
@@ -150,7 +137,7 @@ DummyRankingAssetsRepo::getConstant(const vespalib::string &name) const {
             }
         }
     }
-    return {};
+    return vespalib::eval::ConstantValue::UP(nullptr);
 }
 
 VerifyRankSetup::VerifyRankSetup()
@@ -162,9 +149,11 @@ VerifyRankSetup::~VerifyRankSetup() = default;
 bool
 VerifyRankSetup::verify(const search::index::Schema &schema,
             const search::fef::Properties &props,
-            const IRankingAssetsRepo &repo)
+            const IConstantValueRepo &repo,
+            const RankingExpressions &expressions,
+            const OnnxModels &models)
 {
-    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo);
+    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo, expressions, models);
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);
@@ -203,8 +192,9 @@ VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
     search::index::Schema schema;
     search::index::SchemaBuilder::build(schemaCfg, schema);
     search::index::SchemaBuilder::build(attributeCfg, schema);
-    DummyRankingAssetsRepo repo(constantsCfg, make_expressions(expressionsCfg, myCfg, _messages),
-                                make_models(modelsCfg, myCfg, _messages));
+    DummyConstantValueRepo repo(constantsCfg);
+    auto expressions = make_expressions(expressionsCfg, myCfg, _messages);
+    auto models = make_models(modelsCfg, myCfg, _messages);
     for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
         search::fef::Properties properties;
         const RankProfilesConfig::Rankprofile &profile = rankCfg.rankprofile[i];
@@ -212,7 +202,7 @@ VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
             properties.add(profile.fef.property[j].name,
                            profile.fef.property[j].value);
         }
-        if (verify(schema, properties, repo)) {
+        if (verify(schema, properties, repo, expressions, models)) {
             _messages.emplace_back(search::fef::Level::INFO,
                                    fmt("rank profile '%s': pass", profile.name.c_str()));
         } else {

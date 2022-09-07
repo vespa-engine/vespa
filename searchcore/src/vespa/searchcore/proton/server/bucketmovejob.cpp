@@ -54,7 +54,7 @@ blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
 
 }
 
-BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
+BucketMoveJob::BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
                              RetainGuard dbRetainer,
                              IDocumentMoveHandler &moveHandler,
                              IBucketModifiedHandler &modifiedHandler,
@@ -75,7 +75,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
       IBucketStateChangedHandler(),
       IDiskMemUsageListener(),
       std::enable_shared_from_this<BucketMoveJob>(),
-      _calc(std::move(calc)),
+      _calc(calc),
       _dbRetainer(std::move(dbRetainer)),
       _moveHandler(moveHandler),
       _modifiedHandler(modifiedHandler),
@@ -115,7 +115,7 @@ BucketMoveJob::~BucketMoveJob()
 }
 
 std::shared_ptr<BucketMoveJob>
-BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
+BucketMoveJob::create(const std::shared_ptr<IBucketStateCalculator> &calc,
                       RetainGuard dbRetainer,
                       IDocumentMoveHandler &moveHandler,
                       IBucketModifiedHandler &modifiedHandler,
@@ -132,7 +132,7 @@ BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
                       document::BucketSpace bucketSpace)
 {
     return std::shared_ptr<BucketMoveJob>(
-            new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
+            new BucketMoveJob(calc, std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
                               bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                               diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace),
             [&master](auto job) {
@@ -302,7 +302,7 @@ BucketMoveJob::considerBucket(const bucketdb::Guard & guard, BucketId bucket) {
 void
 BucketMoveJob::reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket) {
     assert( ! _bucketsInFlight.contains(bucket));
-    auto [mustMove, wantReady] = needMove(bucket, BucketStateWrapper(guard->get(bucket)));
+    auto [mustMove, wantReady] = needMove(bucket, guard->get(bucket));
     if (mustMove) {
         _buckets2Move[bucket] = wantReady;
     } else {
@@ -324,7 +324,7 @@ BucketMoveJob::computeBuckets2Move(const bucketdb::Guard & guard)
     BucketMoveJob::BucketMoveSet toMove;
     BucketId::List buckets = guard->getBuckets();
     for (BucketId bucketId : buckets) {
-        auto [mustMove, wantReady] = needMove(bucketId, BucketStateWrapper(guard->get(bucketId)));
+        auto [mustMove, wantReady] = needMove(bucketId, guard->get(bucketId));
         if (mustMove) {
             toMove[bucketId] = wantReady;
         }

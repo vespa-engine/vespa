@@ -83,13 +83,13 @@ private:
         const bucketdb::BucketState & _state;
 
     public:
-        explicit BucketStateWrapper(const bucketdb::BucketState & state) noexcept : _state(state) {}
+        BucketStateWrapper(const bucketdb::BucketState & state) noexcept : _state(state) {}
 
         bool                isActive() const noexcept { return _state.isActive(); }
         bool      hasReadyBucketDocs() const noexcept { return _state.getReadyCount() != 0; }
         bool   hasNotReadyBucketDocs() const noexcept { return _state.getNotReadyCount() != 0; }
     };
-    BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
+    BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
                   vespalib::RetainGuard dbRetainer,
                   IDocumentMoveHandler &moveHandler,
                   IBucketModifiedHandler &modifiedHandler,
@@ -124,7 +124,7 @@ private:
     class StartMove;
 public:
     static std::shared_ptr<BucketMoveJob>
-    create(std::shared_ptr<IBucketStateCalculator> calc,
+    create(const std::shared_ptr<IBucketStateCalculator> &calc,
            vespalib::RetainGuard dbRetainer,
            IDocumentMoveHandler &moveHandler,
            IBucketModifiedHandler &modifiedHandler,

@@ -3,7 +3,7 @@ vespa_add_library(searchcore_matching STATIC
     SOURCES
     attribute_limiter.cpp
     blueprintbuilder.cpp
-        ranking_assets_repo.cpp
+    constant_value_repo.cpp
     docid_range_scheduler.cpp
     docsum_matcher.cpp
     document_scorer.cpp

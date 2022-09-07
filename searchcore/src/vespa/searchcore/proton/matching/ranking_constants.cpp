@@ -13,7 +13,7 @@ RankingConstants::Constant::Constant(const vespalib::string &name_in,
 {
 }
 
-RankingConstants::Constant::~Constant() = default;
+RankingConstants::Constant::~Constant() {}
 
 bool
 RankingConstants::Constant::operator==(const Constant &rhs) const
@@ -28,8 +28,7 @@ RankingConstants::RankingConstants()
 {
 }
 
-RankingConstants::~RankingConstants() = default;
-RankingConstants::RankingConstants(RankingConstants &&) noexcept = default;
+RankingConstants::~RankingConstants() {}
 
 RankingConstants::RankingConstants(const Vector &constants)
     : _constants()

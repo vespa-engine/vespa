@@ -12,7 +12,7 @@ namespace proton {
 namespace matching {
     class Matcher;
     class QueryLimiter;
-    struct IRankingAssetsRepo;
+    struct IConstantValueRepo;
 }
 
 class Matchers {
@@ -22,10 +22,11 @@ private:
     std::shared_ptr<matching::Matcher> _fallback;
     std::shared_ptr<matching::Matcher> _default;
 public:
-    using SP = std::shared_ptr<Matchers>;
+    typedef std::shared_ptr<Matchers> SP;
+    typedef std::unique_ptr<Matchers> UP;
     Matchers(const vespalib::Clock &clock,
              matching::QueryLimiter &queryLimiter,
-             const matching::IRankingAssetsRepo &rankingAssetsRepo);
+             const matching::IConstantValueRepo &constantValueRepo);
     Matchers(const Matchers &) = delete;
     Matchers & operator =(const Matchers &) = delete;
     ~Matchers();
@@ -33,6 +34,8 @@ public:
     matching::MatchingStats getStats() const;
     matching::MatchingStats getStats(const vespalib::string &name) const;
     std::shared_ptr<matching::Matcher> lookup(const vespalib::string &name) const;
+    vespalib::string listMatchers() const;
+    uint32_t numMatchers() const { return _rpmap.size(); }
 };
 
 } // namespace proton
