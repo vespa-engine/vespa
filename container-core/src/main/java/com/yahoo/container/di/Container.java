@@ -73,7 +73,7 @@ public class Container {
             ComponentGraph newGraph;
             Collection<Bundle> obsoleteBundles = new HashSet<>();
             try {
-                newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
+                newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing);
                 newGraph.reuseNodes(oldGraph);
             } catch (Throwable t) {
                 log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
@@ -89,9 +89,8 @@ public class Container {
                 deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
                 throw e;
             }
-            // TODO: take obsoleteBundles as return value here!
-            osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
-            Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
+            Collection<Bundle> unusedBundlesFromPreviousGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
+            Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, unusedBundlesFromPreviousGen);
             return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
             invalidateGeneration(oldGraph.generation(), t);
@@ -108,7 +107,7 @@ public class Container {
     }
 
     private ComponentGraph waitForNewConfigGenAndCreateGraph(
-            ComponentGraph graph, Injector fallbackInjector, boolean isInitializing, Collection<Bundle> obsoleteBundles) // NOTE: Return value
+            ComponentGraph graph, Injector fallbackInjector, boolean isInitializing)
     {
         ConfigSnapshot snapshot;
         while (true) {
@@ -132,8 +131,7 @@ public class Container {
                 } else {
                     throwIfPlatformBundlesChanged(snapshot);
                 }
-                Collection<Bundle> bundlesToRemove = installApplicationBundles(snapshot.configs());
-                obsoleteBundles.addAll(bundlesToRemove);
+                installApplicationBundles(snapshot.configs());
 
                 graph = createComponentGraph(snapshot.configs(), getBootstrapGeneration(), fallbackInjector);
 
@@ -203,9 +201,9 @@ public class Container {
         return () -> destructor.deconstruct(oldGraph.generation(), obsoleteComponents, obsoleteBundles);
     }
 
-    private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
+    private void installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         ApplicationBundlesConfig applicationBundlesConfig = getConfig(applicationBundlesConfigKey, configsIncludingBootstrapConfigs);
-        return osgi.useApplicationBundles(applicationBundlesConfig.bundles(), getBootstrapGeneration());
+        osgi.useApplicationBundles(applicationBundlesConfig.bundles(), getBootstrapGeneration());
     }
 
     private ComponentGraph createComponentGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,

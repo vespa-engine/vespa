@@ -30,26 +30,23 @@ public interface Osgi {
     }
 
     /**
-     * TODO: return void and let all obsolete bundles be returned by completeBundleGeneration
-     *
-     * Returns the set of bundles that is not needed by the new application generation,
-     * and therefore should be scheduled for uninstalling.
+     * Installs the new set of application bundles.
      *
      * @param bundles The bundles for the new application.
      * @param generation The generation number of the new application.
-     * @return the set of bundles that is not needed by the new application generation,
      */
-    default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles, long generation) {
-        return emptySet();
+    default void useApplicationBundles(Collection<FileReference> bundles, long generation) {
     }
 
     /**
+     * If the current generation is a success, the set of bundles that is not needed by the new application
+     * generation, and therefore should be scheduled for uninstalling, is returned.
      * If the current generation is a failure, all state related to application bundles is reverted to
      * the previous generation. The set of bundles that was exclusively needed by the new generation,
      * and therefore should be scheduled for uninstalling, is returned.
      *
      * @param status The success or failure of the new generation
-     * @return The set of bundles that are no longer needed by the latest good generation.
+     * @return The set of bundles that are no longer needed by the new or latest good generation.
      */
     default Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
         return emptySet();

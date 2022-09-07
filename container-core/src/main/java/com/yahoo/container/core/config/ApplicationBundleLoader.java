@@ -50,51 +50,49 @@ public class ApplicationBundleLoader {
     }
 
     /**
-     * Installs the given set of bundles and returns the set of bundles that is no longer used
-     * by the application, and should therefore be scheduled for uninstall.
-     *
-     * TODO: return void, and instead return the bundles to remove from completeGeneration()
+     * Installs the given set of bundles and updates state for which bundles and file references
+     * that are active or should be uninstalled in case of success or failure.
      */
-    public synchronized Set<Bundle> useBundles(List<FileReference> newFileReferences) {
+    public synchronized void useBundles(List<FileReference> newFileReferences) {
         if (! readyForNewBundles)
             throw new IllegalStateException("Bundles must be committed or reverted before using new bundles.");
 
-        obsoleteBundles = removeObsoleteBundles(newFileReferences);
-        Set<Bundle> bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
-        log.info("Bundles to schedule for uninstall: " + bundlesToUninstall);
-
-        osgi.allowDuplicateBundles(bundlesToUninstall);
+        obsoleteBundles = removeObsoleteReferences(newFileReferences);
+        osgi.allowDuplicateBundles(obsoleteBundles.values());
 
         bundlesFromNewGeneration = installBundles(newFileReferences);
         BundleStarter.startBundles(activeBundles.values());
         log.info(installedBundlesMessage());
 
         readyForNewBundles = false;
-
-        return bundlesToUninstall;
     }
 
     public synchronized Collection<Bundle> completeGeneration(GenerationStatus status) {
         Collection<Bundle> ret = List.of();
         if (readyForNewBundles) return ret;
 
-        if (status == GenerationStatus.SUCCESS) {
-            commitBundles();
-        } else {
-            ret = revertToPreviousGeneration();
-        }
         readyForNewBundles = true;
-        return ret;
+        if (status == GenerationStatus.SUCCESS) {
+            return commitBundles();
+        } else {
+            return revertToPreviousGeneration();
+        }
     }
 
     /**
      * Commit to the current set of bundles. Must be called after the component graph creation proved successful,
      * to prevent uninstalling bundles unintentionally upon a future call to {@link #revertToPreviousGeneration()}.
+     * Returns the set of bundles that is no longer used by the application, and should therefore be scheduled
+     * for uninstall.
      */
-    private void commitBundles() {
+    private Collection<Bundle> commitBundles() {
+        Set<Bundle> bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
+        log.info("Bundles to be uninstalled from previous generation: " + bundlesToUninstall);
+
         bundlesFromNewGeneration = Map.of();
         obsoleteBundles = Map.of();
         readyForNewBundles = true;
+        return bundlesToUninstall;
     }
 
     /**
@@ -128,7 +126,7 @@ public class ApplicationBundleLoader {
      *
      * Returns the map of bundles that are not needed by the new application generation.
      */
-    private Map<FileReference, Bundle> removeObsoleteBundles(List<FileReference> newReferences) {
+    private Map<FileReference, Bundle> removeObsoleteReferences(List<FileReference> newReferences) {
         Map<FileReference, Bundle> obsoleteReferences = new LinkedHashMap<>(activeBundles);
         newReferences.forEach(obsoleteReferences::remove);
 
