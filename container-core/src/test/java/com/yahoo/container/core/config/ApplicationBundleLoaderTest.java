@@ -8,7 +8,6 @@ import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1;
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1_REF;

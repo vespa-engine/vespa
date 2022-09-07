@@ -48,7 +48,7 @@ public interface Osgi {
      * @param status The success or failure of the new generation
      * @return The set of bundles that are no longer needed by the new or latest good generation.
      */
-    default Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+    default Set<Bundle> completeBundleGeneration(GenerationStatus status) {
         return emptySet();
     }
 

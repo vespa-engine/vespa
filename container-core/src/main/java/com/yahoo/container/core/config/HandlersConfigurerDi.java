@@ -104,7 +104,7 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+        public Set<Bundle> completeBundleGeneration(GenerationStatus status) {
             return applicationBundleLoader.completeGeneration(status);
         }
     }

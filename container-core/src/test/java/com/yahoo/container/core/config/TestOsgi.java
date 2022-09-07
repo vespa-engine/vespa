@@ -70,7 +70,7 @@ public class TestOsgi extends MockOsgi implements com.yahoo.container.di.Osgi {
     }
 
     @Override
-    public Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+    public Set<Bundle> completeBundleGeneration(GenerationStatus status) {
         return bundleLoader.completeGeneration(status);
     }
 
