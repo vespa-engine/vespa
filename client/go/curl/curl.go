@@ -16,14 +16,30 @@ type header struct {
 }
 
 type Command struct {
-	Path        string
-	Method      string
-	PrivateKey  string
-	Certificate string
-	BodyFile    string
-	url         *url.URL
-	headers     []header
-	rawArgs     []string
+	Path          string
+	Method        string
+	PrivateKey    string
+	CaCertificate string
+	Certificate   string
+	bodyFile      string
+	bodyInput     io.Reader
+	url           *url.URL
+	headers       []header
+	rawArgs       []string
+}
+
+func (c *Command) WithBodyFile(fn string) {
+	if c.bodyInput != nil {
+		panic("cannot use both WithBodyFile and WithBodyInput")
+	}
+	c.bodyFile = fn
+}
+
+func (c *Command) WithBodyInput(r io.Reader) {
+	if c.bodyFile != "" {
+		panic("cannot use both WithBodyFile and WithBodyInput")
+	}
+	c.bodyInput = r
 }
 
 func (c *Command) Args() []string {
@@ -34,14 +50,19 @@ func (c *Command) Args() []string {
 	if c.Certificate != "" {
 		args = append(args, "--cert", c.Certificate)
 	}
+	if c.CaCertificate != "" {
+		args = append(args, "--cacert", c.CaCertificate)
+	}
 	if c.Method != "" {
 		args = append(args, "-X", c.Method)
 	}
 	for _, header := range c.headers {
 		args = append(args, "-H", header.key+": "+header.value)
 	}
-	if c.BodyFile != "" {
-		args = append(args, "--data-binary", "@"+c.BodyFile)
+	if c.bodyFile != "" {
+		args = append(args, "--data-binary", "@"+c.bodyFile)
+	} else if c.bodyInput != nil {
+		args = append(args, "--data-binary", "@-")
 	}
 	args = append(args, c.rawArgs...)
 	args = append(args, c.url.String())
@@ -68,6 +89,7 @@ func (c *Command) Run(stdout, stderr io.Writer) error {
 	cmd := exec.Command(c.Path, c.Args()...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
+	cmd.Stdin = c.bodyInput
 	if err := cmd.Start(); err != nil {
 		return err
 	}

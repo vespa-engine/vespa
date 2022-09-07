@@ -152,7 +152,7 @@ func serviceDo(service *Service, request *http.Request, filename string, options
 			cmd.Header(k, v)
 		}
 	}
-	cmd.BodyFile = filename
+	cmd.WithBodyFile(filename)
 	cmd.Certificate = service.TLSOptions.CertificateFile
 	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
 	out := cmd.String() + "\n"

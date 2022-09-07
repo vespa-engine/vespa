@@ -55,10 +55,13 @@ func findOurHostname(lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, 
 	}
 	name, err := os.Hostname()
 	if err != nil {
-		return findOurHostnameFrom("localhost", lookupAddr, lookupIP)
+		name, err = findOurHostnameFrom("localhost", lookupAddr, lookupIP)
+	} else {
+		name, err = findOurHostnameFrom(name, lookupAddr, lookupIP)
 	}
-	name, err = findOurHostnameFrom(name, lookupAddr, lookupIP)
-	return strings.TrimSuffix(name, "."), err
+	name = strings.TrimSuffix(name, ".")
+	os.Setenv("VESPA_HOSTNAME", name)
+	return name, err
 }
 
 func validateHostname(name string) bool {

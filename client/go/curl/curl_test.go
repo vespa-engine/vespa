@@ -14,7 +14,7 @@ func TestPost(t *testing.T) {
 	}
 	c.PrivateKey = "key.pem"
 	c.Certificate = "cert.pem"
-	c.BodyFile = "file.json"
+	c.WithBodyFile("file.json")
 	c.Header("Content-Type", "application/json")
 
 	assert.Equal(t, "curl --key key.pem --cert cert.pem -X POST -H 'Content-Type: application/json' --data-binary @file.json https://example.com", c.String())
