@@ -72,7 +72,7 @@ public class SummaryClassField {
     public SummaryClassField(String name, DataType type, SummaryTransform transform, String source, boolean rawAsBase64) {
         this.name = name;
         this.type = convertDataType(type, transform, rawAsBase64);
-        this.command = SummaryMap.getCommand(transform);
+        this.command = SummaryClass.getCommand(transform);
         this.source = source;
     }
 

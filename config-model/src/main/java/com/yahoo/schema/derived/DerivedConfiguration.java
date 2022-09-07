@@ -28,7 +28,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
 
     private final Schema schema;
     private Summaries summaries;
-    private SummaryMap summaryMap;
     private Juniperrc juniperrc;
     private AttributeFields attributeFields;
     private RankProfileList rankProfileList;
@@ -80,12 +79,11 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         if ( ! schema.isDocumentsOnly()) {
             attributeFields = new AttributeFields(schema);
             summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
-            summaryMap = new SummaryMap(schema);
             juniperrc = new Juniperrc(schema);
             rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
             indexingScript = new IndexingScript(schema);
             indexInfo = new IndexInfo(schema);
-            schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries, summaryMap);
+            schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
             indexSchema = new IndexSchema(schema);
             importedFields = new ImportedFields(schema);
         }
@@ -101,7 +99,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     public void export(String toDirectory) throws IOException {
         if (!schema.isDocumentsOnly()) {
             summaries.export(toDirectory);
-            summaryMap.export(toDirectory);
             juniperrc.export(toDirectory);
             attributeFields.export(toDirectory);
             streamingFields.export(toDirectory);
@@ -197,10 +194,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
 
     public Juniperrc getJuniperrc() {
         return juniperrc;
-    }
-
-    public SummaryMap getSummaryMap() {
-        return summaryMap;
     }
 
     public ImportedFields getImportedFields() {

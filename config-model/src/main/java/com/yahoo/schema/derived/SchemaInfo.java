@@ -6,7 +6,6 @@ import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -27,14 +26,11 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
     private final Map<String, RankProfileInfo> rankProfiles;
 
     private final Summaries summaries;
-    private final SummaryMap summaryMap;
 
-    public SchemaInfo(Schema schema, RankProfileRegistry rankProfileRegistry,
-                      Summaries summaries, SummaryMap summaryMap) {
+    public SchemaInfo(Schema schema, RankProfileRegistry rankProfileRegistry, Summaries summaries) {
         this.schema = schema;
         this.rankProfiles = Collections.unmodifiableMap(toRankProfiles(rankProfileRegistry.rankProfilesOf(schema)));
         this.summaries = summaries;
-        this.summaryMap = summaryMap;
     }
 
     public String name() { return schema.getName(); }
@@ -69,23 +65,11 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
                 var fieldsBuilder = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
                 fieldsBuilder.name(field.getName())
                              .type(field.getType().getName())
-                             .dynamic(isDynamic(field.getName()));
+                             .dynamic(SummaryClass.commandRequiringQuery(field.getCommand()));
                 summaryBuilder.fields(fieldsBuilder);
             }
             schemaBuilder.summaryclass(summaryBuilder);
         }
-    }
-
-    /** Returns whether the given field is a dynamic summary field. */
-    private boolean isDynamic(String fieldName) {
-        if (summaryMap == null) return false; // not know for streaming, but also not used
-
-        var fieldTransform = summaryMap.resultTransforms().get(fieldName);
-        if (fieldTransform == null) return false;
-        // TODO: Move this into SummaryTransform and call it something else than "dynamic"
-        return fieldTransform.getTransform().isDynamic() ||
-               fieldTransform.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
-               fieldTransform.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER;
     }
 
     private void addRankProfilesConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
