@@ -91,10 +91,8 @@ public class DeploymentTrigger {
                                             && acceptNewRevision(status, instanceName, outstanding.revision().get());
                 application = application.with(instanceName,
                                                instance -> withRemainingChange(instance,
-                                                                               status.withCompatibilityPlatform((deployOutstanding ? outstanding
-                                                                                                                                   : Change.empty())
-                                                                                                                        .onTopOf(instance.change()),
-                                                                                                         instanceName),
+                                                                               deployOutstanding ? outstanding.onTopOf(instance.change())
+                                                                                                 : instance.change(),
                                                                                status));
             }
             applications().store(application);
@@ -430,7 +428,8 @@ public class DeploymentTrigger {
             remaining = remaining.withoutPlatform();
         if (status.hasCompleted(instance.name(), change.withoutPlatform()))
             remaining = remaining.withoutApplication();
-        return instance.withChange(remaining);
+
+        return instance.withChange(status.withCompatibilityPlatform(remaining, instance.name()));
     }
 
     // ---------- Version and job helpers ----------
