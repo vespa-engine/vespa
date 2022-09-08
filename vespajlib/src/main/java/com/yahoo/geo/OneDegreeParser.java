@@ -78,8 +78,7 @@ class OneDegreeParser {
      *
      * @param assumeNorthSouth Latitude assumed, otherwise longitude
      * @param toParse Latitude or longitude string to parse
-     *
-     **/
+     */
     public OneDegreeParser(boolean assumeNorthSouth, String toParse) throws IllegalArgumentException {
         this.parseString = toParse;
         this.len = parseString.length();

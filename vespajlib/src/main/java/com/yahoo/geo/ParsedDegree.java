@@ -10,7 +10,7 @@ package com.yahoo.geo;
 public class ParsedDegree {
 
     /**
-     * the parsed latitude or longitude
+     * The parsed latitude or longitude
      * Degrees north or east if positive
      * Degrees south or west if negative
      */
