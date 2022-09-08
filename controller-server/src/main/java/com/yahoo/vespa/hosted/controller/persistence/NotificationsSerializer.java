@@ -69,18 +69,16 @@ public class NotificationsSerializer {
 
     public List<Notification> fromSlime(TenantName tenantName, Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field(notificationsFieldName))
-                .filter(inspector -> { // TODO: remove in summer.
-                    if ( ! inspector.field(jobTypeField).valid()) return true;
-                    try {
-                        JobType.ofSerialized(inspector.field(jobTypeField).asString());
-                        return true;
-                    }
-                    catch (RuntimeException e) {
-                        return false;
-                    }
-                })
-                .map(inspector -> fromInspector(tenantName, inspector))
-                .collect(Collectors.toUnmodifiableList());
+                         .filter(inspector -> { // TODO: remove in summer.
+                             if (!inspector.field(jobTypeField).valid()) return true;
+                             try {
+                                 JobType.ofSerialized(inspector.field(jobTypeField).asString());
+                                 return true;
+                             } catch (RuntimeException e) {
+                                 return false;
+                             }
+                         })
+                         .map(inspector -> fromInspector(tenantName, inspector)).toList();
     }
 
     private Notification fromInspector(TenantName tenantName, Inspector inspector) {
@@ -96,49 +94,49 @@ public class NotificationsSerializer {
                         SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
                         SlimeUtils.optionalString(inspector.field(jobTypeField)).map(jobName -> JobType.ofSerialized(jobName)),
                         SlimeUtils.optionalLong(inspector.field(runNumberField))),
-                SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).collect(Collectors.toUnmodifiableList()));
+                SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).toList());
     }
     
     private static String asString(Notification.Type type) {
-        switch (type) {
-            case applicationPackage: return "applicationPackage";
-            case submission: return "submission";
-            case testPackage: return "testPackage";
-            case deployment: return "deployment";
-            case feedBlock: return "feedBlock";
-            case reindex: return "reindex";
-            default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
-        }
+        return switch (type) {
+            case applicationPackage -> "applicationPackage";
+            case submission -> "submission";
+            case testPackage -> "testPackage";
+            case deployment -> "deployment";
+            case feedBlock -> "feedBlock";
+            case reindex -> "reindex";
+            default -> throw new IllegalArgumentException("No serialization defined for notification type " + type);
+        };
     }
 
     private static Notification.Type typeFrom(Inspector field) {
-        switch (field.asString()) {
-            case "applicationPackage": return Notification.Type.applicationPackage;
-            case "submission": return Notification.Type.submission;
-            case "testPackage": return Notification.Type.testPackage;
-            case "deployment": return Notification.Type.deployment;
-            case "feedBlock": return Notification.Type.feedBlock;
-            case "reindex": return Notification.Type.reindex;
-            default: throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
-        }
+        return switch (field.asString()) {
+            case "applicationPackage" -> Notification.Type.applicationPackage;
+            case "submission" -> Notification.Type.submission;
+            case "testPackage" -> Notification.Type.testPackage;
+            case "deployment" -> Notification.Type.deployment;
+            case "feedBlock" -> Notification.Type.feedBlock;
+            case "reindex" -> Notification.Type.reindex;
+            default -> throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
+        };
     }
 
     private static String asString(Notification.Level level) {
-        switch (level) {
-            case info: return "info";
-            case warning: return "warning";
-            case error: return "error";
-            default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
-        }
+        return switch (level) {
+            case info -> "info";
+            case warning -> "warning";
+            case error -> "error";
+            default -> throw new IllegalArgumentException("No serialization defined for notification level " + level);
+        };
     }
 
     private static Notification.Level levelFrom(Inspector field) {
-        switch (field.asString()) {
-            case "info": return Notification.Level.info;
-            case "warning": return Notification.Level.warning;
-            case "error": return Notification.Level.error;
-            default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");
-        }
+        return switch (field.asString()) {
+            case "info" -> Notification.Level.info;
+            case "warning" -> Notification.Level.warning;
+            case "error" -> Notification.Level.error;
+            default -> throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");
+        };
     }
 
 }

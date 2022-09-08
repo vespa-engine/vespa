@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
-import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
@@ -580,16 +579,17 @@ public class JobController {
     }
 
     private void validate(TenantAndApplicationId id, Submission submission) {
+        controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
+        controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
+
         validateTests(id, submission);
         validateParentVersion(id, submission);
         validateMajorVersion(id, submission);
     }
 
     private void validateTests(TenantAndApplicationId id, Submission submission) {
-        TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
-        if (testSummary.problems().isEmpty())
-            controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
-        else
+        var testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
+        if ( ! testSummary.problems().isEmpty())
             controller.notificationsDb().setNotification(NotificationSource.from(id),
                                                          Type.testPackage,
                                                          Notification.Level.warning,
@@ -605,8 +605,6 @@ public class JobController {
                                                              Notification.Level.warning,
                                                              "Parent version used to compile the application is on a " +
                                                              "lower major version than the current Vespa Cloud version");
-            else
-                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
         });
    }
 
@@ -614,12 +612,10 @@ public class JobController {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
             if (explicitMajor < 8)
                 controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.applicationPackage,
+                                                             Type.submission,
                                                              Notification.Level.warning,
-                                                             "Vespa 7 will soon be end of life, upgrade to Vespa 8 now:" +
+                                                             "Vespa 7 will soon be end of life, upgrade to Vespa 8 now: " +
                                                              "https://cloud.vespa.ai/en/vespa8-release-notes.html");
-            else
-                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.applicationPackage);
         });
     }
 
