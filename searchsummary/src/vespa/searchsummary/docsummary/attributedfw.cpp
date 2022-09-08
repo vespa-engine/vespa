@@ -53,88 +53,61 @@ public:
     explicit SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) const override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType, Inserter &target) const override;
     bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override {
         return get_attribute(*state).isUndefined(docid);
     }
 };
 
 void
-SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target) const
+SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType, Inserter &target) const
 {
     const auto& v = get_attribute(*state);
-    switch (type) {
-    case RES_INT: {
+    switch (v.getBasicType()) {
+    case BasicType::Type::UINT2:
+    case BasicType::Type::UINT4:
+    case BasicType::Type::INT8:
+    case BasicType::Type::INT16:
+    case BasicType::Type::INT32:
+    case BasicType::Type::INT64: {
         uint32_t val = v.getInt(docid);
         target.insertLong(val);
         break;
     }
-    case RES_SHORT: {
-        uint16_t val = v.getInt(docid);
-        target.insertLong(val);
-        break;
-    }
-    case RES_BYTE: {
-        uint8_t val = v.getInt(docid);
-        target.insertLong(val);
-        break;
-    }
-    case RES_BOOL: {
+    case BasicType::Type::BOOL: {
         uint8_t val = v.getInt(docid);
         target.insertBool(val != 0);
         break;
     }
-    case RES_FLOAT: {
+    case BasicType::Type::FLOAT:
+    case BasicType::Type::DOUBLE: {
         float val = v.getFloat(docid);
         target.insertDouble(val);
         break;
     }
-    case RES_DOUBLE: {
-        double val = v.getFloat(docid);
-        target.insertDouble(val);
-        break;
-    }
-    case RES_INT64: {
-        uint64_t val = v.getInt(docid);
-        target.insertLong(val);
-        break;
-    }
-    case RES_TENSOR: {
-        BasicType::Type t = v.getBasicType();
-        switch (t) {
-        case BasicType::TENSOR: {
-            const tensor::ITensorAttribute *tv = v.asTensorAttribute();
-            assert(tv != nullptr);
-            const auto tensor = tv->getTensor(docid);
-            if (tensor) {
-                vespalib::nbostream str;
-                encode_value(*tensor, str);
-                target.insertData(vespalib::Memory(str.peek(), str.size()));
-            }
+    case BasicType::Type::TENSOR: {
+        const tensor::ITensorAttribute *tv = v.asTensorAttribute();
+        assert(tv != nullptr);
+        const auto tensor = tv->getTensor(docid);
+        if (tensor) {
+            vespalib::nbostream str;
+            encode_value(*tensor, str);
+            target.insertData(vespalib::Memory(str.peek(), str.size()));
         }
-        default:
-            ;
-        }
-    }
         break;
-    case RES_JSONSTRING:
-    case RES_FEATUREDATA:
-    case RES_LONG_STRING:
-    case RES_STRING: {
+    }
+    case BasicType::STRING: {
         const char *s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
         target.insertString(vespalib::Memory(s));
         break;
     }
-    case RES_LONG_DATA:
-    case RES_DATA: {
-        const char *s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
-        target.insertData(vespalib::Memory(s));
-        break;
-    }
+    case BasicType::REFERENCE:
+    case BasicType::PREDICATE:
+        break; // Should never use attribute docsum field writer
     default:
-        // unknown type, will be missing, should not happen
-        return;
+        break; // Unknown type
     }
+    return;
 }
 
 
@@ -279,7 +252,7 @@ public:
         }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    void insertField(uint32_t docid, GetDocsumsState* state, ResType type, Inserter& target) const override;
+    void insertField(uint32_t docid, GetDocsumsState* state, ResType, Inserter& target) const override;
 };
 
 bool
