@@ -177,6 +177,11 @@ public class ApplicationController {
         });
     }
 
+    /** Validate the given application package */
+    public void validatePackage(ApplicationPackage applicationPackage, Application application) {
+        applicationPackageValidator.validate(application, applicationPackage, clock.instant());
+    }
+
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> getApplication(TenantAndApplicationId id) {
         return curator.readApplication(id);
