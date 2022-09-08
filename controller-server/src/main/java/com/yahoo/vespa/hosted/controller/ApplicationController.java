@@ -138,6 +138,7 @@ public class ApplicationController {
     private final StringFlag dockerImageRepoFlag;
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
+    private final ListFlag<String> cloudAccountsFlag;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           FlagSource flagSource, BillingController billingController) {
@@ -152,6 +153,7 @@ public class ApplicationController {
         applicationStore = controller.serviceRegistry().applicationStore();
         dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
         incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
+        cloudAccountsFlag = PermanentFlags.CLOUD_ACCOUNTS.bindTo(flagSource);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificates = new EndpointCertificates(controller,
@@ -542,7 +544,7 @@ public class ApplicationController {
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
     public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        applicationPackageValidator.validate(application.get(), applicationPackage, clock.instant());
+        validatePackage(applicationPackage, application.get());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
@@ -634,9 +636,7 @@ public class ApplicationController {
             List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(deployment).stream()
                                                                    .map(SupportAccessGrant::certificate)
                                                                    .collect(toList());
-            Optional<CloudAccount> cloudAccount = applicationPackage.deploymentSpec()
-                                                                    .instance(application.instance())
-                                                                    .flatMap(spec -> spec.cloudAccount(zone.environment(), Optional.of(zone.region())));
+            Optional<CloudAccount> cloudAccount = decideCloudAccountOf(deployment, applicationPackage.deploymentSpec());
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
@@ -651,6 +651,30 @@ public class ApplicationController {
                 controller.routing().of(deployment).configure(applicationPackage.deploymentSpec());
             }
         }
+    }
+
+    private Optional<CloudAccount> decideCloudAccountOf(DeploymentId deployment, DeploymentSpec spec) {
+        ZoneId zoneId = deployment.zoneId();
+        Optional<CloudAccount> requestedAccount = spec.instance(deployment.applicationId().instance())
+                                                      .flatMap(instanceSpec -> instanceSpec.cloudAccount(zoneId.environment(),
+                                                                                                         Optional.of(zoneId.region())));
+        if (requestedAccount.isEmpty()) {
+            return Optional.empty();
+        }
+        TenantName tenant = deployment.applicationId().tenant();
+        Set<CloudAccount> tenantAccounts = cloudAccountsFlag.with(FetchVector.Dimension.TENANT_ID, tenant.value())
+                                                            .value().stream()
+                                                            .map(CloudAccount::new)
+                                                            .collect(Collectors.toSet());
+        if (!tenantAccounts.contains(requestedAccount.get())) {
+            throw new IllegalArgumentException("Requested cloud account '" + requestedAccount.get().value() +
+                                               "' is not valid for tenant '" + tenant + "'");
+        }
+        if (!controller.zoneRegistry().hasZone(zoneId, requestedAccount.get())) {
+            throw new IllegalArgumentException("Zone " + zoneId + " is not configured in requested cloud account '" +
+                                               requestedAccount.get().value() + "'");
+        }
+        return requestedAccount;
     }
 
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
