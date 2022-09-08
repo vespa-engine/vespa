@@ -44,7 +44,7 @@ public:
 
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state,
-                     ResType type, vespalib::slime::Inserter &target) const override;
+                     ResType, vespalib::slime::Inserter &target) const override;
 
     static std::unique_ptr<DocsumFieldWriter> create(const char *attribute_name, const IAttributeManager *index_man);
 
@@ -60,7 +60,7 @@ public:
     typedef std::unique_ptr<PositionsDFW> UP;
     PositionsDFW(const vespalib::string & attrName, bool useV8geoPositions);
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const override;
     static UP create(const char *attribute_name, const IAttributeManager *index_man, bool useV8geoPositions);
 };
 
