@@ -25,6 +25,7 @@ public class SlobrokTest extends FleetControllerTest {
         setUpVdsNodes(true);
         waitForStableSystem();
 
+        FleetController fleetController = fleetController();
         int version = fleetController.getSystemState().getVersion();
         int slobrokPort = slobrok.port();
 
@@ -79,10 +80,10 @@ public class SlobrokTest extends FleetControllerTest {
         setUpVdsNodes(true);
         waitForStableSystem();
 
-        int version = fleetController.getSystemState().getVersion();
+        int version = fleetController().getSystemState().getVersion();
         nodes.get(0).disconnectSlobrok();
         log.log(Level.INFO, "DISCONNECTED NODE FROM SLOBROK. SHOULD BE IN COOLDOWN PERIOD");
-        fleetController.waitForNodesInSlobrok(9, 10, timeout());
+        fleetController().waitForNodesInSlobrok(9, 10, timeout());
         synchronized(timer) {
             nodes.get(0).sendGetNodeStateReply(0);
         }
@@ -93,7 +94,7 @@ public class SlobrokTest extends FleetControllerTest {
             Thread.sleep(10);
         } catch (InterruptedException e) { /* ignore */
         }
-        assertEquals(version, fleetController.getSystemState().getVersion());
+        assertEquals(version, fleetController().getSystemState().getVersion());
         log.log(Level.INFO, "JUMPING TIME. NODE SHOULD BE MARKED DOWN");
         // At this point the fleetcontroller might not have noticed that the node is out of slobrok yet.
         // Thus we keep advancing time another minute such that it should get down.
@@ -103,7 +104,7 @@ public class SlobrokTest extends FleetControllerTest {
 
     private boolean clusterAvailable() {
         boolean ok = true;
-        ContentCluster cluster = fleetController.getCluster();
+        ContentCluster cluster = fleetController().getCluster();
         for (NodeInfo info : cluster.getNodeInfos()) {
             if (info.getConnectionAttemptCount() > 0) ok = false;
             if (info.getLatestNodeStateRequestTime() == null) ok = false;
@@ -111,7 +112,7 @@ public class SlobrokTest extends FleetControllerTest {
         return ok;
     }
     private void assertClusterAvailable() {
-        ContentCluster cluster = fleetController.getCluster();
+        ContentCluster cluster = fleetController().getCluster();
         for (NodeInfo info : cluster.getNodeInfos()) {
             assertEquals(0, info.getConnectionAttemptCount(), "Node " + info + " connection attempts.");
             assertTrue(info.getLatestNodeStateRequestTime() != 0, "Node " + info + " has no last request time.");

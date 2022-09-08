@@ -968,7 +968,7 @@ public class StateChangeTest extends FleetControllerTest {
         setUpFleetController(useFakeTimer, builder);
 
         StateWaiter waiter = new StateWaiter(timer);
-        fleetController.addSystemStateListener(waiter);
+        fleetController().addSystemStateListener(waiter);
 
         // Ensure all nodes have been seen by fleetcontroller and that it has had enough time to possibly have sent a cluster state
         // Note: this is a candidate state and therefore NOT versioned yet
@@ -986,7 +986,7 @@ public class StateChangeTest extends FleetControllerTest {
         waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:d", timeout());
 
         int version = waiter.getCurrentSystemState().getVersion();
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 19, timeout());
+        fleetController().waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 19, timeout());
 
         new StateMessageChecker(nodes) {
             @Override
@@ -1018,12 +1018,12 @@ public class StateChangeTest extends FleetControllerTest {
 
         final StateWaiter waiter = new StateWaiter(timer);
 
-        fleetController.addSystemStateListener(waiter);
+        fleetController().addSystemStateListener(waiter);
         waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:i .1.i:1.0", timeout());
         waitForCompleteCycle();
 
         final int version = waiter.getCurrentSystemState().getVersion();
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 20, timeout());
+        fleetController().waitForNodesHavingSystemStateVersionEqualToOrAbove(version, 20, timeout());
 
         // The last two versions of the cluster state should be seen (all nodes up,
         // zero out timestate)
@@ -1044,7 +1044,7 @@ public class StateChangeTest extends FleetControllerTest {
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);
-        fleetController.addSystemStateListener(waiter);
+        fleetController().addSystemStateListener(waiter);
 
         nodes.get(1).failSetSystemState(true);
         int versionBeforeChange = nodes.get(1).getSystemStatesReceived().get(0).getVersion();
@@ -1052,16 +1052,16 @@ public class StateChangeTest extends FleetControllerTest {
         waiter.waitForState("version:\\d+ distributor:10 .1.s:d storage:10", timeout());
         int versionAfterChange = waiter.getCurrentSystemState().getVersion();
         assertTrue(versionAfterChange > versionBeforeChange);
-        fleetController.waitForNodesHavingSystemStateVersionEqualToOrAbove(versionAfterChange, 18, timeout());
+        fleetController().waitForNodesHavingSystemStateVersionEqualToOrAbove(versionAfterChange, 18, timeout());
 
         // Assert that the failed node has not acknowledged the latest version.
         // (The version may still be larger than versionBeforeChange if the fleet controller sends a
         // "stable system" update without timestamps in the meantime
-        assertTrue(fleetController.getCluster().getNodeInfo(nodes.get(1).getNode()).getClusterStateVersionBundleAcknowledged() < versionAfterChange);
+        assertTrue(fleetController().getCluster().getNodeInfo(nodes.get(1).getNode()).getClusterStateVersionBundleAcknowledged() < versionAfterChange);
 
         // Ensure non-concurrent access to getNewestSystemStateVersionSent
         synchronized(timer) {
-            int sentVersion = fleetController.getCluster().getNodeInfo(nodes.get(1).getNode()).getNewestSystemStateVersionSent();
+            int sentVersion = fleetController().getCluster().getNodeInfo(nodes.get(1).getNode()).getNewestSystemStateVersionSent();
             assertTrue(sentVersion == -1 || sentVersion == versionAfterChange);
         }
     }
@@ -1122,7 +1122,7 @@ public class StateChangeTest extends FleetControllerTest {
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);
-        fleetController.addSystemStateListener(waiter);
+        fleetController().addSystemStateListener(waiter);
 
         // Simulate netsplit. Take node down without node booting
         assertTrue(nodes.get(0).isDistributor());
@@ -1147,7 +1147,7 @@ public class StateChangeTest extends FleetControllerTest {
                 for (ConfiguredNode i : options.nodes()) {
                     Node nodeId = new Node(NodeType.STORAGE, i.index());
                     long ts = lastState.getNodeState(nodeId).getStartTimestamp();
-                    assertTrue(ts > 0, nodeId + "\n" + stateHistory + "\nWas " + ts + " should be " + fleetController.getCluster().getNodeInfo(nodeId).getStartTimestamp());
+                    assertTrue(ts > 0, nodeId + "\n" + stateHistory + "\nWas " + ts + " should be " + fleetController().getCluster().getNodeInfo(nodeId).getStartTimestamp());
                 }
             } else {
                 for (ConfiguredNode i : options.nodes()) {

@@ -26,6 +26,7 @@ import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.AfterEach;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +59,7 @@ public abstract class FleetControllerTest implements Waiter {
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
-    protected FleetController fleetController;
+    protected List<FleetController> fleetControllers = new ArrayList<>();
     protected List<DummyVdsNode> nodes = new ArrayList<>();
     private String testName;
 
@@ -66,7 +67,7 @@ public abstract class FleetControllerTest implements Waiter {
         @Override
         public Object getMonitor() { return timer; }
         @Override
-        public FleetController getFleetController() { return fleetController; }
+        public FleetController getFleetController() { return fleetController(); }
         @Override
         public List<DummyVdsNode> getDummyNodes() { return nodes; }
         @Override
@@ -149,8 +150,8 @@ public abstract class FleetControllerTest implements Waiter {
     protected FleetControllerOptions setUpFleetController(boolean useFakeTimer, FleetControllerOptions.Builder builder) throws Exception {
         if (slobrok == null) setUpSystem(builder);
         options = builder.build();
-        if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options);
+        if (fleetControllers.isEmpty()) {
+            fleetControllers.add(createFleetController(useFakeTimer, options));
         } else {
             throw new Exception("called setUpFleetcontroller but it was already setup");
         }
@@ -158,15 +159,19 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void stopFleetController() throws Exception {
-        if (fleetController != null) {
-            fleetController.shutdown();
-            fleetController = null;
-        }
+        fleetControllers.forEach(f -> {
+            try {
+                f.shutdown();
+            } catch (InterruptedException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        fleetControllers.clear();
     }
 
     void startFleetController(boolean useFakeTimer) throws Exception {
-        if (fleetController == null) {
-            fleetController = createFleetController(useFakeTimer, options);
+        if (fleetControllers.isEmpty()) {
+            fleetControllers.add(createFleetController(useFakeTimer, options));
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }
@@ -236,7 +241,7 @@ public abstract class FleetControllerTest implements Waiter {
             @Override
             public Object getMonitor() { return timer; }
             @Override
-            public FleetController getFleetController() { return fleetController; }
+            public FleetController getFleetController() { return fleetController(); }
             @Override
             public List<DummyVdsNode> getDummyNodes() {
                 return nodes.stream()
@@ -249,7 +254,7 @@ public abstract class FleetControllerTest implements Waiter {
         subsetWaiter.waitForState(expectedState);
     }
 
-    protected void tearDownSystem() throws Exception {
+    protected void tearDownSystem() {
         if (testName != null) {
             //log.log(Level.INFO, "STOPPING TEST " + testName);
             System.err.println("STOPPING TEST " + testName);
@@ -258,10 +263,14 @@ public abstract class FleetControllerTest implements Waiter {
         if (supervisor != null) {
             supervisor.transport().shutdown().join();
         }
-        if (fleetController != null) {
-            fleetController.shutdown();
-            fleetController = null;
-        }
+        fleetControllers.forEach(f -> {
+            try {
+                f.shutdown();
+            } catch (InterruptedException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        fleetControllers.clear();
         if (nodes != null) for (DummyVdsNode node : nodes) {
             node.shutdown();
             nodes = null;
@@ -291,7 +300,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void waitForCompleteCycle() {
-        fleetController.waitForCompleteCycle(timeout);
+        fleetController().waitForCompleteCycle(timeout);
     }
 
     public static Set<ConfiguredNode> toNodes(Integer ... indexes) {
@@ -306,7 +315,7 @@ public abstract class FleetControllerTest implements Waiter {
         }
         NodeState ns = new NodeState(node.getType(), state);
         if (reason != null) ns.setDescription(reason);
-        Target connection = supervisor.connect(new Spec("localhost", fleetController.getRpcPort()));
+        Target connection = supervisor.connect(new Spec("localhost", fleetController().getRpcPort()));
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node.getSlobrokName()));
         req.parameters().add(new StringValue(ns.serialize()));
@@ -318,6 +327,8 @@ public abstract class FleetControllerTest implements Waiter {
             fail("Failed to invoke setNodeState(): Invalid return types.");
         }
     }
+
+    protected FleetController fleetController() {return fleetControllers.get(0);}
 
     static String[] getSlobrokConnectionSpecs(Slobrok slobrok) {
         String[] connectionSpecs = new String[1];

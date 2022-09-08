@@ -53,7 +53,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         var a = FleetControllerOptions.Builder.copy(options);
         a.setNodes(asConfiguredNodes(nodeIndices));
         options = a.build();
-        fleetController.updateOptions(options);
+        fleetController().updateOptions(options);
         // Need to treat cluster as having 6 nodes due to ideal state algo semantics.
         // Note that we do not use subsetWaiter here since we want node 6 included.
         waitForState("version:\\d+ distributor:7 .4.s:d .5.s:d storage:7 .4.s:d .5.s:d");
@@ -75,7 +75,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         builder = FleetControllerOptions.Builder.copy(options);
         builder.setNodes(configuredNodes);
         options = builder.build();
-        fleetController.updateOptions(options);
+        fleetController().updateOptions(options);
 
         waitForState("version:\\d+ distributor:4 storage:4 .0.s:r");
 
@@ -84,7 +84,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         builder = FleetControllerOptions.Builder.copy(options);
         builder.setNodes(configuredNodes);
         options = builder.build();
-        fleetController.updateOptions(options);
+        fleetController().updateOptions(options);
 
         // The previously retired node should now be marked as down, as it no longer
         // exists from the point of view of the content cluster. We have to use a subset
