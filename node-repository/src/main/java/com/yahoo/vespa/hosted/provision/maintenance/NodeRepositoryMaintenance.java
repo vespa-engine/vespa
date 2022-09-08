@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -37,7 +36,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     MetricsFetcher metricsFetcher, ConfigserverConfig configserverConfig) {
+                                     MetricsFetcher metricsFetcher) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         PeriodicApplicationMaintainer periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval,
@@ -76,9 +75,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionServiceProvider.getHostProvisioner()
                                 .map(hostProvisioner -> new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner))
                                 .ifPresent(maintainers::add);
-        // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly
-        // run that now to ensure the release rollout halts on error.
-        infrastructureProvisioner.maintain(configserverConfig.bootstrapping());
+        // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
+        infrastructureProvisioner.maintainButThrowOnException();
     }
 
     @Override

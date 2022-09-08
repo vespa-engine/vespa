@@ -43,7 +43,6 @@ environment string default="prod"
 region string default="default"
 system string default="main"
 zoneDnsSuffixes[] string
-bootstrapping bool default=false
 
 # RPC protocol
 maxgetconfigclients int default=1000000
