@@ -101,6 +101,11 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                         "</admin>").getDocumentElement();
     }
 
+    private Element servicesAdminNoAdminServerOrConfigServer() {
+        return XML.getDocument("<admin version=\"2.0\">" +
+                        "</admin>").getDocumentElement();
+    }
+
     @Test
     void multitenant() {
         List<ConfigServerSpec> configServerSpecs = Arrays.asList(
@@ -180,6 +185,12 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         admin.addUserConfig(logdBuilder);
         LogdConfig config = new LogdConfig(logdBuilder);
         assertEquals("foobar", config.logserver().host());
+    }
+
+    @Test
+    void noAdminServerOrConfigServer() {
+        Admin admin = buildAdmin(servicesAdminNoAdminServerOrConfigServer());
+        assertEquals(1, admin.getConfigservers().size());
     }
 
     private Admin buildAdmin(Element xml) {

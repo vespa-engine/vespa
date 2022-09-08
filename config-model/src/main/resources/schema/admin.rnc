@@ -4,7 +4,7 @@ Admin = AdminV2 | AdminV3 | AdminV4
 AdminV2 =
  element admin {
    attribute version { "2.0" } &
-   element adminserver { service.attlist } &
+   element adminserver { service.attlist }? &
    GenericConfig* &
    LogServer? &
    ConfigServers? &

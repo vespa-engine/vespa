@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerC
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
 import com.yahoo.vespa.model.container.Container;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -69,7 +68,8 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     private Logserver parseLogserver(DeployState deployState, Admin admin, Element adminE) {
         Element logserverE = XML.getChild(adminE, "logserver");
         if (logserverE == null) {
-            logserverE = XML.getChild(adminE, "adminserver");
+            var adminserverE = XML.getChild(adminE, "adminserver");
+            logserverE = adminserverE != null ? adminserverE : adminE;
         }
         return new LogserverBuilder().build(deployState, admin, logserverE);
     }
@@ -104,13 +104,18 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     private List<Configserver> getConfigServers(DeployState deployState, AbstractConfigProducer<?> parent, Element adminE) {
-        SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
         Element configserversE = XML.getChild(adminE, "configservers");
         if (configserversE == null) {
             Element adminserver = XML.getChild(adminE, "adminserver");
-            return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, adminserver));
+            if (adminserver == null) {
+                return createSingleConfigServer(deployState, parent);
+            } else {
+                SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
+                return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, adminserver));
+            }
         }
         else {
+            SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
             List<Configserver> configservers = new ArrayList<>();
             int i = 0;
             for (Element configserverE : XML.getChildren(configserversE, "configserver"))
