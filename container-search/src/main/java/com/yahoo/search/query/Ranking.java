@@ -220,7 +220,7 @@ public class Ranking implements Cloneable {
         if (sortingString == null)
             setSorting((Sorting)null);
         else
-            setSorting(new Sorting(sortingString));
+            setSorting(new Sorting(sortingString, parent));
     }
 
     public static Ranking getFrom(Query q) {
