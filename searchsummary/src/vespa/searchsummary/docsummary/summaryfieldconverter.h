@@ -16,16 +16,15 @@ class SummaryFieldConverter
 public:
     static document::FieldValue::UP convertSummaryField(bool markup, const document::FieldValue &value);
 
-    /**
-     * Converts the given field value to slime, only keeping the elements that are contained in the matching elements vector.
-     *
-     * Filtering occurs when the field value is an ArrayFieldValue or MapFieldValue.
-     */
     static document::FieldValue::UP convert_field_with_filter(bool markup,
                                                               const document::FieldValue& value,
                                                               const std::vector<uint32_t>& matching_elems);
 
     static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter);
+    /**
+     * Insert the given field value, but only the elements that are contained in the matching_elems vector.
+     */
+    static void insert_summary_field_with_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems);
 };
 
 }

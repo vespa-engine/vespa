@@ -554,7 +554,7 @@ public:
     SlimeFiller(Inserter &inserter, bool tokenize)
         : _inserter(inserter),
           _tokenize(tokenize),
-          _matching_elems()
+          _matching_elems(nullptr)
     {}
 
     SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems)
@@ -603,15 +603,6 @@ SummaryFieldConverter::convertSummaryField(bool markup,
     return SummaryFieldValueConverter(markup, subConv).convert(value);
 }
 
-FieldValue::UP
-SummaryFieldConverter::convert_field_with_filter(bool markup,
-                                                 const document::FieldValue& value,
-                                                 const std::vector<uint32_t>& matching_elems)
-{
-    SlimeConverter sub_conv(markup, matching_elems);
-    return SummaryFieldValueConverter(markup, sub_conv).convert(value);
-}
-
 void
 SummaryFieldConverter::insert_summary_field(const FieldValue& value, vespalib::slime::Inserter& inserter)
 {
@@ -619,6 +610,17 @@ SummaryFieldConverter::insert_summary_field(const FieldValue& value, vespalib::s
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
         SlimeFiller visitor(inserter, false);
+        value.accept(visitor);
+    }
+}
+
+void
+SummaryFieldConverter::insert_summary_field_with_filter(const FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter, false, &matching_elems);
         value.accept(visitor);
     }
 }
