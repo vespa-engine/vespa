@@ -70,7 +70,7 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType, Ins
     case BasicType::Type::INT16:
     case BasicType::Type::INT32:
     case BasicType::Type::INT64: {
-        uint32_t val = v.getInt(docid);
+        int64_t val = v.getInt(docid);
         target.insertLong(val);
         break;
     }
@@ -81,7 +81,7 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType, Ins
     }
     case BasicType::Type::FLOAT:
     case BasicType::Type::DOUBLE: {
-        float val = v.getFloat(docid);
+        double val = v.getFloat(docid);
         target.insertDouble(val);
         break;
     }
