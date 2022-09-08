@@ -71,7 +71,6 @@ public class Container {
     public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             ComponentGraph newGraph;
-            Collection<Bundle> obsoleteBundles = new HashSet<>();
             try {
                 newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing);
                 newGraph.reuseNodes(oldGraph);
