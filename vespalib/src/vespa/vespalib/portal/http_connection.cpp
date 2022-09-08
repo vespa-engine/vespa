@@ -103,8 +103,9 @@ void emit_http_security_headers(OutputWriter &dst) {
     // Do not allow embedding via iframe (clickjacking prevention)
     dst.printf("X-Frame-Options: DENY\r\n");
     // Do not allow _anything_ to be externally loaded, nor inline scripts
-    // etc to be executed.
-    dst.printf("Content-Security-Policy: default-src 'none'\r\n");
+    // etc. to be executed.
+    // "frame-ancestors: none" is analogous to X-Frame-Options: DENY.
+    dst.printf("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n");
     // No heuristic auto-inference of content-type based on payload.
     dst.printf("X-Content-Type-Options: nosniff\r\n");
     // Don't store any potentially sensitive data in any caches.
