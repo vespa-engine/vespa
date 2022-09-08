@@ -95,26 +95,14 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
 }
 
 void
-AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const
+AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const
 {
     const auto & all_locations = getAllLocations(state);
     if (all_locations.empty()) {
         return;
     }
     uint64_t absdist = findMinDistance(docid, state, all_locations.best());
-    if (type == RES_INT) {
-        target.insertLong(absdist);
-    } else {
-        vespalib::string value = vespalib::stringify(absdist);
-        vespalib::Memory data(value.c_str(), value.size());
-
-        if (type == RES_STRING || type == RES_LONG_STRING) {
-            target.insertString(data);
-        }
-        if (type == RES_LONG_DATA || type == RES_DATA) {
-            target.insertData(data);
-        }
-    }
+    target.insertLong(absdist);
 }
 
 //--------------------------------------------------------------------------
@@ -181,14 +169,6 @@ insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, ves
     }
 }
 
-void checkExpected(ResType type) {
-    static bool alreadyWarned = false;
-    if (type == RES_JSONSTRING) return;
-    if (alreadyWarned) return;
-    alreadyWarned = true;
-    LOG(error, "Unexpected summary field type %s", ResultConfig::GetResTypeName(type));
-}
-
 void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
     int32_t docx = 0;
     int32_t docy = 0;
@@ -240,9 +220,8 @@ void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t doc
 } // namespace
 
 void
-PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target) const
+PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, vespalib::slime::Inserter &target) const
 {
-    checkExpected(type);
     if (_useV8geoPositions) {
         insertV8FromAttr(get_attribute(*dsState), docid, target);
     } else {
