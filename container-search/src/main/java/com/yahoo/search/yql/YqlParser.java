@@ -413,10 +413,10 @@ public class YqlParser implements Parser {
     private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
-        String field = fetchFieldRead(args.get(0));
-        var coord_1 = ParsedDegree.fromString(fetchFieldRead(args.get(1)), true, false);
-        var coord_2 = ParsedDegree.fromString(fetchFieldRead(args.get(2)), false, true);
-        double radius = DistanceParser.parse(fetchFieldRead(args.get(3)));
+        String field = fetchFieldName(args.get(0));
+        var coord_1 = ParsedDegree.fromString(fetchLiteral(args.get(1)), true, false);
+        var coord_2 = ParsedDegree.fromString(fetchLiteral(args.get(2)), false, true);
+        double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
         var loc = new Location();
         if (coord_1.isLatitude && coord_2.isLongitude) {
             loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
@@ -447,8 +447,8 @@ public class YqlParser implements Parser {
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
-        String field = fetchFieldRead(args.get(0));
-        String property = fetchFieldRead(args.get(1));
+        String field = fetchFieldName(args.get(0));
+        String property = fetchLiteral(args.get(1));
         NearestNeighborItem item = new NearestNeighborItem(field, property);
         Integer targetNumHits = getAnnotation(ast, TARGET_HITS,
                 Integer.class, null, "desired minimum hits to produce");
@@ -848,7 +848,7 @@ public class YqlParser implements Parser {
         List<OperatorNode<?>> sortArguments = ast.getArgument(1);
         for (OperatorNode<?> op : sortArguments) {
             OperatorNode<ExpressionOperator> fieldNode = op.getArgument(0);
-            String field = fetchFieldRead(fieldNode);
+            String field = fetchFieldName(fieldNode);
             String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null,
                                           "locale used by sorting function");
             String function = getAnnotation(fieldNode, SORTING_FUNCTION, String.class, null,
@@ -945,11 +945,20 @@ public class YqlParser implements Parser {
         return ast.getArgument(0);
     }
 
-    private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
+    private String fetchFieldName(OperatorNode<ExpressionOperator> ast) {
+        return switch (ast.getOperator()) {
+            case LITERAL -> indexFactsSession.getCanonicName(ast.getArgument(0).toString());
+            case READ_FIELD -> ast.getArgument(1);
+            case PROPREF -> fetchLiteral(ast.getArgument(0)) + '.' + ast.getArgument(1);
+            default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                                                            ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        };
+    }
+
+    private static String fetchLiteral(OperatorNode<ExpressionOperator> ast) {
         return switch (ast.getOperator()) {
             case LITERAL -> ast.getArgument(0).toString();
-            case READ_FIELD -> ast.getArgument(1);
-            case PROPREF -> fetchFieldRead(ast.getArgument(0)) + '.' + ast.getArgument(1);
+            case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                                                             ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
         };
@@ -1730,7 +1739,7 @@ public class YqlParser implements Parser {
     }
 
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
-        String index = fetchFieldRead(operatorNode);
+        String index = fetchFieldName(operatorNode);
         String expanded = indexNameExpander.expand(index);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
