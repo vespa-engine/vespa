@@ -301,16 +301,17 @@ public class YqlParser implements Parser {
     private void populateYqlSources(OperatorNode<?> filterArgs) {
         yqlSources.clear();
         if (filterArgs.getOperator() == SequenceOperator.SCAN) {
-            for (String source : filterArgs.<List<String>> getArgument(0)) {
-                yqlSources.add(source);
-            }
-        } else if (filterArgs.getOperator() == SequenceOperator.ALL) {
+            yqlSources.addAll(filterArgs.<List<String>>getArgument(0));
+        }
+        else if (filterArgs.getOperator() == SequenceOperator.ALL) {
             // yqlSources has already been cleared
-        } else if (filterArgs.getOperator() == SequenceOperator.MULTISOURCE) {
+        }
+        else if (filterArgs.getOperator() == SequenceOperator.MULTISOURCE) {
             for (List<String> source : filterArgs.<List<List<String>>> getArgument(0)) {
                 yqlSources.add(source.get(0));
             }
-        } else {
+        }
+        else {
             throw newUnexpectedArgumentException(filterArgs.getOperator(),
                     SequenceOperator.SCAN, SequenceOperator.ALL,
                     SequenceOperator.MULTISOURCE);
@@ -340,39 +341,26 @@ public class YqlParser implements Parser {
     private Item convertExpression(OperatorNode<ExpressionOperator> ast) {
         try {
             annotationStack.addFirst(ast);
-            switch (ast.getOperator()) {
-                case AND:
-                    return buildAnd(ast);
-                case OR:
-                    return buildOr(ast);
-                case EQ:
-                    return buildEquals(ast);
-                case LT:
-                    return buildLessThan(ast);
-                case GT:
-                    return buildGreaterThan(ast);
-                case LTEQ:
-                    return buildLessThanOrEquals(ast);
-                case GTEQ:
-                    return buildGreaterThanOrEquals(ast);
-                case CONTAINS:
-                    return buildTermSearch(ast);
-                case MATCHES:
-                    return buildRegExpSearch(ast);
-                case CALL:
-                    return buildFunctionCall(ast);
-                case LITERAL:
-                    return buildLiteral(ast);
-                case NOT:
-                    return buildNot(ast);
-                default:
-                    throw newUnexpectedArgumentException(ast.getOperator(),
-                                                         ExpressionOperator.AND, ExpressionOperator.CALL,
-                                                         ExpressionOperator.CONTAINS, ExpressionOperator.EQ,
-                                                         ExpressionOperator.GT, ExpressionOperator.GTEQ,
-                                                         ExpressionOperator.LT, ExpressionOperator.LTEQ,
-                                                         ExpressionOperator.OR);
-            }
+            return switch (ast.getOperator()) {
+                case AND -> buildAnd(ast);
+                case OR -> buildOr(ast);
+                case EQ -> buildEquals(ast);
+                case LT -> buildLessThan(ast);
+                case GT -> buildGreaterThan(ast);
+                case LTEQ -> buildLessThanOrEquals(ast);
+                case GTEQ -> buildGreaterThanOrEquals(ast);
+                case CONTAINS -> buildTermSearch(ast);
+                case MATCHES -> buildRegExpSearch(ast);
+                case CALL -> buildFunctionCall(ast);
+                case LITERAL -> buildLiteral(ast);
+                case NOT -> buildNot(ast);
+                default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                                                                ExpressionOperator.AND, ExpressionOperator.CALL,
+                                                                ExpressionOperator.CONTAINS, ExpressionOperator.EQ,
+                                                                ExpressionOperator.GT, ExpressionOperator.GTEQ,
+                                                                ExpressionOperator.LT, ExpressionOperator.LTEQ,
+                                                                ExpressionOperator.OR);
+            };
         } finally {
             annotationStack.removeFirst();
         }
@@ -381,36 +369,23 @@ public class YqlParser implements Parser {
     private Item buildFunctionCall(OperatorNode<ExpressionOperator> ast) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
-        switch (names.get(0)) {
-            case USER_QUERY:
-                return fetchUserQuery();
-            case RANGE:
-                return buildRange(ast);
-            case WAND:
-                return buildWand(ast);
-            case WEIGHTED_SET:
-                return buildWeightedSet(ast);
-            case DOT_PRODUCT:
-                return buildDotProduct(ast);
-            case GEO_LOCATION:
-                return buildGeoLocation(ast);
-            case NEAREST_NEIGHBOR:
-                return buildNearestNeighbor(ast);
-            case PREDICATE:
-                return buildPredicate(ast);
-            case RANK:
-                return buildRank(ast);
-            case WEAK_AND:
-                return buildWeakAnd(ast);
-            case USER_INPUT:
-                return buildUserInput(ast);
-            case NON_EMPTY:
-                return ensureNonEmpty(ast);
-            default:
-                throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR,
-                                                     RANGE, RANK, USER_QUERY, WAND, WEAK_AND, WEIGHTED_SET,
-                                                     PREDICATE, USER_INPUT, NON_EMPTY);
-        }
+        return switch (names.get(0)) {
+            case USER_QUERY -> fetchUserQuery();
+            case RANGE -> buildRange(ast);
+            case WAND -> buildWand(ast);
+            case WEIGHTED_SET -> buildWeightedSet(ast);
+            case DOT_PRODUCT -> buildDotProduct(ast);
+            case GEO_LOCATION -> buildGeoLocation(ast);
+            case NEAREST_NEIGHBOR -> buildNearestNeighbor(ast);
+            case PREDICATE -> buildPredicate(ast);
+            case RANK -> buildRank(ast);
+            case WEAK_AND -> buildWeakAnd(ast);
+            case USER_INPUT -> buildUserInput(ast);
+            case NON_EMPTY -> ensureNonEmpty(ast);
+            default -> throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR,
+                                                            RANGE, RANK, USER_QUERY, WAND, WEAK_AND, WEIGHTED_SET,
+                                                            PREDICATE, USER_INPUT, NON_EMPTY);
+        };
     }
 
     private Item ensureNonEmpty(OperatorNode<ExpressionOperator> ast) {
@@ -438,10 +413,10 @@ public class YqlParser implements Parser {
     private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
-        String field = fetchFieldRead(args.get(0));
-        var coord_1 = ParsedDegree.fromString(fetchFieldRead(args.get(1)), true, false);
-        var coord_2 = ParsedDegree.fromString(fetchFieldRead(args.get(2)), false, true);
-        double radius = DistanceParser.parse(fetchFieldRead(args.get(3)));
+        String field = fetchFieldName(args.get(0));
+        var coord_1 = ParsedDegree.fromString(fetchLiteral(args.get(1)), true, false);
+        var coord_2 = ParsedDegree.fromString(fetchLiteral(args.get(2)), false, true);
+        double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
         var loc = new Location();
         if (coord_1.isLatitude && coord_2.isLongitude) {
             loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
@@ -472,8 +447,8 @@ public class YqlParser implements Parser {
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
-        String field = fetchFieldRead(args.get(0));
-        String property = fetchFieldRead(args.get(1));
+        String field = fetchFieldName(args.get(0));
+        String property = fetchLiteral(args.get(1));
         NearestNeighborItem item = new NearestNeighborItem(field, property);
         Integer targetNumHits = getAnnotation(ast, TARGET_HITS,
                 Integer.class, null, "desired minimum hits to produce");
@@ -873,7 +848,7 @@ public class YqlParser implements Parser {
         List<OperatorNode<?>> sortArguments = ast.getArgument(1);
         for (OperatorNode<?> op : sortArguments) {
             OperatorNode<ExpressionOperator> fieldNode = op.getArgument(0);
-            String field = fetchFieldRead(fieldNode);
+            String field = fetchFieldName(fieldNode);
             String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null,
                                           "locale used by sorting function");
             String function = getAnnotation(fieldNode, SORTING_FUNCTION, String.class, null,
@@ -924,15 +899,10 @@ public class YqlParser implements Parser {
                 throw newUnexpectedArgumentException(function, "lowercase", "raw", "uca");
             }
             switch ((SortOperator) op.getOperator()) {
-                case ASC:
-                    sortingInit.add(new FieldOrder(sorter, Order.ASCENDING));
-                    break;
-                case DESC:
-                    sortingInit.add(new FieldOrder(sorter, Order.DESCENDING));
-                    break;
-                default:
-                    throw newUnexpectedArgumentException(op.getOperator(),
-                                                         SortOperator.ASC, SortOperator.DESC);
+                case ASC -> sortingInit.add(new FieldOrder(sorter, Order.ASCENDING));
+                case DESC -> sortingInit.add(new FieldOrder(sorter, Order.DESCENDING));
+                default -> throw newUnexpectedArgumentException(op.getOperator(),
+                                                                SortOperator.ASC, SortOperator.DESC);
             }
         }
         sorting = new Sorting(sortingInit);
@@ -975,18 +945,23 @@ public class YqlParser implements Parser {
         return ast.getArgument(0);
     }
 
-    private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
-        switch (ast.getOperator()) {
-            case LITERAL:
-                return ast.getArgument(0).toString();
-            case READ_FIELD:
-                return ast.getArgument(1);
-            case PROPREF:
-                return fetchFieldRead(ast.getArgument(0)) + '.' + ast.getArgument(1);
-            default:
-                throw newUnexpectedArgumentException(ast.getOperator(),
-                                                     ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
-        }
+    private String fetchFieldName(OperatorNode<ExpressionOperator> ast) {
+        return switch (ast.getOperator()) {
+            case LITERAL -> indexFactsSession.getCanonicName(ast.getArgument(0).toString());
+            case READ_FIELD -> ast.getArgument(1);
+            case PROPREF -> fetchLiteral(ast.getArgument(0)) + '.' + ast.getArgument(1);
+            default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                                                            ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        };
+    }
+
+    private static String fetchLiteral(OperatorNode<ExpressionOperator> ast) {
+        return switch (ast.getOperator()) {
+            case LITERAL -> ast.getArgument(0).toString();
+            case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
+            default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                                                            ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        };
     }
 
     private IntItem buildGreaterThanOrEquals(OperatorNode<ExpressionOperator> ast) {
@@ -1270,41 +1245,29 @@ public class YqlParser implements Parser {
     }
 
     private Item instantiateLeafItem(String field, OperatorNode<ExpressionOperator> ast) {
-        switch (ast.getOperator()) {
-            case LITERAL:
-            case VARREF:
-                return instantiateWordItem(field, ast, null);
-            case CALL:
-                return instantiateCompositeLeaf(field, ast);
-            default:
-                throw newUnexpectedArgumentException(ast.getOperator().name(),
-                                                     ExpressionOperator.CALL, ExpressionOperator.LITERAL);
-        }
+        return switch (ast.getOperator()) {
+            case LITERAL, VARREF -> instantiateWordItem(field, ast, null);
+            case CALL -> instantiateCompositeLeaf(field, ast);
+            default -> throw newUnexpectedArgumentException(ast.getOperator().name(),
+                                                            ExpressionOperator.CALL, ExpressionOperator.LITERAL);
+        };
     }
 
     private Item instantiateCompositeLeaf(String field, OperatorNode<ExpressionOperator> ast) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
-        switch (names.get(0)) {
-            case SAME_ELEMENT:
-                return instantiateSameElementItem(field, ast);
-            case PHRASE:
-                return instantiatePhraseItem(field, ast);
-            case NEAR:
-                return instantiateNearItem(field, ast);
-            case ONEAR:
-                return instantiateONearItem(field, ast);
-            case EQUIV:
-                return instantiateEquivItem(field, ast);
-            case ALTERNATIVES:
-                return instantiateWordAlternativesItem(field, ast);
-            case URI:
-                return instantiateUriItem(field, ast);
-            case FUZZY:
-                return instantiateFuzzyItem(field, ast);
-            default:
-                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI, FUZZY);
-        }
+        return switch (names.get(0)) {
+            case SAME_ELEMENT -> instantiateSameElementItem(field, ast);
+            case PHRASE -> instantiatePhraseItem(field, ast);
+            case NEAR -> instantiateNearItem(field, ast);
+            case ONEAR -> instantiateONearItem(field, ast);
+            case EQUIV -> instantiateEquivItem(field, ast);
+            case ALTERNATIVES -> instantiateWordAlternativesItem(field, ast);
+            case URI -> instantiateUriItem(field, ast);
+            case FUZZY -> instantiateFuzzyItem(field, ast);
+            default ->
+                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI, FUZZY);
+        };
     }
 
     private Item instantiateFuzzyItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -1339,16 +1302,13 @@ public class YqlParser implements Parser {
         equiv.setIndexName(field);
         for (OperatorNode<ExpressionOperator> arg : args) {
             switch (arg.getOperator()) {
-                case LITERAL: case VARREF:
-                    equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
-                    break;
-                case CALL:
+                case LITERAL, VARREF -> equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
+                case CALL -> {
                     assertHasFunctionName(arg, PHRASE);
                     equiv.addItem(instantiatePhraseItem(field, arg));
-                    break;
-                default:
-                    throw newUnexpectedArgumentException(arg.getOperator(),
-                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+                }
+                default -> throw newUnexpectedArgumentException(arg.getOperator(),
+                                                                ExpressionOperator.CALL, ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
         }
         return leafStyleSettings(ast, equiv);
@@ -1697,19 +1657,14 @@ public class YqlParser implements Parser {
 
     private void addItems(OperatorNode<ExpressionOperator> ast, WeightedSetItem out) {
         switch (ast.getOperator()) {
-            case MAP:
-                addStringItems(ast, out);
-                break;
-            case ARRAY:
-                addLongItems(ast, out);
-                break;
-            case VARREF:
+            case MAP -> addStringItems(ast, out);
+            case ARRAY -> addLongItems(ast, out);
+            case VARREF -> {
                 Preconditions.checkState(userQuery != null, "Query properties are not available");
                 ParameterListParser.addItemsFromString(userQuery.properties().getString(ast.getArgument(0, String.class)), out);
-                break;
-            default:
-                throw newUnexpectedArgumentException(ast.getOperator(),
-                                                     ExpressionOperator.ARRAY, ExpressionOperator.MAP);
+            }
+            default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                                                            ExpressionOperator.ARRAY, ExpressionOperator.MAP);
         }
     }
 
@@ -1784,7 +1739,7 @@ public class YqlParser implements Parser {
     }
 
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
-        String index = fetchFieldRead(operatorNode);
+        String index = fetchFieldName(operatorNode);
         String expanded = indexNameExpander.expand(index);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);

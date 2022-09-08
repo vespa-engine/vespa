@@ -3,7 +3,10 @@ package com.yahoo.search.query;
 
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
+import com.yahoo.search.Query;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
@@ -38,7 +41,15 @@ public class Sorting implements Cloneable {
 
     /** Creates a sort spec from a string */
     public Sorting(String sortSpec) {
-        setSpec(sortSpec);
+        setSpec(sortSpec, null);
+    }
+
+    /** Creates a sort spec from a string, for a given query. */
+    public Sorting(String sortSpec, Query query) {
+        IndexFacts.Session session = null;
+        if (query != null && query.getModel().getExecution().context().getIndexFacts() != null)
+            session = query.getModel().getExecution().context().getIndexFacts().newSession(query);
+        setSpec(sortSpec, session);
     }
 
     /**
@@ -51,7 +62,7 @@ public class Sorting implements Cloneable {
         return new Sorting(sortSpec);
     }
 
-    private void setSpec(String rawSortSpec) {
+    private void setSpec(String rawSortSpec, IndexFacts.Session indexFacts) {
         for (String sortString : rawSortSpec.split(" ")) {
             // A sortspec element must be at least two characters long,
             // a sorting order and an attribute vector name
@@ -66,12 +77,12 @@ public class Sorting implements Cloneable {
             int startPar = sortString.indexOf('(',funcAttrStart);
             int endPar = sortString.lastIndexOf(')');
             if ((startPar > 0) && (endPar > startPar)) {
-                String funcName = sortString.substring(funcAttrStart, startPar);
-                if (LOWERCASE.equalsIgnoreCase(funcName)) {
-                    sorter = new LowerCaseSorter(sortString.substring(startPar+1, endPar));
-                } else if (RAW.equalsIgnoreCase(funcName)) {
-                    sorter = new RawSorter(sortString.substring(startPar+1, endPar));
-                } else if (UCA.equalsIgnoreCase(funcName)) {
+                String functionName = sortString.substring(funcAttrStart, startPar);
+                if (LOWERCASE.equalsIgnoreCase(functionName)) {
+                    sorter = new LowerCaseSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
+                } else if (RAW.equalsIgnoreCase(functionName)) {
+                    sorter = new RawSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
+                } else if (UCA.equalsIgnoreCase(functionName)) {
                     int commaPos = sortString.indexOf(',', startPar+1);
                     if ((startPar+1 < commaPos) && (commaPos < endPar)) {
                         int commaopt = sortString.indexOf(',', commaPos + 1);
@@ -91,22 +102,24 @@ public class Sorting implements Cloneable {
                             } else {
                                 throw new IllegalInputException("Unknown collation strength: '" + s + "'");
                             }
-                            sorter = new UcaSorter(sortString.substring(startPar+1, commaPos), sortString.substring(commaPos+1, commaopt), strength);
+                            sorter = new UcaSorter(canonic(sortString.substring(startPar+1, commaPos), indexFacts),
+                                                   sortString.substring(commaPos+1, commaopt), strength);
                         } else {
-                            sorter = new UcaSorter(sortString.substring(startPar+1, commaPos), sortString.substring(commaPos+1, endPar), strength);
+                            sorter = new UcaSorter(canonic(sortString.substring(startPar+1, commaPos), indexFacts),
+                                                   sortString.substring(commaPos+1, endPar), strength);
                         }
                     } else {
-                        sorter = new UcaSorter(sortString.substring(startPar+1, endPar));
+                        sorter = new UcaSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
                     }
                 } else {
-                    if (funcName.isEmpty()) {
+                    if (functionName.isEmpty()) {
                         throw new IllegalInputException("No sort function specified");
                     } else {
-                        throw new IllegalInputException("Unknown sort function '" + funcName + "'");
+                        throw new IllegalInputException("Unknown sort function '" + functionName + "'");
                     }
                 }
             } else {
-                sorter = new AttributeSorter(sortString.substring(funcAttrStart));
+                sorter = new AttributeSorter(canonic(sortString.substring(funcAttrStart), indexFacts));
             }
             Order order = Order.UNDEFINED;
             if (funcAttrStart != 0) {
@@ -115,6 +128,11 @@ public class Sorting implements Cloneable {
             }
             fieldOrders.add(new FieldOrder(sorter, order));
         }
+    }
+
+    private String canonic(String attributeName, IndexFacts.Session indexFacts) {
+        if (indexFacts == null) return attributeName;
+        return indexFacts.getCanonicName(attributeName);
     }
 
     @Override
@@ -194,11 +212,9 @@ public class Sorting implements Cloneable {
         private String fieldName;
 
         public AttributeSorter(String fieldName) {
-            if (legalAttributeName.matcher(fieldName).matches()) {
-                this.fieldName = fieldName;
-            } else {
+            if ( ! legalAttributeName.matcher(fieldName).matches())
                 throw new IllegalInputException("Illegal attribute name '" + fieldName + "' for sorting. Requires '" + legalAttributeName.pattern() + "'");
-            }
+            this.fieldName = fieldName;
         }
 
         public String getName() { return fieldName; }
@@ -414,14 +430,9 @@ public class Sorting implements Cloneable {
         }
 
         @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof FieldOrder)) {
-                return false;
-            }
-            FieldOrder otherAttr = (FieldOrder) other;
-
-            return otherAttr.sortOrder.equals(sortOrder)
-                   && otherAttr.fieldSorter.equals(fieldSorter);
+        public boolean equals(Object o) {
+            if (!(o instanceof FieldOrder other)) return false;
+            return other.sortOrder.equals(sortOrder) && other.fieldSorter.equals(fieldSorter);
         }
 
         @Override

@@ -98,6 +98,7 @@ public class ValidateSortingSearcher extends Searcher {
         }
         return Sorting.UcaSorter.Strength.PRIMARY;
     }
+
     private ErrorMessage validate(Query query) {
         Sorting sorting = query.getRanking().getSorting();
         List<Sorting.FieldOrder> l = (sorting != null) ? sorting.fieldOrders() : null;
@@ -190,4 +191,5 @@ public class ValidateSortingSearcher extends Searcher {
         }
         return null;
     }
+
 }

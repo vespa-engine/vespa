@@ -5,6 +5,12 @@ import com.ibm.icu.lang.UScript;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
 import com.ibm.icu.util.ULocale;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.search.Query;
+import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author baldersheim
  */
 public class SortingTestCase {
+
     @Test
     void validAttributeName() {
         assertNotNull(Sorting.fromString("a"));
@@ -31,6 +38,17 @@ public class SortingTestCase {
         } catch (Exception e) {
             fail("I only expect 'IllegalArgumentException', not: + " + e.toString());
         }
+    }
+
+    @Test
+    void aliasesAreRecognized() {
+        Query query = new Query();
+        var schema = new SearchDefinition("test");
+        schema.addIndex(new Index("a"));
+        schema.addAlias("aliasOfA", "a");
+        Execution execution = new Execution(Execution.Context.createContextStub(new IndexFacts(new IndexModel(schema))));
+        query.getModel().setExecution(execution);
+        assertEquals("a", new Sorting("aliasOfA", query).fieldOrders().get(0).getFieldName());
     }
 
     @Test

@@ -5597,6 +5597,7 @@
       "public void <init>()",
       "public void <init>(java.util.List)",
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, com.yahoo.search.Query)",
       "public static com.yahoo.search.query.Sorting fromString(java.lang.String)",
       "public java.lang.String toString()",
       "public java.util.List fieldOrders()",
