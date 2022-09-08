@@ -45,7 +45,7 @@ public class Cloud {
 
     /** For testing purposes only */
     public static Cloud defaultCloud() {
-        return new Builder().name(CloudName.DEFAULT).build();
+        return new Builder().build();
     }
 
     public static Builder builder() {

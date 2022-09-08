@@ -60,10 +60,7 @@ public class InfraDeployerImplTest {
 
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final NodeRepository nodeRepository = tester.nodeRepository();
-    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository,
-                                                                              Zone.defaultZone(),
-                                                                              new EmptyProvisionServiceProvider(),
-                                                                              new InMemoryFlagSource()));
+    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider()));
     private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;
