@@ -105,8 +105,6 @@ public:
     RangeLimitMetaInfo locate() const override {
         return {};
     }
-
-public:
 };
 
 //-----------------------------------------------------------------------------

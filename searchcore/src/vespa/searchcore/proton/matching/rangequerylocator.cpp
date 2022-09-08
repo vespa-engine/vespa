@@ -41,7 +41,6 @@ locateFirst(uint32_t field_id, const Blueprint & blueprint) {
         }
     } else {
         const Blueprint::State & state = blueprint.getState();
-        // TODO: Find fieldId
         if (state.isTermLike() && (state.numFields() == 1) && (state.field(0).getFieldId() == field_id)) {
             const LeafBlueprint &leaf = static_cast<const LeafBlueprint &>(blueprint);
             vespalib::string from, too;

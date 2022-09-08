@@ -189,7 +189,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
-                              SplitUnpackingIterators::check(_queryEnv.getProperties(), rankSetup.split_unpacking_iterators()));
+                              SplitUnpackingIterators::check(_queryEnv.getProperties(), _rankSetup.split_unpacking_iterators()));
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
@@ -209,14 +209,14 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
-        vespalib::string attribute = DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute());
+        vespalib::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);
-        const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(attribute);
-        uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
-        _rangeLocator = std::make_unique<LocateRangeItemFromQuery>(*_query.peekRoot(), field_id);
 
         if (degradationParams.enabled()) {
             trace.addEvent(5, "Setup match phase limiter");
+            const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(attribute);
+            uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
+            _rangeLocator = std::make_unique<LocateRangeItemFromQuery>(*_query.peekRoot(), field_id);
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), *_rangeLocator,
                                                                  searchContext.getAttributes(), _requestContext,
                                                                  degradationParams, _diversityParams);
