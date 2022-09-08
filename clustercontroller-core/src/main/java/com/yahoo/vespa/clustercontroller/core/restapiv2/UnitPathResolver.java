@@ -6,8 +6,6 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,16 +17,15 @@ public class UnitPathResolver<T> {
         Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException;
         Request<? extends T> visitService(Id.Service id) throws StateRestApiException;
         Request<? extends T> visitNode(Id.Node id) throws StateRestApiException;
-        Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException;
 
     }
 
     public static abstract class AbstractVisitor<T> implements Visitor<T> {
 
-        private final String path[];
+        private final String[] path;
         private final String failureMessage;
 
-        public AbstractVisitor(String path[], String failureMessage) {
+        public AbstractVisitor(String[] path, String failureMessage) {
             this.path = path;
             this.failureMessage = failureMessage;
         }
@@ -40,7 +37,6 @@ public class UnitPathResolver<T> {
         public Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitService(Id.Service id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitNode(Id.Node id) throws StateRestApiException { return fail(); }
-        public Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException { return fail(); }
 
     }
 
@@ -50,7 +46,7 @@ public class UnitPathResolver<T> {
         this.fleetControllers = new HashMap<>(fleetControllers);
     }
 
-    public RemoteClusterControllerTaskScheduler resolveFleetController(String path[]) throws StateRestApiException {
+    public RemoteClusterControllerTaskScheduler resolveFleetController(String[] path) throws StateRestApiException {
         if (path.length == 0) return null;
         RemoteClusterControllerTaskScheduler fc = fleetControllers.get(path[0]);
         if (fc == null) {
@@ -59,7 +55,7 @@ public class UnitPathResolver<T> {
         return fc;
     }
 
-    public Request<? extends T> visit(String path[], Visitor<T> visitor) throws StateRestApiException {
+    public Request<? extends T> visit(String[] path, Visitor<T> visitor) throws StateRestApiException {
         if (path.length == 0) {
             return visitor.visitGlobal();
         }
@@ -86,15 +82,6 @@ public class UnitPathResolver<T> {
         }
         if (path.length == 3) {
             return visitor.visitNode(node);
-        }
-        Id.Partition partition;
-        try{
-            partition = new Id.Partition(node, Integer.valueOf(path[3]));
-        } catch (NumberFormatException e) {
-            throw new MissingUnitException(path, 3);
-        }
-        if (path.length == 4) {
-            return visitor.visitPartition(partition);
         }
         throw new MissingUnitException(path, 4);
     }

@@ -2,7 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.*;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.ClusterListRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.ClusterStateRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.NodeStateRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.ServiceStateRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStateRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStatesForClusterRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OtherMasterException;
@@ -11,8 +16,6 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
-
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
@@ -85,10 +88,6 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
             @Override
             public Request<? extends UnitResponse> visitNode(Id.Node id)  {
                 return new NodeStateRequest(id);
-            }
-            @Override
-            public Request<? extends UnitResponse> visitPartition(Id.Partition id)  {
-                return new PartitionStateRequest(id, EnumSet.of(VerboseReport.STATISTICS));
             }
         });
         if (req instanceof ClusterListRequest) {
