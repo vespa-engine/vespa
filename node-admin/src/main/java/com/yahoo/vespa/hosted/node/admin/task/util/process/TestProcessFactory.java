@@ -77,7 +77,7 @@ public class TestProcessFactory implements ProcessFactory {
 
     @Override
     public ChildProcess2 spawn(CommandLine commandLine) {
-        String commandLineString = commandLine.toString();
+        String commandLineString = commandLine.toString(false);
         if (spawnCommandLines.size() + 1 > expectedSpawnCalls.size()) {
             throw new IllegalStateException("Too many invocations: " + commandLineString);
         }
@@ -90,7 +90,7 @@ public class TestProcessFactory implements ProcessFactory {
                                               String expectedCommandLineString,
                                               ChildProcess2 toReturn,
                                               int commandSequenceNumber) {
-        String actualCommandLineString = commandLine.toString();
+        String actualCommandLineString = commandLine.toString(false);
         if (!Objects.equals(actualCommandLineString, expectedCommandLineString)) {
             muteVerifyAllCommandsExecuted = true;
             throw new IllegalArgumentException("Expected command #" + commandSequenceNumber + " to be: \n" +

@@ -175,4 +175,16 @@ public class CommandLineTest {
         terminal.verifyAllCommandsExecuted();
     }
 
+    @Test
+    public void testToString() {
+        commandLine.add("bash", "-c", "echo", "$MY_SECRET");
+        assertEquals("bash -c echo \"$MY_SECRET\" 2>&1", commandLine.toString());
+        commandLine.censorArgument();
+        assertEquals("bash -c echo <censored> 2>&1", commandLine.toString());
+
+        terminal.expectCommand("bash -c echo \"$MY_SECRET\" 2>&1");
+        commandLine.execute();
+        terminal.verifyAllCommandsExecuted();
+    }
+
 }
