@@ -62,38 +62,13 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
 
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 
-namespace {
-
-void
-filter_matching_elements_in_input_field_while_converting_to_slime(const FieldValue& input_field_value,
-                                                                  const std::vector<uint32_t>& matching_elems,
-                                                                  vespalib::slime::Inserter& target)
-{
-    // This is a similar conversion that happens in proton::DocumentStoreAdapter.
-    // Only difference is that we filter matched elements on the fly.
-    auto converted = SummaryFieldConverter::convert_field_with_filter(false, input_field_value, matching_elems);
-    // This should hold as we also have asserted that (type == ResType::RES_JSONSTRING);
-    assert(converted->isLiteral());
-    auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
-    vespalib::stringref buf = literal.getValueRef();
-    if (buf.empty()) {
-        return;
-    }
-    Slime input_field_as_slime;
-    BinaryFormat::decode(vespalib::Memory(buf.data(), buf.size()), input_field_as_slime);
-    inject(input_field_as_slime.get(), target);
-}
-
-}
-
 void
 MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
-                                      ResType type, vespalib::slime::Inserter& target) const
+                                      ResType, vespalib::slime::Inserter& target) const
 {
-    assert(type == ResType::RES_JSONSTRING);
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
-        filter_matching_elements_in_input_field_while_converting_to_slime(*field_value, get_matching_elements(docid, *state), target);
+        SummaryFieldConverter::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, *state));
     }
 }
 
