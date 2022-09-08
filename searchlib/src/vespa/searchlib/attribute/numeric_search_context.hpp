@@ -28,6 +28,13 @@ NumericSearchContext<Matcher>::getAsIntegerTerm() const
 }
 
 template <typename Matcher>
+DoubleRange
+NumericSearchContext<Matcher>::getAsDoubleTerm() const
+{
+    return Matcher::getDoubleRange();
+}
+
+template <typename Matcher>
 bool
 NumericSearchContext<Matcher>::valid() const
 {

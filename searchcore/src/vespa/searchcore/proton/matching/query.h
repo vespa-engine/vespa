@@ -129,7 +129,6 @@ public:
      * @return estimate of hits produced.
      */
     Blueprint::HitEstimate estimate() const;
-
     const Blueprint * peekRoot() const { return _blueprint.get(); }
 };
 

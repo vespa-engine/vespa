@@ -255,6 +255,10 @@ Int64Range ImportedSearchContext::getAsIntegerTerm() const {
     return _target_search_context->getAsIntegerTerm();
 }
 
+DoubleRange ImportedSearchContext::getAsDoubleTerm() const {
+    return _target_search_context->getAsDoubleTerm();
+}
+
 const QueryTermUCS4 * ImportedSearchContext::queryTerm() const {
     return _target_search_context->queryTerm();
 }

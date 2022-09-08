@@ -114,6 +114,7 @@ private:
     AttributeBlueprintParams    _global_filter_params;
     Query                       _query;
     MaybeMatchPhaseLimiter::UP  _match_limiter;
+    std::unique_ptr<RangeQueryLocator> _rangeLocator;
     QueryEnvironment            _queryEnv;
     RequestContext              _requestContext;
     MatchDataLayout             _mdl;

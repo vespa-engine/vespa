@@ -51,6 +51,7 @@ public:
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;
+    virtual DoubleRange getAsDoubleTerm() const = 0;
     virtual const QueryTermUCS4 * queryTerm() const = 0;
     virtual const vespalib::string &attributeName() const = 0;
 

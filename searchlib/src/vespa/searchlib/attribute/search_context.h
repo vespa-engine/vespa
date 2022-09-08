@@ -29,7 +29,7 @@ public:
     SearchContext(const SearchContext&) = delete;
     SearchContext(SearchContext&&) noexcept = default;
     SearchContext& operator=(const SearchContext&) = delete;
-    SearchContext& operator=(SearchContext&&) = delete;
+    SearchContext& operator=(SearchContext&&) noexcept = delete;
     ~SearchContext() override;
 
     unsigned int approximateHits() const override;
@@ -37,6 +37,8 @@ public:
     void fetchPostings(const queryeval::ExecuteInfo& execInfo) override;
     bool valid() const override { return false; }
     Int64Range getAsIntegerTerm() const override { return Int64Range(); }
+    DoubleRange getAsDoubleTerm() const override { return DoubleRange(); }
+
     const QueryTermUCS4* queryTerm() const override {
         return static_cast<const QueryTermUCS4*>(nullptr);
     }

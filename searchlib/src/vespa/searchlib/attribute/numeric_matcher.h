@@ -23,7 +23,10 @@ protected:
     bool isValid() const { return _valid; }
     bool match(T v) const { return v == _value; }
     Int64Range getRange() const {
-        return Int64Range(static_cast<int64_t>(_value));
+        return {static_cast<int64_t>(_value)};
+    }
+    DoubleRange getDoubleRange() const {
+        return {static_cast<double>(_value)};
     }
 };
 

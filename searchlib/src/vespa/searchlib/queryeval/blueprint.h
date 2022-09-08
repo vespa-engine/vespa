@@ -362,6 +362,7 @@ public:
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 
+    virtual bool getRange(vespalib::string & from, vespalib::string & to) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const = 0;
 };
 
