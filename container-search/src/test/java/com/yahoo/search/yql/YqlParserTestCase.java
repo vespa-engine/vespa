@@ -980,20 +980,24 @@ public class YqlParserTestCase {
     @Test
     void testFieldAliases() {
         IndexInfoConfig modelConfig = new IndexInfoConfig(new IndexInfoConfig.Builder().indexinfo(new Indexinfo.Builder()
-                .name("music").command(new Command.Builder().indexname("title").command("index"))
-                .alias(new Alias.Builder().alias("song").indexname("title"))));
+                .name("music")
+                .command(new Command.Builder().indexname("title").command("index"))
+                .command(new Command.Builder().indexname("year").command("attribute"))
+                .alias(new Alias.Builder().alias("song").indexname("title"))
+                .alias(new Alias.Builder().alias("from").indexname("year"))));
         IndexModel model = new IndexModel(modelConfig, (QrSearchersConfig) null);
 
         IndexFacts indexFacts = new IndexFacts(model);
         ParserEnvironment parserEnvironment = new ParserEnvironment().setIndexFacts(indexFacts);
         YqlParser configuredParser = new YqlParser(parserEnvironment);
         QueryTree x = configuredParser.parse(new Parsable()
-                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\""));
+                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\" order by \"from\""));
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(2, terms.size());
-        for (IndexedItem term : terms) {
+        for (IndexedItem term : terms)
             assertEquals("title", term.getIndexName());
-        }
+        assertEquals(1, configuredParser.getSorting().fieldOrders().size());
+        assertEquals("year", configuredParser.getSorting().fieldOrders().get(0).getFieldName());
     }
 
     @Test
