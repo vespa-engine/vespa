@@ -8,7 +8,6 @@ import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1;
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1_REF;
@@ -60,7 +59,8 @@ public class ApplicationBundleLoaderTest {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
         // No bundles are obsolete
         assertTrue(obsoleteBundles.isEmpty());
@@ -71,7 +71,8 @@ public class ApplicationBundleLoaderTest {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
         // No bundles are obsolete
         assertTrue(obsoleteBundles.isEmpty());
@@ -97,7 +98,8 @@ public class ApplicationBundleLoaderTest {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_2_REF));
+        Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
         // The returned set of obsolete bundles contains bundle-1
         assertEquals(1, obsoleteBundles.size());
@@ -123,10 +125,9 @@ public class ApplicationBundleLoaderTest {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
         bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_2_REF));
-        assertEquals(BUNDLE_1.getSymbolicName(), obsoleteBundles.iterator().next().getSymbolicName());
+        bundleLoader.useBundles(List.of(BUNDLE_2_REF));
 
-        // Revert to the previous generation, as will be done upon a failed reconfig.
+        // Report the generation as a failure.
         Collection<Bundle> bundlesToUninstall = bundleLoader.completeGeneration(GenerationStatus.FAILURE);
 
         assertEquals(1, bundlesToUninstall.size());
@@ -153,7 +154,8 @@ public class ApplicationBundleLoaderTest {
         assertEquals(0, bundlesToUninstall.size());
         assertEquals(1, osgi.getCurrentBundles().size());
 
-        Set<Bundle> obsoleteBundles = bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
         assertTrue(obsoleteBundles.isEmpty());
         assertEquals(1, osgi.getCurrentBundles().size());
     }

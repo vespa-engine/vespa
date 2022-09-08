@@ -98,13 +98,13 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public Set<Bundle> useApplicationBundles(Collection<FileReference> bundles, long generation) {
+        public void useApplicationBundles(Collection<FileReference> bundles, long generation) {
             log.info("Installing bundles for application generation " + generation);
-            return applicationBundleLoader.useBundles(new ArrayList<>(bundles));
+            applicationBundleLoader.useBundles(new ArrayList<>(bundles));
         }
 
         @Override
-        public Collection<Bundle> completeBundleGeneration(GenerationStatus status) {
+        public Set<Bundle> completeBundleGeneration(GenerationStatus status) {
             return applicationBundleLoader.completeGeneration(status);
         }
     }
