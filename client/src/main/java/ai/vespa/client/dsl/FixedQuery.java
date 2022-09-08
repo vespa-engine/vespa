@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import com.google.gson.internal.LinkedHashTreeMap;
-
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -359,7 +358,7 @@ public class FixedQuery {
         }
         sb.append(";");
 
-        queryMap = new LinkedHashTreeMap<>(); // for the order
+        queryMap = new LinkedHashMap<>(); // for the order
         queryMap.put("yql", sb.toString());
         queryMap.putAll(others);
         queryMap.putAll(getUserInputs());
