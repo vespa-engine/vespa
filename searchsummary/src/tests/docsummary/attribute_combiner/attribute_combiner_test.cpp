@@ -131,7 +131,7 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
 {
     set_field("array", true);
     assertWritten("[ { name: 'n1.2', val: 11}]", 1);
-    assertWritten("[ ]", 2);
+    assertWritten("null", 2);
     assertWritten("[ { fval: 130.0, name: 'n3.1', val: 30} ]", 3);
     assertWritten("[ { fval: 141.0, name: 'n4.2', val:  41} ]", 4);
     assertWritten("null", 5);
@@ -141,7 +141,7 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
 {
     set_field("smap", true);
     assertWritten("[ { key: 'k1.2', value: { name: 'n1.2', val: 11} }]", 1);
-    assertWritten("[ ]", 2);
+    assertWritten("null", 2);
     assertWritten("[ { key: 'k3.1', value: { fval: 130.0, name: 'n3.1', val: 30} } ]", 3);
     assertWritten("[ { key: 'k4.2', value: { fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
     assertWritten("null", 5);
@@ -151,7 +151,7 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
 {
     set_field("map", true);
     assertWritten("[ { key: 'k1.2', value: 'n1.2'}]", 1);
-    assertWritten("[ ]", 2);
+    assertWritten("null", 2);
     assertWritten("[ { key: 'k3.1', value: 'n3.1' } ]", 3);
     assertWritten("[ { key: 'k4.2', value: 'n4.2' } ]", 4);
     assertWritten("null", 5);

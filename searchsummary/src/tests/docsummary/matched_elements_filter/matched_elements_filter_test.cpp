@@ -247,14 +247,14 @@ MatchedElementsFilterTest::~MatchedElementsFilterTest() = default;
 
 TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
 {
-    expect_filtered("array", {}, "[]");
+    expect_filtered("array", {}, "null");
     expect_filtered("array", {0}, "[{'name':'a','weight':3}]");
     expect_filtered("array", {1}, "[{'name':'b','weight':5}]");
     expect_filtered("array", {2}, "[{'name':'c','weight':7}]");
     expect_filtered("array", {0, 1, 2}, "[{'name':'a','weight':3},"
                                         "{'name':'b','weight':5},"
                                         "{'name':'c','weight':7}]");
-    expect_filtered("array", {0, 1, 100}, "[]");
+    expect_filtered("array", {0, 1, 100}, "null");
     set_empty_values();
     expect_filtered("array", {}, "null");
     set_skip_set_values();
@@ -271,14 +271,14 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_fi
 
 TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
 {
-    expect_filtered("map", {}, "[]");
+    expect_filtered("map", {}, "null");
     expect_filtered("map", {0}, "[{'key':'a','value':{'name':'a','weight':3}}]");
     expect_filtered("map", {1}, "[{'key':'b','value':{'name':'b','weight':5}}]");
     expect_filtered("map", {2}, "[{'key':'c','value':{'name':'c','weight':7}}]");
     expect_filtered("map", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
                                       "{'key':'b','value':{'name':'b','weight':5}},"
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
-    expect_filtered("map", {0, 1, 100}, "[]");
+    expect_filtered("map", {0, 1, 100}, "null");
     set_empty_values();
     expect_filtered("map", {}, "null");
     set_skip_set_values();
@@ -287,12 +287,12 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
 
 TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
 {
-    expect_filtered("wset", {}, "[]");
+    expect_filtered("wset", {}, "null");
     expect_filtered("wset", {0}, "[{'item':'a','weight':13}]");
     expect_filtered("wset", {1}, "[{'item':'b','weight':15}]");
     expect_filtered("wset", {2}, "[{'item':'c','weight':17}]");
     expect_filtered("wset", {0, 1, 2}, "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
-    expect_filtered("wset", {0, 1, 100}, "[]");
+    expect_filtered("wset", {0, 1, 100}, "null");
     set_empty_values();
     expect_filtered("wset", {}, "null");
     set_skip_set_values();

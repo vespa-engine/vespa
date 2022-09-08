@@ -372,6 +372,11 @@ private:
         return _matching_elems != nullptr;
     }
 
+    template <typename Value>
+    bool empty_or_empty_after_filtering(const Value& value) const {
+        return (value.isEmpty() || (filter_matching_elements() && (_matching_elems->empty() || _matching_elems->back() >= value.size())));
+    }
+
     void visit(const AnnotationReferenceFieldValue & v ) override {
         (void)v;
         Cursor &c = _inserter.insertObject();
@@ -388,14 +393,15 @@ private:
     }
 
     void visit(const MapFieldValue & v) override {
+        if (empty_or_empty_after_filtering(v)) {
+            return;
+        }
         MapFieldValueInserter map_inserter(_inserter, _tokenize);
         if (filter_matching_elements()) {
             assert(v.has_no_erased_keys());
-            if (!_matching_elems->empty() && _matching_elems->back() < v.size()) {
-                for (uint32_t id_to_keep : (*_matching_elems)) {
-                    auto entry = v[id_to_keep];
-                    map_inserter.insert_entry(*entry.first, *entry.second);
-                }
+            for (uint32_t id_to_keep : (*_matching_elems)) {
+                auto entry = v[id_to_keep];
+                map_inserter.insert_entry(*entry.first, *entry.second);
             }
         } else {
             for (const auto &entry : v) {
@@ -405,20 +411,19 @@ private:
     }
 
     void visit(const ArrayFieldValue &value) override {
+        if (empty_or_empty_after_filtering(value)) {
+            return;
+        }
         Cursor &a = _inserter.insertArray();
-        if (value.size() > 0) {
-            ArrayInserter ai(a);
-            SlimeFiller conv(ai, _tokenize);
-            if (filter_matching_elements()) {
-                if (!_matching_elems->empty() && _matching_elems->back() < value.size()) {
-                    for (uint32_t id_to_keep : (*_matching_elems)) {
-                        value[id_to_keep].accept(conv);
-                    }
-                }
-            } else {
-                for (const FieldValue &fv : value) {
-                    fv.accept(conv);
-                }
+        ArrayInserter ai(a);
+        SlimeFiller conv(ai, _tokenize);
+        if (filter_matching_elements()) {
+            for (uint32_t id_to_keep : (*_matching_elems)) {
+                value[id_to_keep].accept(conv);
+            }
+        } else {
+            for (const FieldValue &fv : value) {
+                fv.accept(conv);
             }
         }
     }
@@ -503,35 +508,36 @@ private:
     }
 
     void visit(const WeightedSetFieldValue &value) override {
+        if (empty_or_empty_after_filtering(value)) {
+            return;
+        }
         Cursor &a = _inserter.insertArray();
-        if (value.size() > 0) {
-            Symbol isym = a.resolve("item");
-            Symbol wsym = a.resolve("weight");
-            using matching_elements_iterator_type = std::vector<uint32_t>::const_iterator;
-            matching_elements_iterator_type matching_elements_itr;
-            matching_elements_iterator_type matching_elements_itr_end;
+        Symbol isym = a.resolve("item");
+        Symbol wsym = a.resolve("weight");
+        using matching_elements_iterator_type = std::vector<uint32_t>::const_iterator;
+        matching_elements_iterator_type matching_elements_itr;
+        matching_elements_iterator_type matching_elements_itr_end;
+        if (filter_matching_elements()) {
+            matching_elements_itr = _matching_elems->begin();
+            matching_elements_itr_end = _matching_elems->end();
+        }
+        uint32_t idx = 0;
+        for (const auto & entry : value) {
             if (filter_matching_elements()) {
-                matching_elements_itr = (!_matching_elems->empty() && _matching_elems->back() < value.size()) ? _matching_elems->begin() : _matching_elems->end();
-                matching_elements_itr_end = _matching_elems->end();
-            }
-            uint32_t idx = 0;
-            for (const auto & entry : value) {
-                if (filter_matching_elements()) {
-                    if (matching_elements_itr == matching_elements_itr_end ||
-                        idx < *matching_elements_itr) {
-                        ++idx;
-                        continue;
-                    }
-                    ++matching_elements_itr;
+                if (matching_elements_itr == matching_elements_itr_end ||
+                    idx < *matching_elements_itr) {
+                    ++idx;
+                    continue;
                 }
-                Cursor &o = a.addObject();
-                ObjectSymbolInserter ki(o, isym);
-                SlimeFiller conv(ki, _tokenize);
-                entry.first->accept(conv);
-                int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
-                o.setLong(wsym, weight);
-                ++idx;
+                ++matching_elements_itr;
             }
+            Cursor &o = a.addObject();
+            ObjectSymbolInserter ki(o, isym);
+            SlimeFiller conv(ki, _tokenize);
+            entry.first->accept(conv);
+            int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
+            o.setLong(wsym, weight);
+            ++idx;
         }
     }
 

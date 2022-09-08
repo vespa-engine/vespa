@@ -197,27 +197,28 @@ MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, Inserter& target)
     if (elements.empty()) {
         return;
     }
-    Cursor &arr = target.insertArray(elements.size());
-
     if (_matching_elements) {
         const auto& matching_elems = _matching_elements->get_matching_elements(docid, _field_name);
-        if (!matching_elems.empty() && matching_elems.back() < elements.size()) {
-            if constexpr (multivalue::is_WeightedValue_v<MultiValueType>) {
-                Symbol itemSymbol = arr.resolve(ITEM);
-                Symbol weightSymbol = arr.resolve(WEIGHT);
-                for (uint32_t id_to_keep : matching_elems) {
-                    auto& element = elements[id_to_keep];
-                    Cursor& elemC = arr.addObject();
-                    set_value<ValueType>(element.value(), itemSymbol, elemC);
-                    elemC.setLong(weightSymbol, element.weight());
-                }
-            } else {
-                for (uint32_t id_to_keep : matching_elems) {
-                    append_value<ValueType>(elements[id_to_keep], arr);
-                }
+        if (matching_elems.empty() || matching_elems.back() >= elements.size()) {
+            return;
+        }
+        Cursor &arr = target.insertArray(elements.size());
+        if constexpr (multivalue::is_WeightedValue_v<MultiValueType>) {
+            Symbol itemSymbol = arr.resolve(ITEM);
+            Symbol weightSymbol = arr.resolve(WEIGHT);
+            for (uint32_t id_to_keep : matching_elems) {
+                auto& element = elements[id_to_keep];
+                Cursor& elemC = arr.addObject();
+                set_value<ValueType>(element.value(), itemSymbol, elemC);
+                elemC.setLong(weightSymbol, element.weight());
+            }
+        } else {
+            for (uint32_t id_to_keep : matching_elems) {
+                append_value<ValueType>(elements[id_to_keep], arr);
             }
         }
     } else {
+        Cursor &arr = target.insertArray(elements.size());
         if constexpr (multivalue::is_WeightedValue_v<MultiValueType>) {
             Symbol itemSymbol = arr.resolve(ITEM);
             Symbol weightSymbol = arr.resolve(WEIGHT);
