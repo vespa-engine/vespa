@@ -52,7 +52,7 @@ vespalib::string make_expected_response(const vespalib::string &content_type, co
                                  "Content-Length: %zu\r\n"
                                  "X-XSS-Protection: 1; mode=block\r\n"
                                  "X-Frame-Options: DENY\r\n"
-                                 "Content-Security-Policy: default-src 'none'\r\n"
+                                 "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n"
                                  "X-Content-Type-Options: nosniff\r\n"
                                  "Cache-Control: no-store\r\n"
                                  "Pragma: no-cache\r\n"
