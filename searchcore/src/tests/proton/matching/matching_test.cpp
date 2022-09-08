@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
-#include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
+#include <vespa/searchcore/proton/matching/i_ranking_assets_repo.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
@@ -107,9 +107,17 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 
 const uint32_t NUM_DOCS = 1000;
 
-struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
+struct EmptyRankingAssetsRepo : public proton::matching::IRankingAssetsRepo {
     vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
         return {};
+    }
+
+    vespalib::string getExpression(const vespalib::string &) const override {
+        return {};
+    }
+
+    const OnnxModel *getOnnxModel(const vespalib::string &) const override {
+        return nullptr;
     }
 };
 
@@ -125,7 +133,7 @@ struct MyWorld {
     MatchingStats           matchingStats;
     vespalib::TestClock     clock;
     QueryLimiter            queryLimiter;
-    EmptyConstantValueRepo  constantValueRepo;
+    EmptyRankingAssetsRepo  constantValueRepo;
 
     MyWorld();
     ~MyWorld();
@@ -347,7 +355,7 @@ struct MyWorld {
     }
 
     Matcher::SP createMatcher() {
-        return std::make_shared<Matcher>(schema, config, clock.clock(), queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), 0);
+        return std::make_shared<Matcher>(schema, config, clock.clock(), queryLimiter, constantValueRepo, 0);
     }
 
     struct MySearchHandler : ISearchHandler {

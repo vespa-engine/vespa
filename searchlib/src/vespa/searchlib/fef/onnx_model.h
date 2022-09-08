@@ -24,6 +24,10 @@ private:
 public:
     OnnxModel(const vespalib::string &name_in,
               const vespalib::string &file_path_in);
+    OnnxModel(OnnxModel &&) noexcept;
+    OnnxModel & operator=(OnnxModel &&) noexcept;
+    OnnxModel(const OnnxModel &) = delete;
+    OnnxModel & operator =(const OnnxModel &) = delete;
     ~OnnxModel();
 
     const vespalib::string &name() const { return _name; }    

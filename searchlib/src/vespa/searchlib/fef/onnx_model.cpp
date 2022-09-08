@@ -15,6 +15,10 @@ OnnxModel::OnnxModel(const vespalib::string &name_in,
 {
 }
 
+OnnxModel::OnnxModel(OnnxModel &&) noexcept = default;
+OnnxModel & OnnxModel::operator =(OnnxModel &&) noexcept = default;
+OnnxModel::~OnnxModel() = default;
+
 OnnxModel &
 OnnxModel::input_feature(const vespalib::string &model_input_name, const vespalib::string &input_feature) {
     _input_features[model_input_name] = input_feature;
@@ -57,7 +61,5 @@ OnnxModel::operator==(const OnnxModel &rhs) const {
     return (std::tie(_name, _file_path, _input_features, _output_names, _dry_run_on_setup) ==
             std::tie(rhs._name, rhs._file_path, rhs._input_features, rhs._output_names, rhs._dry_run_on_setup));
 }
-
-OnnxModel::~OnnxModel() = default;
 
 }
