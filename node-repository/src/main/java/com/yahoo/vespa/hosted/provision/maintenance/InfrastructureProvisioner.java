@@ -26,9 +26,9 @@ public class InfrastructureProvisioner extends NodeRepositoryMaintainer {
         this.infraDeployer = infraDeployer;
     }
 
-    public void maintainButThrowOnException() {
+    public void maintain(boolean bootstrappingZone) {
         try {
-            infraDeployer.activateAllSupportedInfraApplications(true);
+            infraDeployer.activateAllSupportedInfraApplications(!bootstrappingZone);
         } catch (RuntimeException e) {
             logger.log(Level.INFO, "Failed to deploy supported infrastructure applications, " +
                     "will sleep 30s before propagating failure, to allow inspection of zk",
