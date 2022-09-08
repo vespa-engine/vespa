@@ -22,7 +22,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     }
 
     private void updateConfigLive(FleetControllerOptions newOptions) {
-        this.fleetController.updateOptions(newOptions);
+        fleetController().updateOptions(newOptions);
     }
 
     private void reconfigureWithMinNodeRatio(FleetControllerOptions options, double minNodeRatio) {

@@ -33,11 +33,11 @@ public class WantedStateTest extends FleetControllerTest {
 
         setWantedState(nodes.get(1), State.MAINTENANCE, "Foo");
         waitForState("version:\\d+ distributor:10 storage:10 .0.s:m");
-        assertEquals("Foo", fleetController.getWantedNodeState(nodes.get(1).getNode()).getDescription());
+        assertEquals("Foo", fleetController().getWantedNodeState(nodes.get(1).getNode()).getDescription());
 
         setWantedState(nodes.get(1), State.MAINTENANCE, "Bar");
         waitForCompleteCycle();
-        assertEquals("Bar", fleetController.getWantedNodeState(nodes.get(1).getNode()).getDescription());
+        assertEquals("Bar", fleetController().getWantedNodeState(nodes.get(1).getNode()).getDescription());
 
         setWantedState(nodes.get(1), State.UP, null);
         waitForState("version:\\d+ distributor:10 storage:10");

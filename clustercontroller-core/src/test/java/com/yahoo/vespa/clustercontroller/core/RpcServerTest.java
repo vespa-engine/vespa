@@ -105,10 +105,10 @@ public class RpcServerTest extends FleetControllerTest {
         log.log(Level.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
         nodes.get(0).disconnect();
         nodes.get(19).disconnect();
-        fleetController.waitForNodesInSlobrok(9, 9, timeout());
+        fleetController().waitForNodesInSlobrok(9, 9, timeout());
         timer.advanceTime(options.nodeStateRequestTimeoutMS() + options.maxSlobrokDisconnectGracePeriod());
 
-        wait(new WaitCondition.StateWait(fleetController, fleetController.getMonitor()) {
+        wait(new WaitCondition.StateWait(fleetController(), fleetController().getMonitor()) {
             @Override
             public String isConditionMet() {
                 if (currentState == null) {
@@ -126,7 +126,7 @@ public class RpcServerTest extends FleetControllerTest {
             }
         }, null, timeout());
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
@@ -142,7 +142,7 @@ public class RpcServerTest extends FleetControllerTest {
     }
 
     private void setWantedNodeState(State newState, NodeType nodeType, int nodeIndex) {
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
@@ -189,7 +189,7 @@ public class RpcServerTest extends FleetControllerTest {
         nodes.get(3).connect();
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:i .1.i:0.2 .2.s:d .7.s:m");
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
@@ -321,7 +321,7 @@ public class RpcServerTest extends FleetControllerTest {
                     .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            fleetController.updateOptions(builder.build());
+            fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m .2.s:r .3.s:r .4.s:r");
         }
 
@@ -351,7 +351,7 @@ public class RpcServerTest extends FleetControllerTest {
                     .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            fleetController.updateOptions(builder.build());
+            fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m");
         }
 
@@ -391,7 +391,7 @@ public class RpcServerTest extends FleetControllerTest {
                     .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            fleetController.updateOptions(builder.build());
+            fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:5 storage:5");
         }
 
@@ -406,7 +406,7 @@ public class RpcServerTest extends FleetControllerTest {
                     .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            fleetController.updateOptions(builder.build());
+            fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
 
@@ -420,7 +420,7 @@ public class RpcServerTest extends FleetControllerTest {
                     .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            fleetController.updateOptions(builder.build());
+            fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
 
@@ -456,7 +456,7 @@ public class RpcServerTest extends FleetControllerTest {
         setUpVdsNodes(true, false, nodeIndexes);
         waitForState("version:\\d+ distributor:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d storage:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d");
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
@@ -476,7 +476,7 @@ public class RpcServerTest extends FleetControllerTest {
         waitForCompleteCycle();
         timer.advanceTime(100000000);
         waitForCompleteCycle();
-        assertEquals(State.MAINTENANCE, fleetController.getSystemState().getNodeState(new Node(NodeType.STORAGE, 16)).getState());
+        assertEquals(State.MAINTENANCE, fleetController().getSystemState().getNodeState(new Node(NodeType.STORAGE, 16)).getState());
 
         nodes.get(4 * 2 + 1).disconnect();
         waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:m.* .16.s:m .*");
@@ -495,7 +495,7 @@ public class RpcServerTest extends FleetControllerTest {
         setUpVdsNodes(true);
         waitForStableSystem();
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
@@ -523,7 +523,7 @@ public class RpcServerTest extends FleetControllerTest {
         setUpVdsNodes(true);
         waitForStableSystem();
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
@@ -548,7 +548,7 @@ public class RpcServerTest extends FleetControllerTest {
         nodes.get(0).disconnect();
         waitForState("version:\\d+ distributor:5 .0.s:d storage:5");
 
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());

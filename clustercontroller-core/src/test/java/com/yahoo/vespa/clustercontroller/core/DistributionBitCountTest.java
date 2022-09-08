@@ -44,12 +44,12 @@ public class DistributionBitCountTest extends FleetControllerTest {
         var options = setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigIncrease");
         var builder = FleetControllerOptions.Builder.copy(options);
         builder.setDistributionBits(20);
-        fleetController.updateOptions(builder.build());
+        fleetController().updateOptions(builder.build());
         ClusterState currentState = waitForState("version:\\d+ bits:20 distributor:10 storage:10");
 
         int version = currentState.getVersion();
         builder.setDistributionBits(23);
-        fleetController.updateOptions(builder.build());
+        fleetController().updateOptions(builder.build());
         assertEquals(version, currentState.getVersion());
     }
 
@@ -61,7 +61,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
         FleetControllerOptions options = setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigDecrease");
         var builder = FleetControllerOptions.Builder.copy(options);
         builder.setDistributionBits(12);
-        fleetController.updateOptions(builder.build());
+        fleetController().updateOptions(builder.build());
         waitForState("version:\\d+ bits:12 distributor:10 storage:10");
     }
 
@@ -82,7 +82,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
         ClusterState startState = waitForState("version:\\d+ bits:11 distributor:10 storage:10");
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(12));
-        assertEquals(startState.getVersion(), fleetController.getSystemState().getVersion(), startState + "->" + fleetController.getSystemState());
+        assertEquals(startState.getVersion(), fleetController().getSystemState().getVersion(), startState + "->" + fleetController().getSystemState());
 
         for (int i = 0; i < 10; ++i) {
             // nodes is array of [distr.0, stor.0, distr.1, stor.1, ...] and we just want the storage nodes

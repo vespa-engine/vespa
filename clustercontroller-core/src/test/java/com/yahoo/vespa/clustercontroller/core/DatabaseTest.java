@@ -140,13 +140,13 @@ public class DatabaseTest extends FleetControllerTest {
 
     private void assertWantedStates(Map<Node, NodeState> wantedStates) {
         for (DummyVdsNode node : nodes) {
-            assertEquals(wantedStates.get(node.getNode()), fleetController.getWantedNodeState(node.getNode()), node.getNode().toString());
+            assertEquals(wantedStates.get(node.getNode()), fleetController().getWantedNodeState(node.getNode()), node.getNode().toString());
         }
     }
 
     // Note: different semantics than FleetControllerTest.setWantedState
     private void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
-        int rpcPort = fleetController.getRpcPort();
+        int rpcPort = fleetController().getRpcPort();
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
