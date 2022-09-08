@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
  * Verifies that equally named summary fields in different summary classes don't use different fields for source.
- * The summarymap config doesn't model this.
  *
  * @author Vegard Havdal
  */
