@@ -11,9 +11,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -49,6 +51,7 @@ public class CommandLine {
     public static final Duration DEFAULT_SIGKILL_GRACE_PERIOD = Duration.ofMinutes(30);
 
     private final List<String> arguments = new ArrayList<>();
+    private final Set<Integer> censoredArgumentIndices = new HashSet<>();
     private final TreeMap<String, String> environment = new TreeMap<>();
     private final TaskContext taskContext;
     private final ProcessFactory processFactory;
@@ -99,6 +102,12 @@ public class CommandLine {
             throw new IllegalArgumentException("name contains '=': " + name);
         }
         environment.put(name, null);
+        return this;
+    }
+
+    /** Censor (prevent logging of) the last argument added to this */
+    public CommandLine censorArgument() {
+        censoredArgumentIndices.add(arguments.size() - 1);
         return this;
     }
 
@@ -175,24 +184,35 @@ public class CommandLine {
     /** Returns a shell-like representation of the command. */
     @Override
     public String toString() {
+        return toString(true);
+    }
+
+    String toString(boolean censor) {
         var command = new StringBuilder();
 
         if (!environment.isEmpty()) {
             // Pretend environment is propagated through the env program for display purposes
             command.append(environment.entrySet().stream()
-                    .map(entry -> {
-                        if (entry.getValue() == null) {
-                            return "-u " + maybeEscapeArgument(entry.getKey());
-                        } else {
-                            return maybeEscapeArgument(entry.getKey() + "=" + entry.getValue());
-                        }
-                    })
-                    .collect(Collectors.joining(" ", "env ", " ")));
+                                      .map(entry -> {
+                                          if (entry.getValue() == null) {
+                                              return "-u " + maybeEscapeArgument(entry.getKey());
+                                          } else {
+                                              return maybeEscapeArgument(entry.getKey() + "=" + entry.getValue());
+                                          }
+                                      })
+                                      .collect(Collectors.joining(" ", "env ", " ")));
         }
 
-        command.append(arguments.stream()
-                .map(CommandLine::maybeEscapeArgument)
-                .collect(Collectors.joining(" ")));
+        for (int i = 0; i < arguments.size(); i++) {
+            if (censor && censoredArgumentIndices.contains(i)) {
+                command.append("<censored>");
+            } else {
+                command.append(maybeEscapeArgument(arguments.get(i)));
+            }
+            if (i < arguments.size() - 1) {
+                command.append(" ");
+            }
+        }
 
         // Note: Both of these cannot be confused with an argument since they would
         // require escaping.
