@@ -102,9 +102,12 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
     if (elems == 0) {
         return;
     }
-    Cursor &arr = target.insertArray();
     if (_matching_elements != nullptr) {
         auto &elements = _matching_elements->get_matching_elements(docId, _field_name);
+        if (elements.empty() || elements.back() >= elems) {
+            return;
+        }
+        Cursor &arr = target.insertArray();
         auto elements_iterator = elements.cbegin();
         for (uint32_t idx = 0; idx < elems && elements_iterator != elements.cend(); ++idx) {
             assert(*elements_iterator >= idx);
@@ -114,6 +117,7 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
             }
         }
     } else {
+        Cursor &arr = target.insertArray();
         for (uint32_t idx = 0; idx < elems; ++idx) {
             insert_element(idx, arr);
         }
