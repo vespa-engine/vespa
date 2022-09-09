@@ -586,7 +586,6 @@ public class JobController {
         controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
 
         validateTests(id, submission);
-        validateParentVersion(id, submission);
         validateMajorVersion(id, submission);
     }
 
@@ -600,26 +599,21 @@ public class JobController {
 
     }
 
-    private void validateParentVersion(TenantAndApplicationId id, Submission submission) {
+    private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
+        List<String> warnings = new ArrayList<>();
+        submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
+            // TODO jonvm: warn when a version with high or normal confidence exists on a newer major.
+            if (explicitMajor < 8)
+                warnings.add("Vespa 7 will soon be end of life, upgrade to Vespa 8 now: " +
+                             "https://cloud.vespa.ai/en/vespa8-release-notes.html");
+        });
         submission.applicationPackage().parentVersion().ifPresent(parent -> {
             if (parent.getMajor() < controller.readSystemVersion().getMajor())
-                controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.submission,
-                                                             Notification.Level.warning,
-                                                             "Parent version used to compile the application is on a " +
-                                                             "lower major version than the current Vespa Cloud version");
+                warnings.add("Parent version used to compile the application is on a " +
+                             "lower major version than the current Vespa Cloud version");
         });
-   }
-
-    private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
-        submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
-            if (explicitMajor < 8)
-                controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.submission,
-                                                             Notification.Level.warning,
-                                                             "Vespa 7 will soon be end of life, upgrade to Vespa 8 now: " +
-                                                             "https://cloud.vespa.ai/en/vespa8-release-notes.html");
-        });
+        if ( ! warnings.isEmpty())
+            controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning, warnings);
     }
 
     private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
