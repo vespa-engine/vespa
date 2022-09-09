@@ -702,7 +702,7 @@ public class JobController {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
-            controller.applications().validatePackage(applicationPackage, application.get());
+
             controller.applications().store(application);
         });
 

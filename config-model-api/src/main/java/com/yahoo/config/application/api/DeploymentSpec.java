@@ -376,6 +376,8 @@ public class DeploymentSpec {
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
                 illegal("Prod environments must be specified with a region");
+            if (environment != Environment.prod && cloudAccount.isPresent())
+                illegal("Non-prod environments cannot specify cloud account");
             this.environment = Objects.requireNonNull(environment);
             this.region = Objects.requireNonNull(region);
             this.active = active;
@@ -401,7 +403,7 @@ public class DeploymentSpec {
         }
 
         @Override
-        public List<DeclaredZone> zones() { return List.of(this); }
+        public List<DeclaredZone> zones() { return Collections.singletonList(this); }
 
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) {
@@ -490,7 +492,7 @@ public class DeploymentSpec {
         public List<DeclaredZone> zones() {
             return steps.stream()
                         .flatMap(step -> step.zones().stream())
-                        .toList();
+                        .collect(Collectors.toUnmodifiableList());
         }
 
         @Override

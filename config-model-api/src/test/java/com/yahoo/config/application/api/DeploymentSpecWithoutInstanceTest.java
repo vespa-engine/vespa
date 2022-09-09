@@ -715,9 +715,9 @@ public class DeploymentSpecWithoutInstanceTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance = spec.requireInstance("default");
-        assertEquals(Optional.of(new CloudAccount("219876543210")), instance.cloudAccount(Environment.prod, Optional.of(RegionName.from("us-east-1"))));
-        assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.prod, Optional.of(RegionName.from("us-west-1"))));
-        assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.staging, Optional.empty()));
+        assertEquals(Optional.of(new CloudAccount("219876543210")), instance.cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.prod, RegionName.from("us-west-1")));
+        assertEquals(Optional.empty(), instance.cloudAccount(Environment.staging, RegionName.defaultName()));
 
         r = new StringReader(
                 "<deployment version='1.0'>" +
@@ -728,8 +728,8 @@ public class DeploymentSpecWithoutInstanceTest {
                 "</deployment>"
         );
         spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(new CloudAccount("219876543210")), spec.requireInstance("default").cloudAccount(Environment.prod, Optional.of(RegionName.from("us-east-1"))));
-        assertEquals(Optional.empty(), spec.requireInstance("default").cloudAccount(Environment.prod, Optional.of(RegionName.from("us-west-1"))));
+        assertEquals(Optional.of(new CloudAccount("219876543210")), spec.requireInstance("default").cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.empty(), spec.requireInstance("default").cloudAccount(Environment.prod, RegionName.from("us-west-1")));
     }
 
     private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {
