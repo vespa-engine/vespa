@@ -271,7 +271,13 @@ public class UserApiTest extends ControllerContainerCloudTest {
                     .roles(operator)
                     .user(user),
                     """
-                            {"isPublic":true,"isCd":false,"hasTrialCapacity":true,"user":{"name":"dev@domail","email":"dev@domail","verified":false},"tenants":{"scoober":{"supported":false,"roles":["developer"]}},"flags":[{"id":"enable-public-signup-flow","rules":[{"value":false}]}]}""");
+                            {"users":[{"isPublic":true,"isCd":false,"hasTrialCapacity":true,"user":{"name":"dev@domail","email":"dev@domail","verified":false},"tenants":{"scoober":{"supported":false,"roles":["developer"]}},"flags":[{"id":"enable-public-signup-flow","rules":[{"value":false}]}]}]}""");
+
+            tester.assertResponse(request("/user/v1/find?query=email:dev@domail")
+                    .roles(operator)
+                    .user(user),
+                    """
+                            {"users":[]}""");
         }
     }
 
