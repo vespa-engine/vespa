@@ -98,4 +98,9 @@ public class MockUserManagement extends AbstractComponent implements UserManagem
                 .filter(user -> user.email().equals(email))
                 .findFirst();
     }
+
+    @Override
+    public List<User> findUsers(String query) {
+        return List.of();
+    }
 }

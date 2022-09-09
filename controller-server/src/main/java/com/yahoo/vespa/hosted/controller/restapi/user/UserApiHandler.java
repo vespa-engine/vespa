@@ -101,7 +101,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/user/v1/user")) return userMetadata(request);
-        if (path.matches("/user/v1/find")) return userMetadataFromUserId(request.getProperty("email"));
+        if (path.matches("/user/v1/find")) return findUser(request);
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
@@ -134,16 +134,43 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
             RoleDefinition.hostedSupporter,
             RoleDefinition.hostedAccountant);
 
+    private HttpResponse findUser(HttpRequest request) {
+        var email = request.getProperty("email");
+        var query = request.getProperty("query");
+        if (email != null) return userMetadataFromUserId(email);
+        if (query != null) return userMetadataQuery(query);
+        return ErrorResponse.badRequest("Need 'email' or 'query' parameter");
+    }
+
     private HttpResponse userMetadataFromUserId(String email) {
         var maybeUser = users.findUser(email);
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        var usersRoot = root.setArray("users");
 
         if (maybeUser.isPresent()) {
             var user = maybeUser.get();
             var roles = users.listRoles(new UserId(user.email()));
-            return renderUserMetaData(user, Set.copyOf(roles));
+            renderUserMetaData(usersRoot.addObject(), user, Set.copyOf(roles));
         }
 
-        return ErrorResponse.notFoundError("Could not find user: " + email);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse userMetadataQuery(String query) {
+        var userList = users.findUsers(query);
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        var userSlime = root.setArray("users");
+
+        for (var user : userList) {
+            var roles = users.listRoles(new UserId((user.email())));
+            renderUserMetaData(userSlime.addObject(), user, Set.copyOf(roles));
+        }
+
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse userMetadata(HttpRequest request) {
@@ -159,10 +186,12 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
-        return renderUserMetaData(user, roles);
+        var slime = new Slime();
+        renderUserMetaData(slime.setObject(), user, roles);
+        return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse renderUserMetaData(User user, Set<Role> roles) {
+    private void renderUserMetaData(Cursor root, User user, Set<Role> roles) {
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
                 .flatMap(role -> filterTenantRoles(role).stream())
                 .distinct()
@@ -174,9 +203,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
                 .filter(role -> hostedOperators.contains(role.definition()))
                 .sorted(Comparator.comparing(Role::definition))
                 .toList();
-
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
 
         root.setBool("isPublic", controller.system().isPublic());
         root.setBool("isCd", controller.system().isCd());
@@ -202,8 +228,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         }
 
         UserFlagsSerializer.toSlime(root, flagsDb.getAllFlagData(), tenantRolesByTenantName.keySet(), !operatorRoles.isEmpty(), user.email());
-
-        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse listTenantRoleMembers(String tenantName) {
@@ -273,7 +297,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         var user = new UserId(require("user", Inspector::asString, requestObject));
         var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
                 .map(roleName -> Roles.toRole(tenant, roleName))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         users.addToRoles(user, roles);
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
@@ -285,7 +309,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         var user = new UserId(require("user", Inspector::asString, requestObject));
         var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
                 .map(roleName -> Roles.toRole(tenant, roleName))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         enforceLastAdminOfTenant(tenant, user, roles);
         removeDeveloperKey(tenant, user, roles);

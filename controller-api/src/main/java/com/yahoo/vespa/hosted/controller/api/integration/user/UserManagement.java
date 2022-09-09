@@ -44,4 +44,7 @@ public interface UserManagement {
 
     /** Find a user with all attributes */
     Optional<User> findUser(String email);
+
+    /** Find all users from the database given query */
+    List<User> findUsers(String query);
 }
