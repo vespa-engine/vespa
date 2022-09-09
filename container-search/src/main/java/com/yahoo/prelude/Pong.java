@@ -4,9 +4,7 @@ package com.yahoo.prelude;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.statistics.ElapsedTime;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * An answer from Ping.
@@ -16,42 +14,47 @@ import java.util.stream.Collectors;
 public class Pong {
 
     private final ElapsedTime elapsed = new ElapsedTime();
-    private final Optional<Long> activeDocuments;
+    private final Long activeDocuments;
+    private final Long targetActiveDocuments;
     private final boolean isBlockingWrites;
-    private final Optional<ErrorMessage> error;
+    private final ErrorMessage error;
 
     public Pong() {
-        this(Optional.empty(), false, Optional.empty());
+        this(null, null,false, null);
     }
 
     public Pong(ErrorMessage error) {
-        this(Optional.empty(), false, Optional.of(error));
+        this(null, null,false, error);
     }
 
-    public Pong(long activeDocuments) {
-        this(Optional.of(activeDocuments), false, Optional.empty());
+    public Pong(long activeDocuments, long targetActiveDocuments) {
+        this(activeDocuments, targetActiveDocuments, false, null);
     }
 
-    public Pong(long activeDocuments, boolean isBlockingWrites) {
-        this(Optional.of(activeDocuments), isBlockingWrites, Optional.empty());
+    public Pong(long activeDocuments, long targetActiveDocuments, boolean isBlockingWrites) {
+        this(activeDocuments, targetActiveDocuments, isBlockingWrites, null);
     }
 
-    private Pong(Optional<Long> activeDocuments, boolean isBlockingWrites, Optional<ErrorMessage> error) {
+    private Pong(Long activeDocuments, Long targetActiveDocuments, boolean isBlockingWrites, ErrorMessage error) {
         this.activeDocuments = activeDocuments;
+        this.targetActiveDocuments = targetActiveDocuments;
         this.isBlockingWrites = isBlockingWrites;
         this.error = error;
     }
 
-    public Optional<ErrorMessage> error() { return error; }
+    public Optional<ErrorMessage> error() { return Optional.ofNullable(error); }
 
     /** Returns the number of active documents in the backend responding in this Pong, if available */
-    public Optional<Long> activeDocuments() { return activeDocuments; }
+    public Optional<Long> activeDocuments() { return Optional.ofNullable(activeDocuments); }
+
+    /** Returns the number of target active documents in the backend responding in this Pong, if available */
+    public Optional<Long> targetActiveDocuments() { return Optional.ofNullable(targetActiveDocuments); }
 
     /** Returns true if the pinged node is currently blocking write operations due to being full */
     public boolean isBlockingWrites() { return isBlockingWrites; }
 
     /** Returns whether there is an error or not */
-    public boolean badResponse() { return error.isPresent(); }
+    public boolean badResponse() { return error != null; }
 
     public ElapsedTime getElapsedTime() { return elapsed; }
 
@@ -59,10 +62,10 @@ public class Pong {
     @Override
     public String toString() {
         StringBuilder m = new StringBuilder("Ping result");
-        activeDocuments.ifPresent(docCount -> m.append(" active docs: ").append(docCount));
+        activeDocuments().ifPresent(docCount -> m.append(" active docs: ").append(docCount));
         if (isBlockingWrites)
             m.append(" blocking writes: true");
-        error.ifPresent(e -> m.append(" error: ").append(error));
+        error().ifPresent(e -> m.append(" error: ").append(error));
         return m.toString();
     }
 

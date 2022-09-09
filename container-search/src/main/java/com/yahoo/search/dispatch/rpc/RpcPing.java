@@ -81,7 +81,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         } else if (!reply.getOnline()) {
             return new Pong(ErrorMessage.createBackendCommunicationError("Node id " + node.key() + " reports being offline"));
         } else {
-            return new Pong(reply.getActiveDocs(), reply.getIsBlockingWrites());
+            return new Pong(reply.getActiveDocs(), reply.getTargetActiveDocs(), reply.getIsBlockingWrites());
         }
     }
 

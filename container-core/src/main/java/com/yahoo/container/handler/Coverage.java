@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
-
-import com.yahoo.api.annotations.Beta;
-
 /**
  * The coverage report for a result set.
  *
@@ -14,7 +11,7 @@ public class Coverage {
 
     protected long docs;
     protected long active;
-    protected long soonActive;
+    protected long targetActive;
     protected int degradedReason;
     protected int nodes;
     private   int nodesTried;
@@ -55,7 +52,7 @@ public class Coverage {
         this.nodes = nodes;
         this.nodesTried = nodes;
         this.active = active;
-        this.soonActive = active;
+        this.targetActive = active;
         this.degradedReason = 0;
         this.resultSets = resultSets;
         this.fullReason = fullReason;
@@ -69,7 +66,7 @@ public class Coverage {
         nodes += other.getNodes();
         nodesTried += other.nodesTried;
         active += other.getActive();
-        soonActive += other.getSoonActive();
+        targetActive += other.getTargetActive();
         degradedReason |= other.degradedReason;
         resultSets += other.getResultSets();
         fullResultSets += other.getFullResultSets();
@@ -104,10 +101,8 @@ public class Coverage {
 
     /**
      * Returns the total number of documents that will be searchable once redistribution has settled.
-     * Still in beta, semantics not finalized yet.
      */
-    @Beta
-    public long getSoonActive() { return soonActive; }
+    public long getTargetActive() { return targetActive; }
 
     public boolean isDegraded() { return (degradedReason != 0) || isDegradedByNonIdealState(); }
     public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }
@@ -117,16 +112,11 @@ public class Coverage {
 
     /** Returns whether the search had full coverage or not */
     public boolean getFull() {
-        switch (fullReason) {
-            case EXPLICITLY_FULL:
-                return true;
-            case EXPLICITLY_INCOMPLETE:
-                return false;
-            case DOCUMENT_COUNT:
-                return docs == active;
-            default:
-                throw new IllegalStateException("Implementation out of sync. Please report this as a bug.");
-        }
+        return switch (fullReason) {
+            case EXPLICITLY_FULL: yield true;
+            case EXPLICITLY_INCOMPLETE: yield false;
+            case DOCUMENT_COUNT: yield docs == active;
+        };
     }
 
     /** Returns the number of search instances which participated successfully in the search. */

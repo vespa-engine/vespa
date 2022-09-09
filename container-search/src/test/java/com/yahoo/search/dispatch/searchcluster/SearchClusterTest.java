@@ -124,7 +124,7 @@ public class SearchClusterTest {
                     int docs = numDocs.get();
                     pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
-                            : new Pong(docs));
+                            : new Pong(docs, docs));
                     pingCount.incrementAndGet();
                 }
             }

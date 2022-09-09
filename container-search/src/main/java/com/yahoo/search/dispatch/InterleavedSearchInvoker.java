@@ -54,7 +54,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private long answeredDocs = 0;
     private long answeredActiveDocs = 0;
-    private long answeredSoonActiveDocs = 0;
+    private long answeredTargetActiveDocs = 0;
     private int askedNodes = 0;
     private int answeredNodes = 0;
     private int answeredNodesParticipated = 0;
@@ -268,7 +268,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private void collectCoverage(Coverage source) {
         answeredDocs += source.getDocs();
         answeredActiveDocs += source.getActive();
-        answeredSoonActiveDocs += source.getTargetActive();
+        answeredTargetActiveDocs += source.getTargetActive();
         answeredNodesParticipated += source.getNodes();
         answeredNodes++;
         degradedByMatchPhase |= source.isDegradedByMatchPhase();
@@ -280,7 +280,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
-        coverage.setTargetActive(answeredSoonActiveDocs);
+        coverage.setTargetActive(answeredTargetActiveDocs);
         int degradedReason = 0;
         if (timedOut) {
             degradedReason |= (adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);
@@ -300,14 +300,14 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         if (adaptiveTimeoutCalculated && answeredNodesParticipated > 0) {
             answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodesParticipated);
-            answeredSoonActiveDocs += (notAnswered * answeredSoonActiveDocs / answeredNodesParticipated);
+            answeredTargetActiveDocs += (notAnswered * answeredTargetActiveDocs / answeredNodesParticipated);
         } else {
             if (askedNodes > answeredNodesParticipated) {
                 int searchableCopies = (int) searchCluster.dispatchConfig().searchableCopies();
                 int missingNodes = notAnswered - (searchableCopies - 1);
                 if (answeredNodesParticipated > 0) {
                     answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
-                    answeredSoonActiveDocs += (missingNodes * answeredSoonActiveDocs / answeredNodesParticipated);
+                    answeredTargetActiveDocs += (missingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
                     timedOut = true;
                 }
             }

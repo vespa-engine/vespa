@@ -263,7 +263,7 @@ public class ProtobufSerialization {
 
     private static Coverage convertToCoverage(SearchProtocol.SearchReply protobuf) {
         var coverage = new Coverage(protobuf.getCoverageDocs(), protobuf.getActiveDocs(), 1);
-        coverage.setNodesTried(1).setTargetActive(protobuf.getSoonActiveDocs());
+        coverage.setNodesTried(1).setTargetActive(protobuf.getTargetActiveDocs());
 
         int degradedReason = 0;
         if (protobuf.getDegradedByMatchPhase())
@@ -280,7 +280,7 @@ public class ProtobufSerialization {
 
         var coverage = result.getCoverage(false);
         if (coverage != null) {
-            builder.setCoverageDocs(coverage.getDocs()).setActiveDocs(coverage.getActive()).setSoonActiveDocs(coverage.getTargetActive())
+            builder.setCoverageDocs(coverage.getDocs()).setActiveDocs(coverage.getActive()).setTargetActiveDocs(coverage.getTargetActive())
                     .setDegradedBySoftTimeout(coverage.isDegradedByTimeout()).setDegradedByMatchPhase(coverage.isDegradedByMatchPhase());
         }
 
