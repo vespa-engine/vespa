@@ -145,21 +145,22 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse userMetadataFromUserId(String email) {
         var maybeUser = users.findUser(email);
 
+        var slime = new Slime();
+        var root = slime.setObject();
+        var usersRoot = root.setArray("users");
+
         if (maybeUser.isPresent()) {
             var user = maybeUser.get();
             var roles = users.listRoles(new UserId(user.email()));
-            var slime = new Slime();
-            var root = slime.setObject();
-            var usersRoot = root.setArray("users");
             renderUserMetaData(usersRoot.addObject(), user, Set.copyOf(roles));
-            return new SlimeJsonResponse(slime);
         }
 
-        return ErrorResponse.notFoundError("Could not find user: " + email);
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse userMetadataQuery(String query) {
         var userList = users.findUsers(query);
+
         var slime = new Slime();
         var root = slime.setObject();
         var userSlime = root.setArray("users");
