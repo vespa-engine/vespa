@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
@@ -93,7 +92,6 @@ public class ControllerTest {
     void testDeployment() {
         // Setup system
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .explicitEnvironment(Environment.dev, Environment.perf)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -1273,38 +1271,33 @@ public class ControllerTest {
     @Test
     void testCloudAccount() {
         DeploymentContext context = tester.newDeploymentContext();
-        ZoneId devZone = devUsEast1.zone();
-        ZoneId prodZone = productionUsWest1.zone();
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
         String cloudAccount = "012345678912";
         var applicationPackage = new ApplicationPackageBuilder()
                 .cloudAccount(cloudAccount)
-                .region(prodZone.region())
+                .region(zone.region())
                 .build();
-        // Prod and dev deployments fail because cloud account is not declared for this tenant
-        context.submit(applicationPackage).runJobExpectingFailure(systemTest, "Requested cloud account '012345678912' is not valid for tenant 'tenant'");
-
-        // Deployment fails because zone is not configured in requested cloud account
-        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        context.runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
-               .abortJob(stagingTest);
-
-        // Deployment to prod succeeds once all zones are configured in requested account
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount),
-                                                                       systemTest.zone(),
-                                                                       stagingTest.zone(),
-                                                                       prodZone);
-        context.submit(applicationPackage).deploy();
-
-        // Dev zone is added as a configured zone and deployment succeeds
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount), devZone);
-        context.runJob(devZone, applicationPackage);
-
-        // All deployments use the custom account
-        for (var zoneId : List.of(systemTest.zone(), stagingTest.zone(), devZone, prodZone)) {
-            assertEquals(cloudAccount, tester.controllerTester().configServer()
-                                             .cloudAccount(context.deploymentIdIn(zoneId))
-                                             .get().value());
+        // Deployment fails because cloud account is not declared for this tenant
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cloud account '012345678912' is not valid for tenant 'tenant'", e.getMessage());
         }
+
+        // Deployment fails because requested region is not configured in cloud account
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Zone prod.us-west-1 in deployment spec is not configured for use in cloud account '012345678912', in this system", e.getMessage());
+        }
+
+        // Deployment succeeds
+        tester.controllerTester().zoneRegistry().setCloudAccountZones(new CloudAccount(cloudAccount), zone);
+        context.submit(applicationPackage).deploy();
+        assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(zone)).get().value());
     }
 
     @Test

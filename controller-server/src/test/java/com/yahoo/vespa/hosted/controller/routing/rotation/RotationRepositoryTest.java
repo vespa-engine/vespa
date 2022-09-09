@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -113,7 +114,7 @@ public class RotationRepositoryTest {
         // We're now out of rotations and next deployment fails
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
         application3.submit(applicationPackage)
-                    .runJobExpectingFailure(DeploymentContext.systemTest, "out of rotations");
+                .runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("out of rotations"));
     }
 
     @Test
@@ -122,7 +123,7 @@ public class RotationRepositoryTest {
                 .globalServiceId("foo")
                 .region("us-east-3")
                 .build();
-        application.submit(applicationPackage).runJobExpectingFailure(DeploymentContext.systemTest, "less than 2 prod zones are defined");
+        application.submit(applicationPackage).runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("less than 2 prod zones are defined"));
     }
 
     @Test

@@ -258,10 +258,6 @@ public class InternalStepRunner implements StepRunner {
 
             throw e;
         }
-        catch (IllegalArgumentException e) {
-            logger.log(WARNING, e.getMessage());
-            return Optional.of(deploymentFailed);
-        }
         catch (EndpointCertificateException e) {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
