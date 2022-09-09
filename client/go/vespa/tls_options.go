@@ -56,7 +56,7 @@ func ExportSecurityEnvToSh() {
 		} else {
 			helper.unsetVar("VESPA_TLS_HOSTNAME_VALIDATION_DISABLED")
 		}
-		if os.Getenv("VESPA_TLS_INSECURE_MIXED_MODE") == "" {
+		if os.Getenv("VESPA_TLS_INSECURE_MIXED_MODE") != "plaintext_client_mixed_server" {
 			helper.overrideVar("VESPA_TLS_ENABLED", "1")
 		}
 	}
