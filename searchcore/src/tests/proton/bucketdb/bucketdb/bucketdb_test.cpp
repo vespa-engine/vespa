@@ -379,4 +379,30 @@ TEST("test that BucketState can count active Documents") {
     EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
 }
 
+TEST_F("test BucketDB active document tracking", Fixture) {
+    Timestamp t1;
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
+    f.add(make_gid(4,1), t1, 3, SubDbType::READY);
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
+    f._db.setBucketState(make_bucket_id(4), true);
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+
+    BucketState bs;
+    bs.add(make_gid(5,1), Timestamp(1), 3, SubDbType::NOTREADY);
+    bs.add(make_gid(5,2), Timestamp(2), 3, SubDbType::NOTREADY);
+    f._db.add(make_bucket_id(5), bs);
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+    f._db.setBucketState(make_bucket_id(5), true);
+    EXPECT_EQUAL(3u, f._db.getNumActiveDocs());
+    BucketState * writeableBS = f._db.getBucketStatePtr(make_bucket_id(5));
+    writeableBS->setActive(false);
+    EXPECT_EQUAL(3u, f._db.getNumActiveDocs());  // Incorrect until integrity restored
+    f._db.restoreIntegrity();
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+
+    f.remove(make_gid(4,1), t1, 3, SubDbType::READY);
+    f._db.unloadBucket(make_bucket_id(5), bs);
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
