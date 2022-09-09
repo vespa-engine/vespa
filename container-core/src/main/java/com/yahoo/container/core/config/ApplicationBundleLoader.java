@@ -66,6 +66,9 @@ public class ApplicationBundleLoader {
         readyForNewBundles = false;
     }
 
+    /**
+     * Must be called after useBundles() to report success or failure for the latest bundle generation.
+     */
     public synchronized Set<Bundle> completeGeneration(GenerationStatus status) {
         Set<Bundle> ret = Set.of();
         if (readyForNewBundles) return ret;
@@ -79,10 +82,8 @@ public class ApplicationBundleLoader {
     }
 
     /**
-     * Commit to the current set of bundles. Must be called after the component graph creation proved successful,
-     * to prevent uninstalling bundles unintentionally upon a future call to {@link #revertToPreviousGeneration()}.
-     * Returns the set of bundles that is no longer used by the application, and should therefore be scheduled
-     * for uninstall.
+     * Commit to the latest set of bundles given to useBundles(). Returns the set of bundles that is no longer
+     * used by the application, and should therefore be scheduled for uninstall.
      */
     private Set<Bundle> commitBundles() {
         var bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
