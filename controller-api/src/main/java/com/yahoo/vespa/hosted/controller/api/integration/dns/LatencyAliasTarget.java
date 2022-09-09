@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class LatencyAliasTarget extends AliasTarget {
+public final class LatencyAliasTarget extends AliasTarget {
 
     private final ZoneId zone;
 

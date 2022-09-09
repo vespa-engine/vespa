@@ -10,7 +10,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public abstract class AliasTarget {
+public sealed abstract class AliasTarget permits LatencyAliasTarget, WeightedAliasTarget {
 
     private final DomainName name;
     private final String dnsZone;

@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class WeightedAliasTarget extends AliasTarget {
+public final class WeightedAliasTarget extends AliasTarget {
 
     private final long weight;
 
