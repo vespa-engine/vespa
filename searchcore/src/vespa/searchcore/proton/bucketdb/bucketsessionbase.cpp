@@ -10,6 +10,9 @@ BucketSessionBase::BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotif
 {
 }
 
+BucketSessionBase::~BucketSessionBase() {
+    _bucketDB->restoreIntegrity();
+}
 
 bool
 BucketSessionBase::extractInfo(const BucketId &bucket, BucketState *&state)

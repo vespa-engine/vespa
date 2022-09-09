@@ -94,9 +94,12 @@ struct Fixture
     void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.add(gid, bucket, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     const BucketState &add(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
-        return _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        const auto & state = _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
+        return state;
     }
     const BucketState &add(const Timestamp &timestamp, SubDbType subDbType) {
         return add(timestamp, DOCSIZE_1, subDbType);
@@ -104,9 +107,11 @@ struct Fixture
     void remove(const GlobalId& gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.remove(gid, bucket, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     BucketState remove(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         _db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
         return get();
     }
     BucketState remove(const Timestamp &timestamp, SubDbType subDbType) {
@@ -114,8 +119,10 @@ struct Fixture
     }
     void remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType sub_db_type) {
         _db.remove_batch(removed, sub_db_type);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     BucketState get(BucketId bucket_id) const {
+        ASSERT_TRUE(_db.validateIntegrity());
         return _db.get(bucket_id);
     }
     BucketState get() const {

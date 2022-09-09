@@ -1044,6 +1044,9 @@ struct SplitAndJoinEmptyFixture {
     void assertNotifyCreateBuckets(std::vector<document::BucketId> expBuckets) {
         EXPECT_EQ(expBuckets, _bucketCreateListener._buckets);
     }
+    void assertBucketDB() {
+        ASSERT_TRUE(dms.getBucketDB().takeGuard()->validateIntegrity());
+    }
 };
 
 SplitAndJoinEmptyFixture::SplitAndJoinEmptyFixture()
@@ -1252,7 +1255,9 @@ TEST(DocumentMetaStoreTest, active_state_is_preserved_after_split)
         assertActiveLids(getBoolVector(*f.bid30Gids, 31),
                          f.dms.getActiveLids());
         EXPECT_EQ(f.bid30Gids->size(), f.dms.getNumActiveLids());
+        f.assertBucketDB();
         f._bucketDBHandler.handleSplit(10, f.bid10, f.bid20, f.bid22);
+        f.assertBucketDB();
         EXPECT_FALSE(f.getInfo(f.bid20).isActive());
         EXPECT_FALSE(f.getInfo(f.bid22).isActive());
         assertActiveLids(BoolVector(31), f.dms.getActiveLids());

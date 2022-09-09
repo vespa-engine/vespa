@@ -66,6 +66,7 @@ public:
     size_t getRemovedDocSizes() const { return _docSizes[REMOVED]; }
     size_t getNotReadyDocSizes() const { return _docSizes[NOTREADY]; }
     uint32_t getDocumentCount() const { return getReadyCount() + getNotReadyCount(); }
+    uint32_t getActiveDocumentCount() const { return isActive() ? getDocumentCount() : 0u;}
     uint32_t getEntryCount() const { return getDocumentCount() + getRemovedCount(); }
     BucketChecksum getChecksum() const;
     bool empty() const;

@@ -25,6 +25,9 @@ protected:
 
 public:
     BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotifier &bucketCreateNotifier);
+    BucketSessionBase(const BucketSessionBase &) = delete;
+    BucketSessionBase & operator =(const BucketSessionBase &) = delete;
+    ~BucketSessionBase();
     bool extractInfo(const BucketId &bucket, BucketState *&info);
 
     static bool calcFixupNeed(BucketState *state, bool wantActive, bool fixup);

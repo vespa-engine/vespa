@@ -17,6 +17,7 @@ using bucketdb::RemoveBatchEntry;
 
 BucketDB::BucketDB()
     : _map(),
+      _numActiveDocs(0),
       _cachedBucketId(),
       _cachedBucketState()
 {
@@ -28,9 +29,22 @@ BucketDB::~BucketDB()
     clear();
 }
 
+size_t
+BucketDB::countActiveDocs() const {
+    size_t activeDocs = 0;
+    for (const auto & state : _map) {
+        activeDocs += state.second.getActiveDocumentCount();
+    }
+    return activeDocs;
+}
+
 void
-BucketDB::add(BucketId bucketId, const BucketState & state) {
-    _map[bucketId] += state;
+BucketDB::add(BucketId bucketId, const BucketState & delta) {
+    auto & state = _map[bucketId];
+    state += delta;
+    if (state.isActive()) {
+        addActive(delta.getDocumentCount());
+    }
 }
 
 bucketdb::BucketState *
@@ -41,11 +55,20 @@ BucketDB::getBucketStatePtr(BucketId bucket)
 }
 
 void
+BucketDB::checkActiveCount() const {
+    assert(getNumActiveDocs() == countActiveDocs());
+}
+
+void
 BucketDB::unloadBucket(BucketId bucket, const BucketState &delta)
 {
+    checkActiveCount();
     BucketState *state = getBucketStatePtr(bucket);
     assert(state);
     *state -= delta;
+    if (state->isActive()) {
+        subActive(delta.getDocumentCount());
+    }
 }
 
 const bucketdb::BucketState &
@@ -55,6 +78,9 @@ BucketDB::add(const GlobalId &gid,
 {
     BucketState &state = _map[bucketId];
     state.add(gid, timestamp, docSize, subDbType);
+    if (state.isActive() && subDbType != SubDbType::REMOVED) {
+        addActive(1);
+    }
     return state;
 }
 
@@ -65,6 +91,9 @@ BucketDB::remove(const GlobalId &gid,
 {
     BucketState &state = _map[bucketId];
     state.remove(gid, timestamp, docSize, subDbType);
+    if (state.isActive() && subDbType != SubDbType::REMOVED) {
+        subActive(1);
+    }
 }
 
 void
@@ -78,6 +107,9 @@ BucketDB::remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType s
             prev_bucket_id = entry.get_bucket_id();
         }
         state->remove(entry.get_gid(), entry.get_timestamp(), entry.get_doc_size(), sub_db_type);
+        if (state->isActive() && sub_db_type != SubDbType::REMOVED) {
+            subActive(1);
+        }
     }
 }
 
@@ -167,16 +199,12 @@ BucketDB::getBuckets() const
     return buckets;
 }
 
-bool
-BucketDB::empty() const
-{
-    return _map.empty();
-}
-
 void
 BucketDB::clear()
 {
+    checkActiveCount();
     _map.clear();
+    _numActiveDocs = 0ul;
 }
 
 void
@@ -187,6 +215,7 @@ BucketDB::checkEmpty() const
         assert(state.empty());
         (void) state;
     }
+    assert(getNumActiveDocs() == 0ul);
 }
 
 
@@ -194,7 +223,13 @@ void
 BucketDB::setBucketState(BucketId bucketId, bool active)
 {
     BucketState &state = _map[bucketId];
+    if (active == state.isActive()) return;
     state.setActive(active);
+    if (active) {
+        addActive(state.getDocumentCount());
+    } else {
+        subActive(state.getDocumentCount());
+    }
 }
 
 
@@ -263,5 +298,17 @@ BucketDB::populateActiveBuckets(BucketId::List buckets)
     }
     return fixupBuckets;
 }
+
+void BucketDB::restoreIntegrity() {
+    uncacheBucket();
+    _numActiveDocs = countActiveDocs();
+}
+
+bool
+BucketDB::validateIntegrity() const {
+    checkActiveCount();
+    return true;
+}
+
 
 }
