@@ -13,19 +13,15 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RoutingStatus {
+public record RoutingStatus(Value value, Agent agent, Instant changedAt) {
 
     public static final RoutingStatus DEFAULT = new RoutingStatus(Value.in, Agent.system, Instant.EPOCH);
 
-    private final Value value;
-    private final Agent agent;
-    private final Instant changedAt;
-
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingStatus(Value value, Agent agent, Instant changedAt) {
-        this.value = Objects.requireNonNull(value, "value must be non-null");
-        this.agent = Objects.requireNonNull(agent, "agent must be non-null");
-        this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
+    public RoutingStatus {
+        Objects.requireNonNull(value, "value must be non-null");
+        Objects.requireNonNull(agent, "agent must be non-null");
+        Objects.requireNonNull(changedAt, "changedAt must be non-null");
     }
 
     /**
@@ -44,21 +40,6 @@ public class RoutingStatus {
     /** The time this was last changed */
     public Instant changedAt() {
         return changedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RoutingStatus that = (RoutingStatus) o;
-        return value == that.value &&
-               agent == that.agent &&
-               changedAt.equals(that.changedAt);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value, agent, changedAt);
     }
 
     @Override

@@ -13,38 +13,11 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class ZoneRoutingPolicy {
+public record ZoneRoutingPolicy(ZoneId zone, RoutingStatus routingStatus) {
 
-    private final ZoneId zone;
-    private final RoutingStatus routingStatus;
-
-    public ZoneRoutingPolicy(ZoneId zone, RoutingStatus routingStatus) {
-        this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.routingStatus = Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
-    }
-
-    /** The zone this applies to */
-    public ZoneId zone() {
-        return zone;
-    }
-
-    /** Routing status of this policy */
-    public RoutingStatus routingStatus() {
-        return routingStatus;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ZoneRoutingPolicy that = (ZoneRoutingPolicy) o;
-        return zone.equals(that.zone) &&
-               routingStatus.equals(that.routingStatus);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(zone, routingStatus);
+    public ZoneRoutingPolicy {
+        Objects.requireNonNull(zone, "zone must be non-null");
+        Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
     }
 
 }
