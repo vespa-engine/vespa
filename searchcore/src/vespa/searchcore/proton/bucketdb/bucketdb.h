@@ -78,7 +78,7 @@ public:
 
     // Avoid using this one as it breaks encapsulation
     BucketState *getBucketStatePtr(BucketId bucket);
-    // Must be called if buckets state aquired with getBucketStatePtr has bene modified.
+    // Must be called if buckets state aquired with getBucketStatePtr has been modified.
     void restoreIntegrity();
     bool validateIntegrity() const;
 
