@@ -37,7 +37,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
 
         Version targetPlatform = null; // Upgrade to the newest non-broken, deployable version.
         for (VespaVersion platform : controller().readVersionStatus().deployableVersions())
-            if (platform.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
+            if (platform.confidence().equalOrHigherThan(VespaVersion.Confidence.normal))
                 targetPlatform = platform.versionNumber();
 
         if (targetPlatform == null)
@@ -56,6 +56,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         if (application.revisions().get(last.versions().targetRevision()).compileVersion()
                                 .map(version -> controller().applications().versionCompatibility(instance.id()).refuse(version, target.targetPlatform()))
                                 .orElse(false)) continue;
+
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
                         if ( ! isLikelyNightFor(job)) continue;
 

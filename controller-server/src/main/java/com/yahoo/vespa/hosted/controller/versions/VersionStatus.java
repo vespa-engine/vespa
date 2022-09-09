@@ -227,7 +227,7 @@ public record VersionStatus(List<VespaVersion> versions) {
             if (isSystemVersion || isControllerVersion) {
                 confidence = VespaVersion.confidenceFrom(statistics, controller);
             } else {
-                // This is an older version so we preserve the existing confidence, if any
+                // This is an older version, so we preserve the existing confidence, if any
                 confidence = versionStatus.versions().stream()
                                           .filter(v -> statistics.version().equals(v.versionNumber()))
                                           .map(VespaVersion::confidence)

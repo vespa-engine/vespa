@@ -751,7 +751,7 @@ public class JobController {
 
         List<Version> versions = new ArrayList<>(List.of(systemVersion));
         for (VespaVersion version : versionStatus.deployableVersions())
-            if (version.confidence().equalOrHigherThan(Confidence.low))
+            if (version.confidence().equalOrHigherThan(Confidence.normal))
                 versions.add(version.versionNumber());
 
         instance.map(Instance::deployments)

@@ -2308,9 +2308,9 @@ public class DeploymentTriggerTest {
         dev1.assertNotRunning(JobType.dev("us-east-1"));
 
         tester.controllerTester().upgradeSystem(version2);
-        tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(version1, tester.newDeploymentContext("t", "a4", "default").submit().deploy().application().oldestDeployedPlatform().get());
+        assertEquals(version2, tester.newDeploymentContext("t", "a4", "default").submit().deploy().application().oldestDeployedPlatform().get());
         assertEquals(version1, dev1.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
         assertEquals(version2, dev2.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
 
