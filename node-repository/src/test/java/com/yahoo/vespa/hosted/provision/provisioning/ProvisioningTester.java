@@ -115,10 +115,7 @@ public class ProvisioningTester {
                                                  true,
                                                  spareCount,
                                                  1000);
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository,
-                                                         zone,
-                                                         provisionServiceProvider,
-                                                         flagSource);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;

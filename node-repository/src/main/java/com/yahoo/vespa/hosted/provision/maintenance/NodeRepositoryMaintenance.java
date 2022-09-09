@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.HostLivenessTracker;
