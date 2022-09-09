@@ -100,16 +100,13 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder = defaultOptions("mycluster");
         builder.setMasterZooKeeperCooldownPeriod(100);
         boolean usingFakeTimer = false;
-        setUpFleetControllers(5, usingFakeTimer, builder);
+        setUpFleetControllers(3, usingFakeTimer, builder);
         waitForMaster(0);
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 1");
         fleetControllers.get(1).shutdown();
-        waitForMaster(2);
-        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
-        fleetControllers.get(2).shutdown();
 
         // Too few for there to be a master at this point
         for (int i = 0; i < fleetControllers.size(); ++i) {
@@ -117,30 +114,22 @@ public class MasterElectionTest extends FleetControllerTest {
             assertFalse(fleetControllers.get(i).isMaster(), "Fleet controller " + i);
         }
 
-        log.log(Level.INFO, "STARTING FLEET CONTROLLER 2");
-        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions()));
-        waitForMaster(2);
+        log.log(Level.INFO, "STARTING FLEET CONTROLLER 1");
+        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions()));
+        waitForMaster(1);
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 0");
         fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions()));
         waitForMaster(0);
-        log.log(Level.INFO, "STARTING FLEET CONTROLLER 1");
-        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions()));
-        waitForMaster(0);
+    }
 
-        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 4");
-        fleetControllers.get(4).shutdown();
+    @Test
+    void testMasterElectionWith5FleetControllers() throws Exception {
+        startingTest("MasterElectionTest::testMasterElectionWith5FleetControllers");
+        log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElectionWith5FleetControllers()");
+        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        boolean usingFakeTimer = false;
+        setUpFleetControllers(5, usingFakeTimer, builder);
         waitForMaster(0);
-        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 3");
-        fleetControllers.get(3).shutdown();
-        waitForMaster(0);
-        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
-        fleetControllers.get(2).shutdown();
-
-        // Too few for there to be a master at this point
-        for (int i = 0; i < fleetControllers.size(); ++i) {
-            if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
-            assertFalse(fleetControllers.get(i).isMaster());
-        }
     }
 
     private void waitForMaster(int master) {
