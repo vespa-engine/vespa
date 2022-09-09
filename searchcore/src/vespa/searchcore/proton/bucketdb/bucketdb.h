@@ -32,10 +32,10 @@ private:
     size_t countActiveDocs() const;
     void checkActiveCount() const;
     void addActive(size_t value) {
-        _numActiveDocs.fetch_add(value, std::memory_order_relaxed);
+        _numActiveDocs.store(getNumActiveDocs() + value, std::memory_order_relaxed);
     }
     void subActive(size_t value) {
-        _numActiveDocs.fetch_sub(value, std::memory_order_relaxed);
+        _numActiveDocs.store(getNumActiveDocs() - value, std::memory_order_relaxed);
     }
 public:
     BucketDB();
