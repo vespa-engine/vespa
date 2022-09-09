@@ -258,6 +258,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
           .append(options.clusterFeedBlockLimit().entrySet().stream()
                                        .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
+                                       .sorted()
                                        .collect(Collectors.joining("<br/>"))).append("</td></tr>");
 
         sb.append("</table>");
