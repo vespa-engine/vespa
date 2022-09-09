@@ -351,4 +351,32 @@ TEST("test that xxhash64 checksum complies") {
     EXPECT_EQUAL(0xd26fca9au, cksum);
 }
 
+TEST("test that BucketState can count active Documents") {
+    GlobalId gid1("aaaaaaaaaaaa");
+    GlobalId gid2("bbbbbbbbbbbb");
+    GlobalId gid3("cccccccccccc");
+    Timestamp t1;
+    BucketState bs;
+    EXPECT_FALSE(bs.isActive());
+    EXPECT_EQUAL(0u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+    bs.add(gid1, t1, 1, SubDbType::READY);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+    bs.setActive(true);
+    EXPECT_EQUAL(1u, bs.getActiveDocumentCount());
+    bs.add(gid2, t1, 1, SubDbType::NOTREADY);
+    EXPECT_EQUAL(2u, bs.getDocumentCount());
+    EXPECT_EQUAL(2u, bs.getActiveDocumentCount());
+    bs.add(gid3, t1, 1, SubDbType::REMOVED);
+    EXPECT_EQUAL(2u, bs.getDocumentCount());
+    EXPECT_EQUAL(2u, bs.getActiveDocumentCount());
+    bs.remove(gid2, t1, 1, SubDbType::NOTREADY);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(1u, bs.getActiveDocumentCount());
+    bs.setActive(false);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
