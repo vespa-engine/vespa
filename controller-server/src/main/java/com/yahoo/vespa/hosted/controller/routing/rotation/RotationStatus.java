@@ -13,13 +13,11 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RotationStatus {
+public record RotationStatus(Map<RotationId, Targets> status) {
 
     public static final RotationStatus EMPTY = new RotationStatus(Map.of());
 
-    private final Map<RotationId, Targets> status;
-
-    private RotationStatus(Map<RotationId, Targets> status) {
+    public RotationStatus(Map<RotationId, Targets> status) {
         this.status = Map.copyOf(Objects.requireNonNull(status));
     }
 
@@ -46,30 +44,14 @@ public class RotationStatus {
         return "rotation status " + status;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RotationStatus that = (RotationStatus) o;
-        return status.equals(that.status);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(status);
-    }
-
     public static RotationStatus from(Map<RotationId, Targets> targets) {
         return targets.isEmpty() ? EMPTY : new RotationStatus(targets);
     }
 
     /** Targets of a rotation */
-    public static class Targets {
+    public record Targets(Map<ZoneId, RotationState> targets, Instant lastUpdated) {
 
         public static final Targets NONE = new Targets(Map.of(), Instant.EPOCH);
-
-        private final Map<ZoneId, RotationState> targets;
-        private final Instant lastUpdated;
 
         public Targets(Map<ZoneId, RotationState> targets, Instant lastUpdated) {
             this.targets = Map.copyOf(Objects.requireNonNull(targets, "states must be non-null"));
@@ -78,24 +60,6 @@ public class RotationStatus {
 
         public Map<ZoneId, RotationState> asMap() {
             return targets;
-        }
-
-        public Instant lastUpdated() {
-            return lastUpdated;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Targets targets1 = (Targets) o;
-            return targets.equals(targets1.targets) &&
-                   lastUpdated.equals(targets1.lastUpdated);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(targets, lastUpdated);
         }
 
     }

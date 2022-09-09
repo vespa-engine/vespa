@@ -23,14 +23,12 @@ import java.util.Set;
  * @author mortent
  * @author mpolden
  */
-public class RoutingPolicy {
-
-    private final RoutingPolicyId id;
-    private final DomainName canonicalName;
-    private final Optional<String> dnsZone;
-    private final Set<EndpointId> instanceEndpoints;
-    private final Set<EndpointId> applicationEndpoints;
-    private final Status status;
+public record RoutingPolicy(RoutingPolicyId id,
+                            DomainName canonicalName,
+                            Optional<String> dnsZone,
+                            Set<EndpointId> instanceEndpoints,
+                            Set<EndpointId> applicationEndpoints,
+                            Status status) {
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(RoutingPolicyId id, DomainName canonicalName, Optional<String> dnsZone,
@@ -123,15 +121,11 @@ public class RoutingPolicy {
     }
 
     /** The status of a routing policy */
-    public static class Status {
-
-        private final boolean active;
-        private final RoutingStatus routingStatus;
+    public record Status(boolean active, RoutingStatus routingStatus) {
 
         /** DO NOT USE. Public for serialization purposes */
-        public Status(boolean active, RoutingStatus routingStatus) {
-            this.active = active;
-            this.routingStatus = Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
+        public Status {
+            Objects.requireNonNull(routingStatus, "routingStatus must be non-null");
         }
 
         /** Returns whether this is considered active according to the load balancer status */
@@ -147,20 +141,6 @@ public class RoutingPolicy {
         /** Returns a copy of this with routing status changed */
         public Status with(RoutingStatus routingStatus) {
             return new Status(active, routingStatus);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Status status = (Status) o;
-            return active == status.active &&
-                   routingStatus.equals(status.routingStatus);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(active, routingStatus);
         }
 
     }

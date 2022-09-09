@@ -12,42 +12,14 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RoutingId {
+public record RoutingId(ApplicationId instance,
+                        EndpointId endpointId,
+                        TenantAndApplicationId application) {
 
-    private final TenantAndApplicationId application;
-    private final ApplicationId instance;
-    private final EndpointId endpointId;
-
-    private RoutingId(ApplicationId instance, EndpointId endpointId) {
-        this.instance = Objects.requireNonNull(instance, "application must be non-null");
-        this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
-
-        application = TenantAndApplicationId.from(instance);
-    }
-
-    public TenantAndApplicationId application() {
-        return application;
-    }
-
-    public ApplicationId instance() {
-        return instance;
-    }
-
-    public EndpointId endpointId() {
-        return endpointId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RoutingId routingId = (RoutingId) o;
-        return application.equals(routingId.application) && instance.equals(routingId.instance) && endpointId.equals(routingId.endpointId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(application, instance, endpointId);
+    public RoutingId {
+        Objects.requireNonNull(instance, "application must be non-null");
+        Objects.requireNonNull(endpointId, "endpointId must be non-null");
+        Objects.requireNonNull(application, "application must be non-null");
     }
 
     @Override
@@ -56,7 +28,7 @@ public class RoutingId {
     }
 
     public static RoutingId of(ApplicationId instance, EndpointId endpoint) {
-        return new RoutingId(instance, endpoint);
+        return new RoutingId(instance, endpoint, TenantAndApplicationId.from(instance));
     }
 
 }
