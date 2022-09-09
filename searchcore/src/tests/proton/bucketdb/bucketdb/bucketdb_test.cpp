@@ -94,9 +94,12 @@ struct Fixture
     void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.add(gid, bucket, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     const BucketState &add(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
-        return _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        const auto & state = _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
+        return state;
     }
     const BucketState &add(const Timestamp &timestamp, SubDbType subDbType) {
         return add(timestamp, DOCSIZE_1, subDbType);
@@ -104,9 +107,11 @@ struct Fixture
     void remove(const GlobalId& gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.remove(gid, bucket, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     BucketState remove(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         _db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+        ASSERT_TRUE(_db.validateIntegrity());
         return get();
     }
     BucketState remove(const Timestamp &timestamp, SubDbType subDbType) {
@@ -114,8 +119,10 @@ struct Fixture
     }
     void remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType sub_db_type) {
         _db.remove_batch(removed, sub_db_type);
+        ASSERT_TRUE(_db.validateIntegrity());
     }
     BucketState get(BucketId bucket_id) const {
+        ASSERT_TRUE(_db.validateIntegrity());
         return _db.get(bucket_id);
     }
     BucketState get() const {
@@ -342,6 +349,60 @@ TEST("test that legacy checksum complies") {
 TEST("test that xxhash64 checksum complies") {
     BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::XXHASH64);
     EXPECT_EQUAL(0xd26fca9au, cksum);
+}
+
+TEST("test that BucketState can count active Documents") {
+    GlobalId gid1("aaaaaaaaaaaa");
+    GlobalId gid2("bbbbbbbbbbbb");
+    GlobalId gid3("cccccccccccc");
+    Timestamp t1;
+    BucketState bs;
+    EXPECT_FALSE(bs.isActive());
+    EXPECT_EQUAL(0u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+    bs.add(gid1, t1, 1, SubDbType::READY);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+    bs.setActive(true);
+    EXPECT_EQUAL(1u, bs.getActiveDocumentCount());
+    bs.add(gid2, t1, 1, SubDbType::NOTREADY);
+    EXPECT_EQUAL(2u, bs.getDocumentCount());
+    EXPECT_EQUAL(2u, bs.getActiveDocumentCount());
+    bs.add(gid3, t1, 1, SubDbType::REMOVED);
+    EXPECT_EQUAL(2u, bs.getDocumentCount());
+    EXPECT_EQUAL(2u, bs.getActiveDocumentCount());
+    bs.remove(gid2, t1, 1, SubDbType::NOTREADY);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(1u, bs.getActiveDocumentCount());
+    bs.setActive(false);
+    EXPECT_EQUAL(1u, bs.getDocumentCount());
+    EXPECT_EQUAL(0u, bs.getActiveDocumentCount());
+}
+
+TEST_F("test BucketDB active document tracking", Fixture) {
+    Timestamp t1;
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
+    f.add(make_gid(4,1), t1, 3, SubDbType::READY);
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
+    f._db.setBucketState(make_bucket_id(4), true);
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+
+    BucketState bs;
+    bs.add(make_gid(5,1), Timestamp(1), 3, SubDbType::NOTREADY);
+    bs.add(make_gid(5,2), Timestamp(2), 3, SubDbType::NOTREADY);
+    f._db.add(make_bucket_id(5), bs);
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+    f._db.setBucketState(make_bucket_id(5), true);
+    EXPECT_EQUAL(3u, f._db.getNumActiveDocs());
+    BucketState * writeableBS = f._db.getBucketStatePtr(make_bucket_id(5));
+    writeableBS->setActive(false);
+    EXPECT_EQUAL(3u, f._db.getNumActiveDocs());  // Incorrect until integrity restored
+    f._db.restoreIntegrity();
+    EXPECT_EQUAL(1u, f._db.getNumActiveDocs());
+
+    f.remove(make_gid(4,1), t1, 3, SubDbType::READY);
+    f._db.unloadBucket(make_bucket_id(5), bs);
+    EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

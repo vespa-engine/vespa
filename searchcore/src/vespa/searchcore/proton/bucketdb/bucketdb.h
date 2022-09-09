@@ -6,6 +6,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
 
 namespace proton::bucketdb { class RemoveBatchEntry; }
 
@@ -21,12 +22,21 @@ private:
     using BucketState = bucketdb::BucketState;
     using Map = vespalib::hash_map<BucketId, BucketState, document::BucketId::hash>;
 
-    Map _map;
-    BucketId _cachedBucketId;
-    BucketState _cachedBucketState;
+    Map                  _map;
+    std::atomic<size_t>  _numActiveDocs;
+    BucketId             _cachedBucketId;
+    BucketState          _cachedBucketState;
 
     void clear();
     void checkEmpty() const;
+    size_t countActiveDocs() const;
+    void checkActiveCount() const;
+    void addActive(size_t value) {
+        _numActiveDocs.store(getNumActiveDocs() + value, std::memory_order_relaxed);
+    }
+    void subActive(size_t value) {
+        _numActiveDocs.store(getNumActiveDocs() - value, std::memory_order_relaxed);
+    }
 public:
     BucketDB();
     ~BucketDB();
@@ -55,7 +65,7 @@ public:
     BucketState cachedGet(BucketId bucketId) const;
     bool hasBucket(BucketId bucketId) const;
     BucketId::List getBuckets() const;
-    bool empty() const;
+    bool empty() const { return _map.empty(); }
     void setBucketState(BucketId bucketId, bool active);
     void createBucket(BucketId bucketId);
     void deleteEmptyBucket(BucketId bucketId);
@@ -63,8 +73,15 @@ public:
     BucketId::List populateActiveBuckets(BucketId::List buckets);
     size_t size() const { return _map.size(); }
     bool isActiveBucket(BucketId bucketId) const;
-    BucketState *getBucketStatePtr(BucketId bucket);
     void unloadBucket(BucketId bucket, const BucketState &delta);
+    size_t getNumActiveDocs() const { return _numActiveDocs.load(std::memory_order_relaxed); }
+
+    // Avoid using this one as it breaks encapsulation
+    BucketState *getBucketStatePtr(BucketId bucket);
+    // Must be called if buckets state aquired with getBucketStatePtr has been modified.
+    void restoreIntegrity();
+    bool validateIntegrity() const;
+
 };
 
 }

@@ -70,14 +70,14 @@ static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
 
 class DummyTlsSyncer : public ITlsSyncer {
 public:
-    virtual ~DummyTlsSyncer() = default;
+    ~DummyTlsSyncer() override = default;
 
-    virtual void sync() override { }
+    void sync() override { }
 };
 
 struct BoolVector : public std::vector<bool> {
     BoolVector() : std::vector<bool>() {}
-    BoolVector(size_t sz) : std::vector<bool>(sz) {}
+    explicit BoolVector(size_t sz) : std::vector<bool>(sz) {}
     BoolVector &T() { push_back(true); return *this; }
     BoolVector &F() { push_back(false); return *this; }
 
@@ -478,9 +478,9 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
         uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQ(lid, addLid);
     }
-    for (size_t i = 0; i < removeLids.size(); ++i) {
-        dms1.remove(removeLids[i], 0u);
-        dms1.removes_complete({ removeLids[i] });
+    for (uint32_t lid : removeLids) {
+        dms1.remove(lid, 0u);
+        dms1.removes_complete({ lid });
     }
     uint64_t expSaveBytesSize = DocumentMetaStore::minHeaderLen +
                                 (1000 - 4) * DocumentMetaStore::entrySize;
@@ -675,17 +675,17 @@ requireThatBasicBucketInfoWorks()
     uint32_t cnt = 0u;
     uint32_t maxcnt = 0u;
     bucketdb::Guard bucketDB = dms.getBucketDB().takeGuard();
-    for (Map::const_iterator i = m.begin(), ie = m.end(); i != ie; ++i) {
-        if (i->first.first == prevBucket) {
-            cksum.add(i->first.second, i->second, 1, SubDbType::READY);
+    for (const auto & e : m) {
+        if (e.first.first == prevBucket) {
+            cksum.add(e.first.second, e.second, 1, SubDbType::READY);
             ++cnt;
         } else {
             BucketInfo bi = bucketDB->get(prevBucket);
             EXPECT_EQ(cnt, bi.getDocumentCount());
             EXPECT_EQ(cksum.getChecksum(), bi.getChecksum());
-            prevBucket = i->first.first;
+            prevBucket = e.first.first;
             cksum = BucketState();
-            cksum.add(i->first.second, i->second, 1, SubDbType::READY);
+            cksum.add(e.first.second, e.second, 1, SubDbType::READY);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
         }
@@ -727,26 +727,26 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_lids_from_bucket_id)
 
     // Verify that bucket id x has y lids
     EXPECT_EQ(4u, m.size());
-    for (Map::const_iterator itr = m.begin(); itr != m.end(); ++itr) {
-        const BucketId &bucketId = itr->first;
-        const LidVector &expLids = itr->second;
+    for (const auto & e : m) {
+        const BucketId &bucketId = e.first;
+        const LidVector &expLids = e.second;
         LOG(info, "Verify that bucket id '%s' has %zu lids",
             bucketId.toString().c_str(), expLids.size());
         LidVector actLids;
         dms.getLids(bucketId, actLids);
         EXPECT_EQ(expLids.size(), actLids.size());
-        for (size_t i = 0; i < expLids.size(); ++i) {
-            EXPECT_TRUE(std::find(actLids.begin(), actLids.end(), expLids[i]) != actLids.end());
+        for (uint32_t lid : expLids) {
+            EXPECT_TRUE(std::find(actLids.begin(), actLids.end(), lid) != actLids.end());
         }
     }
 
     // Remove and verify empty buckets
-    for (Map::const_iterator itr = m.begin(); itr != m.end(); ++itr) {
-        const BucketId &bucketId = itr->first;
-        const LidVector &expLids = itr->second;
-        for (size_t i = 0; i < expLids.size(); ++i) {
-            EXPECT_TRUE(dms.remove(expLids[i], 0u));
-            dms.removes_complete({ expLids[i] });
+    for (const auto & e : m) {
+        const BucketId &bucketId = e.first;
+        const LidVector &expLids = e.second;
+        for (uint32_t lid : expLids) {
+            EXPECT_TRUE(dms.remove(lid, 0u));
+            dms.removes_complete({ lid });
         }
         LOG(info, "Verify that bucket id '%s' has 0 lids", bucketId.toString().c_str());
         LidVector actLids;
@@ -801,7 +801,7 @@ UserDocFixture::UserDocFixture()
     bid2 = BucketId(minNumBits, gids[2].convertToBucketId().getRawId());
     bid3 = BucketId(minNumBits, gids[7].convertToBucketId().getRawId());
 }
-UserDocFixture::~UserDocFixture() {}
+UserDocFixture::~UserDocFixture() = default;
 
 void
 UserDocFixture::addGlobalIds(size_t numGids) {
@@ -990,7 +990,7 @@ struct GlobalIdEntry {
     BucketId bid1;
     BucketId bid2;
     BucketId bid3;
-    GlobalIdEntry(uint32_t lid_) :
+    explicit GlobalIdEntry(uint32_t lid_) :
         lid(lid_),
         gid(createGid(lid_)),
         bid1(1, gid.convertToBucketId().getRawId()),
@@ -1005,7 +1005,7 @@ struct MyBucketCreateListener : public IBucketCreateListener {
     std::vector<document::BucketId> _buckets;
 
     MyBucketCreateListener();
-    ~MyBucketCreateListener();
+    ~MyBucketCreateListener() override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const document::BucketId &bucket) override;
 };
 
@@ -1041,8 +1041,11 @@ struct SplitAndJoinEmptyFixture {
         return dms.getBucketDB().takeGuard()->get(bid);
     }
 
-    void assertNotifyCreateBuckets(std::vector<document::BucketId> expBuckets) {
+    void assertNotifyCreateBuckets(const std::vector<document::BucketId> & expBuckets) {
         EXPECT_EQ(expBuckets, _bucketCreateListener._buckets);
+    }
+    void assertBucketDBIntegrity() {
+        ASSERT_TRUE(dms.getBucketDB().takeGuard()->validateIntegrity());
     }
 };
 
@@ -1252,7 +1255,9 @@ TEST(DocumentMetaStoreTest, active_state_is_preserved_after_split)
         assertActiveLids(getBoolVector(*f.bid30Gids, 31),
                          f.dms.getActiveLids());
         EXPECT_EQ(f.bid30Gids->size(), f.dms.getNumActiveLids());
+        f.assertBucketDBIntegrity();
         f._bucketDBHandler.handleSplit(10, f.bid10, f.bid20, f.bid22);
+        f.assertBucketDBIntegrity();
         EXPECT_FALSE(f.getInfo(f.bid20).isActive());
         EXPECT_FALSE(f.getInfo(f.bid22).isActive());
         assertActiveLids(BoolVector(31), f.dms.getActiveLids());
