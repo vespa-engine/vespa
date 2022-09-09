@@ -148,8 +148,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock setCloudAccountZones(CloudAccount cloudAccount, ZoneId... zones) {
-        this.cloudAccountZones.put(cloudAccount, Set.of(zones));
+    public ZoneRegistryMock configureCloudAccount(CloudAccount cloudAccount, ZoneId... zones) {
+        this.cloudAccountZones.computeIfAbsent(cloudAccount, (k) -> new HashSet<>()).addAll(Set.of(zones));
         return this;
     }
 

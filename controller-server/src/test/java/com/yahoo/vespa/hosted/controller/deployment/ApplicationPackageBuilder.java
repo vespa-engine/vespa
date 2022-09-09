@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.security.SignatureAlgorithm;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -55,6 +57,7 @@ public class ApplicationPackageBuilder {
     private final StringBuilder endpointsBody = new StringBuilder();
     private final StringBuilder applicationEndpointsBody = new StringBuilder();
     private final List<X509Certificate> trustedCertificates = new ArrayList<>();
+    private final Map<Environment, Map<String, String>> nonProductionEnvironments = new LinkedHashMap<>();
 
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
@@ -65,8 +68,6 @@ public class ApplicationPackageBuilder {
     private String globalServiceId = null;
     private String athenzIdentityAttributes = "athenz-domain='domain' athenz-service='service'";
     private String searchDefinition = "search test { }";
-    private boolean explicitSystemTest = false;
-    private boolean explicitStagingTest = false;
     private Version compileVersion = Version.fromString("6.1");
     private String cloudAccount = null;
 
@@ -135,12 +136,22 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder systemTest() {
-        explicitSystemTest = true;
-        return this;
+        return explicitEnvironment(Environment.test);
     }
 
     public ApplicationPackageBuilder stagingTest() {
-        explicitStagingTest = true;
+        return explicitEnvironment(Environment.staging);
+    }
+
+    public ApplicationPackageBuilder explicitEnvironment(Environment environment, Environment... rest) {
+        Stream.concat(Stream.of(environment), Arrays.stream(rest))
+              .forEach(env -> nonProductionEnvironment(env, Map.of()));
+        return this;
+    }
+
+    private ApplicationPackageBuilder nonProductionEnvironment(Environment environment, Map<String, String> attributes) {
+        if (environment.isProduction()) throw new IllegalArgumentException("Expected non-production environment, got " + environment);
+        nonProductionEnvironments.put(environment, attributes);
         return this;
     }
 
@@ -267,6 +278,10 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder cloudAccount(Environment environment, String cloudAccount) {
+        return nonProductionEnvironment(environment, Map.of("cloud-account", cloudAccount));
+    }
+
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
@@ -291,10 +306,13 @@ public class ApplicationPackageBuilder {
                 xml.append("/>\n");
             }
             xml.append(notifications);
-            if (explicitSystemTest)
-                xml.append("    <test />\n");
-            if (explicitStagingTest)
-                xml.append("    <staging />\n");
+            nonProductionEnvironments.forEach((environment, attributes) -> {
+                xml.append("    <").append(environment.value());
+                attributes.forEach((attribute, value) -> {
+                    xml.append(" ").append(attribute).append("='").append(value).append("'");
+                });
+                xml.append(" />\n");
+            });
             xml.append(blockChange);
             xml.append("    <prod");
             if (globalServiceId != null) {
