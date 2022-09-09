@@ -27,6 +27,8 @@ func main() {
 	switch action {
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
+	case "security-env":
+		vespa.ExportSecurityEnvToSh()
 	case "ipv6-only":
 		if vespa.HasOnlyIpV6() {
 			os.Exit(0)
@@ -43,6 +45,7 @@ func main() {
 		cobra.Execute()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
-		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, vespa-deploy, vespa-logfmt")
+		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env")
+		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
 	}
 }
