@@ -20,11 +20,11 @@ public class Pong {
     private final ErrorMessage error;
 
     public Pong() {
-        this(null, null,false, null);
+        this(null, null, false, null);
     }
 
     public Pong(ErrorMessage error) {
-        this(null, null,false, error);
+        this(null, null, false, error);
     }
 
     public Pong(long activeDocuments, long targetActiveDocuments) {
@@ -63,6 +63,7 @@ public class Pong {
     public String toString() {
         StringBuilder m = new StringBuilder("Ping result");
         activeDocuments().ifPresent(docCount -> m.append(" active docs: ").append(docCount));
+        targetActiveDocuments().ifPresent(docCount -> m.append(" target active docs: ").append(docCount));
         if (isBlockingWrites)
             m.append(" blocking writes: true");
         error().ifPresent(e -> m.append(" error: ").append(error));
