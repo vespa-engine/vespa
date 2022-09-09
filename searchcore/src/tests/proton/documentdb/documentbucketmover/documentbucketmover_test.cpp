@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>

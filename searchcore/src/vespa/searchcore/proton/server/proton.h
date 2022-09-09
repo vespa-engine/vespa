@@ -24,7 +24,6 @@
 #include <vespa/vespalib/net/http/json_get_handler.h>
 #include <vespa/vespalib/net/http/json_handler_repo.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
-#include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <mutex>
 #include <shared_mutex>

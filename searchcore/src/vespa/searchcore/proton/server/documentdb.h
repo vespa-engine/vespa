@@ -126,7 +126,7 @@ private:
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(const DocumentDBConfigSP &config, int64_t generation);
+    void setActiveConfig(DocumentDBConfigSP config, int64_t generation);
     DocumentDBConfigSP getActiveConfig() const;
     void internalInit();
     void initManagers();
@@ -371,7 +371,7 @@ public:
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
     void newConfigSnapshot(DocumentDBConfigSP snapshot);
-    void reconfigure(const DocumentDBConfigSP & snapshot) override;
+    void reconfigure(DocumentDBConfigSP snapshot) override;
     int64_t getActiveGeneration() const;
     /*
      * Implements IDocumentSubDBOwner

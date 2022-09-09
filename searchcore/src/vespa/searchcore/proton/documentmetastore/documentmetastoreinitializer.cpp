@@ -19,7 +19,7 @@ DocumentMetaStoreInitializer::
 DocumentMetaStoreInitializer(const vespalib::string baseDir,
                              const vespalib::string &subDbName,
                              const vespalib::string &docTypeName,
-                             DocumentMetaStore::SP dms)
+                             std::shared_ptr<DocumentMetaStore> dms)
     : _baseDir(baseDir),
       _subDbName(subDbName),
       _docTypeName(docTypeName),

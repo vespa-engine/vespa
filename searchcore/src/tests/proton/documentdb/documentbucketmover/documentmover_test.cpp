@@ -3,6 +3,7 @@
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/server/documentbucketmover.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -18,7 +19,7 @@ struct MySubDbTwoBuckets : public MySubDb
                       std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                       uint32_t subDbId,
                       SubDbType subDbType)
-        : MySubDb(builder.getRepo(), bucketDB, subDbId, subDbType)
+        : MySubDb(builder.getRepo(), std::move(bucketDB), subDbId, subDbType)
     {
         builder.createDocs(1, 1, 6);
         builder.createDocs(2, 6, 9);

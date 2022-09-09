@@ -4,6 +4,7 @@
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>

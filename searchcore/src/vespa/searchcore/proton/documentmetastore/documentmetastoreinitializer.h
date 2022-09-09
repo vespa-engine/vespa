@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "documentmetastore.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace proton { class DocumentMetaStore; }
 namespace proton::documentmetastore {
 
 /*
@@ -16,10 +15,10 @@ namespace proton::documentmetastore {
  */
 class DocumentMetaStoreInitializer : public initializer::InitializerTask
 {
-    vespalib::string          _baseDir;
-    vespalib::string          _subDbName;
-    vespalib::string          _docTypeName;
-    DocumentMetaStore::SP     _dms;
+    vespalib::string                    _baseDir;
+    vespalib::string                    _subDbName;
+    vespalib::string                    _docTypeName;
+    std::shared_ptr<DocumentMetaStore>  _dms;
 
 public:
     using SP = std::shared_ptr<DocumentMetaStoreInitializer>;
@@ -28,7 +27,7 @@ public:
     DocumentMetaStoreInitializer(const vespalib::string baseDir,
                                  const vespalib::string &subDbName,
                                  const vespalib::string &docTypeName,
-                                 DocumentMetaStore::SP dms);
+                                 std::shared_ptr<DocumentMetaStore> dms);
     void run() override;
 };
 

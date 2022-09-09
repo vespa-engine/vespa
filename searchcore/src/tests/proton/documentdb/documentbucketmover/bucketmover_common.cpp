@@ -2,6 +2,7 @@
 
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/testkit/test_macros.h>
 
 using vespalib::IDestructorCallback;
@@ -58,8 +59,7 @@ void
 MySubDb::insertDocs(const UserDocuments &docs_) {
     for (const auto & entry : docs_) {
         const auto & bucketDocs = entry.second;
-        for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
-            const auto & testDoc = bucketDocs.getDocs()[i];
+        for (const auto & testDoc : bucketDocs.getDocs()) {
             _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
                            testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             _realRetriever->_docs.push_back(testDoc.getDoc());

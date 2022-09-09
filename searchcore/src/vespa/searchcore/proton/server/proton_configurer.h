@@ -46,7 +46,7 @@ class ProtonConfigurer : public IProtonConfigurer
                      InitializeThreads initializeThreads, bool initialConfig);
     void configureDocumentDB(const ProtonConfigSnapshot &configSnapshot,
                              const DocTypeName &docTypeName, document::BucketSpace bucketSpace,
-                             const vespalib::string &configId, const InitializeThreads &initializeThreads);
+                             const vespalib::string &configId, InitializeThreads initializeThreads);
     void pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot);
     void pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot);
 
@@ -63,7 +63,7 @@ public:
 
     std::shared_ptr<ProtonConfigSnapshot> getActiveConfigSnapshot() const;
 
-    virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) override;
+    void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) override;
 
     void applyInitialConfig(InitializeThreads initializeThreads);
     vespalib::SimpleComponentConfigProducer &getComponentConfig() { return _componentConfig; }

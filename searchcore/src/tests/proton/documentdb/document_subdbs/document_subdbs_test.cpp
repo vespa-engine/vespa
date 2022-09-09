@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>

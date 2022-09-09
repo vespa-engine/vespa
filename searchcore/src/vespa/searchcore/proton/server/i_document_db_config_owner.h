@@ -16,9 +16,9 @@ class DocumentDBConfig;
 class IDocumentDBConfigOwner
 {
 public:
-    virtual ~IDocumentDBConfigOwner() { }
+    virtual ~IDocumentDBConfigOwner() = default;
     virtual document::BucketSpace getBucketSpace() const = 0;
-    virtual void reconfigure(const std::shared_ptr<DocumentDBConfig> & config) = 0;
+    virtual void reconfigure(std::shared_ptr<DocumentDBConfig> config) = 0;
 };
 
 } // namespace proton

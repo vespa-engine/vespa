@@ -12,6 +12,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>

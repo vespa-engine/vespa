@@ -18,7 +18,7 @@ class IProtonConfigurerOwner
 {
 public:
     using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
-    virtual ~IProtonConfigurerOwner() { }
+    virtual ~IProtonConfigurerOwner() = default;
     virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,
                                                                  const vespalib::string &configId,

@@ -10,13 +10,14 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/replay_throttling_policy.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedstates_test");
@@ -56,7 +57,7 @@ struct MyReplayConfig : IReplayConfig {
 
 struct MyIncSerialNum : IIncSerialNum {
     SerialNum _serial_num;
-    MyIncSerialNum(SerialNum serial_num)
+    explicit MyIncSerialNum(SerialNum serial_num)
         : _serial_num(serial_num)
     {
     }
