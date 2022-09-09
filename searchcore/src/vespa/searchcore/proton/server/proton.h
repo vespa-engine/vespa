@@ -198,7 +198,8 @@ public:
     int64_t getConfigGeneration();
 
     size_t getNumDocs() const;
-    size_t getNumActiveDocs() const;
+    // Active (searchable), and targetActive that will be searchable when idealstate is reached
+    std::pair<size_t, size_t> getNumActiveDocs() const;
 
     search::engine::SearchServer &get_search_server();
     search::engine::DocsumServer &get_docsum_server();

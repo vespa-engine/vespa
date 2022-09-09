@@ -30,7 +30,7 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
      * @return self for chaining
      */
     @Beta
-    public Coverage setSoonActive(long soonActive) { this.soonActive = soonActive; return this; }
+    public Coverage setTargetActive(long soonActive) { this.soonActive = soonActive; return this; }
 
     /**
      * Will set the reasons for degraded coverage as reported by vespa backend.

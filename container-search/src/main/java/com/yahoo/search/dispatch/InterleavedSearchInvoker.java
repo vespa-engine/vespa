@@ -268,7 +268,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private void collectCoverage(Coverage source) {
         answeredDocs += source.getDocs();
         answeredActiveDocs += source.getActive();
-        answeredSoonActiveDocs += source.getSoonActive();
+        answeredSoonActiveDocs += source.getTargetActive();
         answeredNodesParticipated += source.getNodes();
         answeredNodes++;
         degradedByMatchPhase |= source.isDegradedByMatchPhase();
@@ -280,7 +280,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
-        coverage.setSoonActive(answeredSoonActiveDocs);
+        coverage.setTargetActive(answeredSoonActiveDocs);
         int degradedReason = 0;
         if (timedOut) {
             degradedReason |= (adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);

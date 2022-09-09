@@ -41,7 +41,7 @@ public class Coverage {
         return v;
     }
 
-    public long getSoonActive() { return soonActive; }
+    public long getTargetActive() { return soonActive; }
 
     public boolean isDegraded() { return (degradedReason != 0) || isDegradedByNonIdealState(); }
     public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }

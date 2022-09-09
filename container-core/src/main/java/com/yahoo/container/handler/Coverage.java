@@ -184,7 +184,7 @@ public class Coverage {
         int degradation = com.yahoo.container.logging.Coverage.toDegradation(isDegradedByMatchPhase(),
                 isDegradedByTimeout(),
                 isDegradedByAdapativeTimeout());
-        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getSoonActive(), degradation);
+        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation);
     }
 
 }

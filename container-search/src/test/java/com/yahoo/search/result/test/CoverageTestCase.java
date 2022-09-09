@@ -74,7 +74,7 @@ public class CoverageTestCase {
         com.yahoo.container.logging.Coverage lc = c.toLoggingCoverage();
         assertEquals(lc.getDocs(), c.getDocs());
         assertEquals(lc.getActive(), c.getActive());
-        assertEquals(lc.getSoonActive(), c.getSoonActive());
+        assertEquals(lc.getSoonActive(), c.getTargetActive());
         assertEquals(lc.getResultPercentage(), c.getResultPercentage());
         assertEquals(lc.isDegraded(), c.isDegraded());
         assertEquals(lc.isDegradedByNonIdealState(), c.isDegradedByNonIdealState());

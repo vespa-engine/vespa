@@ -247,9 +247,9 @@ TEST_F(SearchReplyTest, require_that_active_docs_is_converted) {
 }
 
 TEST_F(SearchReplyTest, require_that_soon_active_docs_is_converted) {
-    reply.coverage.setSoonActive(250000);
+    reply.coverage.setTargetActive(250000);
     convert();
-    EXPECT_EQ(proto.soon_active_docs(), 250000);
+    EXPECT_EQ(proto.target_active_docs(), 250000);
 }
 
 TEST_F(SearchReplyTest, require_that_degraded_by_match_phase_is_converted) {

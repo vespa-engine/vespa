@@ -297,11 +297,12 @@ public:
     size_t getNumDocs() const;
 
     /**
-     * Returns the number of documents that are active for search in this database.
+     * Returns the number of documents that are active for search in this database,
+     * and the number of documents that will be active once ideal state is reached.
      *
-     * @return The active-document count.
+     * @return The active and target-active document count.
      */
-    size_t getNumActiveDocs() const;
+    std::pair<size_t, size_t> getNumActiveDocs() const;
 
     /**
      * Returns the base directory that this document database uses when

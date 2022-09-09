@@ -101,7 +101,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     proto.set_total_hit_count(reply.totalHitCount);
     proto.set_coverage_docs(reply.coverage.getCovered());
     proto.set_active_docs(reply.coverage.getActive());
-    proto.set_soon_active_docs(reply.coverage.getSoonActive());
+    proto.set_target_active_docs(reply.coverage.getTargetActive());
     proto.set_degraded_by_match_phase(reply.coverage.wasDegradedByMatchPhase());
     proto.set_degraded_by_soft_timeout(reply.coverage.wasDegradedByTimeout());
     bool has_sort_data = ! reply.sortIndex.empty();
@@ -228,6 +228,7 @@ ProtoConverter::monitor_reply_to_proto(const MonitorReply &reply, ProtoMonitorRe
 {
     proto.set_online(reply.timestamp != 0);
     proto.set_active_docs(reply.activeDocs);
+    proto.set_target_active_docs(reply.targetActiveDocs);
     proto.set_distribution_key(reply.distribution_key);
     proto.set_is_blocking_writes(reply.is_blocking_writes);
 }

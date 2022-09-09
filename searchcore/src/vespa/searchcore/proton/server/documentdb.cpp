@@ -619,13 +619,13 @@ DocumentDB::getNumDocs() const
     }
 }
 
-size_t
+std::pair<size_t, size_t>
 DocumentDB::getNumActiveDocs() const
 {
     if (_state.get_load_done()) {
-        return _subDBs.getReadySubDB()->getNumActiveDocs();
+        return { _subDBs.getReadySubDB()->getNumActiveDocs(), _subDBs.getBucketDB().getActiveDocs() };
     } else {
-        return 0u;
+        return {0u, 0u};
     }
 }
 
