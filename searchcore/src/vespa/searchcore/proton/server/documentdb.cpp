@@ -809,7 +809,7 @@ DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum ser
 void
 DocumentDB::reconfigure(DocumentDBConfig::SP snapshot)
 {
-    masterExecute([this, snapshot=std::move(snapshot)]() mutable { newConfigSnapshot(std::move(snapshot)); });
+    masterExecute([this, snapshot]() mutable { newConfigSnapshot(std::move(snapshot)); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
     while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) && !_state.getClosed()) {
