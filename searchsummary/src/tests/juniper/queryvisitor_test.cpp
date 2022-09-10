@@ -4,9 +4,22 @@
 
 #include <vespa/juniper/queryhandle.h>
 #include <vespa/juniper/queryvisitor.h>
+#include <vespa/juniper/query_item.h>
 #include <vespa/vespalib/stllike/string.h>
 
 using namespace juniper;
+
+struct MyQueryItem : public QueryItem
+{
+    MyQueryItem()
+        : QueryItem()
+    { }
+    ~MyQueryItem() override = default;
+
+    vespalib::stringref get_index() const override { return {}; }
+    int get_weight() const override { return 0; }
+    ItemCreator get_creator() const override { return ItemCreator::CREA_ORIG; }
+};
 
 class MyQuery : public juniper::IQuery
 {
@@ -17,17 +30,9 @@ public:
     MyQuery(const vespalib::string &term) : _term(term) {}
 
     virtual bool Traverse(IQueryVisitor* v) const override {
-        v->VisitKeyword(nullptr, _term.c_str(), _term.size());
+        MyQueryItem item;
+        v->VisitKeyword(&item, _term.c_str(), _term.size());
         return true;
-    }
-    virtual int Weight(const QueryItem*) const override {
-        return 0;
-    }
-    virtual ItemCreator Creator(const QueryItem*) const override {
-        return ItemCreator::CREA_ORIG;
-    }
-    virtual const char* Index(const QueryItem*, size_t*) const override {
-        return "my_index";
     }
     virtual bool UsefulIndex(const QueryItem*) const override {
         return true;

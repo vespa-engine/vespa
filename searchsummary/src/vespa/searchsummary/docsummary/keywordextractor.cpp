@@ -13,7 +13,7 @@ namespace search::docsummary {
 
 bool useful(search::ParseItem::ItemCreator creator)
 {
-    return creator == search::ParseItem::CREA_ORIG;
+    return creator == search::ParseItem::ItemCreator::CREA_ORIG;
 }
 
 

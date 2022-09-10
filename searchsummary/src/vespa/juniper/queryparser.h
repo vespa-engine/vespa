@@ -6,6 +6,7 @@
 #include "query.h"
 #include "latintokenizer.h"
 #include <map>
+#include <memory>
 #include <string>
 
 namespace juniper
@@ -22,6 +23,8 @@ struct IsPunctuation {
 
 typedef Fast_LatinTokenizer<Fast_IsSpace, IsPunctuation> WildcardTokenizer;
 
+class QueryParserQueryItem;
+
 class QueryParser : public IQuery
 {
 private:
@@ -32,29 +35,26 @@ public:
     virtual ~QueryParser();
 
     bool Traverse(IQueryVisitor* v) const override;
-    int Weight(const QueryItem* item) const override;
-    ItemCreator Creator(const QueryItem* item) const override;
-    const char* Index(const QueryItem* item, size_t* length) const override;
     bool UsefulIndex(const QueryItem* item) const override;
 
     int ParseError() { return _parse_errno; }
-protected:
-    QueryItem* ParseExpr();
-    QueryItem* ParseKeyword();
-    QueryItem* ParseIndexTerm();
-    QueryItem* CheckPrefix(std::string& kw);
+private:
+    std::unique_ptr<QueryItem> ParseExpr();
+    std::unique_ptr<QueryParserQueryItem> ParseKeyword();
+    std::unique_ptr<QueryItem> ParseIndexTerm();
+    std::unique_ptr<QueryParserQueryItem> CheckPrefix(std::string& kw);
     void next();
     void trav(QueryItem*) const;
     inline void setvisitor(IQueryVisitor* v) { _v = v; }
     bool match(const char* s, bool required = false);
-private:
+
     typedef WildcardTokenizer Tokenizer;
     Tokenizer _tokenizer;
     std::map<std::string, int> _op_to_type;
     const char* _query_string;
     std::string _curtok;
     IQueryVisitor* _v;
-    QueryItem* _exp;
+    std::unique_ptr<QueryItem> _exp;
     int _parse_errno;
     bool _reached_end;
 };

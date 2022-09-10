@@ -67,7 +67,7 @@ public abstract class Item implements Cloneable {
 
     }
 
-    // These must match the definitions in searchlib/src/searchlib/parsequery/parse.h
+    // These must match the definitions in searchlib/src/vespa/searchlib/parsequery/item_creator.h
     public enum ItemCreator {
 
         ORIG(0),
