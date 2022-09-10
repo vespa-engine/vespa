@@ -19,7 +19,6 @@
 #include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/util/varholder.h>
 
 namespace proton {
 

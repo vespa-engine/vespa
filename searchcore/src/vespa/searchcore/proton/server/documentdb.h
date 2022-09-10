@@ -126,7 +126,7 @@ private:
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(const DocumentDBConfigSP &config, int64_t generation);
+    void setActiveConfig(DocumentDBConfigSP config, int64_t generation);
     DocumentDBConfigSP getActiveConfig() const;
     void internalInit();
     void initManagers();
@@ -297,11 +297,12 @@ public:
     size_t getNumDocs() const;
 
     /**
-     * Returns the number of documents that are active for search in this database.
+     * Returns the number of documents that are active for search in this database,
+     * and the number of documents that will be active once ideal state is reached.
      *
-     * @return The active-document count.
+     * @return The active and target-active document count.
      */
-    size_t getNumActiveDocs() const;
+    std::pair<size_t, size_t> getNumActiveDocs() const;
 
     /**
      * Returns the base directory that this document database uses when
@@ -370,7 +371,7 @@ public:
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
     void newConfigSnapshot(DocumentDBConfigSP snapshot);
-    void reconfigure(const DocumentDBConfigSP & snapshot) override;
+    void reconfigure(DocumentDBConfigSP snapshot) override;
     int64_t getActiveGeneration() const;
     /*
      * Implements IDocumentSubDBOwner

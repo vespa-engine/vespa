@@ -436,9 +436,9 @@ public class InterleavedSearchInvokerTest {
         };
     }
 
-    private static Coverage createCoverage(int docs, int activeDocs, int soonActiveDocs, int nodes, int nodesTried, int degradedReason) {
+    private static Coverage createCoverage(int docs, int activeDocs, int targetActiveDocs, int nodes, int nodesTried, int degradedReason) {
         Coverage coverage = new Coverage(docs, activeDocs, nodes);
-        coverage.setSoonActive(soonActiveDocs);
+        coverage.setTargetActive(targetActiveDocs);
         coverage.setNodesTried(nodesTried);
         coverage.setDegradedReason(degradedReason);
         return coverage;

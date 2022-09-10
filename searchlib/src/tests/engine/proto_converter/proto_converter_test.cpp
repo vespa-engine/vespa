@@ -246,10 +246,10 @@ TEST_F(SearchReplyTest, require_that_active_docs_is_converted) {
     EXPECT_EQ(proto.active_docs(), 200000);
 }
 
-TEST_F(SearchReplyTest, require_that_soon_active_docs_is_converted) {
-    reply.coverage.setSoonActive(250000);
+TEST_F(SearchReplyTest, require_that_target_active_docs_is_converted) {
+    reply.coverage.setTargetActive(250000);
     convert();
-    EXPECT_EQ(proto.soon_active_docs(), 250000);
+    EXPECT_EQ(proto.target_active_docs(), 250000);
 }
 
 TEST_F(SearchReplyTest, require_that_degraded_by_match_phase_is_converted) {
@@ -593,6 +593,11 @@ TEST_F(MonitorReplyTest, require_that_active_docs_is_converted) {
     reply.activeDocs = 12345;
     convert();
     EXPECT_EQ(proto.active_docs(), 12345);
+}
+TEST_F(MonitorReplyTest, require_that_target_active_docs_is_converted) {
+    reply.targetActiveDocs = 12345;
+    convert();
+    EXPECT_EQ(proto.target_active_docs(), 12345);
 }
 
 TEST_F(MonitorReplyTest, require_that_distribution_key_is_converted) {

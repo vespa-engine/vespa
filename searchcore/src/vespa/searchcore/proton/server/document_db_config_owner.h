@@ -18,7 +18,7 @@ class DocumentDBConfigOwner : public IDocumentDBConfigOwner
     std::shared_ptr<DocumentDBDirectoryHolder> _holder;
 public:
     DocumentDBConfigOwner();
-    virtual ~DocumentDBConfigOwner();
+    ~DocumentDBConfigOwner() override;
     std::shared_ptr<DocumentDBDirectoryHolder> getDocumentDBDirectoryHolder();
 };
 

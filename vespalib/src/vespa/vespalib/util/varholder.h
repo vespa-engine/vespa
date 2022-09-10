@@ -18,12 +18,12 @@ public:
     VarHolder & operator = (const VarHolder &) = delete;
     ~VarHolder();
 
-    void set(const T &v) {
+    void set(T v) {
         T old;
         {
             std::lock_guard guard(_lock);
-            old = _v;
-            _v = v;
+            old = std::move(_v);
+            _v = std::move(v);
         }
     }
 

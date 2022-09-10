@@ -277,7 +277,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         SearchReply::Coverage & coverage = reply->coverage;
         coverage.setActive(numActiveLids);
         //TODO this should be calculated with ClusterState calculator.
-        coverage.setSoonActive(numActiveLids);
+        coverage.setTargetActive(numActiveLids);
         coverage.setCovered(covered);
         if (wasLimited) {
             coverage.degradeMatchPhase();

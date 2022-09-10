@@ -7,15 +7,15 @@ package com.yahoo.container.logging;
 public class Coverage {
     private final long docs;
     private final long active;
-    private final long soonActive;
+    private final long targetActive;
     private final int degradedReason;
     private final static int DEGRADED_BY_MATCH_PHASE = 1;
     private final static int DEGRADED_BY_TIMEOUT = 2;
     private final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
-    public Coverage(long docs, long active, long soonActive, int degradedReason) {
+    public Coverage(long docs, long active, long targetActive, int degradedReason) {
         this.docs = docs;
         this.active = active;
-        this.soonActive = soonActive;
+        this.targetActive = targetActive;
         this.degradedReason = degradedReason;
     }
 
@@ -41,7 +41,7 @@ public class Coverage {
         return v;
     }
 
-    public long getSoonActive() { return soonActive; }
+    public long getTargetActive() { return targetActive; }
 
     public boolean isDegraded() { return (degradedReason != 0) || isDegradedByNonIdealState(); }
     public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }

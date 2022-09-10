@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include "bucket_db_owner.h"
 #include "ibucketdbhandler.h"
 #include "ibucketdbhandlerinitializer.h"
 #include "bucket_create_notifier.h"
 
 namespace proton::bucketdb {
+
+class BucketDBOwner;
 
 /**
  * The BucketDBHandler class handles operations on a bucket db.
@@ -34,10 +35,9 @@ private:
     BucketCreateNotifier       _bucketCreateNotifier;
 
 public:
-    BucketDBHandler(BucketDBOwner &bucketDB);
-    ~BucketDBHandler();
+    explicit BucketDBHandler(BucketDBOwner &bucketDB);
+    ~BucketDBHandler() override;
 
-    void setBucketDB(BucketDBOwner &bucketDB);
     void addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum) override;
     void handleSplit(search::SerialNum serialNum, const BucketId &source,
                      const BucketId &target1, const BucketId &target2) override;

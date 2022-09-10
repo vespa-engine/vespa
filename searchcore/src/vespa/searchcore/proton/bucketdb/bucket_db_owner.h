@@ -34,6 +34,7 @@ public:
     Guard takeGuard() {
         return Guard(&_bucketDB, _mutex);
     }
+    size_t getNumActiveDocs() const { return _bucketDB.getNumActiveDocs(); }
 private:
     BucketDB   _bucketDB;
     std::mutex _mutex;

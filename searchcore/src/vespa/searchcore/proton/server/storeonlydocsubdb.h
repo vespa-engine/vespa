@@ -5,7 +5,6 @@
 #include "storeonlyfeedview.h"
 #include "summaryadapter.h"
 #include "tlssyncer.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
@@ -48,7 +47,7 @@ public:
           _tlSyncer(tlSyncer)
     { }
 
-    virtual ~DocSubDB() { }
+    ~DocSubDB() override = default;
     void close() override { }
 };
 
@@ -68,7 +67,7 @@ public:
     StoreOnlySubDBFileHeaderContext(const search::common::FileHeaderContext & parentFileHeaderContext,
                                     const DocTypeName &docTypeName,
                                     const vespalib::string &baseDir);
-    ~StoreOnlySubDBFileHeaderContext();
+    ~StoreOnlySubDBFileHeaderContext() override;
 
     void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
 };

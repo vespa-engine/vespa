@@ -39,6 +39,8 @@ private:
     }
 public:
     BucketDB();
+    BucketDB(const BucketDB &) = delete;
+    BucketDB & operator=(const BucketDB &) = delete;
     ~BucketDB();
 
     const BucketState & add(const GlobalId &gid,
@@ -81,8 +83,6 @@ public:
     // Must be called if buckets state aquired with getBucketStatePtr has been modified.
     void restoreIntegrity();
     bool validateIntegrity() const;
-
 };
 
 }
-

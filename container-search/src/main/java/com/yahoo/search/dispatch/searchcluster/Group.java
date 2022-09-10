@@ -26,6 +26,7 @@ public class Group {
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
+    private final AtomicLong targetActiveDocuments = new AtomicLong(0);
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
     private final AtomicBoolean isBalanced = new AtomicBoolean(true);
 
@@ -68,6 +69,8 @@ public class Group {
     public void aggregateNodeValues() {
         long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
         activeDocuments.set(activeDocs);
+        long targetActiveDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getTargetActiveDocuments).sum();
+        targetActiveDocuments.set(targetActiveDocs);
         isBlockingWrites.set(nodes.stream().anyMatch(Node::isBlockingWrites));
         int numWorkingNodes = workingNodes();
         if (numWorkingNodes > 0) {
@@ -90,6 +93,9 @@ public class Group {
     /** Returns the active documents on this group. If unknown, 0 is returned. */
     long activeDocuments() { return activeDocuments.get(); }
 
+    /** Returns the target active documents on this group. If unknown, 0 is returned. */
+    long targetActiveDocuments() { return targetActiveDocuments.get(); }
+
     /** Returns whether any node in this group is currently blocking write operations */
     public boolean isBlockingWrites() { return isBlockingWrites.get(); }
 
@@ -99,7 +105,7 @@ public class Group {
     /** Returns whether this group has too few documents per node to expect it to be balanced */
     public boolean isSparse() {
         if (nodes.isEmpty()) return false;
-        return activeDocuments.get() / nodes.size() < minDocsPerNodeToRequireLowSkew;
+        return activeDocuments() / nodes.size() < minDocsPerNodeToRequireLowSkew;
     }
 
     public boolean fullCoverageStatusChanged(boolean hasFullCoverageNow) {

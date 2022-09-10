@@ -207,7 +207,7 @@
       "public void merge(com.yahoo.container.handler.Coverage)",
       "public long getDocs()",
       "public long getActive()",
-      "public long getSoonActive()",
+      "public long getTargetActive()",
       "public boolean isDegraded()",
       "public boolean isDegradedByMatchPhase()",
       "public boolean isDegradedByTimeout()",
@@ -225,7 +225,7 @@
     "fields": [
       "protected long docs",
       "protected long active",
-      "protected long soonActive",
+      "protected long targetActive",
       "protected int degradedReason",
       "protected int nodes",
       "protected int resultSets",

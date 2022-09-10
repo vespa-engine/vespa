@@ -21,6 +21,7 @@ public class Node {
     private final AtomicBoolean statusIsKnown = new AtomicBoolean(false);
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
+    private final AtomicLong targetActiveDocuments = new AtomicLong(0);
     private final AtomicLong pingSequence = new AtomicLong(0);
     private final AtomicLong lastPong = new AtomicLong(0);
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
@@ -62,6 +63,7 @@ public class Node {
         this.working.lazySet(working);
         if ( ! working ) {
             activeDocuments.set(0);
+            targetActiveDocuments.set(0);
         }
     }
 
@@ -71,10 +73,12 @@ public class Node {
     }
 
     /** Updates the active documents on this node */
-    public void setActiveDocuments(long activeDocuments) { this.activeDocuments.set(activeDocuments); }
+    public void setActiveDocuments(long documents) { this.activeDocuments.set(documents); }
+    public void setTargetActiveDocuments(long documents) { this.targetActiveDocuments.set(documents); }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
     long getActiveDocuments() { return activeDocuments.get(); }
+    long getTargetActiveDocuments() { return targetActiveDocuments.get(); }
 
     public void setBlockingWrites(boolean isBlockingWrites) { this.isBlockingWrites.set(isBlockingWrites); }
 
@@ -86,8 +90,7 @@ public class Node {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Node)) return false;
-        Node other = (Node)o;
+        if ( ! (o instanceof Node other)) return false;
         if ( ! Objects.equals(this.hostname, other.hostname)) return false;
         if ( ! Objects.equals(this.key, other.key)) return false;
         if ( ! Objects.equals(this.pathIndex, other.pathIndex)) return false;
@@ -100,7 +103,7 @@ public class Node {
     public String toString() {
         return "search node key = " + key + " hostname = "+ hostname + " path = " + pathIndex + " in group " + group +
                " statusIsKnown = " + statusIsKnown.get() + " working = " + working.get() +
-               " activeDocs = " + activeDocuments.get();
+               " activeDocs = " + getActiveDocuments() + " targetActiveDocs = " + getTargetActiveDocuments();
     }
 
 }

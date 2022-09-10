@@ -118,6 +118,7 @@ public:
     const_iterator end() const { return _subDBs.end(); }
 
     bucketdb::BucketDBOwner &getBucketDB() { return *_bucketDB; }
+    const bucketdb::BucketDBOwner &getBucketDB() const { return *_bucketDB; }
 
     bucketdb::IBucketDBHandler &getBucketDBHandler() {
         return *_bucketDBHandler;

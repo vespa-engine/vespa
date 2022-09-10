@@ -61,7 +61,7 @@ ProtonConfigurer::ProtonConfigurer(vespalib::ThreadExecutor &executor,
 
 class ProtonConfigurer::ReconfigureTask : public vespalib::Executor::Task {
 public:
-    ReconfigureTask(ProtonConfigurer & configurer)
+    explicit ReconfigureTask(ProtonConfigurer & configurer)
         : _configurer(configurer),
           _retainGuard(configurer._pendingReconfigureTasks)
     {}
@@ -169,7 +169,7 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     size_t gen = bootstrapConfig->getGeneration();
     _componentConfig.addConfig({"proton", gen});
     std::lock_guard<std::mutex> guard(_mutex);
-    _activeConfigSnapshot = configSnapshot;
+    _activeConfigSnapshot = std::move(configSnapshot);
 }
 
 void
@@ -177,7 +177,7 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
                                       const DocTypeName &docTypeName,
                                       document::BucketSpace bucketSpace,
                                       const vespalib::string &configId,
-                                      const InitializeThreads &initializeThreads)
+                                      InitializeThreads initializeThreads)
 {
     // called by proton executor thread
     const auto &bootstrapConfig = configSnapshot.getBootstrapConfig();
@@ -187,7 +187,7 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     const auto &documentDBConfig = cfgitr->second;
     auto dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
-        auto newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
+        auto newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, std::move(initializeThreads));
         if (newdb) {
             auto insres = _documentDBs.insert(std::make_pair(docTypeName, std::make_pair(newdb, newdb->getDocumentDBDirectoryHolder())));
             assert(insres.second);
@@ -251,7 +251,10 @@ ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads)
     assert(!_executor.isCurrentThread());
     std::promise<void> promise;
     auto future = promise.get_future();
-    _executor.execute(makeLambdaTask([this, initializeThreads, &promise]() { applyConfig(getPendingConfigSnapshot(), initializeThreads, true); promise.set_value(); }));
+    _executor.execute(makeLambdaTask([this, executor=std::move(initializeThreads), &promise]() mutable {
+        applyConfig(getPendingConfigSnapshot(), std::move(executor), true);
+        promise.set_value();
+    }));
     future.wait();
 }
 

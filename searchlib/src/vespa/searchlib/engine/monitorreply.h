@@ -9,6 +9,7 @@ namespace search::engine {
 struct MonitorReply
 {
     uint64_t                  activeDocs;
+    uint64_t                  targetActiveDocs;
     int32_t                   distribution_key;
     uint32_t                  timestamp;
     bool                      is_blocking_writes;

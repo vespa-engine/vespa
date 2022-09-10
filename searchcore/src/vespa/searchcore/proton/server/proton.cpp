@@ -115,11 +115,10 @@ setFS4Compression(const ProtonConfig & proton)
 DiskMemUsageSampler::Config
 diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 {
-    return DiskMemUsageSampler::Config(
-            proton.writefilter.memorylimit,
-            proton.writefilter.disklimit,
-            vespalib::from_s(proton.writefilter.sampleinterval),
-            hwInfo);
+    return { proton.writefilter.memorylimit,
+             proton.writefilter.disklimit,
+             vespalib::from_s(proton.writefilter.sampleinterval),
+             hwInfo };
 }
 
 uint32_t
@@ -135,7 +134,7 @@ computeRpcTransportThreads(const ProtonConfig & cfg, const HwInfo::Cpu &cpuInfo)
 struct MetricsUpdateHook : metrics::UpdateHook
 {
     Proton &self;
-    MetricsUpdateHook(Proton &s)
+    explicit MetricsUpdateHook(Proton &s)
         : metrics::UpdateHook("proton-hook"),
           self(s)
     {}
@@ -427,14 +426,14 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
                 "Did not find document type '%s' in the document manager. "
                 "Skipping creating document database for this type",
                 docTypeName.toString().c_str());
-            return std::shared_ptr<DocumentDBConfigOwner>();
+            return {};
         }
     } catch (const document::DocumentTypeNotFoundException & e) {
         LOG(warning,
             "Did not find document type '%s' in the document manager. "
             "Skipping creating document database for this type",
             docTypeName.toString().c_str());
-        return std::shared_ptr<DocumentDBConfigOwner>();
+        return {};
     }
 }
 
@@ -537,14 +536,17 @@ size_t Proton::getNumDocs() const
     return numDocs;
 }
 
-size_t Proton::getNumActiveDocs() const
+std::pair<size_t, size_t>
+Proton::getNumActiveDocs() const
 {
-    size_t numDocs(0);
+    size_t activeDocs(0), targetActiveDocs(0);
     std::shared_lock<std::shared_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
-        numDocs += kv.second->getNumActiveDocs();
+        const auto & docs = kv.second->getNumActiveDocs();
+        activeDocs += docs.first;
+        targetActiveDocs += docs.second;
     }
-    return numDocs;
+    return {activeDocs, targetActiveDocs};
 }
 
 search::engine::SearchServer &
@@ -725,8 +727,16 @@ Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     ret.distribution_key = protonConfig.distributionkey;
-    ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
-    ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
+    if (_matchEngine->isOnline()) {
+        ret.timestamp = 42;
+        auto [active, targetActive] = getNumActiveDocs();
+        ret.activeDocs = active;
+        ret.targetActiveDocs = targetActive;
+    } else {
+        ret.timestamp = 0;
+        ret.activeDocs = 0;
+        ret.targetActiveDocs = 0; // TODO vekterli hmm... or target anyway ...
+    }
     ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
     return reply;
 }

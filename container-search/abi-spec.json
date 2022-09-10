@@ -7485,7 +7485,7 @@
       "public void <init>(long, long)",
       "public void <init>(long, long, int)",
       "public void <init>(long, long, int, int)",
-      "public com.yahoo.search.result.Coverage setSoonActive(long)",
+      "public com.yahoo.search.result.Coverage setTargetActive(long)",
       "public com.yahoo.search.result.Coverage setDegradedReason(int)",
       "public com.yahoo.search.result.Coverage setNodesTried(int)",
       "public bridge synthetic com.yahoo.container.handler.Coverage setNodesTried(int)"
