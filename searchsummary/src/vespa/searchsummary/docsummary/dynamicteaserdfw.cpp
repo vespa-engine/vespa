@@ -10,6 +10,7 @@
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 #include <vespa/juniper/queryhandle.h>
+#include <vespa/juniper/query_item.h>
 #include <vespa/juniper/result.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <sstream>
@@ -17,17 +18,16 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
-namespace juniper {
+namespace search::docsummary {
 
 struct ExplicitItemData
 {
-    const char *_index;
-    uint32_t _indexlen;
-    uint32_t _weight;
+    vespalib::stringref _index;
+    int32_t _weight;
 
     ExplicitItemData()
-        : _index(nullptr), _indexlen(0), _weight(0)
-        {}
+        : _index(), _weight(0)
+    {}
 };
 
 
@@ -37,47 +37,68 @@ struct ExplicitItemData
  * the stack of the IQuery Traverse method. This is needed because
  * the Traverse method is const.
  **/
-struct QueryItem
+class JuniperDFWQueryItem : public juniper::QueryItem
 {
     search::SimpleQueryStackDumpIterator *_si;
     const ExplicitItemData *_data;
-    QueryItem() : _si(nullptr), _data(nullptr) {}
-    explicit QueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
-    explicit QueryItem(ExplicitItemData *data) : _si(nullptr), _data(data) {}
-    QueryItem(const QueryItem&) = delete;
-    QueryItem& operator= (const QueryItem&) = delete;
+public:
+    JuniperDFWQueryItem() : _si(nullptr), _data(nullptr) {}
+    ~JuniperDFWQueryItem() override = default;
+    explicit JuniperDFWQueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
+    explicit JuniperDFWQueryItem(const ExplicitItemData *data) : _si(nullptr), _data(data) {}
+    JuniperDFWQueryItem(const QueryItem&) = delete;
+    JuniperDFWQueryItem& operator= (const QueryItem&) = delete;
+
+    vespalib::stringref get_index() const override;
+    int get_weight() const override;
+    juniper::ItemCreator get_creator() const override;
 };
+
+vespalib::stringref
+JuniperDFWQueryItem::get_index() const
+{
+    return _si != nullptr ? _si->getIndexName() : _data->_index;
 }
 
-namespace search::fef {
-class TermVisitor : public IPropertiesVisitor
+int
+JuniperDFWQueryItem::get_weight() const
+{
+    return _si != nullptr ? _si->GetWeight().percent() : _data->_weight;
+}
+
+juniper::ItemCreator
+JuniperDFWQueryItem::get_creator() const
+{
+    return _si != nullptr ? _si->getCreator() : juniper::ItemCreator::CREA_ORIG;
+}
+
+class TermVisitor : public search::fef::IPropertiesVisitor
 {
 public:
     juniper::IQueryVisitor *_visitor;
-    juniper::QueryItem _item;
+    JuniperDFWQueryItem _item;
 
     explicit TermVisitor(juniper::IQueryVisitor *visitor)
         : _visitor(visitor),
           _item()
     {}
-    void visitProperty(const Property::Value &key, const Property &values) override;
+    void visitProperty(const search::fef::Property::Value &key, const search::fef::Property &values) override;
 
 };
 
 void
-TermVisitor::visitProperty(const Property::Value &key, const Property &values)
+TermVisitor::visitProperty(const search::fef::Property::Value &key, const search::fef::Property &values)
 {
-    juniper::ExplicitItemData data;
-    juniper::QueryItem item(&data);
+    ExplicitItemData data;
+    JuniperDFWQueryItem item(&data);
     int index = 0;
     int numBlocks = atoi(values.getAt(index++).c_str());
-    data._index = key.c_str();
-    data._indexlen = key.length();
+    data._index = key;
 
     _visitor->VisitAND(&item, numBlocks);
 
     for (int i = 0; i < numBlocks; i++) {
-        const Property::Value * s = & values.getAt(index++);
+        const search::fef::Property::Value * s = & values.getAt(index++);
         if ((*s)[0] == '"') {
             s = & values.getAt(index++);
             int phraseLen = atoi(s->c_str());
@@ -92,10 +113,6 @@ TermVisitor::visitProperty(const Property::Value &key, const Property &values)
         }
     }
 }
-
-}
-
-namespace search::docsummary {
 
 class JuniperQueryAdapter : public juniper::IQuery
 {
@@ -126,46 +143,12 @@ public:
 
     bool Traverse(juniper::IQueryVisitor *v) const override;
 
-    int Weight(const juniper::QueryItem* item) const override
-    {
-        if (item->_si != nullptr) {
-            return item->_si->GetWeight().percent();
-        } else {
-            return item->_data->_weight;
-        }
-    }
-    juniper::ItemCreator Creator(const juniper::QueryItem* item) const override
-    {
-        // cast master: Knut Omang
-        if (item->_si != nullptr) {
-            return (juniper::ItemCreator) item->_si->getCreator();
-        } else {
-            return juniper::CREA_ORIG;
-        }
-    }
-    const char *Index(const juniper::QueryItem* item, size_t *len) const override
-    {
-        if (item->_si != nullptr) {
-            *len = item->_si->getIndexName().size();
-            return item->_si->getIndexName().data();
-        } else {
-            *len = item->_data->_indexlen;
-            return item->_data->_index;
-        }
-
-    }
     bool UsefulIndex(const juniper::QueryItem* item) const override
     {
-        vespalib::stringref index;
-
-        if (_kwExtractor == nullptr)
+        if (_kwExtractor == nullptr) {
             return true;
-
-        if (item->_si != nullptr) {
-            index = item->_si->getIndexName();
-        } else {
-            index = vespalib::stringref(item->_data->_index, item->_data->_indexlen);
         }
+        auto index = item->get_index();
         return _kwExtractor->IsLegalIndex(index);
     }
 };
@@ -175,7 +158,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
 {
     bool rc = true;
     search::SimpleQueryStackDumpIterator iterator(_buf);
-    juniper::QueryItem item(&iterator);
+    JuniperDFWQueryItem item(&iterator);
 
     if (_highlightTerms->numKeys() > 0) {
         v->VisitAND(&item, 2);
@@ -280,7 +263,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     if (_highlightTerms->numKeys() > 1) {
         v->VisitAND(&item, _highlightTerms->numKeys());
     }
-    fef::TermVisitor tv(v);
+    TermVisitor tv(v);
     _highlightTerms->visitProperties(tv);
 
     return rc;

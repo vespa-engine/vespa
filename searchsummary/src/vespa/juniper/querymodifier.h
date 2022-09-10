@@ -4,6 +4,7 @@
 #include "simplemap.h"
 #include "query.h"
 #include "rewriter.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <string>
 #include <vector>
 
@@ -63,8 +64,7 @@ public:
     inline bool HasRewriters() { return _has_expanders || _has_reducers; }
 
     /* Return any configured reducer/expander for the index, if any */
-    Rewriter* FindRewriter(const char* index_name);
-    Rewriter* FindRewriter(const char* index_name, const size_t length);
+    Rewriter* FindRewriter(vespalib::stringref index_name);
 
     /* Delete/dereference all rewriters (needed for testing/debugging) */
     void FlushRewriters();

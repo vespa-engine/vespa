@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "item_creator.h"
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -23,7 +24,7 @@ class ParseItem
 {
 public:
     /** The type of the item is from this set of values.
-        It is important that these defines match those in prelude/source/com/yahoo/prelude/query/Item.java */
+        It is important that these defines match those in container-search/src/main/java/com/yahoo/prelude/query/Item.java */
     enum ItemType {
         ITEM_OR                    =   0,
         ITEM_AND                   =   1,
@@ -62,15 +63,8 @@ public:
     };
 
     /** A tag identifying the origin of this query node.
-     *  Note that descendants may originate from elsewhere.
-     *  If changes necessary:
-     *  NB! Append at end of list - corresponding type
-     *  used in Juniper and updates of these two types must be synchronized.
-     *  (juniper/src/query.h)
      */
-    enum ItemCreator {
-        CREA_ORIG = 0  // Original user query
-    };
+    using ItemCreator = parseitem::ItemCreator;
 
     enum ItemFeatures {
         IF_WEIGHT         = 0x20, // item has rank weight

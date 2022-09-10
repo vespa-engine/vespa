@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/parsequery/item_creator.h>
 #include <cstddef>
 #include <cstdint>
 
@@ -27,12 +28,7 @@
 
 namespace juniper {
 
-enum ItemCreator
-{
-    CREA_ORIG = 0,  // Original user query
-    CREA_FILTER    // Automatically applied filter (no specific type)
-};
-
+using ItemCreator = search::parseitem::ItemCreator;
 
 // For debugging purposes: return a text string with the creator enum name
 const char* creator_text(ItemCreator);
@@ -55,23 +51,6 @@ public:
      *  and calls to the appropriate Visitor functions.
      */
     virtual bool Traverse(IQueryVisitor* v) const = 0;
-
-    /** @param item A query item to check
-     *  @return A weight assigned to this term (default 100 (%) )
-     */
-    virtual int Weight(const QueryItem* item) const = 0;
-
-    /** @param item A query item to check
-     *  @return The creator module associated with this term
-     */
-    virtual ItemCreator Creator(const QueryItem* item) const = 0;
-
-    /** Return a text string representing any index specification used for this term
-     *  @param item A query item to check
-     *  @param length the length of the returned string
-     *  @return A text containing the name of the index associated with this term
-     */
-    virtual const char* Index(const QueryItem* item, size_t* length) const = 0;
 
     /** Check if the index specification associated with the query item is useful from
      *  a Juniper perspective (see fsearchrc, highlightindexes parameter)

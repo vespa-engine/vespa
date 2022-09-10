@@ -3,6 +3,7 @@
 #include "query.h"
 #include "juniperdebug.h"
 #include "queryvisitor.h"
+#include "query_item.h"
 #include "Matcher.h"
 #include "queryhandle.h"
 #include "querymodifier.h"
@@ -200,10 +201,7 @@ bool QueryVisitor::VisitOther(const QueryItem*, int arity)
 
 std::string QueryVisitor::get_index(const QueryItem* item)
 {
-    size_t len;
-    const char* ind = _fquery->Index(item, &len);
-    std::string s(ind, len);
-    return s;
+    return item->get_index();
 }
 
 
@@ -214,11 +212,11 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
         // Do not consider empty terms.
         return;
     }
-    juniper::ItemCreator creator = _fquery->Creator(item);
+    juniper::ItemCreator creator = item->get_creator();
     switch (creator)
     {
-    case juniper::CREA_ORIG:
-        LOG(debug, "(juniper::VisitKeyword) Found valid creator '%s'", creator_text(creator));
+    case juniper::ItemCreator::CREA_ORIG:
+        LOG(debug, "(juniper::VisitKeyword) Found valid creator '%s'", juniper::creator_text(creator));
         break;
     default:
         /** Keep track of eliminated children to have correct arity in rep. */
@@ -227,7 +225,7 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
             std::string s(keyword, length);
             std::string ind = get_index(item);
             LOG(debug, "juniper: VisitKeyword(%s:%s) - skip - unwanted creator %s",
-                ind.c_str(), s.c_str(), creator_text(creator));
+                ind.c_str(), s.c_str(), juniper::creator_text(creator));
         }
         return;
     }
@@ -249,7 +247,7 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
             ind.c_str(), (ind.size() > 0 ? ":" : ""), s.c_str());
     }
 
-    QueryTerm* term = new QueryTerm(keyword, length, _term_index++, _fquery->Weight(item));
+    QueryTerm* term = new QueryTerm(keyword, length, _term_index++, item->get_weight());
     if (prefix)
     {
         size_t tmplen = length;
@@ -265,12 +263,11 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
     }
     if (_queryModifier.HasRewriters())
     {
-        size_t len;
-        const char* idx = _fquery->Index(item, &len);
-        if (idx)
+        auto ind = item->get_index();
+        if (!ind.empty())
         {
             // record any rewriter for easier lookup later on..
-            juniper::Rewriter* rh = _queryModifier.FindRewriter(idx, len);
+            juniper::Rewriter* rh = _queryModifier.FindRewriter(ind);
             if (rh)
             {
                 term->rewriter = rh;
@@ -299,8 +296,8 @@ const char* creator_text(ItemCreator creator)
 {
     switch (creator)
     {
-    case CREA_ORIG: return "CREA_ORIG";
-    case CREA_FILTER: return "CREA_FILTER";
+    case ItemCreator::CREA_ORIG: return "CREA_ORIG";
+    case ItemCreator::CREA_FILTER: return "CREA_FILTER";
     default: return "(unknown creator)";
     }
 }

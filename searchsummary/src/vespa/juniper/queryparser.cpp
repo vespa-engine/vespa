@@ -4,6 +4,7 @@
 
 #include "queryparser.h"
 #include "juniperdebug.h"
+#include "query_item.h"
 #include <vector>
 #include <cassert>
 
@@ -17,33 +18,57 @@ namespace juniper {
 
 // simple syntax tree
 
-struct QueryItem
+class QueryParserQueryItem : public QueryItem
 {
-    QueryItem(const char* name, int p1 = -1) :
-        _name(name), _index(""), _child(), _prefix(false), _p1(p1)
+public:
+    QueryParserQueryItem(const char* name, int p1 = -1)
+        : QueryItem(),
+          _name(name), _index(""), _child(), _prefix(false), _p1(p1)
     { }
 
-    ~QueryItem()
-    {
-        for (std::vector<QueryItem*>::iterator it = _child.begin(); it != _child.end(); ++it)
-            delete *it;
-    }
+    ~QueryParserQueryItem() override;
 
     inline int arity() { return _child.size(); }
 
-    void add(QueryItem* e)
+    void add(std::unique_ptr<QueryItem> e)
     {
-        _child.push_back(e);
-        LOG(debug, "Adding %s", e->_name.c_str());
+        _child.push_back(std::move(e));
+        if (LOG_WOULD_LOG(debug)) {
+            auto qpe = dynamic_cast<const QueryParserQueryItem*>(_child.back().get());
+            LOG(debug, "Adding %s", qpe != nullptr ? qpe->_name.c_str() : "");
+        }
     }
 
-    std::string _name;
-    std::string _index;
-    std::vector<QueryItem*> _child;
+    vespalib::stringref get_index() const override;
+    int get_weight() const override;
+    ItemCreator get_creator() const override;
+
+    vespalib::string _name;
+    vespalib::string _index;
+    std::vector<std::unique_ptr<QueryItem>> _child;
     bool _prefix;
     int _p1;
 };
 
+QueryParserQueryItem::~QueryParserQueryItem() = default;
+
+vespalib::stringref
+QueryParserQueryItem::get_index() const
+{
+    return _index;
+}
+
+int
+QueryParserQueryItem::get_weight() const
+{
+    return 100;
+}
+
+ItemCreator
+QueryParserQueryItem::get_creator() const
+{
+    return ItemCreator::CREA_ORIG;
+}
 
 QueryParser::QueryParser(const char* query_string) :
     _tokenizer(),
@@ -51,7 +76,7 @@ QueryParser::QueryParser(const char* query_string) :
     _query_string(query_string),
     _curtok(),
     _v(NULL),
-    _exp(NULL), _parse_errno(0), _reached_end(false)
+    _exp(), _parse_errno(0), _reached_end(false)
 {
     _op_to_type["AND"]    = TOK_NORM_OP;
     _op_to_type["OR"]     = TOK_NORM_OP;
@@ -110,26 +135,10 @@ bool QueryParser::match(const char* s, bool required)
 bool QueryParser::Traverse(IQueryVisitor* v) const
 {
     const_cast<QueryParser*>(this)->_v = v;
-    if (_exp) trav(_exp);
+    if (_exp) trav(_exp.get());
     return true;
 }
 
-
-int QueryParser::Weight(const QueryItem*) const
-{
-    return 100;
-}
-
-ItemCreator QueryParser::Creator(const QueryItem*) const
-{
-    return CREA_ORIG;
-}
-
-const char* QueryParser::Index(const QueryItem* e, size_t* len) const
-{
-    if (len) *len = e->_index.size();
-    return e->_index.c_str();
-}
 
 bool QueryParser::UsefulIndex(const QueryItem*) const
 {
@@ -137,14 +146,12 @@ bool QueryParser::UsefulIndex(const QueryItem*) const
 }
 
 
-QueryParser::~QueryParser()
-{
-    delete _exp;
-}
+QueryParser::~QueryParser() = default;
 
-
-void QueryParser::trav(QueryItem* e) const
+void QueryParser::trav(QueryItem* e_abstract) const
 {
+    auto e = dynamic_cast<QueryParserQueryItem*>(e_abstract);
+    assert(e != nullptr);
     if (e->arity() == 0)
         _v->VisitKeyword(e, e->_name.c_str(), e->_name.size(), e->_prefix);
     if      (e->_name.compare("AND")    == 0)  _v->VisitAND(e, e->arity());
@@ -157,11 +164,13 @@ void QueryParser::trav(QueryItem* e) const
     else if (e->_name.compare("WITHIN") == 0)  _v->VisitWITHIN(e, e->arity(), e->_p1);
     else if (e->_name.compare("ONEAR")  == 0)  _v->VisitWITHIN(e, e->arity(), e->_p1);
 
-    for (std::vector<QueryItem*>::iterator it = e->_child.begin(); it != e->_child.end(); ++it)
-        trav(*it);
+    for (auto& child : e->_child) {
+        trav(child.get());
+    }
 }		
 
-QueryItem* QueryParser::ParseExpr()
+std::unique_ptr<QueryItem>
+QueryParser::ParseExpr()
 {
     int p1 = -1;
     std::map<std::string, int>::iterator it = _op_to_type.find(_curtok);
@@ -184,30 +193,28 @@ QueryItem* QueryParser::ParseExpr()
     }
     next();
     if (!match("(", true)) return NULL;
-    QueryItem* e = new QueryItem(op.c_str(), p1);
+    auto e = std::make_unique<QueryParserQueryItem>(op.c_str(), p1);
     do
     {
         if (ParseError()) return NULL;
         next();
-        QueryItem* ep = ParseExpr();
+        auto ep = ParseExpr();
         if (!ep)
         {
-            delete e;
-            return NULL;
+            return {};
         }
-        e->add(ep);
+        e->add(std::move(ep));
     } while (match(","));
     if (!match(")", true))
     {
-        delete e;
-        return NULL;
+        return {};
     }
     next();
     return e;
 }
 
-
-QueryItem* QueryParser::ParseIndexTerm()
+std::unique_ptr<QueryItem>
+QueryParser::ParseIndexTerm()
 {
     std::string t = _curtok;
     next();
@@ -215,30 +222,34 @@ QueryItem* QueryParser::ParseIndexTerm()
     {
         next();
         LOG(debug, "ParseIndexTerm: %s:%s", t.c_str(), _curtok.c_str());
-        QueryItem* e = ParseKeyword();
-        if (e) e->_index = t;
+        auto e = ParseKeyword();
+        if (e) {
+            e->_index = t;
+        }
         return e;
     }
     else
         return CheckPrefix(t);
 }
 
-QueryItem* QueryParser::CheckPrefix(std::string& kw)
+std::unique_ptr<QueryParserQueryItem>
+QueryParser::CheckPrefix(std::string& kw)
 {
     std::string::size_type pos = kw.find_first_of("*?");
     bool prefix = pos == kw.size() - 1 && kw[pos] == '*';
     if (prefix)
         kw.erase(pos);
-    QueryItem* e = new QueryItem(kw.c_str());
+    auto e = std::make_unique<QueryParserQueryItem>(kw.c_str());
     e->_prefix = pos != std::string::npos;
     return e;
 }
 
 
-QueryItem* QueryParser::ParseKeyword()
+std::unique_ptr<QueryParserQueryItem>
+QueryParser::ParseKeyword()
 {
     LOG(debug, "ParseKeyword: %s", _curtok.c_str());
-    QueryItem* e = CheckPrefix(_curtok);
+    auto e = CheckPrefix(_curtok);
     next();
     return e;
 }

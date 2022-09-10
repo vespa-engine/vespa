@@ -47,17 +47,9 @@ void QueryModifier::AddRewriter(const char* index_name, IRewriter* rewriter,
 
 
 /* Return any configured reducer/expander for the index, if any */
-Rewriter* QueryModifier::FindRewriter(const char* index_name)
+Rewriter* QueryModifier::FindRewriter(vespalib::stringref index_name)
 {
     return _rewriters.find(index_name);
 }
-
-
-Rewriter* QueryModifier::FindRewriter(const char* index_name, const size_t length)
-{
-    std::string idx_name(index_name, length);
-    return _rewriters.find(index_name);
-}
-
 
 } // end namespace juniper
