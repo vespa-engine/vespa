@@ -63,7 +63,7 @@ public class LinguisticsAnnotator {
      * Annotates the given string with the appropriate linguistics annotations.
      *
      * @param text the text to annotate
-     * @return whether or not anything was annotated
+     * @return whether anything was annotated
      */
     public boolean annotate(StringFieldValue text) {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
@@ -116,21 +116,18 @@ public class LinguisticsAnnotator {
             }
             if ( ! token.isIndexable()) return;
         }
-        String orig = token.getOrig();
-        int pos = (int)token.getOffset();
-        if (pos >= input.length()) {
-            throw new IllegalArgumentException("Token '" + orig + "' has offset " + pos + ", which is outside the " +
-                                               "bounds of the input string; " + input);
+        if (token.getOffset() >= input.length()) {
+            throw new IllegalArgumentException(token + " has offset " + token.getOffset() + ", which is outside the " +
+                                               "bounds of the input string '" + input + "'");
         }
-        int len = orig.length();
-        if (pos + len > input.length()) {
-            throw new IllegalArgumentException("Token '" + orig + "' has offset " + pos + ", which makes it overflow " +
+        if (token.getOffset() + token.getOrig().length() > input.length()) {
+            throw new IllegalArgumentException(token + " has offset " + token.getOffset() + ", which makes it overflow " +
                                                "the bounds of the input string; " + input);
         }
         if (mode == StemMode.ALL) {
-            Span where = parent.span(pos, len);
-            String lowercasedOrig = toLowerCase(orig);
-            addAnnotation(where, orig, orig, termOccurrences);
+            Span where = parent.span((int)token.getOffset(), token.getOrig().length());
+            String lowercasedOrig = toLowerCase(token.getOrig());
+            addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
 
             String lowercasedTerm = lowercasedOrig;
             String term = token.getTokenString();
@@ -138,20 +135,20 @@ public class LinguisticsAnnotator {
                 lowercasedTerm = toLowerCase(term);
             }
             if (! lowercasedOrig.equals(lowercasedTerm)) {
-                addAnnotation(where, term, orig, termOccurrences);
+                addAnnotation(where, term, token.getOrig(), termOccurrences);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
                 String lowercasedStem = toLowerCase(stem);
                 if (! (lowercasedOrig.equals(lowercasedStem) || lowercasedTerm.equals(lowercasedStem))) {
-                    addAnnotation(where, stem, orig, termOccurrences);
+                    addAnnotation(where, stem, token.getOrig(), termOccurrences);
                 }
             }
         } else {
             String term = token.getTokenString();
             if (term == null || term.trim().isEmpty()) return;
             if (termOccurrences.termCountBelowLimit(term))  {
-                parent.span(pos, len).annotate(lowerCaseTermAnnotation(term, token.getOrig()));
+                parent.span((int)token.getOffset(), token.getOrig().length()).annotate(lowerCaseTermAnnotation(term, token.getOrig()));
             }
         }
     }

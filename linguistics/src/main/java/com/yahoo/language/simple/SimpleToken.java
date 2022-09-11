@@ -7,6 +7,7 @@ import com.yahoo.language.process.TokenType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Mathias Mølster Lidal
@@ -115,14 +116,14 @@ public class SimpleToken implements Token {
         if (!(o instanceof Token other)) return false;
 
         if (getType() != other.getType()) return false;
-        if (!equalsOpt(getOrig(), other.getOrig())) return false;
+        if (!Objects.equals(getOrig(), other.getOrig())) return false;
         if (getOffset() != other.getOffset()) return false;
-        if (!equalsOpt(getScript(), other.getScript())) return false;
-        if (!equalsOpt(getTokenString(), other.getTokenString())) return false;
+        if (!Objects.equals(getScript(), other.getScript())) return false;
+        if (!Objects.equals(getTokenString(), other.getTokenString())) return false;
         if (isSpecialToken() != other.isSpecialToken()) return false;
         if (getNumComponents() != other.getNumComponents()) return false;
         for (int i = 0, len = getNumComponents(); i < len; ++i) {
-            if (!equalsOpt(getComponent(i), other.getComponent(i)))
+            if (!Objects.equals(getComponent(i), other.getComponent(i)))
                 return false;
         }
         return true;
@@ -133,15 +134,12 @@ public class SimpleToken implements Token {
         return orig.hashCode();
     }
 
-    private static boolean equalsOpt(Object lhs, Object rhs) {
-        if (lhs == null || rhs == null) {
-            return lhs == rhs;
-        }
-        return lhs.equals(rhs);
-    }
-
     @Override
     public String toString() {
+        return "token '" + orig + "'";
+    }
+
+    public String toDetailString() {
         return "token : " + getClass().getSimpleName() + " {\n" + toString(this, "    ") + "}";
     }
 
