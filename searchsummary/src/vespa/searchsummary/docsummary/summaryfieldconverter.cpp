@@ -1,16 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summaryfieldconverter.h"
+#include "annotation_converter.h"
 #include "check_undefined_value_visitor.h"
-#include "linguisticsannotation.h"
-#include "resultconfig.h"
 #include "searchdatatype.h"
-#include <vespa/document/annotation/alternatespanlist.h>
-#include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/annotation/spantreevisitor.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/positiondatatype.h>
+#include "slime_filler.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -27,33 +21,18 @@
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/juniper/juniper_separators.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/util/url.h>
-#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/exceptions.h>
 
-
-using document::AlternateSpanList;
-using document::Annotation;
 using document::AnnotationReferenceFieldValue;
-using document::ArrayDataType;
 using document::ArrayFieldValue;
 using document::BoolFieldValue;
 using document::ByteFieldValue;
-using document::DataType;
 using document::Document;
-using document::DocumentType;
 using document::DoubleFieldValue;
 using document::FieldValue;
-using document::FixedTypeRepo;
 using document::ConstFieldValueVisitor;
 using document::FloatFieldValue;
 using document::IntFieldValue;
@@ -62,126 +41,15 @@ using document::MapFieldValue;
 using document::PredicateFieldValue;
 using document::RawFieldValue;
 using document::ShortFieldValue;
-using document::Span;
-using document::SpanList;
-using document::SimpleSpanList;
-using document::SpanNode;
-using document::SpanTree;
-using document::SpanTreeVisitor;
 using document::StringFieldValue;
 using document::StructFieldValue;
-using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
 using document::TensorFieldValue;
 using document::ReferenceFieldValue;
-using search::index::Schema;
-using search::util::URL;
-using std::make_pair;
-using std::pair;
-using std::vector;
-using vespalib::asciistream;
-using vespalib::geo::ZCurve;
-using vespalib::make_string;
-using vespalib::string;
-using vespalib::stringref;
 
 namespace search::docsummary {
 
 namespace {
-string getSpanString(const string &s, const Span &span) {
-    return string(&s[span.from()], &s[span.from() + span.length()]);
-}
-
-struct SpanFinder : SpanTreeVisitor {
-    int32_t begin_pos;
-    int32_t end_pos;
-
-    SpanFinder() : begin_pos(0x7fffffff), end_pos(-1) {}
-    Span span() { return Span(begin_pos, end_pos - begin_pos); }
-
-    void visit(const Span &node) override {
-        begin_pos = std::min(begin_pos, node.from());
-        end_pos = std::max(end_pos, node.from() + node.length());
-    }
-    void visit(const SpanList &node) override {
-        for (const auto & span_ : node) {
-            span_->accept(*this);
-        }
-    }
-    void visit(const SimpleSpanList &node) override {
-        for (const auto & span_ : node) {
-            span_.accept(*this);
-        }
-    }
-    void visit(const AlternateSpanList &node) override {
-        for (size_t i = 0; i < node.getNumSubtrees(); ++i) {
-            visit(node.getSubtree(i));
-        }
-    }
-};
-
-Span getSpan(const SpanNode &span_node) {
-    SpanFinder finder;
-    span_node.accept(finder);
-    return finder.span();
-}
-
-// Extract the FieldValues from all TERM annotations. For each span
-// with such annotations, the Handler is invoked with a set of
-// iterators over the FieldValues for that span.
-template <typename Handler>
-void handleIndexingTerms(Handler &handler, const StringFieldValue &value) {
-        StringFieldValue::SpanTrees trees = value.getSpanTrees();
-    const SpanTree *tree = StringFieldValue::findTree(trees, linguistics::SPANTREE_NAME);
-    typedef pair<Span, const FieldValue *> SpanTerm;
-    typedef vector<SpanTerm> SpanTermVector;
-    if (!tree) {
-        // Treat a string without annotations as a single span.
-        SpanTerm str(Span(0, handler.text.size()),
-                     static_cast<const FieldValue*>(nullptr));
-        handler.handleAnnotations(str.first, &str, &str + 1);
-        return;
-    }
-    SpanTermVector terms;
-    for (const Annotation & annotation : *tree) {
-        // For now, skip any composite spans.
-        const Span *span = dynamic_cast<const Span*>(annotation.getSpanNode());
-        if ((span != nullptr) && annotation.valid() &&
-            (annotation.getType() == *linguistics::TERM)) {
-            terms.push_back(make_pair(getSpan(*span),
-                                      annotation.getFieldValue()));
-        }
-    }
-    sort(terms.begin(), terms.end());
-    auto it = terms.begin();
-    auto ite = terms.end();
-    int32_t endPos = 0;
-    for (; it != ite; ) {
-        auto it_begin = it;
-        if (it_begin->first.from() >  endPos) {
-            Span tmpSpan(endPos, it_begin->first.from() - endPos);
-            handler.handleAnnotations(tmpSpan, it, it);
-            endPos = it_begin->first.from();
-        }
-        for (; it != ite && it->first == it_begin->first; ++it);
-        handler.handleAnnotations(it_begin->first, it_begin, it);
-        endPos = it_begin->first.from() + it_begin->first.length();
-    }
-    int32_t wantEndPos = handler.text.size();
-    if (endPos < wantEndPos) {
-        Span tmpSpan(endPos, wantEndPos - endPos);
-        handler.handleAnnotations(tmpSpan, ite, ite);
-    }
-}
-
-const StringFieldValue &ensureStringFieldValue(const FieldValue &value) __attribute__((noinline));
-
-const StringFieldValue &ensureStringFieldValue(const FieldValue &value) {
-    if (!value.isA(FieldValue::Type::STRING)) {
-        throw vespalib::IllegalArgumentException("Illegal field type. " + value.toString(), VESPA_STRLOC);
-    }
-    return static_cast<const StringFieldValue &>(value);
-}
 
 struct FieldValueConverter {
     virtual FieldValue::UP convert(const FieldValue &input) = 0;
@@ -189,47 +57,9 @@ struct FieldValueConverter {
 };
 
 
-struct SummaryHandler {
-    const string text;
-    asciistream &out;
-
-    SummaryHandler(const string &s, asciistream &stream)
-        : text(s), out(stream) {}
-
-    template <typename ForwardIt>
-    void handleAnnotations(const Span &span, ForwardIt it, ForwardIt last) {
-        int annCnt = (last - it);
-        if (annCnt > 1 || (annCnt == 1 && it->second)) {
-            annotateSpans(span, it, last);
-        } else {
-            out << getSpanString(text, span) << juniper::separators::unit_separator_string;
-        }
-    }
-
-    template <typename ForwardIt>
-    void annotateSpans(const Span &span, ForwardIt it, ForwardIt last) {
-        out << juniper::separators::interlinear_annotation_anchor_string  // ANCHOR
-            << (getSpanString(text, span))
-            << juniper::separators::interlinear_annotation_separator_string; // SEPARATOR
-        while (it != last) {
-            if (it->second) {
-                out << ensureStringFieldValue(*it->second).getValue();
-            } else {
-                out << getSpanString(text, span);
-            }
-            if (++it != last) {
-                out << " ";
-            }
-        }
-        out << juniper::separators::interlinear_annotation_terminator_string  // TERMINATOR
-            << juniper::separators::unit_separator_string;
-    }
-};
-
-
 class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 {
-    asciistream          _str;
+    vespalib::asciistream _str;
     bool                 _tokenize;
     FieldValue::UP       _field_value;
     FieldValueConverter &_structuredFieldConverter;
@@ -251,8 +81,8 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 
     void visit(const StringFieldValue &value) override {
         if (_tokenize) {
-            SummaryHandler handler(value.getValue(), _str);
-            handleIndexingTerms(handler, value);
+            AnnotationConverter converter(value.getValue(), _str);
+            converter.handleIndexingTerms(value);
         } else {
             _str << value.getValue();
         }
@@ -332,243 +162,6 @@ SummaryFieldValueConverter::SummaryFieldValueConverter(bool tokenize, FieldValue
 SummaryFieldValueConverter::~SummaryFieldValueConverter() = default;
 
 using namespace vespalib::slime::convenience;
-
-
-
-class SlimeFiller : public ConstFieldValueVisitor {
-private:
-    class MapFieldValueInserter {
-    private:
-        Cursor& _array;
-        Symbol _key_sym;
-        Symbol _val_sym;
-        bool _tokenize;
-
-    public:
-        MapFieldValueInserter(Inserter& parent_inserter, bool tokenize)
-            : _array(parent_inserter.insertArray()),
-              _key_sym(_array.resolve("key")),
-              _val_sym(_array.resolve("value")),
-              _tokenize(tokenize)
-        {
-        }
-        void insert_entry(const FieldValue& key, const FieldValue& value) {
-            Cursor& c = _array.addObject();
-            ObjectSymbolInserter ki(c, _key_sym);
-            ObjectSymbolInserter vi(c, _val_sym);
-            SlimeFiller key_conv(ki, _tokenize);
-            SlimeFiller val_conv(vi, _tokenize);
-
-            key.accept(key_conv);
-            value.accept(val_conv);
-        }
-    };
-
-    Inserter    &_inserter;
-    bool         _tokenize;
-    const std::vector<uint32_t>* _matching_elems;
-
-    bool filter_matching_elements() const {
-        return _matching_elems != nullptr;
-    }
-
-    template <typename Value>
-    bool empty_or_empty_after_filtering(const Value& value) const {
-        return (value.isEmpty() || (filter_matching_elements() && (_matching_elems->empty() || _matching_elems->back() >= value.size())));
-    }
-
-    void visit(const AnnotationReferenceFieldValue & v ) override {
-        (void)v;
-        Cursor &c = _inserter.insertObject();
-        Memory key("error");
-        Memory val("cannot convert from annotation reference field");
-        c.setString(key, val);
-    }
-    void visit(const Document & v) override {
-        (void)v;
-        Cursor &c = _inserter.insertObject();
-        Memory key("error");
-        Memory val("cannot convert from field of type document");
-        c.setString(key, val);
-    }
-
-    void visit(const MapFieldValue & v) override {
-        if (empty_or_empty_after_filtering(v)) {
-            return;
-        }
-        MapFieldValueInserter map_inserter(_inserter, _tokenize);
-        if (filter_matching_elements()) {
-            assert(v.has_no_erased_keys());
-            for (uint32_t id_to_keep : (*_matching_elems)) {
-                auto entry = v[id_to_keep];
-                map_inserter.insert_entry(*entry.first, *entry.second);
-            }
-        } else {
-            for (const auto &entry : v) {
-                map_inserter.insert_entry(*entry.first, *entry.second);
-            }
-        }
-    }
-
-    void visit(const ArrayFieldValue &value) override {
-        if (empty_or_empty_after_filtering(value)) {
-            return;
-        }
-        Cursor &a = _inserter.insertArray();
-        ArrayInserter ai(a);
-        SlimeFiller conv(ai, _tokenize);
-        if (filter_matching_elements()) {
-            for (uint32_t id_to_keep : (*_matching_elems)) {
-                value[id_to_keep].accept(conv);
-            }
-        } else {
-            for (const FieldValue &fv : value) {
-                fv.accept(conv);
-            }
-        }
-    }
-
-    void visit(const StringFieldValue &value) override {
-        if (_tokenize) {
-            asciistream tmp;
-            SummaryHandler handler(value.getValue(), tmp);
-            handleIndexingTerms(handler, value);
-            _inserter.insertString(Memory(tmp.str()));
-        } else {
-            _inserter.insertString(Memory(value.getValue()));
-        }
-    }
-
-    void visit(const IntFieldValue &value) override {
-        int32_t v = value.getValue();
-        _inserter.insertLong(v);
-    }
-    void visit(const LongFieldValue &value) override {
-        int64_t v = value.getValue();
-        _inserter.insertLong(v);
-    }
-    void visit(const ShortFieldValue &value) override {
-        int16_t v = value.getValue();
-        _inserter.insertLong(v);
-    }
-    void visit(const ByteFieldValue &value) override {
-        int8_t v = value.getAsByte();
-        _inserter.insertLong(v);
-    }
-    void visit(const BoolFieldValue &value) override {
-        bool v = value.getValue();
-        _inserter.insertBool(v);
-    }
-    void visit(const DoubleFieldValue &value) override {
-        double v = value.getValue();
-        _inserter.insertDouble(v);
-    }
-    void visit(const FloatFieldValue &value) override {
-        float v = value.getValue();
-        _inserter.insertDouble(v);
-    }
-
-    void visit(const PredicateFieldValue &value) override {
-        _inserter.insertString(value.toString());
-    }
-
-    void visit(const RawFieldValue &value) override {
-        std::pair<const char *, size_t> buf = value.getAsRaw();
-        _inserter.insertData(Memory(buf.first, buf.second));
-    }
-
-    void visit(const StructFieldValue &value) override {
-        if (value.getDataType() == &document::PositionDataType::getInstance()
-            && ResultConfig::wantedV8geoPositions())
-        {
-            auto xv = value.getValue("x");
-            auto yv = value.getValue("y");
-            if (xv && yv) {
-                Cursor &c = _inserter.insertObject();
-                c.setDouble("lat", double(yv->getAsInt()) / 1.0e6);
-                c.setDouble("lng", double(xv->getAsInt()) / 1.0e6);
-                return;
-            }
-        }
-        if (*value.getDataType() == *SearchDataType::URI) {
-            FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue && uriAllValue->isA(FieldValue::Type::STRING)) {
-                uriAllValue->accept(*this);
-                return;
-            }
-        }
-        Cursor &c = _inserter.insertObject();
-        for (StructFieldValue::const_iterator itr = value.begin(); itr != value.end(); ++itr) {
-            Memory keymem(itr.field().getName());
-            ObjectInserter vi(c, keymem);
-            SlimeFiller conv(vi, _tokenize);
-            FieldValue::UP nextValue(value.getValue(itr.field()));
-            (*nextValue).accept(conv);
-        }
-    }
-
-    void visit(const WeightedSetFieldValue &value) override {
-        if (empty_or_empty_after_filtering(value)) {
-            return;
-        }
-        Cursor &a = _inserter.insertArray();
-        Symbol isym = a.resolve("item");
-        Symbol wsym = a.resolve("weight");
-        using matching_elements_iterator_type = std::vector<uint32_t>::const_iterator;
-        matching_elements_iterator_type matching_elements_itr;
-        matching_elements_iterator_type matching_elements_itr_end;
-        if (filter_matching_elements()) {
-            matching_elements_itr = _matching_elems->begin();
-            matching_elements_itr_end = _matching_elems->end();
-        }
-        uint32_t idx = 0;
-        for (const auto & entry : value) {
-            if (filter_matching_elements()) {
-                if (matching_elements_itr == matching_elements_itr_end ||
-                    idx < *matching_elements_itr) {
-                    ++idx;
-                    continue;
-                }
-                ++matching_elements_itr;
-            }
-            Cursor &o = a.addObject();
-            ObjectSymbolInserter ki(o, isym);
-            SlimeFiller conv(ki, _tokenize);
-            entry.first->accept(conv);
-            int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
-            o.setLong(wsym, weight);
-            ++idx;
-        }
-    }
-
-    void visit(const TensorFieldValue &value) override {
-        const auto &tensor = value.getAsTensorPtr();
-        vespalib::nbostream s;
-        if (tensor) {
-            encode_value(*tensor, s);
-        }
-        _inserter.insertData(vespalib::Memory(s.peek(), s.size()));
-    }
-
-    void visit(const ReferenceFieldValue& value) override {
-        _inserter.insertString(Memory(value.hasValidDocumentId()
-                ? value.getDocumentId().toString()
-                : string()));
-    }
-
-public:
-    SlimeFiller(Inserter &inserter, bool tokenize)
-        : _inserter(inserter),
-          _tokenize(tokenize),
-          _matching_elems(nullptr)
-    {}
-
-    SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems)
-            : _inserter(inserter),
-              _tokenize(tokenize),
-              _matching_elems(matching_elems)
-    {}
-};
 
 class SlimeConverter : public FieldValueConverter {
 private:
