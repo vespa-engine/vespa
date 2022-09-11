@@ -17,7 +17,10 @@ vespa_add_library(searchsummary_docsummary OBJECT
     empty_dfw.cpp
     geoposdfw.cpp
     getdocsumargs.cpp
+    juniper_dfw_query_item.cpp
+    juniper_dfw_term_visitor.cpp
     juniper_input.cpp
+    juniper_query_adapter.cpp
     juniperproperties.cpp
     keywordextractor.cpp
     linguisticsannotation.cpp
