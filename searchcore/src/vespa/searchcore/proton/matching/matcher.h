@@ -121,6 +121,7 @@ public:
     match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
           ISearchContext &searchContext, IAttributeContext &attrContext,
           SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
+          const bucketdb::BucketDBOwner & bucketdb,
           SearchSession::OwnershipBundle &&owned_objects);
 
     /**

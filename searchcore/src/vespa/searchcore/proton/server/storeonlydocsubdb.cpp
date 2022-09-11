@@ -343,9 +343,8 @@ StoreOnlyDocSubDB::getFlushTargetsInternal()
 StoreOnlyFeedView::Context
 StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot)
 {
-    return StoreOnlyFeedView::Context(getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx,
-                                      configSnapshot.getDocumentTypeRepoSP(), _pendingLidsForCommit,
-                                      *_gidToLidChangeHandler, _writeService);
+    return { getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx, configSnapshot.getDocumentTypeRepoSP(),
+             _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService};
 }
 
 StoreOnlyFeedView::PersistentParams
@@ -353,7 +352,7 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 {
     SerialNum flushedDMSSN(_flushedDocumentMetaStoreSerialNum);
     SerialNum flushedDSSN(_flushedDocumentStoreSerialNum);
-    return StoreOnlyFeedView::PersistentParams(flushedDMSSN, flushedDSSN, _docTypeName, _subDbId, _subDbType);
+    return { flushedDMSSN, flushedDSSN, _docTypeName, _subDbId, _subDbType };
 }
 
 void
@@ -420,7 +419,7 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     initFeedView(newConfigSnapshot);
-    return IReprocessingTask::List();
+    return {};
 }
 
 namespace {
@@ -428,7 +427,7 @@ namespace {
 constexpr double RETIRED_DEAD_RATIO = 0.5;
 
 struct UpdateConfig : public search::attribute::IAttributeFunctor {
-    UpdateConfig(CompactionStrategy compactionStrategy) noexcept
+    explicit UpdateConfig(CompactionStrategy compactionStrategy) noexcept
         : _compactionStrategy(compactionStrategy)
     {}
     void operator()(search::attribute::IAttributeVector &iAttributeVector) override {
@@ -490,7 +489,7 @@ StoreOnlyDocSubDB::reconfigureAttributesConsideringNodeState(OnDone onDone) {
 proton::IAttributeManager::SP
 StoreOnlyDocSubDB::getAttributeManager() const
 {
-    return proton::IAttributeManager::SP();
+    return {};
 }
 
 const searchcorespi::IIndexManager::SP &
@@ -519,7 +518,7 @@ StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &, SerialNum )
 search::SearchableStats
 StoreOnlyDocSubDB::getSearchableStats() const
 {
-    return search::SearchableStats();
+    return {};
 }
 
 IDocumentRetriever::UP
@@ -534,7 +533,7 @@ MatchingStats
 StoreOnlyDocSubDB::getMatcherStats(const vespalib::string &rankProfile) const
 {
     (void) rankProfile;
-    return MatchingStats();
+    return {};
 }
 
 void
@@ -554,7 +553,7 @@ StoreOnlyDocSubDB::close()
 std::shared_ptr<IDocumentDBReference>
 StoreOnlyDocSubDB::getDocumentDBReference()
 {
-    return std::shared_ptr<IDocumentDBReference>();
+    return {};
 }
 
 StoreOnlySubDBFileHeaderContext::

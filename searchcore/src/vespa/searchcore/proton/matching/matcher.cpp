@@ -8,6 +8,7 @@
 #include "matcher.h"
 #include "sessionmanager.h"
 #include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -187,7 +188,8 @@ namespace {
 SearchReply::UP
 Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
                ISearchContext &searchContext, IAttributeContext &attrContext, SessionManager &sessionMgr,
-               const search::IDocumentMetaStore &metaStore, SearchSession::OwnershipBundle &&owned_objects)
+               const search::IDocumentMetaStore &metaStore, const bucketdb::BucketDBOwner & bucketdb,
+               SearchSession::OwnershipBundle &&owned_objects)
 {
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
@@ -277,7 +279,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         SearchReply::Coverage & coverage = reply->coverage;
         coverage.setActive(numActiveLids);
         //TODO this should be calculated with ClusterState calculator.
-        coverage.setTargetActive(numActiveLids);
+        coverage.setTargetActive(bucketdb.getNumActiveDocs());
         coverage.setCovered(covered);
         if (wasLimited) {
             coverage.degradeMatchPhase();

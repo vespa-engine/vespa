@@ -23,9 +23,9 @@ std::shared_ptr<const DocumentTypeRepo>
 getRepo(const std::vector<IFeedView::SP> &views)
 {
     for (const auto &view : views) {
-        if (view.get() == nullptr)
-            continue;
-        return view->getDocumentTypeRepo();
+        if (view) {
+            return view->getDocumentTypeRepo();
+        }
     }
     LOG_ABORT("should not be reached");
 }
@@ -68,8 +68,7 @@ CombiningFeedView::getDocumentMetaStorePtr() const
 }
 
 void
-CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
-                                 DocumentOperation &op)
+CombiningFeedView::findPrevDbdId(const document::GlobalId &gid, DocumentOperation &op)
 {
     uint32_t subDbIdLim = _metaStores.size();
     uint32_t skipSubDbId = std::numeric_limits<uint32_t>::max();

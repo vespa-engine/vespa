@@ -14,7 +14,7 @@ namespace proton {
 struct ISimpleDocumentMetaStore : public documentmetastore::IStore,
                                   public documentmetastore::IBucketHandler
 {
-    virtual ~ISimpleDocumentMetaStore() {}
+    ~ISimpleDocumentMetaStore() override = default;
 };
 
 } // namespace proton

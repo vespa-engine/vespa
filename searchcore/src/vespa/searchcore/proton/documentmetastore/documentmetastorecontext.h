@@ -19,7 +19,7 @@ public:
         search::AttributeGuard   _guard;
         const DocumentMetaStore &_store;
     public:
-        ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
+        explicit ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
         const search::IDocumentMetaStore &get() const override { return _store; }
     };
 private:
@@ -27,7 +27,7 @@ private:
     IDocumentMetaStore::SP      _metaStore;
 public:
 
-    DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB);
+    explicit DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB);
     /**
      * Create a new context instantiating a document meta store
      * with the given name, grow strategy, and comparator.
@@ -40,7 +40,7 @@ public:
      * Create a new context with the given document meta store encapsulated
      * as an attribute vector.
      */
-    DocumentMetaStoreContext(const search::AttributeVector::SP &metaStoreAttr);
+    explicit DocumentMetaStoreContext(const search::AttributeVector::SP &metaStoreAttr);
 
     proton::IDocumentMetaStore::SP   getSP() const override { return _metaStore; }
     proton::IDocumentMetaStore &       get()       override { return *_metaStore; }
