@@ -80,7 +80,7 @@ check_pidfile() {
 }
 
 get_mod_time() {
-	perl -e 'print (((stat("'"$1"'"))[9]) . "\n")'
+	stat -c %Y -- "$1"
 }
 
 maybe_collect() {
