@@ -10,6 +10,8 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
 
+class IJuniperConverter;
+
 /*
  * Class inserting a field value into a slime object.
  */
@@ -18,6 +20,7 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
     vespalib::slime::Inserter&   _inserter;
     bool                         _tokenize;
     const std::vector<uint32_t>* _matching_elems;
+    IJuniperConverter*           _juniper_converter;
 
     bool filter_matching_elements() const {
         return _matching_elems != nullptr;
@@ -49,6 +52,7 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
 public:
     SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize);
     SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems);
+    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter& juniper_converter);
     ~SlimeFiller() override;
 };
 

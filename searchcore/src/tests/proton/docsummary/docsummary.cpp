@@ -37,6 +37,7 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
+#include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
@@ -315,6 +316,16 @@ public:
     }
 };
 
+class MockJuniperConverter : public IJuniperConverter
+{
+    vespalib::string _result;
+public:
+    void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter&) override {
+        _result = input;
+    }
+    const vespalib::string& get_result() const noexcept { return _result; }
+};
+
 bool
 assertString(const std::string & exp, const std::string & fieldName,
              DocumentStoreAdapter &dsa, uint32_t id)
@@ -328,7 +339,11 @@ assertAnnotatedString(const std::string & exp, const std::string & fieldName,
                       DocumentStoreAdapter &dsa, uint32_t id)
 {
     auto res = dsa.getMappedDocsum(id);
-    return EXPECT_EQUAL(exp, res->get_juniper_input(fieldName).get_value());
+    MockJuniperConverter converter;
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+    res->insert_juniper_field(fieldName, inserter, converter);
+    return EXPECT_EQUAL(exp, converter.get_result());
 }
 
 void

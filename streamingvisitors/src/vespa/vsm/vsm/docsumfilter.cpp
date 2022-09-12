@@ -45,8 +45,8 @@ public:
     DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document);
     ~DocsumStoreVsmDocument() override;
     DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
-    JuniperInput get_juniper_input(const vespalib::string& field_name) const override;
     void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
+    void insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
@@ -84,13 +84,6 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
     return {};
 }
 
-JuniperInput
-DocsumStoreVsmDocument::get_juniper_input(const vespalib::string& field_name) const
-{
-    // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
-    return JuniperInput(get_field_value(field_name));
-}
-
 void
 DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
 {
@@ -112,6 +105,16 @@ DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name,
         } catch (document::FieldNotFoundException&) {
             // Field was not found in document type. Don't insert anything.
         }
+    }
+}
+
+void
+DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
+{
+    // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
+    auto field_value = get_field_value(field_name);
+    if (field_value) {
+        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, false, converter);
     }
 }
 
