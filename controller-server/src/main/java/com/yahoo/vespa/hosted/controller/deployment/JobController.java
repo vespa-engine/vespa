@@ -600,20 +600,12 @@ public class JobController {
     }
 
     private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
-        List<String> warnings = new ArrayList<>();
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
-            // TODO jonvm: warn when a version with high or normal confidence exists on a newer major.
-            if (explicitMajor < 8)
-                warnings.add("Vespa 7 will soon be end of life, upgrade to Vespa 8 now: " +
-                             "https://cloud.vespa.ai/en/vespa8-release-notes.html");
+            if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
+                controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
+                                                             "Vespa " + explicitMajor + " will soon be end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
+                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
         });
-        submission.applicationPackage().parentVersion().ifPresent(parent -> {
-            if (parent.getMajor() < controller.readSystemVersion().getMajor())
-                warnings.add("Parent version used to compile the application is on a " +
-                             "lower major version than the current Vespa Cloud version");
-        });
-        if ( ! warnings.isEmpty())
-            controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning, warnings);
     }
 
     private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
