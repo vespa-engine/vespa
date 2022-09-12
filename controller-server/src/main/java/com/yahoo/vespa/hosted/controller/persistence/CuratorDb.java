@@ -139,7 +139,7 @@ public class CuratorDb {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                      .filter(hostAndPort -> !hostAndPort.isEmpty())
                      .map(hostAndPort -> hostAndPort.split(":")[0])
-                     .collect(Collectors.toUnmodifiableList());
+                     .toList();
     }
 
     // -------------- Locks ---------------------------------------------------
@@ -387,7 +387,7 @@ public class CuratorDb {
         return curator.getChildren(applicationRoot).stream()
                       .map(TenantAndApplicationId::fromSerialized)
                       .sorted()
-                      .collect(toUnmodifiableList());
+                      .toList();
     }
 
     public void removeApplication(TenantAndApplicationId id) {
@@ -620,8 +620,8 @@ public class CuratorDb {
 
     public List<TenantName> listTenantsWithNotifications() {
         return curator.getChildren(notificationsRoot).stream()
-                .map(TenantName::from)
-                .collect(Collectors.toUnmodifiableList());
+                      .map(TenantName::from)
+                      .toList();
     }
 
     public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
@@ -677,9 +677,8 @@ public class CuratorDb {
     }
 
     private Path lockPath(String provisionId) {
-        return lockRoot
-                .append(provisionStatePath())
-                .append(provisionId);
+        return lockRoot.append(provisionStatePath())
+                       .append(provisionId);
     }
 
     private static Path upgradesPerMinutePath() {
