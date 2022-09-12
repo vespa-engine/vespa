@@ -230,7 +230,7 @@ SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, v
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, tokenize, converter);
+        SlimeFiller visitor(inserter, tokenize, &converter);
         value.accept(visitor);
     }
 }
