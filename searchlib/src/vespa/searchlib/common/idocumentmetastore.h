@@ -75,7 +75,7 @@ struct IDocumentMetaStore {
     typedef document::BucketId      BucketId;
     typedef uint64_t Timestamp;
 
-    virtual ~IDocumentMetaStore() {}
+    virtual ~IDocumentMetaStore() = default;
 
     /**
      * Retrieves the gid associated with the given lid.

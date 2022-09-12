@@ -63,7 +63,7 @@ public:
      * Deleting the context will trigger cleanup in the
      * implementation.
      **/
-    virtual ~ISearchContext() {}
+    virtual ~ISearchContext() = default;
 };
 
 }

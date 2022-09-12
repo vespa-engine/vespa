@@ -73,8 +73,9 @@ MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const Sear
     owned_objects.context = createContext();
     MatchContext *ctx = owned_objects.context.get();
     const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
+    const bucketdb::BucketDBOwner & bucketDB = _metaStore->get().getBucketDB();
     return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
-                          *_sessionMgr, dms, std::move(owned_objects));
+                          *_sessionMgr, dms, bucketDB, std::move(owned_objects));
 }
 
 } // namespace proton

@@ -14,7 +14,7 @@ struct IDocumentMetaStoreContext : public search::IDocumentMetaStoreContext {
 
     typedef std::shared_ptr<IDocumentMetaStoreContext> SP;
 
-    virtual ~IDocumentMetaStoreContext() {}
+    virtual ~IDocumentMetaStoreContext() = default;
 
     /**
      * Access to write interface.

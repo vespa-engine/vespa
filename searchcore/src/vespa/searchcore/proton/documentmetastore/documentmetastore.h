@@ -133,7 +133,7 @@ private:
     RawDocumentMetaData removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
     void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetaData>& removed);
 
-    MetaDataView make_meta_data_view() { return vespalib::ConstArrayRef(&_metaDataStore[0], getCommittedDocIdLimit()); }
+    MetaDataView make_meta_data_view() { return {&_metaDataStore[0], getCommittedDocIdLimit()}; }
     UnboundMetaDataView acquire_unbound_meta_data_view() const noexcept { return &_metaDataStore.acquire_elem_ref(0); }
     UnboundMetaDataView get_unbound_meta_data_view() const noexcept { return &_metaDataStore.get_elem_ref(0); } // Called from writer only
 
@@ -148,13 +148,13 @@ public:
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +
         sizeof(Timestamp);
 
-    DocumentMetaStore(BucketDBOwnerSP bucketDB);
+    explicit DocumentMetaStore(BucketDBOwnerSP bucketDB);
     DocumentMetaStore(BucketDBOwnerSP bucketDB, const vespalib::string & name);
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
                       const vespalib::string & name,
                       const search::GrowStrategy & grow,
                       SubDbType subDbType = SubDbType::READY);
-    ~DocumentMetaStore();
+    ~DocumentMetaStore() override;
 
     /**
      * Implements documentmetastore::IStore.
@@ -189,7 +189,7 @@ public:
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
-    void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
+    void removeBatch(const std::vector<DocId> &lidsToRemove, DocId docIdLimit) override;
     const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore.acquire_elem_ref(lid); }
 
     /**
