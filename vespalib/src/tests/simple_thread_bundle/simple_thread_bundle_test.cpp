@@ -89,6 +89,17 @@ TEST_FF("require that having too many targets fails", SimpleThreadBundle(1), Sta
     f2.check(Box<size_t>().add(0).add(0));
 }
 
+TEST_F("require that ThreadBundle::trivial works the same as SimpleThreadBundle(1)", State(2)) {
+    ThreadBundle &bundle = ThreadBundle::trivial();
+    EXPECT_EQUAL(bundle.size(), 1u);
+    bundle.run(f.getTargets(0));
+    f.check({0,0});
+    bundle.run(f.getTargets(1));
+    f.check({1,0});
+    EXPECT_EXCEPTION(bundle.run(f.getTargets(2)), IllegalArgumentException, "");
+    f.check({1,0});
+}
+
 TEST_FF("require that bundles with multiple internal threads work", SimpleThreadBundle(3), State(3)) {
     f1.run(f2.getTargets(3));
     f2.check(Box<size_t>().add(1).add(1).add(1));
