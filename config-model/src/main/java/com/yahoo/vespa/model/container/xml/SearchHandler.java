@@ -11,8 +11,6 @@ import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
 
 import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSearchAndDocproc;
 
@@ -27,7 +25,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
     static final String EXECUTION_FACTORY_CLASS = com.yahoo.search.searchchain.ExecutionFactory.class.getName();
 
     static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASS);
-    static final BindingPattern DEFAULT_BINDING = bindingPattern(Optional.empty());
+    static final BindingPattern DEFAULT_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 
     SearchHandler(ApplicationContainerCluster cluster,
                   List<BindingPattern> bindings,
@@ -36,13 +34,6 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         bindings.forEach(this::addServerBindings);
     }
 
-    static BindingPattern bindingPattern(Optional<String> port) {
-        String path = "/search/*";
-        return port
-                .filter(s -> !s.isBlank())
-                .map(s -> SystemBindingPattern.fromHttpPortAndPath(s, path))
-                .orElseGet(() -> SystemBindingPattern.fromHttpPath(path));
-    }
 
     private static class Threadpool extends ContainerThreadpool {
 
