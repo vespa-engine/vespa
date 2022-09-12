@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -41,6 +42,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.Cha
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -661,8 +663,8 @@ public class UpgraderTest {
 
     @Test
     void testPinningMajorVersionInDeploymentXml() {
-        Version version = Version.fromString("6.2");
-        tester.controllerTester().upgradeSystem(version);
+        Version version0 = Version.fromString("6.2");
+        tester.controllerTester().upgradeSystem(version0);
 
         ApplicationPackageBuilder builder = new ApplicationPackageBuilder().region("us-west-1").majorVersion(7);
         ApplicationPackage defaultPackage = new ApplicationPackageBuilder().region("us-west-1").build();
@@ -674,7 +676,7 @@ public class UpgraderTest {
         var lazyApp = tester.newDeploymentContext().submit(defaultPackage).deploy();
 
         // New major version is released; more apps upgrade with increasing confidence.
-        version = Version.fromString("7.0");
+        Version version = Version.fromString("7.0");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().overrideConfidence(version, Confidence.broken);
         tester.controllerTester().computeVersionStatus();

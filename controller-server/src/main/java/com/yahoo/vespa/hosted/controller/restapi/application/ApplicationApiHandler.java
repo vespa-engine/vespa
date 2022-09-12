@@ -2071,7 +2071,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             if (pin)
                 change = change.withPin();
 
-            controller.applications().deploymentTrigger().forceChange(id, change);
+            controller.applications().deploymentTrigger().forceChange(id, change, isOperator(request));
             response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
@@ -2088,7 +2088,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             RevisionId revision = build == -1 ? application.get().revisions().last().get().id()
                                               : getRevision(application.get(), build);
             Change change = Change.of(revision);
-            controller.applications().deploymentTrigger().forceChange(id, change);
+            controller.applications().deploymentTrigger().forceChange(id, change, isOperator(request));
             response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
@@ -2276,7 +2276,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                  .map(Boolean::valueOf)
                                  .orElse(false);
 
-        controller.jobController().deploy(id, type, version, applicationPackage, dryRun);
+        controller.jobController().deploy(id, type, version, applicationPackage, dryRun, isOperator(request));
         RunId runId = controller.jobController().last(id, type).get().id();
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();

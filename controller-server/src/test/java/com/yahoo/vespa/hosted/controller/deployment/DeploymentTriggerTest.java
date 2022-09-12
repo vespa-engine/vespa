@@ -2207,6 +2207,7 @@ public class DeploymentTriggerTest {
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
                 .compileVersion(version2)
                 .build());
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.upgrader().overrideConfidence(version3, Confidence.broken);
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().run();
@@ -2277,6 +2278,58 @@ public class DeploymentTriggerTest {
         newApp.deploy();
         assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+    }
+
+    @Test
+    void testOutdatedMajorIsIllegal() {
+        Version version0 = new Version("6.2");
+        Version version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version0);
+        DeploymentContext old = tester.newDeploymentContext("t", "a", "default").submit()
+                                      .runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        old.runJob(JobType.dev("us-east-1"), applicationPackage());
+
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().overrideConfidence(version1, Confidence.high);
+        tester.controllerTester().computeVersionStatus();
+
+        // New app can't deploy to 6.2
+        DeploymentContext app = tester.newDeploymentContext("t", "b", "default");
+        assertEquals("platform version 6.2 is not on a current major version in this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.jobs().deploy(app.instanceId(),
+                                                             JobType.dev("us-east-1"),
+                                                             Optional.of(version0),
+                                                             DeploymentContext.applicationPackage()))
+                             .getMessage());
+
+        // App which already deployed to 6.2 can still do so.
+        tester.jobs().deploy(old.instanceId(),
+                             JobType.dev("us-east-1"),
+                             Optional.of(version0),
+                             DeploymentContext.applicationPackage());
+
+        app.submit();
+        assertEquals("platform version 6.2 is not on a current major version in this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version0), false))
+                             .getMessage());
+
+       tester.deploymentTrigger().forceChange(old.instanceId(), Change.of(version0), false);
+
+        // Not even version incompatibility tricks the system.
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("7"), String.class);
+        assertEquals("compile version 6.2 is incompatible with the current major version of this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () ->
+                                          app.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                                                    .compileVersion(version0)
+                                                                                    .build()))
+                             .getMessage());
+
+        old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                  .compileVersion(version0)
+                                                  .build());
     }
 
     @Test

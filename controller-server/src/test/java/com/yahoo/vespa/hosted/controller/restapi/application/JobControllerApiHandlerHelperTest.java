@@ -192,7 +192,7 @@ public class JobControllerApiHandlerHelperTest {
         var region = "us-west-1";
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();
         // Deploy directly to production zone, like integration tests, with dryRun.
-        tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true);
+        tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true, true);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
                 "jobs-direct-deployment.json");
     }

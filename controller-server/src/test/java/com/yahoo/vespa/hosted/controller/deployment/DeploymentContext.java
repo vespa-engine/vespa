@@ -406,7 +406,7 @@ public class DeploymentContext {
 
     /** Runs a deployment of the given package to the given dev/perf job, on the given version. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage, Version vespaVersion) {
-        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage, false);
+        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage, false, true);
         return runJob(type);
     }
 

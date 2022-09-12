@@ -684,11 +684,12 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        deploy(id, type, platform, applicationPackage, false);
+        deploy(id, type, platform, applicationPackage, false, false);
     }
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
-    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage,
+                       boolean dryRun, boolean allowOutdatedPlatform) {
         if ( ! controller.zoneRegistry().hasZone(type.zone()))
             throw new IllegalArgumentException(type.zone() + " is not present in this system");
 
@@ -713,8 +714,13 @@ public class JobController {
         byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance())));
+            if (   ! allowOutdatedPlatform
+                && ! controller.readVersionStatus().isOnCurrentMajor(targetPlatform)
+                &&   runs(id, type).values().stream().noneMatch(run -> run.versions().targetPlatform().getMajor() == targetPlatform.getMajor()))
+                throw new IllegalArgumentException("platform version " + targetPlatform + " is not on a current major version in this system");
+
+            controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             controller.applications().store(application.withRevisions(revisions -> revisions.with(version)));
             start(id,
                   type,
