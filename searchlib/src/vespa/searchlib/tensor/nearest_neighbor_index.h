@@ -20,10 +20,8 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::fileutil { class LoadedBuffer; }
 
-namespace search {
-class AddressSpaceUsage;
-class BitVector;
-}
+namespace search { class AddressSpaceUsage; }
+namespace search::queryeval { class GlobalFilter; }
 
 namespace search::tensor {
 
@@ -35,6 +33,7 @@ class NearestNeighborIndexSaver;
  */
 class NearestNeighborIndex {
 public:
+    using GlobalFilter = search::queryeval::GlobalFilter;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using generation_t = vespalib::GenerationHandler::generation_t;
@@ -101,7 +100,7 @@ public:
     // only return neighbors where the corresponding filter bit is set
     virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                          vespalib::eval::TypedCells vector,
-                                                         const BitVector &filter,
+                                                         const GlobalFilter &filter,
                                                          uint32_t explore_k,
                                                          double distance_threshold) const = 0;
 

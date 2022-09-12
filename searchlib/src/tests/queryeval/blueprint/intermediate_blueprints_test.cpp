@@ -80,7 +80,7 @@ TEST("test AndNot Blueprint") {
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
         EXPECT_EQUAL(true, a.getState().want_global_filter());
         auto empty_global_filter = GlobalFilter::create();
-        EXPECT_FALSE(empty_global_filter->has_filter());
+        EXPECT_FALSE(empty_global_filter->is_active());
         a.set_global_filter(*empty_global_filter, 1.0);
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));

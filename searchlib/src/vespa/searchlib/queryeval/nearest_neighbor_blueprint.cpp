@@ -80,8 +80,8 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (_approximate && nns_index) {
         uint32_t est_hits = _attr_tensor.get_num_docs();
-        if (_global_filter->has_filter()) { // pre-filtering case
-            _global_filter_hits = _global_filter->filter()->countTrueBits();
+        if (_global_filter->is_active()) { // pre-filtering case
+            _global_filter_hits = _global_filter->count();
             _global_filter_hit_ratio = static_cast<double>(_global_filter_hits.value()) / est_hits;
             if (_global_filter_hit_ratio.value() < _global_filter_lower_limit) {
                 _algorithm = Algorithm::EXACT_FALLBACK;
@@ -108,9 +108,8 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
 {
     auto lhs = _query_tensor.cells();
     uint32_t k = _adjusted_target_hits;
-    if (_global_filter->has_filter()) {
-        auto filter = _global_filter->filter();
-        _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
+    if (_global_filter->is_active()) {
+        _found_hits = nns_index->find_top_k_with_filter(k, lhs, *_global_filter, k + _explore_additional_hits, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
         _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
@@ -131,7 +130,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
         ;
     }
     return NearestNeighborIterator::create(strict, tfmd, *_distance_calc,
-                                           _distance_heap, _global_filter->filter());
+                                           _distance_heap, *_global_filter);
 }
 
 void
@@ -151,7 +150,7 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.openStruct("global_filter", "GlobalFilter");
     visitor.visitBool("wanted", getState().want_global_filter());
     visitor.visitBool("set", _global_filter_set);
-    visitor.visitBool("calculated", _global_filter->has_filter());
+    visitor.visitBool("calculated", _global_filter->is_active());
     visitor.visitFloat("lower_limit", _global_filter_lower_limit);
     visitor.visitFloat("upper_limit", _global_filter_upper_limit);
     if (_global_filter_hits.has_value()) {
