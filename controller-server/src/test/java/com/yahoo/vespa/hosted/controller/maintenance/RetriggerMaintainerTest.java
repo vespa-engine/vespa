@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -25,7 +24,7 @@ public class RetriggerMaintainerTest {
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
-    void processes_queue() throws IOException {
+    void processes_queue() {
         RetriggerMaintainer maintainer = new RetriggerMaintainer(tester.controller(), Duration.ofDays(1));
         ApplicationId applicationId = ApplicationId.from("tenant", "app", "default");
         var devApp = tester.newDeploymentContext(applicationId);

@@ -14,6 +14,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Trigger any jobs that are marked for re-triggering to effectuate some other change, e.g. a change in access to a
+ * deployment's nodes.
+ *
+ * @author tokle
+ */
 public class RetriggerMaintainer extends ControllerMaintainer {
 
     private static final Logger logger = Logger.getLogger(RetriggerMaintainer.class.getName());
@@ -32,7 +38,7 @@ public class RetriggerMaintainer extends ControllerMaintainer {
                     .filter(this::needsTrigger)
                     .filter(entry -> readyToTrigger(entry.jobId()))
                     .forEach(entry -> controller().applications().deploymentTrigger().reTrigger(entry.jobId().application(), entry.jobId().type(),
-                                                                                                "re-triggered by RetriggerMaintainer"));
+                                                                                                "re-triggered by " + getClass().getSimpleName()));
 
             // Remove all jobs that has succeeded with the required job run and persist the list
             List<RetriggerEntry> remaining = retriggerEntries.stream()
@@ -46,9 +52,7 @@ public class RetriggerMaintainer extends ControllerMaintainer {
         return 1.0;
     }
 
-    /*
-    Returns true if a job is ready to run, i.e is currently not running
-     */
+    /** Returns true if a job is ready to run, i.e. is currently not running */
     private boolean readyToTrigger(JobId jobId) {
         Optional<Run> existingRun = controller().jobController().active(jobId.application()).stream()
                 .filter(run -> run.id().type().equals(jobId.type()))
@@ -56,9 +60,7 @@ public class RetriggerMaintainer extends ControllerMaintainer {
         return existingRun.isEmpty();
     }
 
-    /*
-    Returns true of job needs triggering. I.e the job has not run since the queue item was last run.
-     */
+    /** Returns true of job needs triggering. I.e. the job has not run since the queue item was last run */
     private boolean needsTrigger(RetriggerEntry entry) {
         return controller().jobController().lastCompleted(entry.jobId())
                 .filter(run -> run.id().number() < entry.requiredRun())
