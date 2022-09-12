@@ -224,7 +224,6 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
         private final int clusterControllerStateGatherCount;
-        private final boolean useRestrictedDataPlaneBindings;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -285,7 +284,6 @@ public class ModelContextImpl implements ModelContext {
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
             this.phraseOptimization = flagValue(source, appId, version, Flags.PHRASE_OPTIMIZATION);
             this.clusterControllerStateGatherCount = flagValue(source, appId, version, Flags.CLUSTER_CONTROLLER_STATE_GATHER_COUNT);
-            this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
         }
 
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
@@ -354,7 +352,6 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
         @Override public int clusterControllerStateGatherCount() { return clusterControllerStateGatherCount; }
-        @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

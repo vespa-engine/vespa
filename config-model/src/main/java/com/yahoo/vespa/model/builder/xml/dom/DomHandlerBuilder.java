@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
-import java.util.OptionalInt;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
@@ -37,36 +36,21 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
                    VIP_HANDLER_BINDING);
 
     private final ApplicationContainerCluster cluster;
-    private OptionalInt portBindingOverride;
 
     public DomHandlerBuilder(ApplicationContainerCluster cluster) {
-        this(cluster, OptionalInt.empty());
-    }
-    public DomHandlerBuilder(ApplicationContainerCluster cluster, OptionalInt portBindingOverride) {
         this.cluster = cluster;
-        this.portBindingOverride = portBindingOverride;
     }
 
     @Override
     protected Handler doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element handlerElement) {
         Handler handler = createHandler(handlerElement);
-        OptionalInt port = portBindingOverride.isPresent() && deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()
-                ? portBindingOverride
-                : OptionalInt.empty();
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
-            addServerBinding(handler, userBindingPattern(XML.getValue(binding), port), deployState.getDeployLogger());
+            addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
 
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 
         return handler;
-    }
-
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt port) {
-        UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return port.isPresent()
-                ? bindingPattern.withPort(port.getAsInt())
-                : bindingPattern;
     }
 
     Handler createHandler(Element handlerElement) {

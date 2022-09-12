@@ -6,7 +6,6 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.PlatformBundles;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.OptionalInt;
 
 /**
  * @author Einar M R Rosenvinge
@@ -28,10 +26,10 @@ public class ContainerDocumentApi {
 
     private final boolean ignoreUndefinedFields;
 
-    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields, OptionalInt portOverride) {
+    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields) {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
-        addRestApiHandler(cluster, handlerOptions, portOverride);
-        addFeedHandler(cluster, handlerOptions, portOverride);
+        addRestApiHandler(cluster, handlerOptions);
+        addFeedHandler(cluster, handlerOptions);
         addVespaClientContainerBundle(cluster);
     }
 
@@ -39,18 +37,18 @@ public class ContainerDocumentApi {
         c.addPlatformBundle(VESPACLIENT_CONTAINER_BUNDLE);
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, OptionalInt portOverride) {
+    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
         var executor = new Threadpool("feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
         var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler",
-                                            bindingSuffix, handlerOptions, executor, portOverride);
+                                            bindingSuffix, handlerOptions, executor);
         cluster.addComponent(handler);
     }
 
 
-    private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, OptionalInt portOverride) {
+    private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
         var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
-                                            DOCUMENT_V1_PREFIX + "/*", handlerOptions, null, portOverride);
+                                            DOCUMENT_V1_PREFIX + "/*", handlerOptions, null);
         cluster.addComponent(handler);
 
         // We need to include a dummy implementation of the previous restapi handler (using the same class name).
@@ -64,35 +62,21 @@ public class ContainerDocumentApi {
     private static Handler newVespaClientHandler(String componentId,
                                                  String bindingSuffix,
                                                  HandlerOptions handlerOptions,
-                                                 Threadpool executor,
-                                                 OptionalInt portOverride) {
+                                                 Threadpool executor) {
         Handler handler = createHandler(componentId, executor);
         if (handlerOptions.bindings.isEmpty()) {
             handler.addServerBindings(
-                    bindingPattern(bindingSuffix, portOverride),
-                    bindingPattern(bindingSuffix + '/', portOverride));
+                    SystemBindingPattern.fromHttpPath(bindingSuffix),
+                    SystemBindingPattern.fromHttpPath(bindingSuffix + '/'));
         } else {
             for (String rootBinding : handlerOptions.bindings) {
                 String pathWithoutLeadingSlash = bindingSuffix.substring(1);
                 handler.addServerBindings(
-                        userBindingPattern(rootBinding + pathWithoutLeadingSlash, portOverride),
-                        userBindingPattern(rootBinding + pathWithoutLeadingSlash + '/', portOverride));
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash),
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash + '/'));
             }
         }
         return handler;
-    }
-
-    private static BindingPattern bindingPattern(String path, OptionalInt port) {
-        return port.isPresent()
-                ? SystemBindingPattern.fromHttpPortAndPath(Integer.toString(port.getAsInt()), path)
-                : SystemBindingPattern.fromHttpPath(path);
-    }
-
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt port) {
-        UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return port.isPresent()
-                ? bindingPattern.withPort(port.getAsInt())
-                : bindingPattern;
     }
 
     private static Handler createHandler(String className, Threadpool executor) {
