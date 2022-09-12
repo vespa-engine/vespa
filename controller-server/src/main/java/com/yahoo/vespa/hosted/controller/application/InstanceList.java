@@ -11,6 +11,9 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -18,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
@@ -52,17 +56,25 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances whose application have a deployment on the given major, or specify it in deployment spec.
+     * Returns the subset of instances whose application have a deployment on the given major,
+     * or specify it in deployment spec,
+     * or which are on a {@link VespaVersion.Confidence#legacy} platform, and do not specify that in deployment spec.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
      */
-    public InstanceList allowingMajorVersion(int targetMajorVersion) {
+    public InstanceList allowingMajorVersion(int targetMajorVersion, VersionStatus versions) {
         return matching(id -> {
             Application application = application(id);
-            return application.deploymentSpec().majorVersion().map(allowed -> targetMajorVersion <= allowed)
-                              .orElseGet(() -> application.productionDeployments().values().stream()
-                                                          .flatMap(List::stream)
-                                                          .anyMatch(deployment -> targetMajorVersion <= deployment.version().getMajor()));
+            Optional<Integer> majorVersion = application.deploymentSpec().majorVersion();
+            if (majorVersion.isPresent())
+                return majorVersion.get() >= targetMajorVersion;
+
+            for (List<Deployment> deployments : application.productionDeployments().values())
+                for (Deployment deployment : deployments) {
+                    if (deployment.version().getMajor() >= targetMajorVersion) return true;
+                    if (versions.version(deployment.version()).confidence() == Confidence.legacy) return true;
+                }
+            return false;
         });
     }
 

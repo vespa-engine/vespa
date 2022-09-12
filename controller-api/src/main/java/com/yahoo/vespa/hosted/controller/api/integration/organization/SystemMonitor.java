@@ -14,7 +14,7 @@ public interface SystemMonitor {
     void reportSystemVersion(Version systemVersion, Confidence confidence);
 
     enum Confidence {
-        aborted, broken, low, normal, high;
+        aborted, broken, low, legacy, normal, high;
     }
 
 }

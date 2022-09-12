@@ -921,8 +921,20 @@ public class UpgraderTest {
                         instance -> instance.withChange(instance.change().withoutPin()))));
         tester.upgrader().maintain();
         assertEquals(version1,
-                app1.instance().change().platform().orElseThrow(),
-                "Application upgrades to latest allowed major");
+                     app1.instance().change().platform().orElseThrow(),
+                     "Application upgrades to latest allowed major");
+
+        // Version on old major becomes legacy, so app upgrades once it does not specify the old major in deployment spec.
+        app1.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).runJob(productionUsEast3);
+        app1.submit(new ApplicationPackageBuilder().majorVersion(6).region("us-east-3").region("us-west-1").build()).deploy();
+        tester.upgrader().maintain();
+        assertEquals(Change.empty(), app1.instance().change());
+
+        app1.submit(new ApplicationPackageBuilder().region("us-east-3").region("us-west-1").build()).deploy();
+        tester.upgrader().overrideConfidence(version1, Confidence.legacy);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version2), app1.instance().change());
     }
 
     @Test

@@ -2286,11 +2286,13 @@ public class DeploymentTriggerTest {
         Version version2 = new Version("6.3");
         assertEquals(version0, tester.newDeploymentContext("t", "a1", "default").submit().deploy().application().oldestDeployedPlatform().get());
 
+        // A new version, with normal confidence, is the default for a new app.
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().overrideConfidence(version1, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.newDeploymentContext("t", "a2", "default").submit().deploy().application().oldestDeployedPlatform().get());
 
+        // A newer version has broken confidence, leaving the previous version as the default.
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().overrideConfidence(version2, Confidence.broken);
         tester.controllerTester().computeVersionStatus();
@@ -2307,7 +2309,7 @@ public class DeploymentTriggerTest {
         }
         dev1.assertNotRunning(JobType.dev("us-east-1"));
 
-        tester.controllerTester().upgradeSystem(version2);
+        // Normal confidence lets the newest version be the default again.
         tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
         assertEquals(version2, tester.newDeploymentContext("t", "a4", "default").submit().deploy().application().oldestDeployedPlatform().get());

@@ -29,11 +29,11 @@ public record VespaVersion(Version version,
                            List<NodeVersion> nodeVersions,
                            Confidence confidence) implements Comparable<VespaVersion> {
 
-    public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
+    public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller, VersionStatus versionStatus) {
         int thisMajorVersion = statistics.version().getMajor();
         InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
                                                                                                           .withProductionDeployment()))
-                                       .allowingMajorVersion(thisMajorVersion);
+                                       .allowingMajorVersion(thisMajorVersion, versionStatus);
         // 'production on this': All production deployment jobs upgrading to this version have completed without failure
         InstanceList productionOnThis = all.matching(instance -> statistics.productionSuccesses().stream().anyMatch(run -> run.id().application().equals(instance)))
                                            .not().failingUpgrade()
@@ -123,6 +123,9 @@ public record VespaVersion(Version version,
         
         /** We don't have sufficient evidence that this version is working */
         low,
+
+        /** This version works, but we want users to stop using it */
+        legacy,
         
         /** We have sufficient evidence that this version is working */
         normal,

@@ -225,14 +225,14 @@ public record VersionStatus(List<VespaVersion> versions) {
         if (!confidenceIsOverridden) {
             // Always compute confidence for system and controller
             if (isSystemVersion || isControllerVersion) {
-                confidence = VespaVersion.confidenceFrom(statistics, controller);
+                confidence = VespaVersion.confidenceFrom(statistics, controller, versionStatus);
             } else {
                 // This is an older version, so we preserve the existing confidence, if any
                 confidence = versionStatus.versions().stream()
                                           .filter(v -> statistics.version().equals(v.versionNumber()))
                                           .map(VespaVersion::confidence)
                                           .findFirst()
-                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
+                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller, versionStatus));
             }
         }
 
