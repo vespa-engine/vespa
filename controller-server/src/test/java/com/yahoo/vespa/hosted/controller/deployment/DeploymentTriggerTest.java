@@ -1189,6 +1189,7 @@ public class DeploymentTriggerTest {
                 .region("us-central-1")
                 .test("us-central-1")
                 .test("us-west-1")
+                .region("eu-west-1")
                 .build();
         var app = tester.newDeploymentContext().submit(applicationPackage);
 
@@ -1197,15 +1198,18 @@ public class DeploymentTriggerTest {
 
         tester.clock().advance(Duration.ofMinutes(1));
         app.runJob(testUsEast3)
-                .runJob(productionUsWest1).runJob(productionUsCentral1)
-                .runJob(testUsCentral1).runJob(testUsWest1);
+           .runJob(productionUsWest1).runJob(productionUsCentral1)
+           .runJob(testUsCentral1).runJob(testUsWest1)
+           .runJob(productionEuWest1);
         assertEquals(Change.empty(), app.instance().change());
 
-        // Application starts upgrade, but is confidence is broken cancelled after first zone. Tests won't run.
+        // Application starts upgrade, but confidence is broken after first zone. Tests won't run.
         Version version0 = app.application().oldestDeployedPlatform().get();
         Version version1 = Version.fromString("6.7");
+        Version version2 = Version.fromString("6.8");
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
+        tester.newDeploymentContext("keep", "version1", "alive").submit().deploy();
 
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
         tester.clock().advance(Duration.ofMinutes(1));
@@ -1229,12 +1233,17 @@ public class DeploymentTriggerTest {
         app.runJob(testUsEast3);
         assertEquals(Change.empty().withPin(), app.instance().change());
 
-        // Same upgrade is attempted, and production tests wait for redeployment.
+        // A new upgrade is attempted, and production tests wait for redeployment.
+        tester.controllerTester().upgradeSystem(version2);
         tester.deploymentTrigger().cancelChange(app.instanceId(), ALL);
+
         tester.upgrader().overrideConfidence(version1, VespaVersion.Confidence.high);
         tester.controllerTester().computeVersionStatus();
-        tester.upgrader().maintain();
+        tester.upgrader().maintain(); // App should target version2.
+        assertEquals(Change.of(version2), app.instance().change());
 
+        // App partially upgrades to version2.
+        app.runJob(systemTest).runJob(stagingTest);
         app.triggerJobs();
         app.assertRunning(productionUsEast3);
         app.assertNotRunning(testUsEast3);
@@ -1245,6 +1254,20 @@ public class DeploymentTriggerTest {
         tester.runner().run();
         app.triggerJobs();
         app.assertNotRunning(testUsCentral1);
+        app.assertNotRunning(testUsWest1);
+
+        // Version2 gets broken, but Version1 has high confidence now, and is the new target.
+        // Since us-east-3 is already on Version2, both deployment and tests to it should be skipped.
+        tester.upgrader().overrideConfidence(version2, VespaVersion.Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain(); // App should target version2.
+        assertEquals(Change.of(version1), app.instance().change());
+        app.triggerJobs();
+
+        // Deployment to 6.8 already happened, so a downgrade to 6.7 won't, but production tests will still run.
+        app.timeOutConvergence(productionUsCentral1);
+        app.runJob(testUsCentral1).runJob(testUsWest1).runJob(productionEuWest1);
+        assertEquals(version1, app.instance().deployments().get(ZoneId.from("prod.eu-west-1")).version());
     }
 
     @Test

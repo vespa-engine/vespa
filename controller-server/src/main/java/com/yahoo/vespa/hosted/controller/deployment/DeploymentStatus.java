@@ -1014,10 +1014,18 @@ public class DeploymentStatus {
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
+                    Versions target = Versions.from(change, status.application(), status.deploymentFor(job.id()), status.fallbackPlatform(change, job.id()));
+                    Change applied = Change.empty();
+                    if (change.platform().isPresent())
+                        applied = applied.with(target.targetPlatform());
+                    if (change.revision().isPresent())
+                        applied = applied.with(target.targetRevision());
+                    Change relevant = applied;
+
                     return (dependent.equals(job()) ? job.lastTriggered().filter(run -> deployedAt.map(at -> ! run.start().isBefore(at)).orElse(false)).stream()
                                                     : job.runs().values().stream())
                             .filter(Run::hasSucceeded)
-                            .filter(run -> run.versions().targetsMatch(change))
+                            .filter(run -> run.versions().targetsMatch(relevant))
                             .flatMap(run -> run.end().stream()).findFirst();
                 }
             };
