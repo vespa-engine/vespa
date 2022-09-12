@@ -278,7 +278,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         SearchReply::Coverage & coverage = reply->coverage;
         coverage.setActive(numActiveLids);
-        //TODO this should be calculated with ClusterState calculator.
         coverage.setTargetActive(bucketdb.getNumActiveDocs());
         coverage.setCovered(covered);
         if (wasLimited) {
@@ -324,7 +323,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
 FeatureSet::SP
 Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                            IAttributeContext & attrCtx, SessionManager &sessionMgr)
+                            IAttributeContext & attrCtx, SessionManager &sessionMgr) const
 {
     auto docsum_matcher = create_docsum_matcher(req, searchCtx, attrCtx, sessionMgr);
     return docsum_matcher->get_summary_features();
@@ -332,7 +331,7 @@ Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCt
 
 FeatureSet::SP
 Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                         IAttributeContext & attrCtx, SessionManager &sessionMgr)
+                         IAttributeContext & attrCtx, SessionManager &sessionMgr) const
 {
     auto docsum_matcher = create_docsum_matcher(req, searchCtx, attrCtx, sessionMgr);
     return docsum_matcher->get_rank_features();
@@ -341,7 +340,7 @@ Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
 MatchingElements::UP
 Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                IAttributeContext &attr_ctx, SessionManager &session_manager,
-                               const MatchingElementsFields &fields)
+                               const MatchingElementsFields &fields) const
 {
     auto docsum_matcher = create_docsum_matcher(req, search_ctx, attr_ctx, session_manager);
     return docsum_matcher->get_matching_elements(fields);
@@ -349,7 +348,7 @@ Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_
 
 DocsumMatcher::UP
 Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
-                               IAttributeContext &attr_ctx, SessionManager &session_manager)
+                               IAttributeContext &attr_ctx, SessionManager &session_manager) const
 {
     std::vector<uint32_t> docs;
     docs.reserve(req.hits.size());

@@ -136,7 +136,7 @@ public:
      **/
     search::FeatureSet::SP
     getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                       IAttributeContext & attrCtx, SessionManager &sessionManager);
+                       IAttributeContext & attrCtx, SessionManager &sessionManager) const;
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -150,7 +150,7 @@ public:
      **/
     search::FeatureSet::SP
     getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                    IAttributeContext & attrCtx, SessionManager &sessionManager);
+                    IAttributeContext & attrCtx, SessionManager &sessionManager) const;
 
     /**
      * Perform partial matching for the documents in the given docsum request
@@ -166,10 +166,10 @@ public:
      **/
     MatchingElements::UP get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                                IAttributeContext &attr_ctx, SessionManager &session_manager,
-                                               const MatchingElementsFields &fields);
+                                               const MatchingElementsFields &fields) const;
 
     DocsumMatcher::UP create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
-                                            IAttributeContext &attr_ctx, SessionManager &session_manager);
+                                            IAttributeContext &attr_ctx, SessionManager &session_manager) const;
 
     /**
      * @return true if this rankprofile has summary-features enabled
