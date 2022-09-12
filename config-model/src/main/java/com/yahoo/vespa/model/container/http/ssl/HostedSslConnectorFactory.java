@@ -32,10 +32,10 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      */
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth,
-            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth);
-        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride, enableProxyProtocolMixedMode);
+        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
     }
 
     /**
@@ -43,24 +43,24 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates,
-            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false);
-        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode);
+        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
     }
 
     /**
      * Create connector factory that uses the default certificate and truststore provided by Vespa (through Vespa-global TLS configuration).
      */
     public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName, Collection<String> tlsCiphersOverride,
-                                                                                boolean enableProxyProtocolMixedMode) {
-        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride, enableProxyProtocolMixedMode);
+                                                                                boolean enableProxyProtocolMixedMode, int port) {
+        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
     }
 
     private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth,
                                       boolean enforceHandshakeClientAuth, Collection<String> tlsCiphersOverride,
-                                      boolean enableProxyProtocolMixedMode) {
-        super(new Builder("tls4443", 4443).sslProvider(sslProvider));
+                                      boolean enableProxyProtocolMixedMode, int port) {
+        super(new Builder("tls"+port, port).sslProvider(sslProvider));
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
         this.tlsCiphersOverride = tlsCiphersOverride;

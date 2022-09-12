@@ -13,6 +13,7 @@ public class UserBindingPattern extends BindingPattern {
 
     public static UserBindingPattern fromHttpPath(String path) { return new UserBindingPattern("http", "*", null, path); }
     public static UserBindingPattern fromPattern(String binding) { return new UserBindingPattern(binding); }
+    public UserBindingPattern withPort(int port) { return new UserBindingPattern(scheme(), host(), Integer.toString(port), path()); }
 
     @Override
     public String toString() {
