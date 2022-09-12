@@ -696,7 +696,8 @@ public class ControllerTest {
 
     @Test
     void testDevDeployment() {
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().build();
+        // A package without deployment.xml is considered valid
+        ApplicationPackage applicationPackage = new ApplicationPackage(new byte[0]);
 
         // Create application
         var context = tester.newDeploymentContext();

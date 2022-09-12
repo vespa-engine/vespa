@@ -179,6 +179,11 @@ public class ApplicationController {
         });
     }
 
+    /** Validate the given application package */
+    public void validatePackage(ApplicationPackage applicationPackage, Application application) {
+        applicationPackageValidator.validate(application, applicationPackage, clock.instant());
+    }
+
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> getApplication(TenantAndApplicationId id) {
         return curator.readApplication(id);
@@ -539,7 +544,7 @@ public class ApplicationController {
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
     public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        applicationPackageValidator.validate(application.get(), applicationPackage, clock.instant());
+        validatePackage(applicationPackage, application.get());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
