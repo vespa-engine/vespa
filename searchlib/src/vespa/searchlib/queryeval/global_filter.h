@@ -26,8 +26,14 @@ public:
     virtual bool check(uint32_t docid) const = 0;
     virtual ~GlobalFilter();
 
+    const GlobalFilter *ptr_if_active() const {
+        return is_active() ? this : nullptr;
+    }
+
     static std::shared_ptr<GlobalFilter> create();
+    static std::shared_ptr<GlobalFilter> create(std::vector<uint32_t> docids, uint32_t size);
     static std::shared_ptr<GlobalFilter> create(std::unique_ptr<BitVector> vector);
+    static std::shared_ptr<GlobalFilter> create(std::vector<std::unique_ptr<BitVector>> vectors);
 };
 
 } // namespace
