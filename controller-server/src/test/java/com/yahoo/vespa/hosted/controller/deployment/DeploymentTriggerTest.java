@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.validation.Validation.require;
 import static com.yahoo.config.provision.SystemName.cd;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionApNortheast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionApNortheast2;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionApSoutheast1;
@@ -64,8 +66,10 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests a wide variety of deployment scenarios and configurations
@@ -2050,16 +2054,16 @@ public class DeploymentTriggerTest {
         var conservative = tester.newDeploymentContext("t", "a", "default");
 
         canary.runJob(systemTest)
-                .runJob(stagingTest);
+              .runJob(stagingTest);
         conservative.runJob(productionEuWest1)
-                .runJob(testEuWest1);
+                    .runJob(testEuWest1);
 
         canary.submit(applicationPackage)
-                .runJob(systemTest)
-                .runJob(stagingTest);
+              .runJob(systemTest)
+              .runJob(stagingTest);
         tester.outstandingChangeDeployer().run();
         conservative.runJob(productionEuWest1)
-                .runJob(testEuWest1);
+                    .runJob(testEuWest1);
 
         tester.controllerTester().upgradeSystem(new Version("6.7.7"));
         tester.upgrader().maintain();
@@ -2068,7 +2072,7 @@ public class DeploymentTriggerTest {
               .runJob(stagingTest);
         tester.upgrader().maintain();
         conservative.runJob(productionEuWest1)
-                .runJob(testEuWest1);
+                    .runJob(testEuWest1);
 
     }
 
@@ -2349,7 +2353,7 @@ public class DeploymentTriggerTest {
         Version version3 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version3);
         tests.runJob(systemTest)            // Success in default cloud.
-                .failDeployment(systemTest);   // Failure in centauri cloud.
+             .failDeployment(systemTest);   // Failure in centauri cloud.
         tester.upgrader().run();
 
         assertEquals(Change.of(version3), tests.instance().change());
@@ -2443,6 +2447,91 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
+    }
+
+
+    @Test
+    void testInstancesWithMultipleClouds() {
+        String spec = """
+                      <deployment>
+                        <parallel>
+                          <instance id='independent'>
+                            <test />
+                          </instance>
+                          <steps>
+                            <parallel>
+                              <instance id='alpha'>
+                                <test />
+                                <prod>
+                                  <region>us-east-3</region>
+                                </prod>
+                              </instance>
+                              <instance id='beta'>
+                                <test />
+                                <prod>
+                                  <region>alpha-centauri</region>
+                                </prod>
+                              </instance>
+                              <instance id='gamma'>
+                                <test />
+                              </instance>
+                            </parallel>
+                            <instance id='nu'>
+                              <staging />
+                            </instance>
+                            <instance id='omega'>
+                              <prod>
+                                <region>alpha-centauri</region>
+                              </prod>
+                            </instance>
+                          </steps>
+                          <instance id='separate'>
+                            <staging />
+                            <prod>
+                              <region>alpha-centauri</region>
+                            </prod>
+                          </instance>
+                        </parallel>
+                      </deployment>
+                      """;
+
+        RegionName alphaCentauri = RegionName.from("alpha-centauri");
+        ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withCloud("centauri").withSystem(tester.controller().system());
+        ZoneApi testAlphaCentauri = builder.with(ZoneId.from(Environment.test, alphaCentauri)).build();
+        ZoneApi stagingAlphaCentauri = builder.with(ZoneId.from(Environment.staging, alphaCentauri)).build();
+        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(Environment.prod, alphaCentauri)).build();
+
+        tester.controllerTester().zoneRegistry().addZones(testAlphaCentauri, stagingAlphaCentauri, prodAlphaCentauri);
+        tester.controllerTester().setRoutingMethod(tester.controllerTester().zoneRegistry().zones().all().ids(), RoutingMethod.sharedLayer4);
+        tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
+
+        ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
+        DeploymentContext app = tester.newDeploymentContext("tenant", "application", "alpha").submit(appPackage);
+        Map<JobId, List<DeploymentStatus.Job>> jobs = app.deploymentStatus().jobsToRun();
+
+        JobType centauriTest = JobType.systemTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
+        JobType centauriStaging = JobType.stagingTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
+        assertQueued("independent", jobs, systemTest, centauriTest);
+        assertQueued("alpha", jobs, systemTest);
+        assertQueued("beta", jobs, centauriTest);
+        assertQueued("gamma", jobs, centauriTest);
+        assertQueued("nu", jobs, stagingTest);
+        assertQueued("separate", jobs, centauriStaging);
+
+        // Once alpha runs its default system test, it also runs the centauri system test, as omega depends on it.
+        app.runJob(systemTest);
+        assertQueued("alpha", app.deploymentStatus().jobsToRun(), centauriTest);
+    }
+
+    private static void assertQueued(String instance, Map<JobId, List<DeploymentStatus.Job>> jobs, JobType... expected) {
+        List<DeploymentStatus.Job> queued = jobs.get(new JobId(ApplicationId.from("tenant", "application", instance), expected[0]));
+        Set<ZoneId> remaining = new HashSet<>();
+        for (JobType ex : expected) remaining.add(ex.zone());
+        for (DeploymentStatus.Job q : queued)
+            if ( ! remaining.remove(q.type().zone()))
+                fail("unexpected queued job for " + instance + ": " + q.type());
+        if ( ! remaining.isEmpty())
+            fail("expected tests for " + instance + " were not queued in : " + remaining);
     }
 
     @Test

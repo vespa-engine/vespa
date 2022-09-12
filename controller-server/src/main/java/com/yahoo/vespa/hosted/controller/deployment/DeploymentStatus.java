@@ -255,29 +255,62 @@ public class DeploymentStatus {
             if (change == null || ! change.hasTargets())
                 return;
 
-            Collection<Optional<JobId>> firstProductionJobsWithDeployment = jobSteps.keySet().stream()
-                                                                                   .filter(jobId -> jobId.type().isProduction() && jobId.type().isDeployment())
-                                                                                   .filter(jobId -> deploymentFor(jobId).isPresent())
-                                                                                   .collect(groupingBy(jobId -> findCloud(jobId.type()),
-                                                                                                       Collectors.reducing((o, n) -> o))) // Take the first.
-                                                                                   .values();
-            if (firstProductionJobsWithDeployment.isEmpty())
-                firstProductionJobsWithDeployment = List.of(Optional.empty());
-
-            for (Optional<JobId> firstProductionJobWithDeploymentInCloud : firstProductionJobsWithDeployment) {
+            Map<CloudName, Optional<JobId>> firstProductionJobsWithDeployment = firstDependentProductionJobsWithDeployment(job.application().instance());
+            firstProductionJobsWithDeployment.forEach((cloud, firstProductionJobWithDeploymentInCloud) -> {
                 Versions versions = Versions.from(change,
                                                   application,
                                                   firstProductionJobWithDeploymentInCloud.flatMap(this::deploymentFor),
                                                   fallbackPlatform(change, job));
                 if (step.completedAt(change, firstProductionJobWithDeploymentInCloud).isEmpty()) {
-                    CloudName cloud = firstProductionJobWithDeploymentInCloud.map(JobId::type).map(this::findCloud).orElse(zones.systemZone().getCloudName());
                     JobType typeWithZone = job.type().isSystemTest() ? JobType.systemTest(zones, cloud) : JobType.stagingTest(zones, cloud);
                     jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readyAt(change), change)), DeploymentStatus::union);
                 }
-            }
+            });
         });
         return Collections.unmodifiableMap(jobs);
     }
+
+    /**
+     * Returns the clouds, and their first production deployments, that depend on this instance; or,
+     * if no such deployments exist, all clouds the application deploy to, and their first production deployments; or
+     * if no clouds are deployed to at all, the system default cloud.
+     */
+    Map<CloudName, Optional<JobId>> firstDependentProductionJobsWithDeployment(InstanceName testInstance) {
+        // Find instances' dependencies on each other: these are topologically ordered, so a simple traversal does it.
+        Map<InstanceName, Set<InstanceName>> dependencies = new HashMap<>();
+        instanceSteps().forEach((name, step) -> {
+            dependencies.put(name, new HashSet<>());
+            dependencies.get(name).add(name);
+            for (StepStatus dependency : step.dependencies()) {
+                dependencies.get(name).add(dependency.instance());
+                dependencies.get(name).addAll(dependencies.get(dependency.instance));
+            }
+        });
+
+        Map<CloudName, Optional<JobId>> independentJobsPerCloud = new HashMap<>();
+        Map<CloudName, Optional<JobId>> jobsPerCloud = new HashMap<>();
+        jobSteps.forEach((job, step) -> {
+            if ( ! job.type().isProduction() || ! job.type().isDeployment())
+                return;
+
+            (dependencies.get(step.instance()).contains(testInstance) ? jobsPerCloud
+                                                                      : independentJobsPerCloud)
+                    .merge(findCloud(job.type()),
+                           Optional.of(job),
+                           (o, n) -> o.filter(v -> deploymentFor(v).isPresent())             // Keep first if its deployment is present.
+                                      .or(() -> n.filter(v -> deploymentFor(v).isPresent())) // Use next if only its deployment is present.
+                                      .or(() -> o));                                         // Keep first if none have deployments.
+        });
+
+        if (jobsPerCloud.isEmpty())
+            jobsPerCloud.putAll(independentJobsPerCloud);
+
+        if (jobsPerCloud.isEmpty())
+            jobsPerCloud.put(zones.systemZone().getCloudName(), Optional.empty());
+
+        return jobsPerCloud;
+    }
+
 
     /** Fall back to the newest, deployable platform, which is compatible with what we want to deploy. */
     public Version fallbackPlatform(Change change, JobId job) {
