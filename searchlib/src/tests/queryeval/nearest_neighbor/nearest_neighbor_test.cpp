@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/nearest_neighbor_iterator.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
@@ -63,7 +64,7 @@ struct Fixture
     vespalib::string _typeSpec;
     std::shared_ptr<DenseTensorAttribute> _tensorAttr;
     std::shared_ptr<AttributeVector> _attr;
-    std::unique_ptr<BitVector> _global_filter;
+    std::shared_ptr<GlobalFilter> _global_filter;
 
     Fixture(const vespalib::string &typeSpec)
         : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
@@ -71,7 +72,7 @@ struct Fixture
           _typeSpec(typeSpec),
           _tensorAttr(),
           _attr(),
-          _global_filter()
+          _global_filter(GlobalFilter::create())
     {
         _cfg.setTensorType(ValueType::from_spec(typeSpec));
         _tensorAttr = makeAttr();
@@ -95,11 +96,12 @@ struct Fixture
 
     void setFilter(std::vector<uint32_t> docids) {
         uint32_t sz = _attr->getNumDocs();
-        _global_filter = BitVector::create(sz);
+        auto bit_vector = BitVector::create(sz);
         for (uint32_t id : docids) {
             EXPECT_LT(id, sz);
-            _global_filter->setBit(id);
+            bit_vector->setBit(id);
         }
+        _global_filter = GlobalFilter::create(std::move(bit_vector));
     }
 
     void setTensor(uint32_t docId, const Value &tensor) {
@@ -130,7 +132,7 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     DistanceCalculator dist_calc(attr, qtv, env.dist_fun());
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(env.dist_fun().convert_threshold(threshold));
-    const BitVector *filter = env._global_filter.get();
+    const GlobalFilter &filter = *env._global_filter;
     auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, filter);
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
@@ -222,7 +224,8 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto &attr = *(env._tensorAttr);
     DistanceCalculator dist_calc(attr, qtv, env.dist_fun());
     NearestNeighborDistanceHeap dh(2);
-    auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, nullptr);
+    auto dummy_filter = GlobalFilter::create();
+    auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, *dummy_filter);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);

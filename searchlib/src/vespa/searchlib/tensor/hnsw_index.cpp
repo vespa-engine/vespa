@@ -9,6 +9,7 @@
 #include "random_level_generator.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -214,7 +215,7 @@ HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
 }
 
 uint32_t
-HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const search::BitVector* filter) const
+HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const
 {
     uint32_t m_for_level = max_links_for_level(level);
     uint64_t base_estimate = uint64_t(m_for_level) * neighbors_to_find + 100;
@@ -224,7 +225,7 @@ HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_
     if (!filter) {
         return base_estimate;
     }
-    uint32_t true_bits = filter->countTrueBits();
+    uint32_t true_bits = filter->count();
     if (true_bits == 0) {
         return doc_id_limit;
     }
@@ -260,7 +261,7 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
 template <class VisitedTracker>
 void
 HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find,
-                               FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter,
+                               FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter,
                                uint32_t doc_id_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
@@ -271,7 +272,7 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
         }
         candidates.push(entry);
         visited.mark(entry.docid);
-        if (filter && !filter->testBit(entry.docid)) {
+        if (filter && !filter->check(entry.docid)) {
             assert(best_neighbors.size() == 1);
             best_neighbors.pop();
         }
@@ -297,7 +298,7 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
             double dist_to_input = calc_distance(input, neighbor_docid);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_docid, neighbor_ref, dist_to_input);
-                if ((!filter) || filter->testBit(neighbor_docid)) {
+                if ((!filter) || filter->check(neighbor_docid)) {
                     best_neighbors.emplace(neighbor_docid, neighbor_ref, dist_to_input);
                     if (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
@@ -311,7 +312,7 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
 
 void
 HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
-                        FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
+                        FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
     uint32_t doc_id_limit = _graph.node_refs_size.load(std::memory_order_acquire);
     if (filter) {
@@ -698,7 +699,7 @@ struct NeighborsByDocId {
 
 std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
-                          const BitVector *filter, uint32_t explore_k,
+                          const GlobalFilter *filter, uint32_t explore_k,
                           double distance_threshold) const
 {
     std::vector<Neighbor> result;
@@ -724,14 +725,14 @@ HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
 
 std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                  const BitVector &filter, uint32_t explore_k,
+                                  const GlobalFilter &filter, uint32_t explore_k,
                                   double distance_threshold) const
 {
     return top_k_by_docid(k, vector, &filter, explore_k, distance_threshold);
 }
 
 FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const
 {
     FurthestPriQ best_neighbors;
     auto entry = _graph.get_entry_node();

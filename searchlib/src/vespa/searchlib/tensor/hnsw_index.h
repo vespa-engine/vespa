@@ -135,7 +135,7 @@ protected:
 
     double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const;
     double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
-    uint32_t estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const search::BitVector* filter) const;
+    uint32_t estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
@@ -143,13 +143,13 @@ protected:
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
     template <class VisitedTracker>
     void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
-                             uint32_t level, const search::BitVector *filter,
+                             uint32_t level, const GlobalFilter *filter,
                              uint32_t doc_id_limit,
                              uint32_t estimated_visited_nodes) const;
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
-                      uint32_t level, const search::BitVector *filter = nullptr) const;
+                      uint32_t level, const GlobalFilter *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
-                                         const BitVector *filter, uint32_t explore_k,
+                                         const GlobalFilter *filter, uint32_t explore_k,
                                          double distance_threshold) const;
 
     struct PreparedFirstAddDoc : public PrepareResult {};
@@ -206,11 +206,11 @@ public:
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
                                      double distance_threshold) const override;
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                                 const BitVector &filter, uint32_t explore_k,
+                                                 const GlobalFilter &filter, uint32_t explore_k,
                                                  double distance_threshold) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const;
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const;
 
     uint32_t get_entry_docid() const { return _graph.get_entry_node().docid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }

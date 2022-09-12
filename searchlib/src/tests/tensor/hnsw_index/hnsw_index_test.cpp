@@ -6,6 +6,7 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -24,6 +25,7 @@ using vespalib::Slime;
 using search::BitVector;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
+using search::queryeval::GlobalFilter;
 
 template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
@@ -61,14 +63,14 @@ using HnswIndexUP = std::unique_ptr<HnswIndex>;
 class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
-    std::unique_ptr<BitVector> global_filter;
+    std::shared_ptr<GlobalFilter> global_filter;
     LevelGenerator* level_generator;
     GenerationHandler gen_handler;
     HnswIndexUP index;
 
     HnswIndexTest()
         : vectors(),
-          global_filter(),
+          global_filter(GlobalFilter::create()),
           level_generator(),
           gen_handler(),
           index()
@@ -79,6 +81,10 @@ public:
     }
 
     ~HnswIndexTest() {}
+
+    const GlobalFilter *global_filter_ptr() const {
+        return global_filter->is_active() ? global_filter.get() : nullptr;
+    }
 
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
@@ -104,11 +110,12 @@ public:
     }
     void set_filter(std::vector<uint32_t> docids) {
         uint32_t sz = 10;
-        global_filter = BitVector::create(sz);
+        auto bit_vector = BitVector::create(sz);
         for (uint32_t id : docids) {
             EXPECT_LT(id, sz);
-            global_filter->setBit(id);
+            bit_vector->setBit(id);
         }
+        global_filter = GlobalFilter::create(std::move(bit_vector));
     }
     GenerationHandler::Guard take_read_guard() {
         return gen_handler.takeGuard();
@@ -142,7 +149,7 @@ public:
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid);
-        auto rv = index->top_k_candidates(qv, k, global_filter.get()).peek();
+        auto rv = index->top_k_candidates(qv, k, global_filter_ptr()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -163,12 +170,12 @@ public:
     void check_with_distance_threshold(uint32_t docid) {
         auto qv = vectors.get_vector(docid);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(qv, k, global_filter.get()).peek();
+        auto rv = index->top_k_candidates(qv, k, global_filter_ptr()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
-        auto got_by_docid = (global_filter)
+        auto got_by_docid = (global_filter->is_active())
             ? index->find_top_k_with_filter(k, qv, *global_filter, k, thr)
             : index->find_top_k(k, qv, k, thr);
         EXPECT_EQ(got_by_docid.size(), 1);

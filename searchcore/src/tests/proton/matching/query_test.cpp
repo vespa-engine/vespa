@@ -1158,21 +1158,20 @@ Test::global_filter_is_calculated_and_handled()
         auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.3, nullptr);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
-        EXPECT_TRUE(bp.filter->has_filter());
+        EXPECT_TRUE(bp.filter->is_active());
         EXPECT_EQUAL(0.3, bp.estimated_hit_ratio);
 
-        auto* bv = bp.filter->filter();
-        EXPECT_EQUAL(3u, bv->countTrueBits());
-        EXPECT_TRUE(bv->testBit(3));
-        EXPECT_TRUE(bv->testBit(5));
-        EXPECT_TRUE(bv->testBit(7));
+        EXPECT_EQUAL(3u, bp.filter->count());
+        EXPECT_TRUE(bp.filter->check(3));
+        EXPECT_TRUE(bp.filter->check(5));
+        EXPECT_TRUE(bp.filter->check(7));
     }
     { // estimated_hit_ratio > global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.29, nullptr);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
-        EXPECT_FALSE(bp.filter->has_filter());
+        EXPECT_FALSE(bp.filter->is_active());
         EXPECT_EQUAL(0.3, bp.estimated_hit_ratio);
     }
 }

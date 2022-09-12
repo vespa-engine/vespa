@@ -260,7 +260,7 @@ public:
         return std::vector<Neighbor>();
     }
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k, vespalib::eval::TypedCells vector,
-                                                 const search::BitVector& filter, uint32_t explore_k,
+                                                 const GlobalFilter& filter, uint32_t explore_k,
                                                  double distance_threshold) const override
     {
         (void) k;

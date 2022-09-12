@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nearest_neighbor_iterator.h"
+#include "global_filter.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
@@ -47,7 +48,7 @@ public:
     void doSeek(uint32_t docId) override {
         double distanceLimit = params().distanceHeap.distanceLimit();
         while (__builtin_expect((docId < getEndId()), true)) {
-            if ((!has_filter) || params().filter->testBit(docId)) {
+            if ((!has_filter) || params().filter.check(docId)) {
                 double d = computeDistance(docId, distanceLimit);
                 if (d <= distanceLimit) {
                     _lastScore = d;
@@ -106,11 +107,10 @@ NearestNeighborIterator::create(
         fef::TermFieldMatchData &tfmd,
         const search::tensor::DistanceCalculator &distance_calc,
         NearestNeighborDistanceHeap &distanceHeap,
-        const search::BitVector *filter)
-
+        const GlobalFilter &filter)
 {
     Params params(tfmd, distance_calc, distanceHeap, filter);
-    if (filter) {
+    if (filter.is_active()) {
         return resolve_strict<true>(strict, params);
     } else  {
         return resolve_strict<false>(strict, params);

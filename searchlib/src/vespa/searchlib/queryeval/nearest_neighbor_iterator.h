@@ -14,6 +14,8 @@ namespace search::tensor { class DistanceCalculator; }
 
 namespace search::queryeval {
 
+class GlobalFilter;
+
 class NearestNeighborIterator : public SearchIterator
 {
 public:
@@ -24,12 +26,12 @@ public:
         fef::TermFieldMatchData &tfmd;
         const search::tensor::DistanceCalculator &distance_calc;
         NearestNeighborDistanceHeap &distanceHeap;
-        const search::BitVector *filter;
+        const GlobalFilter &filter;
 
         Params(fef::TermFieldMatchData &tfmd_in,
                const search::tensor::DistanceCalculator &distance_calc_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
-               const search::BitVector *filter_in)
+               const GlobalFilter &filter_in)
           : tfmd(tfmd_in),
             distance_calc(distance_calc_in),
             distanceHeap(distanceHeap_in),
@@ -46,7 +48,7 @@ public:
             fef::TermFieldMatchData &tfmd,
             const search::tensor::DistanceCalculator &distance_calc,
             NearestNeighborDistanceHeap &distanceHeap,
-            const search::BitVector *filter);
+            const GlobalFilter &filter);
 
     const Params& params() const { return _params; }
 private:
