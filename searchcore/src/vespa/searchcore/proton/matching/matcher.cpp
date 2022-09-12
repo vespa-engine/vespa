@@ -141,7 +141,8 @@ using search::fef::indexproperties::softtimeout::Factor;
 std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                     IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                                    const Properties &feature_overrides, bool is_search) const
+                                    const Properties &feature_overrides, vespalib::ThreadBundle &thread_bundle,
+                                    bool is_search) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
     bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
@@ -161,7 +162,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
                                                request.trace(), request.getStackRef(), request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
-                                               rankProperties, feature_overrides, is_search);
+                                               rankProperties, feature_overrides, thread_bundle, is_search);
 }
 
 size_t
@@ -221,8 +222,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             feature_overrides = owned_objects.feature_overrides.get();
         }
 
-        MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
-                metaStore, *feature_overrides, true);
+        MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext, metaStore,
+                                                               *feature_overrides, threadBundle, true);
         isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
@@ -372,7 +373,8 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
     }
     StupidMetaStore meta;
     MatchToolsFactory::UP mtf = create_match_tools_factory(req, search_ctx, attr_ctx, meta,
-            req.propertiesMap.featureOverrides(), false);
+                                                           req.propertiesMap.featureOverrides(),
+                                                           vespalib::ThreadBundle::trivial(), false);
     if (!mtf->valid()) {
         LOG(warning, "could not initialize docsum matching: %s",
             (expectedSessionCached) ? "session has expired" : "invalid query");

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 
+namespace vespalib { class ThreadBundle; }
 namespace search::engine { class Trace; }
 
 namespace proton::matching {
@@ -21,6 +22,7 @@ class Query
 {
 private:
     using Blueprint = search::queryeval::Blueprint;
+    using GlobalFilter = search::queryeval::GlobalFilter;
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
     Blueprint::UP           _whiteListBlueprint;
@@ -95,7 +97,11 @@ public:
     void fetchPostings();
 
     void handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace);
+                              vespalib::ThreadBundle &thread_bundle, search::engine::Trace& trace);
+    
+    // Create a global filter. Called by handle_global_filter if needed.
+    static std::shared_ptr<GlobalFilter> create_global_filter(Blueprint& blueprint, uint32_t docid_limit,
+                                                              vespalib::ThreadBundle &thread_bundle);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.
@@ -112,7 +118,7 @@ public:
      */
     static bool handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                      double global_filter_lower_limit, double global_filter_upper_limit,
-                                     search::engine::Trace* trace);
+                                     vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace);
 
     void freeze();
 

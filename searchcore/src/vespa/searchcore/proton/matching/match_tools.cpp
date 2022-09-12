@@ -14,6 +14,7 @@
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/thread_bundle.h>
 
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
@@ -171,6 +172,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const RankSetup            & rankSetup,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides,
+                  vespalib::ThreadBundle     & thread_bundle,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
       _global_filter_params(extract_global_filter_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
@@ -203,7 +205,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
             _query.handle_global_filter(searchContext.getDocIdLimit(),
                                         _global_filter_params.global_filter_lower_limit,
                                         _global_filter_params.global_filter_upper_limit,
-                                        trace);
+                                        thread_bundle, trace);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

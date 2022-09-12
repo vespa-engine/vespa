@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/clock.h>
 
 namespace vespalib { class ExecutionProfiler; }
+namespace vespalib { class ThreadBundle; }
 
 namespace search::engine { class Trace; }
 
@@ -143,6 +144,7 @@ public:
                       const RankSetup &rankSetup,
                       const Properties &rankProperties,
                       const Properties &featureOverrides,
+                      vespalib::ThreadBundle &thread_bundle,
                       bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }
