@@ -97,6 +97,8 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
 
     if (teaser != nullptr) {
         inserter.insertString({teaser->Text(), teaser->Length()});
+    } else {
+        inserter.insertString({});
     }
 }
 

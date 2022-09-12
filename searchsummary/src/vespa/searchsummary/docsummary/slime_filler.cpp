@@ -105,11 +105,11 @@ SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<ui
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, IJuniperConverter& juniper_converter)
+SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, IJuniperConverter* juniper_converter)
     : _inserter(inserter),
       _tokenize(tokenize),
       _matching_elems(nullptr),
-      _juniper_converter(&juniper_converter)
+      _juniper_converter(juniper_converter)
 {
 }
 
@@ -163,7 +163,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     }
     Cursor& a = _inserter.insertArray();
     ArrayInserter ai(a);
-    SlimeFiller conv(ai, _tokenize);
+    SlimeFiller conv(ai, _tokenize, _juniper_converter);
     if (filter_matching_elements()) {
         for (uint32_t id_to_keep : (*_matching_elems)) {
             value[id_to_keep].accept(conv);

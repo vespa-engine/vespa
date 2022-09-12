@@ -52,7 +52,7 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
 public:
     SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize);
     SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems);
-    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter& juniper_converter);
+    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter* juniper_converter);
     ~SlimeFiller() override;
 };
 
