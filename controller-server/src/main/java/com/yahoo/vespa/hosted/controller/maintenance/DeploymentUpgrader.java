@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -53,10 +54,12 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         Run last = controller().jobController().last(job).get();
                         Versions target = new Versions(targetPlatform, last.versions().targetRevision(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetRevision()));
                         if ( ! last.hasEnded()) continue;
-                        if (application.revisions().get(last.versions().targetRevision()).compileVersion()
-                                       .map(version -> controller().applications().versionCompatibility(instance.id()).refuse(version, target.targetPlatform()))
-                                       .orElse(false)) continue;
-                        // TODO jonmv: respect major-version from deployment spec o_O Probably add it to ApplicationVersion.
+                        ApplicationVersion devVersion = application.revisions().get(last.versions().targetRevision());
+                        if (devVersion.compileVersion()
+                                      .map(version -> controller().applications().versionCompatibility(instance.id()).refuse(version, target.targetPlatform()))
+                                      .orElse(false)) continue;
+                        if (   devVersion.allowedMajor().isPresent()
+                            && devVersion.allowedMajor().get() < targetPlatform.getMajor()) continue;
 
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
                         if ( ! isLikelyNightFor(job)) continue;

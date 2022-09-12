@@ -120,6 +120,7 @@ public class ApplicationSerializer {
     private static final String hasPackageField = "hasPackage";
     private static final String shouldSkipField = "shouldSkip";
     private static final String compileVersionField = "compileVersion";
+    private static final String allowedMajorField = "allowedMajor";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
     private static final String bundleHashField = "bundleHash";
@@ -257,6 +258,7 @@ public class ApplicationSerializer {
         applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
         applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
+        applicationVersion.allowedMajor().ifPresent(major -> object.setLong(allowedMajorField, major));
         applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
         applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
@@ -478,6 +480,7 @@ public class ApplicationSerializer {
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         Optional<String> authorEmail = SlimeUtils.optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = SlimeUtils.optionalString(object.field(compileVersionField)).map(Version::fromString);
+        Optional<Integer> allowedMajor = SlimeUtils.optionalInteger(object.field(allowedMajorField)).stream().boxed().findFirst();
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
@@ -487,8 +490,8 @@ public class ApplicationSerializer {
         int risk = (int) object.field(riskField).asLong();
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
-        return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, buildTime, sourceUrl,
-                                      commit, bundleHash, hasPackage, shouldSkip, description, risk);
+        return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, allowedMajor, buildTime,
+                                      sourceUrl, commit, bundleHash, hasPackage, shouldSkip, description, risk);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

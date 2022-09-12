@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import static ai.vespa.validation.Validation.requireAtLeast;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An application package version, identified by a source revision and a build number.
@@ -27,6 +28,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final Optional<SourceRevision> source;
     private final Optional<String> authorEmail;
     private final Optional<Version> compileVersion;
+    private final Optional<Integer> allowedMajor;
     private final Optional<Instant> buildTime;
     private final Optional<String> sourceUrl;
     private final Optional<String> commit;
@@ -37,8 +39,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final int risk;
 
     public ApplicationVersion(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
-                              Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
-                              Optional<String> commit, Optional<String> bundleHash,
+                              Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime,
+                              Optional<String> sourceUrl, Optional<String> commit, Optional<String> bundleHash,
                               boolean hasPackage, boolean shouldSkip, Optional<String> description, int risk) {
 
         if (commit.isPresent() && commit.get().length() > 128)
@@ -54,9 +56,10 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         this.source = source;
         this.authorEmail = authorEmail;
         this.compileVersion = compileVersion;
+        this.allowedMajor = requireNonNull(allowedMajor);
         this.buildTime = buildTime;
-        this.sourceUrl = Objects.requireNonNull(sourceUrl, "sourceUrl cannot be null");
-        this.commit = Objects.requireNonNull(commit, "commit cannot be null");
+        this.sourceUrl = requireNonNull(sourceUrl, "sourceUrl cannot be null");
+        this.commit = requireNonNull(commit, "commit cannot be null");
         this.bundleHash = bundleHash;
         this.hasPackage = hasPackage;
         this.shouldSkip = shouldSkip;
@@ -70,24 +73,24 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Create an application package version from a completed build, without an author email */
     public static ApplicationVersion from(RevisionId id, SourceRevision source) {
-        return new ApplicationVersion(id, Optional.of(source), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.of(source), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
     public static ApplicationVersion from(RevisionId id, SourceRevision source, String authorEmail, Version compileVersion, Instant buildTime) {
-        return new ApplicationVersion(id, Optional.of(source), Optional.of(authorEmail), Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.of(source), Optional.of(authorEmail), Optional.of(compileVersion), Optional.empty(), Optional.of(buildTime), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a minimal version for a development build. */
-    public static ApplicationVersion forDevelopment(RevisionId id, Optional<Version> compileVersion) {
-        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+    public static ApplicationVersion forDevelopment(RevisionId id, Optional<Version> compileVersion, Optional<Integer> allowedMajor) {
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, allowedMajor, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
     public static ApplicationVersion forProduction(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
-                                                   Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
+                                                   Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime, Optional<String> sourceUrl,
                                                    Optional<String> commit, Optional<String> bundleHash, Optional<String> description, int risk) {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime,
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime,
                                       sourceUrl, commit, bundleHash, true, false, description, risk);
     }
 
@@ -114,6 +117,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns the Vespa version this package was compiled against, if known. */
     public Optional<Version> compileVersion() { return compileVersion; }
+
+    public Optional<Integer> allowedMajor() { return allowedMajor; }
 
     /** Returns the time this package was built, if known. */
     public Optional<Instant> buildTime() { return buildTime; }
@@ -145,7 +150,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this without a package stored. */
     public ApplicationVersion withoutPackage() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime, sourceUrl, commit, bundleHash, false, shouldSkip, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, false, shouldSkip, description, risk);
     }
 
     /** Whether we still have the package for this revision. */
@@ -155,7 +160,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this which will not be rolled out to production. */
     public ApplicationVersion skipped() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime, sourceUrl, commit, bundleHash, hasPackage, true, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, hasPackage, true, description, risk);
     }
 
     /** Whether we still have the package for this revision. */

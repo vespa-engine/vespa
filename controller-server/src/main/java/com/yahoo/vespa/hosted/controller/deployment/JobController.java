@@ -709,7 +709,7 @@ public class JobController {
 
         long build = 1 + lastRun.map(run -> run.versions().targetRevision().number()).orElse(0L);
         RevisionId revisionId = RevisionId.forDevelopment(build, new JobId(id, type));
-        ApplicationVersion version = ApplicationVersion.forDevelopment(revisionId, applicationPackage.compileVersion());
+        ApplicationVersion version = ApplicationVersion.forDevelopment(revisionId, applicationPackage.compileVersion(), applicationPackage.deploymentSpec().majorVersion());
 
         byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 
