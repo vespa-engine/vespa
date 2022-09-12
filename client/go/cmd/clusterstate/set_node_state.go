@@ -54,6 +54,8 @@ func NewSetNodeStateCmd() *cobra.Command {
 		},
 	}
 	addCommonOptions(cmd, &curOptions)
+	cmd.Flags().BoolVarP(&curOptions.Force, "force", "f", false,
+		"Force execution")
 	cmd.Flags().BoolVarP(&curOptions.NoWait, "no-wait", "n", false,
 		"Do not wait for node state changes to be visible in the cluster before returning.")
 	cmd.Flags().BoolVarP(&curOptions.SafeMode, "safe", "a", false,
@@ -142,7 +144,9 @@ func (cc *ClusterControllerSpec) setNodeUserState(s serviceSpec, wanted KnownSta
 	resCode, output := splitResultCode(result)
 	if resCode < 200 || resCode >= 300 {
 		fmt.Println(color.HiYellowString("failed with HTTP code %d", resCode))
+		fmt.Println(output)
+	} else {
+		fmt.Print(output, "OK\n")
 	}
-	fmt.Println(output)
 	return err
 }
