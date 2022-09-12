@@ -57,6 +57,8 @@ public class DeploymentSpecXmlReader {
     private static final String instanceTag = "instance";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
+    private static final String devTag = "dev";
+    private static final String perfTag = "perf";
     private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
@@ -234,11 +236,12 @@ public class DeploymentSpecXmlReader {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
+                    // A production test
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
                 }
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
-            case stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
+            case devTag, perfTag, stagingTag:
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag).stream())
@@ -433,7 +436,11 @@ public class DeploymentSpecXmlReader {
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 readActive(regionTag), athenzService, testerFlavor,
-                                stringAttribute(cloudAccountAttribute, regionTag).map(CloudAccount::new));
+                                readCloudAccount(regionTag));
+    }
+
+    private Optional<CloudAccount> readCloudAccount(Element tag) {
+        return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::new);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -483,42 +490,42 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeploymentSpec.UpgradePolicy readUpgradePolicy(String policy) {
-        switch (policy) {
-            case "canary": return DeploymentSpec.UpgradePolicy.canary;
-            case "default": return DeploymentSpec.UpgradePolicy.defaultPolicy;
-            case "conservative": return DeploymentSpec.UpgradePolicy.conservative;
-            default: throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
-                                                        "Must be one of 'canary', 'default', 'conservative'");
-        }
+        return switch (policy) {
+            case "canary" -> UpgradePolicy.canary;
+            case "default" -> UpgradePolicy.defaultPolicy;
+            case "conservative" -> UpgradePolicy.conservative;
+            default -> throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                          "Must be one of 'canary', 'default', 'conservative'");
+        };
     }
 
     private DeploymentSpec.RevisionChange readRevisionChange(String revision) {
-        switch (revision) {
-            case "when-clear": return DeploymentSpec.RevisionChange.whenClear;
-            case "when-failing": return DeploymentSpec.RevisionChange.whenFailing;
-            case "always": return DeploymentSpec.RevisionChange.always;
-            default: throw new IllegalArgumentException("Illegal upgrade revision change policy '" + revision + "': " +
-                                                        "Must be one of 'always', 'when-failing', 'when-clear'");
-        }
+        return switch (revision) {
+            case "when-clear" -> RevisionChange.whenClear;
+            case "when-failing" -> RevisionChange.whenFailing;
+            case "always" -> RevisionChange.always;
+            default -> throw new IllegalArgumentException("Illegal upgrade revision change policy '" + revision + "': " +
+                                                          "Must be one of 'always', 'when-failing', 'when-clear'");
+        };
     }
 
     private DeploymentSpec.RevisionTarget readRevisionTarget(String revision) {
-        switch (revision) {
-            case "next": return DeploymentSpec.RevisionTarget.next;
-            case "latest": return DeploymentSpec.RevisionTarget.latest;
-            default: throw new IllegalArgumentException("Illegal upgrade revision target '" + revision + "': " +
-                                                        "Must be one of 'next', 'latest'");
-        }
+        return switch (revision) {
+            case "next" -> RevisionTarget.next;
+            case "latest" -> RevisionTarget.latest;
+            default -> throw new IllegalArgumentException("Illegal upgrade revision target '" + revision + "': " +
+                                                          "Must be one of 'next', 'latest'");
+        };
     }
 
     private DeploymentSpec.UpgradeRollout readUpgradeRollout(String rollout) {
-        switch (rollout) {
-            case "separate": return DeploymentSpec.UpgradeRollout.separate;
-            case "leading": return DeploymentSpec.UpgradeRollout.leading;
-            case "simultaneous": return DeploymentSpec.UpgradeRollout.simultaneous;
-            default: throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
-                                                        "Must be one of 'separate', 'leading', 'simultaneous'");
-        }
+        return switch (rollout) {
+            case "separate" -> UpgradeRollout.separate;
+            case "leading" -> UpgradeRollout.leading;
+            case "simultaneous" -> UpgradeRollout.simultaneous;
+            default -> throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
+                                                          "Must be one of 'separate', 'leading', 'simultaneous'");
+        };
     }
 
     private boolean readActive(Element regionTag) {
