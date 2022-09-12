@@ -224,4 +224,15 @@ SummaryFieldConverter::insert_summary_field_with_filter(const FieldValue& value,
     }
 }
 
+void
+SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter& converter)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter, tokenize, converter);
+        value.accept(visitor);
+    }
+}
+
 }

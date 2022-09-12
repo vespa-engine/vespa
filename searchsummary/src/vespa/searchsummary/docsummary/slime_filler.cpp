@@ -2,6 +2,7 @@
 
 #include "slime_filler.h"
 #include "annotation_converter.h"
+#include "i_juniper_converter.h"
 #include "resultconfig.h"
 #include "searchdatatype.h"
 #include <vespa/document/datatype/positiondatatype.h>
@@ -91,14 +92,24 @@ public:
 SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize)
     : _inserter(inserter),
       _tokenize(tokenize),
-      _matching_elems(nullptr)
+      _matching_elems(nullptr),
+      _juniper_converter(nullptr)
 {
 }
 
 SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems)
     : _inserter(inserter),
       _tokenize(tokenize),
-      _matching_elems(matching_elems)
+      _matching_elems(matching_elems),
+      _juniper_converter(nullptr)
+{
+}
+
+SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, IJuniperConverter& juniper_converter)
+    : _inserter(inserter),
+      _tokenize(tokenize),
+      _matching_elems(nullptr),
+      _juniper_converter(&juniper_converter)
 {
 }
 
@@ -171,9 +182,17 @@ SlimeFiller::visit(const StringFieldValue& value)
         asciistream tmp;
         AnnotationConverter converter(value.getValue(), tmp);
         converter.handleIndexingTerms(value);
-        _inserter.insertString(Memory(tmp.str()));
+        if (_juniper_converter != nullptr) {
+            _juniper_converter->insert_juniper_field(tmp.str(), _inserter);
+        } else {
+            _inserter.insertString(Memory(tmp.str()));
+        }
     } else {
-        _inserter.insertString(Memory(value.getValue()));
+        if (_juniper_converter != nullptr) {
+            _juniper_converter->insert_juniper_field(value.getValue(), _inserter);
+        } else {
+            _inserter.insertString(Memory(value.getValue()));
+        }
     }
 }
 
