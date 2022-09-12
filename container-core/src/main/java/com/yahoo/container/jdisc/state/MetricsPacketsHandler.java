@@ -18,6 +18,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -100,10 +101,16 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             if (query != null && query.equals("array-formatted")) {
                 return getMetricsArray();
             }
+            if ("format=prometheus".equals(query)) {
+                return buildPrometheusOutput();
+            }
+
             String output = jsonToString(getStatusPacket()) + getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Unexcpected IOException.", e);
         }
     }
 
@@ -117,6 +124,13 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         root.set("metrics", jsonArray);
         return jsonToString(root)
                 .getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Returns metrics in Prometheus format
+     */
+    private byte[] buildPrometheusOutput() throws IOException {
+        return PrometheusHelper.buildPrometheusOutput(getSnapshot(), applicationName, timer.currentTimeMillis());
     }
 
     /**
