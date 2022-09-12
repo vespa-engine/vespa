@@ -89,6 +89,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
+    private boolean useRestrictedDataPlaneBindings = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -153,6 +154,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
     @Override public String phraseOptimization() { return phraseOptimization; }
+    @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -422,6 +424,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseTwoPhaseDocumentGc(boolean useTwoPhase) {
         this.useTwoPhaseDocumentGc = useTwoPhase;
+        return this;
+    }
+
+    public TestProperties setUseRestrictedDataPlaneBindings(boolean useRestrictedDataPlaneBindings) {
+        this.useRestrictedDataPlaneBindings = useRestrictedDataPlaneBindings;
         return this;
     }
 

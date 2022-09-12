@@ -502,6 +502,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
+            "restrict-data-plane-bindings", false,
+            List.of("mortent"), "2022-09-08", "2022-11-01",
+            "Use restricted data plane bindings",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
