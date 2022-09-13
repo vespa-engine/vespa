@@ -54,6 +54,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
     private int searchableCopies = 1;
+    private int redundancy = 1;
 
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
@@ -263,6 +264,14 @@ public class IndexedSearchCluster extends SearchCluster
         this.searchableCopies = searchableCopies;
     }
 
+    public int getRedundancy() {
+        return redundancy;
+    }
+
+    public void setRedundancy(int redundancy) {
+        this.redundancy = redundancy;
+    }
+
     public void setDispatchSpec(DispatchSpec dispatchSpec) {
         if (dispatchSpec.getNumDispatchGroups() != null) {
             this.dispatchSpec = new DispatchSpec.Builder().setGroups
@@ -310,6 +319,7 @@ public class IndexedSearchCluster extends SearchCluster
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
         builder.searchableCopies(rootDispatch.getSearchableCopies());
+        builder.redundancy(rootDispatch.getRedundancy());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);

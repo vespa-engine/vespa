@@ -33,8 +33,12 @@ useMultilevelDispatch bool default=false
 # Dispatch only to local nodes. DEPRECATED: The container will automatically do this when it is appropriate.
 useLocalNode bool default=false
 
-# Number of document copies
+# Number of document replicas _per group_ that will be indexed in a stable cluster.
 searchableCopies long default=1
+
+# Number of document replicas _per group_ that will be present in a stable cluster.
+# Should always be >= searchableCopies.
+redundancy long default=1
 
 # Minimum search coverage required before returning the results of a query
 minSearchCoverage double default=100
