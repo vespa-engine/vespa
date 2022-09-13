@@ -291,7 +291,7 @@ TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be
 }
 
 #if ENABLE_SAME_ELEMENT_SPLIT
-//TODO Enable once matched-elements-only and artifiscial terms are handled
+//TODO Enable once matched-elements-only and artificial terms are handled
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_split) {
     std::string actual1 = dump_query(*optimize(make_same_element(), true, true));
     std::string expect = split_same_element_dump;
