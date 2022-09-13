@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
  * Fail if:
- * An SD field explicitly says summary:dynamic , but the field is wset, array or struct.
+ * An SD field explicitly says summary:dynamic , but the field is non-string array, wset, or struct.
  * If there is an explicitly defined summary class, saying dynamic in one of its summary
  * fields is always legal.
  *
@@ -31,7 +31,7 @@ public class SummaryDynamicStructsArrays extends Processor {
 
         for (SDField field : schema.allConcreteFields()) {
             DataType type = field.getDataType();
-            if (type instanceof ArrayDataType || type instanceof WeightedSetDataType || type instanceof StructDataType) {
+            if (isNonStringArray(type) || type instanceof WeightedSetDataType || type instanceof StructDataType) {
                 for (SummaryField sField : field.getSummaryFields().values()) {
                     if (sField.getTransform().equals(SummaryTransform.DYNAMICTEASER)) {
                         throw new IllegalArgumentException("For field '"+field.getName()+"': dynamic summary is illegal " +
@@ -42,6 +42,10 @@ public class SummaryDynamicStructsArrays extends Processor {
                 }
             }
         }
+    }
+
+    private boolean isNonStringArray(DataType type) {
+        return (type instanceof ArrayDataType) && (!type.equals(DataType.getArray(DataType.STRING)));
     }
 
 }

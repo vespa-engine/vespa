@@ -192,4 +192,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("structandfieldset");
     }
 
+    @Test
+    void testBoldingAndDynamicSummary() throws IOException, ParseException {
+        assertCorrectDeriving("bolding_dynamic_summary");
+    }
+
 }

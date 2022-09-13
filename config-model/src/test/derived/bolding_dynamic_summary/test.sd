@@ -1,0 +1,50 @@
+schema test {
+  document test {
+    field str_1 type string {
+      indexing: index | summary
+      summary: dynamic
+    }
+    field str_2 type string {
+      indexing: index | summary
+      bolding: on
+    }
+    field str_3 type string {
+      indexing: index | summary
+    }
+    field str_4 type string {
+      indexing: index | summary
+    }
+    field arr_1 type array<string> {
+      indexing: index | summary
+      summary: dynamic
+    }
+    field arr_2 type array<string> {
+      indexing: index | summary
+      bolding: on
+    }
+    field arr_3 type array<string> {
+      indexing: index | summary
+    }
+    field arr_4 type array<string> {
+      indexing: index | summary
+    }
+  }
+  document-summary dyn {
+    summary str_3_dyn type string {
+      source: str_3
+      dynamic
+    }
+    summary arr_3_dyn type array<string> {
+      source: arr_3
+      dynamic
+    }
+    summary str_4_bold type string {
+      source: str_4
+      bolding: on
+    }
+    summary arr_4_bold type array<string> {
+      source: arr_4
+      bolding: on
+    }
+  }
+}

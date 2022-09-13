@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.processing.DynamicSummaryTransformUtils;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -158,14 +159,10 @@ public class SummaryClass extends Derived {
                 summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
         {
             return summaryField.getSingleSource();
+        } else if (summaryField.getTransform().isDynamic()) {
+            return DynamicSummaryTransformUtils.getSource(summaryField);
         } else {
-            // Note: Currently source mapping is handled in the indexing statement,
-            // by creating a summary field for each of the values
-            // This works, but is suboptimal. We could consolidate to a minimal set and
-            // use the right value from the minimal set as the third parameter here,
-            // and add "override" commands to multiple static values
-            boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic();
-            return useFieldNameAsArgument ? summaryField.getName() : "";
+            return "";
         }
     }
 

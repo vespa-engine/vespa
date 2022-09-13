@@ -39,10 +39,10 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
         }
     }
 
-    private final String boldonarray =
-            "search boldonarray {\n" +
-            "    document boldonarray {\n" +
-            "        field myarray type array<string> {\n" +
+    private final String boldonwset =
+            "search test {\n" +
+            "    document test {\n" +
+            "        field mywset type weightedset<string> {\n" +
             "            indexing: summary | index\n" +
             "            bolding: on\n" +
             "        }\n" +
@@ -50,12 +50,12 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
             "}\n";
 
     @Test
-    void testBoldOnArray() throws ParseException {
+    void testBoldOnWsetThrowsException() throws ParseException {
         try {
-            ApplicationBuilder.createFromString(boldonarray);
+            ApplicationBuilder.createFromString(boldonwset);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("'bolding: on' for non-text field 'myarray' (datatype Array<string> (code: -1486737430)) is not allowed",
+            assertEquals("'bolding: on' for non-text field 'mywset' (datatype WeightedSet<string> (code: 1328286588)) is not allowed",
                     e.getMessage());
         }
     }

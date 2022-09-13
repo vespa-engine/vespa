@@ -68,11 +68,13 @@ public class IndexingOutputs extends Processor {
         }
         if (summaryTransform.isDynamic()) {
             DataType fieldType = field.getDataType();
-            if (fieldType != DataType.URI && fieldType != DataType.STRING) {
-                warn(schema, field, "Dynamic summaries are only supported for fields of type " +
-                                    "string, ignoring summary field '" + summaryField.getName() +
-                                    "' for sd field '" + field.getName() + "' of type " +
-                                    fieldType.getName() + ".");
+            if (!DynamicSummaryTransformUtils.summaryFieldIsPopulatedBySourceField(fieldType)) {
+                if (!DynamicSummaryTransformUtils.isSupportedType(fieldType)) {
+                    warn(schema, field, "Dynamic summaries are only supported for fields of type " +
+                            "string and array<string>, ignoring summary field '" + summaryField.getName() +
+                            "' for sd field '" + field.getName() + "' of type " +
+                            fieldType.getName() + ".");
+                }
                 return;
             }
             dynamicSummary.add(summaryName);
