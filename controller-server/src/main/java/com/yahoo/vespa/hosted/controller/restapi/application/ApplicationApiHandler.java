@@ -2110,6 +2110,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         RevisionId revision = RevisionId.forProduction(Long.parseLong(build));
         controller.applications().lockApplicationOrThrow(id, application -> {
             controller.applications().store(application.withRevisions(revisions -> revisions.with(revisions.get(revision).skipped())));
+            for (Instance instance : application.get().instances().values())
+                if (instance.change().revision().equals(Optional.of(revision)))
+                    controller.applications().deploymentTrigger().cancelChange(instance.id(), ChangesToCancel.APPLICATION);
         });
         return new MessageResponse("Marked build '" + build + "' as non-deployable");
     }
