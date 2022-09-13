@@ -2327,9 +2327,22 @@ public class DeploymentTriggerTest {
                                                                                     .build()))
                              .getMessage());
 
+        // Upgrade.
+        old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                  .compileVersion(version1)
+                                                  .build())
+                .deploy();
+
+        // And downgrade again.
         old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
                                                   .compileVersion(version0)
                                                   .build());
+
+        assertEquals(Change.of(version0).with(old.lastSubmission().get()), old.instance().change());
+
+        // An operator can still trigger roll-out of the otherwise illegal submission.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(app.lastSubmission().get()));
+        assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
     }
 
     @Test
