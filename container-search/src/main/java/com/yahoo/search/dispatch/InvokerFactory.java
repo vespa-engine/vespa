@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.concurrent.MonotonicTimer;
+import com.yahoo.concurrent.Timer;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -22,6 +24,7 @@ import java.util.Set;
 public abstract class InvokerFactory {
 
     protected final SearchCluster searchCluster;
+    private static final Timer timer = new MonotonicTimer();
 
     public InvokerFactory(SearchCluster searchCluster) {
         this.searchCluster = searchCluster;
@@ -89,7 +92,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster, group, failed));
+            return Optional.of(new InterleavedSearchInvoker(timer, invokers, searchCluster, group, failed));
         }
     }
 

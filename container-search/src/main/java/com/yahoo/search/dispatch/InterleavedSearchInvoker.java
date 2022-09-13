@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.concurrent.Timer;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
-import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -25,10 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
-import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
-import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
-
 /**
  * InterleavedSearchInvoker uses multiple {@link SearchInvoker} objects to interface with content
  * nodes in parallel. Operationally it first sends requests to all contained invokers and then
@@ -40,38 +36,35 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private static final Logger log = Logger.getLogger(InterleavedSearchInvoker.class.getName());
 
+    private final Timer timer;
     private final Set<SearchInvoker> invokers;
     private final SearchCluster searchCluster;
     private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
+    private final CoverageAggregator coverageAggregator;
     private Query query;
 
-    private boolean adaptiveTimeoutCalculated = false;
-    private long adaptiveTimeoutMin = 0;
-    private long adaptiveTimeoutMax = 0;
-    private long deadline = 0;
-
-    private long answeredDocs = 0;
-    private long answeredActiveDocs = 0;
-    private long answeredTargetActiveDocs = 0;
-    private int askedNodes = 0;
-    private int answeredNodes = 0;
-    private int answeredNodesParticipated = 0;
-    private boolean timedOut = false;
-    private boolean degradedByMatchPhase = false;
-
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers,
+    TimeoutHandler timeoutHandler;
+    public InterleavedSearchInvoker(Timer timer, Collection<SearchInvoker> invokers,
                                     SearchCluster searchCluster,
                                     Group group,
                                     Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
+        this.timer = timer;
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
         this.searchCluster = searchCluster;
         this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
+        coverageAggregator = new CoverageAggregator(invokers.size());
+    }
+
+    TimeoutHandler create(DispatchConfig config, int askedNodes, Query query) {
+        return (config.minSearchCoverage() < 100.0D)
+                ? new AdaptiveTimeoutHandler(timer, config, askedNodes, query)
+                : new SimpleTimeoutHandler(query);
     }
 
     /**
@@ -83,7 +76,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     protected Object sendSearchRequest(Query query, Object unusedContext) throws IOException {
         this.query = query;
         invokers.forEach(invoker -> invoker.setMonitor(this));
-        deadline = currentTime() + query.getTimeLeft();
 
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
@@ -101,8 +93,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         Object context = null;
         for (SearchInvoker invoker : invokers) {
             context = invoker.sendSearchRequest(query, context);
-            askedNodes++;
         }
+        timeoutHandler = create(searchCluster.dispatchConfig(), invokers.size(), query);
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
@@ -119,14 +111,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             while (!invokers.isEmpty() && nextTimeout >= 0) {
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
                 if (invoker == null) {
-                    log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
+                    log.fine(() -> "Search timed out with " + coverageAggregator.getAskedNodes() + " requests made, " +
+                            coverageAggregator.getAnswerdNodes() + " responses received");
                     break;
                 } else {
                     InvokerResult toMerge = invoker.getSearchResult(execution);
                     merged = mergeResult(result.getResult(), toMerge, merged, groupingResultAggregator);
                     ejectInvoker(invoker);
                 }
-                nextTimeout = nextTimeout();
+                nextTimeout = timeoutHandler.nextTimeout(coverageAggregator.getAnswerdNodes());
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while waiting for search results", e);
@@ -134,7 +127,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
-        result.getResult().setCoverage(createCoverage());
+        CoverageAggregator adjusted = coverageAggregator.adjustDegradedCoverage((int)searchCluster.dispatchConfig().searchableCopies(), timeoutHandler);
+        result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler));
 
         int needed = query.getOffset() + query.getHits();
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
@@ -146,7 +140,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private void insertNetworkErrors(Result result) {
         // Network errors will be reported as errors only when all nodes fail, otherwise they are just traced
-        boolean asErrors = answeredNodes == 0;
+        boolean asErrors = coverageAggregator.hasNoAnswers();
 
         if (!invokers.isEmpty()) {
             String keys = invokers.stream().map(SearchInvoker::distributionKey).map(dk -> dk.map(i -> i.toString()).orElse("(unspecified)"))
@@ -158,7 +152,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             } else {
                 query.trace("Backend communication timeout on nodes with distribution-keys: " + keys, 2);
             }
-            timedOut = true;
+            coverageAggregator.setTimedOut();
         }
         if (alreadyFailedNodes != null) {
             var message = "Connection failure on nodes with distribution-keys: "
@@ -168,51 +162,13 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             } else {
                 query.trace(message, 2);
             }
-            int failed = alreadyFailedNodes.size();
-            askedNodes += failed;
-            answeredNodes += failed;
+            coverageAggregator.setFailedNodes(alreadyFailedNodes.size());
         }
-    }
-
-    private long nextTimeout() {
-        DispatchConfig config = searchCluster.dispatchConfig();
-        double minimumCoverage = config.minSearchCoverage();
-
-        if (askedNodes == answeredNodes || minimumCoverage >= 100.0) {
-            return query.getTimeLeft();
-        }
-        int minimumResponses = (int) Math.ceil(askedNodes * minimumCoverage / 100.0);
-
-        if (answeredNodes < minimumResponses) {
-            return query.getTimeLeft();
-        }
-
-        long timeLeft = query.getTimeLeft();
-        if (!adaptiveTimeoutCalculated) {
-            adaptiveTimeoutMin = (long) (timeLeft * config.minWaitAfterCoverageFactor());
-            adaptiveTimeoutMax = (long) (timeLeft * config.maxWaitAfterCoverageFactor());
-            adaptiveTimeoutCalculated = true;
-        }
-
-        long now = currentTime();
-        int pendingQueries = askedNodes - answeredNodes;
-        double missWidth = ((100.0 - config.minSearchCoverage()) * askedNodes) / 100.0 - 1.0;
-        double slopedWait = adaptiveTimeoutMin;
-        if (pendingQueries > 1 && missWidth > 0.0) {
-            slopedWait += ((adaptiveTimeoutMax - adaptiveTimeoutMin) * (pendingQueries - 1)) / missWidth;
-        }
-        long nextAdaptive = (long) slopedWait;
-        if (now + nextAdaptive >= deadline) {
-            return deadline - now;
-        }
-        deadline = now + nextAdaptive;
-
-        return nextAdaptive;
     }
 
     private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current,
                                       GroupingResultAggregator groupingResultAggregator) {
-        collectCoverage(partialResult.getResult().getCoverage(true));
+        coverageAggregator.add(partialResult.getResult().getCoverage(true));
 
         result.mergeWith(partialResult.getResult());
         List<Hit> partialNonLean = partialResult.getResult().hits().asUnorderedHits();
@@ -265,55 +221,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return merged;
     }
 
-    private void collectCoverage(Coverage source) {
-        answeredDocs += source.getDocs();
-        answeredActiveDocs += source.getActive();
-        answeredTargetActiveDocs += source.getTargetActive();
-        answeredNodesParticipated += source.getNodes();
-        answeredNodes++;
-        degradedByMatchPhase |= source.isDegradedByMatchPhase();
-        timedOut |= source.isDegradedByTimeout();
-    }
-
-    private Coverage createCoverage() {
-        adjustDegradedCoverage();
-
-        Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
-        coverage.setNodesTried(askedNodes);
-        coverage.setTargetActive(answeredTargetActiveDocs);
-        int degradedReason = 0;
-        if (timedOut) {
-            degradedReason |= (adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);
-        }
-        if (degradedByMatchPhase) {
-            degradedReason |= DEGRADED_BY_MATCH_PHASE;
-        }
-        coverage.setDegradedReason(degradedReason);
-        return coverage;
-    }
-
-    private void adjustDegradedCoverage() {
-        if (askedNodes == answeredNodesParticipated) {
-            return;
-        }
-        int notAnswered = askedNodes - answeredNodesParticipated;
-
-        if (adaptiveTimeoutCalculated && answeredNodesParticipated > 0) {
-            answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodesParticipated);
-            answeredTargetActiveDocs += (notAnswered * answeredTargetActiveDocs / answeredNodesParticipated);
-        } else {
-            if (askedNodes > answeredNodesParticipated) {
-                int searchableCopies = (int) searchCluster.dispatchConfig().searchableCopies();
-                int missingNodes = notAnswered - (searchableCopies - 1);
-                if (answeredNodesParticipated > 0) {
-                    answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
-                    answeredTargetActiveDocs += (missingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
-                    timedOut = true;
-                }
-            }
-        }
-    }
-
     private void ejectInvoker(SearchInvoker invoker) {
         invokers.remove(invoker);
         invoker.release();
@@ -337,11 +244,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     @Override
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         // never to be called
-    }
-
-    // For overriding in tests
-    protected long currentTime() {
-        return System.currentTimeMillis();
     }
 
     // For overriding in tests
