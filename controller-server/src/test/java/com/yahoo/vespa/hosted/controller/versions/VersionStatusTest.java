@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -28,7 +27,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,8 +89,7 @@ public class VersionStatusTest {
         HostName controller3 = HostName.of("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
-                                                   .collect(Collectors.joining(",")),
-                                             SystemName.main);
+                                                   .collect(Collectors.joining(",")));
         ControllerTester tester = new ControllerTester(db);
 
         writeControllerVersion(controller1, Version.fromString("6.2"), db);
@@ -525,8 +522,7 @@ public class VersionStatusTest {
         HostName controller3 = HostName.of("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
-                                                   .collect(Collectors.joining(",")),
-                                             SystemName.main);
+                                                   .collect(Collectors.joining(",")));
         DeploymentTester tester = new DeploymentTester(new ControllerTester(db));
 
         // Commit details are set for initial version
