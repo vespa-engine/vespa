@@ -189,9 +189,9 @@ SlimeFiller::visit(const StringFieldValue& value)
         }
     } else {
         if (_juniper_converter != nullptr) {
-            _juniper_converter->insert_juniper_field(value.getValue(), _inserter);
+            _juniper_converter->insert_juniper_field(value, _inserter);
         } else {
-            _inserter.insertString(Memory(value.getValue()));
+            _inserter.insertString(Memory(value.getValueRef()));
         }
     }
 }
