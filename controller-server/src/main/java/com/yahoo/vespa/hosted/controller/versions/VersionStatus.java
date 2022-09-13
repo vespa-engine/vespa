@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
+import ai.vespa.validation.Validation;
+import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -9,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -225,14 +228,14 @@ public record VersionStatus(List<VespaVersion> versions) {
         if (!confidenceIsOverridden) {
             // Always compute confidence for system and controller
             if (isSystemVersion || isControllerVersion) {
-                confidence = VespaVersion.confidenceFrom(statistics, controller);
+                confidence = VespaVersion.confidenceFrom(statistics, controller, versionStatus);
             } else {
-                // This is an older version so we preserve the existing confidence, if any
+                // This is an older version, so we preserve the existing confidence, if any
                 confidence = versionStatus.versions().stream()
                                           .filter(v -> statistics.version().equals(v.versionNumber()))
                                           .map(VespaVersion::confidence)
                                           .findFirst()
-                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
+                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller, versionStatus));
             }
         }
 
@@ -260,6 +263,16 @@ public record VersionStatus(List<VespaVersion> versions) {
                                 isReleased,
                                 nodeVersions,
                                 confidence);
+    }
+
+    /** Whether no version on a newer major, with high confidence, can be deployed. */
+    public boolean isOnCurrentMajor(Version version) {
+        for (VespaVersion available : deployableVersions())
+            if (   available.confidence().equalOrHigherThan(Confidence.high)
+                && available.versionNumber().getMajor() > version.getMajor())
+                return false;
+
+        return true;
     }
 
 }

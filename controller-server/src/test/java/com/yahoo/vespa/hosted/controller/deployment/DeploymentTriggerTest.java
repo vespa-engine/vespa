@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.vespa.hosted.controller.maintenance.DeploymentUpgrader;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.tes
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
+import static java.util.Collections.copy;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -2205,6 +2207,7 @@ public class DeploymentTriggerTest {
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
                 .compileVersion(version2)
                 .build());
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.upgrader().overrideConfidence(version3, Confidence.broken);
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().run();
@@ -2275,6 +2278,117 @@ public class DeploymentTriggerTest {
         newApp.deploy();
         assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+    }
+
+    @Test
+    void testOutdatedMajorIsIllegal() {
+        Version version0 = new Version("6.2");
+        Version version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version0);
+        DeploymentContext old = tester.newDeploymentContext("t", "a", "default").submit()
+                                      .runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        old.runJob(JobType.dev("us-east-1"), applicationPackage());
+
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().overrideConfidence(version1, Confidence.high);
+        tester.controllerTester().computeVersionStatus();
+
+        // New app can't deploy to 6.2
+        DeploymentContext app = tester.newDeploymentContext("t", "b", "default");
+        assertEquals("platform version 6.2 is not on a current major version in this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.jobs().deploy(app.instanceId(),
+                                                             JobType.dev("us-east-1"),
+                                                             Optional.of(version0),
+                                                             DeploymentContext.applicationPackage()))
+                             .getMessage());
+
+        // App which already deployed to 6.2 can still do so.
+        tester.jobs().deploy(old.instanceId(),
+                             JobType.dev("us-east-1"),
+                             Optional.of(version0),
+                             DeploymentContext.applicationPackage());
+
+        app.submit();
+        assertEquals("platform version 6.2 is not on a current major version in this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version0), false))
+                             .getMessage());
+
+       tester.deploymentTrigger().forceChange(old.instanceId(), Change.of(version0), false);
+
+        // Not even version incompatibility tricks the system.
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("7"), String.class);
+        assertEquals("compile version 6.2 is incompatible with the current major version of this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () ->
+                                          app.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                                                    .compileVersion(version0)
+                                                                                    .build()))
+                             .getMessage());
+
+        // Upgrade.
+        old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                  .compileVersion(version1)
+                                                  .build())
+                .deploy();
+
+        // And downgrade again.
+        old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                  .compileVersion(version0)
+                                                  .build());
+
+        assertEquals(Change.of(version0).with(old.lastSubmission().get()), old.instance().change());
+
+        // An operator can still trigger roll-out of the otherwise illegal submission.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(app.lastSubmission().get()));
+        assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
+    }
+
+    @Test
+    void testInitialDeploymentPlatform() {
+        Version version0 = tester.controllerTester().controller().readSystemVersion();
+        Version version1 = new Version("6.2");
+        Version version2 = new Version("6.3");
+        assertEquals(version0, tester.newDeploymentContext("t", "a1", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        // A new version, with normal confidence, is the default for a new app.
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().overrideConfidence(version1, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.newDeploymentContext("t", "a2", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        // A newer version has broken confidence, leaving the previous version as the default.
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().overrideConfidence(version2, Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version1, tester.newDeploymentContext("t", "a3", "default").submit().deploy().application().oldestDeployedPlatform().get());
+
+        DeploymentContext dev1 = tester.newDeploymentContext("t", "d1", "default");
+        DeploymentContext dev2 = tester.newDeploymentContext("t", "d2", "default");
+        assertEquals(version1, dev1.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+
+        DeploymentUpgrader devUpgrader = new DeploymentUpgrader(tester.controller(), Duration.ofHours(1));
+        for (int i = 0; i < 24; i++) {
+            tester.clock().advance(Duration.ofHours(1));
+            devUpgrader.run();
+        }
+        dev1.assertNotRunning(JobType.dev("us-east-1"));
+
+        // Normal confidence lets the newest version be the default again.
+        tester.upgrader().overrideConfidence(version2, Confidence.normal);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(version2, tester.newDeploymentContext("t", "a4", "default").submit().deploy().application().oldestDeployedPlatform().get());
+        assertEquals(version1, dev1.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+        assertEquals(version2, dev2.runJob(JobType.dev("us-east-1"), DeploymentContext.applicationPackage()).deployment(ZoneId.from("dev", "us-east-1")).version());
+
+        for (int i = 0; i < 24; i++) {
+            tester.clock().advance(Duration.ofHours(1));
+            devUpgrader.run();
+        }
+        dev1.assertRunning(JobType.dev("us-east-1"));
+        dev1.runJob(JobType.dev("us-east-1"));
+        assertEquals(version2, dev1.deployment(ZoneId.from("dev", "us-east-1")).version());
     }
 
     @Test

@@ -955,28 +955,29 @@ public class DeploymentSpecTest {
 
     @Test
     public void athenzConfigPropagatesThroughParallelZonesAndInstances() {
-        StringReader r = new StringReader(
-                "<deployment athenz-domain='domain' athenz-service='service'>" +
-                "   <parallel>" +
-                "      <instance id='instance1'>" +
-                "         <prod>" +
-                "            <parallel>" +
-                "               <region active='true'>us-west-1</region>" +
-                "               <region active='true'>us-east-3</region>" +
-                "            </parallel>" +
-                "         </prod>" +
-                "      </instance>" +
-                "      <instance id='instance2'>" +
-                "         <prod>" +
-                "            <parallel>" +
-                "               <region active='true'>us-west-1</region>" +
-                "               <region active='true'>us-east-3</region>" +
-                "            </parallel>" +
-                "         </prod>" +
-                "      </instance>" +
-                "   </parallel>" +
-                "</deployment>"
-        );
+        String r =
+                """
+                <deployment athenz-domain='domain' athenz-service='service'>
+                   <parallel>
+                      <instance id='instance1'>
+                         <prod>
+                            <parallel>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
+                            </parallel>
+                         </prod>
+                      </instance>
+                      <instance id='instance2'>
+                         <prod>
+                            <parallel>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
+                            </parallel>
+                         </prod>
+                      </instance>
+                   </parallel>
+                </deployment>
+                """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
@@ -1267,44 +1268,47 @@ public class DeploymentSpecTest {
 
     @Test
     public void instanceEndpointDisallowsRegionAttributeOrInstanceTag() {
-        String xmlForm = "<deployment>\n" +
-                         "  <instance id='default'>\n" +
-                         "    <prod>\n" +
-                         "      <region active=\"true\">us-east</region>\n" +
-                         "      <region active=\"true\">us-west</region>\n" +
-                         "    </prod>\n" +
-                         "    <endpoints>\n" +
-                         "      <endpoint id=\"foo\" container-id=\"bar\" %s>\n" +
-                         "        %s\n" +
-                         "      </endpoint>\n" +
-                         "    </endpoints>\n" +
-                         "  </instance>\n" +
-                         "</deployment>";
+        String xmlForm = """
+                         <deployment>
+                           <instance id='default'>
+                             <prod>
+                               <region active="true">us-east</region>
+                               <region active="true">us-west</region>
+                             </prod>
+                             <endpoints>
+                               <endpoint id="foo" container-id="bar" %s>
+                                 %s
+                               </endpoint>
+                             </endpoints>
+                           </instance>
+                         </deployment>""";
         assertInvalid(String.format(xmlForm, "region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
         assertInvalid(String.format(xmlForm, "", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
     }
 
     @Test
     public void applicationLevelEndpointValidation() {
-        String xmlForm = "<deployment>\n" +
-                         "  <instance id=\"beta\">\n" +
-                         "    <prod>\n" +
-                         "      <region active='true'>us-west-1</region>\n" +
-                         "      <region active='true'>us-east-3</region>\n" +
-                         "    </prod>\n" +
-                         "  </instance>\n" +
-                         "  <instance id=\"main\">\n" +
-                         "    <prod>\n" +
-                         "      <region active='true'>us-west-1</region>\n" +
-                         "      <region active='true'>us-east-3</region>\n" +
-                         "    </prod>\n" +
-                         "  </instance>\n" +
-                         "  <endpoints>\n" +
-                         "    <endpoint id=\"foo\" container-id=\"qrs\" %s>\n" +
-                         "      <instance %s>%s</instance>\n%s" +
-                         "    </endpoint>\n" +
-                         "  </endpoints>\n" +
-                         "</deployment>\n";
+        String xmlForm = """
+                         <deployment>
+                           <instance id="beta">
+                             <prod>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
+                             </prod>
+                           </instance>
+                           <instance id="main">
+                             <prod>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
+                             </prod>
+                           </instance>
+                           <endpoints>
+                             <endpoint id="foo" container-id="qrs" %s>
+                               <instance %s>%s</instance>
+                         %s    </endpoint>
+                           </endpoints>
+                         </deployment>
+                         """;
         assertInvalid(String.format(xmlForm, "", "", "", ""), "Missing required attribute 'region' in 'endpoint'");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "", "main", ""), "Missing required attribute 'weight' in 'instance");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
@@ -1316,32 +1320,34 @@ public class DeploymentSpecTest {
 
     @Test
     public void applicationLevelEndpoint() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "  <instance id=\"beta\">\n" +
-                                                     "    <prod>\n" +
-                                                     "      <region active='true'>us-west-1</region>\n" +
-                                                     "      <region active='true'>us-east-3</region>\n" +
-                                                     "    </prod>\n" +
-                                                     "  </instance>\n" +
-                                                     "  <instance id=\"main\">\n" +
-                                                     "    <prod>\n" +
-                                                     "      <region active='true'>us-west-1</region>\n" +
-                                                     "      <region active='true'>us-east-3</region>\n" +
-                                                     "    </prod>\n" +
-                                                     "    <endpoints>\n" +
-                                                     "      <endpoint id=\"glob\" container-id=\"music\"/>\n" +
-                                                     "    </endpoints>\n" +
-                                                     "  </instance>\n" +
-                                                     "  <endpoints>\n" +
-                                                     "    <endpoint id=\"foo\" container-id=\"movies\" region='us-west-1'>\n" +
-                                                     "      <instance weight=\"2\">beta</instance>\n" +
-                                                     "      <instance weight=\"8\">main</instance>\n" +
-                                                     "    </endpoint>\n" +
-                                                     "    <endpoint id=\"bar\" container-id=\"music\" region='us-east-3'>\n" +
-                                                     "      <instance weight=\"10\">main</instance>\n" +
-                                                     "    </endpoint>\n" +
-                                                     "  </endpoints>\n" +
-                                                     "</deployment>\n");
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment>
+                                                       <instance id="beta">
+                                                         <prod>
+                                                           <region active='true'>us-west-1</region>
+                                                           <region active='true'>us-east-3</region>
+                                                         </prod>
+                                                       </instance>
+                                                       <instance id="main">
+                                                         <prod>
+                                                           <region active='true'>us-west-1</region>
+                                                           <region active='true'>us-east-3</region>
+                                                         </prod>
+                                                         <endpoints>
+                                                           <endpoint id="glob" container-id="music"/>
+                                                         </endpoints>
+                                                       </instance>
+                                                       <endpoints>
+                                                         <endpoint id="foo" container-id="movies" region='us-west-1'>
+                                                           <instance weight="2">beta</instance>
+                                                           <instance weight="8">main</instance>
+                                                         </endpoint>
+                                                         <endpoint id="bar" container-id="music" region='us-east-3'>
+                                                           <instance weight="10">main</instance>
+                                                         </endpoint>
+                                                       </endpoints>
+                                                     </deployment>
+                                                     """);
         assertEquals(List.of(new Endpoint("foo", "movies", Endpoint.Level.application,
                                           List.of(new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("beta"), 2),
                                                   new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("main"), 8))),
@@ -1357,26 +1363,29 @@ public class DeploymentSpecTest {
     @Test
     public void disallowExcessiveUpgradeBlocking() {
         List<String> specs = List.of(
-                "<deployment>\n" +
-                "  <block-change/>\n" +
-                "</deployment>",
+                """
+                <deployment>
+                  <block-change/>
+                </deployment>""",
 
-                "<deployment>\n" +
-                "  <block-change days=\"mon-wed\"/>\n" +
-                "  <block-change days=\"tue-sun\"/>\n" +
-                "</deployment>",
+                """
+                <deployment>
+                  <block-change days="mon-wed"/>
+                  <block-change days="tue-sun"/>
+                </deployment>""",
 
-                "<deployment>\n" +
-                "  <block-change to-date=\"2023-01-01\"/>\n" +
-                "</deployment>",
+                """
+                <deployment>
+                  <block-change to-date="2023-01-01"/>
+                </deployment>""",
 
                 // Convoluted example of blocking too long
-                "<deployment>\n" +
-                "  <block-change days=\"sat-sun\"/>\n" +
-                "  <block-change days=\"mon-fri\" hours=\"0-10\" from-date=\"2023-01-01\" to-date=\"2023-01-15\"/>\n" +
-                "  <block-change days=\"mon-fri\" hours=\"11-23\" from-date=\"2023-01-01\" to-date=\"2023-01-15\"/>\n" +
-                "  <block-change from-date=\"2023-01-14\" to-date=\"2023-01-31\"/>" +
-                "</deployment>"
+                """
+                <deployment>
+                  <block-change days="sat-sun"/>
+                  <block-change days="mon-fri" hours="0-10" from-date="2023-01-01" to-date="2023-01-15"/>
+                  <block-change days="mon-fri" hours="11-23" from-date="2023-01-01" to-date="2023-01-15"/>
+                  <block-change from-date="2023-01-14" to-date="2023-01-31"/></deployment>"""
         );
         ManualClock clock = new ManualClock();
         clock.setInstant(Instant.parse("2022-01-05T15:00:00.00Z"));
@@ -1387,127 +1396,147 @@ public class DeploymentSpecTest {
 
     @Test
     public void testDeployableHash() {
-        assertEquals(DeploymentSpec.fromXml("<deployment>\n" +
-                                            "  <instance id='default' />\n" +
-                                            "</deployment>").deployableHashCode(),
-                     DeploymentSpec.fromXml("<deployment major-version='9'>\n" +
-                                            "  <instance id='default'>\n" +
-                                            "    <test />\n" +
-                                            "    <staging tester-flavor='2-8-50' />\n" +
-                                            "    <block-change days='mon' />\n" +
-                                            "    <upgrade policy='canary' revision-target='next' revision-change='when-clear' rollout='simultaneous' />\n" +
-                                            "    <prod />\n" +
-                                            "    <notifications>\n" +
-                                            "      <email role='author' />\n" +
-                                            "      <email address='dev@duff' />\n" +
-                                            "    </notifications>\n" +
-                                            "  </instance>\n" +
-                                            "</deployment>").deployableHashCode());
+        assertEquals(DeploymentSpec.fromXml("""
+                                            <deployment>
+                                              <instance id='default' />
+                                            </deployment>""").deployableHashCode(),
+                     DeploymentSpec.fromXml("""
+                                            <deployment>
+                                              <instance id='default'>
+                                                <test />
+                                                <staging tester-flavor='2-8-50' />
+                                                <block-change days='mon' />
+                                                <upgrade policy='canary' revision-target='next' revision-change='when-clear' rollout='simultaneous' />
+                                                <prod />
+                                                <notifications>
+                                                  <email role='author' />
+                                                  <email address='dev@duff' />
+                                                </notifications>
+                                              </instance>
+                                            </deployment>""").deployableHashCode());
 
-        assertEquals(DeploymentSpec.fromXml("<deployment>\n" +
-                                            "  <parallel>\n" +
-                                            "    <instance id='one'>\n" +
-                                            "      <prod>\n" +
-                                            "        <region>name</region>\n" +
-                                            "      </prod>\n" +
-                                            "    </instance>\n" +
-                                            "    <instance id='two' />" +
-                                            "  </parallel>\n" +
-                                            "</deployment>").deployableHashCode(),
-                     DeploymentSpec.fromXml("<deployment>\n" +
-                                            "  <instance id='one'>\n" +
-                                            "    <prod>\n" +
-                                            "      <steps>\n" +
-                                            "        <region>name</region>\n" +
-                                            "        <delay hours='3' />\n" +
-                                            "        <test>name</test>\n" +
-                                            "      </steps>\n" +
-                                            "    </prod>\n" +
-                                            "  </instance>\n" +
-                                            "  <instance id='two' />" +
-                                            "</deployment>").deployableHashCode());
+        assertEquals(DeploymentSpec.fromXml("""
+                                            <deployment>
+                                              <parallel>
+                                                <instance id='one'>
+                                                  <prod>
+                                                    <region>name</region>
+                                                  </prod>
+                                                </instance>
+                                                <instance id='two' />  </parallel>
+                                            </deployment>""").deployableHashCode(),
+                     DeploymentSpec.fromXml("""
+                                            <deployment>
+                                              <instance id='one'>
+                                                <prod>
+                                                  <steps>
+                                                    <region>name</region>
+                                                    <delay hours='3' />
+                                                    <test>name</test>
+                                                  </steps>
+                                                </prod>
+                                              </instance>
+                                              <instance id='two' /></deployment>""").deployableHashCode());
 
-        String referenceSpec = "<deployment>\n" +
-                               "  <instance id='default'>" +
-                               "    <prod>" +
-                               "      <region>name</region>\n" +
-                               "    </prod>\n" +
-                               "  </instance>\n" +
-                               "</deployment>";
+        String referenceSpec = """
+                               <deployment>
+                                 <instance id='default'>
+                                   <prod>
+                                     <region>name</region>
+                                   </prod>
+                                 </instance>
+                               </deployment>""";
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
                         DeploymentSpec.fromXml("<deployment />").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment>\n" +
-                                               "  <instance id='default' />\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='default' />
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment>\n" +
-                                               "  <instance id='custom'>" +
-                                               "    <prod>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='custom'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment>\n" +
-                                               "  <instance id='custom'>" +
-                                               "    <prod>" +
-                                               "      <region>other</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='custom'>
+                                                   <prod>
+                                                     <region>other</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment athenz-domain='domain' athenz-service='service'>\n" +
-                                               "  <instance id='default'>" +
-                                               "    <prod>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment major-version='9'>
+                                                 <instance id='default'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment athenz-domain='domain'>\n" +
-                                               "  <instance id='default' athenz-service='service'>" +
-                                               "    <prod>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment athenz-domain='domain' athenz-service='service'>
+                                                 <instance id='default'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment athenz-domain='domain'>\n" +
-                                               "  <instance id='default'>" +
-                                               "    <prod athenz-service='prod'>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment athenz-domain='domain'>
+                                                 <instance id='default' athenz-service='service'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment>\n" +
-                                               "  <instance id='default'>" +
-                                               "    <prod global-service-id='service'>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment athenz-domain='domain'>
+                                                 <instance id='default'>
+                                                   <prod athenz-service='prod'>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("<deployment>\n" +
-                                               "  <instance id='default'>" +
-                                               "    <prod>" +
-                                               "      <region>name</region>\n" +
-                                               "    </prod>\n" +
-                                               "    <endpoints>" +
-                                               "      <endpoint container-id=\"quux\" />" +
-                                               "    </endpoints>" +
-                                               "  </instance>\n" +
-                                               "</deployment>").deployableHashCode());
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='default'>
+                                                   <prod global-service-id='service'>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='default'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                   <endpoints>
+                                                     <endpoint container-id="quux" />    </endpoints>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
     }
 
     @Test

@@ -49,12 +49,6 @@ public class RevisionHistory {
         for (ApplicationVersion revision : productionRevisions)
             production.put(revision.id(), revision);
 
-        // TODO jonmv: remove once it's run once on serialised data
-        String hash = "";
-        for (ApplicationVersion revision : List.copyOf(production.values()))
-            if (hash.equals(hash = revision.bundleHash().orElse("")) && ! hash.isEmpty())
-                production.put(revision.id(), revision.skipped());
-
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(comparator);
         developmentRevisions.forEach((job, jobRevisions) -> {
             NavigableMap<RevisionId, ApplicationVersion> revisions = development.computeIfAbsent(job, __ -> new TreeMap<>());
@@ -100,7 +94,7 @@ public class RevisionHistory {
 
     // Fallback for when an application version isn't known for the given key.
     private static ApplicationVersion revisionOf(RevisionId id) {
-        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false, Optional.empty(), 0);
     }
 
     /** Returns the production {@link ApplicationVersion} with this revision ID. */

@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
@@ -27,12 +28,12 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -170,7 +171,40 @@ public class DeploymentStatus {
     }
 
     /** Returns change potentially with a compatibility platform added, if required for the change to roll out to the given instance. */
-    public Change withCompatibilityPlatform(Change change, InstanceName instance) {
+    public Change withPermittedPlatform(Change change, InstanceName instance, boolean allowOudatedPlatform) {
+        Change augmented = withCompatibilityPlatform(change, instance);
+        if (allowOudatedPlatform)
+            return augmented;
+
+        boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().asList().stream()
+                                                                                        .anyMatch(job -> job.runs().values().stream()
+                                                                                                            .anyMatch(run -> run.versions().targetPlatform().getMajor() == platform.getMajor())))
+                                                     .orElse(false);
+
+        // Verify target platform is either current, or was previously deployed for this app.
+        if (augmented.platform().isPresent() && ! versionStatus.isOnCurrentMajor(augmented.platform().get()) && ! alreadyDeployedOnPlatform)
+            throw new IllegalArgumentException("platform version " + augmented.platform().get() + " is not on a current major version in this system");
+
+        Version latestHighConfidencePlatform = null;
+        for (VespaVersion platform : versionStatus.deployableVersions())
+            if (platform.confidence().equalOrHigherThan(Confidence.high))
+                latestHighConfidencePlatform = platform.versionNumber();
+
+        // Verify package is compatible with the current major, or newer, or that there already are deployments on a compatible, outdated platform.
+        if (latestHighConfidencePlatform != null) {
+            Version target = latestHighConfidencePlatform;
+            augmented.revision().flatMap(revision -> application.revisions().get(revision).compileVersion())
+                     .filter(target::isAfter)
+                     .ifPresent(compiled -> {
+                         if (versionCompatibility.apply(instance).refuse(target, compiled) && ! alreadyDeployedOnPlatform)
+                             throw new IllegalArgumentException("compile version " + compiled + " is incompatible with the current major version of this system");
+                     });
+        }
+
+        return augmented;
+    }
+
+    private Change withCompatibilityPlatform(Change change, InstanceName instance) {
         if (change.revision().isEmpty())
             return change;
 
@@ -184,7 +218,7 @@ public class DeploymentStatus {
         if (change.platform().map(compatibleWithCompileVersion::test).orElse(false))
             return change;
 
-        if (   application.productionDeployments().isEmpty() // TODO: replace with adding this for test jobs when needed
+        if (   application.productionDeployments().isEmpty()
             || application.productionDeployments().getOrDefault(instance, List.of()).stream()
                           .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
             for (Version platform : targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy()))
@@ -314,13 +348,23 @@ public class DeploymentStatus {
 
     /** Fall back to the newest, deployable platform, which is compatible with what we want to deploy. */
     public Version fallbackPlatform(Change change, JobId job) {
+        InstanceName instance = job.application().instance();
         Optional<Version> compileVersion = change.revision().map(application.revisions()::get).flatMap(ApplicationVersion::compileVersion);
-        if (compileVersion.isEmpty())
-            return systemVersion;
+        List<Version> targets = targetsForPolicy(versionStatus,
+                                                 systemVersion,
+                                                 application.deploymentSpec().instance(instance)
+                                                            .map(DeploymentInstanceSpec::upgradePolicy)
+                                                            .orElse(UpgradePolicy.defaultPolicy));
 
-        for (VespaVersion version : reversed(versionStatus.deployableVersions()))
-            if (versionCompatibility.apply(job.application().instance()).accept(version.versionNumber(), compileVersion.get()))
-                return version.versionNumber();
+        // Prefer fallback with proper confidence.
+        for (Version target : targets)
+            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target, compileVersion.get()))
+                return target;
+
+        // Try fallback with any confidence.
+        for (VespaVersion target : reversed(versionStatus.deployableVersions()))
+            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target.versionNumber(), compileVersion.get()))
+                return target.versionNumber();
 
         throw new IllegalArgumentException("no legal platform version exists in this system for compile version " + compileVersion.get());
     }

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -30,7 +31,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
-import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -581,16 +582,16 @@ public class JobController {
     }
 
     private void validate(TenantAndApplicationId id, Submission submission) {
+        controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
+        controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
+
         validateTests(id, submission);
-        validateParentVersion(id, submission);
         validateMajorVersion(id, submission);
     }
 
     private void validateTests(TenantAndApplicationId id, Submission submission) {
-        TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
-        if (testSummary.problems().isEmpty())
-            controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
-        else
+        var testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
+        if ( ! testSummary.problems().isEmpty())
             controller.notificationsDb().setNotification(NotificationSource.from(id),
                                                          Type.testPackage,
                                                          Notification.Level.warning,
@@ -598,29 +599,12 @@ public class JobController {
 
     }
 
-    private void validateParentVersion(TenantAndApplicationId id, Submission submission) {
-        submission.applicationPackage().parentVersion().ifPresent(parent -> {
-            if (parent.getMajor() < controller.readSystemVersion().getMajor())
-                controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.submission,
-                                                             Notification.Level.warning,
-                                                             "Parent version used to compile the application is on a " +
-                                                             "lower major version than the current Vespa Cloud version");
-            else
-                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
-        });
-   }
-
     private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
-            if (explicitMajor < 8)
-                controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                             Type.applicationPackage,
-                                                             Notification.Level.warning,
-                                                             "Vespa 7 will soon be end of life, upgrade to Vespa 8 now:" +
-                                                             "https://cloud.vespa.ai/en/vespa8-release-notes.html");
-            else
-                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.applicationPackage);
+            if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
+                controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
+                                                             "Vespa " + explicitMajor + " will soon be end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
+                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
         });
     }
 
@@ -692,11 +676,12 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        deploy(id, type, platform, applicationPackage, false);
+        deploy(id, type, platform, applicationPackage, false, false);
     }
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
-    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage,
+                       boolean dryRun, boolean allowOutdatedPlatform) {
         if ( ! controller.zoneRegistry().hasZone(type.zone()))
             throw new IllegalArgumentException(type.zone() + " is not present in this system");
 
@@ -716,13 +701,18 @@ public class JobController {
 
         long build = 1 + lastRun.map(run -> run.versions().targetRevision().number()).orElse(0L);
         RevisionId revisionId = RevisionId.forDevelopment(build, new JobId(id, type));
-        ApplicationVersion version = ApplicationVersion.forDevelopment(revisionId, applicationPackage.compileVersion());
+        ApplicationVersion version = ApplicationVersion.forDevelopment(revisionId, applicationPackage.compileVersion(), applicationPackage.deploymentSpec().majorVersion());
 
         byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance())));
+            if (   ! allowOutdatedPlatform
+                && ! controller.readVersionStatus().isOnCurrentMajor(targetPlatform)
+                &&   runs(id, type).values().stream().noneMatch(run -> run.versions().targetPlatform().getMajor() == targetPlatform.getMajor()))
+                throw new IllegalArgumentException("platform version " + targetPlatform + " is not on a current major version in this system");
+
+            controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             controller.applications().store(application.withRevisions(revisions -> revisions.with(version)));
             start(id,
                   type,
@@ -754,9 +744,14 @@ public class JobController {
 
     private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
         // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
-        List<Version> versions = controller.readVersionStatus().deployableVersions().stream()
-                                           .map(VespaVersion::versionNumber)
-                                           .collect(toList());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        Version systemVersion = controller.systemVersion(versionStatus);
+
+        List<Version> versions = new ArrayList<>(List.of(systemVersion));
+        for (VespaVersion version : versionStatus.deployableVersions())
+            if (version.confidence().equalOrHigherThan(Confidence.normal))
+                versions.add(version.versionNumber());
+
         instance.map(Instance::deployments)
                 .map(deployments -> deployments.get(id.zoneId()))
                 .map(Deployment::version)

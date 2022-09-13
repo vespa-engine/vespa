@@ -92,6 +92,7 @@ public class ApplicationSerializerTest {
                 Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
                 Optional.of("william@shakespeare"),
                 Optional.of(Version.fromString("1.2.3")),
+                Optional.of(123),
                 Optional.of(Instant.ofEpochMilli(666)),
                 Optional.empty(),
                 Optional.of("best commit"),
@@ -161,6 +162,8 @@ public class ApplicationSerializerTest {
         assertEquals(applicationVersion1, serialized.revisions().last().get());
         assertEquals(applicationVersion1, serialized.revisions().get(serialized.instances().get(id1.instance()).deployments().get(zone1).revision()));
         assertEquals(original.revisions().last(), serialized.revisions().last());
+        assertEquals(original.revisions().last().get().compileVersion(), serialized.revisions().last().get().compileVersion());
+        assertEquals(original.revisions().last().get().allowedMajor(), serialized.revisions().last().get().allowedMajor());
         assertEquals(original.revisions().last().get().authorEmail(), serialized.revisions().last().get().authorEmail());
         assertEquals(original.revisions().last().get().buildTime(), serialized.revisions().last().get().buildTime());
         assertEquals(original.revisions().last().get().sourceUrl(), serialized.revisions().last().get().sourceUrl());

@@ -66,10 +66,11 @@ public class Notification {
     }
 
     public enum Type {
+
         /** Related to contents of application package, e.g., usage of deprecated features/syntax */
         applicationPackage,
 
-        /** Related to contents of application package, e.g., old parent or compile version, or errors detectable on submission */
+        /** Related to contents of application package detectable by the controller on submission */
         submission,
 
         /** Related to contents of application test package, e.g., mismatch between deployment spec and provided tests */
@@ -83,6 +84,7 @@ public class Notification {
 
         /** Application cluster is reindexing document(s) */
         reindex
+
     }
 
 }

@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.calculateHash;
 
@@ -42,6 +43,7 @@ public class Submission {
                                                 source,
                                                 authorEmail,
                                                 applicationPackage.compileVersion(),
+                                                applicationPackage.deploymentSpec().majorVersion(),
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
                                                 source.map(SourceRevision::commit),

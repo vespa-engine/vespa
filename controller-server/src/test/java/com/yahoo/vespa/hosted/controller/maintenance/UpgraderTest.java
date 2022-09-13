@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -41,6 +42,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.Cha
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -661,8 +663,8 @@ public class UpgraderTest {
 
     @Test
     void testPinningMajorVersionInDeploymentXml() {
-        Version version = Version.fromString("6.2");
-        tester.controllerTester().upgradeSystem(version);
+        Version version0 = Version.fromString("6.2");
+        tester.controllerTester().upgradeSystem(version0);
 
         ApplicationPackageBuilder builder = new ApplicationPackageBuilder().region("us-west-1").majorVersion(7);
         ApplicationPackage defaultPackage = new ApplicationPackageBuilder().region("us-west-1").build();
@@ -674,7 +676,7 @@ public class UpgraderTest {
         var lazyApp = tester.newDeploymentContext().submit(defaultPackage).deploy();
 
         // New major version is released; more apps upgrade with increasing confidence.
-        version = Version.fromString("7.0");
+        Version version = Version.fromString("7.0");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().overrideConfidence(version, Confidence.broken);
         tester.controllerTester().computeVersionStatus();
@@ -921,8 +923,20 @@ public class UpgraderTest {
                         instance -> instance.withChange(instance.change().withoutPin()))));
         tester.upgrader().maintain();
         assertEquals(version1,
-                app1.instance().change().platform().orElseThrow(),
-                "Application upgrades to latest allowed major");
+                     app1.instance().change().platform().orElseThrow(),
+                     "Application upgrades to latest allowed major");
+
+        // Version on old major becomes legacy, so app upgrades once it does not specify the old major in deployment spec.
+        app1.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).runJob(productionUsEast3);
+        app1.submit(new ApplicationPackageBuilder().majorVersion(6).region("us-east-3").region("us-west-1").build()).deploy();
+        tester.upgrader().maintain();
+        assertEquals(Change.empty(), app1.instance().change());
+
+        app1.submit(new ApplicationPackageBuilder().region("us-east-3").region("us-west-1").build()).deploy();
+        tester.upgrader().overrideConfidence(version1, Confidence.legacy);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version2), app1.instance().change());
     }
 
     @Test

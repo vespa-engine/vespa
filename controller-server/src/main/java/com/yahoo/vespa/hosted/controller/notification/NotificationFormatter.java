@@ -28,21 +28,14 @@ public class NotificationFormatter {
     }
 
     public FormattedNotification format(Notification n) {
-        switch (n.type()) {
-            case applicationPackage:
-            case submission:
-                return applicationPackage(n);
-            case deployment:
-                return deployment(n);
-            case testPackage:
-                return testPackage(n);
-            case reindex:
-                return reindex(n);
-            case feedBlock:
-                return feedBlock(n);
-            default:
-                return new FormattedNotification(n, n.type().name(), "", zoneRegistry.dashboardUrl(n.source().tenant()));
-        }
+        return switch (n.type()) {
+            case applicationPackage, submission -> applicationPackage(n);
+            case deployment -> deployment(n);
+            case testPackage -> testPackage(n);
+            case reindex -> reindex(n);
+            case feedBlock -> feedBlock(n);
+            default -> new FormattedNotification(n, n.type().name(), "", zoneRegistry.dashboardUrl(n.source().tenant()));
+        };
     }
 
     private FormattedNotification applicationPackage(Notification n) {
@@ -132,13 +125,10 @@ public class NotificationFormatter {
         var applicationId = ApplicationId.from(source.tenant(), application, instance);
         Function<Environment, URI> link = (Environment env) -> zoneRegistry.dashboardUrl(new RunId(applicationId, jobType, runNumber));
         var environment = jobType.zone().environment();
-        switch (environment) {
-            case dev:
-            case perf:
-                return link.apply(environment);
-            default:
-                return link.apply(Environment.prod);
-        }
+        return switch (environment) {
+            case dev, perf -> link.apply(environment);
+            default -> link.apply(Environment.prod);
+        };
     }
 
     private String jobText(NotificationSource source) {
@@ -162,14 +152,11 @@ public class NotificationFormatter {
     }
 
     private String levelText(Notification.Level level, int count) {
-        switch (level) {
-            case error:
-                return "failed";
-            case warning:
-                return count > 1 ? Text.format("%d warnings", count) : "a warning";
-            default:
-                return count > 1 ? Text.format("%d messages", count) : "a message";
-        }
+        return switch (level) {
+            case error -> "failed";
+            case warning -> count > 1 ? Text.format("%d warnings", count) : "a warning";
+            default -> count > 1 ? Text.format("%d messages", count) : "a message";
+        };
     }
 
     private String clusterInfo(NotificationSource source) {

@@ -119,12 +119,8 @@ public class Versions {
     }
 
     /** Create versions using given change and application */
-    public static Versions from(Change change, Application application, Optional<Deployment> deployment,
-                                Version defaultPlatformVersion) {
-        return new Versions(targetPlatform(application, change, deployment.map(Deployment::version), defaultPlatformVersion),
-                            targetRevision(application, change, deployment.map(Deployment::revision)),
-                            deployment.map(Deployment::version),
-                            deployment.map(Deployment::revision));
+    public static Versions from(Change change, Application application, Optional<Deployment> deployment, Version defaultPlatformVersion) {
+        return from(change, application, deployment.map(Deployment::version), deployment.map(Deployment::revision), defaultPlatformVersion);
     }
 
     private static Version targetPlatform(Application application, Change change, Optional<Version> existing,
