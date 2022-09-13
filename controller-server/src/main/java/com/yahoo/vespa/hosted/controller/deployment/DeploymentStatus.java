@@ -656,6 +656,7 @@ public class DeploymentStatus {
     /** The test jobs that need to run prior to the given production deployment jobs. */
     public Map<JobId, List<Job>> testJobs(Map<JobId, List<Job>> jobs) {
         Map<JobId, List<Job>> testJobs = new LinkedHashMap<>();
+        // First, look for a declared test in the instance of each production job.
         jobs.forEach((job, versionsList) -> {
             for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
                 if (job.type().isProduction() && job.type().isDeployment()) {
@@ -673,6 +674,7 @@ public class DeploymentStatus {
                 }
             }
         });
+        // If no declared test in the right instance was triggered, pick one from a different instance.
         jobs.forEach((job, versionsList) -> {
             for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
                 for (Job productionJob : versionsList)
@@ -680,7 +682,8 @@ public class DeploymentStatus {
                         && allJobs.successOn(testType, productionJob.versions()).asList().isEmpty()
                         && testJobs.keySet().stream()
                                    .noneMatch(test ->    test.type().equals(testType) && test.type().zone().equals(testType.zone())
-                                                      && testJobs.get(test).stream().anyMatch(testJob -> testJob.versions().equals(productionJob.versions())))) {
+                                                      && testJobs.get(test).stream().anyMatch(testJob -> test.type().isSystemTest() ? testJob.versions().targetsMatch(productionJob.versions())
+                                                                                                                                    : testJob.versions().equals(productionJob.versions())))) {
                         JobId testJob = firstDeclaredOrElseImplicitTest(testType);
                         testJobs.merge(testJob,
                                        List.of(new Job(testJob.type(),

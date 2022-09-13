@@ -63,7 +63,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.tes
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.util.Collections.copy;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -2563,12 +2562,18 @@ public class DeploymentTriggerTest {
         assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
     }
 
-
     @Test
     void testInstancesWithMultipleClouds() {
         String spec = """
                       <deployment>
                         <parallel>
+                          <instance id='separate'>
+                            <test />
+                            <staging />
+                            <prod>
+                              <region>alpha-centauri</region>
+                            </prod>
+                          </instance>
                           <instance id='independent'>
                             <test />
                           </instance>
@@ -2599,10 +2604,9 @@ public class DeploymentTriggerTest {
                               </prod>
                             </instance>
                           </steps>
-                          <instance id='separate'>
-                            <staging />
+                          <instance id='dependent'>
                             <prod>
-                              <region>alpha-centauri</region>
+                              <region>us-east-3</region>
                             </prod>
                           </instance>
                         </parallel>
@@ -2620,17 +2624,18 @@ public class DeploymentTriggerTest {
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
 
         ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
-        DeploymentContext app = tester.newDeploymentContext("tenant", "application", "alpha").submit(appPackage);
+        DeploymentContext app = tester.newDeploymentContext("tenant", "application", "alpha").submit(appPackage).deploy();
+        app.submit(appPackage);
         Map<JobId, List<DeploymentStatus.Job>> jobs = app.deploymentStatus().jobsToRun();
 
         JobType centauriTest = JobType.systemTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
         JobType centauriStaging = JobType.stagingTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
+        assertQueued("separate", jobs, centauriTest);
+        assertQueued("separate", jobs, stagingTest, centauriStaging);
         assertQueued("independent", jobs, systemTest, centauriTest);
         assertQueued("alpha", jobs, systemTest);
         assertQueued("beta", jobs, centauriTest);
         assertQueued("gamma", jobs, centauriTest);
-        assertQueued("nu", jobs, stagingTest);
-        assertQueued("separate", jobs, centauriStaging);
 
         // Once alpha runs its default system test, it also runs the centauri system test, as omega depends on it.
         app.runJob(systemTest);
