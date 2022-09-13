@@ -54,6 +54,8 @@ public class DispatchGroup {
 
     public int getSearchableCopies() { return sc.getSearchableCopies(); }
 
+    public int getRedundancy() { return sc.getRedundancy(); }
+
     static class Iterator implements java.util.Iterator<SearchInterface> {
 
         private java.util.Iterator<Map<Integer, SearchInterface>> it1;
