@@ -515,6 +515,14 @@ public class Flags {
             "Lock scheme for tenant-related controller locks (valid values: OLD, BOTH, NEW)",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag COMPUTE_COVERAGE_FROM_TARGET_ACTIVE_DOCS = defineFeatureFlag(
+            "compute-coverage-from-target-active-docs", false,
+            List.of("baldersheim", "vekterli"), "2022-09-13", "2022-11-01",
+            "Whether degraded coverage computation will take target active docs into " +
+            "account, not just currently active docs",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
