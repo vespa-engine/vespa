@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.dns;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -20,22 +20,15 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class NameServiceQueue {
+public record NameServiceQueue(List<NameServiceRequest> requests) {
 
     public static final NameServiceQueue EMPTY = new NameServiceQueue(List.of());
 
     private static final Logger log = Logger.getLogger(NameServiceQueue.class.getName());
 
-    private final LinkedList<NameServiceRequest> requests;
-
     /** DO NOT USE. Public for serialization purposes */
     public NameServiceQueue(List<NameServiceRequest> requests) {
-        this.requests = new LinkedList<>(Objects.requireNonNull(requests, "requests must be non-null"));
-    }
-
-    /** Returns a view of requests in this queue */
-    public List<NameServiceRequest> requests() {
-        return Collections.unmodifiableList(requests);
+        this.requests = List.copyOf(Objects.requireNonNull(requests, "requests must be non-null"));
     }
 
     /** Returns a copy of this containing the last n requests */
@@ -50,13 +43,18 @@ public class NameServiceQueue {
 
     /** Returns a copy of this with given request queued according to priority */
     public NameServiceQueue with(NameServiceRequest request, Priority priority) {
-        var queue = new NameServiceQueue(this.requests);
-        if (priority == Priority.high) {
-            queue.requests.addFirst(request);
-        } else {
-            queue.requests.add(request);
+        List<NameServiceRequest> copy = new ArrayList<>(this.requests.size() + 1);
+        switch (priority) {
+            case normal -> {
+                copy.addAll(this.requests);
+                copy.add(request);
+            }
+            case high -> {
+                copy.add(request);
+                copy.addAll(this.requests);
+            }
         }
-        return queue;
+        return new NameServiceQueue(copy);
     }
 
     /** Returns a copy of this with given request added */
@@ -73,19 +71,18 @@ public class NameServiceQueue {
         requireNonNegative(n);
         if (requests.isEmpty()) return this;
 
-        var queue = new NameServiceQueue(requests);
-        for (int i = 0; i < n && !queue.requests.isEmpty(); i++) {
-            var request = queue.requests.peek();
+        LinkedList<NameServiceRequest> copy = new LinkedList<>(requests);
+        for (int i = 0; i < n && !copy.isEmpty(); i++) {
+            var request = copy.peek();
             try {
                 request.dispatchTo(nameService);
-                queue.requests.poll();
+                copy.poll();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
                                           ", request will be retried");
             }
         }
-
-        return queue;
+        return new NameServiceQueue(copy);
     }
 
     @Override
