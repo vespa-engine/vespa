@@ -97,6 +97,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -113,6 +114,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
+
+    // Data plane port for hosted Vespa
+    static final int HOSTED_VESPA_DATAPLANE_PORT = 4443;
 
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
@@ -450,11 +454,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride, proxyProtocolMixedMode)
+                    serverName, endpointCertificateSecrets, getTlsClientAuthorities(deployState), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
                     : HostedSslConnectorFactory.withProvidedCertificate(
-                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode);
+                    serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride, proxyProtocolMixedMode);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
@@ -540,7 +544,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addIncludes(searchElement);
         cluster.setSearch(buildSearch(deployState, cluster, searchElement));
 
-        addSearchHandler(cluster, searchElement);
+        addSearchHandler(deployState, cluster, searchElement);
 
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
@@ -591,7 +595,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addSearchAndDocprocBundles();
         addIncludes(processingElement);
         cluster.setProcessingChains(new DomProcessingBuilder(null).build(deployState, cluster, processingElement),
-                                    serverBindings(processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));
+                                    serverBindings(deployState, processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));
         validateAndAddConfiguredComponents(deployState, cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
@@ -616,7 +620,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder(cluster).build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster, OptionalInt.of(HOSTED_VESPA_DATAPLANE_PORT)).build(deployState, cluster, component));
         }
     }
 
@@ -875,9 +879,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
-    private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
+    private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement) {
+        BindingPattern bindingPattern = SearchHandler.DEFAULT_BINDING;
+        if (deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()) {
+            bindingPattern = SearchHandler.bindingPattern(Optional.of(Integer.toString(HOSTED_VESPA_DATAPLANE_PORT)));
+        }
         SearchHandler searchHandler = new SearchHandler(cluster,
-                                                        serverBindings(searchElement, SearchHandler.DEFAULT_BINDING),
+                                                        serverBindings(deployState, searchElement, bindingPattern),
                                                         ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null));
         cluster.addComponent(searchHandler);
 
@@ -885,24 +893,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY_CLASS, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
-    private List<BindingPattern> serverBindings(Element searchElement, BindingPattern... defaultBindings) {
+    private List<BindingPattern> serverBindings(DeployState deployState, Element searchElement, BindingPattern... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
             return List.of(defaultBindings);
 
-        return toBindingList(bindings);
+        return toBindingList(deployState, bindings);
     }
 
-    private List<BindingPattern> toBindingList(List<Element> bindingElements) {
+    private List<BindingPattern> toBindingList(DeployState deployState, List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
-
+        OptionalInt port = deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings() ? OptionalInt.of(HOSTED_VESPA_DATAPLANE_PORT) : OptionalInt.empty();
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(UserBindingPattern.fromPattern(text));
+                result.add(userBindingPattern(text, port));
         }
 
         return result;
+    }
+    private static UserBindingPattern userBindingPattern(String path, OptionalInt port) {
+        UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
+        return port.isPresent()
+                ? bindingPattern.withPort(port.getAsInt())
+                : bindingPattern;
     }
 
     private ContainerDocumentApi buildDocumentApi(ApplicationContainerCluster cluster, Element spec) {
@@ -911,8 +925,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
+        OptionalInt portBindingOverride = cluster.isHostedVespa()? OptionalInt.of(HOSTED_VESPA_DATAPLANE_PORT) : OptionalInt.empty();
         return new ContainerDocumentApi(cluster, documentApiOptions,
-                                        "true".equals(XML.getValue(ignoreUndefinedFields)));
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride);
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
