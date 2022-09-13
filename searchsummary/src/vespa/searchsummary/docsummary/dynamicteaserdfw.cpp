@@ -5,6 +5,7 @@
 #include "i_docsum_store_document.h"
 #include "i_juniper_converter.h"
 #include "juniper_query_adapter.h"
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 #include <vespa/juniper/result.h>
@@ -114,6 +115,7 @@ public:
     JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state);
     ~JuniperConverter() override;
     void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter) override;
+    void insert_juniper_field(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
 };
 
 JuniperConverter::JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state)
@@ -130,6 +132,12 @@ void
 JuniperConverter::insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter)
 {
     _writer.insert_juniper_field(_doc_id, input, _state, inserter);
+}
+
+void
+JuniperConverter::insert_juniper_field(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter)
+{
+    _writer.insert_juniper_field(_doc_id, input.getValueRef(), _state, inserter);
 }
 
 }
