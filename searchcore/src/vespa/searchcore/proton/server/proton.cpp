@@ -536,17 +536,15 @@ size_t Proton::getNumDocs() const
     return numDocs;
 }
 
-std::pair<size_t, size_t>
+ActiveDocs
 Proton::getNumActiveDocs() const
 {
-    size_t activeDocs(0), targetActiveDocs(0);
+    ActiveDocs sum;
     std::shared_lock<std::shared_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
-        const auto & docs = kv.second->getNumActiveDocs();
-        activeDocs += docs.first;
-        targetActiveDocs += docs.second;
+        sum += kv.second->getNumActiveDocs();
     }
-    return {activeDocs, targetActiveDocs};
+    return sum;
 }
 
 search::engine::SearchServer &
@@ -729,9 +727,9 @@ Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
     ret.distribution_key = protonConfig.distributionkey;
     if (_matchEngine->isOnline()) {
         ret.timestamp = 42;
-        auto [active, targetActive] = getNumActiveDocs();
-        ret.activeDocs = active;
-        ret.targetActiveDocs = targetActive;
+        auto docs = getNumActiveDocs();
+        ret.activeDocs = docs.active;
+        ret.targetActiveDocs = docs.target_active;
     } else {
         ret.timestamp = 0;
         ret.activeDocs = 0;

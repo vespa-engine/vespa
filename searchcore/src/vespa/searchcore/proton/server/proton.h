@@ -198,7 +198,7 @@ public:
 
     size_t getNumDocs() const;
     // Active (searchable), and targetActive that will be searchable when idealstate is reached
-    std::pair<size_t, size_t> getNumActiveDocs() const;
+    ActiveDocs getNumActiveDocs() const;
 
     search::engine::SearchServer &get_search_server();
     search::engine::DocsumServer &get_docsum_server();

@@ -57,6 +57,18 @@ struct MetricsWireService;
 
 namespace matching { class SessionManager; }
 
+struct ActiveDocs {
+    ActiveDocs() noexcept : active(0), target_active(0) { }
+    ActiveDocs(size_t active_in, size_t target_active_in) noexcept : active(active_in), target_active(target_active_in) { }
+    ActiveDocs & operator += (const ActiveDocs & b) {
+        active += b.active;
+        target_active += b.target_active;
+        return *this;
+    }
+    size_t active;
+    size_t target_active;
+};
+
 /**
  * The document database contains all the necessary structures required per
  * document type. It has an internal single-threaded Executor to process input
@@ -302,7 +314,7 @@ public:
      *
      * @return The active and target-active document count.
      */
-    std::pair<size_t, size_t> getNumActiveDocs() const;
+    ActiveDocs getNumActiveDocs() const;
 
     /**
      * Returns the base directory that this document database uses when
