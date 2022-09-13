@@ -43,7 +43,9 @@ struct TermExpander : QueryVisitor {
     void visit(ONear &) override {}
     void visit(Or &) override {}
     void visit(Phrase &n) override { expand(n); }
-    void visit(SameElement &n) override { expand(n); }
+    void visit(SameElement &) override {
+        // TODO expand(n) once we figure out to handle artificial terms in matched-elements-only;
+    }
     void visit(PrefixTerm &) override {}
     void visit(RangeTerm &) override {}
     void visit(Rank &) override {}

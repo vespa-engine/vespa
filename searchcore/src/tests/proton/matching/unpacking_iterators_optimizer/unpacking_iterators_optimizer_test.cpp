@@ -124,8 +124,14 @@ Node::UP make_query_tree() {
     builder.addOr(3);
     builder.addStringTerm("t2", view, id, weight);
     add_phrase(builder);
+#if ENABLE_SAME_ELEMENT_SPLIT
+    //TODO Enable once matched-elements-only and artificial terms are handled
     add_same_element(builder);
     add_same_element(builder);
+#else
+    builder.addStringTerm("x1", view, id, weight);
+    builder.addStringTerm("x2", view, id, weight);
+#endif
     add_phrase(builder);
     builder.addStringTerm("t1", view, id, weight);
     return builder.build();
@@ -135,12 +141,6 @@ Node::UP make_query_tree() {
 
 std::string plain_phrase_dump =
     "Phrase 3\n"
-    "  Term a\n"
-    "  Term b\n"
-    "  Term c\n";
-
-std::string delayed_phrase_dump =
-    "Phrase 3 expensive\n"
     "  Term a\n"
     "  Term b\n"
     "  Term c\n";
@@ -162,11 +162,6 @@ std::string plain_same_element_dump =
     "  Term x\n"
     "  Term y\n";
 
-std::string delayed_same_element_dump =
-    "SameElement 2 expensive\n"
-    "  Term x\n"
-    "  Term y\n";
-
 std::string split_same_element_dump =
     "And 3\n"
     "  SameElement 2 expensive\n"
@@ -177,6 +172,7 @@ std::string split_same_element_dump =
 
 //-----------------------------------------------------------------------------
 
+#if ENABLE_SAME_ELEMENT_SPLIT
 std::string plain_query_tree_dump =
     "And 4\n"
     "  Or 3\n"
@@ -196,27 +192,25 @@ std::string plain_query_tree_dump =
     "    Term b\n"
     "    Term c\n"
     "  Term t1\n";
+#else
+std::string plain_query_tree_dump =
+        "And 4\n"
+        "  Or 3\n"
+        "    Term t2\n"
+        "    Phrase 3\n"
+        "      Term a\n"
+        "      Term b\n"
+        "      Term c\n"
+        "    Term x1\n"
+        "  Term x2\n"
+        "  Phrase 3\n"
+        "    Term a\n"
+        "    Term b\n"
+        "    Term c\n"
+        "  Term t1\n";
+#endif
 
-std::string delayed_query_tree_dump =
-    "And 4\n"
-    "  Or 3\n"
-    "    Term t2\n"
-    "    Phrase 3 expensive\n"
-    "      Term a\n"
-    "      Term b\n"
-    "      Term c\n"
-    "    SameElement 2 expensive\n"
-    "      Term x\n"
-    "      Term y\n"
-    "  SameElement 2 expensive\n"
-    "    Term x\n"
-    "    Term y\n"
-    "  Phrase 3 expensive\n"
-    "    Term a\n"
-    "    Term b\n"
-    "    Term c\n"
-    "  Term t1\n";
-
+#if ENABLE_SAME_ELEMENT_SPLIT
 std::string split_query_tree_dump =
     "And 9\n"
     "  Or 3\n"
@@ -241,31 +235,26 @@ std::string split_query_tree_dump =
     "  Term a cheap\n"
     "  Term b cheap\n"
     "  Term c cheap\n";
-
-std::string delayed_split_query_tree_dump =
-    "And 9\n"
-    "  Or 3\n"
-    "    Term t2\n"
-    "    Phrase 3 expensive\n"
-    "      Term a\n"
-    "      Term b\n"
-    "      Term c\n"
-    "    SameElement 2 expensive\n"
-    "      Term x\n"
-    "      Term y\n"
-    "  SameElement 2 expensive\n"
-    "    Term x\n"
-    "    Term y\n"
-    "  Phrase 3 expensive\n"
-    "    Term a\n"
-    "    Term b\n"
-    "    Term c\n"
-    "  Term t1\n"
-    "  Term x cheap\n"
-    "  Term y cheap\n"
-    "  Term a cheap\n"
-    "  Term b cheap\n"
-    "  Term c cheap\n";
+#else
+std::string split_query_tree_dump =
+        "And 7\n"
+        "  Or 3\n"
+        "    Term t2\n"
+        "    Phrase 3\n"
+        "      Term a\n"
+        "      Term b\n"
+        "      Term c\n"
+        "    Term x1\n"
+        "  Term x2\n"
+        "  Phrase 3 expensive\n"
+        "    Term a\n"
+        "    Term b\n"
+        "    Term c\n"
+        "  Term t1\n"
+        "  Term a cheap\n"
+        "  Term b cheap\n"
+        "  Term c cheap\n";
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -301,11 +290,14 @@ TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be
     EXPECT_EQ(actual3, expect);
 }
 
+#if ENABLE_SAME_ELEMENT_SPLIT
+//TODO Enable once matched-elements-only and artificial terms are handled
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_split) {
     std::string actual1 = dump_query(*optimize(make_same_element(), true, true));
     std::string expect = split_same_element_dump;
     EXPECT_EQ(actual1, expect);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 
