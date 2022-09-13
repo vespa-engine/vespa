@@ -1114,7 +1114,7 @@ TEST_F("NN blueprint handles empty filter (post-filtering)", NearestNeighborBlue
 TEST_F("NN blueprint handles strong filter (pre-filtering)", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint();
-    auto filter = search::BitVector::create(11);
+    auto filter = search::BitVector::create(1,11);
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
@@ -1128,7 +1128,7 @@ TEST_F("NN blueprint handles strong filter (pre-filtering)", NearestNeighborBlue
 TEST_F("NN blueprint handles weak filter (pre-filtering)", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint();
-    auto filter = search::BitVector::create(11);
+    auto filter = search::BitVector::create(1,11);
     filter->setBit(1);
     filter->setBit(3);
     filter->setBit(5);
@@ -1147,7 +1147,7 @@ TEST_F("NN blueprint handles weak filter (pre-filtering)", NearestNeighborBluepr
 TEST_F("NN blueprint handles strong filter triggering exact search", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint(true, 0.2);
-    auto filter = search::BitVector::create(11);
+    auto filter = search::BitVector::create(1,11);
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));

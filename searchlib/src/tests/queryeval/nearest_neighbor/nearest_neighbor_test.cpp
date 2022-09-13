@@ -96,12 +96,7 @@ struct Fixture
 
     void setFilter(std::vector<uint32_t> docids) {
         uint32_t sz = _attr->getNumDocs();
-        auto bit_vector = BitVector::create(sz);
-        for (uint32_t id : docids) {
-            EXPECT_LT(id, sz);
-            bit_vector->setBit(id);
-        }
-        _global_filter = GlobalFilter::create(std::move(bit_vector));
+        _global_filter = GlobalFilter::create(docids, sz);
     }
 
     void setTensor(uint32_t docId, const Value &tensor) {
