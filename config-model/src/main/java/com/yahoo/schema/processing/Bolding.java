@@ -3,7 +3,6 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfileRegistry;
-import com.yahoo.document.DataType;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.Schema;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -26,16 +25,12 @@ public class Bolding extends Processor {
         if ( ! validate) return;
         for (ImmutableSDField field : schema.allConcreteFields()) {
             for (SummaryField summary : field.getSummaryFields().values()) {
-                if (summary.getTransform().isBolded() &&
-                    !((summary.getDataType() == DataType.STRING) || (summary.getDataType() == DataType.URI)))
-                {
+                if (summary.getTransform().isBolded() && !DynamicSummaryTransformUtils.hasSupportedType(summary)) {
                     throw new IllegalArgumentException("'bolding: on' for non-text field " +
                                                        "'" + field.getName() + "'" +
                                                        " (" + summary.getDataType() + ")" +
                                                        " is not allowed");
-                } else if (summary.getTransform().isDynamic() &&
-                           !((summary.getDataType() == DataType.STRING) || (summary.getDataType() == DataType.URI)))
-                {
+                } else if (summary.getTransform().isDynamic() && !DynamicSummaryTransformUtils.hasSupportedType(summary)) {
                     throw new IllegalArgumentException("'summary: dynamic' for non-text field " +
                                                        "'" + field.getName() + "'" +
                                                        " (" + summary.getDataType() + ")" +

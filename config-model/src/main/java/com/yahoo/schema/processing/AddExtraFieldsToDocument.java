@@ -10,6 +10,7 @@ import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -33,15 +34,14 @@ public class AddExtraFieldsToDocument extends Processor {
             }
             for (var docsum : schema.getSummaries().values()) {
                 for (var summaryField : docsum.getSummaryFields().values()) {
-                    switch (summaryField.getTransform()) {
-                    case NONE:
-                    case BOLDED:
-                    case DYNAMICBOLDED:
-                    case DYNAMICTEASER:
-                    case DOCUMENT_ID: // TODO: Adding the 'documentid' field should no longer be needed when the docsum framework in the backend has been simplified and the transform is always used.
+                    var transform = summaryField.getTransform();
+                    if (transform.isDynamic() && DynamicSummaryTransformUtils.summaryFieldIsRequiredInDocumentType(summaryField) ||
+                            transform == SummaryTransform.NONE ||
+                            transform == SummaryTransform.DOCUMENT_ID)
+                    {
+                        // TODO: Adding the 'documentid' field should no longer be needed when the docsum framework in the backend has been simplified and the transform is always used.
                         addSummaryField(schema, document, summaryField, validate);
-                        break;
-                    default:
+                    } else {
                         // skip: generated from attribute or similar,
                         // so does not need to be included as an extra
                         // field in the document type
