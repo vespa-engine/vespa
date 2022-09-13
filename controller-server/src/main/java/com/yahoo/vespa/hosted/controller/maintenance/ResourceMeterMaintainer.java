@@ -120,7 +120,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                     Map<ZoneId, Double> deploymentCosts = snapshotsByInstance.getOrDefault(instanceName, List.of()).stream()
                             .collect(Collectors.toUnmodifiableMap(
                                     ResourceSnapshot::getZoneId,
-                                    snapshot -> cost(snapshot.allocation(), systemName)));
+                                    snapshot -> cost(snapshot.allocation(), systemName),
+                                    Double::sum));
                     locked = locked.with(instanceName, i -> i.withDeploymentCosts(deploymentCosts));
                     updateCostMetrics(tenantAndApplication.instance(instanceName), deploymentCosts);
                 }
