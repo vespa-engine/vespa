@@ -55,7 +55,6 @@ public class VersionStatusUpdater extends ControllerMaintainer {
             case legacy -> legacy;
             case normal -> normal;
             case high -> high;
-            default -> throw new IllegalArgumentException("Unexpected confidence '" + confidence + "'");
         };
     }
 

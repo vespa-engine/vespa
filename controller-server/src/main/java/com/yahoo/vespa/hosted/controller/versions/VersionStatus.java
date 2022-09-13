@@ -265,7 +265,7 @@ public record VersionStatus(List<VespaVersion> versions) {
                                 confidence);
     }
 
-    /** Whether no version on a newer major, with normal or higher confidence, can be deployed. */
+    /** Whether no version on a newer major, with high confidence, can be deployed. */
     public boolean isOnCurrentMajor(Version version) {
         for (VespaVersion available : deployableVersions())
             if (   available.confidence().equalOrHigherThan(Confidence.high)
