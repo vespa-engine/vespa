@@ -125,7 +125,7 @@ Node::UP make_query_tree() {
     builder.addStringTerm("t2", view, id, weight);
     add_phrase(builder);
 #if ENABLE_SAME_ELEMENT_SPLIT
-    //TODO Enable once matched-elements-only and artifiscial terms are handled
+    //TODO Enable once matched-elements-only and artificial terms are handled
     add_same_element(builder);
     add_same_element(builder);
 #else
