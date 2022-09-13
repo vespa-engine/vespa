@@ -621,7 +621,7 @@ DocumentDB::getNumDocs() const
     }
 }
 
-std::pair<size_t, size_t>
+ActiveDocs
 DocumentDB::getNumActiveDocs() const
 {
     if (_state.get_load_done()) {
