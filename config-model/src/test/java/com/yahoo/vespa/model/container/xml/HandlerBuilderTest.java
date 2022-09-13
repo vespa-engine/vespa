@@ -115,6 +115,14 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    void does_not_restrict_default_bindings_in_hosted_vespa_when_disabled() {
+        DeployState deployState = new DeployState.Builder()
+                .properties(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(false))
+                .build();
+        verifyDefaultBindings(deployState, "http://*");
+    }
+
+    @Test
     void restricts_custom_bindings_in_hosted_vespa() {
         DeployState deployState = new DeployState.Builder()
                 .properties(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true))
@@ -125,7 +133,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void does_not_restrict_default_bindings_in_self_hosted() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(true))
+                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(false))
                 .build();
         verifyDefaultBindings(deployState, "http://*");
     }
@@ -133,7 +141,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void does_not_restrict_custom_bindings_in_self_hosted() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(true))
+                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(false))
                 .build();
         verifyCustomSearchBindings(deployState, "http://*");
     }
