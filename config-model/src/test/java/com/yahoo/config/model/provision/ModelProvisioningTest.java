@@ -39,8 +39,10 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -931,7 +933,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testLogForwarderNotInAdminCluster() {
+    public void testLogForwarderNotInAdminCluster(@TempDir Path splunkHome) {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -940,7 +942,7 @@ public class ModelProvisioningTest {
                         "      <nodes count='1' dedicated='true'/>" +
                         "    </logservers>" +
                         "    <logforwarding>" +
-                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
+                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' splunk-home=\"%s\" />".formatted(splunkHome.toString()) +
                         "    </logforwarding>" +
                         "  </admin>" +
                         "  <container version='1.0' id='foo'>" +
@@ -972,7 +974,7 @@ public class ModelProvisioningTest {
 
         var lfs = hostResource.getService("logforwarder");
         String shutdown = lfs.getPreShutdownCommand().orElse("<none>");
-        assertEquals("/usr/bin/env SPLUNK_HOME=/opt/splunkforwarder /opt/splunkforwarder/bin/splunk stop", shutdown);
+        assertEquals("/usr/bin/env SPLUNK_HOME=%1$s %1$s/bin/splunk stop".formatted(splunkHome.toString()), shutdown);
     }
 
 

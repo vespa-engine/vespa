@@ -5,6 +5,10 @@ import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
+
+import javax.swing.text.html.Option;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 public class LogForwarder extends AbstractService implements LogforwarderConfig.Producer {
@@ -86,7 +90,11 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         getConfig(builder);
         var cfg = new LogforwarderConfig(builder);
         var home = cfg.splunkHome();
-        return Optional.of("/usr/bin/env SPLUNK_HOME="+home+" "+home+"/bin/splunk stop");
+        if (Files.exists(Path.of(home))) {
+            return Optional.of("/usr/bin/env SPLUNK_HOME=" + home + " " + home + "/bin/splunk stop");
+        } else {
+            return Optional.empty();
+        }
     }
 
 }
