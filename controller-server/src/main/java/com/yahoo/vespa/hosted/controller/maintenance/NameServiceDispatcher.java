@@ -31,7 +31,9 @@ public class NameServiceDispatcher extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        int requestCount = trueIntervalInSeconds(); // Dispatch 1 request per second
+        // Dispatch 1 request per second on average. Note that this is not entirely accurate because a NameService
+        // implementation may need to perform multiple API-specific requests to execute a single NameServiceRequest
+        int requestCount = trueIntervalInSeconds();
         try (var lock = db.lockNameServiceQueue()) {
             var queue = db.readNameServiceQueue();
             var instant = clock.instant();
