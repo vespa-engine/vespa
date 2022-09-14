@@ -59,4 +59,5 @@ public class ANDPolicy implements DocumentProtocolRoutingPolicy {
 
     public void destroy() {
     }
+
 }

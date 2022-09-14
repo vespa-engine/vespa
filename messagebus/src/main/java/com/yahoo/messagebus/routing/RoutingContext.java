@@ -83,8 +83,8 @@ public class RoutingContext {
      * @return A modifiable list of recipients.
      */
     public List<Route> getMatchedRecipients() {
-        List<Route> ret = new ArrayList<Route>();
-        Set<String> done = new HashSet<String>();
+        List<Route> ret = new ArrayList<>();
+        Set<String> done = new HashSet<>();
         Hop hop = getHop();
         for (Route route : node.getRecipients()) {
             if (route.hasHops() && hop.matches(route.getHop(0))) {

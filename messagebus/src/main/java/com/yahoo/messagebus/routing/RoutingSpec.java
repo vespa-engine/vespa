@@ -30,7 +30,7 @@ public class RoutingSpec {
     /**
      * Creates an empty specification.
      *
-     * @param verify Whether or not this should be verified.
+     * @param verify Whether this should be verified.
      */
     public RoutingSpec(boolean verify) {
         this.verify = verify;

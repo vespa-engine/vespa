@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Simon Thoresen Hult
  */
 public class RetryPolicyTestCase {
+
     private static final double SMALL = 0.00000000000000000001;
 
     @Test

@@ -105,4 +105,5 @@ public class QueueAdapterTestCase {
             return 0;
         }
     }
+
 }

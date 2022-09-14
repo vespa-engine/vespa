@@ -113,7 +113,6 @@ public class AdvancedRoutingTestCase {
         // Done.
         reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
-        System.out.println(reply.getTrace());
         assertEquals(2, reply.getNumErrors());
         assertEquals(ErrorCode.FATAL_ERROR, reply.getError(0).getCode());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(1).getCode());

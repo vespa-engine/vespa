@@ -43,11 +43,7 @@ public class SlobrokTestCase {
     int        port3;
 
     void check(RPCNetwork net, String pattern, List<Mirror.Entry> expect) {
-        Comparator<Mirror.Entry> cmp = new Comparator<Mirror.Entry>() {
-            public int compare(Mirror.Entry a, Mirror.Entry b) {
-                return a.compareTo(b);
-            }
-        };
+        Comparator<Mirror.Entry> cmp = Comparator.naturalOrder();
         expect.sort(cmp);
         List<Mirror.Entry> actual = null;
         for (int i = 0; i < 1000; i++) {

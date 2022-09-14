@@ -99,4 +99,5 @@ public class RPCNetworkTestCase {
             return new MyProtocol(e);
         }
     }
+
 }

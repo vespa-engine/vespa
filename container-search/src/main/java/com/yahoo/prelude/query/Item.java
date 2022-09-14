@@ -432,7 +432,7 @@ public abstract class Item implements Cloneable {
         this.isRanked = isRanked;
     }
 
-    /** Returns whether or not this item should affect ranking. */
+    /** Returns whether this item should affect ranking. */
     public boolean isRanked() {
         return isRanked;
     }

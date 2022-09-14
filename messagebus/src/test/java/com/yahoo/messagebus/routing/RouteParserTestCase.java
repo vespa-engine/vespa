@@ -138,7 +138,6 @@ public class RouteParserTestCase {
 
     private static void assertError(Hop hop, String msg) {
         assertNotNull(hop);
-        System.out.println(hop.toDebugString());
         assertEquals(1, hop.getNumDirectives());
         assertErrorDirective(hop.getDirective(0), msg);
     }

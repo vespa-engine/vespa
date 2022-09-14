@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
-
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
@@ -17,11 +16,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 
 /**
  * @author havardpe
@@ -36,8 +34,8 @@ public class BasicNetworkTestCase {
     @BeforeEach
     public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
-        table.addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"));
-        table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
+        table.addHop("pxy", "test/pxy/session", List.of("test/pxy/session"));
+        table.addHop("dst", "test/dst/session", List.of("test/dst/session"));
         table.addRoute("test", Arrays.asList("pxy", "dst"));
         slobrok = new Slobrok();
         src = new TestServer("test/src", table, slobrok, null);
@@ -79,7 +77,7 @@ public class BasicNetworkTestCase {
 
         // check message on proxy
         Message msg = pxy_mr.getMessage(60);
-        assertTrue(msg != null);
+        assertNotNull(msg);
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         SimpleMessage sm = (SimpleMessage) msg;
         assertEquals("test message", sm.getValue());
@@ -90,7 +88,7 @@ public class BasicNetworkTestCase {
 
         // check message on server
         msg = dst_mr.getMessage(60);
-        assertTrue(msg != null);
+        assertNotNull(msg);
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         sm = (SimpleMessage) msg;
         assertEquals("test message pxy", sm.getValue());
@@ -102,7 +100,7 @@ public class BasicNetworkTestCase {
 
         // check reply on proxy
         Reply reply = pxy_rr.getReply(60);
-        assertTrue(reply != null);
+        assertNotNull(reply);
         assertEquals(SimpleProtocol.REPLY, reply.getType());
         sr = (SimpleReply) reply;
         assertEquals("test reply", sr.getValue());
@@ -113,7 +111,7 @@ public class BasicNetworkTestCase {
 
         // check reply on client
         reply = src_rr.getReply(60);
-        assertTrue(reply != null);
+        assertNotNull(reply);
         assertEquals(SimpleProtocol.REPLY, reply.getType());
         sr = (SimpleReply) reply;
         assertEquals("test reply pxy", sr.getValue());
