@@ -542,7 +542,10 @@ public class DeploymentStatus {
                 existingRevision = Optional.of(target.targetRevision());
             }
             List<Job> toRun = new ArrayList<>();
-            List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
+            List<Change> changes =    deployingCompatibilityChange
+                                   || allJobs.get(job).flatMap(status -> status.lastCompleted()).isEmpty()
+                                      ? List.of(change)
+                                      : changes(job, step, change);
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
                                        Versions.from(partial, application, existingPlatform, existingRevision, fallbackPlatform(partial, job)),
