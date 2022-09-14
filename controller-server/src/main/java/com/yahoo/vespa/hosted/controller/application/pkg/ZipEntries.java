@@ -67,6 +67,7 @@ public class ZipEntries {
 
     /** Read ZIP entries from inputStream */
     public static ZipEntries from(byte[] zip, Predicate<String> entryNameMatcher, int maxEntrySizeInBytes, boolean throwIfEntryExceedsMaxSize) {
+
         Options options = Options.standard()
                                  .pathPredicate(entryNameMatcher)
                                  .maxSize(2 * (long) Math.pow(1024, 3)) // 2 GB
