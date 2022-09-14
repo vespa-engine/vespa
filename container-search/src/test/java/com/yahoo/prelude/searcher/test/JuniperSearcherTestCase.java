@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -40,7 +41,7 @@ public class JuniperSearcherTestCase {
      * @param sdName the search definition type of the returned hit
      * @param content the content of the "dynteaser" field of the returned hit
      */
-    private Chain<Searcher> createSearchChain(String sdName, String content) {
+    private Chain<Searcher> createSearchChain(String sdName, Object content) {
         JuniperSearcher searcher = new JuniperSearcher(new ComponentId("test"),
                                                        new QrSearchersConfig(new QrSearchersConfig.Builder()));
 
@@ -50,7 +51,7 @@ public class JuniperSearcherTestCase {
         return new Chain<>(searcher, docsource);
     }
 
-    private void addResult(Query query, String sdName, String content, DocumentSourceSearcher docsource) {
+    private void addResult(Query query, String sdName, Object content, DocumentSourceSearcher docsource) {
         Result r = new Result(query);
         FastHit hit = new FastHit();
         hit.setId("http://abc.html");
@@ -62,7 +63,7 @@ public class JuniperSearcherTestCase {
     }
 
     /** Creates a result of the search definiton "one" */
-    private Result createResult(String content) {
+    private Result createResult(Object content) {
         return createResult("one", content, true);
     }
 
@@ -70,7 +71,7 @@ public class JuniperSearcherTestCase {
         return createResult(sdName, content, true);
     }
 
-    private Result createResult(String sdName, String content, boolean bolding) {
+    private Result createResult(String sdName, Object content, boolean bolding) {
         Chain<Searcher> chain = createSearchChain(sdName, content);
         Query query = new Query("?query=12");
         if ( ! bolding)
@@ -119,6 +120,17 @@ public class JuniperSearcherTestCase {
         check = createResult("a&b&c");
         assertEquals(1, check.getHitCount());
         assertEquals("a&b&c",
+                check.hits().get(0).getField("dynteaser").toString());
+    }
+
+    @Test
+    void test_field_rewriting_for_array_of_string_field() {
+        var content = new Value.ArrayValue()
+                .add("\u001Faaa\u001F\u001Ebbb\u001Fccc\u001Fddd")
+                .add("\u001Feee\u001F\u001Efff\u001Fggg\u001Fhhh");
+        Result check = createResult(content);
+        assertEquals(1, check.getHitCount());
+        assertEquals("[\"<hi>aaa</hi><sep />bbb<hi>ccc</hi>ddd\",\"<hi>eee</hi><sep />fff<hi>ggg</hi>hhh\"]",
                 check.hits().get(0).getField("dynteaser").toString());
     }
 

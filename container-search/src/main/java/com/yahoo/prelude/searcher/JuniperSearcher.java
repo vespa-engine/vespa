@@ -11,6 +11,11 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.data.access.ArrayTraverser;
+import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.Type;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.search.Searcher;
@@ -104,11 +109,48 @@ public class JuniperSearcher extends Searcher {
 
             for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {
                 if (index.getDynamicSummary() || index.getHighlightSummary()) {
-                    HitField fieldValue = fastHit.buildHitField(index.getName(), true);
-                    if (fieldValue != null)
-                        insertTags(fieldValue, bolding, index.getDynamicSummary());
+                    var field = fastHit.getField(index.getName());
+                    if (StringArrayConverter.shouldHandleField(field)) {
+                        new StringArrayConverter(fastHit, index, field, bolding);
+                    } else {
+                        HitField fieldValue = fastHit.buildHitField(index.getName(), true);
+                        if (fieldValue != null) {
+                            insertTags(fieldValue, bolding, index.getDynamicSummary());
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private class StringArrayConverter implements ArrayTraverser {
+
+        private Index index;
+        private boolean bolding;
+        private Value.ArrayValue convertedField = new Value.ArrayValue();
+
+        /**
+         * This converts the backend binary highlighting of each item in an array of string field,
+         * and creates a new field that replaces the original.
+         */
+        StringArrayConverter(FastHit hit, Index index, Object field, boolean bolding) {
+            this.index = index;
+            this.bolding = bolding;
+            ((Inspectable)field).inspect().traverse(this);
+            hit.setField(index.getName(), convertedField);
+        }
+
+        static boolean shouldHandleField(Object field) {
+            return (field instanceof Inspectable) &&
+                    (((Inspectable)field).inspect().type() == Type.ARRAY);
+        }
+
+        @Override
+        public void entry(int idx, Inspector inspector) {
+            // This is how HitField is instantiated in Hit.buildHitField() when forceNoPreTokenize=true.
+            var hitField = new HitField(index.getName(), inspector.asString(), false);
+            insertTags(hitField, bolding, index.getDynamicSummary());
+            convertedField.add(hitField.getContent());
         }
     }
 
