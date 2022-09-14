@@ -25,6 +25,8 @@ import com.yahoo.yolean.Exceptions;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -81,8 +83,9 @@ public class TestPackage {
         entries.put("tests/.ignore-" + UUID.randomUUID(), new byte[0]);
 
         entries.put(servicesFile,
-                    servicesXml( ! isPublicSystem,
+                    servicesXml(! isPublicSystem,
                                 certificateValidFrom != null,
+                                hasLegacyTests(testPackage),
                                 testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance())),
                                 testerApp));
 
@@ -112,6 +115,12 @@ public class TestPackage {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream(testPackage.length + 10_000);
         transferAndWrite(buffer, new ByteArrayInputStream(testPackage), entries);
         this.applicationPackage = new ApplicationPackage(buffer.toByteArray());
+    }
+
+    static boolean hasLegacyTests(byte[] testPackage) {
+        return ZipEntries.from(testPackage, __ -> true, 0, false).asList().stream()
+                         .anyMatch(file -> file.name().startsWith("artifacts/") && file.name().endsWith("-tests.jar"));
+
     }
 
     public ApplicationPackage asApplicationPackage() {
@@ -210,9 +219,9 @@ public class TestPackage {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    public static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate,
+    public static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, boolean hasLegacyTests,
                                      NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
-        int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
+        int jdiscMemoryGb = 2; // 2Gb memory for tester application which uses Maven.
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
@@ -260,7 +269,7 @@ public class TestPackage {
                 "        </component>\n" +
                 "\n" +
                 "        <nodes count=\"1\">\n" +
-                "            <jvm allocated-memory=\"" + jdiscMemoryPct + "%\"/>\n" +
+                (hasLegacyTests ? "            <jvm allocated-memory=\"" + jdiscMemoryPct + "%\"/>\n" : "" ) +
                 "            " + resourceString + "\n" +
                 "        </nodes>\n" +
                 "    </container>\n" +

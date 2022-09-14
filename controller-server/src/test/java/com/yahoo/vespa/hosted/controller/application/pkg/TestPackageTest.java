@@ -147,8 +147,17 @@ public class TestPackageTest {
     @Test
     void generates_correct_services_xml() throws IOException {
         assertEquals(Files.readString(Paths.get("src/test/resources/test_runner_services.xml-cd")),
+                     new String(TestPackage.servicesXml(true,
+                                                        false,
+                                                        false,
+                                                        new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
+                                                        new ControllerConfig.Steprunner.Testerapp.Builder().build()),
+                                UTF_8));
+
+        assertEquals(Files.readString(Paths.get("src/test/resources/test_runner_services_with_legacy_tests.xml-cd")),
                 new String(TestPackage.servicesXml(true,
                                 false,
+                                true,
                                 new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
                                 new ControllerConfig.Steprunner.Testerapp.Builder().build()),
                         UTF_8));
