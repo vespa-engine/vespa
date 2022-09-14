@@ -2,7 +2,7 @@
 package com.yahoo.vespafeeder;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
-import com.yahoo.concurrent.Timer;
+import com.yahoo.concurrent.ManualTimer;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.EmptyReply;
@@ -15,17 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BenchmarkProgressPrinterTest {
 
-    class DummyTimer implements Timer {
-        long ms;
-
-        public long milliTime() { return ms; }
-    }
-
     @Test
     void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        DummyTimer timer = new DummyTimer();
-        timer.ms = 0;
+        ManualTimer timer = new ManualTimer();
         BenchmarkProgressPrinter printer = new BenchmarkProgressPrinter(timer, new PrintStream(output));
         RouteMetricSet metrics = new RouteMetricSet("foobar", printer);
 
@@ -35,7 +28,7 @@ public class BenchmarkProgressPrinterTest {
             metrics.addReply(reply);
         }
 
-        timer.ms = 1200;
+        timer.set(1200);
 
         {
             EmptyReply reply = new EmptyReply();
@@ -49,7 +42,7 @@ public class BenchmarkProgressPrinterTest {
             metrics.addReply(reply);
         }
 
-        timer.ms = 2400;
+        timer.set(2400);
 
         {
             EmptyReply reply = new EmptyReply();
@@ -58,7 +51,7 @@ public class BenchmarkProgressPrinterTest {
             metrics.addReply(reply);
         }
 
-        timer.ms = 62000;
+        timer.set(62000);
 
         {
             EmptyReply reply = new EmptyReply();

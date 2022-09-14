@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
+import com.yahoo.concurrent.ManualTimer;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleReply;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ public class DynamicThrottlePolicyTest {
         { // This setup is lucky with the artificial local maxima for latency, and gives good results. See below for counter-examples.
             int workPerSuccess = 8;
 
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer).setMinWindowSize(1)
                     .setWindowSizeIncrement(0.1)
                     .setResizeRate(100);
@@ -64,7 +65,7 @@ public class DynamicThrottlePolicyTest {
         { // This setup is not so lucky, and the artificial behaviour pushes it into overload.
             int workPerSuccess = 5;
 
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer).setMinWindowSize(1)
                     .setWindowSizeIncrement(0.1)
                     .setResizeRate(100);
@@ -80,7 +81,7 @@ public class DynamicThrottlePolicyTest {
         { // This setup is not so lucky either, and the artificial behaviour keeps it far below a good throughput.
             int workPerSuccess = 4;
 
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer).setMinWindowSize(1)
                     .setWindowSizeIncrement(0.1)
                     .setResizeRate(100);
@@ -98,7 +99,7 @@ public class DynamicThrottlePolicyTest {
     @Test
     void singlePolicySingleWorkerWithIncreasingParallelism() {
         for (int exponent = 0; exponent < 4; exponent++) {
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, exponent);
             long operations = 3_000L * scaleFactor;
@@ -121,7 +122,7 @@ public class DynamicThrottlePolicyTest {
     @Test
     void singlePolicyIncreasingWorkersWithNoParallelism() {
         for (int exponent = 0; exponent < 4; exponent++) {
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, exponent);
             long operations = 2_000L * scaleFactor;
@@ -156,7 +157,7 @@ public class DynamicThrottlePolicyTest {
             int numberOfWorkers = 1 + (int) (10 * Math.random());
             int maximumTasksPerWorker = 100_000;
             int workerParallelism = 32;
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             DynamicThrottlePolicy policy1 = new DynamicThrottlePolicy(timer);
             DynamicThrottlePolicy policy2 = new DynamicThrottlePolicy(timer).setWeight(0.5);
             Summary summary = run(operations, workPerSuccess, numberOfWorkers, maximumTasksPerWorker, workerParallelism, timer, policy1, policy2);
@@ -180,7 +181,7 @@ public class DynamicThrottlePolicyTest {
             int numberOfWorkers = 6;
             int maximumTasksPerWorker = 180 + (int) (120 * Math.random());
             int workerParallelism = 60 + (int) (40 * Math.random());
-            CustomTimer timer = new CustomTimer();
+            ManualTimer timer = new ManualTimer();
             int p = 10;
             DynamicThrottlePolicy[] policies = IntStream.range(0, p)
                     .mapToObj(j -> new DynamicThrottlePolicy(timer)
@@ -213,7 +214,7 @@ public class DynamicThrottlePolicyTest {
     }
 
     private Summary run(long operations, int workPerSuccess, int numberOfWorkers, int maximumTasksPerWorker,
-                        int workerParallelism, CustomTimer timer, DynamicThrottlePolicy... policies) {
+                        int workerParallelism, ManualTimer timer, DynamicThrottlePolicy... policies) {
         System.err.printf("\n### Running %d operations of %d ticks each against %d workers with parallelism %d and queue size %d\n",
                           operations, workPerSuccess, numberOfWorkers, workerParallelism, maximumTasksPerWorker);
 
@@ -250,7 +251,7 @@ public class DynamicThrottlePolicyTest {
             ++ticks;
             totalPending += resource.pending();
             resource.tick();
-            ++timer.millis;
+            timer.advance(1);
         }
 
         for (int i = 0; i < windows.length; i++)

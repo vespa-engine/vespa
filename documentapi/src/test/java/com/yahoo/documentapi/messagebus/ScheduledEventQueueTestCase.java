@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus;
 
-import com.yahoo.concurrent.Timer;
+import com.yahoo.concurrent.ManualTimer;
 import org.junit.Test;
 
 import java.util.concurrent.RejectedExecutionException;
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 
 public class ScheduledEventQueueTestCase {
 
-    class TestTask implements Runnable {
+    static class TestTask implements Runnable {
         public long timestamp = 0;
 
         public void run() {
@@ -46,42 +46,34 @@ public class ScheduledEventQueueTestCase {
         assertNull(queue.popTask());
     }
 
-    class TestTimer implements Timer {
-        public long milliTime = 0;
-
-        public long milliTime() {
-            return milliTime;
-        }
-    }
-
     @Test
     public void testPushTaskWithTime() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask task = new TestTask();
         queue.pushTask(task, 1000);
         assertNull(queue.popTask());
-        timer.milliTime = 1000;
+        timer.set(1000);
         assertEquals(task, queue.popTask());
     }
 
     @Test
     public void testTwoTasksWithSameTime() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask task1 = new TestTask();
         queue.pushTask(task1, 1000);
         TestTask task2 = new TestTask();
         queue.pushTask(task2, 1000);
         assertNull(queue.popTask());
-        timer.milliTime = 1000;
+        timer.set(1000);
         assertEquals(task1, queue.popTask());
         assertEquals(task2, queue.popTask());
     }
 
     @Test
     public void testThreeTasksWithDifferentTime() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask task1 = new TestTask();
         queue.pushTask(task1, 1000);
@@ -91,17 +83,17 @@ public class ScheduledEventQueueTestCase {
         queue.pushTask(task3);
         assertEquals(task3, queue.popTask());
         assertNull(queue.popTask());
-        timer.milliTime = 1000;
+        timer.set(1000);
         assertEquals(task2, queue.popTask());
         assertEquals(task1, queue.popTask());
     }
 
-    class ClockSetterThread implements Runnable {
+    static class ClockSetterThread implements Runnable {
         ScheduledEventQueue queue;
-        TestTimer timer;
+        ManualTimer timer;
         long newTime;
 
-        public ClockSetterThread(ScheduledEventQueue queue, TestTimer timer, long newTime) {
+        public ClockSetterThread(ScheduledEventQueue queue, ManualTimer timer, long newTime) {
             this.queue = queue;
             this.timer = timer;
             this.newTime = newTime;
@@ -114,14 +106,14 @@ public class ScheduledEventQueueTestCase {
                 }
             } catch (InterruptedException e) {
             }
-            timer.milliTime = newTime;
+            timer.set(newTime);
             queue.wakeTasks();
         }
     }
 
     @Test
     public void testPushAndWaitForTask() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask task = new TestTask();
         queue.pushTask(task, 50);
@@ -131,7 +123,7 @@ public class ScheduledEventQueueTestCase {
         assertEquals(50, timer.milliTime());
     }
 
-    class TaskPusherThread implements Runnable {
+    static class TaskPusherThread implements Runnable {
         ScheduledEventQueue queue;
         TestTask task;
 
@@ -162,7 +154,7 @@ public class ScheduledEventQueueTestCase {
 
     @Test
     public void testPushAndWaitMultiple() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask lastTask = new TestTask();
         queue.pushTask(lastTask, 250);
@@ -188,11 +180,11 @@ public class ScheduledEventQueueTestCase {
         }
     }
 
-    class ShutdownThread implements Runnable {
+    static class ShutdownThread implements Runnable {
         ScheduledEventQueue queue;
-        TestTimer timer;
+        ManualTimer timer;
 
-        public ShutdownThread(ScheduledEventQueue queue, TestTimer timer) {
+        public ShutdownThread(ScheduledEventQueue queue, ManualTimer timer) {
             this.queue = queue;
             this.timer = timer;
         }
@@ -205,14 +197,14 @@ public class ScheduledEventQueueTestCase {
             } catch (InterruptedException e) {
             }
             queue.shutdown();
-            timer.milliTime = 100;
+            timer.set(100);
             queue.wakeTasks();
         }
     }
 
     @Test
     public void testShutdownInGetNext() {
-        TestTimer timer = new TestTimer();
+        ManualTimer timer = new ManualTimer();
         ScheduledEventQueue queue = new ScheduledEventQueue(timer);
         TestTask task = new TestTask();
         queue.pushTask(task, 100);

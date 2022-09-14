@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.concurrent.Timer;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -23,6 +24,7 @@ import com.yahoo.test.ManualClock;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
 import java.util.stream.StreamSupport;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
@@ -347,7 +350,7 @@ public class InterleavedSearchInvokerTest {
                         .addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3))));
         invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping2)))));
 
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, cluster, new Group(0, List.of()), Collections.emptySet());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, cluster, new Group(0, List.of()), Collections.emptySet());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         Result result = invoker.search(query, null);
@@ -360,7 +363,7 @@ public class InterleavedSearchInvokerTest {
         List<SearchInvoker> invokers = new ArrayList<>();
         invokers.add(createInvoker(a, 0));
         invokers.add(createInvoker(b, 1));
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, cluster, group, Collections.emptySet());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, cluster, group, Collections.emptySet());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         return invoker;
@@ -411,12 +414,7 @@ public class InterleavedSearchInvokerTest {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(invokers, searchCluster, group,null) {
-
-            @Override
-            protected long currentTime() {
-                return clock.millis();
-            }
+        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, searchCluster, group,null) {
 
             @Override
             protected LinkedBlockingQueue<SearchInvoker> newQueue() {
