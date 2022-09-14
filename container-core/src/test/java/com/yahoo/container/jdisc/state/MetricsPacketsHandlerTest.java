@@ -169,16 +169,16 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
         var response = requestAsString("http://localhost/metrics-packets?format=prometheus");
         var expectedResponse = """
-                # HELP gauge_metric_last
+                # HELP gauge_metric_last\s
                 # TYPE gauge_metric_last untyped
                 gauge_metric_last{dim1="value1",vespa_service="state-handler-test-base",} 0.2 0
-                # HELP gauge_metric_average
+                # HELP gauge_metric_average\s
                 # TYPE gauge_metric_average untyped
                 gauge_metric_average{dim1="value1",vespa_service="state-handler-test-base",} 0.2 0
-                # HELP gauge_metric_max
+                # HELP gauge_metric_max\s
                 # TYPE gauge_metric_max untyped
                 gauge_metric_max{dim1="value1",vespa_service="state-handler-test-base",} 0.2 0
-                # HELP counter_metric_count
+                # HELP counter_metric_count\s
                 # TYPE counter_metric_count untyped
                 counter_metric_count{dim1="value1",vespa_service="state-handler-test-base",} 5 0
                 """;

@@ -13,7 +13,7 @@ import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
  */
 public class PrometheusHelper {
 
-    private static final String HELP_LINE = "# HELP %s\n# TYPE %s untyped\n";
+    private static final String HELP_LINE = "# HELP %s \n# TYPE %s untyped\n";
     private static final String METRIC_LINE = "%s{%s} %s %d\n";
 
     protected static byte[] buildPrometheusOutput(MetricSnapshot metricSnapshot, String application, long timestamp) throws IOException {

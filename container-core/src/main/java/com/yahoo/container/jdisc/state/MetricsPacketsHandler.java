@@ -83,7 +83,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             @Override
             protected Response newResponse() {
                 Response response = new Response(Response.Status.OK);
-                response.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
+                response.headers().add(HttpHeaders.Names.CONTENT_TYPE, getContentType(request.getUri().getQuery()));
                 return response;
             }
 
@@ -223,6 +223,13 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 throw new UnsupportedOperationException("Unknown metric class: " + value.getClass().getName());
             }
         }
+    }
+
+    private String getContentType(String query) {
+        if ("format=prometheus".equals(query)) {
+            return "text/plain;charset=utf-8";
+        }
+        return "application/json";
     }
 
 }
