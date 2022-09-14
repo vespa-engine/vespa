@@ -14,10 +14,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.MultiplePathsLock;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -53,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -119,7 +114,6 @@ public class CuratorDb {
 
     private final Curator curator;
     private final Duration tryLockTimeout;
-    private final StringFlag lockScheme;
 
     // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
     // This will grow to keep all applications in memory, but this should be OK
@@ -129,14 +123,13 @@ public class CuratorDb {
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
-    public CuratorDb(Curator curator, FlagSource flagSource) {
-        this(curator, defaultTryLockTimeout, flagSource);
+    public CuratorDb(Curator curator) {
+        this(curator, defaultTryLockTimeout);
     }
 
-    CuratorDb(Curator curator, Duration tryLockTimeout, FlagSource flagSource) {
+    CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
-        this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
@@ -149,47 +142,24 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    private enum LockScheme {
-
-        OLD, BOTH, NEW;
-
-        boolean isLegacy() { return this == OLD; }
-
-    }
-
-    /** Acquire the appropriate lock according to the lock scheme set by feature flag */
-    private Mutex lock(Function<LockScheme, Path> pathFactory, Duration timeout) {
-        LockScheme scheme = LockScheme.valueOf(lockScheme.value().toUpperCase(Locale.ENGLISH));
-        return switch (scheme) {
-            case OLD, NEW -> curator.lock(pathFactory.apply(scheme), timeout);
-            case BOTH -> new MultiplePathsLock(curator.lock(pathFactory.apply(LockScheme.OLD), timeout),
-                                               curator.lock(pathFactory.apply(LockScheme.NEW), timeout));
-        };
-    }
-
     public Mutex lock(TenantName name) {
-        return lock(scheme -> lockPath(name, scheme.isLegacy()), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
     public Mutex lock(TenantAndApplicationId id) {
-        return lock(scheme -> lockPath(id, scheme.isLegacy()), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
     public Mutex lockForDeployment(ApplicationId id, ZoneId zone) {
-        return lock(scheme -> lockPath(id, zone, scheme.isLegacy()), deployLockTimeout);
+        return curator.lock(lockPath(id, zone), deployLockTimeout);
     }
 
     public Mutex lock(ApplicationId id, JobType type) {
-        return lock(scheme -> lockPath(id, type, scheme.isLegacy()), defaultLockTimeout);
+        return curator.lock(lockPath(id, type), defaultLockTimeout);
     }
 
     public Mutex lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
-        try {
-            // TODO(mpolden): Revert to tryLock once lock scheme is removed
-            return lock(scheme -> lockPath(id, type, step, scheme.isLegacy()), tryLockTimeout);
-        } catch (UncheckedTimeoutException e) {
-            throw new TimeoutException(e.getMessage());
-        }
+        return tryLock(lockPath(id, type, step));
     }
 
     public Mutex lockRotations() {
@@ -682,29 +652,24 @@ public class CuratorDb {
 
     // -------------- Paths ---------------------------------------------------
 
-    private Path lockPath(TenantName tenant, boolean legacy) {
-        Path currentRoot = legacy ? lockRoot : lockRoot.append("tenants");
-        return currentRoot.append(tenant.value());
+    private Path lockPath(TenantName tenant) {
+        return lockRoot.append("tenants").append(tenant.value());
     }
 
-    private Path lockPath(TenantAndApplicationId application, boolean legacy) {
-        Path currentRoot = legacy ? lockRoot : lockRoot.append("applications");
-        return currentRoot.append(application.tenant().value() + ":" + application.application().value());
+    private Path lockPath(TenantAndApplicationId application) {
+        return lockRoot.append("applications").append(application.tenant().value() + ":" + application.application().value());
     }
 
-    private Path lockPath(ApplicationId instance, ZoneId zone, boolean legacy) {
-        Path currentRoot = legacy ? lockRoot : lockRoot.append("instances");
-        return currentRoot.append(instance.serializedForm() + ":" + zone.environment().value() + ":" + zone.region().value());
+    private Path lockPath(ApplicationId instance, ZoneId zone) {
+        return lockRoot.append("instances").append(instance.serializedForm() + ":" + zone.environment().value() + ":" + zone.region().value());
     }
 
-    private Path lockPath(ApplicationId instance, JobType type, boolean legacy) {
-        Path currentRoot = legacy ? lockRoot : lockRoot.append("jobs");
-        return currentRoot.append(instance.serializedForm() + ":" + type.jobName());
+    private Path lockPath(ApplicationId instance, JobType type) {
+        return lockRoot.append("jobs").append(instance.serializedForm() + ":" + type.jobName());
     }
 
-    private Path lockPath(ApplicationId instance, JobType type, Step step, boolean legacy) {
-        Path currentRoot = legacy ? lockRoot : lockRoot.append("steps");
-        return currentRoot.append(instance.serializedForm() + ":" + type.jobName() + ":" + step.name());
+    private Path lockPath(ApplicationId instance, JobType type, Step step) {
+        return lockRoot.append("steps").append(instance.serializedForm() + ":" + type.jobName() + ":" + step.name());
     }
 
     private Path lockPath(String provisionId) {
