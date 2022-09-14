@@ -11,9 +11,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.yolean.Exceptions;
 import org.w3c.dom.Element;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 /**
  * Builder that transforms xml config to a slime tree representation of the config. The root element of the xml config
@@ -37,8 +35,8 @@ public class DomConfigPayloadBuilder {
     /**
      * Builds a {@link ConfigPayloadBuilder} representing the input 'config' xml element.
      *
-     * @param configE        The 'config' xml element
-     * @return a new payload builder built from xml.
+     * @param configE the 'config' xml element
+     * @return a new payload builder built from xml
      */
     public ConfigPayloadBuilder build(Element configE) {
         parseConfigName(configE);
@@ -120,7 +118,6 @@ public class DomConfigPayloadBuilder {
     private void parseLeaf(Element element, ConfigPayloadBuilder payloadBuilder, String parentName) {
         String name = extractName(element);
         String value = XML.getValue(element);
-        var definition = payloadBuilder.getConfigDefinition();
         if (value == null) {
             throw new ConfigurationRuntimeException("Element '" + name + "' must have either children or a value");
         }
@@ -134,7 +131,8 @@ public class DomConfigPayloadBuilder {
                 payloadBuilder.getArray(parentName).append(value);
             }
         }
-        else if (definition != null && definition.getModelDefs().containsKey(name)) { // model field special syntax
+        else if (element.hasAttribute("model-id") || element.hasAttribute("url") || element.hasAttribute("path")) {
+            // special syntax for "model" fields
             String modelString = XML.attribute("model-id", element).orElse("\"\"");
             modelString += " " + XML.attribute("url", element).orElse("\"\"");
             modelString += " " + XML.attribute("path", element).orElse("\"\"");
