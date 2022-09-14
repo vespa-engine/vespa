@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vector>
 
 namespace search::queryeval {
 

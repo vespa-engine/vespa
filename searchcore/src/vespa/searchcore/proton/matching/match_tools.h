@@ -19,7 +19,7 @@
 #include <vespa/vespalib/util/clock.h>
 
 namespace vespalib { class ExecutionProfiler; }
-namespace vespalib { class ThreadBundle; }
+namespace vespalib { struct ThreadBundle; }
 
 namespace search::engine { class Trace; }
 
