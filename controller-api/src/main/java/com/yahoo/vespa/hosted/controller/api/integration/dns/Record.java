@@ -10,22 +10,20 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class Record implements Comparable<Record> {
+public record Record(Type type,
+                     Duration ttl,
+                     RecordName name,
+                     RecordData data) implements Comparable<Record> {
 
     private static final Comparator<Record> comparator = Comparator.comparing(Record::type)
                                                                    .thenComparing(Record::name)
                                                                    .thenComparing(Record::data);
 
-    private final Type type;
-    private final Duration ttl;
-    private final RecordName name;
-    private final RecordData data;
-
-    public Record(Type type, Duration ttl, RecordName name, RecordData data) {
-        this.type = Objects.requireNonNull(type, "type cannot be null");
-        this.ttl = Objects.requireNonNull(ttl, "ttl cannot be null");
-        this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.data = Objects.requireNonNull(data, "data cannot be null");
+    public Record {
+        Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(ttl, "ttl cannot be null");
+        Objects.requireNonNull(name, "name cannot be null");
+        Objects.requireNonNull(data, "data cannot be null");
     }
 
     public Record(Type type, RecordName name, RecordData data) {
@@ -71,22 +69,6 @@ public class Record implements Comparable<Record> {
     @Override
     public String toString() {
         return String.format("%s %s -> %s [TTL: %s]", type, name, data, ttl);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Record record = (Record) o;
-        return type == record.type &&
-               ttl.equals(record.ttl) &&
-               name.equals(record.name) &&
-               data.equals(record.data);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, ttl, name, data);
     }
 
     @Override
