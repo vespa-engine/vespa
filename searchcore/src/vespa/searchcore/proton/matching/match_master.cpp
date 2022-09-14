@@ -103,7 +103,6 @@ MatchMaster::match(search::engine::Trace & trace,
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 
     std::vector<MatchThread::UP> threadState;
-    std::vector<vespalib::Runnable*> targets;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
         IMatchLoopCommunicator &com = (i == 0)
                 ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
@@ -111,10 +110,9 @@ MatchMaster::match(search::engine::Trace & trace,
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
                                                                resultProcessor, mergeDirector, distributionKey,
                                                                trace.getRelativeTime(), trace.getLevel(), trace.getProfileDepth()));
-        targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
-    threadBundle.run(targets);
+    threadBundle.run(threadState);
     auto reply = make_reply(mtf, resultProcessor, threadBundle, threadState[0]->extract_result());
     double query_time_s = vespalib::to_s(query_latency_time.elapsed());
     double rerank_time_s = vespalib::to_s(timedCommunicator.elapsed);

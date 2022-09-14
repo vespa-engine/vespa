@@ -157,20 +157,21 @@ SimpleThreadBundle::size() const
 }
 
 void
-SimpleThreadBundle::run(const std::vector<Runnable*> &targets)
+SimpleThreadBundle::run(Runnable* const* targets, size_t cnt)
 {
-    if (targets.size() > size()) {
+    if (cnt > size()) {
         throw IllegalArgumentException("too many targets");
     }
-    if (targets.empty()) {
+    if (cnt == 0) {
         return;
     }
-    if (targets.size() == 1) {
+    if (cnt == 1) {
         targets[0]->run();
         return;
     }
     CountDownLatch latch(size());
-    _work.targets = &targets;
+    _work.targets = targets;
+    _work.cnt = cnt;
     _work.latch = &latch;
     _hook->run();
     latch.await();

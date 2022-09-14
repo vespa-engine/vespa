@@ -18,9 +18,10 @@ namespace fixed_thread_bundle {
  * support static wiring of signal paths and execution hooks.
  **/
 struct Work {
-    const std::vector<Runnable *> *targets;
+    Runnable* const* targets;
+    size_t cnt;
     CountDownLatch *latch;
-    Work() : targets(0), latch(0) {}
+    Work() : targets(nullptr), cnt(0), latch(0) {}
 };
 
 /**
@@ -30,10 +31,10 @@ struct Part {
     const Work &work;
     size_t offset;
     Part(const Work &w, size_t o) : work(w), offset(o) {}
-    bool valid() { return (offset < work.targets->size()); }
+    bool valid() { return (offset < work.cnt); }
     void perform() {
         if (valid()) {
-            (*(work.targets))[offset]->run();
+            work.targets[offset]->run();
         }
         work.latch->countDown();
     }
@@ -130,7 +131,8 @@ public:
       : SimpleThreadBundle(size, Runnable::default_init_function, strategy) {}
     ~SimpleThreadBundle();
     size_t size() const override;
-    void run(const std::vector<Runnable*> &targets) override;
+    using ThreadBundle::run;
+    void run(Runnable* const* targets, size_t cnt) override;
 };
 
 } // namespace vespalib
