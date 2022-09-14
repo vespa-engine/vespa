@@ -114,22 +114,6 @@ struct LaterChunk : MyChunk {
     }
 };
 
-struct MyWork {
-    size_t num_threads;
-    std::vector<Runnable::UP> chunks;
-    MyWork(ThreadBundle &thread_bundle) : num_threads(thread_bundle.size()), chunks() {
-        chunks.reserve(num_threads);
-    }
-    void run(ThreadBundle &thread_bundle) {
-        std::vector<Runnable*> refs;
-        refs.reserve(chunks.size());
-        for (const auto &task: chunks) {
-            refs.push_back(task.get());
-        }
-        thread_bundle.run(refs);
-    }
-};
-
 } // unnamed
 
 FeatureSet::UP
@@ -161,24 +145,26 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
     FeatureResolver resolver(tools->rank_program().get_seeds(false));
     result.names = extract_names(resolver, mtf.get_feature_rename_map());
     result.values.resize(result.names.size() * docs.size());
-    MyWork work(thread_bundle);
-    size_t per_thread = docs.size() / work.num_threads;
-    size_t rest_docs = docs.size() % work.num_threads;
+    size_t num_threads = thread_bundle.size();
+    std::vector<Runnable::UP> chunks;
+    chunks.reserve(num_threads);
+    size_t per_thread = docs.size() / num_threads;
+    size_t rest_docs = docs.size() % num_threads;
     size_t idx = 0;
-    for (size_t i = 0; i < work.num_threads; ++i) {
+    for (size_t i = 0; i < num_threads; ++i) {
         size_t chunk_size = per_thread + (i < rest_docs);
         if (chunk_size == 0) {
             break;
         }
         if (i == 0) {
-            work.chunks.push_back(std::make_unique<FirstChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), tools->search(), resolver));
+            chunks.push_back(std::make_unique<FirstChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), tools->search(), resolver));
         } else {
-            work.chunks.push_back(std::make_unique<LaterChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), mtf));
+            chunks.push_back(std::make_unique<LaterChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), mtf));
         }
         idx += chunk_size;
     }
     assert(idx == docs.size());
-    work.run(thread_bundle);
+    thread_bundle.run(chunks);
     return result;
 }
 

@@ -201,4 +201,54 @@ TEST_MT_FF("require that bundle pool works with multiple threads", 32, SimpleThr
     f1.release(std::move(bundle));
 }
 
+struct Filler {
+    int stuff;
+    Filler() : stuff(0) {}
+    virtual ~Filler() {}
+};
+
+struct Proxy : Filler, Runnable {
+    Runnable &target;
+    Proxy(Runnable &target_in) : target(target_in) {}
+    void run() override { target.run(); }
+};
+
+struct AlmostRunnable : Runnable {};
+
+TEST("require that Proxy needs fixup to become Runnable") {
+    Cnt cnt;
+    Proxy proxy(cnt);
+    Runnable &runnable = proxy;
+    void *proxy_ptr = &proxy;
+    void *runnable_ptr = &runnable;
+    EXPECT_TRUE(proxy_ptr != runnable_ptr);
+}
+
+TEST_FF("require that various versions of run can be used to invoke targets", SimpleThreadBundle(5), State(5)) {
+    EXPECT_TRUE(ThreadBundle::is_runnable_ptr<Runnable*>());
+    EXPECT_TRUE(ThreadBundle::is_runnable_ptr<Runnable::UP>());
+    EXPECT_FALSE(ThreadBundle::is_runnable_ptr<std::unique_ptr<Proxy>>());
+    EXPECT_FALSE(ThreadBundle::is_runnable_ptr<std::unique_ptr<AlmostRunnable>>());
+    std::vector<Runnable::UP> direct;
+    std::vector<std::unique_ptr<Proxy>> custom;
+    for (Runnable &target: f2.cnts) {
+        direct.push_back(std::make_unique<Proxy>(target));
+        custom.push_back(std::make_unique<Proxy>(target));
+    }
+    std::vector<Runnable*> refs = f2.getTargets(5);
+    f2.check({0,0,0,0,0});
+    f1.run(refs.data(), 3);
+    f2.check({1,1,1,0,0});
+    f1.run(&refs[3], 2);
+    f2.check({1,1,1,1,1});
+    f1.run(refs);
+    f2.check({2,2,2,2,2});
+    f1.run(direct);
+    f2.check({3,3,3,3,3});
+    f1.run(custom);
+    f2.check({4,4,4,4,4});
+    f1.run(f2.cnts);
+    f2.check({5,5,5,5,5});
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

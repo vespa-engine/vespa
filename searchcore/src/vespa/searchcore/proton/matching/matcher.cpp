@@ -75,8 +75,8 @@ public:
     { }
 private:
     size_t size() const override { return _maxThreads; }
-    void run(const std::vector<vespalib::Runnable*> &targets) override {
-        _threadBundle.run(targets);
+    void run(vespalib::Runnable* const* targets, size_t cnt) override {
+        _threadBundle.run(targets, cnt);
     }
     vespalib::ThreadBundle &_threadBundle;
     const uint32_t          _maxThreads;

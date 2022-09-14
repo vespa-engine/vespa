@@ -9,10 +9,10 @@ ThreadBundle &
 ThreadBundle::trivial() {
     struct TrivialThreadBundle : ThreadBundle {
         size_t size() const override { return 1; }
-        void run(const std::vector<Runnable*> &targets) override {
-            if (targets.size() == 1) {
+        void run(Runnable* const* targets, size_t cnt) override {
+            if (cnt == 1) {
                 targets[0]->run();
-            } else if (targets.size() > 1) {
+            } else if (cnt > 1) {
                 throw IllegalArgumentException("too many targets");
             }
         };
