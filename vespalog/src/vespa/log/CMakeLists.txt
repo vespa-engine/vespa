@@ -2,7 +2,7 @@
 vespa_add_library(vespalog
     SOURCES
     exceptions.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/loglevelnames.cpp
+    loglevelnames.cpp
     log.cpp
     bufferedlogger.cpp
     log-target-fd.cpp
@@ -18,11 +18,3 @@ vespa_add_library(vespalog
     reject-filter.cpp
     INSTALL lib64
 )
-
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/loglevelnames.cpp
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/mknm.pl < ${CMAKE_CURRENT_SOURCE_DIR}/log.h > lln.NEW && mv lln.NEW ${CMAKE_CURRENT_BINARY_DIR}/loglevelnames.cpp
-    MAIN_DEPENDENCY log.h
-    DEPENDENCIES mknm.pl
-)
-    
