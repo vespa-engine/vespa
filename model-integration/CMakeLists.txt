@@ -4,3 +4,5 @@ install_jar(model-integration-jar-with-dependencies.jar)
 vespa_install_script(src/main/python/vespa-convert-tf2onnx.py vespa-convert-tf2onnx bin)
 
 install(FILES src/main/config/model-integration.xml DESTINATION conf/configserver-app)
+
+install_config_definitions()

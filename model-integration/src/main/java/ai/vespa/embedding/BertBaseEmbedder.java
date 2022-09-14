@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * A BERT Base compatible embedder. This embedder uses a WordPiece embedder to
- * produce a token sequence that is input to a transformer model. A BERT base
+ * produce a token sequence that is then input to a transformer model. A BERT base
  * compatible transformer model must have three inputs:
  *
  *  - A token sequence (input_ids)
@@ -76,7 +76,7 @@ public class BertBaseEmbedder implements Embedder {
     private void validateName(Map<String, TensorType> types, String name, String type) {
         if ( ! types.containsKey(name)) {
             throw new IllegalArgumentException("Model does not contain required " + type + ": '" + name + "'. " +
-                    "Model contains: " + String.join(",", types.keySet()));
+                                               "Model contains: " + String.join(",", types.keySet()));
         }
     }
 
