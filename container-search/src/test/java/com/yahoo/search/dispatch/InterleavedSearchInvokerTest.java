@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.concurrent.MonotonicTimer;
 import com.yahoo.concurrent.Timer;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
@@ -351,7 +350,7 @@ public class InterleavedSearchInvokerTest {
                         .addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3))));
         invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping2)))));
 
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(new MonotonicTimer(), invokers, cluster, new Group(0, List.of()), Collections.emptySet());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, cluster, new Group(0, List.of()), Collections.emptySet());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         Result result = invoker.search(query, null);
@@ -364,7 +363,7 @@ public class InterleavedSearchInvokerTest {
         List<SearchInvoker> invokers = new ArrayList<>();
         invokers.add(createInvoker(a, 0));
         invokers.add(createInvoker(b, 1));
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(new MonotonicTimer(), invokers, cluster, group, Collections.emptySet());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, cluster, group, Collections.emptySet());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         return invoker;
@@ -410,22 +409,12 @@ public class InterleavedSearchInvokerTest {
         assertTrue(cov.isDegradedByTimeout());
     }
 
-    private static class ClockAsTimer implements Timer {
-        private final Clock clock;
-        ClockAsTimer(Clock clock) { this.clock = clock; }
-
-        @Override
-        public long milliTime() {
-            return clock.millis();
-        }
-    }
-
     private InterleavedSearchInvoker createInterleavedInvoker(SearchCluster searchCluster, Group group, int numInvokers) {
         for (int i = 0; i < numInvokers; i++) {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(new ClockAsTimer(clock), invokers, searchCluster, group,null) {
+        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, searchCluster, group,null) {
 
             @Override
             protected LinkedBlockingQueue<SearchInvoker> newQueue() {

@@ -6,6 +6,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.concurrent.Timer;
+import com.yahoo.concurrent.ManualTimer;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +47,7 @@ public class TargetPoolTestCase {
         // Necessary setup to be able to resolve targets.
         RPCServiceAddress adr1 = registerServer();
 
-        PoolTimer timer = new PoolTimer();
+        Timer timer = new ManualTimer();
         RPCTargetPool pool1 = new RPCTargetPool(timer, 0.666, 1);
 
         RPCTarget target1 = pool1.getTarget(orb, adr1);
@@ -80,7 +81,7 @@ public class TargetPoolTestCase {
         RPCServiceAddress adr2 = registerServer();
         RPCServiceAddress adr3 = registerServer();
 
-        PoolTimer timer = new PoolTimer();
+        ManualTimer timer = new ManualTimer();
         RPCTargetPool pool = new RPCTargetPool(timer, 0.666, 1);
 
         // Assert that all connections expire.
@@ -96,7 +97,7 @@ public class TargetPoolTestCase {
             pool.flushTargets(false);
             assertEquals(3, pool.size());
         }
-        timer.millis += 999;
+        timer.advance(999);
         pool.flushTargets(false);
         assertEquals(0, pool.size());
 
@@ -108,7 +109,7 @@ public class TargetPoolTestCase {
         assertNotNull(target = pool.getTarget(orb, adr3));
         target.subRef();
         assertEquals(3, pool.size());
-        timer.millis += 444;
+        timer.advance(444);
         pool.flushTargets(false);
         assertEquals(3, pool.size());
         assertNotNull(target = pool.getTarget(orb, adr2));
@@ -116,15 +117,15 @@ public class TargetPoolTestCase {
         assertNotNull(target = pool.getTarget(orb, adr3));
         target.subRef();
         assertEquals(3, pool.size());
-        timer.millis += 444;
+        timer.advance(444);
         pool.flushTargets(false);
         assertEquals(2, pool.size());
         assertNotNull(target = pool.getTarget(orb, adr3));
         target.subRef();
-        timer.millis += 444;
+        timer.advance(444);
         pool.flushTargets(false);
         assertEquals(1, pool.size());
-        timer.millis += 444;
+        timer.advance(444);
         pool.flushTargets(false);
         assertEquals(0, pool.size());
 
@@ -132,12 +133,12 @@ public class TargetPoolTestCase {
         assertNotNull(target = pool.getTarget(orb, adr1));
         assertEquals(1, pool.size());
         for (int i = 0; i < 10; ++i) {
-            timer.millis += 999;
+            timer.advance(999);
             pool.flushTargets(false);
             assertEquals(1, pool.size());
         }
         target.subRef();
-        timer.millis += 999;
+        timer.advance(999);
         pool.flushTargets(false);
         assertEquals(0, pool.size());
     }
@@ -145,15 +146,6 @@ public class TargetPoolTestCase {
     private RPCServiceAddress registerServer() {
         servers.add(new TestServer("srv" + servers.size(), null, slobrok, null));
         return new RPCServiceAddress("foo/bar", servers.get(servers.size() - 1).mb.getConnectionSpec());
-    }
-
-    private static class PoolTimer implements Timer {
-        long millis = 0;
-
-        @Override
-        public long milliTime() {
-            return millis;
-        }
     }
 
 }
