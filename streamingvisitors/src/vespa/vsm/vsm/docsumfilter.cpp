@@ -5,6 +5,7 @@
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchsummary/docsummary/check_undefined_value_visitor.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
+#include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
@@ -19,6 +20,49 @@ using namespace search::docsummary;
 namespace vsm {
 
 namespace {
+
+bool is_struct_or_multivalue_field_type(const document::DataType& data_type)
+{
+    return (data_type.isStructured() || data_type.isArray() || data_type.isWeightedSet() || data_type.isMap());
+}
+
+/*
+ * This class creates a modified field value which is then passed to
+ * the original juniper converter.
+ */
+class SnippetModifierJuniperConverter : public IJuniperConverter
+{
+    IJuniperConverter& _orig_converter;
+    FieldModifier&     _modifier;
+    FieldPath          _empty_field_path;
+public:
+    SnippetModifierJuniperConverter(IJuniperConverter& orig_converter, FieldModifier& modifier)
+        : IJuniperConverter(),
+          _orig_converter(orig_converter),
+          _modifier(modifier),
+          _empty_field_path()
+    {
+    }
+    ~SnippetModifierJuniperConverter() override = default;
+    void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter) override;
+    void insert_juniper_field(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+};
+
+
+void
+SnippetModifierJuniperConverter::insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter)
+{
+    _orig_converter.insert_juniper_field(input, inserter);
+}
+
+void
+SnippetModifierJuniperConverter::insert_juniper_field(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter)
+{
+    auto fv = _modifier.modify(input, _empty_field_path);
+    assert(fv);
+    auto& modified_input = dynamic_cast<const document::StringFieldValue &>(*fv);
+    _orig_converter.insert_juniper_field(modified_input.getValueRef(), inserter);
+}
 
 /**
  * Class providing access to a document retrieved from an IDocsumStore
@@ -114,6 +158,18 @@ DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name,
     // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
     auto field_value = get_field_value(field_name);
     if (field_value) {
+        if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
+            auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+            if (entry_idx >= 0) {
+                assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+                auto modifier = _docsum_filter.get_field_modifier(entry_idx);
+                if (modifier != nullptr) {
+                    SnippetModifierJuniperConverter stacked_converter(converter, *modifier);
+                    SummaryFieldConverter::insert_juniper_field(*field_value, inserter, false, stacked_converter);
+                    return;
+                }
+            }
+        }
         SummaryFieldConverter::insert_juniper_field(*field_value, inserter, false, converter);
     }
 }
@@ -394,6 +450,18 @@ DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vesp
             insert_flattened_summary_field(field_spec, doc, inserter);
         }
     }
+}
+
+FieldModifier*
+DocsumFilter::get_field_modifier(uint32_t entry_idx)
+{
+    if (_snippetModifiers == nullptr) {
+        return nullptr;
+    }
+    const auto& field_spec = _fields[entry_idx];
+    auto& fieldId = field_spec.getOutputField();
+    FieldIdT fId = fieldId.getId();
+    return _snippetModifiers->getModifier(fId);
 }
 
 }
