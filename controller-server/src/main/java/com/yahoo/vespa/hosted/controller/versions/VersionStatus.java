@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import ai.vespa.validation.Validation;
-import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -122,10 +120,10 @@ public record VersionStatus(List<VespaVersion> versions) {
                                              .orElse(newSystemVersion);
         if (newSystemVersion.isBefore(systemVersion)) {
             log.warning("Refusing to lower system version from " +
-                        systemVersion +
+                        systemVersion.toFullString() +
                         " to " +
-                        newSystemVersion +
-                        ", nodes on " + newSystemVersion + ": " +
+                        newSystemVersion.toFullString() +
+                        ", nodes on " + newSystemVersion.toFullString() + ": " +
                         infrastructureVersions.get(newSystemVersion).stream()
                                               .map(HostName::value)
                                               .collect(Collectors.joining(", ")));

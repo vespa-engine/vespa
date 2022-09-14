@@ -8,12 +8,10 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RecordName implements Comparable<RecordName> {
+public record RecordName(String name) implements Comparable<RecordName> {
 
-    private final String name;
-
-    private RecordName(String name) {
-        this.name = Objects.requireNonNull(name, "name cannot be null");
+    public RecordName {
+        Objects.requireNonNull(name, "name cannot be null");
     }
 
     public String asString() {
@@ -31,21 +29,13 @@ public class RecordName implements Comparable<RecordName> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RecordName that = (RecordName) o;
-        return Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
-
-    @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public int compareTo(RecordName that) {
+        return this.name.compareTo(that.name);
     }
 
     public static RecordName from(String name) {
@@ -54,11 +44,6 @@ public class RecordName implements Comparable<RecordName> {
 
     public static RecordName fqdn(String name) {
         return from(name).asFqdn();
-    }
-
-    @Override
-    public int compareTo(RecordName that) {
-        return this.name.compareTo(that.name);
     }
 
 }

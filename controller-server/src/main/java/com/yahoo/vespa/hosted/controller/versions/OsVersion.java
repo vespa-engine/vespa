@@ -24,7 +24,7 @@ public record OsVersion(Version version, CloudName cloud) implements Comparable<
 
     @Override
     public String toString() {
-        return "version " + version + " for " + cloud + " cloud";
+        return "version " + version.toFullString() + " for " + cloud + " cloud";
     }
 
     @Override

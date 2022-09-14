@@ -38,7 +38,9 @@ public record NodeVersion(HostName hostname,
 
     @Override
     public String toString() {
-        return hostname + ": " + currentVersion + " -> " + wantedVersion + " [zone=" + zone + ", suspendedAt=" + suspendedAt.map(Instant::toString).orElse("<not suspended>") + "]";
+        return hostname + ": " + currentVersion.toFullString() + " -> " + wantedVersion.toFullString() +
+               " [zone=" + zone + ", suspendedAt=" + suspendedAt.map(Instant::toString)
+                                                                .orElse("<not suspended>") + "]";
     }
 
     /** Returns whether this is upgrading */
