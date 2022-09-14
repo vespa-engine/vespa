@@ -1,7 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "global_filter.h"
+#include "blueprint.h"
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/searchlib/common/bitvector.h>
+#include <cassert>
+
+using vespalib::Runnable;
+using vespalib::ThreadBundle;
 
 namespace search::queryeval {
 
@@ -49,6 +56,27 @@ struct MultiBitVectorFilter : public GlobalFilter {
     }
 };
 
+std::unique_ptr<BitVector> make_part(Blueprint &blueprint, uint32_t begin, uint32_t end) {
+    bool strict = true;
+    auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
+    auto filter_iterator = blueprint.createFilterSearch(strict, constraint);
+    filter_iterator->initRange(begin, end);
+    auto result = filter_iterator->get_hits(begin);
+    // count bits in parallel and cache the results for later
+    result->countTrueBits();
+    return result;
+}
+
+struct MakePart : Runnable {
+    Blueprint &blueprint;
+    uint32_t begin;
+    uint32_t end;
+    std::unique_ptr<BitVector> result;
+    MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in) noexcept
+      : blueprint(blueprint_in), begin(begin_in), end(end_in), result() {}
+    void run() override { result = make_part(blueprint, begin, end); }
+};
+
 }
 
 GlobalFilter::GlobalFilter() = default;
@@ -83,9 +111,10 @@ GlobalFilter::create(std::unique_ptr<BitVector> vector)
 std::shared_ptr<GlobalFilter>
 GlobalFilter::create(std::vector<std::unique_ptr<BitVector>> vectors)
 {
-    uint32_t total_size = 0;
+    uint32_t total_size = 1;
     uint32_t total_count = 0;
     std::vector<uint32_t> splits;
+    splits.reserve(vectors.size());
     for (size_t i = 0; i < vectors.size(); ++i) {
         bool last = ((i + 1) == vectors.size());
         total_count += vectors[i]->countTrueBits();
@@ -98,6 +127,34 @@ GlobalFilter::create(std::vector<std::unique_ptr<BitVector>> vectors)
     }
     return std::make_shared<MultiBitVectorFilter>(std::move(vectors), std::move(splits),
                                                   total_size, total_count);
+}
+
+std::shared_ptr<GlobalFilter>
+GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &thread_bundle)
+{
+    uint32_t num_threads = thread_bundle.size();
+    std::vector<MakePart> parts;
+    parts.reserve(num_threads);
+    uint32_t docid = 1;
+    uint32_t per_thread = (docid_limit - docid) / num_threads;
+    uint32_t rest_docs = (docid_limit - docid) % num_threads;
+    while (docid < docid_limit) {
+        uint32_t part_size = per_thread + (parts.size() < rest_docs);
+        parts.emplace_back(blueprint, docid, docid + part_size);
+        docid += part_size;
+    }
+    assert(parts.size() <= num_threads);
+    assert((docid == docid_limit) || parts.empty());
+    thread_bundle.run(parts);
+    if (parts.size() == 1) {
+        return create(std::move(parts[0].result));
+    }
+    std::vector<std::unique_ptr<BitVector>> vectors;
+    vectors.reserve(parts.size());
+    for (MakePart &part: parts) {
+        vectors.push_back(std::move(part.result));
+    }
+    return create(std::move(vectors));
 }
 
 }

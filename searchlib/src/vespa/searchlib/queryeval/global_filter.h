@@ -3,10 +3,14 @@
 #pragma once
 
 #include <memory>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vector>
 
+namespace vespalib { class ThreadBundle; }
+namespace search { class BitVector; }
+
 namespace search::queryeval {
+
+class Blueprint;
 
 /**
  * Hold ownership of a global filter that can be taken into account by
@@ -35,6 +39,7 @@ public:
     static std::shared_ptr<GlobalFilter> create(std::vector<uint32_t> docids, uint32_t size);
     static std::shared_ptr<GlobalFilter> create(std::unique_ptr<BitVector> vector);
     static std::shared_ptr<GlobalFilter> create(std::vector<std::unique_ptr<BitVector>> vectors);
+    static std::shared_ptr<GlobalFilter> create(Blueprint &blueprint, uint32_t docid_limit, vespalib::ThreadBundle &thread_bundle);
 };
 
 } // namespace
