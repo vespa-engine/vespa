@@ -329,6 +329,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
+          <environmentVariables>
+            <VESPA_HOME>/opt/vespa</VESPA_HOME>
+          </environmentVariables>
         </configuration>
       </plugin>
       <plugin>
