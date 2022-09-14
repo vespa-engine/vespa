@@ -35,9 +35,8 @@ const char* creator_text(ItemCreator);
 
 class IQueryVisitor;
 
-/** Opaque datatype implemented by provider
- */
-struct QueryItem;
+// Interface class for juniper query items
+class QueryItem;
 
 /** This is the basic query type, implemented by the query provider
  */

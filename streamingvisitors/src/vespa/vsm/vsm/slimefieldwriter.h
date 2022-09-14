@@ -5,7 +5,7 @@
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
-namespace vespalib::slime { class Inserter; }
+namespace vespalib::slime { struct Inserter; }
 
 namespace vsm {
 

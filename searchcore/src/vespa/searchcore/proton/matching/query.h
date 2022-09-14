@@ -10,7 +10,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 
-namespace vespalib { class ThreadBundle; }
+namespace vespalib { struct ThreadBundle; }
 namespace search::engine { class Trace; }
 
 namespace proton::matching {
