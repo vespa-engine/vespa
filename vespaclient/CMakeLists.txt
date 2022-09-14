@@ -18,10 +18,6 @@ vespa_define_module(
     src/vespa/vespaclient/vesparoute
 )
 
-vespa_install_script(src/sh/vespa-set-node-state vespa-set-node-state bin)
-vespa_install_script(src/sh/vespa-get-node-state vespa-get-node-state bin)
-vespa_install_script(src/sh/vespa-get-cluster-state vespa-get-cluster-state bin)
-
 vespa_install_script(src/perl/bin/SetNodeState.pl libexec/vespa)
 vespa_install_script(src/perl/bin/GetNodeState.pl libexec/vespa)
 vespa_install_script(src/perl/bin/GetClusterState.pl libexec/vespa)
