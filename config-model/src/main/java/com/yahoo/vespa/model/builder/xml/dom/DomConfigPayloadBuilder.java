@@ -135,14 +135,22 @@ public class DomConfigPayloadBuilder {
             }
         }
         else if (definition != null && definition.getModelDefs().containsKey(name)) { // model field special syntax
-            String modelString = XML.attribute("model-id", element).orElse("\"\"");
-            modelString += " " + XML.attribute("url", element).orElse("\"\"");
-            modelString += " " + XML.attribute("path", element).orElse("\"\"");
+            String modelString = modelElement("model-id", element);
+            modelString += " " + modelElement("url", element);
+            modelString += " " + modelElement("path", element);
             payloadBuilder.setField(name, modelString);
         }
         else { // leaf value: <myValueName>value</myValue>
             payloadBuilder.setField(name, value);
         }
+    }
+
+    private String modelElement(String attributeName, Element element) {
+        String value = XML.attribute(attributeName, element).orElse("\"\"").trim();
+        if (value.contains(" "))
+            throw new IllegalArgumentException("The value of " + attributeName + " on " + element.getTagName() +
+                                               "cannot contain space");
+        return value;
     }
 
     private void parseComplex(Element element, List<Element> children, ConfigPayloadBuilder payloadBuilder, String parentName) {
