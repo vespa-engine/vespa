@@ -45,13 +45,13 @@ public class CoverageAggregator {
     public int getAskedNodes() {
         return askedNodes;
     }
-    public int getAnswerdNodes() {
+    public int getAnsweredNodes() {
         return answeredNodes;
     }
     public boolean hasNoAnswers() { return answeredNodes == 0; }
     public void setTimedOut() { timedOut = true; }
     public void setFailedNodes(int failedNodes) {
-        this.failedNodes += failedNodes;
+        this.failedNodes = failedNodes;
     }
 
     public Coverage createCoverage(TimeoutHandler timeoutHandler) {
@@ -68,7 +68,7 @@ public class CoverageAggregator {
         coverage.setDegradedReason(degradedReason);
         return coverage;
     }
-    public CoverageAggregator adjustDegradedCoverage(int searchableCopies, TimeoutHandler timeoutHandler) {
+    public CoverageAggregator adjustedDegradedCoverage(int searchableCopies, TimeoutHandler timeoutHandler) {
         int askedAndFailed = askedNodes + failedNodes;
         if (askedAndFailed == answeredNodesParticipated) {
             return this;
