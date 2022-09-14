@@ -1028,6 +1028,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var awsRegion = request.getProperty("aws-region");
         var parameterName = request.getProperty("parameter-name");
         var applicationId = ApplicationId.fromFullString(request.getProperty("application-id"));
+        if (!applicationId.tenant().equals(TenantName.from(tenantName)))
+            return ErrorResponse.badRequest("Invalid application id");
         var zoneId = requireZone(ZoneId.from(request.getProperty("zone")));
         var deploymentId = new DeploymentId(applicationId, zoneId);
 
