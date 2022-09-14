@@ -58,6 +58,11 @@ public class UriBindingsValidatorTest {
     }
 
     @Test
+    void allows_portbinding_when_restricting_data_plane() throws IOException, SAXException {
+        runUriBindingValidator(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true), createServicesXmlWithHandler("http://*:4443/my-handler"));
+    }
+
+    @Test
     void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
     }
@@ -68,12 +73,16 @@ public class UriBindingsValidatorTest {
     }
 
     private void runUriBindingValidator(boolean isHosted, String servicesXml) throws IOException, SAXException {
+        runUriBindingValidator(new TestProperties().setHostedVespa(isHosted), servicesXml);
+    }
+
+    private void runUriBindingValidator(TestProperties testProperties, String servicesXml) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
-                .properties(new TestProperties().setHostedVespa(isHosted))
+                .properties(testProperties)
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         new UriBindingsValidator().validate(model, deployState);
