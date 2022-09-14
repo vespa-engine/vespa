@@ -377,7 +377,7 @@ public:
     /**
      * Reference counting
      */
-    vespalib::RetainGuard retain() { return vespalib::RetainGuard(_refCount); }
+    vespalib::RetainGuard retain() { return {_refCount}; }
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;

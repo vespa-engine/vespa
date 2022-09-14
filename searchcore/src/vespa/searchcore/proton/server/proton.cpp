@@ -643,7 +643,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     } catch (vespalib::Exception &e) {
         LOG(warning, "Failed to start database for document type '%s'; %s",
             docTypeName.toString().c_str(), e.what());
-        return DocumentDB::SP();
+        return {};
     }
     // Wait for replay done on document dbs added due to reconfigs, since engines are already up and running.
     // Also wait for document db reaching online state if initializing in sequence.
@@ -940,11 +940,10 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
         return names;
     }
     std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override {
-        typedef std::unique_ptr<StateExplorer> Explorer_UP;
         std::shared_lock<std::shared_mutex> guard(mutex);
         auto result = documentDBMap.find(DocTypeName(vespalib::string(name)));
         if (result == documentDBMap.end()) {
-            return Explorer_UP(nullptr);
+            return {};
         }
         return std::make_unique<DocumentDBExplorer>(result->second);
     }
@@ -966,7 +965,6 @@ Proton::get_children_names() const
 std::unique_ptr<vespalib::StateExplorer>
 Proton::get_child(vespalib::stringref name) const
 {
-    typedef std::unique_ptr<StateExplorer> Explorer_UP;
     if (name == MATCH_ENGINE && _matchEngine) {
         return std::make_unique<StateExplorerProxy>(*_matchEngine);
     } else if (name == DOCUMENT_DB) {
@@ -990,7 +988,7 @@ Proton::get_child(vespalib::stringref name) const
     } else if (name == HW_INFO) {
         return std::make_unique<HwInfoExplorer>(_hw_info);
     }
-    return Explorer_UP(nullptr);
+    return {};
 }
 
 std::shared_ptr<IDocumentDBReferenceRegistry>

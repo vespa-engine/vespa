@@ -76,7 +76,7 @@ private:
         pid_t _pid;
 
     public:
-        ProtonFileHeaderContext(const vespalib::string &creator);
+        explicit ProtonFileHeaderContext(const vespalib::string &creator);
         ~ProtonFileHeaderContext() override;
 
         void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
