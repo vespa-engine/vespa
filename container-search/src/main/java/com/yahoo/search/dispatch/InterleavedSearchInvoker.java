@@ -45,7 +45,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final CoverageAggregator coverageAggregator;
     private Query query;
 
-    TimeoutHandler timeoutHandler;
+    private TimeoutHandler timeoutHandler;
     public InterleavedSearchInvoker(Timer timer, Collection<SearchInvoker> invokers,
                                     SearchCluster searchCluster,
                                     Group group,
@@ -61,7 +61,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         coverageAggregator = new CoverageAggregator(invokers.size());
     }
 
-    TimeoutHandler create(DispatchConfig config, int askedNodes, Query query) {
+    private TimeoutHandler createTimeoutHandler(DispatchConfig config, int askedNodes, Query query) {
         return (config.minSearchCoverage() < 100.0D)
                 ? new AdaptiveTimeoutHandler(timer, config, askedNodes, query)
                 : new SimpleTimeoutHandler(query);
@@ -94,7 +94,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         for (SearchInvoker invoker : invokers) {
             context = invoker.sendSearchRequest(query, context);
         }
-        timeoutHandler = create(searchCluster.dispatchConfig(), invokers.size(), query);
+        timeoutHandler = createTimeoutHandler(searchCluster.dispatchConfig(), invokers.size(), query);
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
@@ -112,14 +112,14 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
                 if (invoker == null) {
                     log.fine(() -> "Search timed out with " + coverageAggregator.getAskedNodes() + " requests made, " +
-                            coverageAggregator.getAnswerdNodes() + " responses received");
+                            coverageAggregator.getAnsweredNodes() + " responses received");
                     break;
                 } else {
                     InvokerResult toMerge = invoker.getSearchResult(execution);
                     merged = mergeResult(result.getResult(), toMerge, merged, groupingResultAggregator);
                     ejectInvoker(invoker);
                 }
-                nextTimeout = timeoutHandler.nextTimeout(coverageAggregator.getAnswerdNodes());
+                nextTimeout = timeoutHandler.nextTimeoutMS(coverageAggregator.getAnsweredNodes());
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while waiting for search results", e);
@@ -127,7 +127,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
-        CoverageAggregator adjusted = coverageAggregator.adjustDegradedCoverage((int)searchCluster.dispatchConfig().searchableCopies(), timeoutHandler);
+        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)searchCluster.dispatchConfig().searchableCopies(), timeoutHandler);
         result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler));
 
         int needed = query.getOffset() + query.getHits();

@@ -15,7 +15,7 @@ public class SimpleTimeoutHandler implements TimeoutHandler {
         this.query = query;
     }
     @Override
-    public long nextTimeout(int answeredNodes) {
+    public long nextTimeoutMS(int answeredNodes) {
             return query.getTimeLeft();
     }
 

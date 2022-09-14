@@ -35,7 +35,7 @@ class AdaptiveTimeoutHandler implements TimeoutHandler {
     }
 
     @Override
-    public long nextTimeout(int answeredNodes) {
+    public long nextTimeoutMS(int answeredNodes) {
         if (askedNodes == answeredNodes) return query.getTimeLeft();  // All nodes have responded - done
         if (answeredNodes < minimumResponses) return query.getTimeLeft(); // Minimum responses have not been received yet
 
