@@ -1,15 +1,9 @@
-#!/usr/bin/perl -w
+#!/bin/sh
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-use strict;
-
-my @pids = `ps auxww | grep "./testrunner" | grep -v grep`;
-foreach (@pids) {
-    s/^\S+\s+(\d+)\s+.*$/$1/;
-    chomp;
-}
-
-foreach my $pid (@pids) {
-    my $cmd = "pstack $pid";
-    system($cmd) == 0 or die "Failed to run '$cmd'";
-}
+ps auxww | grep "./testrunner" | grep -v grep | while read username pid restofline; do
+	if pstack $pid; then :; else
+		echo "Failed to run 'pstack $pid'"
+		exit 1
+	fi
+done
