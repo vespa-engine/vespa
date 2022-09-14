@@ -54,5 +54,3 @@ vespa_define_module(
     src/tests/subscription
     src/tests/configparser
 )
-
-vespa_install_script(src/apps/vespa-config/vespa-config.pl libexec/vespa)
