@@ -98,10 +98,6 @@ public:
 
     void handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit,
                               vespalib::ThreadBundle &thread_bundle, search::engine::Trace& trace);
-    
-    // Create a global filter. Called by handle_global_filter if needed.
-    static std::shared_ptr<GlobalFilter> create_global_filter(Blueprint& blueprint, uint32_t docid_limit,
-                                                              vespalib::ThreadBundle &thread_bundle);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.

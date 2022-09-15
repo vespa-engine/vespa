@@ -20,7 +20,7 @@ public:
     /**
      * Create an empty result
      **/
-    SimpleResult() : _hits() {}
+    SimpleResult() noexcept : _hits() {}
 
     /**
      * Create a result with the given hits.
