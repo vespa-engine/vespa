@@ -152,7 +152,7 @@ public class BertBaseEmbedder implements Embedder {
     }
 
     private static Tensor createTokenTypeIds(Tensor d)  {
-        return d.map((x) -> x > 0 ? 0:0);
+        return d.map((x) -> 0);  // Assume only one token type
     }
 
     private int modifyThreadCount(int numThreads) {
