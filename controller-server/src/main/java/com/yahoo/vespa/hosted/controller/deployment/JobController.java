@@ -755,6 +755,7 @@ public class JobController {
         instance.map(Instance::deployments)
                 .map(deployments -> deployments.get(id.zoneId()))
                 .map(Deployment::version)
+                .filter(versions::contains) // Don't deploy versions that are no longer known.
                 .ifPresent(versions::add);
 
         if (versions.isEmpty())
