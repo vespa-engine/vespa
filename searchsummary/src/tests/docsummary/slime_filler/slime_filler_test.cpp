@@ -542,6 +542,7 @@ TEST_F(SlimeFillerTest, insert_array_filtered)
     expect_insert_filtered(R"(["foo"])", array, {0});
     expect_insert_filtered(R"(["bar"])", array, {1});
     expect_insert_filtered(R"(["baz"])", array, {2});
+    expect_insert_filtered(R"(["foo","baz"])", array, {0, 2});
     expect_insert_filtered("null", array, {0, 1, 2, 3});
 }
 
@@ -559,6 +560,7 @@ TEST_F(SlimeFillerTest, insert_weighted_set_filtered)
     expect_insert_filtered(R"([{"item":"foo","weight":2}])", wset, {0});
     expect_insert_filtered(R"([{"item":"bar","weight":4}])", wset, {1});
     expect_insert_filtered(R"([{"item":"baz","weight":6}])", wset, {2});
+    expect_insert_filtered(R"([{"item":"foo","weight":2},{"item":"baz","weight":6}])", wset, {0, 2});
     expect_insert_filtered("null", wset, {0, 1, 2, 3});
 }
 
@@ -576,6 +578,7 @@ TEST_F(SlimeFillerTest, insert_map_filtered)
     expect_insert_filtered(R"([{"key":"key1","value":"value1"}])", map, {0});
     expect_insert_filtered(R"([{"key":"key2","value":"value2"}])", map, {1});
     expect_insert_filtered(R"([{"key":"key3","value":"value3"}])", map, {2});
+    expect_insert_filtered(R"([{"key":"key1","value":"value1"},{"key":"key3","value":"value3"}])", map, {0, 2});
     expect_insert_filtered("null", map, {0, 1, 2, 3});
 }
 
