@@ -44,15 +44,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(RpcServerTest.class.getName());
 
-    private Supervisor supervisor;
-
-    public void tearDown() throws Exception {
-        if (supervisor != null) {
-            supervisor.transport().shutdown().join();
-        }
-        super.tearDown();
-    }
-
     @Test
     void testRebinding() throws Exception {
         startingTest("RpcServerTest::testRebinding");
