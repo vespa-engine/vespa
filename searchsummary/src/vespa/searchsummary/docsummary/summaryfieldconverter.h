@@ -24,7 +24,7 @@ public:
      * Insert the given field value, but only the elements that are contained in the matching_elems vector.
      */
     static void insert_summary_field_with_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems);
-    static void insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter& converter);
+    static void insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IJuniperConverter& converter);
 };
 
 }

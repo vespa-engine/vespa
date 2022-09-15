@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsum_store_document.h"
-#include "check_undefined_value_visitor.h"
+#include "annotation_converter.h"
 #include "summaryfieldconverter.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
@@ -50,7 +50,8 @@ DocsumStoreDocument::insert_juniper_field(const vespalib::string& field_name, ve
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, true, converter);
+        AnnotationConverter stacked_converter(converter);
+        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, stacked_converter);
     }
 }
 

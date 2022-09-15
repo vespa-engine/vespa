@@ -65,22 +65,20 @@ private:
     Cursor& _array;
     Symbol _key_sym;
     Symbol _val_sym;
-    bool _tokenize;
 
 public:
-    MapFieldValueInserter(Inserter& parent_inserter, bool tokenize)
+    MapFieldValueInserter(Inserter& parent_inserter)
         : _array(parent_inserter.insertArray()),
           _key_sym(_array.resolve("key")),
-          _val_sym(_array.resolve("value")),
-          _tokenize(tokenize)
+          _val_sym(_array.resolve("value"))
     {
     }
     void insert_entry(const FieldValue& key, const FieldValue& value) {
         Cursor& c = _array.addObject();
         ObjectSymbolInserter ki(c, _key_sym);
         ObjectSymbolInserter vi(c, _val_sym);
-        SlimeFiller key_conv(ki, _tokenize);
-        SlimeFiller val_conv(vi, _tokenize);
+        SlimeFiller key_conv(ki);
+        SlimeFiller val_conv(vi);
 
         key.accept(key_conv);
         value.accept(val_conv);
@@ -89,25 +87,22 @@ public:
 
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize)
+SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
-      _tokenize(tokenize),
       _matching_elems(nullptr),
       _juniper_converter(nullptr)
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems)
+SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matching_elems)
     : _inserter(inserter),
-      _tokenize(tokenize),
       _matching_elems(matching_elems),
       _juniper_converter(nullptr)
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, bool tokenize, IJuniperConverter* juniper_converter)
+SlimeFiller::SlimeFiller(Inserter& inserter, IJuniperConverter* juniper_converter)
     : _inserter(inserter),
-      _tokenize(tokenize),
       _matching_elems(nullptr),
       _juniper_converter(juniper_converter)
 {
@@ -141,7 +136,7 @@ SlimeFiller::visit(const MapFieldValue& v)
     if (empty_or_empty_after_filtering(v)) {
         return;
     }
-    MapFieldValueInserter map_inserter(_inserter, _tokenize);
+    MapFieldValueInserter map_inserter(_inserter);
     if (filter_matching_elements()) {
         assert(v.has_no_erased_keys());
         for (uint32_t id_to_keep : (*_matching_elems)) {
@@ -163,7 +158,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     }
     Cursor& a = _inserter.insertArray();
     ArrayInserter ai(a);
-    SlimeFiller conv(ai, _tokenize, _juniper_converter);
+    SlimeFiller conv(ai, _juniper_converter);
     if (filter_matching_elements()) {
         for (uint32_t id_to_keep : (*_matching_elems)) {
             value[id_to_keep].accept(conv);
@@ -178,21 +173,10 @@ SlimeFiller::visit(const ArrayFieldValue& value)
 void
 SlimeFiller::visit(const StringFieldValue& value)
 {
-    if (_tokenize) {
-        asciistream tmp;
-        AnnotationConverter converter(value.getValue(), tmp);
-        converter.handleIndexingTerms(value);
-        if (_juniper_converter != nullptr) {
-            _juniper_converter->insert_juniper_field(tmp.str(), _inserter);
-        } else {
-            _inserter.insertString(Memory(tmp.str()));
-        }
+    if (_juniper_converter != nullptr) {
+        _juniper_converter->insert_juniper_field(value, _inserter);
     } else {
-        if (_juniper_converter != nullptr) {
-            _juniper_converter->insert_juniper_field(value, _inserter);
-        } else {
-            _inserter.insertString(Memory(value.getValueRef()));
-        }
+        _inserter.insertString(Memory(value.getValueRef()));
     }
 }
 
@@ -284,7 +268,7 @@ SlimeFiller::visit(const StructFieldValue& value)
     for (StructFieldValue::const_iterator itr = value.begin(); itr != value.end(); ++itr) {
         Memory keymem(itr.field().getName());
         ObjectInserter vi(c, keymem);
-        SlimeFiller conv(vi, _tokenize);
+        SlimeFiller conv(vi);
         FieldValue::UP nextValue(value.getValue(itr.field()));
         (*nextValue).accept(conv);
     }
@@ -318,7 +302,7 @@ SlimeFiller::visit(const WeightedSetFieldValue& value)
         }
         Cursor& o = a.addObject();
         ObjectSymbolInserter ki(o, isym);
-        SlimeFiller conv(ki, _tokenize);
+        SlimeFiller conv(ki);
         entry.first->accept(conv);
         int weight = static_cast<const IntFieldValue&>(*entry.second).getValue();
         o.setLong(wsym, weight);

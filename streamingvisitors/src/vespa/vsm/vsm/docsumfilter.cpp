@@ -165,12 +165,12 @@ DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name,
                 auto modifier = _docsum_filter.get_field_modifier(entry_idx);
                 if (modifier != nullptr) {
                     SnippetModifierJuniperConverter stacked_converter(converter, *modifier);
-                    SummaryFieldConverter::insert_juniper_field(*field_value, inserter, false, stacked_converter);
+                    SummaryFieldConverter::insert_juniper_field(*field_value, inserter, stacked_converter);
                     return;
                 }
             }
         }
-        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, false, converter);
+        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, converter);
     }
 }
 
