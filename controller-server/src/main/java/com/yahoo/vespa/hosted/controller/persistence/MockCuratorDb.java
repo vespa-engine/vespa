@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.time.Duration;
 
@@ -33,7 +32,7 @@ public class MockCuratorDb extends CuratorDb {
     }
 
     public MockCuratorDb(MockCurator curator) {
-        super(curator, Duration.ofMillis(100), new InMemoryFlagSource());
+        super(curator, Duration.ofMillis(100));
         this.curator = curator;
     }
 
