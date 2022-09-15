@@ -433,9 +433,9 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
 
 TEST_F(ControllerFixture, ready_bucket_not_moved_to_not_ready_if_node_is_marked_as_retired)
 {
-    _calc->setNodeRetired(true);
     // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
-    addReady(_ready.bucket(1));
+    remReady(_ready.bucket(1));
+    _calc->setNodeRetired(true);
     masterExecute([this]() {
         _bmj->recompute();
         _bmj->scanAndMove(4, 3);
@@ -449,10 +449,10 @@ TEST_F(ControllerFixture, ready_bucket_not_moved_to_not_ready_if_node_is_marked_
 // but test this case for the sake of completion.
 TEST_F(ControllerFixture, inactive_not_ready_bucket_not_moved_to_ready_if_node_is_marked_as_retired)
 {
+    remReady(_ready.bucket(1));
+    remReady(_ready.bucket(2));
+    remReady(_notReady.bucket(3));
     _calc->setNodeRetired(true);
-    addReady(_ready.bucket(1));
-    addReady(_ready.bucket(2));
-    addReady(_notReady.bucket(3));
     masterExecute([this]() {
         _bmj->recompute();
         _bmj->scanAndMove(4, 3);
@@ -464,10 +464,10 @@ TEST_F(ControllerFixture, inactive_not_ready_bucket_not_moved_to_ready_if_node_i
 
 TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_not_be_moved_to_ready_if_node_is_marked_as_retired)
 {
+    remReady(_ready.bucket(1));
+    remReady(_ready.bucket(2));
+    remReady(_notReady.bucket(3));
     _calc->setNodeRetired(true);
-    addReady(_ready.bucket(1));
-    addReady(_ready.bucket(2));
-    addReady(_notReady.bucket(3));
     _bmj->recompute();
     masterExecute([this]() {
         activateBucket(_notReady.bucket(3));
