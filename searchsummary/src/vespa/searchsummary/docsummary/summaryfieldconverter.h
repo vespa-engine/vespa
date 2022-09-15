@@ -2,7 +2,10 @@
 
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalue.h>
+#include <cstdint>
+#include <vector>
+
+namespace document { class FieldValue; }
 
 namespace vespalib::slime { struct Inserter; }
 
@@ -16,12 +19,6 @@ class IJuniperConverter;
 class SummaryFieldConverter
 {
 public:
-    static document::FieldValue::UP convertSummaryField(bool markup, const document::FieldValue &value);
-
-    static document::FieldValue::UP convert_field_with_filter(bool markup,
-                                                              const document::FieldValue& value,
-                                                              const std::vector<uint32_t>& matching_elems);
-
     static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter);
     /**
      * Insert the given field value, but only the elements that are contained in the matching_elems vector.
