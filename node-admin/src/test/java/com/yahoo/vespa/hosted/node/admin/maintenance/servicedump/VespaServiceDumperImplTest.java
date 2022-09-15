@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -168,6 +171,32 @@ class VespaServiceDumperImplTest {
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/perf-report.txt"),
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/recording.jfr.zst"));
         assertSyncedFiles(context, syncClient, expectedUris);
+    }
+
+    @Test
+    void fails_gracefully_on_invalid_request_json() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        JsonNodeFactory fac = new ObjectMapper().getNodeFactory();
+        ObjectNode invalidRequest = new ObjectNode(fac)
+                .set("dumpOptions", new ObjectNode(fac).put("duration", "invalidDurationDataType"));
+        NodeSpec spec = NodeSpec.Builder
+                .testSpec(HOSTNAME, NodeState.active)
+                .report(ServiceDumpReport.REPORT_ID, invalidRequest)
+                .build();
+        nodeRepository.updateNodeSpec(spec);
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(spec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+        String expectedJson = "{\"createdMillis\":1600001000000,\"startedAt\":1600001000000,\"failedAt\":1600001000000," +
+                "\"configId\":\"unknown\",\"error\":\"Invalid JSON in service dump request\",\"artifacts\":[]}";
+        assertReportEquals(nodeRepository, expectedJson);
     }
 
     private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, List<String> artifacts,

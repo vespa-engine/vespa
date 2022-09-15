@@ -89,10 +89,15 @@ class ServiceDumpReport extends BaseReport {
     }
 
     public static ServiceDumpReport createErrorReport(
-            ServiceDumpReport request, Instant startedAt, Instant failedAt, String message) {
+            ServiceDumpReport reqOrNull, Instant startedAt, Instant failedAt, String message) {
+        Long createdAt = reqOrNull != null ? reqOrNull.getCreatedMillisOrNull() : Long.valueOf(startedAt.toEpochMilli());
+        String configId = reqOrNull != null ? reqOrNull.configId() : "unknown";
+        Long expireAt = reqOrNull != null ? reqOrNull.expireAt() : null;
+        List<String> artifacts = reqOrNull != null ? reqOrNull.artifacts() : List.of();
+        DumpOptions dumpOptions = reqOrNull != null ? reqOrNull.dumpOptions() : null;
         return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, failedAt.toEpochMilli(), null,
-                request.configId(), request.expireAt(), message, request.artifacts(), request.dumpOptions());
+                createdAt, startedAt.toEpochMilli(), null, failedAt.toEpochMilli(), null,
+                configId, expireAt, message, artifacts, dumpOptions);
     }
 
     @JsonGetter(STARTED_AT_FIELD) public Long startedAt() { return startedAt; }

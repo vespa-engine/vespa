@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.yolean.concurrent.Sleeper;
 
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -66,8 +67,14 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
         Instant startedAt = clock.instant();
         NodeSpec nodeSpec = context.node();
-        ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
-                .orElse(null);
+        ServiceDumpReport request;
+        try {
+            request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
+                    .orElse(null);
+        } catch (IllegalArgumentException | UncheckedIOException e) {
+            handleFailure(context, null, startedAt, e, "Invalid JSON in service dump request");
+            return;
+        }
         if (request == null || request.isCompletedOrFailed()) {
             context.log(log, Level.FINE, "No service dump requested or dump already completed/failed");
             return;
@@ -114,7 +121,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             uploadArtifacts(context, destination, producedArtifacts);
             storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, clock.instant(), destination));
         } catch (Exception e) {
-            handleFailure(context, request, startedAt, e);
+            handleFailure(context, request, startedAt, e, e.getMessage());
         } finally {
             if (unixPathDirectory.exists()) {
                 context.log(log, Level.INFO, "Deleting directory '" + unixPathDirectory +"'.");
@@ -147,15 +154,16 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 : Instant.ofEpochMilli(request.expireAt());
     }
 
-    private void handleFailure(NodeAgentContext context, ServiceDumpReport request, Instant startedAt, Exception failure) {
+    private void handleFailure(NodeAgentContext context, ServiceDumpReport requestOrNull, Instant startedAt,
+                               Exception failure, String message) {
         context.log(log, Level.WARNING, failure.toString(), failure);
-        ServiceDumpReport report = ServiceDumpReport.createErrorReport(request, startedAt, clock.instant(), failure.toString());
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, clock.instant(), message);
         storeReport(context, report);
     }
 
-    private void handleFailure(NodeAgentContext context, ServiceDumpReport request, Instant startedAt, String message) {
+    private void handleFailure(NodeAgentContext context, ServiceDumpReport requestOrNull, Instant startedAt, String message) {
         context.log(log, Level.WARNING, message);
-        ServiceDumpReport report = ServiceDumpReport.createErrorReport(request, startedAt, clock.instant(), message);
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, clock.instant(), message);
         storeReport(context, report);
     }
 
