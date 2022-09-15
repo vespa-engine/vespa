@@ -104,6 +104,7 @@ public abstract class FleetControllerTest implements Waiter {
         slobrok = new Slobrok();
         if (builder.zooKeeperServerAddress() != null) {
             zooKeeperServer = new ZooKeeperTestServer();
+            // Need to set zookeeper address again, as port number is not known until ZooKeeperTestServer has been created
             builder.setZooKeeperServerAddress(zooKeeperServer.getAddress());
             log.log(Level.FINE, "Set up new zookeeper server at " + zooKeeperServer.getAddress());
         }
@@ -158,7 +159,7 @@ public abstract class FleetControllerTest implements Waiter {
         return options;
     }
 
-    void stopFleetController() throws Exception {
+    void stopFleetController() {
         fleetControllers.forEach(f -> {
             try {
                 f.shutdown();
