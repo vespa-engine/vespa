@@ -38,7 +38,6 @@
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
-#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -168,14 +167,6 @@ vespalib::string asVstring(vespalib::Memory str) {
 }
 vespalib::string asVstring(const Inspector &value) {
     return asVstring(value.asString());
-}
-
-void decode(const FieldValue &fv, vespalib::Slime &slime) {
-    auto& raw_fv = dynamic_cast<const RawFieldValue&>(fv);
-    auto value_ref = raw_fv.getValueRef();
-    vespalib::Memory mem(value_ref.data(), value_ref.size());
-    size_t decodeRes = BinaryFormat::decode(mem, slime);
-    ASSERT_EQUAL(decodeRes, mem.size);
 }
 
 std::string b64encode(const Inspector &value) {
@@ -999,17 +990,24 @@ TEST_F("requireThatUrisAreUsed", Fixture)
 
     DocumentStoreAdapter dsa(store, *bc._repo);
     auto res = dsa.getMappedDocsum(1);
-    EXPECT_EQUAL("http://www.example.com:81/fluke?ab=2#4", SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("urisingle"))->getAsString());
     {
         vespalib::Slime slime;
-        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("uriarray")), slime);
+        vespalib::slime::SlimeInserter inserter(slime);
+        res->insert_summary_field("urisingle", inserter);
+        EXPECT_EQUAL("http://www.example.com:81/fluke?ab=2#4", asVstring(slime.get()));
+    }
+    {
+        vespalib::Slime slime;
+        vespalib::slime::SlimeInserter inserter(slime);
+        res->insert_summary_field("uriarray", inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
         EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("uriwset")), slime);
+        vespalib::slime::SlimeInserter inserter(slime);
+        res->insert_summary_field("uriwset", inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
@@ -1129,14 +1127,16 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     auto res = dsa.getMappedDocsum(1);
     {
         vespalib::Slime slime;
-        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("araw")), slime);
+        vespalib::slime::SlimeInserter inserter(slime);
+        res->insert_summary_field("araw", inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(*SummaryFieldConverter::convertSummaryField(false, *res->get_field_value("wraw")), slime);
+        vespalib::slime::SlimeInserter inserter(slime);
+        res->insert_summary_field("wraw", inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(46L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(45L, slime.get()[1]["weight"].asLong());
