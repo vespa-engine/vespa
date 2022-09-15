@@ -251,7 +251,8 @@ public abstract class FleetControllerTest implements Waiter {
         subsetWaiter.waitForState(expectedState);
     }
 
-    protected void tearDownSystem() {
+    @AfterEach
+    public void tearDown() {
         if (testName != null) {
             //log.log(Level.INFO, "STOPPING TEST " + testName);
             System.err.println("STOPPING TEST " + testName);
@@ -276,11 +277,6 @@ public abstract class FleetControllerTest implements Waiter {
             slobrok.stop();
             slobrok = null;
         }
-    }
-
-    @AfterEach
-    public void tearDown() throws Exception {
-        tearDownSystem();
     }
 
     public ClusterState waitForStableSystem() throws Exception { return waiter.waitForStableSystem(); }

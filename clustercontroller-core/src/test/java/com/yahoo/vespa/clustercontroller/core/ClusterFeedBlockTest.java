@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -11,21 +9,19 @@ import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourceUsageJson;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.mapOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourceUsageJson;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,14 +31,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     private static final int NODE_COUNT = 3;
 
     // TODO dedupe fixture and setup stuff with other tests
-    private Supervisor supervisor;
     private FleetController ctrl;
     private DummyCommunicator communicator;
-
-    @BeforeEach
-    public void setUp() {
-        supervisor = new Supervisor(new Transport());
-    }
 
     private void initialize(FleetControllerOptions options) throws Exception {
         List<Node> nodes = new ArrayList<>();
@@ -76,14 +66,6 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
             communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, i), State.UP, "");
         }
         ctrl.tick();
-    }
-
-    public void tearDown() throws Exception {
-        if (supervisor != null) {
-            supervisor.transport().shutdown().join();
-            supervisor = null;
-        }
-        super.tearDown();
     }
 
     private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {

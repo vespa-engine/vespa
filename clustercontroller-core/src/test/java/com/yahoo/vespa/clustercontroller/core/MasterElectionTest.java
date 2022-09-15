@@ -35,8 +35,6 @@ public class MasterElectionTest extends FleetControllerTest {
     private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
-    private Supervisor supervisor;
-
     protected void setUpFleetControllers(int count, boolean useFakeTimer, FleetControllerOptions.Builder builder) throws Exception {
         if (zooKeeperServer == null) {
             zooKeeperServer = new ZooKeeperTestServer();
@@ -84,13 +82,6 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i = 0; i < fleetControllers.size(); ++i) {
             waitForCompleteCycle(i);
         }
-    }
-
-    public void tearDown() throws Exception {
-        if (supervisor != null) {
-            supervisor.transport().shutdown().join();
-        }
-        super.tearDown();
     }
 
     @Test
