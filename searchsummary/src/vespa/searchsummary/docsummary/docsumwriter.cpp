@@ -48,7 +48,7 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
 }
 
 void
-DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
+DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState& state,
                                   IDocsumStore *docinfos, Inserter& topInserter)
 {
     if (rci.outputClass == nullptr) {
@@ -61,10 +61,10 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *resCfg = rci.outputClass->GetEntry(i);
             const DocsumFieldWriter *writer = resCfg->_docsum_field_writer.get();
-            if (state->_args.needField(resCfg->_name) && ! writer->isDefaultValue(docid, state)) {
+            if (state._args.needField(resCfg->_name) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->_name.data(), resCfg->_name.size());
                 ObjectInserter inserter(docsum, field_name);
-                writer->insertField(docid, nullptr, state, resCfg->_type, inserter);
+                writer->insertField(docid, nullptr, state, inserter);
             }
         }
     } else {
@@ -77,13 +77,13 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
-            if ( ! state->_args.needField(outCfg->_name)) continue;
+            if ( ! state._args.needField(outCfg->_name)) continue;
             const DocsumFieldWriter *writer = outCfg->_docsum_field_writer.get();
             const Memory field_name(outCfg->_name.data(), outCfg->_name.size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
                 if (! writer->isDefaultValue(docid, state)) {
-                    writer->insertField(docid, doc.get(), state, outCfg->_type, inserter);
+                    writer->insertField(docid, doc.get(), state, inserter);
                 }
             } else {
                 if (doc) {

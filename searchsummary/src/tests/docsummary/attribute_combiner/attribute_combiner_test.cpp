@@ -91,7 +91,7 @@ AttributeCombinerTest::assertWritten(const vespalib::string &exp_slime_as_json, 
 {
     vespalib::Slime act;
     vespalib::slime::SlimeInserter inserter(act);
-    writer->insertField(docId, nullptr, &state, search::docsummary::RES_JSONSTRING, inserter);
+    writer->insertField(docId, nullptr, state, inserter);
 
     SlimeValue exp(exp_slime_as_json);
     EXPECT_EQ(exp.slime, act);

@@ -12,17 +12,17 @@ RankFeaturesDFW::RankFeaturesDFW() = default;
 RankFeaturesDFW::~RankFeaturesDFW() = default;
 
 void
-RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
-                             ResType, vespalib::slime::Inserter &target) const
+RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state,
+                             vespalib::slime::Inserter &target) const
 {
-    if ( !state->_rankFeatures ) {
-        state->_callback.FillRankFeatures(*state);
-        if (state->_rankFeatures.get() == nullptr) { // still no rank features to write
+    if ( !state._rankFeatures ) {
+        state._callback.FillRankFeatures(state);
+        if (state._rankFeatures.get() == nullptr) { // still no rank features to write
             return;
         }
     }
-    const FeatureSet::StringVector & names = state->_rankFeatures->getNames();
-    const FeatureSet::Value * values = state->_rankFeatures->getFeaturesByDocId(docid);
+    const FeatureSet::StringVector & names = state._rankFeatures->getNames();
+    const FeatureSet::Value * values = state._rankFeatures->getFeaturesByDocId(docid);
     if (values == nullptr) { return; }
 
     vespalib::slime::Cursor& obj = target.insertObject();

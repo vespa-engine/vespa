@@ -39,7 +39,7 @@ public:
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     static std::unique_ptr<DocsumFieldWriter> create(const vespalib::string &fieldName, search::attribute::IAttributeContext &attrCtx,
                                                      bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const override;
+    void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
 };
 
 }

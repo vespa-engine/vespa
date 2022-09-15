@@ -53,16 +53,16 @@ public:
     explicit SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
-    void insertField(uint32_t docid, GetDocsumsState *state, ResType, Inserter &target) const override;
-    bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override {
-        return get_attribute(*state).isUndefined(docid);
+    void insertField(uint32_t docid, GetDocsumsState& state, Inserter &target) const override;
+    bool isDefaultValue(uint32_t docid, const GetDocsumsState& state) const override {
+        return get_attribute(state).isUndefined(docid);
     }
 };
 
 void
-SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType, Inserter &target) const
+SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, Inserter &target) const
 {
-    const auto& v = get_attribute(*state);
+    const auto& v = get_attribute(state);
     switch (v.getBasicType()) {
     case BasicType::Type::UINT2:
     case BasicType::Type::UINT4:
@@ -253,7 +253,7 @@ public:
         }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    void insertField(uint32_t docid, GetDocsumsState* state, ResType, Inserter& target) const override;
+    void insertField(uint32_t docid, GetDocsumsState& state, Inserter& target) const override;
 };
 
 bool
@@ -301,16 +301,16 @@ make_field_writer_state(const vespalib::string& field_name, const IAttributeVect
 }
 
 void
-MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const
+MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const
 {
-    auto& field_writer_state = state->_fieldWriterStates[_state_index];
+    auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
         const MatchingElements *matching_elements = nullptr;
         if (_filter_elements) {
-            matching_elements = &state->get_matching_elements(*_matching_elems_fields);
+            matching_elements = &state.get_matching_elements(*_matching_elems_fields);
         }
-        const auto& attr = get_attribute(*state);
-        field_writer_state = make_field_writer_state(getAttributeName(), attr, state->get_stash(), matching_elements);
+        const auto& attr = get_attribute(state);
+        field_writer_state = make_field_writer_state(getAttributeName(), attr, state.get_stash(), matching_elements);
     }
     field_writer_state->insertField(docid, target);
 }

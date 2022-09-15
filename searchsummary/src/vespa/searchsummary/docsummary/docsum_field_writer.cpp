@@ -13,7 +13,7 @@ DocsumFieldWriter::getAttributeName() const
 }
 
 bool
-DocsumFieldWriter::isDefaultValue(uint32_t, const GetDocsumsState*) const
+DocsumFieldWriter::isDefaultValue(uint32_t, const GetDocsumsState&) const
 {
     return false;
 }

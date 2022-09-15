@@ -13,8 +13,8 @@ namespace search::docsummary {
 class SimpleDFW : public DocsumFieldWriter
 {
 public:
-    virtual void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const = 0;
-    void insertField(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const override;
+    virtual void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const = 0;
+    void insertField(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
 };
 
 }

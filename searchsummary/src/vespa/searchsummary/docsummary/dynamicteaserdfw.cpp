@@ -143,11 +143,11 @@ JuniperConverter::insert_juniper_field(const document::StringFieldValue& input, 
 }
 
 void
-DynamicTeaserDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType,
+DynamicTeaserDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
                               vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {
-        JuniperConverter converter(*this, docid, *state);
+        JuniperConverter converter(*this, docid, state);
         doc->insert_juniper_field(_input_field_name, target, converter);
     }
 }

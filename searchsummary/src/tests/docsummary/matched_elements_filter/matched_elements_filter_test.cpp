@@ -218,7 +218,7 @@ private:
         Slime slime;
         SlimeInserter inserter(slime);
 
-        writer->insertField(doc_id, doc.get(), &state, ResType::RES_JSONSTRING, inserter);
+        writer->insertField(doc_id, doc.get(), state, inserter);
         return slime;
     }
 

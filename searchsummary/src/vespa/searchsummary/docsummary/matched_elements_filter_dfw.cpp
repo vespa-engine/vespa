@@ -63,12 +63,12 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 
 void
-MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state,
-                                      ResType, vespalib::slime::Inserter& target) const
+MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                                      vespalib::slime::Inserter& target) const
 {
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
-        SummaryFieldConverter::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, *state));
+        SummaryFieldConverter::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, state));
     }
 }
 
