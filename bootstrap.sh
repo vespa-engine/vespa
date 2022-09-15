@@ -47,7 +47,7 @@ mvn_install() {
 
 # Generate vtag map
 top=$(dirname $0)
-$top/dist/getversion.pl -M $top > $top/dist/vtag.map
+$top/dist/getversionmap.sh $top > $top/dist/vtag.map
 
 # NOTES ON BUILDING JAVA MODULES
 #
