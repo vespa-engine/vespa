@@ -10,5 +10,6 @@ private:
 public:
     void startChild(const vespalib::string &prefix);
     void stopChild();
+    void stopChild(const vespalib::string &prefix);
     ChildHandler();
 };
