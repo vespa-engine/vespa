@@ -148,21 +148,6 @@ public:
 
 };
 
-void
-set_v8_geo_positions(bool value)
-{
-    SummaryConfigBuilder empty;
-    empty.usev8geopositions = value;
-    empty.defaultsummaryid = 0;
-    empty.classes.emplace_back();
-    auto& default_summary_class = empty.classes.back();
-    default_summary_class.id = 0;
-    default_summary_class.name = "default";
-    ResultConfig config;
-    MockDocsumFieldWriterFactory mock_factory;
-    config.ReadConfig(empty, "dummy", mock_factory);
-}
-
 DocumenttypesConfig
 get_document_types_config()
 {
@@ -455,16 +440,16 @@ TEST_F(SlimeFillerTest, insert_raw)
 
 TEST_F(SlimeFillerTest, insert_position)
 {
-    set_v8_geo_positions(true);
+    ResultConfig::set_wanted_v8_geo_positions(true);
     {
         SCOPED_TRACE("normal position");
         StructFieldValue position(get_data_type("position"));
         position.setValue("x", IntFieldValue(500000));
         position.setValue("y", IntFieldValue(750000));
         expect_insert(R"({"lat":0.75,"lng":0.5})", position);
-        set_v8_geo_positions(false);
+        ResultConfig::set_wanted_v8_geo_positions(false);
         expect_insert(R"({"y":750000,"x":500000})", position);
-        set_v8_geo_positions(true);
+        ResultConfig::set_wanted_v8_geo_positions(true);
     }
     {
         SCOPED_TRACE("partial position");

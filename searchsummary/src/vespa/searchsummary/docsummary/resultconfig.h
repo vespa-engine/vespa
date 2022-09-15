@@ -94,6 +94,9 @@ public:
     // whether last config seen wanted useV8geoPositions = true
     static bool wantedV8geoPositions();
 
+    // This function should only be called by unit tests.
+    static void set_wanted_v8_geo_positions(bool value);
+
     /**
      * @return the name of the given result field type.
      * @param resType enum value of a result field type.
