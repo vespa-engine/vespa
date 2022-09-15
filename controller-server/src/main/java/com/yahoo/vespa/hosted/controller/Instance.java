@@ -220,6 +220,6 @@ public class Instance {
 
     @Override
     public String toString() {
-        return "application '" + id + "'";
+        return "application instance '" + id + "'";
     }
 }

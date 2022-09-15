@@ -175,12 +175,13 @@ public class ControllerTest {
             fail("Expected exception due to illegal production deployment removal");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("deployment-removal: application 'tenant.application' is deployed in us-west-1, but does not include this zone in deployment.xml. " +
-                    ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval),
-                    e.getMessage());
+            assertEquals("deployment-removal: application instance 'tenant.application' is deployed in us-west-1, " +
+                         "but this instance and region combination is removed from deployment.xml. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval),
+                         e.getMessage());
         }
         assertNotNull(context.instance().deployments().get(productionUsWest1.zone()),
-                "Zone was not removed");
+                      "Zone was not removed");
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()

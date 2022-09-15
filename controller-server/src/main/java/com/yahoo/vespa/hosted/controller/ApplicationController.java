@@ -695,9 +695,10 @@ public class ApplicationController {
                                                deploymentsToRemove.stream()
                                                                   .map(zone -> zone.region().value())
                                                                   .collect(joining(", ")) +
-                                               ", but does not include " +
-                                               (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
-                                               " in deployment.xml. " +
+                                               ", but " + (deploymentsToRemove.size() > 1 ? "these " : "this ") +
+                                               "instance and region combination" +
+                                               (deploymentsToRemove.size() > 1 ? "s are" : " is") +
+                                               " removed from deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
         // Remove the instance as well, if it is no longer referenced, and contains only production deployments that are removed now.
         boolean removeInstance =    ! deploymentSpec.instanceNames().contains(instance)
