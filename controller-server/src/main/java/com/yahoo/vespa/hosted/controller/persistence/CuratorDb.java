@@ -213,7 +213,7 @@ public class CuratorDb {
     }
 
     public Mutex lockProvisionState(String provisionStateId) {
-        return curator.lock(lockRoot.append(provisionStatePath()).append(provisionStateId), Duration.ofSeconds(1));
+        return curator.lock(lockRoot.append("provisioning").append("states").append(provisionStateId), Duration.ofSeconds(1));
     }
 
     public Mutex lockOsVersions() {
