@@ -167,25 +167,26 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void startFleetController(boolean useFakeTimer) throws Exception {
-        if (fleetControllers.isEmpty()) {
-            fleetControllers.add(createFleetController(useFakeTimer, options));
-        } else {
-            log.log(Level.WARNING, "already started fleetcontroller, not starting another");
-        }
+        if ( ! fleetControllers.isEmpty()) throw new IllegalStateException("already started fleetcontroller, not starting another");
+
+        fleetControllers.add(createFleetController(useFakeTimer, options));
     }
 
     protected void setUpVdsNodes(boolean useFakeTimer) throws Exception {
         setUpVdsNodes(useFakeTimer, false);
     }
+
     protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected) throws Exception {
         setUpVdsNodes(useFakeTimer, startDisconnected, DEFAULT_NODE_COUNT);
     }
+
     protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected, int nodeCount) throws Exception {
         TreeSet<Integer> nodeIndexes = new TreeSet<>();
         for (int i = 0; i < nodeCount; ++i)
             nodeIndexes.add(this.nodes.size()/2 + i); // divide by 2 because there are 2 nodes (storage and distributor) per index
         setUpVdsNodes(useFakeTimer, startDisconnected, nodeIndexes);
     }
+
     protected void setUpVdsNodes(boolean useFakeTimer, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
         for (int nodeIndex : nodeIndexes) {
             nodes.add(createNode(useFakeTimer, startDisconnected, DISTRIBUTOR, nodeIndex));
