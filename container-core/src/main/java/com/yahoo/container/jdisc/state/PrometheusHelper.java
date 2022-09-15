@@ -52,6 +52,8 @@ public class PrometheusHelper {
         var value = sanitizeDouble(gaugeMetric.getLast());
         outputStream.write(getMetricLines(sanitizedMetricName, dimensions, value, timestamp));
 
+        /*
+        For now - only push "last" value - to limit metric volume
         sanitizedMetricName = getSanitizedMetricName(metricName, "average");
         value = sanitizeDouble(gaugeMetric.getAverage());
         outputStream.write(getMetricLines(sanitizedMetricName, dimensions, value, timestamp));
@@ -59,6 +61,7 @@ public class PrometheusHelper {
         sanitizedMetricName = getSanitizedMetricName(metricName, "max");
         value = sanitizeDouble(gaugeMetric.getMax());
         outputStream.write(getMetricLines(sanitizedMetricName, dimensions, value, timestamp));
+         */
     }
 
     private static byte[] getMetricLines(String metricName, String dimensions, Number value, long timestamp) {
