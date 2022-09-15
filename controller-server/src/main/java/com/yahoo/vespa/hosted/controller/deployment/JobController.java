@@ -690,8 +690,9 @@ public class JobController {
             throw new IllegalArgumentException(type.zone() + " is not present in this system");
 
         VersionStatus versionStatus = controller.readVersionStatus();
+        /* TODO jonmv: re-enable
         if (platform.isPresent() && versionStatus.deployableVersions().stream().map(VespaVersion::versionNumber).noneMatch(platform.get()::equals))
-            throw new IllegalArgumentException("platform version " + platform.get() + " is not present in this system");
+            throw new IllegalArgumentException("platform version " + platform.get() + " is not present in this system"); */
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
