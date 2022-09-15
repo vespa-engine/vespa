@@ -110,10 +110,9 @@ public class RoutingController {
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
-            for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-                endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
-            }
+            RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
+            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
+            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -364,19 +363,18 @@ public class RoutingController {
     }
 
     private boolean usesSharedRouting(ZoneId zone) {
-        return controller.zoneRegistry().routingMethods(zone).stream().anyMatch(RoutingMethod::isShared);
+        return controller.zoneRegistry().routingMethod(zone).isShared();
     }
 
     /** Returns the routing methods that are available across all given deployments */
     private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments) {
-        var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
+        Map<RoutingMethod, Set<DeploymentId>> deploymentsByMethod = new HashMap<>();
         for (var deployment : deployments) {
-            for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
-                deploymentsByMethod.computeIfAbsent(method, k -> new LinkedHashSet<>())
-                                   .add(deployment);
-            }
+            RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
+            deploymentsByMethod.computeIfAbsent(routingMethod, k -> new LinkedHashSet<>())
+                               .add(deployment);
         }
-        var routingMethods = new ArrayList<RoutingMethod>();
+        List<RoutingMethod> routingMethods = new ArrayList<>();
         deploymentsByMethod.forEach((method, supportedDeployments) -> {
             if (supportedDeployments.containsAll(deployments)) {
                 routingMethods.add(method);

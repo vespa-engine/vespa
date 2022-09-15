@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.NodeSlice;
-import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -78,8 +77,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
-            boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethods(zone.getId()).stream()
-                                                       .anyMatch(RoutingMethod::isShared);
+            boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethod(zone.getId()).isShared();
             return versionOf(NodeSlice.ALL, zone, application, Node::wantedVersion)
                     .map(wantedVersion -> !wantedVersion.equals(target.version()))
                     .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet

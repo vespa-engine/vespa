@@ -83,8 +83,8 @@ public interface ZoneRegistry {
     /** Returns all OS upgrade policies */
     List<UpgradePolicy> osUpgradePolicies();
 
-    /** Returns the routing methods supported by given zone, with the most preferred method appearing first */
-    List<RoutingMethod> routingMethods(ZoneId zone);
+    /** Returns the routing method used by given zone */
+    RoutingMethod routingMethod(ZoneId zone);
 
     /** Returns a URL where an informative dashboard can be found. */
     URI dashboardUrl();

@@ -25,18 +25,18 @@ import java.util.stream.Collectors;
 public class ZoneFilterMock implements ZoneList {
 
     private final List<ZoneApi> zones;
-    private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods;
+    private final Map<ZoneApi, RoutingMethod> zoneRoutingMethods;
     private final Set<ZoneApi> reprovisionToUpgradeOs;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods, Set<ZoneApi> reprovisionToUpgradeOs, boolean negate) {
+    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, RoutingMethod> zoneRoutingMethods, Set<ZoneApi> reprovisionToUpgradeOs, boolean negate) {
         this.zones = zones;
         this.zoneRoutingMethods = zoneRoutingMethods;
         this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> routingMethods, Set<ZoneApi> reprovisionToUpgradeOs) {
+    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, RoutingMethod> routingMethods, Set<ZoneApi> reprovisionToUpgradeOs) {
         return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), reprovisionToUpgradeOs, false);
     }
 
@@ -62,7 +62,7 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList routingMethod(RoutingMethod method) {
-        return filter(zone -> zoneRoutingMethods.getOrDefault(zone, List.of()).contains(method));
+        return filter(zone -> zoneRoutingMethods.get(zone) == method);
     }
 
     @Override
