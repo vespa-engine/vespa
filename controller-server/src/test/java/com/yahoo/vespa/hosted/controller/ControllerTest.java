@@ -743,6 +743,7 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
         tester.controllerTester().upgradeSystem(version2);
+        tester.newDeploymentContext("keep", "v2", "alive").submit().deploy(); // TODO jonmv: remove
         ZoneId zone = ZoneId.from("dev", "us-east-1");
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version1).build());

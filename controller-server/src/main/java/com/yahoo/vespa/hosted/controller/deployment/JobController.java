@@ -70,6 +70,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -537,6 +538,9 @@ public class JobController {
     /** Marks the given run as aborted; no further normal steps will run, but run-always steps will try to succeed. */
     public void abort(RunId id, String reason) {
         locked(id, run -> {
+            if (run.status() == aborted)
+                return run;
+
             run.stepStatuses().entrySet().stream()
                .filter(entry -> entry.getValue() == unfinished)
                .forEach(entry -> log(id, entry.getKey(), INFO, "Aborting run: " + reason));
@@ -685,6 +689,10 @@ public class JobController {
         if ( ! controller.zoneRegistry().hasZone(type.zone()))
             throw new IllegalArgumentException(type.zone() + " is not present in this system");
 
+        VersionStatus versionStatus = controller.readVersionStatus();
+        if (platform.isPresent() && versionStatus.deployableVersions().stream().map(VespaVersion::versionNumber).noneMatch(platform.get()::equals))
+            throw new IllegalArgumentException("platform version " + platform.get() + " is not present in this system");
+
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -706,7 +714,7 @@ public class JobController {
         byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance())));
+            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance()), versionStatus));
             if (   ! allowOutdatedPlatform
                 && ! controller.readVersionStatus().isOnCurrentMajor(targetPlatform)
                 &&   runs(id, type).values().stream().noneMatch(run -> run.versions().targetPlatform().getMajor() == targetPlatform.getMajor()))
@@ -742,9 +750,8 @@ public class JobController {
                       .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
     }
 
-    private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
+    private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance, VersionStatus versionStatus) {
         // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
-        VersionStatus versionStatus = controller.readVersionStatus();
         Version systemVersion = controller.systemVersion(versionStatus);
 
         List<Version> versions = new ArrayList<>(List.of(systemVersion));
@@ -755,6 +762,7 @@ public class JobController {
         instance.map(Instance::deployments)
                 .map(deployments -> deployments.get(id.zoneId()))
                 .map(Deployment::version)
+                .filter(versions::contains) // Don't deploy versions that are no longer known.
                 .ifPresent(versions::add);
 
         if (versions.isEmpty())
