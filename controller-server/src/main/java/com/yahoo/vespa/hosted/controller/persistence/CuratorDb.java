@@ -172,23 +172,28 @@ public class CuratorDb {
     // -------------- Locks ---------------------------------------------------
 
     public Mutex lock(TenantName name) {
-        return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockRoot.append("tenants").append(name.value()), defaultLockTimeout.multipliedBy(2));
     }
 
     public Mutex lock(TenantAndApplicationId id) {
-        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockRoot.append("applications").append(id.tenant().value() + ":" +
+                                                                   id.application().value()),
+                            defaultLockTimeout.multipliedBy(2));
     }
 
     public Mutex lockForDeployment(ApplicationId id, ZoneId zone) {
-        return curator.lock(lockPath(id, zone), deployLockTimeout);
+        return curator.lock(lockRoot.append("instances").append(id.serializedForm() + ":" + zone.environment().value() +
+                                                                ":" + zone.region().value()),
+                            deployLockTimeout);
     }
 
     public Mutex lock(ApplicationId id, JobType type) {
-        return curator.lock(lockPath(id, type), defaultLockTimeout);
+        return curator.lock(lockRoot.append("jobs").append(id.serializedForm() + ":" + type.jobName()),
+                            defaultLockTimeout);
     }
 
     public Mutex lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
-        return tryLock(lockPath(id, type, step));
+        return tryLock(lockRoot.append("steps").append(id.serializedForm() + ":" + type.jobName() + ":" + step.name()));
     }
 
     public Mutex lockRotations() {
@@ -208,7 +213,7 @@ public class CuratorDb {
     }
 
     public Mutex lockProvisionState(String provisionStateId) {
-        return curator.lock(lockPath(provisionStateId), Duration.ofSeconds(1));
+        return curator.lock(lockRoot.append(provisionStatePath()).append(provisionStateId), Duration.ofSeconds(1));
     }
 
     public Mutex lockOsVersions() {
@@ -680,31 +685,6 @@ public class CuratorDb {
     }
 
     // -------------- Paths ---------------------------------------------------
-
-    private Path lockPath(TenantName tenant) {
-        return lockRoot.append("tenants").append(tenant.value());
-    }
-
-    private Path lockPath(TenantAndApplicationId application) {
-        return lockRoot.append("applications").append(application.tenant().value() + ":" + application.application().value());
-    }
-
-    private Path lockPath(ApplicationId instance, ZoneId zone) {
-        return lockRoot.append("instances").append(instance.serializedForm() + ":" + zone.environment().value() + ":" + zone.region().value());
-    }
-
-    private Path lockPath(ApplicationId instance, JobType type) {
-        return lockRoot.append("jobs").append(instance.serializedForm() + ":" + type.jobName());
-    }
-
-    private Path lockPath(ApplicationId instance, JobType type, Step step) {
-        return lockRoot.append("steps").append(instance.serializedForm() + ":" + type.jobName() + ":" + step.name());
-    }
-
-    private Path lockPath(String provisionId) {
-        return lockRoot.append(provisionStatePath())
-                       .append(provisionId);
-    }
 
     private static Path upgradesPerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
