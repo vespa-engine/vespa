@@ -90,6 +90,12 @@ bool ResultConfig::wantedV8geoPositions() {
     return global_useV8geoPositions;
 }
 
+void
+ResultConfig::set_wanted_v8_geo_positions(bool value)
+{
+    global_useV8geoPositions = value;
+}
+
 bool
 ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
 {
