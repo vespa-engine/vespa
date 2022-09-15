@@ -70,6 +70,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -537,6 +538,9 @@ public class JobController {
     /** Marks the given run as aborted; no further normal steps will run, but run-always steps will try to succeed. */
     public void abort(RunId id, String reason) {
         locked(id, run -> {
+            if (run.status() == aborted)
+                return run;
+
             run.stepStatuses().entrySet().stream()
                .filter(entry -> entry.getValue() == unfinished)
                .forEach(entry -> log(id, entry.getKey(), INFO, "Aborting run: " + reason));
