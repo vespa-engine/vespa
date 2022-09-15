@@ -27,13 +27,15 @@ public class TrafficShareUpdaterTest {
     @Test
     void testTrafficUpdater() {
         DeploymentTester tester = new DeploymentTester();
+        Version version = Version.fromString("7.1");
+        tester.controllerTester().upgradeSystem(version);
         var application = tester.newDeploymentContext();
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
         var updater = new TrafficShareUpdater(tester.controller(), Duration.ofDays(1));
         ZoneId prod1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId prod2 = ZoneId.from("prod", "us-east-3");
         ZoneId prod3 = ZoneId.from("prod", "us-west-1");
-        application.runJob(DeploymentContext.productionApNortheast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionApNortheast1, new ApplicationPackage(new byte[0]), version);
 
         // Single zone
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
@@ -42,7 +44,7 @@ public class TrafficShareUpdaterTest {
         assertTrafficFraction(1.0, 1.0, application.instanceId(), prod1, tester);
 
         // Two zones
-        application.runJob(DeploymentContext.productionUsEast3, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionUsEast3, new ApplicationPackage(new byte[0]), version);
         // - one cold
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(0.0, application.application().id().defaultInstance(), prod2, tester);
@@ -59,7 +61,7 @@ public class TrafficShareUpdaterTest {
         assertTrafficFraction(0.47, 1.0, application.instanceId(), prod2, tester);
 
         // Three zones
-        application.runJob(DeploymentContext.productionUsWest1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionUsWest1, new ApplicationPackage(new byte[0]), version);
         // - one cold
         setQpsMetric(53.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(47.0, application.application().id().defaultInstance(), prod2, tester);

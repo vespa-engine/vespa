@@ -80,7 +80,7 @@ public class ArchiveUriUpdaterTest {
     }
 
     private void deploy(DeploymentContext application, ZoneId zone) {
-        application.runJob(JobType.deploymentTo(zone), new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(JobType.deploymentTo(zone), new ApplicationPackage(new byte[0]));
     }
 
 }

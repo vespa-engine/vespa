@@ -398,6 +398,7 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
 
         Version version = new Version("7.8.9");
+        tester.controllerTester().upgradeSystem(version);
         Future<?> concurrentDeployment = Executors.newSingleThreadExecutor().submit(() -> {
             tester.jobs().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.of(version), applicationPackage());
         });

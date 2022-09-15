@@ -36,8 +36,10 @@ public class DeploymentMetricsMaintainerTest {
 
     @Test
     void updates_metrics() {
+        Version version1 = Version.fromString("7.1");
+        tester.controllerTester().upgradeSystem(version1);
         var application = tester.newDeploymentContext();
-        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), version1);
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
         Supplier<Application> app = application::application;
@@ -51,7 +53,9 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse(deployment.get().activity().lastWritten().isPresent(), "Never received any writes");
 
         // Metrics are gathered and saved to application
-        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
+        Version version2 = Version.fromString("7.5.5");
+        tester.controllerTester().upgradeSystem(version2);
+        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), version2);
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
                 ClusterMetrics.FEED_PER_SECOND, 2D,
                 ClusterMetrics.DOCUMENT_COUNT, 3D,
