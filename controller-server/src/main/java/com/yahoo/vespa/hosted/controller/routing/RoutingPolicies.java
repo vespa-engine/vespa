@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -203,11 +202,10 @@ public class RoutingPolicies {
     /** Compute region endpoints and their targets from given policies */
     private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
-        RoutingMethod routingMethod = RoutingMethod.exclusive;
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
-            if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
-            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod);
+            if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
+            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -437,12 +435,12 @@ public class RoutingPolicies {
     }
 
     private static boolean isActive(LoadBalancer loadBalancer) {
-        switch (loadBalancer.state()) {
-            case reserved: // Count reserved as active as we want callers (application API) to see the endpoint as early
-                           // as possible
-            case active: return true;
-        }
-        return false;
+        return switch (loadBalancer.state()) {
+            // Count reserved as active as we want callers (application API) to see the endpoint as early
+            // as possible
+            case reserved, active -> true;
+            default -> false;
+        };
     }
 
     /** Represents records for a region-wide endpoint */
@@ -556,10 +554,10 @@ public class RoutingPolicies {
 
     /** Returns the name updater to use for given zone */
     private NameServiceForwarder nameServiceForwarderIn(ZoneId zone) {
-        if (controller.zoneRegistry().routingMethods(zone).contains(RoutingMethod.exclusive)) {
-            return controller.nameServiceForwarder();
-        }
-        return new NameServiceDiscarder(controller.curator());
+        return switch (controller.zoneRegistry().routingMethod(zone)) {
+            case exclusive -> controller.nameServiceForwarder();
+            case sharedLayer4 -> new NameServiceDiscarder(controller.curator());
+        };
     }
 
     /** A {@link NameServiceForwarder} that does nothing. Used in zones where no explicit DNS updates are needed */
