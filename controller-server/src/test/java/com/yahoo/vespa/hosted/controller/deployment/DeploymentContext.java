@@ -209,8 +209,8 @@ public class DeploymentContext {
     public DeploymentContext deployPlatform(Version version) {
         assertEquals(instance().change().platform().get(), version);
         assertFalse(application().instances().values().stream()
-                          .anyMatch(instance -> instance.deployments().values().stream()
-                                                        .anyMatch(deployment -> deployment.version().equals(version))));
+                                 .anyMatch(instance -> instance.deployments().values().stream()
+                                                               .anyMatch(deployment -> deployment.version().equals(version))));
         assertEquals(version, instance().change().platform().get());
         assertFalse(instance().change().revision().isPresent());
 

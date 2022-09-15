@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
@@ -132,6 +133,10 @@ public class VersionStatusTest {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = applicationPackage("default");
 
+        Version version0 = new Version("6.1");
+        tester.controllerTester().upgradeSystem(version0);
+        var context0 = tester.newDeploymentContext("tenant1", "app0", "default").runJob(JobType.dev("us-east-1"), applicationPackage);
+
         Version version1 = new Version("6.2");
         Version version2 = new Version("6.3");
         tester.controllerTester().upgradeSystem(version1);
@@ -158,8 +163,13 @@ public class VersionStatusTest {
 
         tester.triggerJobs();
         tester.controllerTester().computeVersionStatus();
+        VersionStatus status = tester.controller().readVersionStatus();
+        assertEquals(3, status.versions().size(), "The three versions above exist");
+
+        tester.controller().applications().deactivate(context0.instanceId(), JobType.dev("us-east-1").zone());
+        tester.controllerTester().computeVersionStatus();
         List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
-        assertEquals(2, versions.size(), "The two versions above exist");
+        assertEquals(2, versions.size(), "The two last versions above exist after dev deployment is gone");
 
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
@@ -265,6 +275,7 @@ public class VersionStatusTest {
                 .submit(conservativePolicy)
                 .deploy();
 
+        var devApp = tester.newDeploymentContext("dev", "app", "on-version-1");
         // Applications that do not affect confidence calculation:
 
         // Application without deployment
@@ -278,11 +289,16 @@ public class VersionStatusTest {
         tester.upgrader().maintain();
         tester.triggerJobs();
 
-        // Canaries upgrade to new versions and fail
+        // Dev app deploys to the new versions, and canaries also upgrade, and fail.
+        devApp.runJob(JobType.dev("us-east-1"), canaryApplicationPackage);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.low, confidence(tester.controller(), version1), "Just the dev app: Low");
+
         canary0.deployPlatform(version1);
         canary1.runJob(systemTest)
                .runJob(stagingTest)
                .failDeployment(productionUsWest1);
+
         tester.controllerTester().computeVersionStatus();
         assertEquals(Confidence.broken, confidence(tester.controller(), version1), "One canary failed: Broken");
 
@@ -297,7 +313,7 @@ public class VersionStatusTest {
         canary0.deployPlatform(version2);
         canary1.deployPlatform(version2);
 
-        assertEquals(Confidence.broken, confidence(tester.controller(), version1), "Confidence for remains unchanged for version1: Broken");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version1), "Confidence remains unchanged for version1: Broken");
         assertEquals(Confidence.low, confidence(tester.controller(), version2), "Nothing has failed but not all canaries have upgraded: Low");
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade

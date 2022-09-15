@@ -3,10 +3,13 @@ package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -15,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -131,8 +135,13 @@ public record VersionStatus(List<VespaVersion> versions) {
             systemVersion = newSystemVersion;
         }
 
+        Set<Version> allVersions = new HashSet<>(infrastructureVersions.keySet());
+        for (Application application : controller.applications().asList())
+            for (Instance instance : application.instances().values())
+                for (Deployment deployment : instance.deployments().values())
+                    allVersions.add(deployment.version());
 
-        List<DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(infrastructureVersions.keySet(),
+        List<DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(allVersions,
                                                                                        controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
                                                                                                                                                     .withProjectId()
                                                                                                                                                     .withJobs()));
