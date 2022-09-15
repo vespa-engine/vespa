@@ -25,7 +25,11 @@ public class PrometheusHelper {
 
             var dimensionBuilder = new StringBuilder();
             for (var dimension : metricDimensions) {
-                dimensionBuilder.append(dimension.getKey()).append("=\"").append(dimension.getValue()).append("\",");
+                dimensionBuilder
+                        .append(sanitize(dimension.getKey()))
+                        .append("=\"")
+                        .append(dimension.getValue())
+                        .append("\",");
             }
             dimensionBuilder.append("vespa_service=\"").append(application).append("\",");
             var dimensions = dimensionBuilder.toString();
@@ -70,7 +74,11 @@ public class PrometheusHelper {
     }
 
     private static String getSanitizedMetricName(String metricName, String suffix) {
-        return metricName.replaceAll("([-.])", "_") + "_" + suffix;
+        return sanitize(metricName) + "_" + suffix;
+    }
+
+    private static String sanitize(String name) {
+        return name.replaceAll("([-.])", "_");
     }
 
 }
