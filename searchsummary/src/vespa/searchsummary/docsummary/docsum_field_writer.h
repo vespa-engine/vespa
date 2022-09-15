@@ -24,9 +24,9 @@ public:
     }
     virtual ~DocsumFieldWriter() = default;
     virtual bool IsGenerated() const = 0;
-    virtual void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const = 0;
+    virtual void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter &target) const = 0;
     virtual const vespalib::string & getAttributeName() const;
-    virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const;
+    virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState& state) const;
     void setIndex(size_t v) { _index = v; }
     size_t getIndex() const { return _index; }
     virtual bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex);

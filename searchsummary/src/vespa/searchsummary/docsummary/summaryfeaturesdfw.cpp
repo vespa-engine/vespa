@@ -18,19 +18,19 @@ SummaryFeaturesDFW::~SummaryFeaturesDFW() = default;
 static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
-SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target) const
+SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const
 {
-    if (state->_omit_summary_features) {
+    if (state._omit_summary_features) {
         return;
     }
-    if ( ! state->_summaryFeatures) {
-        state->_callback.FillSummaryFeatures(*state);
-        if ( !state->_summaryFeatures) { // still no summary features to write
+    if ( ! state._summaryFeatures) {
+        state._callback.FillSummaryFeatures(state);
+        if ( !state._summaryFeatures) { // still no summary features to write
             return;
         }
     }
-    const FeatureSet::StringVector &names = state->_summaryFeatures->getNames();
-    const FeatureSet::Value *values = state->_summaryFeatures->getFeaturesByDocId(docid);
+    const FeatureSet::StringVector &names = state._summaryFeatures->getNames();
+    const FeatureSet::Value *values = state._summaryFeatures->getFeaturesByDocId(docid);
     if (values == nullptr) { return; }
 
     vespalib::slime::Cursor& obj = target.insertObject();
@@ -42,7 +42,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType,
             obj.setDouble(name, values[i].as_double());
         }
     }
-    if (state->_summaryFeaturesCached) {
+    if (state._summaryFeaturesCached) {
         obj.setDouble(_M_cached, 1.0);
     } else {
         obj.setDouble(_M_cached, 0.0);

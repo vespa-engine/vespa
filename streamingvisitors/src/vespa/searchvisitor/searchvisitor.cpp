@@ -173,7 +173,7 @@ SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const H
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         auto& sds = get_streaming_docsums_state(summaryClass);
-        _docsumWriter->insertDocsum(sds.get_resolve_class_info(), lid, &sds.get_state(), _docsumFilter.get(), inserter);
+        _docsumWriter->insertDocsum(sds.get_resolve_class_info(), lid, sds.get_state(), _docsumFilter.get(), inserter);
         _buf.reset();
         vespalib::WritableMemory magicId = _buf.reserve(4);
         memcpy(magicId.data, &search::docsummary::SLIME_MAGIC_ID, 4);

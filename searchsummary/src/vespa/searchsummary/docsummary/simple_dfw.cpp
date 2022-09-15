@@ -5,9 +5,9 @@
 namespace search::docsummary {
 
 void
-SimpleDFW::insertField(uint32_t docid, const IDocsumStoreDocument *, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) const
+SimpleDFW::insertField(uint32_t docid, const IDocsumStoreDocument *, GetDocsumsState& state, vespalib::slime::Inserter &target) const
 {
-    insertField(docid, state, type, target);
+    insertField(docid, state, target);
 }
 
 }

@@ -5,6 +5,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/document_id_dfw.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>
@@ -20,8 +22,12 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
+using search::MatchingElements;
+using search::MatchingElementsFields;
 using search::docsummary::DocsumStoreDocument;
 using search::docsummary::DocumentIdDFW;
+using search::docsummary::GetDocsumsState;
+using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumStoreDocument;
 using search::docsummary::ResultClass;
 using search::docsummary::ResultConfig;
@@ -46,6 +52,12 @@ make_doc_type_repo()
                      Struct(header_name), Struct(body_name));
     return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
+
+struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
+    virtual void FillSummaryFeatures(GetDocsumsState&) override {}
+    virtual void FillRankFeatures(GetDocsumsState&) override {}
+    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
+};
 
 class DocumentIdDFWTest : public ::testing::Test
 {
@@ -96,7 +108,9 @@ DocumentIdDFWTest::write(const IDocsumStoreDocument* doc)
     Cursor & docsum = top_inserter.insertObject();
     ObjectInserter field_inserter(docsum, _field_name_view);
     DocumentIdDFW writer;
-    writer.insertField(0, doc, nullptr, search::docsummary::RES_LONG_STRING, field_inserter);
+    MyGetDocsumsStateCallback callback;
+    GetDocsumsState state(callback);
+    writer.insertField(0, doc, state, field_inserter);
     return slime;
 }
 

@@ -17,7 +17,7 @@ CopyDFW::CopyDFW(const vespalib::string& inputField)
 CopyDFW::~CopyDFW() = default;
 
 void
-CopyDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState *, ResType,
+CopyDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
                      vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {

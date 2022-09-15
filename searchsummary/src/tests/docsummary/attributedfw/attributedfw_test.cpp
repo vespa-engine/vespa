@@ -69,7 +69,7 @@ public:
     void expect_field(const vespalib::string& exp_slime_as_json, uint32_t docid) {
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
-        _writer->insertField(docid, nullptr, &_state, search::docsummary::RES_JSONSTRING, inserter);
+        _writer->insertField(docid, nullptr, _state, inserter);
 
         SlimeValue exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);

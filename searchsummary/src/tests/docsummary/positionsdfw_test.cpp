@@ -132,14 +132,13 @@ void checkWritePositionField(AttrType &attr,
     MyAttributeManager attribute_man(attr);
     PositionsDFW::UP writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man, false);
     ASSERT_TRUE(writer.get());
-    ResType res_type = RES_JSONSTRING;
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
     state._attributes.push_back(&attr);
 
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
-    writer->insertField(doc_id, &state, res_type, inserter);
+    writer->insertField(doc_id, state, inserter);
 
     test::SlimeValue expected(expect_json);
     EXPECT_EQUAL(expected.slime, target);

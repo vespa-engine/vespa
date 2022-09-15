@@ -14,8 +14,8 @@ public:
     SummaryFeaturesDFW & operator=(const SummaryFeaturesDFW &) = delete;
     ~SummaryFeaturesDFW() override;
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState *state,
-                     ResType type, vespalib::slime::Inserter &target) const override;
+    void insertField(uint32_t docid, GetDocsumsState& state,
+                     vespalib::slime::Inserter &target) const override;
 };
 
 }
