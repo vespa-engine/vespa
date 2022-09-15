@@ -93,8 +93,7 @@ public:
      * @return output parameter for a single thread
      * @param input input parameter for a single thread
      **/
-    template <bool ext_id = external_id>
-    typename std::enable_if<!ext_id,OUT>::type rendezvous(IN input);
+    OUT rendezvous(IN input) requires (!external_id);
 
     /**
      * Called by individual threads to synchronize execution and share
@@ -107,8 +106,7 @@ public:
      * @param my_id participant id for this thread (must be in range and
      *              not conflicting with other threads)
      **/
-    template <bool ext_id = external_id>
-    typename std::enable_if<ext_id,OUT>::type rendezvous(IN input, size_t my_id);
+    OUT rendezvous(IN input, size_t my_id) requires (external_id);
 };
 
 } // namespace vespalib

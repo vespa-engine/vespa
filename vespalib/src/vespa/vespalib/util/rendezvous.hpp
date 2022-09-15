@@ -59,12 +59,12 @@ template <typename IN, typename OUT, bool external_id>
 Rendezvous<IN, OUT, external_id>::~Rendezvous() = default;
 
 template <typename IN, typename OUT, bool external_id>
-template <bool ext_id>
-typename std::enable_if<!ext_id,OUT>::type
+OUT
 Rendezvous<IN, OUT, external_id>::rendezvous(IN input)
+    requires (!external_id)
 {
     OUT ret{};
-    static_assert(ext_id == external_id);
+    static_assert(!external_id);
     if (_size == 1) {
         meet_self(input, ret);
     } else {
@@ -75,13 +75,13 @@ Rendezvous<IN, OUT, external_id>::rendezvous(IN input)
 }
 
 template <typename IN, typename OUT, bool external_id>
-template <bool ext_id>
-typename std::enable_if<ext_id,OUT>::type
+OUT
 Rendezvous<IN, OUT, external_id>::rendezvous(IN input, size_t my_id)
+    requires (external_id)
 {
     OUT ret{};
     assert(my_id < _size);
-    static_assert(ext_id == external_id);
+    static_assert(external_id);
     if (_size == 1) {
         meet_self(input, ret);
     } else {

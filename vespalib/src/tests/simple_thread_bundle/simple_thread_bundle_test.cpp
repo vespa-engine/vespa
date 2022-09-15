@@ -249,6 +249,9 @@ TEST_FF("require that various versions of run can be used to invoke targets", Si
     f2.check({4,4,4,4,4});
     f1.run(f2.cnts);
     f2.check({5,5,5,5,5});
+    std::initializer_list<std::reference_wrapper<Cnt>> list = {f2.cnts[0], f2.cnts[1], f2.cnts[2], f2.cnts[3], f2.cnts[4]};
+    f1.run(list);
+    f2.check({6,6,6,6,6});
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
