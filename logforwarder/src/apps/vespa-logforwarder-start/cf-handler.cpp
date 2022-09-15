@@ -4,100 +4,44 @@
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
-#include <dirent.h>
+
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".cf-handler");
-
 
 CfHandler::CfHandler() = default;
 
 CfHandler::~CfHandler() = default;
 
-void
-CfHandler::subscribe(const std::string & configId, std::chrono::milliseconds timeout)
-{
+void CfHandler::subscribe(const std::string & configId, std::chrono::milliseconds timeout) {
     _handle = _subscriber.subscribe<LogforwarderConfig>(configId, timeout);
 }
 
 namespace {
-
-bool fixDir(const vespalib::string &path) {
-    if (path.size() == 0) return true;
-    size_t lastSlash = path.rfind('/');
-    if (lastSlash != vespalib::string::npos) {
-        vespalib::string parent = path.substr(0, lastSlash);
-        if (!fixDir(parent)) return false;
+bool isExecutable(const char *path) {
+    struct stat statbuf;
+    if (stat(path, &statbuf) != 0) {
+        return false;
     }
-    DIR *dp = opendir(path.c_str());
-    if (dp == NULL) {
-        if (errno != ENOENT || mkdir(path.c_str(), 0755) != 0) {
-            perror(path.c_str());
-            return false;
-        }
-    } else {
-        closedir(dp);
+    if (! S_ISREG(statbuf.st_mode)) {
+        return false;
     }
-    return true;
+    return ((statbuf.st_mode & S_IXOTH) != 0);
+}
 }
 
-vespalib::string
-cfFilePath(const vespalib::string &parent, const vespalib::string &filename) {
-    vespalib::string path = parent + "/etc/system/local";
-    fixDir(path);
-    path += "/";
-    path += filename;
-    return path;
-}
-
-} // namespace <unnamed>
-
-void
-CfHandler::doConfigure()
-{
+void CfHandler::doConfigure() {
     std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
     const LogforwarderConfig& config(*cfg);
-
-    vespalib::string path = cfFilePath(config.splunkHome, "deploymentclient.conf");
-    vespalib::string tmpPath = path + ".new";
-    FILE *fp = fopen(tmpPath.c_str(), "w");
-    if (fp == NULL) return;
-
-    fprintf(fp, "[deployment-client]\n");
-    fprintf(fp, "clientName = %s\n", config.clientName.c_str());
-    fprintf(fp, "phoneHomeIntervalInSecs = %i\n", config.phoneHomeInterval);
-    fprintf(fp, "\n");
-    fprintf(fp, "[target-broker:deploymentServer]\n");
-    fprintf(fp, "targetUri = %s\n", config.deploymentServer.c_str());
-
-    fclose(fp);
-    rename(tmpPath.c_str(), path.c_str());
-
-    if (getenv("VESPA_HOSTNAME") != NULL &&
-        getenv("VESPA_TENANT") != NULL &&
-        getenv("VESPA_APPLICATION")!= NULL &&
-        getenv("VESPA_INSTANCE") != NULL &&
-        getenv("VESPA_ENVIRONMENT") != NULL &&
-        getenv("VESPA_REGION") != NULL)
-    {
-        path = cfFilePath(config.splunkHome, "inputs.conf");
-        tmpPath = path + ".new";
-        fp = fopen(tmpPath.c_str(), "w");
-        if (fp != NULL) {
-            fprintf(fp, "[default]\n");
-            fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
-            fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s vespa_zone::%s.%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"), getenv("VESPA_ENVIRONMENT"), getenv("VESPA_REGION"));
-            fclose(fp);
-            rename(tmpPath.c_str(), path.c_str());
-        }
-    }
-    if (config.clientName.size() == 0 ||
-        config.deploymentServer.size() == 0)
-    {
-        _childHandler.stopChild();
+    LOG(debug, "validating splunk home '%s'", config.splunkHome.c_str());
+    auto program = config.splunkHome + "/bin/splunk";
+    if (isExecutable(program.c_str())) {
+        gotConfig(config);
     } else {
-        _childHandler.startChild(config.splunkHome);
+        LOG(warning, "invalid splunk home, '%s' is not an executable", program.c_str());
     }
 }
 
@@ -107,10 +51,6 @@ CfHandler::check()
     if (_subscriber.nextConfigNow()) {
         doConfigure();
     }
-}
-
-void CfHandler::stop() {
-    _childHandler.stopChild();
 }
 
 constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(30 * 1000);

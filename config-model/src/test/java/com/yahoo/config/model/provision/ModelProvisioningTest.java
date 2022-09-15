@@ -972,7 +972,7 @@ public class ModelProvisioningTest {
 
         var lfs = hostResource.getService("logforwarder");
         String shutdown = lfs.getPreShutdownCommand().orElse("<none>");
-        assertEquals("/usr/bin/env SPLUNK_HOME=/opt/splunkforwarder /opt/splunkforwarder/bin/splunk stop", shutdown);
+        assertTrue(shutdown.startsWith("$ROOT/bin/vespa-logforwarder-start -S -c hosts/"));
     }
 
 

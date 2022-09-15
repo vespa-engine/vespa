@@ -6,7 +6,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-logforwarder-start");
 
-#include "cf-handler.h"
+#include "splunk-starter.h"
+#include "splunk-stopper.h"
 #include <vespa/vespalib/util/sig_catch.h>
 
 class Wrapper {
@@ -15,7 +16,7 @@ public:
     Wrapper(const char *cfid) : _configId(cfid) {}
     void run() {
         vespalib::SigCatch catcher;
-        CfHandler handler;
+        SplunkStarter handler;
         handler.start(_configId);
         while (! catcher.receivedStopSignal()) {
             handler.check();
@@ -28,12 +29,32 @@ public:
 int
 main(int argc, char** argv)
 {
-    int c = getopt(argc, argv, "c:");
-    if (c != 'c') {
+    int c = -1;
+    bool stopMode = false;
+    const char *cfid = nullptr;
+    while ((c = getopt(argc, argv, "Sc:")) != -1) {
+        switch (c) {
+        case 'S':
+            stopMode = true;
+            break;
+        case 'c':
+            cfid = optarg;
+            break;
+        default:
+            cfid = nullptr;
+            break;
+        }
+    }
+    if (cfid == nullptr) {
         LOG(error, "Usage: %s -c <config-id>", argv[0]);
         return EXIT_FAILURE;
     }
-    Wrapper wrapper(optarg);
-    wrapper.run();
+    if (stopMode) {
+        SplunkStopper stopper(cfid);
+        stopper.check();
+    } else {
+        Wrapper wrapper(cfid);
+        wrapper.run();
+    }
     return 0;
 }

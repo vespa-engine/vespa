@@ -76,6 +76,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
 void
 ChildHandler::startChild(const vespalib::string &prefix)
 {
+    LOG(debug, "startChild '%s'", prefix.c_str());
     if (_childRunning && prefix == _runningPrefix) {
         runSplunk(prefix, {"restart"});
     } else {
@@ -93,9 +94,17 @@ ChildHandler::startChild(const vespalib::string &prefix)
     }
 }
 
-void
-ChildHandler::stopChild()
-{
-    runSplunk(_runningPrefix, {"stop"});
+void ChildHandler::stopChild() {
+    if (_runningPrefix != "") {
+        LOG(debug, "stopChild '%s'", _runningPrefix.c_str());
+        runSplunk(_runningPrefix, {"stop"});
+    }
     _childRunning = false;
+}
+
+void
+ChildHandler::stopChild(const vespalib::string &prefix) {
+    stopChild();
+    _runningPrefix = prefix;
+    stopChild();
 }

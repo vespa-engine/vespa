@@ -86,7 +86,8 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         getConfig(builder);
         var cfg = new LogforwarderConfig(builder);
         var home = cfg.splunkHome();
-        return Optional.of("/usr/bin/env SPLUNK_HOME="+home+" "+home+"/bin/splunk stop");
+        String cmd = "$ROOT/bin/vespa-logforwarder-start -S -c " + getConfigId();
+        return Optional.of(cmd);
     }
 
 }
