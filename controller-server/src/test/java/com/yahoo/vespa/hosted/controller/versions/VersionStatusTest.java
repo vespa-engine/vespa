@@ -270,8 +270,7 @@ public class VersionStatusTest {
         // Application without deployment
         var ignored0 = tester.newDeploymentContext("tenant1", "ignored0", "default");
 
-        assertEquals(
-                     Confidence.high, confidence(tester.controller(), version0), "All applications running on this version: High");
+        assertEquals(Confidence.high, confidence(tester.controller(), version0), "All applications running on this version: High");
 
         // New version is released
         Version version1 = new Version("6.3");
@@ -285,25 +284,21 @@ public class VersionStatusTest {
                .runJob(stagingTest)
                .failDeployment(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version1), "One canary failed: Broken");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version1), "One canary failed: Broken");
 
         // New version is released
         Version version2 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().maintain();
         tester.triggerJobs();
-        assertEquals(
-                     Confidence.low, confidence(tester.controller(), version2), "Confidence defaults to low for version with no applications");
+        assertEquals(Confidence.low, confidence(tester.controller(), version2), "Confidence defaults to low for version with no applications");
 
         // All canaries upgrade successfully
         canary0.deployPlatform(version2);
         canary1.deployPlatform(version2);
 
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version1), "Confidence for remains unchanged for version1: Broken");
-        assertEquals(
-                     Confidence.low, confidence(tester.controller(), version2), "Nothing has failed but not all canaries have upgraded: Low");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version1), "Confidence for remains unchanged for version1: Broken");
+        assertEquals(Confidence.low, confidence(tester.controller(), version2), "Nothing has failed but not all canaries have upgraded: Low");
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
         canary2.triggerJobs().jobAborted(systemTest).jobAborted(stagingTest);
@@ -312,8 +307,7 @@ public class VersionStatusTest {
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.triggerJobs();
-        assertEquals(
-                     Confidence.normal, confidence(tester.controller(), version2), "Canaries have upgraded: Normal");
+        assertEquals(Confidence.normal, confidence(tester.controller(), version2), "Canaries have upgraded: Normal");
         default0.deployPlatform(version2);
         default1.deployPlatform(version2);
         default2.deployPlatform(version2);
@@ -327,10 +321,8 @@ public class VersionStatusTest {
         // Remember confidence across restart
         tester.controllerTester().createNewController();
 
-        assertEquals(
-                     Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
-        assertEquals(
-                     Confidence.normal, confidence(tester.controller(), version2), "All canaries deployed + < 90% of defaults: Normal");
+        assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
+        assertEquals(Confidence.normal, confidence(tester.controller(), version2), "All canaries deployed + < 90% of defaults: Normal");
         assertTrue(tester.controller().readVersionStatus().versions().stream()
                          .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)),
                 "Status for version without applications is removed");
@@ -340,10 +332,8 @@ public class VersionStatusTest {
         default9.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();
 
-        assertEquals(
-                     Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
-        assertEquals(
-                     VespaVersion.Confidence.high, confidence(tester.controller(), version2), "90% of defaults deployed successfully: High");
+        assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
+        assertEquals(VespaVersion.Confidence.high, confidence(tester.controller(), version2), "90% of defaults deployed successfully: High");
 
         // A new version is released, all canaries upgrade successfully, but enough "default" apps fail to mark version
         // as broken
@@ -363,12 +353,9 @@ public class VersionStatusTest {
         default3.failDeployment(stagingTest);
         tester.controllerTester().computeVersionStatus();
 
-        assertEquals(
-                     Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
-        assertEquals(
-                     Confidence.high, confidence(tester.controller(), version2), "Confidence remains unchanged for version2: High");
-        assertEquals(
-                     VespaVersion.Confidence.broken, confidence(tester.controller(), version3), "40% of defaults failed: Broken");
+        assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
+        assertEquals(Confidence.high, confidence(tester.controller(), version2), "Confidence remains unchanged for version2: High");
+        assertEquals(VespaVersion.Confidence.broken, confidence(tester.controller(), version3), "40% of defaults failed: Broken");
 
         // Test version order
         List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
