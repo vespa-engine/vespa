@@ -151,11 +151,7 @@ public abstract class FleetControllerTest implements Waiter {
     protected FleetControllerOptions setUpFleetController(boolean useFakeTimer, FleetControllerOptions.Builder builder) throws Exception {
         if (slobrok == null) setUpSystem(builder);
         options = builder.build();
-        if (fleetControllers.isEmpty()) {
-            fleetControllers.add(createFleetController(useFakeTimer, options));
-        } else {
-            throw new Exception("called setUpFleetcontroller but it was already setup");
-        }
+        startFleetController(useFakeTimer);
         return options;
     }
 
