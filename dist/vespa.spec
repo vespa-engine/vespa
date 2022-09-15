@@ -207,24 +207,24 @@ Requires: initscripts
 Requires: libcgroup-tools
 %endif
 Requires: numactl
-BuildRequires: perl
-BuildRequires: perl-Carp
-BuildRequires: perl-Data-Dumper
-BuildRequires: perl-Digest-MD5
-BuildRequires: perl-Env
-BuildRequires: perl-Exporter
-BuildRequires: perl-File-Path
-BuildRequires: perl-File-Temp
-BuildRequires: perl-Getopt-Long
-BuildRequires: perl-IO-Socket-IP
-BuildRequires: perl-JSON
-BuildRequires: perl-libwww-perl
-BuildRequires: perl-LWP-Protocol-https
+Requires: perl
+Requires: perl-Carp
+Requires: perl-Data-Dumper
+Requires: perl-Digest-MD5
+Requires: perl-Env
+Requires: perl-Exporter
+Requires: perl-File-Path
+Requires: perl-File-Temp
+Requires: perl-Getopt-Long
+Requires: perl-IO-Socket-IP
+Requires: perl-JSON
+Requires: perl-libwww-perl
+Requires: perl-LWP-Protocol-https
 %if ! 0%{?amzn2022} && ! 0%{?el9}
-BuildRequires: perl-Net-INET6Glue
+Requires: perl-Net-INET6Glue
 %endif
-BuildRequires: perl-Pod-Usage
-BuildRequires: perl-URI
+Requires: perl-Pod-Usage
+Requires: perl-URI
 Requires: valgrind
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
@@ -310,8 +310,8 @@ Requires: java-17-amazon-corretto
 %else
 Requires: java-17-openjdk-devel
 %endif
-BuildRequires: perl
-BuildRequires: perl-Getopt-Long
+Requires: perl
+Requires: perl-Getopt-Long
 Requires(pre): shadow-utils
 
 %description base
@@ -689,6 +689,7 @@ fi
 %{_prefix}/lib/jars/vespa-testrunner-components.jar
 %{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
+%{_prefix}/lib/perl5
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
