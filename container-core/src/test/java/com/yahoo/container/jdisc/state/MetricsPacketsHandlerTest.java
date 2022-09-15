@@ -162,7 +162,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
 
     @Test
     public void prometheus_metrics() {
-        var context = StateMetricContext.newInstance(Map.of("dim1", "value1"));
+        var context = StateMetricContext.newInstance(Map.of("dim-1", "value1"));
         var snapshot = new MetricSnapshot();
         snapshot.set(context, "gauge.metric", 0.2);
         snapshot.add(context, "counter.metric", 5);
@@ -171,10 +171,10 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         var expectedResponse = """
                 # HELP gauge_metric_last\s
                 # TYPE gauge_metric_last untyped
-                gauge_metric_last{dim1="value1",vespa_service="state-handler-test-base",} 0.2 0
+                gauge_metric_last{dim_1="value1",vespa_service="state-handler-test-base",} 0.2 0
                 # HELP counter_metric_count\s
                 # TYPE counter_metric_count untyped
-                counter_metric_count{dim1="value1",vespa_service="state-handler-test-base",} 5 0
+                counter_metric_count{dim_1="value1",vespa_service="state-handler-test-base",} 5 0
                 """;
         assertEquals(expectedResponse, response);
     }
