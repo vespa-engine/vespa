@@ -36,12 +36,12 @@ namespace bucketdb { class IBucketCreateNotifier; }
  * 3 - Actual movement is then done in master thread while still holding bucket lock. Once bucket has fully moved
  *     bucket modified notification is sent.
  */
-class BucketMoveJob : public BlockableMaintenanceJob,
-                      public IClusterStateChangedHandler,
-                      public bucketdb::IBucketCreateListener,
-                      public IBucketStateChangedHandler,
-                      public IDiskMemUsageListener,
-                      public std::enable_shared_from_this<BucketMoveJob>
+class BucketMoveJob final : public BlockableMaintenanceJob,
+                            public IClusterStateChangedHandler,
+                            public bucketdb::IBucketCreateListener,
+                            public IBucketStateChangedHandler,
+                            public IDiskMemUsageListener,
+                            public std::enable_shared_from_this<BucketMoveJob>
 {
 private:
     using BucketExecutor = storage::spi::BucketExecutor;

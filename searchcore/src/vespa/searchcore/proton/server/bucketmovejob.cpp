@@ -131,14 +131,13 @@ BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
                       const vespalib::string &docTypeName,
                       document::BucketSpace bucketSpace)
 {
-    return std::shared_ptr<BucketMoveJob>(
-            new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
+    return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
                               bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                               diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
                 assert(!failed);
-            });
+            }};
 }
 
 BucketMoveJob::NeedResult
@@ -149,17 +148,16 @@ BucketMoveJob::needMove(BucketId bucketId, const BucketStateWrapper &itr) const 
     if (!hasReadyDocs && !hasNotReadyDocs) {
         return noMove; // No documents for bucket in ready or notready subdbs
     }
-    const bool isActive = itr.isActive();
     // No point in moving buckets when node is retired and everything will be deleted soon.
-    // However, allow moving of explicitly activated buckets, as this implies a lack of other good replicas.
-    if (!_calc || (_calc->nodeRetired() && !isActive)) {
+    if (!_calc || _calc->nodeRetired()) {
         return noMove;
     }
     const Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, bucketId));
     if (shouldBeReady == Trinary::Undefined) {
         return noMove;
     }
-    const bool wantReady = (shouldBeReady == Trinary::True) || isActive;
+    const bool isActive = itr.isActive();
+    const bool wantReady = (shouldBeReady == Trinary::True);
     LOG(spam, "needMove(): bucket(%s), shouldBeReady(%s), active(%s)",
         bucketId.toString().c_str(), toStr(shouldBeReady), toStr(isActive));
     if (wantReady) {
@@ -168,7 +166,7 @@ BucketMoveJob::needMove(BucketId bucketId, const BucketStateWrapper &itr) const 
         }
     } else {
         if (isActive) {
-            return noMove; // Do not move rom ready to not ready when active
+            return noMove; // Do not move from ready to not ready when active
         }
         if (!hasReadyDocs) {
             return noMove; // No ready bucket to make notready
