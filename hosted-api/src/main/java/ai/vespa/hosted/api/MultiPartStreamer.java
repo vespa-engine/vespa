@@ -105,7 +105,7 @@ public class MultiPartStreamer {
 
     /** Returns the value of the {@code "Content-Type"} header to use with this. */
     public String contentType() {
-        return "multipart/form-data; boundary=" + boundary + "; charset: utf-8";
+        return "multipart/form-data; boundary=" + boundary + "; charset=utf-8";
     }
 
     /** Returns the separator to put between one part and the next, when this is a string. */

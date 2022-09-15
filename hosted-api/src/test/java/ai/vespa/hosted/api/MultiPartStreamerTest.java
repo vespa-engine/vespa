@@ -29,27 +29,28 @@ class MultiPartStreamerTest {
                 .addText("text", "Hello!")
                 .addFile("file", file);
 
-        String expected = "--My boundary\r\n" +
-                          "Content-Disposition: form-data; name=\"data\"\r\n" +
-                          "Content-Type: uss/enterprise\r\n" +
-                          "\r\n" +
-                          "lore\r\n" +
-                          "--My boundary\r\n" +
-                          "Content-Disposition: form-data; name=\"json\"\r\n" +
-                          "Content-Type: application/json\r\n" +
-                          "\r\n" +
-                          "{\"xml\":false}\r\n" +
-                          "--My boundary\r\n" +
-                          "Content-Disposition: form-data; name=\"text\"\r\n" +
-                          "Content-Type: text/plain\r\n" +
-                          "\r\n" +
-                          "Hello!\r\n" +
-                          "--My boundary\r\n" +
-                          "Content-Disposition: form-data; name=\"file\"; filename=\"" + file.getFileName() + "\"\r\n" +
-                          "Content-Type: application/octet-stream\r\n" +
-                          "\r\n" +
-                          "Hi\r\n" +
-                          "--My boundary--";
+        String expected = """
+                          --My boundary\r
+                          Content-Disposition: form-data; name="data"\r
+                          Content-Type: uss/enterprise\r
+                          \r
+                          lore\r
+                          --My boundary\r
+                          Content-Disposition: form-data; name="json"\r
+                          Content-Type: application/json\r
+                          \r
+                          {"xml":false}\r
+                          --My boundary\r
+                          Content-Disposition: form-data; name="text"\r
+                          Content-Type: text/plain\r
+                          \r
+                          Hello!\r
+                          --My boundary\r
+                          Content-Disposition: form-data; name="file"; filename="%s"\r
+                          Content-Type: application/octet-stream\r
+                          \r
+                          Hi\r
+                          --My boundary--""".formatted(file.getFileName());
 
         assertEquals(expected,
                      new String(streamer.data().readAllBytes()));
@@ -58,7 +59,7 @@ class MultiPartStreamerTest {
         assertEquals(expected,
                      new String(streamer.data().readAllBytes()));
 
-        assertEquals(List.of("multipart/form-data; boundary=My boundary; charset: utf-8"),
+        assertEquals(List.of("multipart/form-data; boundary=My boundary; charset=utf-8"),
                      streamer.streamTo(HttpRequest.newBuilder(), Method.POST)
                              .uri(URI.create("https://uri/path"))
                              .build().headers().allValues("Content-Type"));
