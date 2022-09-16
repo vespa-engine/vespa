@@ -27,7 +27,7 @@ func newVersionCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Printf("vespa version %s compiled with %v on %v/%v", build.Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+			log.Printf("Vespa CLI version %s compiled with %v on %v/%v", build.Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 			if !skipVersionCheck && cli.isTerminal() {
 				return checkVersion(cli)
 			}

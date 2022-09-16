@@ -21,7 +21,7 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "vespa version 0.0.0-devel compiled with")
+	assert.Contains(t, stdout.String(), "Vespa CLI version 0.0.0-devel compiled with")
 	assert.Contains(t, stdout.String(), "New release available: 1.2.3\nhttps://github.com/vespa-engine/vespa/releases/tag/v1.2.3")
 }
 
@@ -38,7 +38,7 @@ func TestVersionCheckHomebrew(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "vespa version 0.0.0-devel compiled with")
+	assert.Contains(t, stdout.String(), "Vespa CLI version 0.0.0-devel compiled with")
 	assert.Contains(t, stdout.String(), "New release available: 1.2.3\n"+
 		"https://github.com/vespa-engine/vespa/releases/tag/v1.2.3\n"+
 		"\nUpgrade by running:\nbrew update && brew upgrade vespa-cli\n")
