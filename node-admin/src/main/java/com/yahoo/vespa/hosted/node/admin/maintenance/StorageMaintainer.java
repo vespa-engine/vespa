@@ -226,7 +226,7 @@ public class StorageMaintainer {
         String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
                 .filter(line -> line.startsWith("microcode"))
                 .findFirst()
-                .orElseThrow(() -> ConvergenceException.ofError("No microcode information found in /proc/cpuinfo")));
+                .orElse("microcode : UNKNOWN"));
 
         String[] results = output.split(":");
         if (results.length != 2) {
