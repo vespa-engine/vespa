@@ -169,10 +169,21 @@ void
 StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Portal::GetRequest request)
 {
     vespalib::string link(urlpath.getPath());
-    if (!link.empty() && link[0] == '/') link = link.substr(1);
+
+    // We allow a fixed path prefix that aliases down to whatever is provided after the prefix.
+    vespalib::stringref optional_status_path_prefix = "/contentnode-status/v1/";
+    if (link.starts_with(optional_status_path_prefix)) {
+        link = link.substr(optional_status_path_prefix.size());
+    }
+
+    if (!link.empty() && link[0] == '/') {
+        link = link.substr(1);
+    }
 
     size_t slashPos = link.find('/');
-    if (slashPos != std::string::npos) link = link.substr(0, slashPos);
+    if (slashPos != std::string::npos) {
+        link = link.substr(0, slashPos);
+    }
 
     if ( ! link.empty()) {
         const framework::StatusReporter *reporter = _reporterMap.getStatusReporter(link);

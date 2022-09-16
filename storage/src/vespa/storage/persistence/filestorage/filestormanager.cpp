@@ -893,7 +893,7 @@ FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPat
     bool showStatus = !path.hasAttribute("thread");
     bool verbose    = path.hasAttribute("verbose");
     // Print menu
-    out << "<font size=\"-1\">[ <a href=\"/\">Back to top</a>"
+    out << "<font size=\"-1\">[ <a href=\"../\">Back to top</a>"
         << " | <a href=\"?" << (verbose ? "verbose" : "")
         << "\">Main filestor manager status page</a>"
         << " | <a href=\"?" << (verbose ? "notverbose" : "verbose");

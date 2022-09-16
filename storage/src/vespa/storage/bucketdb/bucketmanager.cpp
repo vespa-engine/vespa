@@ -376,8 +376,8 @@ BucketManager::reportStatus(std::ostream& out,
     } else {
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
-            // Print menu
-        out << "<font size=\"-1\">[ <a href=\"/\">Back to top</a>"
+        // Print menu
+        out << "<font size=\"-1\">[ <a href=\"../\">Back to top</a>"
             << " | <a href=\"?showall\">Show all buckets</a> ]</font>";
         htmlReporter.reportHtmlFooter(out, path);
     }
