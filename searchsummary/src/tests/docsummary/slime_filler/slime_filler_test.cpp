@@ -1,12 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -31,11 +26,6 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/juniper/juniper_separators.h>
-#include <vespa/searchsummary/docsummary/annotation_converter.h>
-#include <vespa/searchsummary/docsummary/docsum_field_writer.h>
-#include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
-#include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/i_string_field_converter.h>
 #include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
@@ -47,10 +37,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/config-summary.h>
 
-using document::Annotation;
 using document::ArrayFieldValue;
 using document::BoolFieldValue;
 using document::ByteFieldValue;
@@ -72,21 +59,13 @@ using document::RawFieldValue;
 using document::ReferenceDataType;
 using document::ReferenceFieldValue;
 using document::ShortFieldValue;
-using document::Span;
-using document::SpanList;
-using document::SpanTree;
 using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
 using document::TensorDataType;
 using document::TensorFieldValue;
-using document::UrlDataType;
 using document::WeightedSetFieldValue;
-using search::docsummary::AnnotationConverter;
-using search::docsummary::IDocsumFieldWriterFactory;
-using search::docsummary::IJuniperConverter;
 using search::docsummary::IStringFieldConverter;
-using search::docsummary::DocsumFieldWriter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
 using search::docsummary::SlimeFillerFilter;
@@ -101,7 +80,6 @@ using vespalib::eval::ValueType;
 using vespalib::slime::Cursor;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::SlimeInserter;
-using vespa::config::search::SummaryConfigBuilder;
 
 namespace {
 
@@ -120,15 +98,6 @@ slime_to_string(const Slime& slime)
 }
 
 vespalib::string
-make_slime_string(vespalib::stringref value)
-{
-    Slime slime;
-    SlimeInserter inserter(slime);
-    inserter.insertString({value});
-    return slime_to_string(slime);
-}
-
-vespalib::string
 make_slime_data_string(vespalib::stringref data)
 {
     Slime slime;
@@ -144,15 +113,6 @@ make_slime_tensor_string(const Value& value)
     encode_value(value, s);
     return make_slime_data_string({s.peek(), s.size()});
 }
-
-class MockDocsumFieldWriterFactory : public IDocsumFieldWriterFactory
-{
-public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string&, const vespalib::string&, const vespalib::string&, bool&) override {
-        return {};
-    }
-
-};
 
 DocumenttypesConfig
 get_document_types_config()
@@ -186,29 +146,20 @@ get_document_types_config()
     return builder.config();
 }
 
-class MockJuniperConverter : public IJuniperConverter
+class MockStringFieldConverter : public IStringFieldConverter
 {
     vespalib::string _result;
 public:
-    void convert(vespalib::stringref input, vespalib::slime::Inserter&) override {
-        _result = input;
-    }
-    const vespalib::string& get_result() const noexcept { return _result; }
-};
-
-class PassThroughStringFieldConverter : public IStringFieldConverter
-{
-    IJuniperConverter& _juniper_converter;
-public:
-    PassThroughStringFieldConverter(IJuniperConverter& juniper_converter)
+    MockStringFieldConverter()
         : IStringFieldConverter(),
-          _juniper_converter(juniper_converter)
+          _result()
     {
     }
-    ~PassThroughStringFieldConverter() override = default;
-    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override {
-        _juniper_converter.convert(input.getValueRef(), inserter);
+    ~MockStringFieldConverter() override = default;
+    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter&) override {
+        _result = input.getValueRef();
     }
+    const vespalib::string& get_result() const noexcept { return _result; }
 };
 
 }
@@ -218,17 +169,11 @@ class SlimeFillerTest : public testing::Test
 protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
-    document::FixedTypeRepo                 _fixed_repo;
 
     SlimeFillerTest();
     ~SlimeFillerTest() override;
     const DataType& get_data_type(const vespalib::string& name) const;
     const ReferenceDataType& get_as_ref_type(const vespalib::string& name) const;
-    void set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree);
-    StringFieldValue make_annotated_string();
-    StringFieldValue make_annotated_chinese_string();
-    vespalib::string make_exp_il_annotated_string();
-    vespalib::string make_exp_il_annotated_chinese_string();
     ArrayFieldValue make_array();
     WeightedSetFieldValue make_weighted_set();
     MapFieldValue make_map();
@@ -237,14 +182,13 @@ protected:
     void expect_insert(const vespalib::string& exp, const FieldValue& fv);
     void expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv, SlimeFillerFilter& filter);
-    void expect_insert_callback(const vespalib::string& exp, const FieldValue& fv, bool tokenize);
+    void expect_insert_callback(const vespalib::string& exp, const FieldValue& fv);
 };
 
 SlimeFillerTest::SlimeFillerTest()
     : testing::Test(),
       _repo(std::make_unique<DocumentTypeRepo>(get_document_types_config())),
-      _document_type(_repo->getDocumentType("indexingdocument")),
-      _fixed_repo(*_repo, *_document_type)
+      _document_type(_repo->getDocumentType("indexingdocument"))
 {
 }
 
@@ -261,64 +205,6 @@ SlimeFillerTest::get_data_type(const vespalib::string& name) const
 const ReferenceDataType&
 SlimeFillerTest::get_as_ref_type(const vespalib::string& name) const {
     return dynamic_cast<const ReferenceDataType&>(get_data_type(name));
-}
-
-void
-SlimeFillerTest::set_span_tree(StringFieldValue & value, std::unique_ptr<SpanTree> tree)
-{
-    StringFieldValue::SpanTrees trees;
-    trees.push_back(std::move(tree));
-    value.setSpanTrees(trees, _fixed_repo);
-}
-
-StringFieldValue
-SlimeFillerTest::make_annotated_string()
-{
-    auto span_list_up = std::make_unique<SpanList>();
-    auto span_list = span_list_up.get();
-    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
-    tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
-                   Annotation(*TERM, std::make_unique<StringFieldValue>("baz")));
-    StringFieldValue value("foo bar");
-    set_span_tree(value, std::move(tree));
-    return value;
-}
-
-StringFieldValue
-SlimeFillerTest::make_annotated_chinese_string()
-{
-    auto span_list_up = std::make_unique<SpanList>();
-    auto span_list = span_list_up.get();
-    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
-    // These chinese characters each use 3 bytes in their UTF8 encoding.
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 15)), *TERM);
-    tree->annotate(span_list->add(std::make_unique<Span>(15, 9)), *TERM);
-    StringFieldValue value("我就是那个大灰狼");
-    set_span_tree(value, std::move(tree));
-    return value;
-}
-
-vespalib::string
-SlimeFillerTest::make_exp_il_annotated_string()
-{
-    using namespace juniper::separators;
-    vespalib::asciistream exp;
-    exp << "foo" << unit_separator_string <<
-        " " << unit_separator_string << interlinear_annotation_anchor_string <<
-        "bar" << interlinear_annotation_separator_string <<
-        "baz" << interlinear_annotation_terminator_string << unit_separator_string;
-    return exp.str();
-}
-
-vespalib::string
-SlimeFillerTest::make_exp_il_annotated_chinese_string()
-{
-    using namespace juniper::separators;
-    vespalib::asciistream exp;
-    exp << "我就是那个" << unit_separator_string <<
-        "大灰狼" << unit_separator_string;
-    return exp.str();
 }
 
 ArrayFieldValue
@@ -401,14 +287,12 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
 }
 
 void
-SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const FieldValue& fv, bool tokenize)
+SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const FieldValue& fv)
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    MockJuniperConverter converter;
-    AnnotationConverter annotation_converter(converter);
-    PassThroughStringFieldConverter passthrough_converter(converter);
-    SlimeFiller filler(inserter, tokenize ? (IStringFieldConverter*) &annotation_converter : (IStringFieldConverter*) &passthrough_converter, nullptr);
+    MockStringFieldConverter converter;
+    SlimeFiller filler(inserter, &converter, nullptr);
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
@@ -456,15 +340,8 @@ TEST_F(SlimeFillerTest, insert_string)
         expect_insert(R"("Foo Bar Baz")", StringFieldValue("Foo Bar Baz"));
     }
     {
-        SCOPED_TRACE("annotated string");
-        auto exp = make_exp_il_annotated_string();
-        expect_insert(R"("foo bar")", make_annotated_string());
-    }
-    {
-        SCOPED_TRACE("annotated chinese string");
-        auto annotated_chinese_string = make_annotated_chinese_string();
-        auto exp = annotated_chinese_string.getValue();
-        expect_insert(make_slime_string(exp), annotated_chinese_string);
+        SCOPED_TRACE("empty string");
+        expect_insert(R"("")", StringFieldValue());
     }
 }
 
@@ -647,28 +524,9 @@ TEST_F(SlimeFillerTest, insert_struct_map)
 
 TEST_F(SlimeFillerTest, insert_string_with_callback)
 {
-    {
-        SCOPED_TRACE("plain string");
-        using namespace juniper::separators;
-        vespalib::string exp("Foo Bar Baz");
-        StringFieldValue plain_string("Foo Bar Baz");
-        expect_insert_callback(exp + unit_separator_string, plain_string, true);
-        expect_insert_callback(exp, plain_string, false);
-    }
-    {
-        SCOPED_TRACE("annotated string");
-        auto exp = make_exp_il_annotated_string();
-        auto annotated_string = make_annotated_string();
-        expect_insert_callback(exp, annotated_string, true);
-        expect_insert_callback("foo bar", annotated_string, false);
-    }
-    {
-        SCOPED_TRACE("annotated chinese string");
-        auto exp = make_exp_il_annotated_chinese_string();
-        auto annotated_chinese_string = make_annotated_chinese_string();
-        expect_insert_callback(exp, annotated_chinese_string, true);
-        expect_insert_callback(annotated_chinese_string.getValueRef(), annotated_chinese_string, false);
-    }
+    vespalib::string exp("Foo Bar Baz");
+    StringFieldValue plain_string(exp);
+    expect_insert_callback(exp, plain_string);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
