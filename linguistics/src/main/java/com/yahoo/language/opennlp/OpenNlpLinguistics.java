@@ -5,9 +5,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Tokenizer;
-import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
-import opennlp.tools.langdetect.LanguageDetectorModel;
 
 /**
  * Returns a linguistics implementation based on OpenNlp.

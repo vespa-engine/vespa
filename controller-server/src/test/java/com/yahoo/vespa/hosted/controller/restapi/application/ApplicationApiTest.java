@@ -973,14 +973,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Invalid deployment fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation", GET)
                         .userIdentity(USER_ID),
-                "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"application instance 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                 404);
 
         // Change status of non-existing deployment fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation/override", PUT)
                         .userIdentity(USER_ID)
                         .data("{\"reason\":\"unit-test\"}"),
-                "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"application instance 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                 404);
 
         // GET global rotation status
@@ -1038,7 +1038,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET global rotation status without specifying endpointId fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
                         .userIdentity(USER_ID),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"application 'tenant1.application1.instance1' has multiple rotations. Query parameter 'endpointId' must be given\"}",
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"application instance 'tenant1.application1.instance1' has multiple rotations. Query parameter 'endpointId' must be given\"}",
                 400);
 
         // GET global rotation status for us-west-1 in default endpoint
