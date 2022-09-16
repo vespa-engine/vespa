@@ -10,14 +10,13 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::docsummary {
 
 /**
- * Interface class for inserting a dynamic string based on an
- * annotated full string and query context.
+ * Interface class for inserting a dynamic string.
  */
-class IJuniperConverter
+class IStringFieldConverter
 {
 public:
-    virtual ~IJuniperConverter() = default;
-    virtual void convert(vespalib::stringref input, vespalib::slime::Inserter& inserter) = 0;
+    virtual ~IStringFieldConverter() = default;
+    virtual void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) = 0;
 };
 
 }

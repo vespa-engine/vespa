@@ -114,8 +114,7 @@ class JuniperConverter : public IJuniperConverter
 public:
     JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state);
     ~JuniperConverter() override;
-    void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter) override;
-    void insert_juniper_field(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    void convert(vespalib::stringref input, vespalib::slime::Inserter& inserter) override;
 };
 
 JuniperConverter::JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state)
@@ -129,15 +128,9 @@ JuniperConverter::JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_
 JuniperConverter::~JuniperConverter() = default;
 
 void
-JuniperConverter::insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter)
+JuniperConverter::convert(vespalib::stringref input, vespalib::slime::Inserter& inserter)
 {
     _writer.insert_juniper_field(_doc_id, input, _state, inserter);
-}
-
-void
-JuniperConverter::insert_juniper_field(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter)
-{
-    _writer.insert_juniper_field(_doc_id, input.getValueRef(), _state, inserter);
 }
 
 }

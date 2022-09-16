@@ -36,6 +36,7 @@
 #include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
+#include <vespa/searchsummary/docsummary/i_string_field_converter.h>
 #include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
@@ -83,6 +84,7 @@ using document::WeightedSetFieldValue;
 using search::docsummary::AnnotationConverter;
 using search::docsummary::IDocsumFieldWriterFactory;
 using search::docsummary::IJuniperConverter;
+using search::docsummary::IStringFieldConverter;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
@@ -184,13 +186,25 @@ class MockJuniperConverter : public IJuniperConverter
 {
     vespalib::string _result;
 public:
-    void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter&) override {
+    void convert(vespalib::stringref input, vespalib::slime::Inserter&) override {
         _result = input;
     }
-    void insert_juniper_field(const document::StringFieldValue& input, vespalib::slime::Inserter&) override {
-        _result = input.getValueRef();
-    }
     const vespalib::string& get_result() const noexcept { return _result; }
+};
+
+class PassThroughStringFieldConverter : public IStringFieldConverter
+{
+    IJuniperConverter& _juniper_converter;
+public:
+    PassThroughStringFieldConverter(IJuniperConverter& juniper_converter)
+        : IStringFieldConverter(),
+          _juniper_converter(juniper_converter)
+    {
+    }
+    ~PassThroughStringFieldConverter() override = default;
+    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override {
+        _juniper_converter.convert(input.getValueRef(), inserter);
+    }
 };
 
 }
@@ -362,8 +376,9 @@ SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const Field
     Slime slime;
     SlimeInserter inserter(slime);
     MockJuniperConverter converter;
-    AnnotationConverter stacked_converter(converter);
-    SlimeFiller filler(inserter, tokenize ? (IJuniperConverter*)&stacked_converter : (IJuniperConverter *) &converter);
+    AnnotationConverter annotation_converter(converter);
+    PassThroughStringFieldConverter passthrough_converter(converter);
+    SlimeFiller filler(inserter, tokenize ? (IStringFieldConverter*) &annotation_converter : (IStringFieldConverter*) &passthrough_converter);
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);

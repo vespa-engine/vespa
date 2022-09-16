@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "annotation_converter.h"
+#include "i_juniper_converter.h"
 #include "linguisticsannotation.h"
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
@@ -78,9 +79,9 @@ const StringFieldValue &ensureStringFieldValue(const FieldValue &value) {
 
 }
 
-AnnotationConverter::AnnotationConverter(IJuniperConverter& orig_converter)
-    : IJuniperConverter(),
-      _orig_converter(orig_converter),
+AnnotationConverter::AnnotationConverter(IJuniperConverter& juniper_converter)
+    : IStringFieldConverter(),
+      _juniper_converter(juniper_converter),
       _text(),
       _out()
 {
@@ -166,19 +167,12 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
 }
 
 void
-AnnotationConverter::insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter)
-{
-    StringFieldValue value(input);
-    insert_juniper_field(value, inserter);
-}
-
-void
-AnnotationConverter::insert_juniper_field(const StringFieldValue &input, vespalib::slime::Inserter& inserter)
+AnnotationConverter::convert(const StringFieldValue &input, vespalib::slime::Inserter& inserter)
 {
     _out.clear();
     _text = input.getValueRef();
     handleIndexingTerms(input);
-    _orig_converter.insert_juniper_field(_out.str(), inserter);
+    _juniper_converter.convert(_out.str(), inserter);
 }
 
 }
