@@ -566,7 +566,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     bool showAll = path.hasAttribute("allvisitors");
 
         // Print menu
-    out << "<font size=\"-1\">[ <a href=\"/\">Back to top</a>"
+    out << "<font size=\"-1\">[ <a href=\"../\">Back to top</a>"
         << " | <a href=\"?" << (verbose ? "verbose" : "")
         << "\">Main visitor manager status page</a>"
         << " | <a href=\"?allvisitors" << (verbose ? "&verbose" : "")

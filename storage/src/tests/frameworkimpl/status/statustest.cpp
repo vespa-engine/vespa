@@ -12,6 +12,7 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <string>
 
 using namespace ::testing;
 
@@ -99,6 +100,19 @@ void StatusTest::SetUp() {
     _node = std::make_unique<TestServiceLayerApp>();
 }
 
+namespace {
+
+std::string additional_fixed_http_response_headers() {
+    return ("X-XSS-Protection: 1; mode=block\r\n"
+            "X-Frame-Options: DENY\r\n"
+            "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n"
+            "X-Content-Type-Options: nosniff\r\n"
+            "Cache-Control: no-store\r\n"
+            "Pragma: no-cache\r\n");
+}
+
+}
+
 TEST_F(StatusTest, index_status_page) {
     StatusComponent rep1(_node->getComponentRegister(), "foo",
                          new HtmlStatusReporter(
@@ -115,12 +129,7 @@ TEST_F(StatusTest, index_status_page) {
             "Connection: close\r\n"
             "Content-Type: text\\/html\r\n"
             "Content-Length: [0-9]+\r\n"
-            "X-XSS-Protection: 1; mode=block\r\n"
-            "X-Frame-Options: DENY\r\n"
-            "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n"
-            "X-Content-Type-Options: nosniff\r\n"
-            "Cache-Control: no-store\r\n"
-            "Pragma: no-cache\r\n"
+            + additional_fixed_http_response_headers() +
             "\r\n"
             "<html>\n"
             "<head>\n"
@@ -150,12 +159,33 @@ TEST_F(StatusTest, html_status) {
             "Connection: close\r\n"
             "Content-Type: text/html\r\n"
             "Content-Length: 117\r\n"
-            "X-XSS-Protection: 1; mode=block\r\n"
-            "X-Frame-Options: DENY\r\n"
-            "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n"
-            "X-Content-Type-Options: nosniff\r\n"
-            "Cache-Control: no-store\r\n"
-            "Pragma: no-cache\r\n"
+            + additional_fixed_http_response_headers() +
+            "\r\n"
+            "<html>\n"
+            "<head>\n"
+            "  <title>Foo impl</title>\n"
+            "<!-- script --></head>\n"
+            "<body>\n"
+            "  <h1>Foo impl</h1>\n"
+            "<p>info</p></body>\n"
+            "</html>\n"
+    );
+    EXPECT_EQ(expected, std::string(actual));
+}
+
+TEST_F(StatusTest, path_with_v1_prefix_aliases_to_handler_under_root) {
+    StatusComponent rep1(_node->getComponentRegister(), "foo",
+                         new HtmlStatusReporter("fooid", "Foo impl", "<p>info</p>", "<!-- script -->"));
+    StatusWebServer webServer(_node->getComponentRegister(),
+                              _node->getComponentRegister(),
+                              config::ConfigUri("raw:httpport 0"));
+    auto actual = fetch(webServer.getListenPort(), "/contentnode-status/v1/fooid?unusedParam");
+    std::string expected(
+            "HTTP/1.1 200 OK\r\n"
+            "Connection: close\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: 117\r\n"
+            + additional_fixed_http_response_headers() +
             "\r\n"
             "<html>\n"
             "<head>\n"
@@ -182,12 +212,7 @@ TEST_F(StatusTest, xml_sStatus) {
             "Connection: close\r\n"
             "Content-Type: application/xml\r\n"
             "Content-Length: 100\r\n"
-            "X-XSS-Protection: 1; mode=block\r\n"
-            "X-Frame-Options: DENY\r\n"
-            "Content-Security-Policy: default-src 'none'; frame-ancestors 'none'\r\n"
-            "X-Content-Type-Options: nosniff\r\n"
-            "Cache-Control: no-store\r\n"
-            "Pragma: no-cache\r\n"
+            + additional_fixed_http_response_headers() +
             "\r\n"
             "<?xml version=\"1.0\"?>\n"
             "<status id=\"fooid\" name=\"Foo impl\">\n"
