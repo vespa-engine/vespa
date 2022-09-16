@@ -16,7 +16,12 @@ class IDocsumFieldWriterFactory
 {
 public:
     virtual ~IDocsumFieldWriterFactory() = default;
-    virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) = 0;
+    /**
+     * Implementations can throw vespalib::IllegalArgumentException if setup of field writer fails.
+     */
+    virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
+                                                                          const vespalib::string& command,
+                                                                          const vespalib::string& source) = 0;
 };
 
 }

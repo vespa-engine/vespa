@@ -82,11 +82,7 @@ namespace proton {
 class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
 {
 public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) override {
-        (void) fieldName;
-        (void) overrideName;
-        (void) argument;
-        (void) rc;
+    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string&, const vespalib::string&, const vespalib::string&) override {
         return {};
     }
 
