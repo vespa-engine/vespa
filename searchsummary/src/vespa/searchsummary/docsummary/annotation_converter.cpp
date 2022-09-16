@@ -13,8 +13,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <utility>
 
-using document::Annotation;
 using document::AlternateSpanList;
+using document::Annotation;
 using document::FieldValue;
 using document::SimpleSpanList;
 using document::Span;
@@ -125,8 +125,8 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
 {
     StringFieldValue::SpanTrees trees = value.getSpanTrees();
     const SpanTree *tree = StringFieldValue::findTree(trees, linguistics::SPANTREE_NAME);
-    typedef std::pair<Span, const FieldValue *> SpanTerm;
-    typedef std::vector<SpanTerm> SpanTermVector;
+    using SpanTerm = std::pair<Span, const FieldValue *>;
+    using SpanTermVector = std::vector<SpanTerm>;
     if (!tree) {
         // Treat a string without annotations as a single span.
         SpanTerm str(Span(0, _text.size()),
@@ -137,7 +137,7 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
     SpanTermVector terms;
     for (const Annotation& annotation : *tree) {
         // For now, skip any composite spans.
-        const Span *span = dynamic_cast<const Span*>(annotation.getSpanNode());
+        const auto *span = dynamic_cast<const Span*>(annotation.getSpanNode());
         if ((span != nullptr) && annotation.valid() &&
             (annotation.getType() == *linguistics::TERM)) {
             terms.push_back(std::make_pair(getSpan(*span),

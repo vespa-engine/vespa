@@ -23,15 +23,16 @@ ResultClass::~ResultClass() = default;
 int
 ResultClass::GetIndexFromName(const char* name) const
 {
-    NameIdMap::const_iterator found(_nameMap.find(name));
+    auto found = _nameMap.find(name);
     return (found != _nameMap.end()) ? found->second : -1;
 }
 
 bool
 ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
 {
-    if (_nameMap.find(name) != _nameMap.end())
+    if (_nameMap.find(name) != _nameMap.end()) {
         return false;
+    }
 
     _nameMap[name] = _entries.size();
     ResConfigEntry e;

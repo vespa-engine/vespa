@@ -100,8 +100,9 @@ KeywordExtractor::GetLegalIndexSpec()
     }
 
     for (const auto & index : _legalIndexes) {
-        if (!spec.empty())
+        if (!spec.empty()) {
             spec.append(';');
+        }
         spec.append(index);
     }
     return spec;

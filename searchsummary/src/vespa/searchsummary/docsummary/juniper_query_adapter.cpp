@@ -27,8 +27,9 @@ JuniperQueryAdapter::SkipItem(search::SimpleQueryStackDumpIterator *iterator) co
     uint32_t skipCount = iterator->getArity();
 
     while (skipCount > 0) {
-        if (!iterator->next())
+        if (!iterator->next()) {
             return false; // stack too small
+        }
         skipCount = skipCount - 1 + iterator->getArity();
     }
     return true;

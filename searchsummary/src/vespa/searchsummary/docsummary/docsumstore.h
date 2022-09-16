@@ -15,10 +15,7 @@ class IDocsumStoreDocument;
 class IDocsumStore
 {
 public:
-    /**
-     * Convenience typedef.
-     */
-    typedef std::unique_ptr<IDocsumStore> UP;
+    using UP = std::unique_ptr<IDocsumStore>;
 
     /**
      * Destructor.  No cleanup needed for base class.

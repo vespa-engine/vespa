@@ -41,7 +41,7 @@ AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContex
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
-        return std::unique_ptr<DocsumFieldWriter>();
+        return {};
     } else if (structFields.is_map_of_struct()) {
         return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
     }

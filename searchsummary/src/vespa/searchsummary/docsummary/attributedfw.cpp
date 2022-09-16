@@ -25,12 +25,12 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::IMultiValueReadView;
+using vespalib::Issue;
 using vespalib::Memory;
+using vespalib::eval::Value;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
 using vespalib::slime::Symbol;
-using vespalib::eval::Value;
-using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -347,7 +347,7 @@ AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
     const auto* attr = ctx->getAttribute(attr_name);
     if (attr == nullptr) {
         Issue::report("No valid attribute vector found: '%s'", attr_name.c_str());
-        return std::unique_ptr<DocsumFieldWriter>();
+        return {};
     }
     if (attr->hasMultiValue()) {
         return create_multi_writer(*attr, filter_elements, std::move(matching_elems_fields));
