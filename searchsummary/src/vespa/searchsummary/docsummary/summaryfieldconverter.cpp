@@ -32,7 +32,7 @@ SummaryFieldConverter::insert_summary_field_with_filter(const FieldValue& value,
 }
 
 void
-SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IJuniperConverter& converter)
+SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);

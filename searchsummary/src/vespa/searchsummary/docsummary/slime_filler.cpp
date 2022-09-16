@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slime_filler.h"
-#include "annotation_converter.h"
 #include "i_juniper_converter.h"
+#include "i_string_field_converter.h"
 #include "resultconfig.h"
 #include "searchdatatype.h"
 #include <vespa/document/datatype/positiondatatype.h>
@@ -90,21 +90,21 @@ public:
 SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
       _matching_elems(nullptr),
-      _juniper_converter(nullptr)
+      _string_converter(nullptr)
 {
 }
 
 SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matching_elems)
     : _inserter(inserter),
       _matching_elems(matching_elems),
-      _juniper_converter(nullptr)
+      _string_converter(nullptr)
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, IJuniperConverter* juniper_converter)
+SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter)
     : _inserter(inserter),
       _matching_elems(nullptr),
-      _juniper_converter(juniper_converter)
+      _string_converter(string_converter)
 {
 }
 
@@ -158,7 +158,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     }
     Cursor& a = _inserter.insertArray();
     ArrayInserter ai(a);
-    SlimeFiller conv(ai, _juniper_converter);
+    SlimeFiller conv(ai, _string_converter);
     if (filter_matching_elements()) {
         for (uint32_t id_to_keep : (*_matching_elems)) {
             value[id_to_keep].accept(conv);
@@ -173,8 +173,8 @@ SlimeFiller::visit(const ArrayFieldValue& value)
 void
 SlimeFiller::visit(const StringFieldValue& value)
 {
-    if (_juniper_converter != nullptr) {
-        _juniper_converter->insert_juniper_field(value, _inserter);
+    if (_string_converter != nullptr) {
+        _string_converter->convert(value, _inserter);
     } else {
         _inserter.insertString(Memory(value.getValueRef()));
     }

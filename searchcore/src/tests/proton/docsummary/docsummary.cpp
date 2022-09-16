@@ -311,11 +311,8 @@ class MockJuniperConverter : public IJuniperConverter
 {
     vespalib::string _result;
 public:
-    void insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter&) override {
+    void convert(vespalib::stringref input, vespalib::slime::Inserter&) override {
         _result = input;
-    }
-    void insert_juniper_field(const document::StringFieldValue& input, vespalib::slime::Inserter&) override {
-        _result = input.getValueRef();
     }
     const vespalib::string& get_result() const noexcept { return _result; }
 };
