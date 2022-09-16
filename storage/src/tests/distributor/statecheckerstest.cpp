@@ -287,7 +287,7 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
 
     void do_test_bucket_activation();
 
-    void set_node_supports_no_implicit_index_on_activation(uint16_t node, bool supported) {
+    void set_node_supports_no_implicit_indexing_on_activation(uint16_t node, bool supported) {
         NodeSupportedFeatures nsf;
         nsf.no_implicit_indexing_of_active_buckets = supported;
         set_node_supported_features(node, nsf);
@@ -1097,12 +1097,12 @@ void StateCheckersTest::do_test_bucket_activation() {
               testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/r,3=5/6/7/u/i/r"));
 }
 
-TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_with_implicit_index_on_active) {
+TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_with_implicit_indexing_on_active) {
     set_node_supports_no_implicit_index_on_activation(2, false);
     do_test_bucket_activation();
 }
 
-TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_without_implicit_index_on_active) {
+TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_without_implicit_indexing_on_active) {
     set_node_supports_no_implicit_index_on_activation(2, true);
     do_test_bucket_activation();
 }
