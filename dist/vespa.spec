@@ -207,24 +207,24 @@ Requires: initscripts
 Requires: libcgroup-tools
 %endif
 Requires: numactl
-Requires: perl
-Requires: perl-Carp
-Requires: perl-Data-Dumper
-Requires: perl-Digest-MD5
-Requires: perl-Env
-Requires: perl-Exporter
-Requires: perl-File-Path
-Requires: perl-File-Temp
-Requires: perl-Getopt-Long
-Requires: perl-IO-Socket-IP
-Requires: perl-JSON
-Requires: perl-libwww-perl
-Requires: perl-LWP-Protocol-https
+BuildRequires: perl
+BuildRequires: perl-Carp
+BuildRequires: perl-Data-Dumper
+BuildRequires: perl-Digest-MD5
+BuildRequires: perl-Env
+BuildRequires: perl-Exporter
+BuildRequires: perl-File-Path
+BuildRequires: perl-File-Temp
+BuildRequires: perl-Getopt-Long
+BuildRequires: perl-IO-Socket-IP
+BuildRequires: perl-JSON
+BuildRequires: perl-libwww-perl
+BuildRequires: perl-LWP-Protocol-https
 %if ! 0%{?amzn2022} && ! 0%{?el9}
-Requires: perl-Net-INET6Glue
+BuildRequires: perl-Net-INET6Glue
 %endif
-Requires: perl-Pod-Usage
-Requires: perl-URI
+BuildRequires: perl-Pod-Usage
+BuildRequires: perl-URI
 Requires: valgrind
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
@@ -310,8 +310,8 @@ Requires: java-17-amazon-corretto
 %else
 Requires: java-17-openjdk-devel
 %endif
-Requires: perl
-Requires: perl-Getopt-Long
+BuildRequires: perl
+BuildRequires: perl-Getopt-Long
 Requires(pre): shadow-utils
 
 %description base
