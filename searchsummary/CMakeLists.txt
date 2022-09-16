@@ -16,6 +16,7 @@ vespa_define_module(
 
     TESTS
     src/tests/docsummary
+    src/tests/docsummary/annotation_converter
     src/tests/docsummary/attribute_combiner
     src/tests/docsummary/attributedfw
     src/tests/docsummary/document_id_dfw
