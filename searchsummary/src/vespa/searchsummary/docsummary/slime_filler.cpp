@@ -5,6 +5,7 @@
 #include "i_string_field_converter.h"
 #include "resultconfig.h"
 #include "searchdatatype.h"
+#include "slime_filler_filter.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -65,23 +66,27 @@ private:
     Cursor& _array;
     Symbol _key_sym;
     Symbol _val_sym;
+    std::optional<const SlimeFillerFilter*> _filter;
 
 public:
-    MapFieldValueInserter(Inserter& parent_inserter)
+    MapFieldValueInserter(Inserter& parent_inserter, std::optional<const SlimeFillerFilter*> filter)
         : _array(parent_inserter.insertArray()),
           _key_sym(_array.resolve("key")),
-          _val_sym(_array.resolve("value"))
+          _val_sym(_array.resolve("value")),
+          _filter(std::move(filter))
     {
     }
     void insert_entry(const FieldValue& key, const FieldValue& value) {
         Cursor& c = _array.addObject();
         ObjectSymbolInserter ki(c, _key_sym);
-        ObjectSymbolInserter vi(c, _val_sym);
         SlimeFiller key_conv(ki);
-        SlimeFiller val_conv(vi);
 
         key.accept(key_conv);
-        value.accept(val_conv);
+        if (_filter.has_value()) {
+            ObjectSymbolInserter vi(c, _val_sym);
+            SlimeFiller val_conv(vi, nullptr, _filter.value());
+            value.accept(val_conv);
+        }
     }
 };
 
@@ -90,21 +95,24 @@ public:
 SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
       _matching_elems(nullptr),
-      _string_converter(nullptr)
+      _string_converter(nullptr),
+      _filter(nullptr)
 {
 }
 
 SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matching_elems)
     : _inserter(inserter),
       _matching_elems(matching_elems),
-      _string_converter(nullptr)
+      _string_converter(nullptr),
+      _filter(nullptr)
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter)
+SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter, const SlimeFillerFilter* filter)
     : _inserter(inserter),
       _matching_elems(nullptr),
-      _string_converter(string_converter)
+      _string_converter(string_converter),
+      _filter(filter)
 {
 }
 
@@ -136,7 +144,7 @@ SlimeFiller::visit(const MapFieldValue& v)
     if (empty_or_empty_after_filtering(v)) {
         return;
     }
-    MapFieldValueInserter map_inserter(_inserter);
+    MapFieldValueInserter map_inserter(_inserter, SlimeFillerFilter::get_filter(_filter, "value"));
     if (filter_matching_elements()) {
         assert(v.has_no_erased_keys());
         for (uint32_t id_to_keep : (*_matching_elems)) {
@@ -158,7 +166,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     }
     Cursor& a = _inserter.insertArray();
     ArrayInserter ai(a);
-    SlimeFiller conv(ai, _string_converter);
+    SlimeFiller conv(ai, _string_converter, _filter);
     if (filter_matching_elements()) {
         for (uint32_t id_to_keep : (*_matching_elems)) {
             value[id_to_keep].accept(conv);
@@ -266,11 +274,15 @@ SlimeFiller::visit(const StructFieldValue& value)
     }
     Cursor& c = _inserter.insertObject();
     for (StructFieldValue::const_iterator itr = value.begin(); itr != value.end(); ++itr) {
-        Memory keymem(itr.field().getName());
-        ObjectInserter vi(c, keymem);
-        SlimeFiller conv(vi);
-        FieldValue::UP nextValue(value.getValue(itr.field()));
-        (*nextValue).accept(conv);
+        auto& name = itr.field().getName();
+        auto sub_filter = SlimeFillerFilter::get_filter(_filter, name);
+        if (sub_filter.has_value()) {
+            Memory keymem(name);
+            ObjectInserter vi(c, keymem);
+            SlimeFiller conv(vi, nullptr, sub_filter.value());
+            FieldValue::UP nextValue(value.getValue(itr.field()));
+            (*nextValue).accept(conv);
+        }
     }
 }
 

@@ -40,6 +40,7 @@
 #include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
+#include <vespa/searchsummary/docsummary/slime_filler_filter.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -88,6 +89,7 @@ using search::docsummary::IStringFieldConverter;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
+using search::docsummary::SlimeFillerFilter;
 using search::linguistics::SPANTREE_NAME;
 using search::linguistics::TERM;
 using vespalib::SimpleBuffer;
@@ -176,6 +178,8 @@ get_document_types_config()
                                .addField("d", nested_type_id)
                                .addField("e", nested_type_id)
                                .addField("f", nested_type_id))
+                     .addField("nested_array", Array(nested_type_id))
+                     .addField("nested_map", Map(DataType::T_STRING, nested_type_id))
                      .addField("ref", ref_type_id),
                    Struct("indexingdocument.body"))
         .referenceType(ref_type_id, ref_target_doctype_id);
@@ -228,9 +232,11 @@ protected:
     ArrayFieldValue make_array();
     WeightedSetFieldValue make_weighted_set();
     MapFieldValue make_map();
+    StructFieldValue make_nested_value(int i);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv);
     void expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
+    void expect_insert(const vespalib::string& exp, const FieldValue& fv, SlimeFillerFilter& filter);
     void expect_insert_callback(const vespalib::string& exp, const FieldValue& fv, bool tokenize);
 };
 
@@ -345,6 +351,21 @@ SlimeFillerTest::make_map()
     return map;
 }
 
+StructFieldValue
+SlimeFillerTest::make_nested_value(int i)
+{
+    StructFieldValue nested(get_data_type("nested"));
+    StructFieldValue nested2(get_data_type("nested"));
+    nested.setValue("a", IntFieldValue(42 + 100 * i));
+    nested.setValue("b", IntFieldValue(44 + 100 * i));
+    nested.setValue("c", IntFieldValue(46 + 100 * i));
+    nested2.setValue("a", IntFieldValue(62 + 100 * i));
+    nested2.setValue("c", IntFieldValue(66 + 100 * i));
+    nested.setValue("d", nested2);
+    nested.setValue("f", nested2);
+    return nested;
+}
+
 void
 SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems)
 {
@@ -352,8 +373,6 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
     SlimeInserter inserter(slime);
     SlimeFiller filler(inserter, matching_elems);
     fv.accept(filler);
-    SimpleBuffer buf;
-    JsonFormat::encode(slime, buf, true);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -371,6 +390,17 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
 }
 
 void
+SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv, SlimeFillerFilter& filter)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    SlimeFiller filler(inserter, nullptr, &filter);
+    fv.accept(filler);
+    auto act = slime_to_string(slime);
+    EXPECT_EQ(exp, act);
+}
+
+void
 SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const FieldValue& fv, bool tokenize)
 {
     Slime slime;
@@ -378,7 +408,7 @@ SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const Field
     MockJuniperConverter converter;
     AnnotationConverter annotation_converter(converter);
     PassThroughStringFieldConverter passthrough_converter(converter);
-    SlimeFiller filler(inserter, tokenize ? (IStringFieldConverter*) &annotation_converter : (IStringFieldConverter*) &passthrough_converter);
+    SlimeFiller filler(inserter, tokenize ? (IStringFieldConverter*) &annotation_converter : (IStringFieldConverter*) &passthrough_converter, nullptr);
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
@@ -581,17 +611,38 @@ TEST_F(SlimeFillerTest, insert_map_filtered)
 
 TEST_F(SlimeFillerTest, insert_struct)
 {
-    StructFieldValue nested(get_data_type("nested"));
-    StructFieldValue nested2(get_data_type("nested"));
-    nested.setValue("a", IntFieldValue(42));
-    nested.setValue("b", IntFieldValue(44));
-    nested.setValue("c", IntFieldValue(46));
-    nested2.setValue("a", IntFieldValue(62));
-    nested2.setValue("c", IntFieldValue(66));
-    nested.setValue("d", nested2);
-    nested.setValue("f", nested2);
-    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7()
+    auto nested = make_nested_value(0);
+    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in slime
     expect_insert(R"({"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}})", nested);
+    SlimeFillerFilter filter;
+    filter.add("a").add("c").add("f.a").add("d");
+    expect_insert(R"({"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}})", nested, filter);
+}
+
+TEST_F(SlimeFillerTest, insert_struct_array)
+{
+    ArrayFieldValue array(get_data_type("Array<nested>"));
+    for (int i = 0; i < 3; ++i) {
+        array.add(make_nested_value(i));
+    }
+    expect_insert(R"([{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}},{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}},{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}])", array);
+    SlimeFillerFilter filter;
+    filter.add("a").add("c").add("f.a").add("d");
+    expect_insert(R"([{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}},{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}},{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}])", array, filter);
+}
+
+TEST_F(SlimeFillerTest, insert_struct_map)
+{
+    MapFieldValue map(get_data_type("Map<String,nested>"));
+    for (int i = 0; i < 3; ++i) {
+        vespalib::asciistream key;
+        key << "key" << (i + 1);
+        map.put(StringFieldValue(key.str()), make_nested_value(i));
+    }
+    expect_insert(R"([{"key":"key1","value":{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}}},{"key":"key2","value":{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}}},{"key":"key3","value":{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}}])", map);
+    SlimeFillerFilter filter;
+    filter.add("value.a").add("value.c").add("value.f.a").add("value.d");
+    expect_insert(R"([{"key":"key1","value":{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}}},{"key":"key2","value":{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}}},{"key":"key3","value":{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}}])", map, filter);
 }
 
 TEST_F(SlimeFillerTest, insert_string_with_callback)
