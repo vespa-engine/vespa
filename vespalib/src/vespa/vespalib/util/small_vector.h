@@ -104,15 +104,15 @@ private:
             free(old_data);
         }
     }
-    template <typename InputIt>
-    void init(InputIt first, InputIt last, std::random_access_iterator_tag) {
+    template <std::random_access_iterator InputIt>
+    void init(InputIt first, InputIt last) {
         reserve(last - first);
         while (first != last) {
             small_vector::create_at((_data + _size++), *first++);
         }
     }
-    template <typename InputIt>
-    void init(InputIt first, InputIt last, std::input_iterator_tag) {
+    template <std::input_iterator InputIt>
+    void init(InputIt first, InputIt last) {
         while (first != last) {
             emplace_back(*first++);
         }
@@ -137,10 +137,10 @@ public:
             small_vector::create_at((_data + _size++), value);
         }
     }
-    template <typename InputIt, std::enable_if_t<std::is_base_of_v<std::input_iterator_tag, typename std::iterator_traits<InputIt>::iterator_category>, bool> = true>
+    template <std::input_iterator InputIt>
     SmallVector(InputIt first, InputIt last) : SmallVector()
     {
-        init(first, last, typename std::iterator_traits<InputIt>::iterator_category());
+        init(first, last);
     }
     SmallVector(SmallVector &&rhs) : SmallVector() {
         reserve(rhs._size);

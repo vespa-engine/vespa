@@ -4,6 +4,7 @@
 
 #include "runnable.h"
 #include <vector>
+#include <ranges>
 
 namespace vespalib {
 
@@ -46,10 +47,11 @@ struct ThreadBundle {
     }
 
     // convenience run wrapper
-    template <typename Item>
-    std::enable_if_t<!is_runnable_ptr<Item>(),void> run(std::vector<Item> &items) {
+    template <std::ranges::range List>
+    requires (!is_runnable_ptr<std::ranges::range_value_t<List>>())
+    void run(List &items) {
         std::vector<Runnable*> targets;
-        targets.reserve(items.size());
+        targets.reserve(std::ranges::size(items));
         for (auto &item: items) {
             targets.push_back(resolve(item));
         }
