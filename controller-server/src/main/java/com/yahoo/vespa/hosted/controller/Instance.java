@@ -220,6 +220,6 @@ public class Instance {
 
     @Override
     public String toString() {
-        return "application instance '" + id.ToFullString() + "'";
+        return "application instance '" + id.toFullString() + "'";
     }
 }
