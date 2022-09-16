@@ -32,6 +32,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/juniper/juniper_separators.h>
+#include <vespa/searchsummary/docsummary/annotation_converter.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
@@ -79,6 +80,7 @@ using document::TensorDataType;
 using document::TensorFieldValue;
 using document::UrlDataType;
 using document::WeightedSetFieldValue;
+using search::docsummary::AnnotationConverter;
 using search::docsummary::IDocsumFieldWriterFactory;
 using search::docsummary::IJuniperConverter;
 using search::docsummary::DocsumFieldWriter;
@@ -212,8 +214,7 @@ protected:
     ArrayFieldValue make_array();
     WeightedSetFieldValue make_weighted_set();
     MapFieldValue make_map();
-    void expect_insert(const vespalib::string& exp, const FieldValue& fv, bool tokenize, const std::vector<uint32_t>* matching_elems);
-    void expect_insert(const vespalib::string& exp, const FieldValue& fv, bool tokenize);
+    void expect_insert(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv);
     void expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
     void expect_insert_callback(const vespalib::string& exp, const FieldValue& fv, bool tokenize);
@@ -331,11 +332,11 @@ SlimeFillerTest::make_map()
 }
 
 void
-SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv, bool tokenize, const std::vector<uint32_t>* matching_elems)
+SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems)
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, tokenize, matching_elems);
+    SlimeFiller filler(inserter, matching_elems);
     fv.accept(filler);
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
@@ -346,19 +347,13 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
 void
 SlimeFillerTest::expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems)
 {
-    expect_insert(exp, fv, false, &matching_elems);
-}
-
-void
-SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv, bool tokenize)
-{
-    expect_insert(exp, fv, tokenize, nullptr);
+    expect_insert(exp, fv, &matching_elems);
 }
 
 void
 SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv)
 {
-    expect_insert(exp, fv, false);
+    expect_insert(exp, fv, nullptr);
 }
 
 void
@@ -367,7 +362,8 @@ SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const Field
     Slime slime;
     SlimeInserter inserter(slime);
     MockJuniperConverter converter;
-    SlimeFiller filler(inserter, tokenize, &converter);
+    AnnotationConverter stacked_converter(converter);
+    SlimeFiller filler(inserter, tokenize ? (IJuniperConverter*)&stacked_converter : (IJuniperConverter *) &converter);
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
@@ -417,12 +413,13 @@ TEST_F(SlimeFillerTest, insert_string)
     {
         SCOPED_TRACE("annotated string");
         auto exp = make_exp_il_annotated_string();
-        expect_insert(make_slime_string(exp), make_annotated_string(), true);
+        expect_insert(R"("foo bar")", make_annotated_string());
     }
     {
         SCOPED_TRACE("annotated chinese string");
-        auto exp = make_exp_il_annotated_chinese_string();
-        expect_insert(make_slime_string(exp), make_annotated_chinese_string(), true);
+        auto annotated_chinese_string = make_annotated_chinese_string();
+        auto exp = annotated_chinese_string.getValue();
+        expect_insert(make_slime_string(exp), annotated_chinese_string);
     }
 }
 

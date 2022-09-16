@@ -15,7 +15,7 @@ SummaryFieldConverter::insert_summary_field(const FieldValue& value, vespalib::s
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, false);
+        SlimeFiller visitor(inserter);
         value.accept(visitor);
     }
 }
@@ -26,18 +26,18 @@ SummaryFieldConverter::insert_summary_field_with_filter(const FieldValue& value,
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, false, &matching_elems);
+        SlimeFiller visitor(inserter, &matching_elems);
         value.accept(visitor);
     }
 }
 
 void
-SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter& converter)
+SummaryFieldConverter::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IJuniperConverter& converter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, tokenize, &converter);
+        SlimeFiller visitor(inserter, &converter);
         value.accept(visitor);
     }
 }

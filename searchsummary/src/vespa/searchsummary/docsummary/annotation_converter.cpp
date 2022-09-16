@@ -27,10 +27,10 @@ namespace search::docsummary {
 
 namespace {
 
-vespalib::string
-getSpanString(const vespalib::string &s, const Span &span)
+vespalib::stringref
+getSpanString(vespalib::stringref s, const Span &span)
 {
-    return vespalib::string(&s[span.from()], &s[span.from() + span.length()]);
+    return {s.data() + span.from(), static_cast<size_t>(span.length())};
 }
 
 struct SpanFinder : SpanTreeVisitor {
@@ -78,6 +78,16 @@ const StringFieldValue &ensureStringFieldValue(const FieldValue &value) {
 
 }
 
+AnnotationConverter::AnnotationConverter(IJuniperConverter& orig_converter)
+    : IJuniperConverter(),
+      _orig_converter(orig_converter),
+      _text(),
+      _out()
+{
+}
+
+AnnotationConverter::~AnnotationConverter() = default;
+
 template <typename ForwardIt>
 void
 AnnotationConverter::handleAnnotations(const document::Span& span, ForwardIt it, ForwardIt last) {
@@ -85,28 +95,28 @@ AnnotationConverter::handleAnnotations(const document::Span& span, ForwardIt it,
     if (annCnt > 1 || (annCnt == 1 && it->second)) {
         annotateSpans(span, it, last);
     } else {
-        out << getSpanString(text, span) << juniper::separators::unit_separator_string;
+        _out << getSpanString(_text, span) << juniper::separators::unit_separator_string;
     }
 }
 
 template <typename ForwardIt>
 void
 AnnotationConverter::annotateSpans(const document::Span& span, ForwardIt it, ForwardIt last) {
-    out << juniper::separators::interlinear_annotation_anchor_string  // ANCHOR
-        << (getSpanString(text, span))
-        << juniper::separators::interlinear_annotation_separator_string; // SEPARATOR
+    _out << juniper::separators::interlinear_annotation_anchor_string  // ANCHOR
+         << (getSpanString(_text, span))
+         << juniper::separators::interlinear_annotation_separator_string; // SEPARATOR
     while (it != last) {
         if (it->second) {
-            out << ensureStringFieldValue(*it->second).getValue();
+            _out << ensureStringFieldValue(*it->second).getValue();
         } else {
-            out << getSpanString(text, span);
+            _out << getSpanString(_text, span);
         }
         if (++it != last) {
-            out << " ";
+            _out << " ";
         }
     }
-    out << juniper::separators::interlinear_annotation_terminator_string  // TERMINATOR
-        << juniper::separators::unit_separator_string;
+    _out << juniper::separators::interlinear_annotation_terminator_string  // TERMINATOR
+         << juniper::separators::unit_separator_string;
 }
 
 void
@@ -118,7 +128,7 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
     typedef std::vector<SpanTerm> SpanTermVector;
     if (!tree) {
         // Treat a string without annotations as a single span.
-        SpanTerm str(Span(0, text.size()),
+        SpanTerm str(Span(0, _text.size()),
                      static_cast<const FieldValue*>(nullptr));
         handleAnnotations(str.first, &str, &str + 1);
         return;
@@ -148,11 +158,27 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
         handleAnnotations(it_begin->first, it_begin, it);
         endPos = it_begin->first.from() + it_begin->first.length();
     }
-    int32_t wantEndPos = text.size();
+    int32_t wantEndPos = _text.size();
     if (endPos < wantEndPos) {
         Span tmpSpan(endPos, wantEndPos - endPos);
         handleAnnotations(tmpSpan, ite, ite);
     }
+}
+
+void
+AnnotationConverter::insert_juniper_field(vespalib::stringref input, vespalib::slime::Inserter& inserter)
+{
+    StringFieldValue value(input);
+    insert_juniper_field(value, inserter);
+}
+
+void
+AnnotationConverter::insert_juniper_field(const StringFieldValue &input, vespalib::slime::Inserter& inserter)
+{
+    _out.clear();
+    _text = input.getValueRef();
+    handleIndexingTerms(input);
+    _orig_converter.insert_juniper_field(_out.str(), inserter);
 }
 
 }

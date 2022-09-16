@@ -18,7 +18,6 @@ class IJuniperConverter;
 class SlimeFiller : public document::ConstFieldValueVisitor {
 
     vespalib::slime::Inserter&   _inserter;
-    bool                         _tokenize;
     const std::vector<uint32_t>* _matching_elems;
     IJuniperConverter*           _juniper_converter;
 
@@ -50,9 +49,9 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
     void visit(const document::TensorFieldValue& value) override;
     void visit(const document::ReferenceFieldValue& value) override;
 public:
-    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize);
-    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems);
-    SlimeFiller(vespalib::slime::Inserter& inserter, bool tokenize, IJuniperConverter* juniper_converter);
+    SlimeFiller(vespalib::slime::Inserter& inserter);
+    SlimeFiller(vespalib::slime::Inserter& inserter, const std::vector<uint32_t>* matching_elems);
+    SlimeFiller(vespalib::slime::Inserter& inserter, IJuniperConverter* juniper_converter);
     ~SlimeFiller() override;
 };
 
