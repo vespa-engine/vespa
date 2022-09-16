@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "res_type_utils.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::slime { struct Inserter; }
