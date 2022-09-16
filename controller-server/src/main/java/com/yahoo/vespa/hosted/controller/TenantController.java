@@ -189,8 +189,12 @@ public class TenantController {
     }
 
     private void requireNonExistent(TenantName name) {
+        var tenant = get(name, true);
+        if (tenant.isPresent() && tenant.get().type().equals(Tenant.Type.deleted)) {
+            throw new IllegalArgumentException("Tenant '" + name + "' cannot be created, try a different name");
+        }
         if (SystemApplication.TENANT.equals(name)
-            || get(name, true).isPresent()
+            || tenant.isPresent()
             // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.
             || get(name.value().replace('-', '_')).isPresent()) {
