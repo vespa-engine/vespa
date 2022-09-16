@@ -4,8 +4,9 @@
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config-summary.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 #include <atomic>
 
 #include <vespa/log/log.h>
@@ -126,16 +127,20 @@ ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsum
         for (unsigned int j = 0; rc && (j < cfg_class.fields.size()); j++) {
             const char *fieldtype = cfg_class.fields[j].type.c_str();
             const char *fieldname = cfg_class.fields[j].name.c_str();
-            vespalib::string override_name = cfg_class.fields[j].command;
+            vespalib::string command = cfg_class.fields[j].command;
             vespalib::string source_name = cfg_class.fields[j].source;
             auto res_type = ResTypeUtils::get_res_type(fieldtype);
             LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg_class.name.c_str(), fieldname, fieldtype);
             if (res_type != RES_BAD) {
                 std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
-                if (!override_name.empty()) {
-                    docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname, override_name, source_name, rc);
-                    if (!rc) {
-                        LOG(error, "%s override operation failed during initialization", override_name.c_str());
+                if (!command.empty()) {
+                    try {
+                        docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname,
+                                                                                                     command,
+                                                                                                     source_name);
+                    } catch (const vespalib::IllegalArgumentException& ex) {
+                        LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
+                            cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
                         break;
                     }
                 }

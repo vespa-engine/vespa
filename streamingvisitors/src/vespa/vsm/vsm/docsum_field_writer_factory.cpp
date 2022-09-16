@@ -44,35 +44,33 @@ DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, co
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
 std::unique_ptr<DocsumFieldWriter>
-DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc)
+DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& field_name,
+                                                     const vespalib::string& command,
+                                                     const vespalib::string& source)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
-    if ((overrideName == "staticrank") ||
-        (overrideName == "ranklog") ||
-        (overrideName == "label") ||
-        (overrideName == "project") ||
-        (overrideName == "positions") ||
-        (overrideName == "absdist") ||
-        (overrideName == "subproject"))
+    if ((command == "staticrank") ||
+        (command == "ranklog") ||
+        (command == "label") ||
+        (command == "project") ||
+        (command == "positions") ||
+        (command == "absdist") ||
+        (command == "subproject"))
     {
         fieldWriter = std::make_unique<EmptyDFW>();
-        rc = true;
-    } else if ((overrideName == "attribute") ||
-               (overrideName == "attributecombiner")) {
-        if (!argument.empty() && argument != fieldName) {
-            fieldWriter = std::make_unique<CopyDFW>(argument);
+    } else if ((command == "attribute") ||
+               (command == "attributecombiner")) {
+        if (!source.empty() && source != field_name) {
+            fieldWriter = std::make_unique<CopyDFW>(source);
         }
-        rc = true;
-    } else if (overrideName == "geopos") {
-        rc = true;
-    } else if ((overrideName == "matchedattributeelementsfilter") ||
-               (overrideName == "matchedelementsfilter")) {
-        vespalib::string source_field = argument.empty() ? fieldName : argument;
+    } else if (command == "geopos") {
+    } else if ((command == "matchedattributeelementsfilter") ||
+               (command == "matchedelementsfilter")) {
+        vespalib::string source_field = source.empty() ? field_name : source;
         populate_fields(*_matching_elems_fields, _vsm_fields_config, source_field);
         fieldWriter = MatchedElementsFilterDFW::create(source_field, _matching_elems_fields);
-        rc = static_cast<bool>(fieldWriter);
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(fieldName, overrideName, argument, rc);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source);
     }
     return fieldWriter;
 }

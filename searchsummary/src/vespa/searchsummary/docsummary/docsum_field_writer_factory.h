@@ -24,7 +24,9 @@ protected:
 public:
     DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env);
     ~DocsumFieldWriterFactory() override;
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& fieldName, const vespalib::string& overrideName, const vespalib::string& argument, bool& rc) override;
+    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
+                                                                  const vespalib::string& command,
+                                                                  const vespalib::string& source) override;
 };
 
 }
