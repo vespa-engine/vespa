@@ -26,12 +26,12 @@ double to_degrees(int32_t microDegrees) {
 
 }
 
+using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
-using search::attribute::BasicType;
 using search::attribute::IntegerContent;
-using search::common::Location;
 using search::common::GeoGcd;
+using search::common::Location;
 
 LocationAttrDFW::AllLocations
 LocationAttrDFW::getAllLocations(GetDocsumsState& state) const
@@ -232,21 +232,20 @@ PositionsDFW::insertField(uint32_t docid, GetDocsumsState& dsState, vespalib::sl
 //--------------------------------------------------------------------------
 
 PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager, bool useV8geoPositions) {
-    PositionsDFW::UP ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createPositionsDFW: missing attribute name '%p'", attribute_name);
-            return ret;
+            return {};
         }
         IAttributeContext::UP context = attribute_manager->createContext();
         if (!context.get()) {
             LOG(debug, "createPositionsDFW: could not create context from attribute manager");
-            return ret;
+            return {};
         }
         const IAttributeVector *attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             LOG(debug, "createPositionsDFW: could not get attribute '%s' from context", attribute_name);
-            return ret;
+            return {};
         }
     }
     return std::make_unique<PositionsDFW>(attribute_name, useV8geoPositions);
@@ -254,21 +253,20 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttribu
 
 std::unique_ptr<DocsumFieldWriter>
 AbsDistanceDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager) {
-    std::unique_ptr<DocsumFieldWriter> ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createAbsDistanceDFW: missing attribute name '%p'", attribute_name);
-            return ret;
+            return {};
         }
         IAttributeContext::UP context = attribute_manager->createContext();
         if (!context.get()) {
             LOG(debug, "createAbsDistanceDFW: could not create context from attribute manager");
-            return ret;
+            return {};
         }
         const IAttributeVector *attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             LOG(debug, "createAbsDistanceDFW: could not get attribute '%s' from context", attribute_name);
-            return ret;
+            return {};
         }
     }
     return std::make_unique<AbsDistanceDFW>(attribute_name);

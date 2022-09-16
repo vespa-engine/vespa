@@ -104,21 +104,20 @@ GeoPositionDFW::create(const char *attribute_name,
                        const IAttributeManager *attribute_manager,
                        bool useV8geoPositions)
 {
-    GeoPositionDFW::UP ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(warning, "create: missing attribute name '%p'", attribute_name);
-            return ret;
+            return {};
         }
         IAttributeContext::UP context = attribute_manager->createContext();
         if (!context.get()) {
             LOG(warning, "create: could not create context from attribute manager");
-            return ret;
+            return {};
         }
         const IAttributeVector *attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             Issue::report("GeoPositionDFW::create: could not get attribute '%s' from context", attribute_name);
-            return ret;
+            return {};
         }
     }
     return std::make_unique<GeoPositionDFW>(attribute_name, useV8geoPositions);

@@ -54,7 +54,7 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
 {
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
-        return std::unique_ptr<DocsumFieldWriter>();
+        return {};
     }
     resolver.apply_to(*matching_elems_fields);
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name, std::move(matching_elems_fields));

@@ -70,14 +70,14 @@ ResultConfig::set_default_result_class_id(uint32_t id)
 const ResultClass*
 ResultConfig::LookupResultClass(uint32_t id) const
 {
-    IdMap::const_iterator it(_classLookup.find(id));
+    auto it = _classLookup.find(id);
     return (it != _classLookup.end()) ? it->second.get() : nullptr;
 }
 
 uint32_t
 ResultConfig::LookupResultClassId(const vespalib::string &name) const
 {
-    NameMap::const_iterator found(_nameLookup.find(name));
+    auto found = _nameLookup.find(name);
     return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : NoClassID());
 }
 

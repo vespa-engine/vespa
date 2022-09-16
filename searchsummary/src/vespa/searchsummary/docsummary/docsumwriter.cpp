@@ -14,8 +14,8 @@
 LOG_SETUP(".searchlib.docsummary.docsumwriter");
 
 using vespalib::Issue;
-using vespalib::slime::ObjectInserter;
 using vespalib::Memory;
+using vespalib::slime::ObjectInserter;
 
 namespace search::docsummary {
 
@@ -77,7 +77,9 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
-            if ( ! state._args.needField(outCfg->_name)) continue;
+            if (!state._args.needField(outCfg->_name)) {
+                continue;
+            }
             const DocsumFieldWriter *writer = outCfg->_docsum_field_writer.get();
             const Memory field_name(outCfg->_name.data(), outCfg->_name.size());
             ObjectInserter inserter(docsum, field_name);

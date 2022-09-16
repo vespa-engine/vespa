@@ -23,7 +23,7 @@ public:
     };
 
 private:
-    typedef vespalib::hash_set<vespalib::string> Set;
+    using Set = vespalib::hash_set<vespalib::string>;
     const IDocsumEnvironment *_env;
     std::vector<IndexPrefix>  _legalPrefixes;
     Set                       _legalIndexes;

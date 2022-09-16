@@ -1,17 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for positionsdfw.
 
+#include <vespa/juniper/rpinterface.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer.h>
-#include <vespa/searchsummary/docsummary/positionsdfw.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
+#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
+#include <vespa/searchsummary/docsummary/positionsdfw.h>
 #include <vespa/searchsummary/test/slime_value.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/juniper/rpinterface.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("positionsdfw_test");
@@ -28,33 +27,6 @@ using std::vector;
 namespace search::docsummary {
 
 namespace {
-
-class Test : public vespalib::TestApp {
-    void requireThat2DPositionFieldIsWritten();
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("positionsdfw_test");
-
-    TEST_DO(requireThat2DPositionFieldIsWritten());
-
-    TEST_DONE();
-}
-
-struct MyEnvironment : IDocsumEnvironment {
-    IAttributeManager *attribute_man;
-
-    MyEnvironment() : attribute_man(0) {}
-
-    const IAttributeManager *getAttributeManager() const override { return attribute_man; }
-    string lookupIndex(const string &s) const override { return s; }
-    const juniper::Juniper *getJuniper() const override { return nullptr; }
-};
 
 class MyAttributeContext : public IAttributeContext {
     const IAttributeVector &_attr;
@@ -141,10 +113,13 @@ void checkWritePositionField(AttrType &attr,
     writer->insertField(doc_id, state, inserter);
 
     test::SlimeValue expected(expect_json);
-    EXPECT_EQUAL(expected.slime, target);
+    EXPECT_EQ(expected.slime, target);
 }
 
-void Test::requireThat2DPositionFieldIsWritten() {
+}  // namespace
+
+TEST(PositionsDFWTest, require_that_2D_position_field_is_written)
+{
     SingleInt64ExtAttribute attr("foo");
     checkWritePositionField(attr, 0x3e, "{x:6,y:7,latlong:'N0.000007;E0.000006'}");
     checkWritePositionField(attr,  007, "{x:-1,y:-1,latlong:'S0.000001;W0.000001'}");
@@ -153,7 +128,6 @@ void Test::requireThat2DPositionFieldIsWritten() {
     checkWritePositionField(attr,   42, "null");
 }
 
-}  // namespace
 }
 
-TEST_APPHOOK(search::docsummary::Test);
+GTEST_MAIN_RUN_ALL_TESTS()
