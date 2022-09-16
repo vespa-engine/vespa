@@ -51,7 +51,7 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
         }
     }
     return builder->build(std::move(builder));
-};
+}
 
 namespace {
 
@@ -64,7 +64,7 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
-};
+}
 
 //-----------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ void my_mixed_dense_join_op(State &state, uint64_t param_in) {
         assert(rhs == rhs_cells.end());
     }
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
-};
+}
 
 //-----------------------------------------------------------------------------
 
@@ -110,7 +110,7 @@ void my_dense_join_op(State &state, uint64_t param_in) {
     auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
     param.dense_plan.execute(0, 0, join_cells);
     state.pop_pop_push(state.stash.create<DenseValueView>(param.res_type, TypedCells(out_cells)));
-};
+}
 
 //-----------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ void my_double_join_op(State &state, uint64_t param_in) {
     Fun fun(unwrap_param<JoinParam>(param_in).function);
     state.pop_pop_push(state.stash.create<DoubleValue>(fun(state.peek(1).as_double(),
                                                            state.peek(0).as_double())));
-};
+}
 
 //-----------------------------------------------------------------------------
 

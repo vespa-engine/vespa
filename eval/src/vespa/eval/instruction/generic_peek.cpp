@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <cassert>
 #include <map>
 

@@ -17,8 +17,8 @@ private:
     ISummaryManager & imgr() const;
 
 public:
-    SummaryAdapter(const std::shared_ptr<SummaryManager> &mgr);
-    ~SummaryAdapter();
+    explicit SummaryAdapter(std::shared_ptr<SummaryManager> mgr);
+    ~SummaryAdapter() override;
 
     void put(SerialNum serialNum, const DocumentIdT lid, const Document &doc) override;
     void put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream &doc) override;

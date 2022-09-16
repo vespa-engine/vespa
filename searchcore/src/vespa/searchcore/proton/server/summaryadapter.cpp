@@ -3,6 +3,7 @@
 #include "summaryadapter.h"
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.summaryadapter");
@@ -11,12 +12,12 @@ using namespace document;
 
 namespace proton {
 
-SummaryAdapter::SummaryAdapter(const SummaryManager::SP &mgr)
-    : _mgr(mgr),
+SummaryAdapter::SummaryAdapter(SummaryManager::SP mgr)
+    : _mgr(std::move(mgr)),
       _lastSerial(_mgr->getBackingStore().lastSyncToken())
 {}
 
-SummaryAdapter::~SummaryAdapter() {}
+SummaryAdapter::~SummaryAdapter() = default;
 
 bool SummaryAdapter::ignore(SerialNum serialNum) const
 {

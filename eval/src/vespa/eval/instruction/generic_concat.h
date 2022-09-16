@@ -6,7 +6,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include <vespa/vespalib/util/small_vector.h>
 
 namespace vespalib::eval { struct ValueBuilderFactory; }
 

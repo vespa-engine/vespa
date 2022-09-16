@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/aggr.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/nested_loop.h>
+#include <vespa/vespalib/util/small_vector.h>
 
 namespace vespalib { class Stash; }
 namespace vespalib::eval { struct ValueBuilderFactory; }

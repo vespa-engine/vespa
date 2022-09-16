@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "small_vector.h"
 #include <vector>
 
 namespace vespalib {
@@ -17,8 +16,6 @@ public:
     constexpr ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ArrayRef(std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
-    template<size_t N>
-    ArrayRef(SmallVector<T, N> &v) noexcept :  _v(v.data()), _sz(v.size()) { }
     T & operator [] (size_t i) noexcept { return _v[i]; }
     const T & operator [] (size_t i) const noexcept { return _v[i]; }
     T * data() noexcept { return _v; }
@@ -38,8 +35,6 @@ public:
     constexpr ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
-    template<size_t N>
-    ConstArrayRef(const SmallVector<T, N> &v) noexcept :  _v(v.data()), _sz(v.size()) { }
     ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(v.data()), _sz(v.size()) { }
     constexpr ConstArrayRef() noexcept : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const noexcept { return _v[i]; }

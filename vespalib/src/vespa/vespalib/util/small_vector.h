@@ -4,6 +4,7 @@
 
 #include "alloc.h"
 #include "traits.h"
+#include "arrayref.h"
 #include <cstring>
 #include <cassert>
 #include <iterator>
@@ -174,6 +175,7 @@ public:
             free(_data);
         }
     }
+    operator ConstArrayRef<T> () const { return ConstArrayRef<T>(data(), size()); }
     bool empty() const { return (_size == 0); }
     uint32_t size() const { return _size; }
     uint32_t capacity() const { return _capacity; }
