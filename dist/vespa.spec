@@ -32,6 +32,9 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
+# Avoid auto requirement for perl
+%global __requires_exclude_from vespa-fbench-result-filter.pl|%{_prefix}/lib/perl5
+
 %if 0%{?centos} || 0%{?rocky}
 BuildRequires: epel-release
 %endif
