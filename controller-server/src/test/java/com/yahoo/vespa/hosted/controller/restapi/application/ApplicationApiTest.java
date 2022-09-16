@@ -925,7 +925,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
                         .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                         .oAuthCredentials(OKTA_CREDENTIALS),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}", 400);
+                """
+                        {"error-code":"BAD_REQUEST","message":"Tenant 'tenant1' cannot be created, try a different name"}""", 400);
 
 
         // Forget a deleted tenant
