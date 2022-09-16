@@ -17,7 +17,11 @@ class SlimeFillerFilter {
 public:
     SlimeFillerFilter();
     ~SlimeFillerFilter();
-    static std::optional<const SlimeFillerFilter*> get_filter(const SlimeFillerFilter*, vespalib::stringref field_name);
+    /*
+     * If field is blocked by the filter then the return value is not set,
+     * otherwise it is set to the filter for the next level.
+     */
+    static std::optional<const SlimeFillerFilter*> get_filter(const SlimeFillerFilter* filter, vespalib::stringref field_name);
     bool empty() const;
     SlimeFillerFilter& add(vespalib::stringref field_path);
 };
