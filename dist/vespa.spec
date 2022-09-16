@@ -32,6 +32,9 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
+# Avoid auto requirement for perl
+%global __requires_exclude_from vespa-fbench-result-filter.pl|%{_prefix}/lib/perl5
+
 %if 0%{?centos} || 0%{?rocky}
 BuildRequires: epel-release
 %endif
@@ -225,7 +228,7 @@ BuildRequires: perl-Net-INET6Glue
 %endif
 BuildRequires: perl-Pod-Usage
 BuildRequires: perl-URI
-Requires: valgrind
+BuildRequires: valgrind
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
 Requires: gdb
@@ -460,6 +463,18 @@ Requires: %{name}-base-libs = %{version}-%{release}
 
 Vespa - The open big data serving engine - tools
 
+%package systemtest-tools
+
+Summary: Vespa - The open big data serving engine - tools for system tests
+
+Requires: %{name} = %{version}-%{release}
+Requires: %{name}-base-libs = %{version}-%{release}
+Requires: valgrind
+
+%description systemtest-tools
+
+Vespa - The open big data serving engine - tools for system tests
+
 %package ann-benchmark
 
 Summary: Vespa - The open big data serving engine - ann-benchmark
@@ -635,6 +650,7 @@ fi
 %exclude %{_prefix}/bin/vespa-destination
 %exclude %{_prefix}/bin/vespa-document-statistics
 %exclude %{_prefix}/bin/vespa-fbench
+%exclude %{_prefix}/bin/vespa-fbench-result-filter.pl
 %exclude %{_prefix}/bin/vespa-feed-client
 %exclude %{_prefix}/bin/vespa-feeder
 %exclude %{_prefix}/bin/vespa-get
@@ -644,6 +660,8 @@ fi
 %exclude %{_prefix}/bin/vespa-stat
 %exclude %{_prefix}/bin/vespa-security-env
 %exclude %{_prefix}/bin/vespa-summary-benchmark
+%exclude %{_prefix}/bin/vespa-tensor-conformance
+%exclude %{_prefix}/bin/vespa-tensor-instructions-benchmark
 %exclude %{_prefix}/bin/vespa-visit
 %exclude %{_prefix}/bin/vespa-visit-target
 %dir %{_prefix}/conf
@@ -901,6 +919,16 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/vespaclient-java-jar-with-dependencies.jar
+
+%files systemtest-tools
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%dir %{_prefix}/bin
+%{_prefix}/bin/vespa-fbench-result-filter.pl
+%{_prefix}/bin/vespa-tensor-conformance
+%{_prefix}/bin/vespa-tensor-instructions-benchmark
 
 %files ann-benchmark
 %if %{_defattr_is_vespa_vespa}
