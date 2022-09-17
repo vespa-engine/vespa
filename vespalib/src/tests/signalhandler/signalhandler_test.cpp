@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "my_shared_library.h"
+#include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <latch>
 #include <thread>
 #include <unistd.h>
 
@@ -38,18 +38,20 @@ TEST(SignalHandlerTest, signal_handler_can_intercept_hooked_signals)
 
 TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
 {
-    std::latch arrival_latch(2);
-    std::latch departure_latch(2);
+    vespalib::CountDownLatch arrival_latch(2);
+    vespalib::CountDownLatch departure_latch(2);
 
     std::thread t([&]{
         my_cool_function(arrival_latch, departure_latch);
     });
-    arrival_latch.arrive_and_wait();
+    arrival_latch.countDown();
+    arrival_latch.await();
 
     auto trace = SignalHandler::get_cross_thread_stack_trace(t.native_handle());
     EXPECT_THAT(trace, HasSubstr("my_cool_function"));
 
-    departure_latch.arrive_and_wait();
+    departure_latch.countDown();
+    departure_latch.await();
     t.join();
 }
 
