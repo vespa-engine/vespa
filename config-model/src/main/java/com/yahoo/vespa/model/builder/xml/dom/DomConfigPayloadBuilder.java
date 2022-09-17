@@ -3,6 +3,9 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
+import com.yahoo.config.UrlReference;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -11,6 +14,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.yolean.Exceptions;
 import org.w3c.dom.Element;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -133,19 +137,19 @@ public class DomConfigPayloadBuilder {
         }
         else if (element.hasAttribute("model-id") || element.hasAttribute("url") || element.hasAttribute("path")) {
             // special syntax for "model" fields
-            String modelString = modelElement("model-id", element);
-            modelString += " " + modelElement("url", element);
-            modelString += " " + modelElement("path", element);
-            payloadBuilder.setField(name, modelString);
+            var model = ModelReference.unresolved(modelElement("model-id", element),
+                                                  modelElement("url", element).map(UrlReference::new),
+                                                  modelElement("path", element).map(FileReference::new));
+            payloadBuilder.setField(name, model.toString());
         }
         else { // leaf value: <myValueName>value</myValue>
             payloadBuilder.setField(name, value);
         }
     }
 
-    private String modelElement(String attributeName, Element element) {
-        String value = XML.attribute(attributeName, element).orElse("\"\"").trim();
-        if (value.contains(" "))
+    private Optional<String> modelElement(String attributeName, Element element) {
+        Optional<String> value = XML.attribute(attributeName, element);
+        if (value.isPresent() && value.get().contains(" "))
             throw new IllegalArgumentException("The value of " + attributeName + " on " + element.getTagName() +
                                                "cannot contain space");
         return value;

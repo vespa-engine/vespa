@@ -169,9 +169,7 @@ public class ConfigInstanceBuilderTest {
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
                 urlVal(new UrlReference("http://docs.vespa.ai")).
-                modelVal(new ModelReference(Optional.empty(),
-                                            Optional.empty(),
-                                            Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
+                modelVal(ModelReference.unresolved(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml")))).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).

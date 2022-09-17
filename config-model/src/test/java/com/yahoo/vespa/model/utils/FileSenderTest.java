@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.utils;
 
 import com.yahoo.config.FileNode;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
+import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -106,6 +109,42 @@ public class FileSenderTest {
     }
 
     @Test
+    void require_that_simple_model_field_with_just_path_is_modified() {
+        var originalValue = ModelReference.unresolved(new FileReference("myModel.onnx"));
+        def.addModelDef("modelVal");
+        builder.setField("modelVal", originalValue.toString());
+        assertFileSent("myModel.onnx", originalValue);
+    }
+
+    @Test
+    void require_that_simple_model_field_with_path_and_url_is_modified() {
+        var originalValue = ModelReference.unresolved(Optional.empty(),
+                                                      Optional.of(new UrlReference("myUrl")),
+                                                      Optional.of(new FileReference("myModel.onnx")));
+        def.addModelDef("modelVal");
+        builder.setField("modelVal", originalValue.toString());
+        assertFileSent("myModel.onnx", originalValue);
+    }
+
+    @Test
+    void require_that_simple_model_field_with_just_url_is_not_modified() {
+        var originalValue = ModelReference.unresolved(new UrlReference("myUrl"));
+        def.addModelDef("modelVal");
+        builder.setField("modelVal",originalValue.toString());
+        fileSender().sendUserConfiguredFiles(producer);
+        assertEquals(originalValue, ModelReference.valueOf(builder.getObject("modelVal").getValue()));
+    }
+
+    private void assertFileSent(String path, ModelReference originalValue) {
+        fileRegistry.pathToRef.put(path, new FileNode("myModelHash").value());
+        fileSender().sendUserConfiguredFiles(producer);
+        var expected = ModelReference.unresolved(originalValue.modelId(),
+                                                 originalValue.url(),
+                                                 Optional.of(new FileReference("myModelHash")));
+        assertEquals(expected, ModelReference.valueOf(builder.getObject("modelVal").getValue()));
+    }
+
+    @Test
     void require_that_fields_in_inner_arrays_are_modified() {
         def.innerArrayDef("inner").addFileDef("fileVal");
         def.innerArrayDef("inner").addStringDef("stringVal");
@@ -116,6 +155,25 @@ public class FileSenderTest {
         fileSender().sendUserConfiguredFiles(producer);
         assertEquals("barhash", builder.getArray("inner").get(0).getObject("fileVal").getValue());
         assertEquals("bar.txt", builder.getArray("inner").get(0).getObject("stringVal").getValue());
+    }
+
+    @Test
+    void require_that_paths_and_model_fields_are_modified() {
+        def.arrayDef("fileArray").setTypeSpec(new ConfigDefinition.TypeSpec("fileArray", "file", null, null, null, null));
+        def.arrayDef("pathArray").setTypeSpec(new ConfigDefinition.TypeSpec("pathArray", "path", null, null, null, null));
+        def.arrayDef("stringArray").setTypeSpec(new ConfigDefinition.TypeSpec("stringArray", "string", null, null, null, null));
+        builder.getArray("fileArray").append("foo.txt");
+        builder.getArray("fileArray").append("bar.txt");
+        builder.getArray("pathArray").append("path.txt");
+        builder.getArray("stringArray").append("foo.txt");
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
+        fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
+        fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
+        fileSender().sendUserConfiguredFiles(producer);
+        assertEquals("foohash", builder.getArray("fileArray").get(0).getValue());
+        assertEquals("barhash", builder.getArray("fileArray").get(1).getValue());
+        assertEquals("pathhash", builder.getArray("pathArray").get(0).getValue());
+        assertEquals("foo.txt", builder.getArray("stringArray").get(0).getValue());
     }
 
     @Test

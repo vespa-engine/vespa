@@ -22,57 +22,41 @@ public class ModelReference {
     // Or: If resolved, this is set
     private final Path resolved;
 
-    public ModelReference(Path resolved) {
-        this.modelId = Optional.empty();
-        this.url = Optional.empty();
-        this.path = Optional.empty();
-        this.resolved = resolved;
-    }
-
-    public ModelReference(Optional<String> modelId,
-                          Optional<UrlReference> url,
-                          Optional<FileReference> path) {
-        if (modelId.isEmpty() && url.isEmpty() && path.isEmpty())
-            throw new IllegalArgumentException("A model reference must have either a model id, url or path");
+    private ModelReference(Optional<String> modelId,
+                           Optional<UrlReference> url,
+                           Optional<FileReference> path,
+                           Path resolved) {
         this.modelId = modelId;
         this.url = url;
         this.path = path;
-        this.resolved = null;
+        this.resolved = resolved;
     }
 
+    /** Returns the id specified for this model, oor null if it is resolved. */
     public Optional<String> modelId() { return modelId; }
+
+    /** Returns the url specified for this model, or null if it is resolved. */
     public Optional<UrlReference> url() { return url; }
+
+    /** Returns the path specified for this model, oor null if it is resolved. */
     public Optional<FileReference> path() { return path; }
 
-    public ModelReference withModelId(Optional<String> modelId) {
-        return new ModelReference(modelId, url, path);
-    }
-
-    public ModelReference withUrl(Optional<UrlReference> url) {
-        return new ModelReference(modelId, url, path);
-    }
-
-    public ModelReference withPath(Optional<FileReference> path) {
-        return new ModelReference(modelId, url, path);
-    }
-
-    /** Returns the path to the file containing this model, or null if not available. */
-    public Path value() {
-        return resolved;
-    }
+    /** Returns the path to the file containing this model, or null if this is unresolved. */
+    public Path value() { return resolved; }
 
     @Override
     public boolean equals(Object o) {
         if ( ! (o instanceof ModelReference other)) return false;
-        if ( ! this.modelId.equals(other.modelId)) return false;
-        if ( ! this.url.equals(other.url)) return false;
-        if ( ! this.path.equals(other.path)) return false;
+        if ( ! Objects.equals(this.modelId, other.modelId)) return false;
+        if ( ! Objects.equals(this.url, other.url)) return false;
+        if ( ! Objects.equals(this.path, other.path)) return false;
+        if ( ! Objects.equals(this.resolved, other.resolved)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(modelId, url, path);
+        return Objects.hash(modelId, url, path, resolved);
     }
 
     /** Returns this on the format accepted by valueOf */
@@ -84,26 +68,50 @@ public class ModelReference {
                path.map(v -> v.value()).orElse("\"\"");
     }
 
-    /** Creates a model reference resolved to a Path to the local file. */
-    public static ModelReference valueOf(Path path) {
-        return new ModelReference(path);
-    }
-
     /**
-     * Creates a model reference from a three-part string on the form
-     * <code>modelId url path</code>
-     * Each of the elements is either a value not containing space, or empty represented by "".
+     * Creates a model reference which is either a single string with no spaces if resolved, or if unresolved
+     * a three-part string on the form <code>modelId url path</code>, where
+     * each of the elements is either a value not containing space, or empty represented by "".
      */
     public static ModelReference valueOf(String s) {
         String[] parts = s.split(" ");
         if (parts.length == 1)
-            return new ModelReference(Path.of(s));
+            return resolved(Path.of(s));
         else if (parts.length == 3)
-            return new ModelReference(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
-                                      parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
-                                      parts[2].equals("\"\"") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
+            return unresolved(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
+                              parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
+                              parts[2].equals("\"\"") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
         else
-            throw new IllegalArgumentException("Unexpected model string '" + s + "'");
+            throw new IllegalArgumentException("Unexpected model reference string '" + s + "'");
+    }
+
+    /** Creates an unresolved reference from a model id only. */
+    public static ModelReference unresolved(String modelId) {
+        return new ModelReference(Optional.of(modelId), Optional.empty(), Optional.empty(), null);
+    }
+
+    /** Creates an unresolved reference from an url only. */
+    public static ModelReference unresolved(UrlReference url) {
+        return new ModelReference(Optional.empty(), Optional.of(url), Optional.empty(), null);
+    }
+
+    /** Creates an unresolved reference from a path only. */
+    public static ModelReference unresolved(FileReference path) {
+        return new ModelReference(Optional.empty(), Optional.empty(), Optional.of(path), null);
+    }
+
+    /** Creates an unresolved reference. */
+    public static ModelReference unresolved(Optional<String> modelId,
+                                            Optional<UrlReference> url,
+                                            Optional<FileReference> path) {
+        if (modelId.isEmpty() && url.isEmpty() && path.isEmpty())
+            throw new IllegalArgumentException("A model reference must have either a model id, url or path");
+        return new ModelReference(modelId, url, path, null);
+    }
+
+    /** Creates a nresolved reference. */
+    public static ModelReference resolved(Path path) {
+        return new ModelReference(null, null, null, Objects.requireNonNull(path));
     }
 
 }

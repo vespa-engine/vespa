@@ -67,14 +67,9 @@ public class DistributableResource implements Comparable <DistributableResource>
 
     public void register(FileRegistry fileRegistry) {
         switch (pathType) {
-            case FILE:
-                fileReference = fileRegistry.addFile(path);
-                break;
-            case URI:
-                fileReference = fileRegistry.addUri(path);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown path type " + pathType);
+            case FILE -> fileReference = fileRegistry.addFile(path);
+            case URI -> fileReference = fileRegistry.addUri(path);
+            default -> throw new IllegalArgumentException("Unknown path type " + pathType);
         }
     }
 

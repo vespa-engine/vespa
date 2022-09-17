@@ -27,9 +27,9 @@ public class ConfigPayloadApplierTest {
         var inputConfig = new ResolvedTypesConfig.Builder();
         inputConfig.myPath(new FileReference("myPath.txt"));
         inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(new ModelReference(Optional.empty(),
-                                               Optional.of(new UrlReference("myUrl.txt")),
-                                               Optional.of(new FileReference("myPath.txt"))));
+        inputConfig.myModel(ModelReference.unresolved(Optional.empty(),
+                                                      Optional.of(new UrlReference("myUrl.txt")),
+                                                      Optional.of(new FileReference("myPath.txt"))));
         applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
         var config = configBuilder.build();
 
