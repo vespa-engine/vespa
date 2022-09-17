@@ -73,7 +73,7 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunI
 }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
-	return fmt.Errorf("reading logs from non-cloud deployment is unsupported")
+	return fmt.Errorf("log access is only supported on cloud: run vespa-logfmt on the admin node instead")
 }
 
 func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
