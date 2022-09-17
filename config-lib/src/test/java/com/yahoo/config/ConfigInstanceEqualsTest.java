@@ -132,9 +132,9 @@ public class ConfigInstanceEqualsTest {
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
                 urlVal(new UrlReference("http://docs.vespa.ai")).
-                modelVal(new ModelReference(Optional.of("my-model-id"),
-                                            Optional.of(new UrlReference("http://docs.vespa.ai")),
-                                            Optional.empty())).
+                modelVal(ModelReference.unresolved(Optional.of("my-model-id"),
+                                                   Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                                   Optional.empty())).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -145,9 +145,9 @@ public class ConfigInstanceEqualsTest {
                 refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
                 urlArr(new UrlReference("http://docs.vespa.ai")).
-                modelArr(new ModelReference(Optional.empty(),
-                                            Optional.of(new UrlReference("http://docs.vespa.ai")),
-                                            Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
+                modelArr(ModelReference.unresolved(Optional.empty(),
+                                                   Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                                   Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
 
                 basicStruct(new BasicStruct.Builder().
                         foo("basicFoo").

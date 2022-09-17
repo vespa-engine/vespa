@@ -6,7 +6,6 @@ import com.yahoo.config.FileReference;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-
 /**
  * @author Tony Vaagenes
  */

@@ -249,13 +249,10 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private ModelReference resolveModel(String modelStringValue) {
         var model = ModelReference.valueOf(modelStringValue);
-        // Resolve any of url and path present, in priority order
-        if (model.url().isPresent() && canResolveUrls()) {
-            model = new ModelReference(Path.of(resolveUrl(model.url().get().value()).value()));
-        }
-        else if (model.path().isPresent()) {
-            model = new ModelReference(Path.of(resolvePath(model.path().get().value()).value()));
-        }
+        if (model.url().isPresent() && canResolveUrls()) // url has priority
+            model = ModelReference.resolved(Path.of(resolveUrl(model.url().get().value()).value()));
+        else if (model.path().isPresent())
+            model = ModelReference.resolved(Path.of(resolvePath(model.path().get().value()).value()));
         return model;
     }
 

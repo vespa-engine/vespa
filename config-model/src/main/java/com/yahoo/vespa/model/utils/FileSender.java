@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.utils;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -17,6 +18,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -40,8 +42,7 @@ public class FileSender implements Serializable {
      * Sends all user configured files for a producer to all given services.
      */
     public <PRODUCER extends AbstractConfigProducer<?>> void sendUserConfiguredFiles(PRODUCER producer) {
-        if (services.isEmpty())
-            return;
+        if (services.isEmpty()) return;
 
         UserConfigRepo userConfigs = producer.getUserConfigs();
         Map<Path, FileReference> sentFiles = new HashMap<>();
@@ -64,22 +65,22 @@ public class FileSender implements Serializable {
             return;
         }
         // Inspect fields at this level
-        sendEntries(builder, sentFiles, configDefinition.getFileDefs());
-        sendEntries(builder, sentFiles, configDefinition.getPathDefs());
+        sendEntries(builder, sentFiles, configDefinition.getFileDefs(), false);
+        sendEntries(builder, sentFiles, configDefinition.getPathDefs(), false);
+        sendEntries(builder, sentFiles, configDefinition.getModelDefs(), true);
 
         // Inspect arrays
         for (Map.Entry<String, ConfigDefinition.ArrayDef> entry : configDefinition.getArrayDefs().entrySet()) {
-            if (isFileOrPathArray(entry)) {
-                ConfigPayloadBuilder.Array array = builder.getArray(entry.getKey());
-                sendFileEntries(array.getElements(), sentFiles);
-            }
+            if ( ! isAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
+            ConfigPayloadBuilder.Array array = builder.getArray(entry.getKey());
+            sendFileEntries(array.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
-        // Maps
+
+        // Inspect maps
         for (Map.Entry<String, ConfigDefinition.LeafMapDef> entry : configDefinition.getLeafMapDefs().entrySet()) {
-            if (isFileOrPathMap(entry)) {
-                ConfigPayloadBuilder.MapBuilder map = builder.getMap(entry.getKey());
-                sendFileEntries(map.getElements(), sentFiles);
-            }
+            if ( ! isAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
+            ConfigPayloadBuilder.MapBuilder map = builder.getMap(entry.getKey());
+            sendFileEntries(map.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
 
         // Inspect inner fields
@@ -98,45 +99,56 @@ public class FileSender implements Serializable {
                 sendUserConfiguredFiles(element, sentFiles, key);
             }
         }
-
     }
 
-    private static boolean isFileOrPathMap(Map.Entry<String, ConfigDefinition.LeafMapDef> entry) {
-        String mapType = entry.getValue().getTypeSpec().getType();
-        return ("file".equals(mapType) || "path".equals(mapType));
-    }
-
-    private static boolean isFileOrPathArray(Map.Entry<String, ConfigDefinition.ArrayDef> entry) {
-        String arrayType = entry.getValue().getTypeSpec().getType();
-        return ("file".equals(arrayType) || "path".equals(arrayType));
+    private static boolean isAnyFileType(String type) {
+        return "file".equals(type) || "path".equals(type) || "model".equals(type);
     }
 
     private void sendEntries(ConfigPayloadBuilder builder,
                              Map<Path, FileReference> sentFiles,
-                             Map<String, ? extends DefaultValued<String>> entries) {
+                             Map<String, ?> entries,
+                             boolean isModelType) {
         for (String name : entries.keySet()) {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
             if (fileEntry.getValue() == null)
                 throw new IllegalArgumentException("Unable to send file for field '" + name +
                                                    "': Invalid config value " + fileEntry.getValue());
-            sendFileEntry(fileEntry, sentFiles);
+            sendFileEntry(fileEntry, sentFiles, isModelType);
         }
     }
 
-    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> sentFiles) {
+    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> sentFiles, boolean isModelType) {
         for (ConfigPayloadBuilder builder : builders) {
-            sendFileEntry(builder, sentFiles);
+            sendFileEntry(builder, sentFiles, isModelType);
         }
     }
 
-    private void sendFileEntry(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles) {
-        Path path = Path.fromString(builder.getValue());
+    private void sendFileEntry(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles, boolean isModelType) {
+        Path path;
+        if (isModelType) {
+            var modelReference = ModelReference.valueOf(builder.getValue());
+            if (modelReference.path().isEmpty()) return;
+            path = Path.fromString(modelReference.path().get().value());
+        }
+        else {
+            path = Path.fromString(builder.getValue());
+        }
+
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
             reference = fileRegistry.addFile(path.getRelative());
             sentFiles.put(path, reference);
         }
-        builder.setValue(reference.value());
+
+        if (isModelType) {
+            var model = ModelReference.valueOf(builder.getValue());
+            var modelWithReference = ModelReference.unresolved(model.modelId(), model.url(), Optional.of(reference));
+            builder.setValue(modelWithReference.toString());
+        }
+        else {
+            builder.setValue(reference.value());
+        }
     }
 
 }
