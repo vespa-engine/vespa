@@ -60,7 +60,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
     endif()
   endif()
 else()
-  set(CXX_SPECIFIC_WARN_OPTS "-Wnoexcept -Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
+  set(CXX_SPECIFIC_WARN_OPTS "-Wnoexcept -Wsuggest-override -Wnon-virtual-dtor -Wformat-security -Wmismatched-tags")
   set(VESPA_GCC_LIB "gcc")
   set(VESPA_STDCXX_FS_LIB "stdc++fs")
 endif()
