@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace vespalib { class ThreadBundle; }
+namespace vespalib { struct ThreadBundle; }
 namespace search { class BitVector; }
 
 namespace search::queryeval {
