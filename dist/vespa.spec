@@ -158,14 +158,14 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc37}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 14.0.5
+BuildRequires: llvm-devel >= 15.0.0
 BuildRequires: boost-devel >= 1.78
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc38}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 14.0.5
+BuildRequires: llvm-devel >= 15.0.0
 BuildRequires: boost-devel >= 1.78
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -273,10 +273,10 @@ Requires: gtest
 %define _vespa_llvm_version 14
 %endif
 %if 0%{?fc37}
-%define _vespa_llvm_version 14
+%define _vespa_llvm_version 15
 %endif
 %if 0%{?fc38}
-%define _vespa_llvm_version 14
+%define _vespa_llvm_version 15
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -394,10 +394,10 @@ Requires: llvm-libs >= 13.0.0
 Requires: llvm-libs >= 14.0.0
 %endif
 %if 0%{?fc37}
-Requires: llvm-libs >= 14.0.5
+Requires: llvm-libs >= 15.0.0
 %endif
 %if 0%{?fc38}
-Requires: llvm-libs >= 14.0.5
+Requires: llvm-libs >= 15.0.0
 %endif
 %endif
 Requires: vespa-onnxruntime = 1.12.1
