@@ -7,12 +7,6 @@
 #include "ngram.h"
 #include "base64.h"
 
-#if (__GNUG__ <3 || (__GNUG__ == 3 && __GNUC_MINOR__ < 1))
-namespace std {
-const char *fixed = "";
-}
-#endif
-
 using namespace fsa;
 
 unsigned int gram_count(unsigned int mg, unsigned int q)

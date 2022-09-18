@@ -776,35 +776,8 @@ public:
      */
     virtual ~HashedState() {}
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::start;
     using State::delta;
-#else
-    virtual bool start(symbol_t in) { start(); return delta(in); }
-    virtual bool start(const symbol_t *in) { start(); return delta(in); }
-    virtual bool start(const char *in) { start(); return delta(in); }
-    virtual bool start(const std::string &in) { start(); return delta(in); }
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -923,35 +896,8 @@ public:
      */
     virtual ~CounterState() {}
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::start;
     using State::delta;
-#else
-    virtual bool start(symbol_t in) { start(); return delta(in); }
-    virtual bool start(const symbol_t *in) { start(); return delta(in); }
-    virtual bool start(const char *in) { start(); return delta(in); }
-    virtual bool start(const std::string &in) { start(); return delta(in); }
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -1240,35 +1186,8 @@ public:
      */
     virtual ~MemoryState() {}
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::start;
     using State::delta;
-#else
-    virtual bool start(symbol_t in) { start(); return delta(in); }
-    virtual bool start(const symbol_t *in) { start(); return delta(in); }
-    virtual bool start(const char *in) { start(); return delta(in); }
-    virtual bool start(const std::string &in) { start(); return delta(in); }
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -1280,11 +1199,7 @@ public:
      */
     bool start() override
     {
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
       _memory.clear();
-#else
-      _memory = "";
-#endif
       return State::start();
     }
 
@@ -1425,35 +1340,8 @@ public:
      */
     virtual ~HashedMemoryState() {}
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::start;
     using State::delta;
-#else
-    virtual bool start(symbol_t in) { start(); return delta(in); }
-    virtual bool start(const symbol_t *in) { start(); return delta(in); }
-    virtual bool start(const char *in) { start(); return delta(in); }
-    virtual bool start(const std::string &in) { start(); return delta(in); }
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -1466,11 +1354,7 @@ public:
     bool start() override
     {
       _hash = 0;
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
       _memory.clear();
-#else
-      _memory = "";
-#endif
       return State::start();
     }
 
@@ -1606,35 +1490,8 @@ public:
      */
     virtual ~HashedCounterState() {}
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::start;
     using State::delta;
-#else
-    virtual bool start(symbol_t in) { start(); return delta(in); }
-    virtual bool start(const symbol_t *in) { start(); return delta(in); }
-    virtual bool start(const char *in) { start(); return delta(in); }
-    virtual bool start(const std::string &in) { start(); return delta(in); }
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -1749,30 +1606,7 @@ public:
     uint32_t  _counter;   /**< Counter value.  */
 
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     using State::delta;
-#else
-    virtual bool delta(const symbol_t *in)
-    {
-      const symbol_t *p=in;
-      while(*p && _state>0){
-        delta(*p);
-        p++;
-      }
-      return _state!=0;
-    }
-    virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
-    virtual bool delta(const std::string &in)
-    {
-      unsigned int idx=0;
-
-      while(idx<in.length() && _state>0){
-        delta(in[idx]);
-        idx++;
-      }
-      return _state!=0;
-    }
-#endif
 
     /**
      * @brief Delta transition for hashed word counter states.
@@ -1932,17 +1766,6 @@ public:
   };
 
   // }}}
-
-#if (__GNUG__ < 3 || (__GNUG__ == 3 && __GNUC_MINOR__ < 1))
-  friend class State;
-  friend class HashedState;
-  friend class MemoryState;
-  friend class HashedMemoryState;
-  friend class CounterState;
-  friend class HashedCounterState;
-  friend class WordCounterState;
-  friend class HashedWordCounterState;
-#endif
 
 public:
   /**

@@ -7,12 +7,6 @@
 
 #include <vespa/fsa/fsa.h>
 
-#if (__GNUG__ <3 || (__GNUG__ == 3 && __GNUC_MINOR__ < 1))
-namespace std {
-const char *left = "";
-}
-#endif
-
 using namespace fsa;
 
 int main(int argc, char** argv)

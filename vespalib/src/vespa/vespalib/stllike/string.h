@@ -654,7 +654,7 @@ template<uint32_t StackSize>
 small_string<StackSize>
 operator + (const char * a, const small_string<StackSize> & b);
 
-#if __cplusplus < 201709L || (!defined(__clang__) && defined(__GNUC__) && __GNUC__ < 10)
+#if __cplusplus < 201709L
 template<typename T, uint32_t StackSize>
 bool
 operator == (const T& a, const small_string<StackSize>& b) noexcept

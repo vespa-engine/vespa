@@ -448,10 +448,6 @@ private:
 
     // }}}
 
-#if (__GNUG__<3 || (__GNUG__ == 3 && __GNUC_MINOR__ < 1))
-    friend RawVector::iterator;
-#endif
-
   private:
 
     /**
