@@ -638,11 +638,7 @@ void Automaton::cleanUp()
     _register.clear();
     delete _q0;
     _q0 = NULL;
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
     _previous_input.clear();
-#else
-    _previous_input = "";
-#endif
   }
 }
 

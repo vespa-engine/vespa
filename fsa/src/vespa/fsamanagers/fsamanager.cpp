@@ -42,11 +42,7 @@ bool FSAManager::load(const std::string &id, const std::string &url)
 {
   std::string file=url;
 
-#if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
   if(!url.compare(0,7,"http://"))
-#else
-  if(!url.compare("http://",0,7))
-#endif
   {
     unsigned int pos=url.find_last_of('/');
     if(pos==url.size()-1) return false;
