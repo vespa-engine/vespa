@@ -2,19 +2,6 @@
 
 include(VespaExtendedDefaultBuildSettings OPTIONAL)
 
-function(setup_vespa_default_build_settings_rhel_6_10)
-  message("-- Setting up default build settings for rhel 6.10")
-  set(DEFAULT_EXTRA_INCLUDE_DIRECTORY "${VESPA_DEPS}/include" "/usr/include/openblas" PARENT_SCOPE)
-  set(DEFAULT_CMAKE_SHARED_LINKER_FLAGS "-lrt" PARENT_SCOPE)
-endfunction()
-
-function(setup_vespa_default_build_settings_rhel_7)
-  message("-- Setting up default build settings for rhel 7")
-  set(DEFAULT_EXTRA_LINK_DIRECTORY "${VESPA_DEPS}/lib64" "/usr/lib64/llvm7.0/lib" PARENT_SCOPE)
-  set(DEFAULT_EXTRA_INCLUDE_DIRECTORY "${VESPA_DEPS}/include" "/usr/include/llvm7.0" PARENT_SCOPE)
-  set(DEFAULT_VESPA_LLVM_VERSION "7" PARENT_SCOPE)
-endfunction()
-
 function(setup_vespa_default_build_settings_rhel_8)
   message("-- Setting up default build settings for rhel 8")
   set(DEFAULT_EXTRA_INCLUDE_DIRECTORY "${VESPA_DEPS}/include" PARENT_SCOPE)
@@ -194,13 +181,7 @@ function(vespa_use_default_build_settings)
   if(COMMAND vespa_use_specific_llvm_version)
     vespa_use_specific_llvm_version()
   endif()
-  if(VESPA_OS_DISTRO_COMBINED STREQUAL "rhel 6.10")
-    setup_vespa_default_build_settings_rhel_6_10()
-  elseif(VESPA_OS_DISTRO STREQUAL "rhel" AND
-      VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "7" AND
-      VESPA_OS_DISTRO_VERSION VERSION_LESS "8")
-    setup_vespa_default_build_settings_rhel_7()
-  elseif(VESPA_OS_DISTRO STREQUAL "rhel" AND
+  if(VESPA_OS_DISTRO STREQUAL "rhel" AND
       VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "8" AND
       VESPA_OS_DISTRO_VERSION VERSION_LESS "9")
     setup_vespa_default_build_settings_rhel_8()
