@@ -330,6 +330,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("query_hit_offset.count"));
         metrics.add(new Metric("documents_covered.count"));
         metrics.add(new Metric("documents_total.count"));
+        metrics.add(new Metric("documents_target_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
         metrics.add(new Metric("dispatch_fdispatch.rate"));
         addMetric(metrics, "jdisc.render.latency", Set.of("min", "max", "count", "sum", "last", "average"));
