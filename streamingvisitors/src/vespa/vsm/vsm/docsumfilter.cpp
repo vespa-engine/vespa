@@ -1,15 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumfilter.h"
-#include "slimefieldwriter.h"
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchsummary/docsummary/check_undefined_value_visitor.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/i_string_field_converter.h>
+#include <vespa/searchsummary/docsummary/slime_filler.h>
+#include <vespa/searchsummary/docsummary/slime_filler_filter.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
@@ -213,6 +216,10 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         }
     }
     // setup input fields
+    std::unique_ptr<SlimeFillerFilter> filter;
+    if (spec.getResultType() == RES_JSONSTRING) {
+        filter = std::make_unique<SlimeFillerFilter>();
+    }
     for (size_t i = 0; i < toolsSpec.getInputNames().size(); ++i) {
         const vespalib::string & name = toolsSpec.getInputNames()[i];
         LOG(debug, "prepareFieldSpec: input field name '%s'", name.c_str());
@@ -231,6 +238,10 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         } else {
             LOG(warning, "Could not find input summary field '%s'", name.c_str());
         }
+        SlimeFillerFilter::add_remaining(filter, name);
+    }
+    if (filter && !filter->empty()) {
+        spec.set_filter(std::move(filter));
     }
 }
 
@@ -407,11 +418,8 @@ DocsumFilter::insert_struct_or_multivalue_summary_field(const DocsumFieldSpec& f
     CheckUndefinedValueVisitor check_undefined;
     fv->accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFieldWriter writer;
-        if (! field_spec.hasIdentityMapping()) {
-            writer.setInputFields(field_spec.getInputFields());
-        }
-        writer.insert(*fv, inserter);
+        SlimeFiller writer(inserter, nullptr, field_spec.get_filter());
+        fv->accept(writer);
     }
 }
 

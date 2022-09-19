@@ -5,8 +5,8 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vsm/common/docsum.h>
+#include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
-#include <vespa/vsm/vsm/slimefieldwriter.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -59,15 +59,7 @@ private:
         assertFlattenDocsumWriter(fdw, fv, exp);
     }
     void assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValue & fv, const std::string & exp);
-    void assertSlimeFieldWriter(const FieldValue & fv, const std::string & exp) {
-        SlimeFieldWriter sfw;
-        TEST_DO(assertSlimeFieldWriter(sfw, fv, exp));
-    }
-    void assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp);
-
     void testFlattenDocsumWriter();
-    void testSlimeFieldWriter();
-    void requireThatSlimeFieldWriterHandlesMap();
     void testDocSumCache();
 
 public:
@@ -107,32 +99,6 @@ DocsumTest::assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValu
 }
 
 void
-convert(SlimeFieldWriter & sfw, const document::FieldValue & fv, vespalib::Output & output)
-{
-    vespalib::Slime slime;
-    vespalib::slime::SlimeInserter inserter(slime);
-    sfw.insert(fv, inserter);
-    vespalib::slime::BinaryFormat::encode(slime, output);
-}
-
-void
-DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp)
-{
-    vespalib::SmartBuffer buffer(1024);
-    convert(sfw, fv, buffer);
-
-    vespalib::Slime gotSlime;
-    vespalib::Memory serialized(buffer.obtain());
-    size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized, gotSlime);
-    ASSERT_EQUAL(decodeRes, serialized.size);
-
-    vespalib::Slime expSlime;
-    size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
-    EXPECT_TRUE(used > 0);
-    EXPECT_EQUAL(expSlime, gotSlime);
-}
-
-void
 DocsumTest::testFlattenDocsumWriter()
 {
     { // basic tests
@@ -169,132 +135,12 @@ DocsumTest::testFlattenDocsumWriter()
     }
 }
 
-void
-DocsumTest::testSlimeFieldWriter()
-{
-    { // basic types
-        assertSlimeFieldWriter(LongFieldValue(123456789), "123456789");
-        assertSlimeFieldWriter(BoolFieldValue(true), "true");
-        assertSlimeFieldWriter(BoolFieldValue(false), "false");
-        assertSlimeFieldWriter(DoubleFieldValue(12.34), "12.34");
-        assertSlimeFieldWriter(StringFieldValue("foo bar"), "\"foo bar\"");
-    }
-    { // collection field values
-        assertSlimeFieldWriter(createFieldValue(StringList().add("foo").add("bar").add("baz")),
-                               "[\"foo\",\"bar\",\"baz\"]");
-        assertSlimeFieldWriter(createFieldValue(WeightedStringList().add(std::make_pair("bar", 20)).
-                                                                     add(std::make_pair("baz", 30)).
-                                                                     add(std::make_pair("foo", 10))),
-                               "[{item:\"bar\",weight:20},{item:\"baz\",weight:30},{item:\"foo\",weight:10}]");
-    }
-    { // struct field value
-        StructDataType subType("substruct");
-        Field fd("d", 0, *DataType::STRING);
-        Field fe("e", 1, *DataType::STRING);
-        subType.addField(fd);
-        subType.addField(fe);
-        StructFieldValue subValue(subType);
-        subValue.setValue(fd, StringFieldValue("baz"));
-        subValue.setValue(fe, StringFieldValue("qux"));
-
-        StructDataType type("struct");
-        Field fa("a", 0, *DataType::STRING);
-        Field fb("b", 1, *DataType::STRING);
-        Field fc("c", 2, subType);
-        type.addField(fa);
-        type.addField(fb);
-        type.addField(fc);
-        StructFieldValue value(type);
-        value.setValue(fa, StringFieldValue("foo"));
-        value.setValue(fb, StringFieldValue("bar"));
-        value.setValue(fc, subValue);
-
-
-        { // select a subset and then all
-            SlimeFieldWriter sfw;
-            DocsumFieldSpec::FieldIdentifierVector fields;
-            {
-                FieldPath path;
-                type.buildFieldPath(path, "a");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
-            }
-            {
-                FieldPath path;
-                type.buildFieldPath(path, "c.e");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
-            }
-            sfw.setInputFields(fields);
-            TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}"));
-            sfw.clear();
-            TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}"));
-        }
-
-    { // multiple invocations
-        SlimeFieldWriter sfw;
-        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("foo"), "\"foo\""));
-        sfw.clear();
-        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("bar"), "\"bar\""));
-        sfw.clear();
-        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("baz"), "\"baz\""));
-    }
-
-    }
-}
-
-void
-DocsumTest::requireThatSlimeFieldWriterHandlesMap()
-{
-    { // map<string, string>
-        MapDataType mapType(*DataType::STRING, *DataType::STRING);
-        MapFieldValue mapfv(mapType);
-        EXPECT_TRUE(mapfv.put(StringFieldValue("k1"), StringFieldValue("v1")));
-        EXPECT_TRUE(mapfv.put(StringFieldValue("k2"), StringFieldValue("v2")));
-        assertSlimeFieldWriter(mapfv, "[{\"key\":\"k1\",\"value\":\"v1\"},{\"key\":\"k2\",\"value\":\"v2\"}]");
-    }
-    { // map<string, struct>
-        StructDataType structType("struct");
-        Field fa("a", 0, *DataType::STRING);
-        Field fb("b", 1, *DataType::STRING);
-        structType.addField(fa);
-        structType.addField(fb);
-        StructFieldValue structValue(structType);
-        structValue.setValue(fa, StringFieldValue("foo"));
-        structValue.setValue(fb, StringFieldValue("bar"));
-        MapDataType mapType(*DataType::STRING, structType);
-        MapFieldValue mapfv(mapType);
-        EXPECT_TRUE(mapfv.put(StringFieldValue("k1"), structValue));
-        { // select a subset and then all
-            SlimeFieldWriter sfw;
-            DocsumFieldSpec::FieldIdentifierVector fields;
-            {
-                FieldPath path;
-                mapType.buildFieldPath(path, "value.b");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
-            }
-            sfw.setInputFields(fields);
-            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]"));
-            {
-                FieldPath path;
-                mapType.buildFieldPath(path, "{k1}.a");
-                fields[0] = DocsumFieldSpec::FieldIdentifier(0, std::move(path));
-            }
-            sfw.clear();
-            sfw.setInputFields(fields);
-            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]"));
-            sfw.clear(); // all fields implicit
-            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]"));
-        }
-    }
-}
-
 int
 DocsumTest::Main()
 {
     TEST_INIT("docsum_test");
 
     TEST_DO(testFlattenDocsumWriter());
-    TEST_DO(testSlimeFieldWriter());
-    TEST_DO(requireThatSlimeFieldWriterHandlesMap());
 
     TEST_DONE();
 }

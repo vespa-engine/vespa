@@ -6,6 +6,8 @@
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
+namespace search::docsummary { class SlimeFillerFilter; }
+
 namespace vsm {
 
 /**
@@ -40,10 +42,13 @@ private:
     VsmsummaryConfig::Fieldmap::Command  _command;
     FieldIdentifier             _outputField;
     FieldIdentifierVector       _inputFields;
+    std::unique_ptr<search::docsummary::SlimeFillerFilter> _filter;
 
 public:
     DocsumFieldSpec();
     DocsumFieldSpec(search::docsummary::ResType resultType, VsmsummaryConfig::Fieldmap::Command command);
+    DocsumFieldSpec(DocsumFieldSpec&&) noexcept;
+    ~DocsumFieldSpec();
 
     /**
      * Returns the result type for the summary field.
@@ -66,6 +71,8 @@ public:
     void setOutputField(FieldIdentifier outputField) { _outputField = std::move(outputField); }
     const FieldIdentifierVector & getInputFields() const { return _inputFields; }
     FieldIdentifierVector & getInputFields() { return _inputFields; }
+    void set_filter(std::unique_ptr<search::docsummary::SlimeFillerFilter> filter);
+    const search::docsummary::SlimeFillerFilter *get_filter() const noexcept;
 };
 
 }

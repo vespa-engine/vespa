@@ -6,7 +6,6 @@ vespa_add_library(vsm_vsmbase OBJECT
     docsum_field_writer_factory.cpp
     fieldsearchspec.cpp
     flattendocsumwriter.cpp
-    slimefieldwriter.cpp
     snippetmodifier.cpp
     vsm-adapter.cpp
     DEPENDS

@@ -64,4 +64,22 @@ SlimeFillerFilter::add(vespalib::stringref field_path)
     return *this;
 }
 
+void
+SlimeFillerFilter::add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, vespalib::stringref field_path)
+{
+    if (filter) {
+        auto dot_pos = field_path.find('.');
+        if (dot_pos != vespalib::string::npos) {
+            auto remaining_path = field_path.substr(dot_pos + 1);
+            if (!remaining_path.empty()) {
+                filter->add(remaining_path);
+            } else {
+                filter.reset();
+            }
+        } else {
+            filter.reset();
+        }
+    }
+}
+
 }
