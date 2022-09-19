@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/vsm/common/document.h>
-#include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
 namespace search::docsummary { class SlimeFillerFilter; }
@@ -15,6 +13,7 @@ namespace vsm {
  **/
 class DocsumFieldSpec {
 public:
+    using FieldPath = document::FieldPath;
     /**
      * This class contains a field id and a field path (to navigate a field value).
      **/
@@ -38,7 +37,7 @@ public:
     typedef std::vector<FieldIdentifier> FieldIdentifierVector;
 
 private:
-    search::docsummary::ResType _resultType;
+    bool                        _struct_or_multivalue; // property of the output field
     VsmsummaryConfig::Fieldmap::Command  _command;
     FieldIdentifier             _outputField;
     FieldIdentifierVector       _inputFields;
@@ -46,14 +45,12 @@ private:
 
 public:
     DocsumFieldSpec();
-    DocsumFieldSpec(search::docsummary::ResType resultType, VsmsummaryConfig::Fieldmap::Command command);
+    DocsumFieldSpec(VsmsummaryConfig::Fieldmap::Command command);
     DocsumFieldSpec(DocsumFieldSpec&&) noexcept;
     ~DocsumFieldSpec();
 
-    /**
-     * Returns the result type for the summary field.
-     **/
-    search::docsummary::ResType getResultType() const { return _resultType; }
+    bool is_struct_or_multivalue() const noexcept { return _struct_or_multivalue; }
+    void set_struct_or_multivalue(bool struct_or_multivalue) { _struct_or_multivalue = struct_or_multivalue; }
 
     /**
      * Returns the command specifying how to transform input fields into output summary field.
