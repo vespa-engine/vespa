@@ -509,12 +509,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag CONTROLLER_LOCK_SCHEME = defineStringFlag(
-            "controller-lock-scheme", "OLD",
-            List.of("mpolden"), "2022-09-12", "2022-11-01",
-            "Lock scheme for tenant-related controller locks (valid values: OLD, BOTH, NEW)",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag COMPUTE_COVERAGE_FROM_TARGET_ACTIVE_DOCS = defineFeatureFlag(
             "compute-coverage-from-target-active-docs", false,
             List.of("baldersheim", "vekterli"), "2022-09-13", "2022-11-01",
