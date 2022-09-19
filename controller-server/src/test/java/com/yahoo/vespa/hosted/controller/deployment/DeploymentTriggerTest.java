@@ -2315,6 +2315,7 @@ public class DeploymentTriggerTest {
                              .getMessage());
 
        tester.deploymentTrigger().forceChange(old.instanceId(), Change.of(version0), false);
+       tester.deploymentTrigger().cancelChange(old.instanceId(), ALL);
 
         // Not even version incompatibility tricks the system.
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("7"), String.class);
@@ -2326,11 +2327,17 @@ public class DeploymentTriggerTest {
                                                                                     .build()))
                              .getMessage());
 
+        // Submit new revision on old major
+        old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
+                                                  .compileVersion(version0)
+                                                  .build())
+           .deploy();
+
         // Upgrade.
         old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
                                                   .compileVersion(version1)
                                                   .build())
-                .deploy();
+           .deploy();
 
         // And downgrade again.
         old.submit(new ApplicationPackageBuilder().region("us-central-1").region("us-east-3").region("us-west-1")
