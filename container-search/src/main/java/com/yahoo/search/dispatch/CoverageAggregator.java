@@ -54,10 +54,11 @@ public class CoverageAggregator {
         this.failedNodes = failedNodes;
     }
 
-    public Coverage createCoverage(TimeoutHandler timeoutHandler) {
+    public Coverage createCoverage(TimeoutHandler timeoutHandler, boolean useTargetActiveForCoverageComputation) {
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
         coverage.setTargetActive(answeredTargetActiveDocs);
+        coverage.useTargetActiveForCoverageComputation(useTargetActiveForCoverageComputation);
         int degradedReason = 0;
         if (timedOut) {
             degradedReason |= timeoutHandler.reason();
@@ -82,11 +83,13 @@ public class CoverageAggregator {
             return clone;
         } else {
             if (askedAndFailed > answeredNodesParticipated) {
-                int missingNodes = notAnswered - (searchableCopies - 1);
                 if (answeredNodesParticipated > 0) {
                     CoverageAggregator clone = new CoverageAggregator(this);
-                    clone.answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
-                    clone.answeredTargetActiveDocs += (missingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
+                    int missingNodes = notAnswered - (searchableCopies - 1);
+                    if (missingNodes > 0) {
+                        clone.answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
+                        clone.answeredTargetActiveDocs += (missingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
+                    }
                     clone.timedOut = true;
                     return clone;
                 }
