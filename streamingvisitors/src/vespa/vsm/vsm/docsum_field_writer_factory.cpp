@@ -1,18 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsum_field_writer_factory.h"
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchsummary/docsummary/copy_dfw.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer.h>
+#include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/searchsummary/docsummary/empty_dfw.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
-#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vsm/config/config-vsmfields.h>
 
 using search::MatchingElementsFields;
 using search::docsummary::CopyDFW;
+using search::docsummary::DocsumFieldWriter;
 using search::docsummary::EmptyDFW;
 using search::docsummary::IDocsumEnvironment;
-using search::docsummary::DocsumFieldWriter;
 using search::docsummary::MatchedElementsFilterDFW;
 using vespa::config::search::vsm::VsmfieldsConfig;
 
@@ -49,23 +50,19 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
                                                      const vespalib::string& source)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
-    if ((command == "staticrank") ||
-        (command == "ranklog") ||
-        (command == "label") ||
-        (command == "project") ||
-        (command == "positions") ||
-        (command == "absdist") ||
-        (command == "subproject"))
+    using namespace search::docsummary;
+    if ((command == command::positions) ||
+        (command == command::abs_distance))
     {
         fieldWriter = std::make_unique<EmptyDFW>();
-    } else if ((command == "attribute") ||
-               (command == "attributecombiner")) {
+    } else if ((command == command::attribute) ||
+               (command == command::attribute_combiner)) {
         if (!source.empty() && source != field_name) {
             fieldWriter = std::make_unique<CopyDFW>(source);
         }
-    } else if (command == "geopos") {
-    } else if ((command == "matchedattributeelementsfilter") ||
-               (command == "matchedelementsfilter")) {
+    } else if (command == command::geo_position) {
+    } else if ((command == command::matched_attribute_elements_filter) ||
+               (command == command::matched_elements_filter)) {
         vespalib::string source_field = source.empty() ? field_name : source;
         populate_fields(*_matching_elems_fields, _vsm_fields_config, source_field);
         fieldWriter = MatchedElementsFilterDFW::create(source_field, _matching_elems_fields);

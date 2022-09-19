@@ -9,6 +9,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     check_undefined_value_visitor.cpp
     copy_dfw.cpp
     docsum_field_writer.cpp
+    docsum_field_writer_commands.cpp
     docsum_field_writer_factory.cpp
     docsum_store_document.cpp
     docsumstate.cpp
