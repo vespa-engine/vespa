@@ -6,7 +6,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -55,7 +54,6 @@ public abstract class FleetControllerTest implements Waiter {
     private final Duration timeout = Duration.ofSeconds(30);
     protected final FakeTimer timer = new FakeTimer();
 
-    Supervisor supervisor;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
@@ -259,9 +257,6 @@ public abstract class FleetControllerTest implements Waiter {
             System.err.println("STOPPING TEST " + testName);
             testName = null;
         }
-        if (supervisor != null) {
-            supervisor.transport().shutdown().join();
-        }
         fleetControllers.forEach(f -> {
             try {
                 f.shutdown();
@@ -303,10 +298,7 @@ public abstract class FleetControllerTest implements Waiter {
                 .collect(Collectors.toSet());
     }
 
-    void setWantedState(DummyVdsNode node, State state, String reason) {
-        if (supervisor == null) {
-            supervisor = new Supervisor(new Transport());
-        }
+    void setWantedState(DummyVdsNode node, State state, String reason, Supervisor supervisor) {
         NodeState ns = new NodeState(node.getType(), state);
         if (reason != null) ns.setDescription(reason);
         Target connection = supervisor.connect(new Spec("localhost", fleetController().getRpcPort()));
