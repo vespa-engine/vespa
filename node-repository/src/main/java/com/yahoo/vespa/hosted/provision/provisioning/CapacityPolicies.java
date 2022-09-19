@@ -139,12 +139,9 @@ public class CapacityPolicies {
                 : new NodeResources(0.5, 2, 50, 0.3);
     }
 
-    /**
-     * Returns whether the nodes requested can share physical host with other applications.
-     * A security feature which only makes sense for prod.
-     */
+    /** Returns whether the nodes requested can share physical host with other applications */
     public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
-        if (zone.environment() == Environment.prod && capacity.cloudAccount().isPresent()) return true; // Implicit exclusive when using custom cloud account
+        if (capacity.cloudAccount().isPresent()) return true; // Implicit exclusive when using custom cloud account
         return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
     }
 
