@@ -36,7 +36,7 @@ public class Configurator {
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.configFilePath = makeAbsolutePath(zookeeperServerConfig.zooKeeperConfigFile());
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
-        System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
+        System.setProperty("zookeeper.snapshot.trust.empty", String.valueOf(zookeeperServerConfig.trustEmptySnapshot()));
         // Max serialization length. Has effect for both client and server.
         // Doc says that it is max size of data in a zookeeper node, but it goes for everything that
         // needs to be serialized, see https://issues.apache.org/jira/browse/ZOOKEEPER-1162 for details
@@ -46,6 +46,8 @@ public class Configurator {
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
         System.setProperty("zookeeper.globalOutstandingLimit", "1000");
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
+        System.setProperty("zookeeper.leader.closeSocketAsync", String.valueOf(zookeeperServerConfig.leaderCloseSocketAsync()));
+        System.setProperty("zookeeper.learner.asyncSending", String.valueOf(zookeeperServerConfig.learnerAsyncSending()));
     }
 
     void writeConfigToDisk() {
