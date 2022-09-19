@@ -226,11 +226,11 @@ BuildRequires: perl-Net-INET6Glue
 BuildRequires: perl-Pod-Usage
 BuildRequires: perl-URI
 BuildRequires: valgrind
+BuildRequires: perf
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
 Requires: gdb
 Requires: hostname
-Requires: perf
 Requires: nc
 Requires: nghttp2
 Requires: net-tools
@@ -467,6 +467,7 @@ Summary: Vespa - The open big data serving engine - tools for system tests
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: valgrind
+Requires: perf
 
 %description systemtest-tools
 
