@@ -4,30 +4,27 @@
 #include <vespa/config-attributes.h>
 #include <vespa/config-summary.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchlib/attribute/configconverter.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-using search::attribute::isUpdateableInMemoryOnly;
 using search::attribute::BasicType;
 using search::attribute::ConfigConverter;
+using search::attribute::isUpdateableInMemoryOnly;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::SummaryConfig;
 using vespa::config::search::SummaryConfigBuilder;
 
+using namespace search::docsummary;
+
 namespace proton {
 
 namespace {
-
-vespalib::string attribute_combiner_dfw_string("attributecombiner");
-vespalib::string matched_attribute_elements_filter_dfw_string("matchedattributeelementsfilter");
-vespalib::string matched_elements_filter_dfw_string("matchedelementsfilter");
-vespalib::string copy_dfw_string("copy");
-vespalib::string attribute_dfw_string("attribute");
 
 using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
 
@@ -53,7 +50,7 @@ void
 remove_docsum_field_rewriter(SummaryConfig::Classes::Fields& summary_field)
 {
     if (source_field(summary_field) != summary_field.name) {
-        summary_field.command = copy_dfw_string;
+        summary_field.command = command::copy;
     } else {
         summary_field.command = "";
         summary_field.source = "";
@@ -225,31 +222,31 @@ AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig& new_sum
     summary_config_builder = new_summary_config;
     for (auto &summary_class : summary_config_builder.classes) {
         for (auto &summary_field : summary_class.fields) {
-            if (summary_field.command == attribute_dfw_string) {
+            if (summary_field.command == command::attribute) {
                 if (is_delayed_add_attribute_aspect(source_field(summary_field))) {
                     remove_docsum_field_rewriter(summary_field);
                 }
-            } else if (summary_field.command == attribute_combiner_dfw_string) {
+            } else if (summary_field.command == command::attribute_combiner) {
                 if (is_delayed_add_attribute_aspect_struct(source_field(summary_field))) {
                     remove_docsum_field_rewriter(summary_field);
                 }
-            } else if (summary_field.command == matched_attribute_elements_filter_dfw_string) {
+            } else if (summary_field.command == command::matched_attribute_elements_filter) {
                 if (is_delayed_add_attribute_aspect_struct(source_field(summary_field)) ||
                     is_delayed_add_attribute_aspect(source_field(summary_field))) {
-                    summary_field.command = matched_elements_filter_dfw_string;
+                    summary_field.command = command::matched_elements_filter;
                 }
-            } else if (summary_field.command == matched_elements_filter_dfw_string) {
+            } else if (summary_field.command == command::matched_elements_filter) {
                 if (is_delayed_remove_attribute_aspect(source_field(summary_field))) {
-                    summary_field.command = matched_attribute_elements_filter_dfw_string;
+                    summary_field.command = command::matched_attribute_elements_filter;
                 }
             } else if (summary_field.command == "") {
                 if (is_delayed_remove_attribute_aspect(summary_field.name)) {
-                    summary_field.command = attribute_dfw_string;
+                    summary_field.command = command::attribute;
                     summary_field.source = summary_field.name;
                 }
-            } else if (summary_field.command == copy_dfw_string) {
+            } else if (summary_field.command == command::copy) {
                 if (is_delayed_remove_attribute_aspect(source_field(summary_field))) {
-                    summary_field.command = attribute_dfw_string;
+                    summary_field.command = command::attribute;
                     summary_field.source = source_field(summary_field);
                 }
             }
