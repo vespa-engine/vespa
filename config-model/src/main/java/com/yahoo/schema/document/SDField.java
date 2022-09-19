@@ -387,6 +387,14 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         return wasConfiguredToDoIndexing;
     }
 
+    @Override
+    public boolean hasSingleAttribute() {
+        if (getAttributes().size() != 1) {
+            return false;
+        }
+        return (getAttributes().get(getName()) != null);
+    }
+
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String script) {
         parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());

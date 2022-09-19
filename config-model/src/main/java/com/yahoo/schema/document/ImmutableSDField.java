@@ -53,6 +53,11 @@ public interface ImmutableSDField {
      */
     boolean wasConfiguredToDoIndexing();
 
+    /**
+     * Returns whether this field has a single attribute with the same name as this field.
+     */
+    boolean hasSingleAttribute();
+
     DataType getDataType();
 
     Index getIndex(String name);

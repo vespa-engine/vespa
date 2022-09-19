@@ -95,29 +95,22 @@ public class ComplexAttributeFieldUtils {
         if (isArrayOfSimpleStruct(field)) {
             return hasOnlyStructFieldAttributes(field);
         } else if (isMapOfSimpleStruct(field)) {
-            return hasSingleAttribute(field.getStructField("key")) &&
+            return (field.getStructField("key").hasSingleAttribute()) &&
                     hasOnlyStructFieldAttributes(field.getStructField("value"));
         } else if (isMapOfPrimitiveType(field)) {
-            return hasSingleAttribute(field.getStructField("key")) &&
-                    hasSingleAttribute(field.getStructField("value"));
+            return (field.getStructField("key").hasSingleAttribute() &&
+                    field.getStructField("value").hasSingleAttribute());
         }
         return false;
     }
 
     private static boolean hasOnlyStructFieldAttributes(ImmutableSDField field) {
         for (ImmutableSDField structField : field.getStructFields()) {
-            if (!hasSingleAttribute(structField)) {
+            if (!structField.hasSingleAttribute()) {
                 return false;
             }
         }
         return true;
-    }
-
-    private static boolean hasSingleAttribute(ImmutableSDField field) {
-        if (field.getAttributes().size() != 1) {
-            return false;
-        }
-        return (field.getAttributes().get(field.getName()) != null);
     }
 
 }
