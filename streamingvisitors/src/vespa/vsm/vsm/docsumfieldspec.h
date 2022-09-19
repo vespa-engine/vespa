@@ -37,7 +37,7 @@ public:
     typedef std::vector<FieldIdentifier> FieldIdentifierVector;
 
 private:
-    bool                        _struct_or_multivalue;
+    bool                        _struct_or_multivalue; // property of the output field
     VsmsummaryConfig::Fieldmap::Command  _command;
     FieldIdentifier             _outputField;
     FieldIdentifierVector       _inputFields;
