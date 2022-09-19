@@ -26,7 +26,7 @@ public:
     SlimeFillerFilter& add(vespalib::stringref field_path);
 
     /*
-     * Called by DocsumFilter::prepareFieldSpec() wich each input field name as field_path. First component
+     * Called by DocsumFilter::prepareFieldSpec() with each input field name as field_path. First component
      * is assumed to be the same as the output field name.
      */
     static void add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, vespalib::stringref field_path);
