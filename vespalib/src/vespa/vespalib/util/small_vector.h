@@ -176,21 +176,21 @@ public:
         }
     }
     operator ConstArrayRef<T> () const { return ConstArrayRef<T>(data(), size()); }
-    bool empty() const { return (_size == 0); }
-    uint32_t size() const { return _size; }
-    uint32_t capacity() const { return _capacity; }
-    bool is_local() const { return (_data == local()); }
-    T *begin() { return _data; }
-    T *end() { return (_data + _size); }
-    const T *begin() const { return _data; }
-    const T *end() const { return (_data + _size); }
-    T &operator[](size_t idx) { return _data[idx]; }
-    const T &operator[](size_t idx) const { return _data[idx]; }
+    bool empty() const noexcept { return (_size == 0); }
+    uint32_t size() const noexcept { return _size; }
+    uint32_t capacity() const noexcept { return _capacity; }
+    bool is_local() const noexcept { return (_data == local()); }
+    T *begin() noexcept { return _data; }
+    T *end() noexcept { return (_data + _size); }
+    const T *begin() const noexcept { return _data; }
+    const T *end() const noexcept { return (_data + _size); }
+    T &operator[](size_t idx) noexcept { return _data[idx]; }
+    const T &operator[](size_t idx) const noexcept { return _data[idx]; }
     T *data() noexcept { return _data; }
     const T *data() const noexcept { return _data; }
-    T &back() { return _data[_size - 1]; }
-    const T &back() const { return _data[_size - 1]; }
-    void clear() {
+    T &back() noexcept { return _data[_size - 1]; }
+    const T &back() const noexcept { return _data[_size - 1]; }
+    void clear() noexcept {
         small_vector::destroy_objects(_data, _size);
         _size = 0;
     }

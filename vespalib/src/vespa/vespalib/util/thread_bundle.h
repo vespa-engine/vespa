@@ -8,6 +8,16 @@
 
 namespace vespalib {
 
+namespace thread_bundle {
+
+template <typename T>
+concept direct_dispatch_array = std::ranges::contiguous_range<T> &&
+    std::ranges::sized_range<T> &&
+    (std::is_same_v<std::ranges::range_value_t<T>,Runnable*> ||
+     std::is_same_v<std::ranges::range_value_t<T>,Runnable::UP>);
+
+}
+
 /**
  * Interface used to separate the ownership and deployment of a
  * collection of threads cooperating to perform a partitioned
@@ -31,31 +41,24 @@ struct ThreadBundle {
     virtual void run(Runnable* const* targets, size_t cnt) = 0;
 
     // convenience run wrapper
-    void run(const std::vector<Runnable*> &targets) {
-        run(targets.data(), targets.size());
-    }
-
-    // convenience run wrapper
-    void run(const std::vector<Runnable::UP> &targets) {
-        static_assert(sizeof(Runnable::UP) == sizeof(Runnable*));
-        run(reinterpret_cast<Runnable* const*>(targets.data()), targets.size());
-    }
-
-    template <typename T>
-    static constexpr bool is_runnable_ptr() {
-        return (std::is_same_v<T,Runnable*> || std::is_same_v<T,Runnable::UP>);
+    template <thread_bundle::direct_dispatch_array Array>
+    void run(const Array &items) {
+        static_assert(sizeof(std::ranges::range_value_t<Array>) == sizeof(Runnable*));
+        run(reinterpret_cast<Runnable* const*>(std::ranges::data(items)), std::ranges::size(items));
     }
 
     // convenience run wrapper
     template <std::ranges::range List>
-    requires (!is_runnable_ptr<std::ranges::range_value_t<List>>())
+    requires (!thread_bundle::direct_dispatch_array<List>)
     void run(List &items) {
         std::vector<Runnable*> targets;
-        targets.reserve(std::ranges::size(items));
+        if constexpr (std::ranges::sized_range<List>) {
+            targets.reserve(std::ranges::size(items));
+        }
         for (auto &item: items) {
             targets.push_back(resolve(item));
         }
-        run(targets);
+        run(targets.data(), targets.size());
     }
 
     /**
@@ -67,6 +70,7 @@ struct ThreadBundle {
     static ThreadBundle &trivial();
     
 private:
+    Runnable *resolve(Runnable *target) { return target; }
     Runnable *resolve(Runnable &target) { return &target; }
     template <typename T>
     Runnable *resolve(const std::unique_ptr<T> &target) { return target.get(); }
