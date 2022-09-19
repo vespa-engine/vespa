@@ -326,6 +326,10 @@ Service::runChild()
         fcntl(n, F_SETFD, FD_CLOEXEC);
     }
 
+    for (const auto &envvar : _config->environ) {
+        setenv(envvar.varname.c_str(), envvar.varvalue.c_str(), 1);
+    }
+
     // Set up environment
     setenv("VESPA_SERVICE_NAME", _config->name.c_str(), 1);
     setenv("VESPA_CONFIG_ID", _config->id.c_str(), 1);
