@@ -171,9 +171,9 @@ public class DeploymentStatus {
     }
 
     /** Returns change potentially with a compatibility platform added, if required for the change to roll out to the given instance. */
-    public Change withPermittedPlatform(Change change, InstanceName instance, boolean allowOudatedPlatform) {
+    public Change withPermittedPlatform(Change change, InstanceName instance, boolean allowOutdatedPlatform) {
         Change augmented = withCompatibilityPlatform(change, instance);
-        if (allowOudatedPlatform)
+        if (allowOutdatedPlatform)
             return augmented;
 
         boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().asList().stream()
