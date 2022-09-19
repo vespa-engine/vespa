@@ -68,6 +68,7 @@ public class StatisticsSearcher extends Searcher {
     private static final String PEAK_QPS_METRIC = "peak_qps";
     private static final String DOCS_COVERED_METRIC = "documents_covered";
     private static final String DOCS_TOTAL_METRIC = "documents_total";
+    private static final String DOCS_TARGET_TOTAL_METRIC = "documents_target_total";
     private static final String DEGRADED_QUERIES_METRIC = "degraded_queries";
     private static final String RELEVANCE_AT_1_METRIC = "relevance.at_1";
     private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
@@ -252,6 +253,7 @@ public class StatisticsSearcher extends Searcher {
             }
             metric.add(DOCS_COVERED_METRIC, queryCoverage.getDocs(), metricContext);
             metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
+            metric.add(DOCS_TARGET_TOTAL_METRIC, queryCoverage.getTargetActive(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
