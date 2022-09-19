@@ -48,3 +48,6 @@ snapshotMethod string default="gz"
 
 # Uses default Vespa mTLS config if empty string
 vespaTlsConfigFile string default=""
+
+leaderCloseSocketAsync bool default=false
+learnerAsyncSending bool default=false
