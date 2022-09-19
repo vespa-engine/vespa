@@ -78,26 +78,6 @@ public class RpcServerTest extends FleetControllerTest {
         slobrok.stop();
     }
 
-    /**
-     * For some reason, the first test trying to set up a stable system here occasionally times out.
-     * The theory is that some test run before it does something that is not cleaned up in time.
-     * Trying to add a test that should provoke the failure, but not fail due to it to see if we can verify that
-     * assumption.
-     *
-     * (testRebinding() does not seem to be that test. Tests in StateChangeTest that runs before this test tests very
-     * similar things, so strange if it should be from them too though. Maybe last test there.
-     */
-    @Test
-    void testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork() {
-        try {
-            startingTest("RpcServerTest::testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork");
-            setUpFleetController(true, defaultOptions("mycluster"));
-            setUpVdsNodes(true);
-            waitForStableSystem();
-        } catch (Throwable t) {
-        }
-    }
-
     @Test
     void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
