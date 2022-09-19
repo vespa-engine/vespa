@@ -523,6 +523,20 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ZOOKEEPER_LEADER_CLOSE_SOCKET_ASYNC = defineFeatureFlag(
+            "zookeeper-leader-close-socket-async", false,
+            List.of("hmusum"), "2022-09-19", "2022-11-01",
+            "Sets ZooKeeper config leader.closeSocketAsync",
+            "Takes effect when restarting zookeeper server",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ZOOKEEPER_LEARNER_ASYNC_SENDING = defineFeatureFlag(
+            "zookeeper-learner-async-sending", false,
+            List.of("hmusum"), "2022-09-19", "2022-11-01",
+            "Sets ZooKeeper config leader.closeSocketAsync",
+            "Takes effect when restarting zookeeper server",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
