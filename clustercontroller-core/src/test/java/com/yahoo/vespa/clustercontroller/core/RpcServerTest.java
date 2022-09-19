@@ -21,6 +21,8 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.ArrayList;
@@ -43,6 +45,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RpcServerTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(RpcServerTest.class.getName());
+
+    private Supervisor supervisor;
+
+    @BeforeEach
+    public void setup() {
+        supervisor = new Supervisor(new Transport());
+    }
+
+    @AfterEach
+    public void teardown() {
+        supervisor.transport().shutdown().join();
+    }
 
     @Test
     void testRebinding() throws Exception {
@@ -118,7 +132,6 @@ public class RpcServerTest extends FleetControllerTest {
         }, null, timeout());
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -134,9 +147,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     private void setWantedNodeState(State newState, NodeType nodeType, int nodeIndex) {
         int rpcPort = fleetController().getRpcPort();
-        if (supervisor == null) {
-            supervisor = new Supervisor(new Transport());
-        }
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -181,7 +191,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:i .1.i:0.2 .2.s:d .7.s:m");
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -448,7 +457,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d storage:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d");
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -487,7 +495,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForStableSystem();
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -515,7 +522,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForStableSystem();
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
@@ -540,7 +546,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:5 .0.s:d storage:5");
 
         int rpcPort = fleetController().getRpcPort();
-        supervisor = new Supervisor(new Transport());
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 

@@ -11,6 +11,8 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -34,6 +36,18 @@ public class MasterElectionTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
+
+    private Supervisor supervisor;
+
+    @BeforeEach
+    public void setup() {
+        supervisor = new Supervisor(new Transport());
+    }
+
+    @AfterEach
+    public void teardown() {
+        supervisor.transport().shutdown().join();
+    }
 
     protected void setUpFleetControllers(int count, boolean useFakeTimer, FleetControllerOptions.Builder builder) throws Exception {
         if (zooKeeperServer == null) {
@@ -309,7 +323,6 @@ public class MasterElectionTest extends FleetControllerTest {
         setUpFleetControllers(3, true, options);
         waitForMaster(0);
 
-        supervisor = new Supervisor(new Transport());
         List<Target> connections = new ArrayList<>();
         for (FleetController fleetController : fleetControllers) {
             int rpcPort = fleetController.getRpcPort();
@@ -434,7 +447,7 @@ public class MasterElectionTest extends FleetControllerTest {
             n.disconnectImmediately();
             waitForCompleteCycle(0);
         });
-        setWantedState(this.nodes.get(2 * 10 - 1), State.MAINTENANCE, "bar");
+        setWantedState(this.nodes.get(2 * 10 - 1), State.MAINTENANCE, "bar", supervisor);
         waitForCompleteCycle(0);
 
         // This receives the version number of the highest _working_ cluster state, with

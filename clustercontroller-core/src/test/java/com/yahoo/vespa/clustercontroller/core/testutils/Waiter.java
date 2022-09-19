@@ -43,17 +43,16 @@ public interface Waiter {
         }
 
         // TODO refactor
-        private ClusterState waitForState(String state, Duration timeoutMS, boolean checkAllSpaces, Set<String> checkSpaces) {
-            LinkedList<DummyVdsNode> nodesToCheck = new LinkedList<>();
+        private ClusterState waitForState(String state, Duration timeout, boolean checkAllSpaces, Set<String> checkSpaces) {
+                LinkedList<DummyVdsNode> nodesToCheck = new LinkedList<>();
             for(DummyVdsNode node : data.getDummyNodes()) {
                 if (node.isConnected()) nodesToCheck.add(node);
             }
-            WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher(
-                    state, data.getFleetController(), data.getMonitor())
+            WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher(state, data.getFleetController(), data.getMonitor())
                     .includeNotifyingNodes(nodesToCheck)
                     .checkAllSpaces(checkAllSpaces)
                     .checkSpaceSubset(checkSpaces);
-            wait(swc, new WaitTask.StateResender(data.getFleetController()), timeoutMS);
+            wait(swc, new WaitTask.StateResender(data.getFleetController()), timeout);
             return swc.getCurrentState();
         }
 
