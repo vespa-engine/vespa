@@ -5,6 +5,7 @@
 #include "hnsw_index_loader.h"
 #include "hnsw_graph.h"
 #include <vespa/searchlib/util/fileutil.h>
+#include <cassert>
 
 namespace search::tensor {
 
@@ -18,7 +19,7 @@ HnswIndexLoader<ReaderType>::init()
 }
 
 template <typename ReaderType>
-HnswIndexLoader<ReaderType>::~HnswIndexLoader() {}
+HnswIndexLoader<ReaderType>::~HnswIndexLoader() = default;
 
 template <typename ReaderType>
 HnswIndexLoader<ReaderType>::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<ReaderType> reader)

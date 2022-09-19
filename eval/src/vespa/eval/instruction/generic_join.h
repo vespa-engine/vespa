@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/vespalib/util/small_vector.h>
 
 namespace vespalib { class Stash; }
 namespace vespalib::eval { struct ValueBuilderFactory; }
@@ -64,7 +65,7 @@ struct SparseJoinPlan {
     bool should_forward_lhs_index() const;
     bool should_forward_rhs_index() const;
     SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
-    SparseJoinPlan(size_t num_mapped_dims); // full overlap plan
+    explicit SparseJoinPlan(size_t num_mapped_dims); // full overlap plan
     ~SparseJoinPlan();
 };
 

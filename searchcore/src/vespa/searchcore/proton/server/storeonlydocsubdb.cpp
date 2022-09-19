@@ -242,7 +242,7 @@ StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
     _rSummaryMgr = std::move(summaryManager);
     _iSummaryMgr = _rSummaryMgr; // Upcast allowed with std::shared_ptr
     _flushedDocumentStoreSerialNum = _iSummaryMgr->getBackingStore().lastSyncToken();
-    _summaryAdapter.reset(new SummaryAdapter(_rSummaryMgr));
+    _summaryAdapter = std::make_shared<SummaryAdapter>(_rSummaryMgr);
 }
 
 

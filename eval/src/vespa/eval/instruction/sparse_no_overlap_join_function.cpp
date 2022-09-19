@@ -52,7 +52,7 @@ const Value &my_fast_no_overlap_sparse_join(const FastAddrMap &lhs_map, const Fa
                 size_t addr_idx = store_rhs_idx[i];
                 output_addr[addr_idx] = r_addr[i];
             }
-            result.add_mapping(ConstArrayRef(output_addr));
+            result.add_mapping(output_addr);
             CT cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
             result.my_cells.push_back_fast(cell_value);
         }
@@ -109,7 +109,7 @@ SparseNoOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, St
                                                 lhs().result_type(), rhs().result_type(),
                                                 function(), factory);
     auto op = typify_invoke<2,MyTypify,SelectSparseNoOverlapJoinOp>(result_type().cell_meta().limit(), function());
-    return InterpretedFunction::Instruction(op, wrap_param<JoinParam>(param));
+    return {op, wrap_param<JoinParam>(param)};
 }
 
 bool

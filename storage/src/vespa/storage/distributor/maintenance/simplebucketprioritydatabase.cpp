@@ -2,6 +2,7 @@
 
 #include "simplebucketprioritydatabase.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 #include <ostream>
 #include <sstream>
 

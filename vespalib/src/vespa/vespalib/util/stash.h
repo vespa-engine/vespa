@@ -6,6 +6,7 @@
 #include "arrayref.h"
 #include "memoryusage.h"
 #include <cstdlib>
+#include <memory>
 
 namespace vespalib {
 namespace stash {

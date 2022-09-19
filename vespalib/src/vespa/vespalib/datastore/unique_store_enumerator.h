@@ -5,6 +5,7 @@
 #include "i_unique_store_dictionary.h"
 #include "i_unique_store_dictionary_read_snapshot.h"
 #include <vespa/vespalib/stllike/allocator.h>
+#include <cassert>
 
 namespace vespalib::datastore {
 

@@ -3,7 +3,7 @@
 #include "generic_lambda.h"
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
-#include <assert.h>
+#include <vespa/vespalib/util/small_vector.h>
 
 using namespace vespalib::eval::tensor_function;
 

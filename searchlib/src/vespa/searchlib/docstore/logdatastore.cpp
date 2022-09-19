@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.logdatastore");

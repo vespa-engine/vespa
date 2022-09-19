@@ -11,6 +11,7 @@
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <optional>
 
 using namespace vespalib::eval::nodes;

@@ -4,6 +4,7 @@
 #include "hnsw_graph.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <limits>
+#include <cassert>
 
 namespace search::tensor {
 

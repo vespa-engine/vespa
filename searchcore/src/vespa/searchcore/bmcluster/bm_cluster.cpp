@@ -23,6 +23,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <filesystem>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".bmcluster.bm_cluster");
