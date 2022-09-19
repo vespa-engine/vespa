@@ -88,6 +88,15 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public boolean hasSingleAttribute() {
+        if (getAttributes().size() != 1) {
+            return false;
+        }
+        // Must use the name of the target field as the attributes also exist on the target field.
+        return (getAttributes().get(importedField.targetField().getName()) != null);
+    }
+
+    @Override
     public DataType getDataType() {
         return importedField.targetField().getDataType();
     }
