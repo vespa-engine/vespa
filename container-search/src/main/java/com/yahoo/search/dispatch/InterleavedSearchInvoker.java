@@ -128,7 +128,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         insertNetworkErrors(result.getResult());
         CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)searchCluster.dispatchConfig().searchableCopies(), timeoutHandler);
-        result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler));
+        result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler, searchCluster.dispatchConfig().computeCoverageFromTargetActiveDocs()));
 
         int needed = query.getOffset() + query.getHits();
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {

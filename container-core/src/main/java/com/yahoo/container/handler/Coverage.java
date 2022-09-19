@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.yahoo.api.annotations.Beta;
+
 /**
  * The coverage report for a result set.
  *
@@ -9,6 +11,7 @@ package com.yahoo.container.handler;
  */
 public class Coverage {
 
+    private boolean useTargetActiveForCoverageComputation = false;
     protected long docs;
     protected long active;
     protected long targetActive;
@@ -28,11 +31,6 @@ public class Coverage {
     public final static int DEGRADED_BY_MATCH_PHASE = 1;
     public final static int DEGRADED_BY_TIMEOUT = 2;
     public final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
-
-    /**
-     * Build an invalid instance to initiate manually.
-     */
-    protected Coverage() { }
 
     protected Coverage(long docs, long active, int nodes, int resultSets) {
         this(docs, active, nodes, resultSets, FullCoverageDefinition.DOCUMENT_COUNT);
@@ -164,17 +162,28 @@ public class Coverage {
         if (getResultSets() == 0) {
             return 0;
         }
-        if (docs < active) {
-            return (int) Math.round(docs * 100.0d / active);
+        long total = useTargetActiveForCoverageComputation ? targetActive : active;
+        if (docs < total) {
+            return (int) Math.round(docs * 100.0d / total);
         }
         return getFullResultSets() * 100 / getResultSets();
+    }
+
+    /**
+     * Decides whether active or target active shall be used for coverage computation.
+     * DO NOT USE - This is only for temporary internal use.
+     */
+    @Beta
+    public Coverage useTargetActiveForCoverageComputation(boolean value) {
+        useTargetActiveForCoverageComputation = value;
+        return this;
     }
 
     public com.yahoo.container.logging.Coverage toLoggingCoverage() {
         int degradation = com.yahoo.container.logging.Coverage.toDegradation(isDegradedByMatchPhase(),
                 isDegradedByTimeout(),
                 isDegradedByAdapativeTimeout());
-        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation);
+        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation, useTargetActiveForCoverageComputation);
     }
 
 }

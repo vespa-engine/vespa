@@ -200,7 +200,6 @@
       "public"
     ],
     "methods": [
-      "protected void <init>()",
       "protected void <init>(long, long, int, int)",
       "public void <init>(long, int, boolean)",
       "protected void <init>(long, int, boolean, int)",
@@ -220,6 +219,7 @@
       "public int getFullResultSets()",
       "public int getResultSets()",
       "public int getResultPercentage()",
+      "public com.yahoo.container.handler.Coverage useTargetActiveForCoverageComputation(boolean)",
       "public com.yahoo.container.logging.Coverage toLoggingCoverage()"
     ],
     "fields": [

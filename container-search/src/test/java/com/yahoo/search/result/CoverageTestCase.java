@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.result.test;
+package com.yahoo.search.result;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.result.Coverage;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +30,17 @@ public class CoverageTestCase {
         c.merge(d);
         assertEquals(11, c.getActive());
         assertEquals(13, c.getDocs());
+    }
+
+    @Test
+    void testCoverageBasedOnActive() {
+        var c = new Coverage(8, 10).setTargetActive(16);
+        assertEquals(80, c.getResultPercentage());
+    }
+    @Test
+    void testCoverageBasedOnTargetActive() {
+        var c = new Coverage(8, 10).setTargetActive(16).useTargetActiveForCoverageComputation(true);
+        assertEquals(50, c.getResultPercentage());
     }
 
     @Test
@@ -67,10 +77,7 @@ public class CoverageTestCase {
         assertEquals(1, federationSearcherResult.getCoverage(create).getResultSets());
     }
 
-    @Test
-    void testCoverageConversion() {
-        Coverage c = new Coverage(6, 10);
-        c.setDegradedReason(7);
+    void verifyCoverageConversion(com.yahoo.container.handler.Coverage c) {
         com.yahoo.container.logging.Coverage lc = c.toLoggingCoverage();
         assertEquals(lc.getDocs(), c.getDocs());
         assertEquals(lc.getActive(), c.getActive());
@@ -81,6 +88,12 @@ public class CoverageTestCase {
         assertEquals(lc.isDegradedByAdapativeTimeout(), c.isDegradedByAdapativeTimeout());
         assertEquals(lc.isDegradedByMatchPhase(), c.isDegradedByMatchPhase());
         assertEquals(lc.isDegradedByTimeout(), c.isDegradedByTimeout());
+    }
+
+    @Test
+    void testCoverageConversion() {
+        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12).useTargetActiveForCoverageComputation(false));
+        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12).useTargetActiveForCoverageComputation(true));
     }
 
 }

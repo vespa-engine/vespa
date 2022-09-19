@@ -18,11 +18,6 @@ public class HitCounts {
     private final int requestedOffset;
     private final Coverage coverage;
 
-    HitCounts(int retrievedHits, int summaryCount, long totalHitCount, int requestedHits, int requestedOffset) {
-        this(retrievedHits, summaryCount, totalHitCount, requestedHits, requestedOffset,
-             new Coverage(1,1,1,0));
-    }
-
     public HitCounts(int retrievedHits, int summaryCount, long totalHitCount,
                      int requestedHits, int requestedOffset, Coverage coverage)
     {
