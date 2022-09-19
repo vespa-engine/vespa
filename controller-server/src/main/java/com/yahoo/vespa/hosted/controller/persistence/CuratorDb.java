@@ -122,29 +122,6 @@ public class CuratorDb {
     // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
-    private static final Set<String> knownLockRootChildren = Set.of(
-            "applications",
-            "archiveBuckets",
-            "auditLog",
-            "changeRequests",
-            "confidenceOverrides",
-            "deploymentRetriggerQueue",
-            "instances",
-            "jobs",
-            "maintenanceJobLocks",
-            "meteringRefreshTime",
-            "nameServiceQueue",
-            "notifications",
-            "osTargetVersion",
-            "osVersionStatus",
-            "provisioning",
-            "rotations",
-            "routingPolicies",
-            "steps",
-            "supportAccess",
-            "tenants"
-    );
-
     @Inject
     public CuratorDb(Curator curator) {
         this(curator, defaultTryLockTimeout);
@@ -153,12 +130,6 @@ public class CuratorDb {
     CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
-        // TODO(mpolden): Remove after 2022-09-26. This cleans up the immediate children of lock root which are no longer used
-        for (var path : curator.getChildren(lockRoot)) {
-            if (!knownLockRootChildren.contains(path)) {
-                curator.delete(lockRoot.append(path));
-            }
-        }
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
