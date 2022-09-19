@@ -20,16 +20,15 @@ DocsumFieldSpec::FieldIdentifier & DocsumFieldSpec::FieldIdentifier::operator=(F
 DocsumFieldSpec::FieldIdentifier::~FieldIdentifier() = default;
 
 DocsumFieldSpec::DocsumFieldSpec() :
-    _resultType(search::docsummary::RES_INT),
+    _struct_or_multivalue(false),
     _command(VsmsummaryConfig::Fieldmap::Command::NONE),
     _outputField(),
     _inputFields(),
     _filter()
 { }
 
-DocsumFieldSpec::DocsumFieldSpec(search::docsummary::ResType resultType,
-                                 VsmsummaryConfig::Fieldmap::Command command) :
-    _resultType(resultType),
+DocsumFieldSpec::DocsumFieldSpec(VsmsummaryConfig::Fieldmap::Command command) :
+    _struct_or_multivalue(false),
     _command(command),
     _outputField(),
     _inputFields(),

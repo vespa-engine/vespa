@@ -19,7 +19,7 @@
 LOG_SETUP(".vsm.docsumfilter");
 
 using namespace search::docsummary;
-
+using document::FieldPathEntry;
 
 namespace vsm {
 
@@ -28,6 +28,17 @@ namespace {
 bool is_struct_or_multivalue_field_type(const document::DataType& data_type)
 {
     return (data_type.isStructured() || data_type.isArray() || data_type.isWeightedSet() || data_type.isMap());
+}
+
+bool is_struct_or_multivalue_field_type(const FieldPath& fp)
+{
+    if (fp.size() == 1u) {
+        auto& fpe = fp[0];
+        if (fpe.getType() == FieldPathEntry::Type::STRUCT_FIELD && is_struct_or_multivalue_field_type(fpe.getDataType())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
@@ -207,6 +218,9 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         if (field != FieldMap::npos) {
             if (field < fieldPathMap.size()) {
                 spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
+                if (is_struct_or_multivalue_field_type(fieldPathMap[field])) {
+                    spec.set_struct_or_multivalue(true);
+                }
             } else {
                 LOG(warning, "Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
@@ -217,7 +231,7 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
     }
     // setup input fields
     std::unique_ptr<SlimeFillerFilter> filter;
-    if (spec.getResultType() == RES_JSONSTRING) {
+    if (spec.is_struct_or_multivalue()) {
         filter = std::make_unique<SlimeFillerFilter>();
     }
     for (size_t i = 0; i < toolsSpec.getInputNames().size(); ++i) {
@@ -296,7 +310,7 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
             for (uint32_t i = 0; i < entryCnt; ++i) {
                 const ResConfigEntry &entry = *resClass->GetEntry(i);
                 const DocsumTools::FieldSpec & toolsSpec = inputSpecs[i];
-                _fields.push_back(DocsumFieldSpec(entry._type, toolsSpec.getCommand()));
+                _fields.push_back(DocsumFieldSpec(toolsSpec.getCommand()));
                 LOG(debug, "About to prepare field spec for summary field '%s'", entry._name.c_str());
                 prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap);
             }
@@ -319,10 +333,6 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
         return false;
     }
 
-    if (field_spec.getResultType() != RES_LONG_STRING && field_spec.getResultType() != RES_STRING) {
-        LOG(debug, "write_flatten_field: Can only handle result types STRING and LONG_STRING");
-        return false;
-    }
     switch (field_spec.getCommand()) {
     case VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER:
         _flattenWriter.setSeparator(juniper::separators::record_separator_string);
@@ -388,8 +398,7 @@ search::docsummary::DocsumStoreFieldValue
 DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
 {
     const auto& field_spec = _fields[entry_idx];
-    ResType type = field_spec.getResultType();
-    if (type == RES_JSONSTRING) {
+    if (field_spec.is_struct_or_multivalue()) {
         return get_struct_or_multivalue_summary_field(field_spec, doc);
     } else {
         if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
@@ -438,8 +447,7 @@ void
 DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter)
 {
     const auto& field_spec = _fields[entry_idx];
-    ResType type = field_spec.getResultType();
-    if (type == RES_JSONSTRING) {
+    if (field_spec.is_struct_or_multivalue()) {
         insert_struct_or_multivalue_summary_field(field_spec, doc, inserter);
     } else {
         if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
