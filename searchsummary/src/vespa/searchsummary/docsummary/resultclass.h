@@ -91,11 +91,10 @@ public:
      *
      * @return true(success)/false(fail)
      * @param name the name of the field to add.
-     * @param type the type of the field to add.
      * @param docsum_field_writer field writer for writing field
      **/
-    bool AddConfigEntry(const char *name, ResType type, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
-    bool AddConfigEntry(const char *name, ResType type);
+    bool AddConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
+    bool AddConfigEntry(const char *name);
 
     /**
      * Obtain the field index from the field name. The field index may

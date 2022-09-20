@@ -2,9 +2,7 @@
 
 #include "resultclass.h"
 #include "docsum_field_writer.h"
-#include "resultconfig.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
-#include <cassert>
 
 namespace search::docsummary {
 
@@ -28,7 +26,7 @@ ResultClass::GetIndexFromName(const char* name) const
 }
 
 bool
-ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
+ResultClass::AddConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
 {
     if (_nameMap.find(name) != _nameMap.end()) {
         return false;
@@ -36,7 +34,6 @@ ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<Docs
 
     _nameMap[name] = _entries.size();
     ResConfigEntry e;
-    e._type = type;
     e._name = name;
     if (docsum_field_writer) {
         docsum_field_writer->setIndex(_entries.size());
@@ -52,9 +49,9 @@ ResultClass::AddConfigEntry(const char *name, ResType type, std::unique_ptr<Docs
 }
 
 bool
-ResultClass::AddConfigEntry(const char *name, ResType type)
+ResultClass::AddConfigEntry(const char *name)
 {
-    return AddConfigEntry(name, type, {});
+    return AddConfigEntry(name, {});
 }
 
 }

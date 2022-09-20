@@ -124,34 +124,26 @@ ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             break;
         }
         resClass->set_omit_summary_features(cfg_class.omitsummaryfeatures);
-        for (unsigned int j = 0; rc && (j < cfg_class.fields.size()); j++) {
-            const char *fieldtype = cfg_class.fields[j].type.c_str();
-            const char *fieldname = cfg_class.fields[j].name.c_str();
-            vespalib::string command = cfg_class.fields[j].command;
-            vespalib::string source_name = cfg_class.fields[j].source;
-            auto res_type = ResTypeUtils::get_res_type(fieldtype);
-            LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg_class.name.c_str(), fieldname, fieldtype);
-            if (res_type != RES_BAD) {
-                std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
-                if (!command.empty()) {
-                    try {
-                        docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname,
-                                                                                                     command,
-                                                                                                     source_name);
-                    } catch (const vespalib::IllegalArgumentException& ex) {
-                        LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
-                            cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
-                        break;
-                    }
+        for (const auto & field : cfg_class.fields) {
+            const char *fieldname = field.name.c_str();
+            vespalib::string command = field.command;
+            vespalib::string source_name = field.source;
+            LOG(debug, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
+            std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
+            if (!command.empty()) {
+                try {
+                    docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname,
+                                                                                                 command,
+                                                                                                 source_name);
+                } catch (const vespalib::IllegalArgumentException& ex) {
+                    LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
+                        cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
+                    break;
                 }
-                rc = resClass->AddConfigEntry(fieldname, res_type, std::move(docsum_field_writer));
-            } else {
-                LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg_class.name.c_str(), j, fieldtype);
-                rc = false;
-                break;
             }
+            rc = resClass->AddConfigEntry(fieldname, std::move(docsum_field_writer));
             if (!rc) {
-                LOG(error, "%s %s.fields[%d]: duplicate name '%s'", configId, cfg_class.name.c_str(), j, fieldname);
+                LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
                 break;
             }
         }

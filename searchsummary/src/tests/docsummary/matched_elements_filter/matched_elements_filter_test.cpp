@@ -97,13 +97,11 @@ public:
         _doc_type.addField(Field("wset", _wset_type));
 
         auto* result_class = _config.AddResultClass("test", class_id);
-        EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
-        EXPECT_TRUE(result_class->AddConfigEntry("map", ResType::RES_JSONSTRING));
-        EXPECT_TRUE(result_class->AddConfigEntry("map2", ResType::RES_JSONSTRING));
+        EXPECT_TRUE(result_class->AddConfigEntry("array"));
+        EXPECT_TRUE(result_class->AddConfigEntry("map"));
+        EXPECT_TRUE(result_class->AddConfigEntry("map2"));
     }
     ~DocsumStore();
-    const ResultConfig& get_config() const { return _config; }
-    const ResultClass* get_class() const { return _config.LookupResultClass(class_id); }
     std::unique_ptr<IDocsumStoreDocument> getMappedDocsum() {
         auto doc = std::make_unique<Document>(_doc_type, DocumentId("id:test:test::0"));
         {

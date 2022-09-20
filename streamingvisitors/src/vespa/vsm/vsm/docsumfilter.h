@@ -12,7 +12,6 @@
 #include <vespa/searchsummary/docsummary/docsum_store_field_value.h>
 
 using search::docsummary::IDocsumStore;
-using search::docsummary::ResType;
 
 namespace vsm {
 
@@ -37,8 +36,6 @@ private:
     document::FieldValue::UP _cachedValue;
     document::FieldPath _emptyFieldPath;
 
-    DocsumFilter(const DocsumFilter &);
-    DocsumFilter &operator=(const DocsumFilter &);
     void prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpec,
                           const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap);
     const document::FieldValue * getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
@@ -52,6 +49,8 @@ private:
     void insert_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter);
 public:
     DocsumFilter(const DocsumToolsPtr & tools, const IDocSumCache & docsumCache);
+    DocsumFilter(const DocsumFilter &) = delete;
+    DocsumFilter &operator=(const DocsumFilter &) = delete;
     ~DocsumFilter() override;
     const DocsumToolsPtr & getTools() const { return _tools; }
 
