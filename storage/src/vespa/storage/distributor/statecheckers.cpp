@@ -2,6 +2,7 @@
 
 #include "statecheckers.h"
 #include "activecopy.h"
+#include "node_supported_features_repo.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
@@ -1038,15 +1039,18 @@ BucketStateStateChecker::shouldSkipActivationDueToMaintenance(
         const StateChecker::Context& c) const
 {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
-        const BucketCopy* cp(c.entry->getNode(activeNodes[i]._nodeIndex));
+        const auto node_index = activeNodes[i]._nodeIndex;
+        const BucketCopy* cp(c.entry->getNode(node_index));
         if (!cp || cp->active()) {
             continue;
         }
         if (!cp->ready()) {
-            // If copy is not ready, we don't want to activate it if a node
-            // is set in maintenance. Doing so would imply that we want proton
-            // to start background indexing.
-            return containsMaintenanceNode(c.idealState, c);
+            if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets) {
+                // If copy is not ready, we don't want to activate it if a node
+                // is set in maintenance. Doing so would imply that we want proton
+                // to start background indexing.
+                return containsMaintenanceNode(c.idealState, c);
+            } // else: activation does not imply indexing, so we can safely do it at any time.
         }
     }
     return false;

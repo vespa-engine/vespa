@@ -13,6 +13,7 @@ namespace storage::distributor {
 struct NodeSupportedFeatures {
     bool unordered_merge_chaining  = false;
     bool two_phase_remove_location = false;
+    bool no_implicit_indexing_of_active_buckets = false;
 
     bool operator==(const NodeSupportedFeatures& rhs) const noexcept = default;
 };

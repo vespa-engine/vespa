@@ -88,11 +88,11 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
         c.siblingEntry = getBucketDatabase(c.getBucketSpace()).get(c.siblingBucket);
 
         c.entries = entries;
-        for (uint32_t j = 0; j < entries.size(); ++j) {
+        for (const auto & entry : entries) {
             // Run checking only on this bucketid, but include all buckets
             // owned by it or owners of it, so we can detect inconsistent split.
-            if (entries[j].getBucketId() == c.getBucketId()) {
-                c.entry = entries[j];
+            if (entry.getBucketId() == c.getBucketId()) {
+                c.entry = entry;
 
                 StateChecker::Result result(checker.check(c));
                 IdealStateOperation::UP op(result.createOperation());
@@ -284,6 +284,14 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
                                 bool includePriority = false);
     std::string testBucketStatePerGroup(const std::string& bucketInfo,
                                         bool includePriority = false);
+
+    void do_test_bucket_activation();
+
+    void set_node_supports_no_implicit_indexing_on_activation(uint16_t node, bool supported) {
+        NodeSupportedFeatures nsf;
+        nsf.no_implicit_indexing_of_active_buckets = supported;
+        set_node_supported_features(node, nsf);
+    }
 };
 
 StateCheckersTest::CheckerParams::CheckerParams() = default;
@@ -997,7 +1005,7 @@ std::string StateCheckersTest::testBucketState(
                             includePriority);
 }
 
-TEST_F(StateCheckersTest, bucket_state) {
+void StateCheckersTest::do_test_bucket_activation() {
     setup_stripe(2, 100, "distributor:1 storage:4");
 
     {
@@ -1035,11 +1043,13 @@ TEST_F(StateCheckersTest, bucket_state) {
     EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]",
               testBucketState("0=2/3/4"));
 
+    // TODO remove this
     // A replica with more documents should be preferred over one with fewer.
     EXPECT_EQ("[Setting node 3 as active: copy has 6 docs and ideal state priority 1]"
               "[Setting node 1 as inactive]",
               testBucketState("1=2/3/4/u/a,3=5/6/7/t"));
 
+    // TODO remove this
     // Replica 2 has most documents and should be activated
     EXPECT_EQ("[Setting node 2 as active: copy has 9 docs]",
               testBucketState("1=2/3/4,3=5/6/7/,2=8/9/10/t"));
@@ -1087,16 +1097,38 @@ TEST_F(StateCheckersTest, bucket_state) {
               testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/r,3=5/6/7/u/i/r"));
 }
 
+TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_with_implicit_indexing_on_active) {
+    set_node_supports_no_implicit_indexing_on_activation(2, false);
+    do_test_bucket_activation();
+}
+
+TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_without_implicit_indexing_on_active) {
+    set_node_supports_no_implicit_indexing_on_activation(2, true);
+    do_test_bucket_activation();
+}
+
 /**
  * Users assume that setting nodes into maintenance will not cause extra load
  * on the cluster, but activating non-ready copies because the active copy went
  * into maintenance violates that assumption. See bug 6833209 for context and
  * details.
  */
-TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_maintenance) {
+TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_maintenance_if_active_implicitly_indexes) {
     setup_stripe(2, 100, "distributor:1 storage:4 .1.s:m");
+    set_node_supports_no_implicit_indexing_on_activation(2, false);
     // Ideal node 1 is in maintenance and no ready copy available.
     EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
+    // But we should activate another copy iff there's another ready copy.
+    EXPECT_EQ("[Setting node 2 as active: copy is ready with 9 docs]",
+              testBucketState("2=8/9/10/u/i/r,3=5/6/7/u/i/u"));
+}
+
+TEST_F(StateCheckersTest, activate_non_ready_copies_when_ideal_node_in_maintenance_if_active_does_not_implicitly_index) {
+    setup_stripe(2, 100, "distributor:1 storage:4 .1.s:m");
+    set_node_supports_no_implicit_indexing_on_activation(2, true);
+    // Ideal node 1 is in maintenance and no ready copy available.
+    EXPECT_EQ("[Setting node 2 as active: copy has 9 docs]", // TODO ideal state pri instead
               testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
     // But we should activate another copy iff there's another ready copy.
     EXPECT_EQ("[Setting node 2 as active: copy is ready with 9 docs]",

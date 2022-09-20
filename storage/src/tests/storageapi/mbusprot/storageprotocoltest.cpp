@@ -389,6 +389,7 @@ TEST_P(StorageProtocolTest, request_bucket_info) {
 
         EXPECT_TRUE(reply2->supported_node_features().unordered_merge_chaining);
         EXPECT_TRUE(reply2->supported_node_features().two_phase_remove_location);
+        EXPECT_TRUE(reply2->supported_node_features().no_implicit_indexing_of_active_buckets);
     }
 }
 

@@ -14,7 +14,6 @@
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -84,7 +83,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
 {
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
-};
+}
 
 DistributorStripe::~DistributorStripe() = default;
 
@@ -109,7 +108,7 @@ void
 DistributorStripe::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
 {
     if (cmd->getType() == api::MessageType::MERGEBUCKET) {
-        api::MergeBucketCommand& merge(static_cast<api::MergeBucketCommand&>(*cmd));
+        auto & merge(static_cast<api::MergeBucketCommand&>(*cmd));
         _idealStateManager.getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
     }
     send_up_with_tracking(cmd);
@@ -182,7 +181,7 @@ DistributorStripe::handleCompletedMerge(
 }
 
 bool
-DistributorStripe::isMaintenanceReply(const api::StorageReply& reply) const
+DistributorStripe::isMaintenanceReply(const api::StorageReply& reply)
 {
     switch (reply.getType().getId()) {
     case api::MessageType::CREATEBUCKET_REPLY_ID:
@@ -290,8 +289,8 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
             std::vector<uint64_t> msgIds = _pendingMessageTracker.clearMessagesForNode(i);
             LOG(debug, "Node %u is down, clearing %zu pending maintenance operations", i, msgIds.size());
 
-            for (uint32_t j = 0; j < msgIds.size(); ++j) {
-                _maintenanceOperationOwner.erase(msgIds[j]);
+            for (const auto & msgId : msgIds) {
+                _maintenanceOperationOwner.erase(msgId);
             }
         }
     }
@@ -407,7 +406,7 @@ public:
     bool found;
     uint8_t maxPri;
 
-    SplitChecker(uint8_t maxP) : found(false), maxPri(maxP) {};
+    explicit SplitChecker(uint8_t maxP) : found(false), maxPri(maxP) {};
 
     bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
         (void) node;
@@ -603,7 +602,7 @@ namespace {
 BucketSpaceStats
 toBucketSpaceStats(const NodeMaintenanceStats &stats)
 {
-    return BucketSpaceStats(stats.total, stats.syncing + stats.copyingIn);
+    return {stats.total, stats.syncing + stats.copyingIn};
 }
 
 using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;

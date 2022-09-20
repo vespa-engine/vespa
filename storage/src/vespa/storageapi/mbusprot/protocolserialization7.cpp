@@ -1058,6 +1058,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoRe
         if (msg.full_bucket_fetch()) {
             res.mutable_supported_node_features()->set_unordered_merge_chaining(true);
             res.mutable_supported_node_features()->set_two_phase_remove_location(true);
+            res.mutable_supported_node_features()->set_no_implicit_indexing_of_active_buckets(true);
         }
     });
 }
@@ -1098,8 +1099,9 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(con
         if (res.has_supported_node_features()) {
             const auto& src_features  = res.supported_node_features();
             auto&       dest_features = reply->supported_node_features();
-            dest_features.unordered_merge_chaining  = src_features.unordered_merge_chaining();
-            dest_features.two_phase_remove_location = src_features.two_phase_remove_location();
+            dest_features.unordered_merge_chaining               = src_features.unordered_merge_chaining();
+            dest_features.two_phase_remove_location              = src_features.two_phase_remove_location();
+            dest_features.no_implicit_indexing_of_active_buckets = src_features.no_implicit_indexing_of_active_buckets();
         }
         return reply;
     });

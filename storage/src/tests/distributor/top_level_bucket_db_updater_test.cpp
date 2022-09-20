@@ -2512,6 +2512,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
         for (uint16_t i : {0, 1, 2}) {
             EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
             EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).two_phase_remove_location);
+            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).no_implicit_indexing_of_active_buckets);
         }
     }
 
@@ -2524,6 +2525,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
             if (i > 0) {
                 reply.supported_node_features().unordered_merge_chaining = true;
                 reply.supported_node_features().two_phase_remove_location = true;
+                reply.supported_node_features().no_implicit_indexing_of_active_buckets = true;
             }
         }));
     }
@@ -2532,10 +2534,15 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
     for (auto* s : stripes) {
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).unordered_merge_chaining);
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).two_phase_remove_location);
+        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).no_implicit_indexing_of_active_buckets);
+
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).two_phase_remove_location);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).no_implicit_indexing_of_active_buckets);
+
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
         EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).two_phase_remove_location);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).no_implicit_indexing_of_active_buckets);
     }
 }
 

@@ -208,7 +208,7 @@ private:
     friend class TopLevelDistributorTestUtil;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
-    bool isMaintenanceReply(const api::StorageReply& reply) const;
+    static bool isMaintenanceReply(const api::StorageReply& reply);
 
     void send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>&);
     void handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg);
