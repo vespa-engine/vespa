@@ -88,11 +88,11 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
         c.siblingEntry = getBucketDatabase(c.getBucketSpace()).get(c.siblingBucket);
 
         c.entries = entries;
-        for (uint32_t j = 0; j < entries.size(); ++j) {
+        for (const auto & entry : entries) {
             // Run checking only on this bucketid, but include all buckets
             // owned by it or owners of it, so we can detect inconsistent split.
-            if (entries[j].getBucketId() == c.getBucketId()) {
-                c.entry = entries[j];
+            if (entry.getBucketId() == c.getBucketId()) {
+                c.entry = entry;
 
                 StateChecker::Result result(checker.check(c));
                 IdealStateOperation::UP op(result.createOperation());
@@ -1098,12 +1098,12 @@ void StateCheckersTest::do_test_bucket_activation() {
 }
 
 TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_with_implicit_indexing_on_active) {
-    set_node_supports_no_implicit_index_on_activation(2, false);
+    set_node_supports_no_implicit_indexing_on_activation(2, false);
     do_test_bucket_activation();
 }
 
 TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_without_implicit_indexing_on_active) {
-    set_node_supports_no_implicit_index_on_activation(2, true);
+    set_node_supports_no_implicit_indexing_on_activation(2, true);
     do_test_bucket_activation();
 }
 
@@ -1115,7 +1115,7 @@ TEST_F(StateCheckersTest, bucket_activation_behaves_as_expected_without_implicit
  */
 TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_maintenance_if_active_implicitly_indexes) {
     setup_stripe(2, 100, "distributor:1 storage:4 .1.s:m");
-    set_node_supports_no_implicit_index_on_activation(2, false);
+    set_node_supports_no_implicit_indexing_on_activation(2, false);
     // Ideal node 1 is in maintenance and no ready copy available.
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
@@ -1126,7 +1126,7 @@ TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_ma
 
 TEST_F(StateCheckersTest, activate_non_ready_copies_when_ideal_node_in_maintenance_if_active_does_not_implicitly_index) {
     setup_stripe(2, 100, "distributor:1 storage:4 .1.s:m");
-    set_node_supports_no_implicit_index_on_activation(2, true);
+    set_node_supports_no_implicit_indexing_on_activation(2, true);
     // Ideal node 1 is in maintenance and no ready copy available.
     EXPECT_EQ("[Setting node 2 as active: copy has 9 docs]", // TODO ideal state pri instead
               testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
