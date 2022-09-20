@@ -400,29 +400,46 @@ public class InterleavedSearchInvokerTest {
         return hits;
     }
 
-    @Test
-    void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpected() throws IOException {
-        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
-        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
+    void verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(DispatchConfig dispatchConfig, int expectedCoverage) throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", dispatchConfig, 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 60000, 1, 1, 0)));
         Coverage errorCoverage = new Coverage(0, 0, 0);
         errorCoverage.setNodesTried(1);
         invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("node is down"), errorCoverage));
-        SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 0);
+        try (SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 0)) {
 
-        expectedEvents.add(new Event(null,   1, 1));
-        expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 1, 1));
+            expectedEvents.add(new Event(null, 100, 0));
 
-        Result result = invoker.search(query, null);
+            Result result = invoker.search(query, null);
 
-        Coverage cov = result.getCoverage(true);
-        assertEquals(50155L, cov.getDocs());
-        assertEquals(1, cov.getNodes());
-        assertEquals(2, cov.getNodesTried());
-        assertFalse(cov.getFull());
-        assertEquals(50, cov.getResultPercentage());
-        assertEquals(1, cov.getResultSets());
-        assertEquals(0, cov.getFullResultSets());
-        assertTrue(cov.isDegradedByTimeout());
+            Coverage cov = result.getCoverage(true);
+            assertEquals(50155L, cov.getDocs());
+            assertEquals(1, cov.getNodes());
+            assertEquals(2, cov.getNodesTried());
+            assertFalse(cov.getFull());
+            assertEquals(expectedCoverage, cov.getResultPercentage());
+            assertEquals(1, cov.getResultSets());
+            assertEquals(0, cov.getFullResultSets());
+            assertTrue(cov.isDegradedByTimeout());
+        }
+    }
+    @Test
+    void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingActiveDocs() throws IOException {
+        verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
+                .searchableCopies(1)
+                .redundancy(2)
+                .build(),
+                50);
+    }
+    @Test
+    void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingTargetActiveDocs() throws IOException {
+        verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
+                .searchableCopies(1)
+                .redundancy(1)
+                .computeCoverageFromTargetActiveDocs(true)
+                .build(),
+                42);
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(SearchCluster searchCluster, Group group, int numInvokers) {

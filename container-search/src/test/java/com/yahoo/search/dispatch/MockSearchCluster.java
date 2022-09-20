@@ -105,14 +105,14 @@ public class MockSearchCluster extends SearchCluster {
         return createDispatchConfig(100.0, nodes);
     }
     public static DispatchConfig createDispatchConfig(List<Node> nodes) {
-        return createDispatchConfig(100.0, nodes);
+        return createDispatchConfig(100.0, nodes).build();
     }
 
     public static DispatchConfig createDispatchConfig(double minSearchCoverage, Node... nodes) {
-        return createDispatchConfig(minSearchCoverage, Arrays.asList(nodes));
+        return createDispatchConfig(minSearchCoverage, Arrays.asList(nodes)).build();
     }
 
-    public static DispatchConfig createDispatchConfig(double minSearchCoverage, List<Node> nodes) {
+    public static DispatchConfig.Builder createDispatchConfig(double minSearchCoverage, List<Node> nodes) {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         builder.minActivedocsPercentage(88.0);
         builder.minSearchCoverage(minSearchCoverage);
@@ -125,7 +125,7 @@ public class MockSearchCluster extends SearchCluster {
         for (Node n : nodes) {
             builder.node(new DispatchConfig.Node.Builder().key(n.key()).host(n.hostname()).port(port++).group(n.group()));
         }
-        return new DispatchConfig(builder);
+        return builder;
     }
 
 }
