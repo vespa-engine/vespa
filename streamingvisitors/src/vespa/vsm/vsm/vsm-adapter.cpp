@@ -92,12 +92,12 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
         for (uint32_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
             const ResConfigEntry * entry = _resultClass->GetEntry(i);
             _fieldSpecs.emplace_back();
-            _fieldSpecs.back().setOutputName(entry->_name);
+            _fieldSpecs.back().setOutputName(entry->name());
             bool found = false;
             if (cfg) {
                 // check if we have this summary field in the vsmsummary config
                 for (uint32_t j = 0; j < cfg->fieldmap.size() && !found; ++j) {
-                    if (entry->_name == cfg->fieldmap[j].summary.c_str()) {
+                    if (entry->name() == cfg->fieldmap[j].summary.c_str()) {
                         for (uint32_t k = 0; k < cfg->fieldmap[j].document.size(); ++k) {
                             _fieldSpecs.back().getInputNames().push_back(cfg->fieldmap[j].document[k].field);
                         }
@@ -108,7 +108,7 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
             }
             if (!found) {
                 // use yourself as input
-                _fieldSpecs.back().getInputNames().push_back(entry->_name);
+                _fieldSpecs.back().getInputNames().push_back(entry->name());
             }
         }
     } else {

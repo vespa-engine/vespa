@@ -33,17 +33,16 @@ ResultClass::AddConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter>
     }
 
     _nameMap[name] = _entries.size();
-    ResConfigEntry e;
-    e._name = name;
+    ResConfigEntry e(name);
     if (docsum_field_writer) {
         docsum_field_writer->setIndex(_entries.size());
         bool generated = docsum_field_writer->IsGenerated();
-        getDynamicInfo().update_override_counts(generated);
+        _dynInfo.update_override_counts(generated);
         if (docsum_field_writer->setFieldWriterStateIndex(_num_field_writer_states)) {
             ++_num_field_writer_states;
         }
     }
-    e._docsum_field_writer = std::move(docsum_field_writer);
+    e.set_writer(std::move(docsum_field_writer));
     _entries.push_back(std::move(e));
     return true;
 }
@@ -52,6 +51,23 @@ bool
 ResultClass::AddConfigEntry(const char *name)
 {
     return AddConfigEntry(name, {});
+}
+
+bool
+ResultClass::all_fields_generated(const vespalib::hash_set<vespalib::string>& fields) const
+{
+    if (_dynInfo._generateCnt == GetNumEntries()) {
+        return true;
+    }
+    if (fields.empty()) {
+        return false;
+    }
+    for (const auto& entry : _entries) {
+        if (fields.contains(entry.name()) && !entry.is_generated()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }

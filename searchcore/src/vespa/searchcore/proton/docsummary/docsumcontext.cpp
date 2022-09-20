@@ -71,20 +71,21 @@ makeSlimeParams(size_t chunkSize) {
 vespalib::Slime::UP
 DocsumContext::createSlimeReply()
 {
-    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName());
+    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
+                                                                         _docsumState._args.get_fields());
     _docsumWriter.InitState(_attrMgr, _docsumState, rci);
     const size_t estimatedChunkSize(std::min(0x200000ul, _docsumState._docsumbuf.size()*0x400ul));
     vespalib::Slime::UP response(std::make_unique<vespalib::Slime>(makeSlimeParams(estimatedChunkSize)));
     Cursor & root = response->setObject();
     Cursor & array = root.setArray(DOCSUMS);
     const Symbol docsumSym = response->insert(DOCSUM);
-    _docsumState._omit_summary_features = (rci.outputClass != nullptr) ? rci.outputClass->omit_summary_features() : true;
+    _docsumState._omit_summary_features = (rci.res_class != nullptr) ? rci.res_class->omit_summary_features() : true;
     uint32_t num_ok(0);
     for (uint32_t docId : _docsumState._docsumbuf) {
         if (_request.expired() ) { break; }
         Cursor &docSumC = array.addObject();
         ObjectSymbolInserter inserter(docSumC, docsumSym);
-        if ((docId != search::endDocId) && rci.outputClass != nullptr) {
+        if ((docId != search::endDocId) && rci.res_class != nullptr) {
             _docsumWriter.insertDocsum(rci, docId, _docsumState, &_docsumStore, inserter);
         }
         num_ok++;

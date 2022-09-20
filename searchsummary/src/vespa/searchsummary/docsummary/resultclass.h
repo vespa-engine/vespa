@@ -3,8 +3,9 @@
 #pragma once
 
 #include "res_config_entry.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::docsummary {
 
@@ -66,14 +67,6 @@ public:
     ~ResultClass();
 
     /**
-     * Obtain reference to dynamic field data for this result class.
-     *
-     * @return reference to dynamic field data.
-     **/
-    DynamicInfo& getDynamicInfo() noexcept { return _dynInfo; }
-    const DynamicInfo& getDynamicInfo() const noexcept { return _dynInfo; }
-
-    /**
      * Obtain the number of config entries (size of the
      * ResConfigEntry array) held by this result class.
      *
@@ -119,6 +112,13 @@ public:
     const ResConfigEntry *GetEntry(uint32_t offset) const {
         return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
+
+    /**
+     * Returns whether the given fields are generated in this result class (do not require the document instance).
+     *
+     * If the given fields set is empty, check all fields defined in this result class.
+     */
+    bool all_fields_generated(const vespalib::hash_set<vespalib::string>& fields) const;
 
     void set_omit_summary_features(bool value) {
         _omit_summary_features = value;
