@@ -10,6 +10,7 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
@@ -24,6 +25,7 @@ using namespace vespa::config::search;
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
+using search::index::SchemaBuilder;
 using vespa::config::search::core::RankingConstantsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
 
@@ -233,7 +235,12 @@ DocumentDBConfig::SP
 DocumentDBConfig::makeReplayConfig(const SP & orig)
 {
     const DocumentDBConfig &o = *orig;
-    
+
+    auto replay_summary_config = emptyConfig(o._summary);
+    auto replay_schema = build_schema(*o._attributes, *replay_summary_config, *o._indexschema);
+    if (*replay_schema == *o._schema) {
+        replay_schema = o._schema;
+    }
     SP ret = std::make_shared<DocumentDBConfig>(
                 o._generation,
                 emptyConfig(o._rankProfiles),
@@ -242,13 +249,13 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 std::make_shared<OnnxModels>(),
                 o._indexschema,
                 o._attributes,
-                emptyConfig(o._summary),
+                replay_summary_config,
                 o._juniperrc,
                 o._documenttypes,
                 o._repo,
                 std::make_shared<ImportedFieldsConfig>(),
                 o._tuneFileDocumentDB,
-                o._schema,
+                replay_schema,
                 o._maintenance,
                 o._storeConfig,
                 o._threading_service_config,
@@ -347,5 +354,16 @@ DocumentDBConfig::getDocumentType() const
     return _repo->getDocumentType(getDocTypeName());
 }
 
+std::shared_ptr<Schema>
+DocumentDBConfig::build_schema(const AttributesConfig& attributes_config,
+                               const SummaryConfig& summary_config,
+                               const IndexschemaConfig &indexschema_config)
+{
+    auto schema = std::make_shared<Schema>();
+    SchemaBuilder::build(attributes_config, *schema);
+    SchemaBuilder::build(summary_config, *schema);
+    SchemaBuilder::build(indexschema_config, *schema);
+    return schema;
+}
 
 } // namespace proton

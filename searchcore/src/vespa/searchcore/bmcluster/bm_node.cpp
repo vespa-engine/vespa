@@ -31,7 +31,6 @@
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/metrics/config-metricsmanager.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -91,7 +90,6 @@ using proton::DocumentDB;
 using proton::DocumentDBConfig;
 using proton::HwInfo;
 using search::index::Schema;
-using search::index::SchemaBuilder;
 using search::transactionlog::TransLogServer;
 using storage::MergeThrottler;
 using storage::distributor::BucketSpacesStatsProvider;
@@ -178,10 +176,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
     auto indexschema = std::make_shared<IndexschemaConfig>();
     auto attributes = make_attributes_config();
     auto summary = std::make_shared<SummaryConfig>();
-    std::shared_ptr<Schema> schema(new Schema());
-    SchemaBuilder::build(*indexschema, *schema);
-    SchemaBuilder::build(*attributes, *schema);
-    SchemaBuilder::build(*summary, *schema);
+    auto schema = DocumentDBConfig::build_schema(*attributes, *summary, *indexschema);
     return std::make_shared<DocumentDBConfig>(
             1,
             std::make_shared<RankProfilesConfig>(),

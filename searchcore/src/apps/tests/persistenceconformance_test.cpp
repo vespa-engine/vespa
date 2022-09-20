@@ -16,7 +16,6 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -61,7 +60,6 @@ using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
-using search::index::SchemaBuilder;
 using search::transactionlog::TransLogServer;
 using storage::spi::ConformanceTest;
 using storage::spi::PersistenceProvider;
@@ -126,10 +124,7 @@ public:
         CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
         CS::AttributesConfigSP attributes = _schemaFactory->createAttributes(*docType);
         CS::SummaryConfigSP summary = _schemaFactory->createSummary(*docType);
-        Schema::SP schema(new Schema());
-        SchemaBuilder::build(*indexschema, *schema);
-        SchemaBuilder::build(*attributes, *schema);
-        SchemaBuilder::build(*summary, *schema);
+        auto schema = DocumentDBConfig::build_schema(*attributes, *summary, *indexschema);
         return std::make_shared<DocumentDBConfig>(
                         1,
                         std::make_shared<RankProfilesConfig>(),

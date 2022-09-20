@@ -123,22 +123,27 @@ public:
 };
 
 struct Fixture {
-    Schema::SP schema;
+    std::shared_ptr<Schema> basic_schema;
+    std::shared_ptr<Schema> full_schema;
     std::shared_ptr<const DocumentTypeRepo> repo;
     ConfigSP basicCfg;
     ConfigSP fullCfg;
     ConfigSP replayCfg;
     ConfigSP nullCfg;
     Fixture()
-        : schema(make_shared<Schema>()),
+        : basic_schema(make_shared<Schema>()),
+          full_schema(make_shared<Schema>()),
           repo(make_shared<DocumentTypeRepo>()),
           basicCfg(),
           fullCfg(),
           replayCfg(),
           nullCfg()
     {
-        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(false, false).build();
-        fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
+        basic_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
+        full_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
+        full_schema->addSummaryField(Schema::SummaryField("my_attribute", schema::DataType::INT32));
+        basicCfg = MyConfigBuilder(4, basic_schema, repo).addAttribute().addSummary(false, false).build();
+        fullCfg = MyConfigBuilder(4, full_schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
                                                    addRankingExpression().

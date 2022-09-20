@@ -72,22 +72,6 @@ DocumentDBConfigManager::createConfigKeySet() const
     return set;
 }
 
-namespace {
-
-Schema::SP
-buildNewSchema(const AttributesConfig &newAttributesConfig,
-               const SummaryConfig &newSummaryConfig,
-               const IndexschemaConfig &newIndexschemaConfig)
-{
-    Schema::SP schema = std::make_shared<Schema>();
-    SchemaBuilder::build(newAttributesConfig, *schema);
-    SchemaBuilder::build(newSummaryConfig, *schema);
-    SchemaBuilder::build(newIndexschemaConfig, *schema);
-    return schema;
-}
-
-}
-
 Schema::SP
 DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
                                      const SummaryConfig &newSummaryConfig,
@@ -99,14 +83,14 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
     if (!oldSchema) {
-        return buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
+        return DocumentDBConfig::build_schema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
     }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;
     if (old.getAttributesConfig() != newAttributesConfig ||
         old.getSummaryConfig() != newSummaryConfig ||
         old.getIndexschemaConfig() != newIndexschemaConfig)
     {
-        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig));
+        auto schema = DocumentDBConfig::build_schema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
         return (*oldSchema == *schema) ? oldSchema : schema;
     }
     return oldSchema;
