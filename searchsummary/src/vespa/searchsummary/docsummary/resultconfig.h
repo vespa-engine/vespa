@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "res_type_utils.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace vespa::config::search::internal {
@@ -96,12 +95,6 @@ public:
 
     // This function should only be called by unit tests.
     static void set_wanted_v8_geo_positions(bool value);
-
-    /**
-     * @return the name of the given result field type.
-     * @param resType enum value of a result field type.
-     **/
-    static const char *GetResTypeName(ResType type) { return ResTypeUtils::GetResTypeName(type); }
 
     /**
      * Discard the current configuration and start over. After this

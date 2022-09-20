@@ -29,7 +29,6 @@ vespa_add_library(searchsummary_docsummary OBJECT
     positionsdfw.cpp
     rankfeaturesdfw.cpp
     res_config_entry.cpp
-    res_type_utils.cpp
     resultclass.cpp
     resultconfig.cpp
     searchdatatype.cpp

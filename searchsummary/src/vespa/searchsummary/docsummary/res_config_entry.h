@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "res_type.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
@@ -14,7 +13,6 @@ class DocsumFieldWriter;
  * This struct describes a single docsum field (name and type).
  **/
 struct ResConfigEntry {
-    ResType          _type;
     vespalib::string _name;
     std::unique_ptr<DocsumFieldWriter> _docsum_field_writer;
     ResConfigEntry() noexcept;
