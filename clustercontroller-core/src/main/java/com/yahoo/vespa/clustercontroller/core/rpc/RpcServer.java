@@ -96,22 +96,15 @@ public class RpcServer {
 
     public void connect() throws ListenFailedException, UnknownHostException {
         disconnect();
-        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
-        if (supervisor != null) disconnect();
         supervisor = new Supervisor(new Transport("rpc" + port)).setDropEmptyBuffers(true);
         addMethods();
-        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
+        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server attempting to bind to port " + port);
         acceptor = supervisor.listen(new Spec(port));
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
-        StringBuilder slobroks = new StringBuilder("(");
-        for (String s : slobrokConnectionSpecs) {
-            slobroks.append(" ").append(s);
-        }
-        slobroks.append(" )");
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
-        log.log(Level.INFO, "Registering " + spec + " with slobrok at " + slobroks);
+        log.log(Level.INFO, "Registering " + spec + " with slobrok at " + String.join(" ", slobrokConnectionSpecs));
         if (slobrokBackOffPolicy != null) {
             register = new Register(supervisor, slist, spec, slobrokBackOffPolicy);
         } else {
@@ -135,7 +128,6 @@ public class RpcServer {
             supervisor = null;
         }
     }
-
 
     public void addMethods() {
         Method m = new Method("getMaster", "", "is", this::queueRpcRequest);
