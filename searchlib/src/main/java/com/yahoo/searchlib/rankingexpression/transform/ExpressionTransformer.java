@@ -20,7 +20,11 @@ public abstract class ExpressionTransformer<CONTEXT extends TransformContext> {
         return new RankingExpression(expression.getName(), transform(expression.getRoot(), context));
     }
 
-    /** Transforms an expression node and returns the transformed node */
+    /**
+     * Transforms an expression node and returns the transformed node.
+     * This ic called with the root node of an expression to transform by clients of transformers.
+     * Transforming nested expression nodes are left to each transformer.
+     */
     public abstract ExpressionNode transform(ExpressionNode node, CONTEXT context);
 
     /**
