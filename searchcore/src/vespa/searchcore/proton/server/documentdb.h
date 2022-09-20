@@ -155,7 +155,7 @@ private:
      *
      * @param configSnapshot initial config snapshot.
      */
-    void saveInitialConfig(const DocumentDBConfig &configSnapshot);
+    void saveInitialConfig(std::shared_ptr<DocumentDBConfig> configSnapshot);
 
     /**
      * Resume interrupted config save if needed.

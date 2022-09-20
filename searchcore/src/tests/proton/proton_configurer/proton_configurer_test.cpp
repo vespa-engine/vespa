@@ -20,7 +20,6 @@
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -42,7 +41,6 @@ using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using std::map;
 using search::index::Schema;
-using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
 using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
@@ -58,11 +56,7 @@ struct DBConfigFixture {
 
     Schema::SP buildSchema()
     {
-        Schema::SP schema(std::make_shared<Schema>());
-        SchemaBuilder::build(_attributesBuilder, *schema);
-        SchemaBuilder::build(_summaryBuilder, *schema);
-        SchemaBuilder::build(_indexschemaBuilder, *schema);
-        return schema;
+        return DocumentDBConfig::build_schema(_attributesBuilder, _summaryBuilder, _indexschemaBuilder);
     }
 
     static RankingConstants::SP buildRankingConstants()
