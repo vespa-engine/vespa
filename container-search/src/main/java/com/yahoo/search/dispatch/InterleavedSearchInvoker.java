@@ -127,7 +127,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
-        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)searchCluster.dispatchConfig().searchableCopies(), timeoutHandler);
+        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage(redundancyForCoverage(searchCluster.dispatchConfig()), timeoutHandler);
         result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler, searchCluster.dispatchConfig().computeCoverageFromTargetActiveDocs()));
 
         int needed = query.getOffset() + query.getHits();
@@ -136,6 +136,10 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         }
         query.setOffset(0);  // Now we are all trimmed down
         return result;
+    }
+
+    private int redundancyForCoverage(DispatchConfig config) {
+        return (int)(config.computeCoverageFromTargetActiveDocs() ? config.redundancy() : config.searchableCopies());
     }
 
     private void insertNetworkErrors(Result result) {

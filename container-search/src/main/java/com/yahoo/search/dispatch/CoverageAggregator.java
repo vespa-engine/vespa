@@ -69,31 +69,33 @@ public class CoverageAggregator {
         coverage.setDegradedReason(degradedReason);
         return coverage;
     }
-    public CoverageAggregator adjustedDegradedCoverage(int searchableCopies, TimeoutHandler timeoutHandler) {
+    public CoverageAggregator adjustedDegradedCoverage(int redundancy, TimeoutHandler timeoutHandler) {
         int askedAndFailed = askedNodes + failedNodes;
         if (askedAndFailed == answeredNodesParticipated) {
             return this;
         }
         int notAnswered = askedAndFailed - answeredNodesParticipated;
 
-        if ((timeoutHandler.reason() == DEGRADED_BY_ADAPTIVE_TIMEOUT) && answeredNodesParticipated > 0) {
+        if (timeoutHandler.reason() == DEGRADED_BY_ADAPTIVE_TIMEOUT) {
             CoverageAggregator clone = new CoverageAggregator(this);
-            clone.answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodesParticipated);
-            clone.answeredTargetActiveDocs += (notAnswered * answeredTargetActiveDocs / answeredNodesParticipated);
-            return clone;
+            return clone.adjustActiveDocs(notAnswered);
         } else {
             if (askedAndFailed > answeredNodesParticipated) {
-                if (answeredNodesParticipated > 0) {
-                    CoverageAggregator clone = new CoverageAggregator(this);
-                    int missingNodes = notAnswered - (searchableCopies - 1);
-                    if (missingNodes > 0) {
-                        clone.answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
-                        clone.answeredTargetActiveDocs += (missingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
-                    }
-                    clone.timedOut = true;
-                    return clone;
+                CoverageAggregator clone = new CoverageAggregator(this);
+                int missingNodes = notAnswered - (redundancy - 1);
+                if (missingNodes > 0) {
+                    clone.adjustActiveDocs(missingNodes);
                 }
+                clone.timedOut = true;
+                return clone;
             }
+        }
+        return this;
+    }
+    private CoverageAggregator adjustActiveDocs(int numMissingNodes) {
+        if (answeredNodesParticipated > 0) {
+            answeredActiveDocs += (numMissingNodes * answeredActiveDocs / answeredNodesParticipated);
+            answeredTargetActiveDocs += (numMissingNodes * answeredTargetActiveDocs / answeredNodesParticipated);
         }
         return this;
     }
