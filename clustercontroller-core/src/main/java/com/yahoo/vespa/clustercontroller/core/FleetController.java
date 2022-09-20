@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.exception.ExceptionUtils;
-import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -511,13 +510,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
         if (rpcServer != null) {
             rpcServer.setMasterElectionHandler(masterElectionHandler);
-            try{
-                rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs(), options.rpcPort());
-            } catch (ListenFailedException e) {
-                context.log(logger, Level.WARNING, "Failed to bind RPC server to port " + options.rpcPort() + ". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
-            } catch (Exception e) {
-                context.log(logger, Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
-            }
+            rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs(), options.rpcPort());
         }
 
         try {

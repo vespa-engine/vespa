@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
-import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -79,7 +77,7 @@ public class RpcServer {
         return "storage/cluster." + clusterName + "/fleetcontroller/" + fleetControllerIndex;
     }
 
-    public void setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs, int port) throws ListenFailedException, UnknownHostException {
+    public void setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs, int port) {
         if (this.slobrokConnectionSpecs == null
                 || !Arrays.equals(this.slobrokConnectionSpecs, slobrokConnectionSpecs)
                 || this.port != port) {
@@ -94,12 +92,21 @@ public class RpcServer {
         return (register != null);
     }
 
-    public void connect() throws ListenFailedException, UnknownHostException {
+    public void connect() {
         disconnect();
         supervisor = new Supervisor(new Transport("rpc" + port)).setDropEmptyBuffers(true);
         addMethods();
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server attempting to bind to port " + port);
-        acceptor = supervisor.listen(new Spec(port));
+        try {
+            acceptor = supervisor.listen(new Spec(port));
+        } catch (Exception e) {
+            long time = timer.getCurrentTimeInMillis();
+            if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
+                lastConnectError = e.getMessage();
+                lastConnectErrorTime = time;
+                log.log(Level.WARNING, "Failed to bind or initialize RPC server socket: " + e.getMessage());
+            }
+        }
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
@@ -176,25 +183,10 @@ public class RpcServer {
     }
 
     public boolean handleRpcRequests(ContentCluster cluster, ClusterState systemState, NodeListener changeListener) {
+        if (!isConnected())
+            connect();
+
         boolean handledAnyRequests = false;
-        if (!isConnected()) {
-            long time = timer.getCurrentTimeInMillis();
-            try{
-                connect();
-            } catch (ListenFailedException e) {
-                if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
-                    lastConnectError = e.getMessage();
-                    lastConnectErrorTime = time;
-                    log.log(Level.WARNING, "Failed to bind RPC server to port " + port +": " + e.getMessage());
-                }
-            } catch (Exception e) {
-                if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
-                    lastConnectError = e.getMessage();
-                    lastConnectErrorTime = time;
-                    log.log(Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
-                }
-            }
-        }
         for (int j=0; j<10; ++j) { // Max perform 10 RPC requests per cycle.
             Request req;
             synchronized(monitor) {
