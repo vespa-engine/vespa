@@ -167,7 +167,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 options.nodeStateRequestTimeoutLatestPercentage(),
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
-        var lookUp = new SlobrokClient(context, timer);
+        var lookUp = new SlobrokClient(context, timer, options.slobrokConnectionSpecs());
         var stateGenerator = new StateChangeHandler(context, timer, log);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);

@@ -125,8 +125,7 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestTimeoutEarliestPercentage(),
                 options.nodeStateRequestTimeoutLatestPercentage(),
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
-        var lookUp = new SlobrokClient(context, timer);
-        lookUp.setSlobrokConnectionSpecs(new String[0]);
+        var lookUp = new SlobrokClient(context, timer, new String[0]);
         var rpcServer = new RpcServer(timer, timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
 

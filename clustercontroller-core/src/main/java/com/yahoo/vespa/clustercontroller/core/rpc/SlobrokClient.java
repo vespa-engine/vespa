@@ -35,30 +35,37 @@ public class SlobrokClient implements NodeLookup {
     private Supervisor supervisor;
     private boolean freshMirror = false;
 
-    public SlobrokClient(FleetControllerContext context, Timer timer) {
+    public SlobrokClient(FleetControllerContext context, Timer timer, String[] connectionSpecs) {
         this.context = context;
         this.timer = timer;
+        this.connectionSpecs = connectionSpecs;
+        setup();
     }
 
-    public boolean equalsExistingSpec(String spec[]) {
+    public boolean equalsExistingSpec(String[] spec) {
         if (spec == null && connectionSpecs == null) return true;
-        if (spec == null && connectionSpecs != null) return false;
-        if (spec != null && connectionSpecs == null) return false;
+        if (spec == null) return false;
+        if (connectionSpecs == null) return false;
         if (spec.length != connectionSpecs.length) return false;
-        for (int i=0, n=spec.length; i<n; ++i) {
+        for (int i = 0, n = spec.length; i < n; ++i) {
             if (!spec[i].equals(connectionSpecs[i])) return false;
         }
         return true;
     }
 
-    public void setSlobrokConnectionSpecs(String slobrokConnectionSpecs[]) {
+    public void setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs) {
         if (equalsExistingSpec(slobrokConnectionSpecs)) return;
+
         this.connectionSpecs = slobrokConnectionSpecs;
         shutdown();
+        setup();
+    }
+
+    private void setup() {
         supervisor = new Supervisor(new Transport("slobrok-client"));
         supervisor.setDropEmptyBuffers(true);
         SlobrokList slist = new SlobrokList();
-        slist.setup(slobrokConnectionSpecs);
+        slist.setup(connectionSpecs);
         mirror = new Mirror(supervisor, slist);
         freshMirror = true;
     }
@@ -80,6 +87,7 @@ public class SlobrokClient implements NodeLookup {
     @Override
     public boolean updateCluster(ContentCluster cluster, SlobrokListener listener) {
         if (mirror == null) return false;
+
         int mirrorVersion = mirror.updates();
         if (freshMirror) {
             freshMirror = false;
@@ -124,7 +132,7 @@ public class SlobrokClient implements NodeLookup {
             // XXX we really would like to cross-check the actual RPC address against what's configured,
             // but this information does not seem to be available to the cluster controller currently.
             NodeInfo nodeInfo = cluster.clusterInfo().getNodeInfo(data.node);
-            if (nodeInfo == null) continue; // slobrok may contain nonconfigured nodes during state transitions
+            if (nodeInfo == null) continue; // slobrok may contain non-configured nodes during state transitions
             cluster.clusterInfo().setRpcAddress(data.node, data.rpcAddress);
             if (listener != null)
                 listener.handleNewNode(nodeInfo); // TODO: We'll never add new nodes here, move this to where clusterInfo.setNodes is called?
