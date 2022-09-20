@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -99,7 +98,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     // Legacy behavior is an empty set of explicitly configured bucket spaces, which means that
     // only a baseline cluster state will be sent from the controller and no per-space state
     // deriving is done.
-    private Set<String> configuredBucketSpaces = Collections.emptySet();
+    private final Set<String> configuredBucketSpaces = Set.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace());
 
     public FleetController(FleetControllerContext context,
                            Timer timer,
@@ -168,7 +167,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 options.nodeStateRequestTimeoutLatestPercentage(),
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
-        var lookUp = new SlobrokClient(context, timer);
+        var lookUp = new SlobrokClient(context, timer, options.slobrokConnectionSpecs());
         var stateGenerator = new StateChangeHandler(context, timer, log);
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
@@ -487,7 +486,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             cluster.setSlobrokGenerationCount(0);
         }
 
-        configuredBucketSpaces = Set.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace());
         stateVersionTracker.setMinMergeCompletionRatio(options.minMergeCompletionRatio());
 
         communicator.propagateOptions(options);
@@ -625,7 +623,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             if (tickStopTime >= tickStartTime) {
                 metricUpdater.addTickTime(tickStopTime - tickStartTime, didWork);
             }
-            // Always sleep some to use avoid using too much CPU and avoid starving waiting threads
+            // Always sleep some to avoid using too much CPU and avoid starving waiting threads
             monitor.wait(didWork || waitingForCycle ? 1 : options.cycleWaitTime());
             if ( ! isRunning()) { return; }
             tickStartTime = timer.getCurrentTimeInMillis();

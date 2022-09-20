@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -88,7 +89,9 @@ public interface Waiter {
         }
 
         public final void wait(WaitCondition c, WaitTask wt, Duration timeout) {
-            log.log(Level.INFO, "Waiting for " + c + (wt == null ? "" : " with wait task " + wt));
+            Objects.requireNonNull(wt, "wait task cannot be null");
+
+            log.log(Level.INFO, "Waiting for " + c + " with wait task " + wt);
             Instant endTime = Instant.now().plus(timeout);
             String lastReason = null;
             while (true) {
@@ -104,17 +107,15 @@ public interface Waiter {
                     }
                     try {
                         boolean allowWait = true;
-                        if (wt != null) {
-                            if (wt.performWaitTask()) {
-                                data.getMonitor().notifyAll();
-                                allowWait = false;
-                            }
+                        if (wt.performWaitTask()) {
+                            data.getMonitor().notifyAll();
+                            allowWait = false;
                         }
                         Duration timeLeft = Duration.between(Instant.now(), endTime);
                         if (timeLeft.isNegative())
-                            throw new IllegalStateException("Timed out waiting max " + timeout + " ms for " + c + (wt == null ? "" : "\n  with wait task " + wt) + ",\n  reason: " + reason);
+                            throw new IllegalStateException("Timed out waiting max " + timeout + " ms for " + c + "\n  with wait task " + wt + ",\n  reason: " + reason);
                         if (allowWait)
-                            data.getMonitor().wait(wt == null ? WaitTask.defaultTaskFrequencyMillis : Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
+                            data.getMonitor().wait(Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

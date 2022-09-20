@@ -21,6 +21,7 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
+import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,26 +78,6 @@ public class RpcServerTest extends FleetControllerTest {
         slobrok.stop();
     }
 
-    /**
-     * For some reason, the first test trying to set up a stable system here occasionally times out.
-     * The theory is that some test run before it does something that is not cleaned up in time.
-     * Trying to add a test that should provoke the failure, but not fail due to it to see if we can verify that
-     * assumption.
-     *
-     * (testRebinding() does not seem to be that test. Tests in StateChangeTest that runs before this test tests very
-     * similar things, so strange if it should be from them too though. Maybe last test there.
-     */
-    @Test
-    void testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork() {
-        try {
-            startingTest("RpcServerTest::testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork");
-            setUpFleetController(true, defaultOptions("mycluster"));
-            setUpVdsNodes(true);
-            waitForStableSystem();
-        } catch (Throwable t) {
-        }
-    }
-
     @Test
     void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
@@ -114,22 +95,28 @@ public class RpcServerTest extends FleetControllerTest {
         timer.advanceTime(options.nodeStateRequestTimeoutMS() + options.maxSlobrokDisconnectGracePeriod());
 
         wait(new WaitCondition.StateWait(fleetController(), fleetController().getMonitor()) {
-            @Override
-            public String isConditionMet() {
-                if (currentState == null) {
-                    return "No cluster state defined yet";
-                }
-                NodeState distState = currentState.getNodeState(new Node(NodeType.DISTRIBUTOR, 0));
-                if (distState.getState() != State.DOWN) {
-                    return "Distributor not detected down yet: " + currentState.toString();
-                }
-                NodeState storState = currentState.getNodeState(new Node(NodeType.STORAGE, 9));
-                if (!storState.getState().oneOf("md")) {
-                    return "Storage node not detected down yet: " + currentState.toString();
-                }
-                return null;
-            }
-        }, null, timeout());
+                 @Override
+                 public String isConditionMet() {
+                     if (currentState == null) {
+                         return "No cluster state defined yet";
+                     }
+                     NodeState distState = currentState.getNodeState(new Node(NodeType.DISTRIBUTOR, 0));
+                     if (distState.getState() != State.DOWN) {
+                         return "Distributor not detected down yet: " + currentState.toString();
+                     }
+                     NodeState storState = currentState.getNodeState(new Node(NodeType.STORAGE, 9));
+                     if (!storState.getState().oneOf("md")) {
+                         return "Storage node not detected down yet: " + currentState.toString();
+                     }
+                     return null;
+                 }
+             }, new WaitTask() {
+                 @Override
+                 public boolean performWaitTask() {
+                     return false;
+                 }
+             },
+             timeout());
 
         int rpcPort = fleetController().getRpcPort();
         Target connection = supervisor.connect(new Spec("localhost", rpcPort));
