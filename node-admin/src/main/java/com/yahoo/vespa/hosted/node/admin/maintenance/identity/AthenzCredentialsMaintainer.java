@@ -63,7 +63,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
 
     private final URI ztsEndpoint;
-    private final Path trustStorePath;
+    private final Path jksTrustStorePath;
+    private final Path pemTrustStorePath;
     private final AthenzIdentity configserverIdentity;
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
@@ -75,23 +76,16 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
 
     public AthenzCredentialsMaintainer(URI ztsEndpoint,
-                                       Path trustStorePath,
-                                       ConfigServerInfo configServerInfo,
-                                       String certificateDnsSuffix,
-                                       ServiceIdentityProvider hostIdentityProvider,
-                                       boolean useInternalZts) {
-        this(ztsEndpoint, trustStorePath, configServerInfo, certificateDnsSuffix, hostIdentityProvider, useInternalZts, Clock.systemUTC());
-    }
-
-    public AthenzCredentialsMaintainer(URI ztsEndpoint,
-                                       Path trustStorePath,
+                                       Path jksTrustStorePath,
+                                       Path pemTrustStorePath,
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        boolean useInternalZts,
                                        Clock clock) {
         this.ztsEndpoint = ztsEndpoint;
-        this.trustStorePath = trustStorePath;
+        this.jksTrustStorePath = jksTrustStorePath;
+        this.pemTrustStorePath = pemTrustStorePath;
         this.configserverIdentity = configServerInfo.getConfigServerIdentity();
         this.csrGenerator = new CsrGenerator(certificateDnsSuffix, configserverIdentity.getFullName());
         this.hostIdentityProvider = hostIdentityProvider;
@@ -216,11 +210,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
-        SSLContext containerIdentitySslContext =
-                new SslContextBuilder()
-                        .withKeyStore(privateKeyFile, certificateFile)
-                        .withTrustStore(trustStorePath, KeyStoreType.JKS)
-                        .build();
+
+        var sslContextBuilder = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile);
+        if (pemTrustStorePath != null) {
+            sslContextBuilder.withTrustStore(pemTrustStorePath);
+        } else {
+            sslContextBuilder.withTrustStore(jksTrustStorePath, KeyStoreType.JKS);
+        }
+        SSLContext containerIdentitySslContext = sslContextBuilder.build();
+
         try {
             // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
             HostnameVerifier ztsHostNameVerifier = useInternalZts
