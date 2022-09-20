@@ -99,9 +99,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         serviceBuilder.name(s.getServiceName());
         serviceBuilder.id(s.getConfigId());
         serviceBuilder.affinity(getServiceAffinity(s));
-        for (var entry : s.getEnvVars().entrySet()) {
-            serviceBuilder.environ(b -> b.varname(entry.getKey()).varvalue(entry.getValue().toString()));
-        }
         setPreShutdownCommand(serviceBuilder, s);
         return serviceBuilder;
     }
