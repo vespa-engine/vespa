@@ -95,7 +95,7 @@ public class SearchNodeTest {
         SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().loadCodeAsHugePages(hugePages));
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
-        assertEquals(hugePages, node.getEnvVars().get("VESPA_LOAD_CODE_AS_HUGEPAGES") != null);
+        assertEquals(hugePages, node.getStartupCommand().contains("VESPA_LOAD_CODE_AS_HUGEPAGES="));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class SearchNodeTest {
         SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().sharedStringRepoNoReclaim(sharedStringRepoNoReclaim));
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
-        assertEquals(sharedStringRepoNoReclaim, node.getEnvVars().get("VESPA_SHARED_STRING_REPO_NO_RECLAIM") != null);
+        assertEquals(sharedStringRepoNoReclaim, node.getStartupCommand().contains("VESPA_SHARED_STRING_REPO_NO_RECLAIM="));
     }
 
     @Test

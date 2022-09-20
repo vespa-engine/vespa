@@ -39,10 +39,6 @@ ignoreRequestedStackSizes bool default=false restart
 ## stdout and stderr connected to sentinel via pipe on startup.
 service[].command string
 
-## Extra environment variables that will be exposed for this service
-service[].environ[].varname string
-service[].environ[].varvalue string
-
 ## The command to run before stopping service. The same properties as for
 ## startup command holds.
 service[].preShutdownCommand string default=""
