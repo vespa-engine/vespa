@@ -24,7 +24,7 @@ import java.util.List;
  *        a || b into if(a, true, b)
  * to avoid computing b if a is false and true respectively.
  *
- * This may increase performance since boolean expressions are not short-circuited.
+ * This may increase performance since boolean expressions are short-circuited.
  *
  * @author bratseth
  */
