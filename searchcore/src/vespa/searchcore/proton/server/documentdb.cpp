@@ -233,7 +233,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
 
     _feedHandler->init(_config_store->getOldestSerialNum());
     _feedHandler->setBucketDBHandler(&_subDBs.getBucketDBHandler());
-    saveInitialConfig(*configSnapshot);
+    saveInitialConfig(configSnapshot);
     resumeSaveConfig();
     SerialNum configSerial = _config_store->getPrevValidSerial(_feedHandler->getPrunedSerialNum() + 1);
     assert(configSerial > 0);
@@ -473,15 +473,17 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     const ReconfigParams params(cmpres);
 
     // Save config via config manager if replay is done.
+    auto replay_config = DocumentDBConfig::makeReplayConfig(configSnapshot);
     bool equalReplayConfig =
-        *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
+        *replay_config ==
         *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot);
     bool tlsReplayDone = _feedHandler->getTransactionLogReplayDone();
     FeedHandler::CommitResult commit_result;
     if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler->getSerialNum());
         serialNum = _feedHandler->inc_serial_num();
-        _config_store->saveConfig(*configSnapshot, serialNum);
+        _config_store->saveConfig(*replay_config, serialNum);
+        replay_config.reset();
         // save entry in transaction log
         NewConfigOperation op(serialNum, *_config_store);
         commit_result = _feedHandler->storeOperationSync(op);
@@ -632,7 +634,7 @@ DocumentDB::getNumActiveDocs() const
 }
 
 void
-DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
+DocumentDB::saveInitialConfig(std::shared_ptr<DocumentDBConfig> configSnapshot)
 {
     // Only called from ctor
 
@@ -657,7 +659,8 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
         LOG(warning, "DocumentDB(%s): saveInitialConfig() failed pruning due to '%s'",
             _docTypeName.toString().c_str(), e.what());
     }
-    _config_store->saveConfig(configSnapshot, confSerial);
+    auto replay_config = DocumentDBConfig::makeReplayConfig(configSnapshot);
+    _config_store->saveConfig(*replay_config, confSerial);
 }
 
 void
