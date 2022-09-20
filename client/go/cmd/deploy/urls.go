@@ -32,11 +32,12 @@ func makeConfigsourceUrls(opts *Options) []string {
 			if len(colonParts) > 1 {
 				// XXX overwrites port number from above - is this sensible?
 				src = fmt.Sprintf("%s:%s:%d", colonParts[0], colonParts[1], opts.PortNumber)
+				PutTrace("can use config server at", src)
 				results = append(results, src)
 			}
 		}
 		if len(results) == 0 {
-			fmt.Println("Could not get url to config server, make sure that VESPA_CONFIGSERVERS is set")
+			PutWarning("Could not get url to config server, make sure that VESPA_CONFIGSERVERS is set")
 			results = append(results, fmt.Sprintf("http://localhost:%d", opts.PortNumber))
 		}
 	} else {

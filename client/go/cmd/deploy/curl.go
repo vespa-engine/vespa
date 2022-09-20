@@ -12,37 +12,73 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-func curlPut(url string, cfgSrc string) (string, error) {
-	args := append(curlPutArgs(), url)
-	return runCurl(args, new(strings.Reader), cfgSrc)
+func curlPutNothing(url string) (string, error) {
+	cmd := newCurlCommand(url, curlPutArgs())
+	cmd.Method = "PUT"
+	var out bytes.Buffer
+	err := runCurl(cmd, &out)
+	return out.String(), err
 }
 
-func curlPost(url string, input io.Reader, cfgSrc string) (string, error) {
-	args := append(curlPostArgs(), url)
-	return runCurl(args, input, cfgSrc)
+func curlPost(url string, input io.Reader) (string, error) {
+	cmd := newCurlCommand(url, curlPostArgs())
+	cmd.Method = "POST"
+	cmd.Header("Content-Type", "application/x-gzip")
+	cmd.WithBodyInput(input)
+	var out bytes.Buffer
+	err := runCurl(cmd, &out)
+	return out.String(), err
 }
 
-func curlPostZip(url string, input io.Reader, cfgSrc string) (string, error) {
-	args := append(curlPostZipArgs(), url)
-	return runCurl(args, input, cfgSrc)
+func curlPostZip(url string, input io.Reader) (string, error) {
+	cmd := newCurlCommand(url, curlPostArgs())
+	cmd.Method = "POST"
+	cmd.Header("Content-Type", "application/zip")
+	cmd.WithBodyInput(input)
+	var out bytes.Buffer
+	err := runCurl(cmd, &out)
+	return out.String(), err
 }
 
 func curlGet(url string, output io.Writer) error {
-	args := append(curlGetArgs(), url)
-	cmd := exec.Command(curlWrapper(), args...)
-	cmd.Stdout = output
-	cmd.Stderr = os.Stderr
-	// fmt.Printf("running command: %v\n", cmd)
-	err := cmd.Run()
+	cmd := newCurlCommand(url, commonCurlArgs())
+	err := runCurl(cmd, output)
 	return err
 }
 
 func urlWithoutQuery(url string) string {
 	parts := strings.Split(url, "?")
 	return parts[0]
+}
+
+func newCurlCommand(url string, args []string) *curl.Command {
+	tls, err := vespa.LoadTlsConfig()
+	if err != nil {
+		panic(err)
+	}
+	if tls != nil && strings.HasPrefix(url, "http:") {
+		url = "https:" + url[5:]
+	}
+	cmd, err := curl.RawArgs(url, args...)
+	if err != nil {
+		panic(err)
+	}
+	if tls != nil {
+		if tls.DisableHostnameValidation {
+			cmd, err = curl.RawArgs(url, append(args, "--insecure")...)
+			if err != nil {
+				panic(err)
+			}
+		}
+		cmd.PrivateKey = tls.Files.PrivateKey
+		cmd.Certificate = tls.Files.Certificates
+		cmd.CaCertificate = tls.Files.CaCertificates
+	}
+	return cmd
 }
 
 func getOutputFromCmd(program string, args ...string) (string, error) {
@@ -54,26 +90,18 @@ func getOutputFromCmd(program string, args ...string) (string, error) {
 	return out.String(), err
 }
 
-func runCurl(args []string, input io.Reader, cfgSrc string) (string, error) {
-	cmd := exec.Command(curlWrapper(), args...)
-	cmd.Stdin = input
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = os.Stderr
-	// fmt.Printf("running command: %v\n", cmd)
-	err := cmd.Run()
-	// fmt.Printf("output: %s\n", out.String())
+func runCurl(cmd *curl.Command, stdout io.Writer) error {
+	PutTrace("running curl:", cmd.String())
+	err := cmd.Run(stdout, os.Stderr)
 	if err != nil {
-		if cmd.ProcessState.ExitCode() == 7 {
-			return "", fmt.Errorf("HTTP request failed. Could not connect to %s", cfgSrc)
+		if ee, ok := err.(*exec.ExitError); ok {
+			if ee.ProcessState.ExitCode() == 7 {
+				return fmt.Errorf("HTTP request failed. Could not connect to %s", cmd.GetUrlPrefix())
+			}
 		}
-		return "", fmt.Errorf("HTTP request failed with curl %s", err.Error())
+		return fmt.Errorf("HTTP request failed with curl %s", err.Error())
 	}
-	return out.String(), err
-}
-
-func curlWrapper() string {
-	return vespa.FindHome() + "/libexec/vespa/vespa-curl-wrapper"
+	return err
 }
 
 func commonCurlArgs() []string {
@@ -88,27 +116,14 @@ func commonCurlArgs() []string {
 
 func curlPutArgs() []string {
 	return append(commonCurlArgs(),
-		"--write-out", "%{http_code}",
-		"--request", "PUT")
+		"--write-out", "\n%{http_code}")
 }
 
 func curlGetArgs() []string {
-	return append(commonCurlArgs(),
-		"--request", "GET")
+	return commonCurlArgs()
 }
 
 func curlPostArgs() []string {
 	return append(commonCurlArgs(),
-		"--write-out", "%{http_code}",
-		"--request", "POST",
-		"--header", "Content-Type: application/x-gzip",
-		"--data-binary", "@-")
-}
-
-func curlPostZipArgs() []string {
-	return append(commonCurlArgs(),
-		"--write-out", "%{http_code}",
-		"--request", "POST",
-		"--header", "Content-Type: application/zip",
-		"--data-binary", "@-")
+		"--write-out", "\n%{http_code}")
 }

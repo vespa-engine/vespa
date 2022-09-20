@@ -67,7 +67,7 @@ func writeSessionIdToFile(tenant, newSessionId string) {
 		dir := createTenantDir(tenant)
 		fn := filepath.Join(dir, sessionIdFileName)
 		os.WriteFile(fn, []byte(newSessionId), 0600)
-		// fmt.Printf("wrote %s to %s\n", newSessionId, fn)
+		PutTrace("wrote", newSessionId, "to", fn)
 	}
 }
 
@@ -76,7 +76,7 @@ func getSessionIdFromFile(tenant string) string {
 	fn := filepath.Join(dir, sessionIdFileName)
 	bytes, err := os.ReadFile(fn)
 	if err == nil {
-		// fmt.Printf("Session-id '%s' found from file %s\n", string(bytes), fn)
+		PutTrace("Session-id", string(bytes), "found from file", fn)
 		return string(bytes)
 	}
 	panic("Could not read session id from file, and no session id supplied as argument. Exiting.")

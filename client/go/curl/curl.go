@@ -28,6 +28,10 @@ type Command struct {
 	rawArgs       []string
 }
 
+func (c *Command) GetUrlPrefix() string {
+	return c.url.Scheme + "://" + c.url.Host
+}
+
 func (c *Command) WithBodyFile(fn string) {
 	if c.bodyInput != nil {
 		panic("cannot use both WithBodyFile and WithBodyInput")
