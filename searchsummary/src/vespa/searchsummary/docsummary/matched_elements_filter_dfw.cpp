@@ -3,8 +3,8 @@
 #include "matched_elements_filter_dfw.h"
 #include "docsumstate.h"
 #include "i_docsum_store_document.h"
+#include "slime_filler.h"
 #include "struct_fields_resolver.h"
-#include "summaryfieldconverter.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -68,7 +68,7 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument
 {
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
-        SummaryFieldConverter::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, state));
+        SlimeFiller::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, state));
     }
 }
 

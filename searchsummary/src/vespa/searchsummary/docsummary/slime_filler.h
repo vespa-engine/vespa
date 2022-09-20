@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <vector>
 
+namespace document { class FieldValue; }
+
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
@@ -55,6 +57,14 @@ public:
     SlimeFiller(vespalib::slime::Inserter& inserter, const std::vector<uint32_t>* matching_elems);
     SlimeFiller(vespalib::slime::Inserter& inserter, IStringFieldConverter* string_converter, const SlimeFillerFilter* filter);
     ~SlimeFiller() override;
+
+    static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter);
+
+    /**
+     * Insert the given field value, but only the elements that are contained in the matching_elems vector.
+     */
+    static void insert_summary_field_with_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems);
+    static void insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter);
 };
 
 }

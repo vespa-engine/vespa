@@ -8,7 +8,6 @@
 #include <vespa/searchsummary/docsummary/i_string_field_converter.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
 #include <vespa/searchsummary/docsummary/slime_filler_filter.h>
-#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -242,7 +241,7 @@ DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name,
             auto value(field.getDataType().createFieldValue());
             if (value) {
                 if (_document->getValue(field, *value)) {
-                    SummaryFieldConverter::insert_summary_field(*value, inserter);
+                    SlimeFiller::insert_summary_field(*value, inserter);
                 }
             }
         } catch (document::FieldNotFoundException&) {
@@ -267,7 +266,7 @@ DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name,
             // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
         }
         SnippetModifierJuniperConverter string_converter(converter, modifier);
-        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, string_converter);
+        SlimeFiller::insert_juniper_field(*field_value, inserter, string_converter);
     }
 }
 
@@ -445,7 +444,7 @@ DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vesp
             const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getInputFields()[0];
             const document::FieldValue* field_value = doc.getField(fieldId.getId());
             if (field_value != nullptr) {
-                SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+                SlimeFiller::insert_summary_field(*field_value, inserter);
             }
         } else if (field_spec.getInputFields().empty() && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
         } else {

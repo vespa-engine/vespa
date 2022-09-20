@@ -2,7 +2,7 @@
 
 #include "docsum_store_document.h"
 #include "annotation_converter.h"
-#include "summaryfieldconverter.h"
+#include "slime_filler.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -41,7 +41,7 @@ DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, ve
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+        SlimeFiller::insert_summary_field(*field_value, inserter);
     }
 }
 
@@ -51,7 +51,7 @@ DocsumStoreDocument::insert_juniper_field(const vespalib::string& field_name, ve
     auto field_value = get_field_value(field_name);
     if (field_value) {
         AnnotationConverter stacked_converter(converter);
-        SummaryFieldConverter::insert_juniper_field(*field_value, inserter, stacked_converter);
+        SlimeFiller::insert_juniper_field(*field_value, inserter, stacked_converter);
     }
 }
 

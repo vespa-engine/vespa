@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slime_filler.h"
+#include "check_undefined_value_visitor.h"
 #include "i_juniper_converter.h"
 #include "i_string_field_converter.h"
 #include "resultconfig.h"
@@ -339,6 +340,39 @@ SlimeFiller::visit(const ReferenceFieldValue& value)
     _inserter.insertString(Memory(value.hasValidDocumentId()
                                   ? value.getDocumentId().toString()
                                   : vespalib::string()));
+}
+
+void
+SlimeFiller::insert_summary_field(const FieldValue& value, vespalib::slime::Inserter& inserter)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter);
+        value.accept(visitor);
+    }
+}
+
+void
+SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter, &matching_elems);
+        value.accept(visitor);
+    }
+}
+
+void
+SlimeFiller::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter, &converter, nullptr);
+        value.accept(visitor);
+    }
 }
 
 }

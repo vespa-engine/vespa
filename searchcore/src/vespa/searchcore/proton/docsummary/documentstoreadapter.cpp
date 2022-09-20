@@ -2,7 +2,6 @@
 
 #include "documentstoreadapter.h"
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
-#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/eval/eval/value_codec.h>
