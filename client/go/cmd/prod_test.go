@@ -217,6 +217,30 @@ func TestProdSubmitWithJava(t *testing.T) {
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
+func TestProdSubmitInvalidZip(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, true)
+
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	cli, _, stderr := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+
+	// Copy an invalid application package containing relative file names
+	testAppDir := filepath.Join("testdata", "applications", "withInvalidEntries", "target")
+	zipFile := filepath.Join(testAppDir, "application.zip")
+	copyFile(t, filepath.Join(pkgDir, "target", "application.zip"), zipFile)
+	testZipFile := filepath.Join(testAppDir, "application-test.zip")
+	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
+
+	assert.NotNil(t, cli.Run("prod", "submit", pkgDir))
+	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
+}
+
 func copyFile(t *testing.T, dstFilename, srcFilename string) {
 	dst, err := os.Create(dstFilename)
 	if err != nil {
