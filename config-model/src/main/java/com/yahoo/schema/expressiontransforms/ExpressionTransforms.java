@@ -35,8 +35,7 @@ public class ExpressionTransforms {
                                  new FunctionInliner(),
                                  new FunctionShadower(),
                                  new TensorMaxMinTransformer(),
-                                 new Simplifier(),
-                                 new BooleanExpressionTransformer());
+                                 new Simplifier());
     }
 
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
