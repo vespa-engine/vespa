@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -165,6 +166,9 @@ func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
 	}
 	defer f.Close()
 	for _, f := range f.File {
+		if !validPath(f.Name) {
+			return "", fmt.Errorf("found invalid path inside zip: %s", f.Name)
+		}
 		dst := filepath.Join(tmp, f.Name)
 		if f.FileInfo().IsDir() {
 			if err := os.Mkdir(dst, f.FileInfo().Mode()); err != nil {
@@ -173,12 +177,24 @@ func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
 			continue
 		}
 		if err := copyFile(f, dst); err != nil {
-			return "", fmt.Errorf("copyFile: %w", err)
+			return "", fmt.Errorf("copying %s to %s failed: %w", f.Name, dst, err)
 		}
-
 	}
 	cleanTemp = false
 	return tmp, nil
+}
+
+func validPath(path string) bool {
+	path = strings.TrimSuffix(path, "/")
+	if filepath.Clean(path) != path {
+		return false
+	}
+	for _, part := range strings.Split(path, "/") {
+		if part == ".." {
+			return false
+		}
+	}
+	return true
 }
 
 func copyFile(src *zip.File, dst string) error {
