@@ -47,7 +47,9 @@ public final class ArithmeticNode extends CompositeNode {
             string.append("(");
 
         Iterator<ExpressionNode> child = children.iterator();
-        child.next().toString(string, context, path, this).append(" ");
+        child.next().toString(string, context, path, this);
+        if (child.hasNext())
+            string.append(" ");
         for (Iterator<ArithmeticOperator> op = operators.iterator(); op.hasNext() && child.hasNext();) {
             string.append(op.next().toString()).append(" ");
             child.next().toString(string, context, path, this);
@@ -65,16 +67,15 @@ public final class ArithmeticNode extends CompositeNode {
      * (even though by virtue of being a node it will be calculated before the parent).
      */
     private boolean nonDefaultPrecedence(CompositeNode parent) {
-        if ( parent==null) return false;
-        if ( ! (parent instanceof ArithmeticNode)) return false;
+        if ( parent == null) return false;
+        if ( ! (parent instanceof ArithmeticNode arithmeticParent)) return false;
 
-        ArithmeticNode arithParent = (ArithmeticNode) parent;
         // The line below can only be correct in both only have one operator.
         // Getting this correct is impossible without more work.
-        // So for now now we only handle the simple case correctly, and use a safe approach by adding
+        // So for now we only handle the simple case correctly, and use a safe approach by adding
         // extra parenthesis just in case....
-        return arithParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
-                || ((arithParent.operators.size() > 1) || (operators.size() > 1));
+        return arithmeticParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
+                || ((arithmeticParent.operators.size() > 1) || (operators.size() > 1));
     }
 
     @Override
@@ -98,7 +99,7 @@ public final class ArithmeticNode extends CompositeNode {
         for (Iterator<ArithmeticOperator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
             ArithmeticOperator op = it.next();
             if ( ! stack.isEmpty()) {
-                while (stack.peek().op.hasPrecedenceOver(op)) {
+                while (stack.size() > 1 && ! op.hasPrecedenceOver(stack.peek().op)) {
                     popStack(stack);
                 }
             }
@@ -127,9 +128,7 @@ public final class ArithmeticNode extends CompositeNode {
     public int hashCode() { return Objects.hash(children, operators); }
 
     public static ArithmeticNode resolve(ExpressionNode left, ArithmeticOperator op, ExpressionNode right) {
-        if ( ! (left instanceof ArithmeticNode)) return new ArithmeticNode(left, op, right);
-
-        ArithmeticNode leftArithmetic = (ArithmeticNode)left;
+        if ( ! (left instanceof ArithmeticNode leftArithmetic)) return new ArithmeticNode(left, op, right);
 
         List<ExpressionNode> newChildren = new ArrayList<>(leftArithmetic.children());
         newChildren.add(right);
@@ -149,6 +148,12 @@ public final class ArithmeticNode extends CompositeNode {
             this.op = op;
             this.value = value;
         }
+
+        @Override
+        public String toString() {
+            return value.toString();
+        }
+
     }
 
 }

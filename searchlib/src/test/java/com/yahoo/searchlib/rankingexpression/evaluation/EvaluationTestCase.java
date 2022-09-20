@@ -56,6 +56,15 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testEvaluationOrder() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates(-4, "1 + -2 + -3");
+        tester.assertEvaluates(2, "1 - (2 - 3)");
+        tester.assertEvaluates(-4, "(1 - 2) - 3");
+        tester.assertEvaluates(-4, "1 - 2 - 3");
+    }
+
+    @Test
     public void testEvaluation() {
         EvaluationTester tester = new EvaluationTester();
         tester.assertEvaluates(0.5, "0.5");
@@ -78,6 +87,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(3, "1 + 10 % 6 / 2");
         tester.assertEvaluates(10.0, "3 ^ 2 + 1");
         tester.assertEvaluates(18.0, "2 * 3 ^ 2");
+        tester.assertEvaluates(-4, "1 - 2 - 3"); // Means 1 + -2 + -3
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
@@ -106,7 +116,7 @@ public class EvaluationTestCase {
 
         // Conditionals with branch probabilities
         RankingExpression e = tester.assertEvaluates(3.5, "if(1.0-1.0, 2.5, 3.5, 0.3)");
-        assertEquals(0.3d, (double)((IfNode) e.getRoot()).getTrueProbability(), tolerance);
+        assertEquals(0.3d, ((IfNode) e.getRoot()).getTrueProbability(), tolerance);
 
         // Conditionals as expressions
         tester.assertEvaluates(new BooleanValue(true), "2<3");
