@@ -56,7 +56,7 @@ public class NodePatcher {
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
     private static final String WANT_TO_REBUILD = "wantToRebuild";
-    private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE);
+    private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE, WANT_TO_DEPROVISION);
     private static final Set<String> IP_CONFIG_FIELDS = Set.of("ipAddresses",
                                                                "additionalIpAddresses",
                                                                "additionalHostnames");
