@@ -3,9 +3,29 @@
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/annotation/annotation.h>
+#include <vespa/document/annotation/span.h>
+#include <vespa/document/annotation/spanlist.h>
+#include <vespa/document/annotation/spantree.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/doublefieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/shortfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -30,7 +50,6 @@
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/engine/docsumapi.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
@@ -38,15 +57,18 @@
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
+#include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-summary.h>
 #include <filesystem>
+#include <functional>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -67,17 +89,35 @@ using vespalib::IDestructorCallback;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
-using search::index::schema::CollectionType;
+using search::linguistics::SPANTREE_NAME;
+using search::linguistics::TERM;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 using vespalib::GateCallback;
 using vespalib::Slime;
+using vespalib::geo::ZCurve;
 using namespace vespalib::slime;
 
 namespace proton {
+
+using AddFieldsType = std::function<void(document::config_builder::Struct&)>;
+
+DocumenttypesConfig
+get_document_types_config(AddFieldsType add_fields)
+{
+    using namespace document::config_builder;
+    DocumenttypesConfigBuilderHelper builder;
+    Struct header("searchdocument.header");
+    add_fields(header);
+    builder.document(42, "searchdocument",
+                     header,
+                     Struct("searchdocument.body"));
+    return builder.config();
+}
 
 class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
 {
@@ -107,44 +147,86 @@ class BuildContext
 {
 public:
     DirMaker _dmk;
-    DocBuilder _bld;
     std::shared_ptr<const DocumentTypeRepo> _repo;
+    const DocumentType*                     _document_type;
+    document::FixedTypeRepo                 _fixed_repo;
     DummyFileHeaderContext _fileHeaderContext;
     vespalib::ThreadStackExecutor _summaryExecutor;
     search::transactionlog::NoSyncProxy _noTlSyncer;
     search::LogDocumentStore _str;
     uint64_t _serialNum;
 
-    explicit BuildContext(const Schema &schema)
-        : _dmk("summary"),
-          _bld(schema),
-          _repo(std::make_shared<DocumentTypeRepo>(_bld.getDocumentType())),
-          _summaryExecutor(4, 128_Ki),
-          _noTlSyncer(),
-          _str(_summaryExecutor, "summary",
-               LogDocumentStore::Config(
-                   DocumentStore::Config(),
-                   LogDataStore::Config()),
-               GrowStrategy(),
-               TuneFileSummary(),
-               _fileHeaderContext,
-               _noTlSyncer,
-               nullptr),
-          _serialNum(1)
-    {
-    }
+    explicit BuildContext(AddFieldsType addfields);
 
     ~BuildContext();
 
-    void
-    endDocument(uint32_t docId)
+    const DocumentTypeRepo& get_repo() { return *_repo; }
+    const DocumentType& get_document_type() { return* _document_type; }
+    const document::FixedTypeRepo& get_fixed_repo() { return _fixed_repo; }
+
+    std::unique_ptr<Document>
+    make_document(vespalib::string document_id)
     {
-        Document::UP doc = _bld.endDocument();
+        auto doc = std::make_unique<Document>(get_document_type(),
+                                              DocumentId(document_id));
+        doc->setRepo(get_repo());
+        return doc;
+    }
+
+    void
+    put_document(uint32_t docId, std::unique_ptr<Document> doc)
+    {
         _str.write(_serialNum++, docId, *doc);
     }
+
+    const DataType &
+    get_data_type(const vespalib::string &name) const
+    {
+        const DataType *type = _repo->getDataType(*_document_type, name);
+        ASSERT_TRUE(type);
+        return *type;
+    }
+
+    StringFieldValue make_annotated_string();
 };
 
+BuildContext::BuildContext(AddFieldsType add_fields)
+    : _dmk("summary"),
+      _repo(std::make_shared<const DocumentTypeRepo>(get_document_types_config(add_fields))),
+      _document_type(_repo->getDocumentType("searchdocument")),
+      _fixed_repo(*_repo, *_document_type),
+      _summaryExecutor(4, 128_Ki),
+      _noTlSyncer(),
+      _str(_summaryExecutor, "summary",
+           LogDocumentStore::Config(
+                   DocumentStore::Config(),
+                   LogDataStore::Config()),
+           GrowStrategy(),
+           TuneFileSummary(),
+           _fileHeaderContext,
+           _noTlSyncer,
+           nullptr),
+      _serialNum(1)
+{
+}
+
 BuildContext::~BuildContext() = default;
+
+StringFieldValue
+BuildContext::make_annotated_string()
+{
+    auto span_list_up = std::make_unique<SpanList>();
+    auto span_list = span_list_up.get();
+    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
+                   Annotation(*TERM, std::make_unique<StringFieldValue>("baz")));
+    StringFieldValue value("foo bar");
+    StringFieldValue::SpanTrees trees;
+    trees.push_back(std::move(tree));
+    value.setSpanTrees(trees, _fixed_repo);
+    return value;
+}
 
 namespace {
 
@@ -363,38 +445,39 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
 
 TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT8));
-    s.addSummaryField(Schema::SummaryField("b", schema::DataType::INT16));
-    s.addSummaryField(Schema::SummaryField("c", schema::DataType::INT32));
-    s.addSummaryField(Schema::SummaryField("d", schema::DataType::INT64));
-    s.addSummaryField(Schema::SummaryField("e", schema::DataType::FLOAT));
-    s.addSummaryField(Schema::SummaryField("f", schema::DataType::DOUBLE));
-    s.addSummaryField(Schema::SummaryField("g", schema::DataType::STRING));
-    s.addSummaryField(Schema::SummaryField("h", schema::DataType::STRING));
-    s.addSummaryField(Schema::SummaryField("i", schema::DataType::RAW));
-    s.addSummaryField(Schema::SummaryField("j", schema::DataType::RAW));
-    s.addSummaryField(Schema::SummaryField("k", schema::DataType::STRING));
-    s.addSummaryField(Schema::SummaryField("l", schema::DataType::STRING));
+    BuildContext bc([](auto& header)
+                    {
+                        header
+                            .addField("a", DataType::T_BYTE)
+                            .addField("b", DataType::T_SHORT)
+                            .addField("c", DataType::T_INT)
+                            .addField("d", DataType::T_LONG)
+                            .addField("e", DataType::T_FLOAT)
+                            .addField("f", DataType::T_DOUBLE)
+                            .addField("g", DataType::T_STRING)
+                            .addField("h", DataType::T_STRING)
+                            .addField("i", DataType::T_RAW)
+                            .addField("j", DataType::T_RAW)
+                            .addField("k", DataType::T_STRING)
+                            .addField("l", DataType::T_STRING);
+                    });
 
-    BuildContext bc(s);
-    bc._bld.startDocument("id:ns:searchdocument::0");
-    bc._bld.startSummaryField("a").addInt(255).endField();
-    bc._bld.startSummaryField("b").addInt(32767).endField();
-    bc._bld.startSummaryField("c").addInt(2147483647).endField();
-    bc._bld.startSummaryField("d").addInt(2147483648).endField();
-    bc._bld.startSummaryField("e").addFloat(1234.56).endField();
-    bc._bld.startSummaryField("f").addFloat(9876.54).endField();
-    bc._bld.startSummaryField("g").addStr("foo").endField();
-    bc._bld.startSummaryField("h").addStr("bar").endField();
-    bc._bld.startSummaryField("i").addStr("baz").endField();
-    bc._bld.startSummaryField("j").addStr("qux").endField();
-    bc._bld.startSummaryField("k").addStr("<foo>").endField();
-    bc._bld.startSummaryField("l").addStr("{foo:10}").endField();
-    bc.endDocument(0);
+    auto doc = bc.make_document("id:ns:searchdocument::0");
+    doc->setValue("a", ByteFieldValue(-1));
+    doc->setValue("b", ShortFieldValue(32767));
+    doc->setValue("c", IntFieldValue(2147483647));
+    doc->setValue("d", LongFieldValue(2147483648));
+    doc->setValue("e", FloatFieldValue(1234.56));
+    doc->setValue("f", DoubleFieldValue(9876.54));
+    doc->setValue("g", StringFieldValue("foo"));
+    doc->setValue("h", StringFieldValue("bar"));
+    doc->setValue("i", RawFieldValue("baz"));
+    doc->setValue("j", RawFieldValue("qux"));
+    doc->setValue("k", StringFieldValue("<foo>"));
+    doc->setValue("l", StringFieldValue("{foo:10}"));
+    bc.put_document(0, std::move(doc));
 
-    DocumentStoreAdapter dsa(bc._str,
-                             *bc._repo);
+    DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     auto res = dsa.getMappedDocsum(0);
     EXPECT_EQUAL(-1,          res->get_field_value("a")->getAsInt());
     EXPECT_EQUAL(32767,       res->get_field_value("b")->getAsInt());
@@ -412,21 +495,15 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
 
 TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
+    BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
+    auto doc = bc.make_document("id:ns:searchdocument::0");
+    doc->setValue("a", IntFieldValue(1000));
+    bc.put_document(0, std::move(doc));
+    doc = bc.make_document("id:ns:searchdocument::1");
+    doc->setValue("a", IntFieldValue(2000));
+    bc.put_document(1, std::move(doc));
 
-    BuildContext bc(s);
-    bc._bld.startDocument("id:ns:searchdocument::0").
-        startSummaryField("a").
-        addInt(1000).
-        endField();
-    bc.endDocument(0);
-    bc._bld.startDocument("id:ns:searchdocument::1").
-        startSummaryField("a").
-        addInt(2000).endField();
-    bc.endDocument(1);
-
-    DocumentStoreAdapter dsa(bc._str, *bc._repo);
+    DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     { // doc 0
         auto res = dsa.getMappedDocsum(0);
         EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
@@ -450,15 +527,10 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
 
 TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("documentid", schema::DataType::STRING));
-    BuildContext bc(s);
-    bc._bld.startDocument("id:ns:searchdocument::0").
-        startSummaryField("documentid").
-        addStr("foo").
-        endField();
-    bc.endDocument(0);
-    DocumentStoreAdapter dsa(bc._str, *bc._repo);
+    BuildContext bc([](auto&) noexcept {});
+    auto doc = bc.make_document("id:ns:searchdocument::0");
+    bc.put_document(0, std::move(doc));
+    DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     auto res = dsa.getMappedDocsum(0);
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -474,41 +546,23 @@ GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not exis
 
 TEST("requireThatDocsumRequestIsProcessed")
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
-           startSummaryField("a").
-           addInt(10).
-           endField().
-           endDocument(),
-           1);
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::2").
-           startSummaryField("a").
-           addInt(20).
-           endField().
-           endDocument(),
-           2);
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::3").
-           startSummaryField("a").
-           addInt(30).
-           endField().
-           endDocument(),
-           3);
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::4").
-           startSummaryField("a").
-           addInt(40).
-           endField().
-           endDocument(),
-           4);
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::5").
-           startSummaryField("a").
-           addInt(50).
-           endField().
-           endDocument(),
-           5);
+    auto doc = bc.make_document("id:ns:searchdocument::1");
+    doc->setValue("a", IntFieldValue(10));
+    dc.put(*doc, 1);
+    doc = bc.make_document("id:ns:searchdocument::2");
+    doc->setValue("a", IntFieldValue(20));
+    dc.put(*doc, 2);
+    doc = bc.make_document("id:ns:searchdocument::3");
+    doc->setValue("a", IntFieldValue(30));
+    dc.put(*doc, 3);
+    doc = bc.make_document("id:ns:searchdocument::4");
+    doc->setValue("a", IntFieldValue(40));
+    dc.put(*doc, 4);
+    doc = bc.make_document("id:ns:searchdocument::5");
+    doc->setValue("a", IntFieldValue(50));
+    dc.put(*doc, 5);
 
     DocsumRequest req;
     req.resultClassName = "class1";
@@ -521,21 +575,14 @@ TEST("requireThatDocsumRequestIsProcessed")
 
 TEST("requireThatRewritersAreUsed")
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("aa", schema::DataType::INT32));
-    s.addSummaryField(Schema::SummaryField("ab", schema::DataType::INT32));
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { header.addField("aa", DataType::T_INT)
+                            .addField("ab", DataType::T_INT); });
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
-           startSummaryField("aa").
-           addInt(10).
-           endField().
-           startSummaryField("ab").
-           addInt(20).
-           endField().
-           endDocument(),
-           1);
+    auto doc = bc.make_document("id:ns:searchdocument::1");
+    doc->setValue("aa", IntFieldValue(10));
+    doc->setValue("ab", IntFieldValue(20));
+    dc.put(*doc, 1);
 
     DocsumRequest req;
     req.resultClassName = "class2";
@@ -546,21 +593,14 @@ TEST("requireThatRewritersAreUsed")
 
 TEST("requireThatSummariesTimeout")
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("aa", schema::DataType::INT32));
-    s.addSummaryField(Schema::SummaryField("ab", schema::DataType::INT32));
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { header.addField("aa", DataType::T_INT)
+                            .addField("ab", DataType::T_INT); });
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
-           startSummaryField("aa").
-           addInt(10).
-           endField().
-           startSummaryField("ab").
-           addInt(20).
-           endField().
-           endDocument(),
-           1);
+    auto doc = bc.make_document("id:ns:searchdocument::1");
+    doc->setValue("aa", IntFieldValue(10));
+    doc->setValue("ab", IntFieldValue(20));
+    dc.put(*doc, 1);
 
     DocsumRequest req;
     req.setTimeout(vespalib::duration::zero());
@@ -576,34 +616,15 @@ TEST("requireThatSummariesTimeout")
     EXPECT_TRUE(std::regex_search(bufstring.data, bufstring.data + bufstring.size, std::regex("Timed out 1 summaries with -[0-9]+us left.")));
 }
 
-void
-addField(Schema & s,
-         const std::string &name,
-         Schema::DataType dtype,
-         Schema::CollectionType ctype,
-         const std::string& tensor_spec = "")
-{
-    s.addSummaryField(Schema::SummaryField(name, dtype, ctype, tensor_spec));
-    s.addAttributeField(Schema::AttributeField(name, dtype, ctype, tensor_spec));
-}
-
 void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string & json) {
-    Schema s;
-    addField(s, "ba", schema::DataType::INT32, CollectionType::SINGLE);
-    addField(s, "bb", schema::DataType::FLOAT, CollectionType::SINGLE);
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { header.addField("ba", DataType::T_INT)
+                            .addField("bb", DataType::T_FLOAT); });
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
-                   startAttributeField("ba").
-                   addInt(10).
-                   endField().
-                   startAttributeField("bb").
-                   addFloat(10.1250).
-                   endField().
-                   endDocument(),
-           1);
-
+    auto doc = bc.make_document("id:ns:searchdocument::1");
+    doc->setValue("ba", IntFieldValue(10));
+    doc->setValue("bb", FloatFieldValue(10.1250));
+    dc.put(*doc, 1);
     DocsumRequest req;
     req.resultClassName = "class6";
     req.hits.emplace_back(gid1);
@@ -624,90 +645,57 @@ TEST("requireThatFieldListIsHonoured")
 
 TEST("requireThatAttributesAreUsed")
 {
-    Schema s;
-    addField(s, "ba", schema::DataType::INT32, CollectionType::SINGLE);
-    addField(s, "bb", schema::DataType::FLOAT, CollectionType::SINGLE);
-    addField(s, "bc", schema::DataType::STRING, CollectionType::SINGLE);
-    addField(s, "bd", schema::DataType::INT32, CollectionType::ARRAY);
-    addField(s, "be", schema::DataType::FLOAT, CollectionType::ARRAY);
-    addField(s, "bf", schema::DataType::STRING, CollectionType::ARRAY);
-    addField(s, "bg", schema::DataType::INT32, CollectionType::WEIGHTEDSET);
-    addField(s, "bh", schema::DataType::FLOAT, CollectionType::WEIGHTEDSET);
-    addField(s, "bi", schema::DataType::STRING, CollectionType::WEIGHTEDSET);
-    addField(s, "bj", schema::DataType::TENSOR, CollectionType::SINGLE, "tensor(x{},y{})");
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { using namespace document::config_builder;
+                        header.addField("ba", DataType::T_INT)
+                            .addField("bb", DataType::T_FLOAT)
+                            .addField("bc", DataType::T_STRING)
+                            .addField("bd", Array(DataType::T_INT))
+                            .addField("be", Array(DataType::T_FLOAT))
+                            .addField("bf", Array(DataType::T_STRING))
+                            .addField("bg", Wset(DataType::T_INT))
+                            .addField("bh", Wset(DataType::T_FLOAT))
+                            .addField("bi", Wset(DataType::T_STRING))
+                            .addTensorField("bj", "tensor(x{},y{})"); });
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
-           endDocument(),
-           1); // empty doc
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::2").
-           startAttributeField("ba").
-           addInt(10).
-           endField().
-           startAttributeField("bb").
-           addFloat(10.1250).
-           endField().
-           startAttributeField("bc").
-           addStr("foo").
-           endField().
-           startAttributeField("bd").
-           startElement().
-           addInt(20).
-           endElement().
-           startElement().
-           addInt(30).
-           endElement().
-           endField().
-           startAttributeField("be").
-           startElement().
-           addFloat(20.2500).
-           endElement().
-           startElement().
-           addFloat(30.3125).
-           endElement().
-           endField().
-           startAttributeField("bf").
-           startElement().
-           addStr("bar").
-           endElement().
-           startElement().
-           addStr("baz").
-           endElement().
-           endField().
-           startAttributeField("bg").
-           startElement(2).
-           addInt(40).
-           endElement().
-           startElement(3).
-           addInt(50).
-           endElement().
-           endField().
-           startAttributeField("bh").
-           startElement(4).
-           addFloat(40.4375).
-           endElement().
-           startElement(5).
-           addFloat(50.5625).
-           endElement().
-           endField().
-           startAttributeField("bi").
-           startElement(7).
-           addStr("quux").
-           endElement().
-           startElement(6).
-           addStr("qux").
-           endElement().
-           endField().
-           startAttributeField("bj").
-           addTensor(make_tensor(TensorSpec("tensor(x{},y{})")
-                                 .add({{"x", "f"}, {"y", "g"}}, 3))).
-           endField().
-           endDocument(),
-           2);
-    dc.put(*bc._bld.startDocument("id:ns:searchdocument::3").
-           endDocument(),
-           3); // empty doc
+    auto doc = bc.make_document("id:ns:searchdocument::1");
+    dc.put(*doc, 1); // empty doc
+    doc = bc.make_document("id:ns:searchdocument::2");
+    doc->setValue("ba", IntFieldValue(10));
+    doc->setValue("bb", FloatFieldValue(10.1250));
+    doc->setValue("bc", StringFieldValue("foo"));
+    ArrayFieldValue int_array(bc.get_data_type("Array<Int>"));
+    int_array.add(IntFieldValue(20));
+    int_array.add(IntFieldValue(30));
+    doc->setValue("bd", int_array);
+    ArrayFieldValue float_array(bc.get_data_type("Array<Float>"));
+    float_array.add(FloatFieldValue(20.25000));
+    float_array.add(FloatFieldValue(30.31250));
+    doc->setValue("be", float_array);
+    ArrayFieldValue string_array(bc.get_data_type("Array<String>"));
+    string_array.add(StringFieldValue("bar"));
+    string_array.add(StringFieldValue("baz"));
+    doc->setValue("bf", string_array);
+    WeightedSetFieldValue int_wset(bc.get_data_type("WeightedSet<Int>"));
+    int_wset.add(IntFieldValue(40), 2);
+    int_wset.add(IntFieldValue(50), 3);
+    doc->setValue("bg", int_wset);
+    WeightedSetFieldValue float_wset(bc.get_data_type("WeightedSet<Float>"));
+    float_wset.add(FloatFieldValue(40.4375), 4);
+    float_wset.add(FloatFieldValue(50.5625), 5);
+    doc->setValue("bh", float_wset);
+    WeightedSetFieldValue string_wset(bc.get_data_type("WeightedSet<String>"));
+    string_wset.add(StringFieldValue("quux"), 7);
+    string_wset.add(StringFieldValue("qux"), 6);
+    doc->setValue("bi", string_wset);
+    TensorDataType tensor_data_type(ValueType::from_spec("tensor(x{},y{})"));
+    TensorFieldValue tensor(tensor_data_type);
+    tensor = make_tensor(TensorSpec("tensor(x{},y{})")
+                         .add({{"x", "f"}, {"y", "g"}}, 3));
+    doc->setValue("bj", tensor);
+    dc.put(*doc, 2);
+    doc = bc.make_document("id:ns:searchdocument::3");
+    dc.put(*doc, 3); // empty doc
 
     DocsumRequest req;
     req.resultClassName = "class3";
@@ -763,15 +751,10 @@ TEST("requireThatAttributesAreUsed")
 
 TEST("requireThatSummaryAdapterHandlesPutAndRemove")
 {
-    Schema s;
-    s.addSummaryField(Schema::SummaryField("f1", schema::DataType::STRING, CollectionType::SINGLE));
-    BuildContext bc(s);
+    BuildContext bc([](auto& header) { header.addField("f1", DataType::T_STRING); });
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::1").
-        startSummaryField("f1").
-        addStr("foo").
-        endField().
-        endDocument();
+    auto exp = bc.make_document("id:ns:searchdocument::1");
+    exp->setValue("f1", StringFieldValue("foo"));
     dc._sa->put(1, 1, *exp);
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
@@ -794,35 +777,13 @@ const std::string empty;
 
 TEST_F("requireThatAnnotationsAreUsed", Fixture)
 {
-    Schema s;
-    s.addIndexField(Schema::IndexField("g", schema::DataType::STRING, CollectionType::SINGLE));
-    s.addSummaryField(Schema::SummaryField("g", schema::DataType::STRING, CollectionType::SINGLE));
-    s.addIndexField(Schema::IndexField("dynamicstring", schema::DataType::STRING, CollectionType::SINGLE));
-    s.addSummaryField(Schema::SummaryField("dynamicstring", schema::DataType::STRING, CollectionType::SINGLE));
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { header.addField("g", DataType::T_STRING)
+                            .addField("dynamicstring", DataType::T_STRING); });
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
-        startIndexField("g").
-        addStr("foo").
-        addStr("bar").
-        addTermAnnotation("baz").
-        endField().
-        startIndexField("dynamicstring").
-        setAutoAnnotate(false).
-        addStr("foo").
-        addSpan().
-        addAlphabeticTokenAnnotation().
-        addTermAnnotation().
-        addNoWordStr(" ").
-        addSpan().
-        addSpaceTokenAnnotation().
-        addStr("bar").
-        addSpan().
-        addAlphabeticTokenAnnotation().
-        addTermAnnotation("baz").
-        setAutoAnnotate(true).
-        endField().
-        endDocument();
+    auto exp = bc.make_document("id:ns:searchdocument::0");
+    exp->setValue("g", bc.make_annotated_string());
+    exp->setValue("dynamicstring", bc.make_annotated_string());
     dc._sa->put(1, 1, *exp);
 
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
@@ -843,136 +804,58 @@ TEST_F("requireThatAnnotationsAreUsed", Fixture)
 
 TEST_F("requireThatUrisAreUsed", Fixture)
 {
-    Schema s;
-    s.addUriIndexFields(Schema::IndexField("urisingle", schema::DataType::STRING, CollectionType::SINGLE));
-    s.addSummaryField(Schema::SummaryField("urisingle", schema::DataType::STRING, CollectionType::SINGLE));
-    s.addUriIndexFields(Schema::IndexField("uriarray", schema::DataType::STRING, CollectionType::ARRAY));
-    s.addSummaryField(Schema::SummaryField("uriarray", schema::DataType::STRING, CollectionType::ARRAY));
-    s.addUriIndexFields(Schema::IndexField("uriwset", schema::DataType::STRING, CollectionType::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("uriwset", schema::DataType::STRING, CollectionType::WEIGHTEDSET));
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { using namespace document::config_builder;
+                        header.addField("urisingle", UrlDataType::getInstance().getId())
+                            .addField("uriarray", Array(UrlDataType::getInstance().getId()))
+                            .addField("uriwset", Wset(UrlDataType::getInstance().getId())); });
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
-        startIndexField("urisingle").
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("81").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("4").
-        endSubField().
-        endField().
-        startIndexField("uriarray").
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("8").
-        endSubField().
-        endElement().
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:82/fluke?ab=2#9").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("9").
-        endSubField().
-        endElement().
-        endField().
-        startIndexField("uriwset").
-        startElement(4).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("83").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("12").
-        endSubField().
-        endElement().
-        startElement(7).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:85/fluke?ab=2#13").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("85").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("13").
-        endSubField().
-        endElement().
-        endField().
-        endDocument();
+    auto exp = bc.make_document("id:ns:searchdocument::0");
+    StructFieldValue uri(bc.get_data_type("url"));
+    uri.setValue("all", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
+    uri.setValue("scheme", StringFieldValue("http"));
+    uri.setValue("host", StringFieldValue("www.example.com"));
+    uri.setValue("port", StringFieldValue("81"));
+    uri.setValue("path", StringFieldValue("/fluke"));
+    uri.setValue("query", StringFieldValue("ab=2"));
+    uri.setValue("fragment", StringFieldValue("4"));
+    exp->setValue("urisingle", uri);
+    ArrayFieldValue uri_array(bc.get_data_type("Array<url>"));
+    uri.setValue("all", StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
+    uri.setValue("scheme", StringFieldValue("http"));
+    uri.setValue("host", StringFieldValue("www.example.com"));
+    uri.setValue("port", StringFieldValue("82"));
+    uri.setValue("path", StringFieldValue("/fluke"));
+    uri.setValue("query", StringFieldValue("ab=2"));
+    uri.setValue("fragment", StringFieldValue("8"));
+    uri_array.add(uri);
+    uri.setValue("all", StringFieldValue("http://www.flickr.com:82/fluke?ab=2#9"));
+    uri.setValue("scheme", StringFieldValue("http"));
+    uri.setValue("host", StringFieldValue("www.flickr.com"));
+    uri.setValue("port", StringFieldValue("82"));
+    uri.setValue("path", StringFieldValue("/fluke"));
+    uri.setValue("query", StringFieldValue("ab=2"));
+    uri.setValue("fragment", StringFieldValue("9"));
+    uri_array.add(uri);
+    exp->setValue("uriarray", uri_array);
+    WeightedSetFieldValue uri_wset(bc.get_data_type("WeightedSet<url>"));
+    uri.setValue("all", StringFieldValue("http://www.example.com:83/fluke?ab=2#12"));
+    uri.setValue("scheme", StringFieldValue("http"));
+    uri.setValue("host", StringFieldValue("www.example.com"));
+    uri.setValue("port", StringFieldValue("83"));
+    uri.setValue("path", StringFieldValue("/fluke"));
+    uri.setValue("query", StringFieldValue("ab=2"));
+    uri.setValue("fragment", StringFieldValue("12"));
+    uri_wset.add(uri, 4);
+    uri.setValue("all", StringFieldValue("http://www.flickr.com:85/fluke?ab=2#13"));
+    uri.setValue("scheme", StringFieldValue("http"));
+    uri.setValue("host", StringFieldValue("www.flickr.com"));
+    uri.setValue("port", StringFieldValue("85"));
+    uri.setValue("path", StringFieldValue("/fluke"));
+    uri.setValue("query", StringFieldValue("ab=2"));
+    uri.setValue("fragment", StringFieldValue("13"));
+    uri_wset.add(uri, 7);
+    exp->setValue("uriwset", uri_wset);
     dc._sa->put(1, 1, *exp);
 
     IDocumentStore & store =
@@ -1013,26 +896,22 @@ TEST_F("requireThatUrisAreUsed", Fixture)
 
 TEST("requireThatPositionsAreUsed")
 {
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("sp2", schema::DataType::INT64));
-    s.addAttributeField(Schema::AttributeField("ap2", schema::DataType::INT64, CollectionType::ARRAY));
-    s.addAttributeField(Schema::AttributeField("wp2", schema::DataType::INT64, CollectionType::WEIGHTEDSET));
-
-    BuildContext bc(s);
+    BuildContext bc([](auto& header)
+                    { using namespace document::config_builder;
+                        header.addField("sp2", DataType::T_LONG)
+                            .addField("ap2", Array(DataType::T_LONG))
+                            .addField("wp2", Wset(DataType::T_LONG)); });
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::1").
-        startAttributeField("sp2").
-        addPosition(1002, 1003).
-        endField().
-        startAttributeField("ap2").
-        startElement().addPosition(1006, 1007).endElement().
-        startElement().addPosition(1008, 1009).endElement().
-        endField().
-        startAttributeField("wp2").
-        startElement(43).addPosition(1012, 1013).endElement().
-        startElement(44).addPosition(1014, 1015).endElement().
-        endField().
-        endDocument();
+    auto exp = bc.make_document("id:ns:searchdocument::1");
+    exp->setValue("sp2", LongFieldValue(ZCurve::encode(1002, 1003)));
+    ArrayFieldValue pos_array(bc.get_data_type("Array<Long>"));
+    pos_array.add(LongFieldValue(ZCurve::encode(1006, 1007)));
+    pos_array.add(LongFieldValue(ZCurve::encode(1008, 1009)));
+    exp->setValue("ap2", pos_array);
+    WeightedSetFieldValue pos_wset(bc.get_data_type("WeightedSet<Long>"));
+    pos_wset.add(LongFieldValue(ZCurve::encode(1012, 1013)), 43);
+    pos_wset.add(LongFieldValue(ZCurve::encode(1014, 1015)), 44);
+    exp->setValue("wp2", pos_wset);
     dc.put(*exp, 1);
 
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
@@ -1058,11 +937,11 @@ TEST("requireThatPositionsAreUsed")
 
 TEST_F("requireThatRawFieldsWorks", Fixture)
 {
-    Schema s;
-    s.addSummaryField(Schema::AttributeField("i", schema::DataType::RAW));
-    s.addSummaryField(Schema::AttributeField("araw", schema::DataType::RAW, CollectionType::ARRAY));
-    s.addSummaryField(Schema::AttributeField("wraw", schema::DataType::RAW, CollectionType::WEIGHTEDSET));
-
+    BuildContext bc([](auto& header)
+                    { using namespace document::config_builder;
+                        header.addField("i", DataType::T_RAW)
+                            .addField("araw", Array(DataType::T_RAW))
+                            .addField("wraw", Wset(DataType::T_RAW)); });
     std::vector<char> binaryBlob;
     binaryBlob.push_back('\0');
     binaryBlob.push_back('\2');
@@ -1083,29 +962,17 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     raw1w1 += std::string(&binaryBlob[0],
                           &binaryBlob[0] + binaryBlob.size());
 
-    BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
-        startSummaryField("i").
-        addRaw(raw1s.c_str(), raw1s.size()).
-        endField().
-        startSummaryField("araw").
-        startElement().
-        addRaw(raw1a0.c_str(), raw1a0.size()).
-        endElement().
-        startElement().
-        addRaw(raw1a1.c_str(), raw1a1.size()).
-        endElement().
-        endField().
-        startSummaryField("wraw").
-        startElement(46).
-        addRaw(raw1w1.c_str(), raw1w1.size()).
-        endElement().
-        startElement(45).
-        addRaw(raw1w0.c_str(), raw1w0.size()).
-        endElement().
-        endField().
-        endDocument();
+    auto exp = bc.make_document("id:ns:searchdocument::0");
+    exp->setValue("i", RawFieldValue(raw1s));
+    ArrayFieldValue raw_array(bc.get_data_type("Array<Raw>"));
+    raw_array.add(RawFieldValue(raw1a0));
+    raw_array.add(RawFieldValue(raw1a1));
+    exp->setValue("araw", raw_array);
+    WeightedSetFieldValue raw_wset(bc.get_data_type("WeightedSet<Raw>"));
+    raw_wset.add(RawFieldValue(raw1w1), 46);
+    raw_wset.add(RawFieldValue(raw1w0), 45);
+    exp->setValue("wraw", raw_wset);
     dc._sa->put(1, 1, *exp);
 
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
