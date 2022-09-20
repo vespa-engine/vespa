@@ -23,36 +23,30 @@ namespace vsm {
 class DocsumFilter : public IDocsumStore
 {
 private:
-    typedef std::vector<DocsumFieldSpec>   FieldSpecList; // list of summary field specs
-    typedef std::vector<vespalib::string>       StringList;
-    typedef StringFieldIdTMap              FieldMap;
+    using FieldSpecList = std::vector<DocsumFieldSpec>; // list of summary field specs
+    using FieldMap = StringFieldIdTMap;
 
     const IDocSumCache  * _docsumCache;
     DocsumToolsPtr        _tools;
     FieldSpecList         _fields;        // list of summary fields to generate
-    size_t                _highestFieldNo;
     FlattenDocsumWriter   _flattenWriter;
     const FieldModifierMap * _snippetModifiers;
     document::FieldValue::UP _cachedValue;
     document::FieldPath _emptyFieldPath;
 
-    void prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpec,
-                          const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap);
     const document::FieldValue * getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
                                                VsmsummaryConfig::Fieldmap::Command command,
                                                const Document & docsum, bool & modified);
     bool write_flatten_field(const DocsumFieldSpec& field_spec, const Document & docsum);
 
-    search::docsummary::DocsumStoreFieldValue get_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc);
     search::docsummary::DocsumStoreFieldValue get_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc);
-    void insert_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter);
     void insert_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter);
 public:
-    DocsumFilter(const DocsumToolsPtr & tools, const IDocSumCache & docsumCache);
+    DocsumFilter(DocsumToolsPtr tools, const IDocSumCache & docsumCache);
     DocsumFilter(const DocsumFilter &) = delete;
     DocsumFilter &operator=(const DocsumFilter &) = delete;
     ~DocsumFilter() override;
-    const DocsumToolsPtr & getTools() const { return _tools; }
+    const DocsumTools & getTools() const { return *_tools; }
 
     /**
      * Initializes this docsum filter using the given field map and field path map.
@@ -68,12 +62,6 @@ public:
      * Sets the snippet modifiers to use when writing string fields used as input to snippet generation.
      **/
     void setSnippetModifiers(const FieldModifierMap & modifiers) { _snippetModifiers = &modifiers; }
-
-    /**
-     * Returns the highest field id + 1 among all fields in the field spec list.
-     **/
-    size_t getHighestFieldNo() const { return _highestFieldNo; }
-
 
     void setDocSumStore(const IDocSumCache & docsumCache) { _docsumCache = &docsumCache; }
 
