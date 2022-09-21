@@ -94,7 +94,7 @@ public class SearchNode extends AbstractService implements
         }
 
         @Override
-        protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
                                      flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
                                      fractionOfMemoryReserved, deployState.featureFlags());
@@ -102,7 +102,7 @@ public class SearchNode extends AbstractService implements
 
     }
 
-    public static SearchNode create(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
+    public static SearchNode create(AbstractConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                                     Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
                                     double fractionOfMemoryReserved, ModelContext.FeatureFlags featureFlags) {
@@ -117,7 +117,7 @@ public class SearchNode extends AbstractService implements
         return node;
     }
 
-    private SearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
+    private SearchNode(AbstractConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                        Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
                        double fractionOfMemoryReserved) {
@@ -138,6 +138,7 @@ public class SearchNode extends AbstractService implements
         this.tuning = tuning;
         this.resourceLimits = resourceLimits;
         setPropertiesElastic(clusterName, distributionKey);
+        addEnvironmentVariable("OMP_NUM_THREADS", 1);
     }
 
     private void setPropertiesElastic(String clusterName, int distributionKey) {

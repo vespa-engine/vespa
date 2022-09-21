@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
@@ -28,8 +27,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author gjoranv
  */
 public abstract class AbstractService extends AbstractConfigProducer<AbstractConfigProducer<?>> implements Service {
-
-    private static final long serialVersionUID = 1L;
 
     // The physical host this Service runs on.
     private HostResource hostResource = null;
@@ -88,7 +85,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      */
     public AbstractService(AbstractConfigProducer<?> parent, String name) {
         super(parent, name);
-        environmentVariables.put("OMP_NUM_THREADS", 1);
         environmentVariables.put("VESPA_SILENCE_CORE_ON_OOM", true);
     }
 
