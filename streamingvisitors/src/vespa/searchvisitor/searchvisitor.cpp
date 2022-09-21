@@ -350,7 +350,7 @@ void SearchVisitor::init(const Parameters & params)
             LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             QueryTermDataFactory addOnFactory;
-            _query = Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
+            _query = Query(addOnFactory, vespalib::stringref(queryBlob.data(), queryBlob.size()));
             _searchBuffer->reserve(0x10000);
 
             int stackCount = 0;

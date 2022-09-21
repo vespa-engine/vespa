@@ -5,13 +5,13 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <stdexcept>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 using vespalib::ConstBufferRef;
 using vespalib::make_string;
 
-ConstBufferRef PassThroughConverter::onConvert(const ConstBufferRef & src) const
+ConstBufferRef
+PassThroughConverter::onConvert(const ConstBufferRef & src) const
 {
     return src;
 }
@@ -21,7 +21,8 @@ LowercaseConverter::LowercaseConverter() :
 {
 }
 
-ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef & src) const
+ConstBufferRef
+LowercaseConverter::onConvert(const ConstBufferRef & src) const
 {
     _buffer.clear();
     vespalib::stringref input((const char *)src.data(), src.size());
@@ -32,13 +33,13 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef & src) const
         c = Fast_NormalizeWordFolder::ToFold(c);
         w.putChar(c);
     }
-    return ConstBufferRef(_buffer.begin(), _buffer.size());
+    return {_buffer.begin(), _buffer.size()};
 }
 
 SortInfo::SortInfo(const vespalib::string & field, bool ascending, const BlobConverter::SP & converter)
     : _field(field), _ascending(ascending), _converter(converter)
 { }
-SortInfo::~SortInfo() {}
+SortInfo::~SortInfo() = default;
 
 SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFactory) :
     _spec(spec)
@@ -98,13 +99,12 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                     throw std::runtime_error("Unknown func " + vespalib::string(func, p-func));
                 }
             } else {
-                push_back(SortInfo(funcSpec, ascending, BlobConverter::SP(NULL)));
+                push_back(SortInfo(funcSpec, ascending, BlobConverter::SP()));
             }
         }
     }
 }
 
-SortSpec::~SortSpec() {}
+SortSpec::~SortSpec() = default;
 
-}
 }

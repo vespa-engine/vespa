@@ -4,7 +4,6 @@
 #include "hit.h"
 #include "aggregationresult.h"
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/docstamp.h>
 
 namespace search::aggregation {
 

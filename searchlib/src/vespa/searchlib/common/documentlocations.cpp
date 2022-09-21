@@ -4,19 +4,17 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 DocumentLocations::DocumentLocations()
-    : _vec(NULL)
+    : _vec(nullptr)
 {
 }
 
-DocumentLocations::~DocumentLocations() { }
+DocumentLocations::~DocumentLocations() = default;
 
 DocumentLocations::DocumentLocations(DocumentLocations &&) = default;
 DocumentLocations & DocumentLocations::operator = (DocumentLocations &&) = default;
 
 
-}  // namespace common
-}  // namespace search
+}

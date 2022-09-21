@@ -333,7 +333,7 @@ ONearQueryNode::evaluate() const
 
 Query::Query() = default;
 
-Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
+Query::Query(const QueryNodeResultFactory & factory, vespalib::stringref queryRep)
     : _root()
 {
     build(factory, queryRep);
@@ -345,7 +345,7 @@ Query::evaluate() const {
 }
 
 bool
-Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
+Query::build(const QueryNodeResultFactory & factory, vespalib::stringref queryRep)
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {

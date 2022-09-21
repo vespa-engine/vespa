@@ -5,8 +5,7 @@
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 class PassThroughConverter : public BlobConverter
 {
@@ -27,10 +26,8 @@ class ConverterFactory {
 protected:
     using stringref = vespalib::stringref;
 public:
-    virtual ~ConverterFactory() { }
+    virtual ~ConverterFactory() = default;
     virtual BlobConverter::UP create(stringref local, stringref strength) const = 0;
 };
 
 }
-}
-

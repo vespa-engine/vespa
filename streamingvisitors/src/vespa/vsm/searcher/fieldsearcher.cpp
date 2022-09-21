@@ -105,7 +105,7 @@ bool FieldSearcher::search(const StorageDocument & doc)
     return true;
 }
 
-void FieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & UNUSED_PARAM(buf))
+void FieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf &)
 {
     FieldSearcherBase::prepare(qtl);
     prepareFieldId();
