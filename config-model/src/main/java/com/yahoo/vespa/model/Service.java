@@ -4,6 +4,7 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.model.api.ServiceInfo;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -20,6 +21,9 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
      * TODO: Should change this to Optional of String
      */
     String getStartupCommand();
+
+    // environment variables specific for this service:
+    Map<String, Object> getEnvVars();
 
     /**
      * Services that wish that a command should be run before shutdown

@@ -405,11 +405,17 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         int pos = nameAndValue.indexOf('=');
         environmentVariables.put(nameAndValue.substring(0, pos), nameAndValue.substring(pos+1));
     }
+
     public void addEnvironmentVariable(String name, Object value) {
         environmentVariables.put(name, value);
     }
 
-    public String getEnv() {
+    @Override
+    public Map<String, Object> getEnvVars() {
+        return Map.copyOf(environmentVariables);
+    }
+
+    public String getEnvStringForTesting() {
         return environmentVariables.entrySet().stream().map(e -> e.getKey() + '=' + toEnvValue(e.getValue())).collect(Collectors.joining(" "));
     }
 

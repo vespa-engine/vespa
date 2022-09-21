@@ -109,10 +109,10 @@ public class SearchNode extends AbstractService implements
         SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown,
                               tuning, resourceLimits, isHostedVespa, fractionOfMemoryReserved);
         if (featureFlags.loadCodeAsHugePages()) {
-            node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", "true");
+            node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", true);
         }
-        if ( featureFlags.sharedStringRepoNoReclaim()) {
-            node.addEnvironmentVariable("VESPA_SHARED_STRING_REPO_NO_RECLAIM", "true");
+        if (featureFlags.sharedStringRepoNoReclaim()) {
+            node.addEnvironmentVariable("VESPA_SHARED_STRING_REPO_NO_RECLAIM", true);
         }
         return node;
     }
@@ -241,7 +241,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public String getStartupCommand() {
-        String startup = getEnv() + " exec $ROOT/sbin/vespa-proton " + "--identity " + getConfigId();
+        String startup = "exec $ROOT/sbin/vespa-proton --identity " + getConfigId();
         if (serviceLayerService != null) {
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }
