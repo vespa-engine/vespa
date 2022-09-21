@@ -338,12 +338,6 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
     }
 }
 
-uint32_t
-DocsumFilter::getNumDocs() const
-{
-    return std::numeric_limits<uint32_t>::max();
-}
-
 bool
 DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Document& doc)
 {
@@ -379,7 +373,7 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
 }
 
 std::unique_ptr<const IDocsumStoreDocument>
-DocsumFilter::getMappedDocsum(uint32_t id)
+DocsumFilter::get_document(uint32_t id)
 {
     const ResultClass *resClass = _tools->getResultClass();
     if (resClass == nullptr) {

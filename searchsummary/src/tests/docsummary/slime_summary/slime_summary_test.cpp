@@ -56,13 +56,12 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
         Slime slimeOut;
         SlimeInserter inserter(slimeOut);
         auto rci = writer->resolveClassInfo(state._args.getResultClassName(), {});
-        writer->insertDocsum(rci, 1u, state, this, inserter);
+        writer->insertDocsum(rci, 1u, state, *this, inserter);
         vespalib::SmartBuffer buf(4_Ki);
         BinaryFormat::encode(slimeOut, buf);
         EXPECT_GT(BinaryFormat::decode(buf.obtain(), slime), 0u);
     }
-    uint32_t getNumDocs() const override { return 2; }
-    std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) override {
+    std::unique_ptr<const IDocsumStoreDocument> get_document(uint32_t docid) override {
         EXPECT_EQ(1u, docid);
         if (fail_get_mapped_docsum) {
             return {};

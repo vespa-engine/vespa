@@ -9,33 +9,19 @@ namespace search::docsummary {
 class IDocsumStoreDocument;
 
 /**
- * Interface for object able to fetch docsum blobs based on local
- * document id.
+ * Interface used to fetch docsum specific abstract of documents based on local document id.
  **/
 class IDocsumStore
 {
 public:
     using UP = std::unique_ptr<IDocsumStore>;
 
-    /**
-     * Destructor.  No cleanup needed for base class.
-     */
     virtual ~IDocsumStore() = default;
 
     /**
-     * @return total number of documents.
+     * Get a docsum specific abstract of the document for the given local document id.
      **/
-    virtual uint32_t getNumDocs() const = 0;
-
-    /**
-     * Get a reference to a docsum blob in memory.  The docsum store
-     * owns the memory (which is either mmap()ed or from a memory-based
-     * index of some kind).
-     *
-     * @return unique pointer to interface class providing access to document
-     * @param docid local document id
-     **/
-    virtual std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) = 0;
+    virtual std::unique_ptr<const IDocsumStoreDocument> get_document(uint32_t docid) = 0;
 };
 
 }

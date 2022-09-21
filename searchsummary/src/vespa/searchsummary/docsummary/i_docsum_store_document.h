@@ -12,9 +12,9 @@ namespace search::docsummary {
 class IJuniperConverter;
 
 /**
- * Interface class providing access to a document retrieved from an
- * IDocsumStore.  Some implementations (e.g. DocsumStoreVsmDocument) might
- * apply transforms when accessing some fields.
+ * Interface class providing access to a document retrieved from an IDocsumStore.
+ *
+ * Some implementations (e.g. DocsumStoreVsmDocument) might apply transforms when accessing some fields.
  **/
 class IDocsumStoreDocument
 {

@@ -399,7 +399,7 @@ bool
 assertString(const std::string & exp, const std::string & fieldName,
              DocumentStoreAdapter &dsa, uint32_t id)
 {
-    auto res = dsa.getMappedDocsum(id);
+    auto res = dsa.get_document(id);
     return EXPECT_EQUAL(exp, res->get_field_value(fieldName)->getAsString());
 }
 
@@ -407,7 +407,7 @@ bool
 assertAnnotatedString(const std::string & exp, const std::string & fieldName,
                       DocumentStoreAdapter &dsa, uint32_t id)
 {
-    auto res = dsa.getMappedDocsum(id);
+    auto res = dsa.get_document(id);
     MockJuniperConverter converter;
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -478,7 +478,7 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
     bc.put_document(0, std::move(doc));
 
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
-    auto res = dsa.getMappedDocsum(0);
+    auto res = dsa.get_document(0);
     EXPECT_EQUAL(-1,          res->get_field_value("a")->getAsInt());
     EXPECT_EQUAL(32767,       res->get_field_value("b")->getAsInt());
     EXPECT_EQUAL(2147483647,  res->get_field_value("c")->getAsInt());
@@ -505,19 +505,19 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
 
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     { // doc 0
-        auto res = dsa.getMappedDocsum(0);
+        auto res = dsa.get_document(0);
         EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
     }
     { // doc 1
-        auto res = dsa.getMappedDocsum(1);
+        auto res = dsa.get_document(1);
         EXPECT_EQUAL(2000, res->get_field_value("a")->getAsInt());
     }
     { // doc 2
-        auto res = dsa.getMappedDocsum(2);
+        auto res = dsa.get_document(2);
         EXPECT_TRUE(!res);
     }
     { // doc 0 (again)
-        auto res = dsa.getMappedDocsum(0);
+        auto res = dsa.get_document(0);
         EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
     }
     EXPECT_EQUAL(0u, bc._str.lastSyncToken());
@@ -531,7 +531,7 @@ TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
     auto doc = bc.make_document("id:ns:searchdocument::0");
     bc.put_document(0, std::move(doc));
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
-    auto res = dsa.getMappedDocsum(0);
+    auto res = dsa.get_document(0);
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
     res->insert_document_id(inserter);
@@ -865,7 +865,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     EXPECT_EQUAL(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, *bc._repo);
-    auto res = dsa.getMappedDocsum(1);
+    auto res = dsa.get_document(1);
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
@@ -984,7 +984,7 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
 
     ASSERT_TRUE(assertString(raw1s, "i", dsa, 1));
 
-    auto res = dsa.getMappedDocsum(1);
+    auto res = dsa.get_document(1);
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);

@@ -33,7 +33,7 @@ DocumentStoreAdapter(const search::IDocumentStore & docStore,
 DocumentStoreAdapter::~DocumentStoreAdapter() = default;
 
 std::unique_ptr<const IDocsumStoreDocument>
-DocumentStoreAdapter::getMappedDocsum(uint32_t docId)
+DocumentStoreAdapter::get_document(uint32_t docId)
 {
     auto document = _docStore.read(docId, _repo);
     if ( ! document) {

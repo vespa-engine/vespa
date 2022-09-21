@@ -39,7 +39,7 @@ DynamicDocsumWriter::resolveClassInfo(vespalib::stringref class_name,
 
 void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState& state,
-                                  IDocsumStore *docinfos, Inserter& topInserter)
+                                  IDocsumStore &docinfos, Inserter& topInserter)
 {
     if (rci.res_class == nullptr) {
         // Use empty docsum when illegal docsum class has been requested
@@ -59,7 +59,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         }
     } else {
         // look up docsum entry
-        auto doc = docinfos->getMappedDocsum(docid);
+        auto doc = docinfos.get_document(docid);
         if (!doc) {
             return; // Use empty docsum when document is gone
         }
