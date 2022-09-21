@@ -93,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -707,25 +708,27 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             extractJvmOptions(nodes, cluster, nodesElement, context);
             applyDefaultPreload(nodes, nodesElement);
-            String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
-            if (!environmentVars.isEmpty()) {
-                cluster.setEnvironmentVars(environmentVars);
+            var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
+            for (var container : nodes) {
+                for (var entry : envVars) {
+                    container.addEnvironmentVariable(entry.getKey(), entry.getValue());
+                }
             }
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
-
             cluster.addContainers(nodes);
         }
     }
 
-    private static String getEnvironmentVariables(Element environmentVariables) {
-        StringBuilder sb = new StringBuilder();
+    private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
+        var map = new LinkedHashMap<String, String>();
         if (environmentVariables != null) {
             for (Element var: XML.getChildren(environmentVariables)) {
-                sb.append(var.getNodeName()).append('=').append(var.getTextContent()).append(' ');
+                var name = new com.yahoo.text.Identifier(var.getNodeName());
+                map.put(name.toString(), var.getTextContent());
             }
         }
-        return sb.toString();
+        return map;
     }
     
     private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {

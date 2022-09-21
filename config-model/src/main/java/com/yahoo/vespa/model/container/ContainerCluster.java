@@ -160,7 +160,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private String hostClusterId = null;
     private String jvmGCOptions = null;
-    private String environmentVars = null;
 
     private boolean deferChangesUntilRestart = false;
 
@@ -521,9 +520,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
                 .heapsize(256)
                 .heapSizeAsPercentageOfPhysicalMemory(0)
                 .gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
-        if (environmentVars != null) {
-            builder.qrs.env(environmentVars);
-        }
     }
 
     @Override
@@ -642,8 +638,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
-
-    public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
 
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
