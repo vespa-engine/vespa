@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func getOutputFromCmd(program string, args ...string) (string, error) {
@@ -16,7 +18,7 @@ func getOutputFromCmd(program string, args ...string) (string, error) {
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
-	PutDebug("running command:", program, strings.Join(args, " "))
+	trace.Debug("running command:", program, strings.Join(args, " "))
 	err := cmd.Run()
 	return out.String(), err
 }

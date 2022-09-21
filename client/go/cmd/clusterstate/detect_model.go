@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -20,7 +21,7 @@ func getConfigServerHosts(s string) []string {
 	if err != nil || len(res) < 1 {
 		panic("bad configservers: " + got)
 	}
-	PutDebug("found", len(res), "configservers:", res)
+	trace.Debug("found", len(res), "configservers:", res)
 	return res
 }
 
@@ -35,7 +36,7 @@ func getConfigServerPort(i int) int {
 	if err != nil || i < 1 {
 		panic("bad configserver_rpc_port: " + got)
 	}
-	PutDebug("found configservers rpc port:", i)
+	trace.Debug("found configservers rpc port:", i)
 	return i
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -140,9 +141,9 @@ func addCommonOptions(cmd *cobra.Command, curOptions *Options) {
 	flag.NoOptDefVal = "true"
 	cobra.OnInitialize(func() {
 		if curOptions.Silent {
-			AdjustVerbosity(-1)
+			trace.Silent()
 		} else {
-			AdjustVerbosity(curOptions.Verbose)
+			trace.AdjustVerbosity(curOptions.Verbose)
 		}
 	})
 }

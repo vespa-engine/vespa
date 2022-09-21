@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func NewGetClusterStateCmd() *cobra.Command {
@@ -36,21 +37,21 @@ func NewGetClusterStateCmd() *cobra.Command {
 
 func runGetClusterState(opts *Options) {
 	if opts.Silent {
-		currentOutputLevel = levelNone
+		trace.Silent()
 	}
 	if opts.NoColors || os.Getenv("TERM") == "" {
 		color.NoColor = true
 	}
-	PutDebug("run getClusterState with: ", opts)
+	trace.Debug("run getClusterState with: ", opts)
 	m := detectModel(opts)
-	PutDebug("model:", m)
+	trace.Debug("model:", m)
 	sss := m.findSelectedServices(opts)
 	clusters := make(map[string]*ClusterState)
 	for _, s := range sss {
-		PutDebug("found service: ", s)
+		trace.Debug("found service: ", s)
 		if clusters[s.cluster] == nil {
 			state, _ := m.getClusterState(s.cluster)
-			PutDebug("cluster ", s.cluster, state)
+			trace.Debug("cluster ", s.cluster, state)
 			clusters[s.cluster] = state
 		}
 	}

@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 type VespaModelConfig struct {
@@ -63,7 +65,7 @@ func parseModelConfig(input string) *VespaModelConfig {
 	var parsedJson VespaModelConfig
 	err := codec.Decode(&parsedJson)
 	if err != nil {
-		PutTrace("could not decode JSON >>>", input, "<<< error:", err)
+		trace.Trace("could not decode JSON >>>", input, "<<< error:", err)
 		return nil
 	}
 	return &parsedJson

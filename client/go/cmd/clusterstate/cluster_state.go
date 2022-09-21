@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 // common struct used various places in the clustercontroller REST api:
@@ -90,7 +92,7 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 	errs := make([]string, 0, 0)
 	ccs := model.findClusterControllers()
 	if len(ccs) == 0 {
-		PutTrace("No cluster controllers found in vespa model:", model)
+		trace.Trace("No cluster controllers found in vespa model:", model)
 		errs = append(errs, "No cluster controllers found in vespa model config")
 	}
 	for _, cc := range ccs {
@@ -106,7 +108,7 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 		var parsedJson ClusterState
 		err = codec.Decode(&parsedJson)
 		if err != nil {
-			PutTrace("Could not parse JSON >>>", buf.String(), "<<< from", url)
+			trace.Trace("Could not parse JSON >>>", buf.String(), "<<< from", url)
 			errs = append(errs, "Bad JSON from "+url+" was: "+buf.String())
 			continue
 		}
