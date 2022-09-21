@@ -55,7 +55,7 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
     void getDocsum(Slime &slime) {
         Slime slimeOut;
         SlimeInserter inserter(slimeOut);
-        auto rci = writer->resolveClassInfo(state._args.getResultClassName());
+        auto rci = writer->resolveClassInfo(state._args.getResultClassName(), {});
         writer->insertDocsum(rci, 1u, state, this, inserter);
         vespalib::SmartBuffer buf(4_Ki);
         BinaryFormat::encode(slimeOut, buf);

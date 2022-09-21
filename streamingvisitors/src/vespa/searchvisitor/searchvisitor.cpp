@@ -145,13 +145,15 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
     if (itr != _docsum_states.end()) {
         return *itr->second;
     }
-    auto rci = _docsumWriter->resolveClassInfo(summary_class);
+    vespalib::hash_set<vespalib::string> fields;
+    for (const auto& field: _summaryFields) {
+        fields.insert(field);
+    }
+    auto rci = _docsumWriter->resolveClassInfo(summary_class, fields);
     auto state = std::make_unique<StreamingDocsumsState>(_callback, rci);
     auto &ds = state->get_state();
     ds._args.setResultClassName(summary_class);
-    for (const auto &field: _summaryFields) {
-        ds._args.add_field(field);
-    }
+    ds._args.set_fields(fields);
     if (_dump_features.has_value()) {
         ds._args.dumpFeatures(_dump_features.value());
     }
