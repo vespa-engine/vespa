@@ -1,5 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -21,10 +26,8 @@
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -35,6 +38,7 @@ using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
+using document::StringFieldValue;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
@@ -431,24 +435,28 @@ MyTransport::~MyTransport() = default;
 
 struct SchemaContext
 {
-    Schema::SP                _schema;
-    std::unique_ptr<DocBuilder> _builder;
+    Schema::SP      _schema;
+    EmptyDocBuilder _builder;
     SchemaContext();
     ~SchemaContext();
-    const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const { return _builder->getDocumentTypeRepo(); }
+    std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return _builder.get_repo_sp(); }
 };
 
 SchemaContext::SchemaContext() :
     _schema(std::make_shared<Schema>()),
-    _builder()
+    _builder([](auto &header) { using document::DataType;
+                                   header.addField("i1", DataType::T_STRING)
+                                       .addField("a1", DataType::T_STRING)
+                                       .addField("a2", DataType::T_PREDICATE)
+                                       .addTensorField("a3", "")
+                                       .addField("s1", DataType::T_STRING); })
 {
     _schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
     _schema->addAttributeField(Schema::AttributeField("a1", DataType::STRING, CollectionType::SINGLE));
     _schema->addAttributeField(Schema::AttributeField("a2", DataType::BOOLEANTREE, CollectionType::SINGLE));
     _schema->addAttributeField(Schema::AttributeField("a3", DataType::TENSOR, CollectionType::SINGLE));
-    _schema->addSummaryField(Schema::SummaryField("s1", DataType::STRING, CollectionType::SINGLE));
-    _builder = std::make_unique<DocBuilder>(*_schema);
 }
+
 SchemaContext::~SchemaContext() = default;
 
 struct DocumentContext
@@ -458,21 +466,25 @@ struct DocumentContext
     BucketId           bid;
     Timestamp          ts;
     typedef std::vector<DocumentContext> List;
-    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
+    DocumentContext(const vespalib::string &docId, uint64_t timestamp, EmptyDocBuilder &builder);
     ~DocumentContext();
-    void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
-        const document::Field &field = builder.getDocumentType().getField(fieldName);
+    void addFieldUpdate(EmptyDocBuilder &builder, const vespalib::string &fieldName) {
+        const document::Field &field = builder.get_document_type().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
     document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
 
-DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
-    : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
-      upd(std::make_shared<DocumentUpdate>(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
+DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, EmptyDocBuilder& builder)
+    : doc(builder.make_document(docId)),
+      upd(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
       ts(timestamp)
-{}
+{
+    doc->setValue("s1", StringFieldValue(docId));
+}
+
+
 DocumentContext::~DocumentContext() = default;
 
 struct FeedTokenContext
@@ -543,7 +555,7 @@ struct FixtureBase
         return getMetaStore().getMetaData(doc_.doc->getId().getGlobalId());
     }
 
-    DocBuilder &getBuilder() { return *sc._builder; }
+    EmptyDocBuilder &getBuilder() { return sc._builder; }
 
     DocumentContext doc(const vespalib::string &docId, uint64_t timestamp) {
         return DocumentContext(docId, timestamp, getBuilder());
@@ -688,7 +700,7 @@ FixtureBase::FixtureBase()
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       sc(),
       iw(std::make_shared<MyIndexWriter>(_tracer)),
-      sa(std::make_shared<MySummaryAdapter>(*sc._builder->getDocumentTypeRepo())),
+      sa(std::make_shared<MySummaryAdapter>(sc._builder.get_repo())),
       aw(std::make_shared<MyAttributeWriter>(_tracer)),
       miw(static_cast<MyIndexWriter&>(*iw)),
       msa(static_cast<MySummaryAdapter&>(*sa)),
@@ -696,7 +708,7 @@ FixtureBase::FixtureBase()
       _docIdLimit(0u),
       _dmscReal(std::make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>())),
       _dmsc(std::make_shared<test::DocumentMetaStoreContextObserver>(*_dmscReal)),
-      pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
+      pc(sc._builder.get_document_type().getName(), "fileconfig_test"),
       _service(1),
       _writeService(_service.write()),
       serial(0),
