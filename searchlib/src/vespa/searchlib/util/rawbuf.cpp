@@ -12,9 +12,7 @@ RawBuf::RawBuf(size_t size)
     : _bufStart(nullptr),
       _bufEnd(nullptr),
       _bufFillPos(nullptr),
-      _bufDrainPos(nullptr),
-      _initialBufStart(nullptr),
-      _initialSize(size)
+      _bufDrainPos(nullptr)
 {
     if (size > 0) {
         _bufStart = static_cast<char *>(malloc(size));
@@ -25,8 +23,7 @@ RawBuf::RawBuf(size_t size)
 
 RawBuf::~RawBuf()
 {
-    if (_bufStart != _initialBufStart)
-        free(_bufStart);
+    free(_bufStart);
 }
 
 
@@ -48,8 +45,7 @@ RawBuf::expandBuf(size_t needlen)
         memcpy(nbuf, _bufDrainPos, _bufFillPos - _bufDrainPos);
     _bufFillPos = _bufFillPos - _bufDrainPos + nbuf;
     _bufDrainPos = nbuf;
-    if (_bufStart != _initialBufStart)
-        free(_bufStart);
+    free(_bufStart);
     _bufStart = nbuf;
     _bufEnd = _bufStart + size;
 }
@@ -92,18 +88,6 @@ RawBuf::appendCompressedNumber(int64_t n)
     _bufFillPos += vespalib::compress::Integer::compress(n, _bufFillPos);
 }
 
-/**
- * Free 'len' bytes from the start of the contents.  (These
- * have presumably been written or read.)
- */
-void
-RawBuf::Drain(size_t len)
-{
-    _bufDrainPos += len;
-    if (_bufDrainPos == _bufFillPos)
-        reset();
-}
-
 
 /**
  * Compact any free space from the beginning of the buffer, by
@@ -128,131 +112,6 @@ RawBuf::preAlloc(size_t len)
     _bufFillPos -= (_bufDrainPos - _bufStart);
     _bufDrainPos = _bufStart;
     assert(static_cast<size_t>(_bufEnd -_bufFillPos) >= len);
-}
-
-void
-RawBuf::Reuse()
-{
-    if (static_cast<size_t>(_bufEnd - _bufStart) > _initialSize * 4) {
-        free(_bufStart);
-        if (_initialSize > 0) {
-            if (_initialBufStart != nullptr)
-                _bufStart = _initialBufStart;
-            else
-                _bufStart = static_cast<char *>(malloc(_initialSize));
-            assert(_bufStart != nullptr);
-        } else
-            _bufStart = nullptr;
-        _bufEnd = _bufStart + _initialSize;
-    }
-    _bufDrainPos = _bufFillPos = _bufStart;
-}
-
-
-void
-RawBuf::append(const char *src)
-{
-    while (*src) {
-        char *cachedBufFillPos = _bufFillPos;
-        const char *cachedBufEnd = _bufEnd;
-        while (cachedBufFillPos < cachedBufEnd && *src)
-            *cachedBufFillPos++ = *src++;
-        _bufFillPos = cachedBufFillPos;
-        if (_bufFillPos >= _bufEnd)
-            expandBuf(1);
-    }
-}
-
-/**
- * Append the value of param 'num' to the buffer, as a decimal
- * number right adjusted in a field of width 'fieldw', remaining
- * space filled with 'fill' characters.
- */
-void
-RawBuf::addNum(size_t num, size_t fieldw, char fill)
-{
-    char buf1[20];
-    char *p = buf1;
-    do {
-        *p++ = '0' + (num % 10);
-        num /= 10;
-    } while (num != 0);
-    size_t plen = p - buf1;
-    size_t wantlen = fieldw;
-    if (plen > wantlen)
-        wantlen = plen;
-    if (_bufFillPos + wantlen >= _bufEnd)
-        expandBuf(wantlen);
-    char *cachedBufFillPos = _bufFillPos;
-    while (plen < wantlen) {
-        *cachedBufFillPos++ = fill;
-        wantlen--;
-    }
-    while (p > buf1) {
-        *cachedBufFillPos++ = *--p;
-    }
-    _bufFillPos = cachedBufFillPos;
-}
-
-
-void
-RawBuf::addNum32(int32_t num, size_t fieldw, char fill)
-{
-    char buf1[11];
-    uint32_t unum = num >= 0 ? num : -num;
-    char *p = buf1;
-    do {
-        *p++ = '0' + (unum % 10);
-        unum /= 10;
-    } while (unum != 0);
-    if (num < 0)
-        *p++ = '-';
-    size_t plen = p - buf1;
-    size_t wantlen = fieldw;
-    if (plen > wantlen)
-        wantlen = plen;
-    if (_bufFillPos + wantlen >= _bufEnd)
-        expandBuf(wantlen);
-    char *cachedBufFillPos = _bufFillPos;
-    while (plen < wantlen) {
-        *cachedBufFillPos++ = fill;
-        wantlen--;
-    }
-    while (p > buf1) {
-        *cachedBufFillPos++ = *--p;
-    }
-    _bufFillPos = cachedBufFillPos;
-}
-
-
-
-void
-RawBuf::addNum64(int64_t num, size_t fieldw, char fill)
-{
-    char buf1[21];
-    uint64_t unum = num >= 0 ? num : -num;
-    char *p = buf1;
-    do {
-        *p++ = '0' + (unum % 10);
-        unum /= 10;
-    } while (unum != 0);
-    if (num < 0)
-        *p++ = '-';
-    size_t plen = p - buf1;
-    size_t wantlen = fieldw;
-    if (plen > wantlen)
-        wantlen = plen;
-    if (_bufFillPos + wantlen >= _bufEnd)
-        expandBuf(wantlen);
-    char *cachedBufFillPos = _bufFillPos;
-    while (plen < wantlen) {
-        *cachedBufFillPos++ = fill;
-        wantlen--;
-    }
-    while (p > buf1) {
-        *cachedBufFillPos++ = *--p;
-    }
-    _bufFillPos = cachedBufFillPos;
 }
 
 void
