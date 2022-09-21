@@ -95,7 +95,7 @@ public final class ArithmeticNode extends CompositeNode {
 
         // Apply in precedence order:
         Deque<ValueItem> stack = new ArrayDeque<>();
-        stack.push(new ValueItem(ArithmeticOperator.OR, child.next().evaluate(context)));
+        stack.push(new ValueItem(null, child.next().evaluate(context)));
         for (Iterator<ArithmeticOperator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
             ArithmeticOperator op = it.next();
             if ( ! stack.isEmpty()) {

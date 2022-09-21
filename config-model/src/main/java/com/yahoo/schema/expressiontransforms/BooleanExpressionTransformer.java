@@ -12,7 +12,6 @@ import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -46,7 +45,7 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
 
         // Transform in precedence order:
         Deque<ChildNode> stack = new ArrayDeque<>();
-        stack.push(new ChildNode(ArithmeticOperator.OR, child.next()));
+        stack.push(new ChildNode(null, child.next()));
         for (Iterator<ArithmeticOperator> it = node.operators().iterator(); it.hasNext() && child.hasNext();) {
             ArithmeticOperator op = it.next();
             if ( ! stack.isEmpty()) {
