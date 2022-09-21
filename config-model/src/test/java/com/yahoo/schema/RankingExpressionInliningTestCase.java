@@ -163,7 +163,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    \n" +
                         "    rank-profile test {\n" +
                         "        first-phase {\n" +
-                        "            expression: A + C + D\n" +
+                        "            expression: A + C - D\n" +
                         "        }\n" +
                         "        function inline D() {\n" +
                         "            expression: B + 1\n" +
@@ -184,7 +184,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
 
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
+        assertEquals("attribute(a) + C - (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
         assertEquals("attribute(a) + attribute(b)", getRankingExpression("C", test, s));
         assertEquals("attribute(b) + 1", getRankingExpression("D", test, s));
     }
