@@ -75,10 +75,18 @@ public class BooleanExpressionTransformerTestCase {
 
         assertEquals(new RankingExpression(expected), transformedExpression, "Transformed as expected");
 
+        MapContext context = contextWithSingleLetterVariables();
         var inputExpression = new RankingExpression(input);
         assertEquals(inputExpression.evaluate(new MapContext()).asBoolean(),
                      transformedExpression.evaluate(new MapContext()).asBoolean(),
                      "Transform and original input are equivalent");
+    }
+
+    private MapContext contextWithSingleLetterVariables() {
+        var context = new MapContext();
+        for (int i = 0; i < 26; i++)
+            context.put(Character.toString(i + 97), Math.floorMod(i, 2));
+        return context;
     }
 
 }
