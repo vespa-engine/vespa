@@ -33,7 +33,7 @@ protected:
     const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
     explicit AttrDFW(const vespalib::string & attrName);
-    bool IsGenerated() const override { return true; }
+    bool isGenerated() const override { return true; }
 };
 
 }

@@ -73,7 +73,7 @@ DocsumContext::createSlimeReply()
 {
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
                                                                          _docsumState._args.get_fields());
-    _docsumWriter.InitState(_attrMgr, _docsumState, rci);
+    _docsumWriter.initState(_attrMgr, _docsumState, rci);
     const size_t estimatedChunkSize(std::min(0x200000ul, _docsumState._docsumbuf.size()*0x400ul));
     vespalib::Slime::UP response(std::make_unique<vespalib::Slime>(makeSlimeParams(estimatedChunkSize)));
     Cursor & root = response->setObject();
@@ -125,7 +125,7 @@ DocsumContext::getDocsums()
 }
 
 void
-DocsumContext::FillSummaryFeatures(search::docsummary::GetDocsumsState& state)
+DocsumContext::fillSummaryFeatures(search::docsummary::GetDocsumsState& state)
 {
     assert(&_docsumState == &state);
     if (_matcher->canProduceSummaryFeatures()) {
@@ -135,7 +135,7 @@ DocsumContext::FillSummaryFeatures(search::docsummary::GetDocsumsState& state)
 }
 
 void
-DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState& state)
+DocsumContext::fillRankFeatures(search::docsummary::GetDocsumsState& state)
 {
     assert(&_docsumState == &state);
     // check if we are allowed to run

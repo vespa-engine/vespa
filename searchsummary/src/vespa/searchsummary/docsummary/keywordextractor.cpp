@@ -28,7 +28,7 @@ KeywordExtractor::KeywordExtractor(const IDocsumEnvironment * env)
 KeywordExtractor::~KeywordExtractor() = default;
 
 bool
-KeywordExtractor::IsLegalIndexName(const char *idxName) const
+KeywordExtractor::isLegalIndexName(const char *idxName) const
 {
     return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
@@ -47,7 +47,7 @@ KeywordExtractor::IndexPrefix::Match(const char *idxName) const
 }
 
 void
-KeywordExtractor::AddLegalIndexSpec(const char *spec)
+KeywordExtractor::addLegalIndexSpec(const char *spec)
 {
     if (spec == nullptr)
         return;
@@ -66,9 +66,9 @@ KeywordExtractor::AddLegalIndexSpec(const char *spec)
             offset = seppos + 1;
             if (tok[tok.size() - 1] == '*') {
                 tok.resize(tok.size() - 1);
-                AddLegalIndexPrefix(tok.c_str());
+                addLegalIndexPrefix(tok.c_str());
             } else {
-                AddLegalIndexName(tok.c_str());
+                addLegalIndexName(tok.c_str());
             }
         }
     }
@@ -76,16 +76,16 @@ KeywordExtractor::AddLegalIndexSpec(const char *spec)
         tok = toks.substr(offset);
         if (tok[tok.size() - 1] == '*') {
             tok.resize(tok.size() - 1);
-            AddLegalIndexPrefix(tok.c_str());
+            addLegalIndexPrefix(tok.c_str());
         } else {
-            AddLegalIndexName(tok.c_str());
+            addLegalIndexName(tok.c_str());
         }
     }
 }
 
 
 vespalib::string
-KeywordExtractor::GetLegalIndexSpec()
+KeywordExtractor::getLegalIndexSpec()
 {
     vespalib::string spec;
 
@@ -110,16 +110,16 @@ KeywordExtractor::GetLegalIndexSpec()
 
 
 bool
-KeywordExtractor::IsLegalIndex(vespalib::stringref idxS) const
+KeywordExtractor::isLegalIndex(vespalib::stringref idx) const
 {
     vespalib::string resolvedIdxName;
 
     if (_env != nullptr) {
-        resolvedIdxName = _env->lookupIndex(idxS);
+        resolvedIdxName = _env->lookupIndex(idx);
     } else {
 
-        if ( ! idxS.empty() ) {
-            resolvedIdxName = idxS;
+        if ( ! idx.empty() ) {
+            resolvedIdxName = idx;
         } else {
             resolvedIdxName = "__defaultindex";
         }
@@ -128,8 +128,8 @@ KeywordExtractor::IsLegalIndex(vespalib::stringref idxS) const
     if (resolvedIdxName.empty())
         return false;
 
-    return (IsLegalIndexPrefix(resolvedIdxName.c_str()) ||
-            IsLegalIndexName(resolvedIdxName.c_str()));
+    return (isLegalIndexPrefix(resolvedIdxName.c_str()) ||
+            isLegalIndexName(resolvedIdxName.c_str()));
 }
 
 }

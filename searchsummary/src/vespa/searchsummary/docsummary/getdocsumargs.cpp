@@ -32,7 +32,7 @@ GetDocsumArgs::initFromDocsumRequest(const engine::DocsumRequest &req)
 }
 
 void
-GetDocsumArgs::SetStackDump(uint32_t stackDumpLen, const char *stackDump)
+GetDocsumArgs::setStackDump(uint32_t stackDumpLen, const char *stackDump)
 {
     _stackDump.resize(stackDumpLen);
     memcpy(&_stackDump[0], stackDump, _stackDump.size());

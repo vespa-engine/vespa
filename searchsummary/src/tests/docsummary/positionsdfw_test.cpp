@@ -78,8 +78,8 @@ public:
 };
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
-    virtual void FillSummaryFeatures(GetDocsumsState&) override {}
-    virtual void FillRankFeatures(GetDocsumsState&) override {}
+    virtual void fillSummaryFeatures(GetDocsumsState&) override {}
+    virtual void fillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 

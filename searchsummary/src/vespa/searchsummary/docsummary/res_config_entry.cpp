@@ -20,7 +20,7 @@ void
 ResConfigEntry::set_writer(std::unique_ptr<DocsumFieldWriter> writer_in)
 {
     _writer = std::move(writer_in);
-    _generated = _writer ? _writer->IsGenerated() : false;
+    _generated = _writer ? _writer->isGenerated() : false;
 }
 
 }

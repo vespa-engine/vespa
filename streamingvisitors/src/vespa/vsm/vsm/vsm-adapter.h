@@ -34,8 +34,8 @@ private:
 
 public:
     GetDocsumsStateCallback();
-    void FillSummaryFeatures(GetDocsumsState& state) override;
-    void FillRankFeatures(GetDocsumsState& state) override;
+    void fillSummaryFeatures(GetDocsumsState& state) override;
+    void fillRankFeatures(GetDocsumsState& state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
     void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }

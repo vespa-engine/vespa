@@ -27,7 +27,7 @@ protected:
     std::unique_ptr<juniper::Config> _juniperConfig;
     const juniper::Juniper          *_juniper;
 private:
-    bool IsGenerated() const override { return false; }
+    bool isGenerated() const override { return false; }
     JuniperDFW(const JuniperDFW &);
     JuniperDFW & operator=(const JuniperDFW &);
 };

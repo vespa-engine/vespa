@@ -37,7 +37,7 @@ ResultConfig::~ResultConfig()
 
 
 void
-ResultConfig::Reset()
+ResultConfig::reset()
 {
     if (! _classLookup.empty()) {
         Clean();
@@ -46,18 +46,18 @@ ResultConfig::Reset()
 
 
 ResultClass *
-ResultConfig::AddResultClass(const char *name, uint32_t id)
+ResultConfig::addResultClass(const char *name, uint32_t classID)
 {
     ResultClass *ret = nullptr;
 
-    if (id != NoClassID() && (_classLookup.find(id) == _classLookup.end())) {
+    if (classID != noClassID() && (_classLookup.find(classID) == _classLookup.end())) {
         auto rc = std::make_unique<ResultClass>(name);
         ret = rc.get();
-        _classLookup[id] = std::move(rc);
+        _classLookup[classID] = std::move(rc);
         if (_nameLookup.find(name) != _nameLookup.end()) {
-            LOG(warning, "Duplicate result class name: %s (now maps to class id %u)", name, id);
+            LOG(warning, "Duplicate result class name: %s (now maps to class id %u)", name, classID);
         }
-        _nameLookup[name] = id;
+        _nameLookup[name] = classID;
     }
     return ret;
 }
@@ -69,17 +69,17 @@ ResultConfig::set_default_result_class_id(uint32_t id)
 }
 
 const ResultClass*
-ResultConfig::LookupResultClass(uint32_t id) const
+ResultConfig::lookupResultClass(uint32_t classID) const
 {
-    auto it = _classLookup.find(id);
+    auto it = _classLookup.find(classID);
     return (it != _classLookup.end()) ? it->second.get() : nullptr;
 }
 
 uint32_t
-ResultConfig::LookupResultClassId(const vespalib::string &name) const
+ResultConfig::lookupResultClassId(const vespalib::string &name) const
 {
     auto found = _nameLookup.find(name);
-    return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : NoClassID());
+    return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : noClassID());
 }
 
 
@@ -98,10 +98,10 @@ ResultConfig::set_wanted_v8_geo_positions(bool value)
 }
 
 bool
-ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
+ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
 {
     bool rc = true;
-    Reset();
+    reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
     global_useV8geoPositions = cfg.usev8geopositions;
@@ -117,7 +117,7 @@ ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             rc = false;
             break;
         }
-        ResultClass *resClass = AddResultClass(cfg_class.name.c_str(), classID);
+        ResultClass *resClass = addResultClass(cfg_class.name.c_str(), classID);
         if (resClass == nullptr) {
             LOG(error,"%s: unable to add classes[%d] name %s", configId, i, cfg_class.name.c_str());
             rc = false;
@@ -141,7 +141,7 @@ ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                     break;
                 }
             }
-            rc = resClass->AddConfigEntry(fieldname, std::move(docsum_field_writer));
+            rc = resClass->addConfigEntry(fieldname, std::move(docsum_field_writer));
             if (!rc) {
                 LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
                 break;
@@ -149,7 +149,7 @@ ResultConfig::ReadConfig(const SummaryConfig &cfg, const char *configId, IDocsum
         }
     }
     if (!rc) {
-        Reset();          // FAIL, discard all config
+        reset();          // FAIL, discard all config
     }
     return rc;
 }

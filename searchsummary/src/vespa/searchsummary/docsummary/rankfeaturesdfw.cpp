@@ -16,7 +16,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state,
                              vespalib::slime::Inserter &target) const
 {
     if ( !state._rankFeatures ) {
-        state._callback.FillRankFeatures(state);
+        state._callback.fillRankFeatures(state);
         if (state._rankFeatures.get() == nullptr) { // still no rank features to write
             return;
         }

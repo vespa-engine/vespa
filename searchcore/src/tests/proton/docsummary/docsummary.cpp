@@ -1015,7 +1015,7 @@ Fixture::Fixture()
     _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
         cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
     auto docsum_field_writer_factory = std::make_unique<MockDocsumFieldWriterFactory>();
-    _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str(), *docsum_field_writer_factory);
+    _resultCfg.readConfig(*_summaryCfg, cfgId.c_str(), *docsum_field_writer_factory);
 }
 
 Fixture::~Fixture() = default;

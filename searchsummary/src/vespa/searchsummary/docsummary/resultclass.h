@@ -72,7 +72,7 @@ public:
      *
      * @return number of config entries held by this object.
      **/
-    uint32_t GetNumEntries() const { return _entries.size(); }
+    uint32_t getNumEntries() const { return _entries.size(); }
 
 
     /**
@@ -86,8 +86,8 @@ public:
      * @param name the name of the field to add.
      * @param docsum_field_writer field writer for writing field
      **/
-    bool AddConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
-    bool AddConfigEntry(const char *name);
+    bool addConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
+    bool addConfigEntry(const char *name);
 
     /**
      * Obtain the field index from the field name. The field index may
@@ -97,19 +97,19 @@ public:
      * GeneralResult object, make sure that the
      * GeneralResult object has this object as it's result
      * class. NOTE2: This method is called by the
-     * GeneralResult::GetEntry(string) method; no need to call it
+     * GeneralResult::getEntry(string) method; no need to call it
      * directly.
      *
      * @return field index or -1 if not found
      **/
-    int GetIndexFromName(const char* name) const;
+    int getIndexFromName(const char* name) const;
 
     /**
      * Obtain config entry by field index.
      *
      * @return config entry or NULL if not found.
      **/
-    const ResConfigEntry *GetEntry(uint32_t offset) const {
+    const ResConfigEntry *getEntry(uint32_t offset) const {
         return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
 

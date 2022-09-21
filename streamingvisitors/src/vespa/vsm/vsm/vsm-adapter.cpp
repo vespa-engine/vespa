@@ -25,7 +25,7 @@ GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _matching_elements_filler()
 { }
 
-void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState& state)
+void GetDocsumsStateCallback::fillSummaryFeatures(GetDocsumsState& state)
 {
     if (_summaryFeatures) { // set the summary features to write to the docsum
         state._summaryFeatures = _summaryFeatures;
@@ -33,7 +33,7 @@ void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState& state)
     }
 }
 
-void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState& state)
+void GetDocsumsStateCallback::fillRankFeatures(GetDocsumsState& state)
 {
     if (_rankFeatures) { // set the rank features to write to the docsum
         state._rankFeatures = _rankFeatures;
@@ -86,11 +86,11 @@ DocsumTools::set_writer(std::unique_ptr<DynamicDocsumWriter> writer)
 bool
 DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 {
-    uint32_t defaultSummaryId = getResultConfig()->LookupResultClassId(cfg->outputclass);
-    _resultClass = getResultConfig()->LookupResultClass(defaultSummaryId);
+    uint32_t defaultSummaryId = getResultConfig()->lookupResultClassId(cfg->outputclass);
+    _resultClass = getResultConfig()->lookupResultClass(defaultSummaryId);
     if (_resultClass != nullptr) {
-        for (uint32_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
-            const ResConfigEntry * entry = _resultClass->GetEntry(i);
+        for (uint32_t i = 0; i < _resultClass->getNumEntries(); ++i) {
+            const ResConfigEntry * entry = _resultClass->getEntry(i);
             _fieldSpecs.emplace_back();
             _fieldSpecs.back().setOutputName(entry->name());
             bool found = false;
@@ -147,15 +147,15 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     // init result config
     auto resCfg = std::make_unique<ResultConfig>();
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *_fieldsCfg.get());
-    if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
+    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }
     docsum_field_writer_factory.reset();
 
     // init keyword extractor
     auto kwExtractor = std::make_unique<KeywordExtractor>(nullptr);
-    kwExtractor->AddLegalIndexSpec(_highlightindexes.c_str());
-    vespalib::string spec = kwExtractor->GetLegalIndexSpec();
+    kwExtractor->addLegalIndexSpec(_highlightindexes.c_str());
+    vespalib::string spec = kwExtractor->getLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());
 
     // create dynamic docsum writer

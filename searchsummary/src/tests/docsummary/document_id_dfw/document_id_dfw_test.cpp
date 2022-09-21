@@ -54,8 +54,8 @@ make_doc_type_repo()
 }
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
-    virtual void FillSummaryFeatures(GetDocsumsState&) override {}
-    virtual void FillRankFeatures(GetDocsumsState&) override {}
+    virtual void fillSummaryFeatures(GetDocsumsState&) override {}
+    virtual void fillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 
@@ -84,8 +84,8 @@ DocumentIdDFWTest::DocumentIdDFWTest()
       _repo(make_doc_type_repo()),
       _document_type(_repo->getDocumentType(doc_type_name))
 {
-    auto* cfg = _result_config->AddResultClass("default", 0);
-    cfg->AddConfigEntry(_field_name.c_str());
+    auto* cfg = _result_config->addResultClass("default", 0);
+    cfg->addConfigEntry(_field_name.c_str());
 }
 
 

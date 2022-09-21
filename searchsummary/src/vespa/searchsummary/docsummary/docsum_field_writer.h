@@ -12,7 +12,7 @@ class IDocsumStoreDocument;
 class GetDocsumsState;
 
 /*
- * Abstract class for writing document summaries.
+ * Abstract class for writing a field in a document summary.
  */
 class DocsumFieldWriter
 {
@@ -22,7 +22,7 @@ public:
     {
     }
     virtual ~DocsumFieldWriter() = default;
-    virtual bool IsGenerated() const = 0;
+    virtual bool isGenerated() const = 0;
     virtual void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter &target) const = 0;
     virtual const vespalib::string & getAttributeName() const;
     virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState& state) const;

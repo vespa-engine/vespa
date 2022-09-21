@@ -32,8 +32,8 @@ class DocsumFieldWriterState;
 class GetDocsumsStateCallback
 {
 public:
-    virtual void FillSummaryFeatures(GetDocsumsState& state) = 0;
-    virtual void FillRankFeatures(GetDocsumsState& state) = 0;
+    virtual void fillSummaryFeatures(GetDocsumsState& state) = 0;
+    virtual void fillRankFeatures(GetDocsumsState& state) = 0;
     virtual std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &matching_elems_fields) = 0;
     virtual ~GetDocsumsStateCallback() = default;
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;

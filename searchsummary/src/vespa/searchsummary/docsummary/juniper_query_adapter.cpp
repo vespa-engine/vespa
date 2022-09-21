@@ -22,7 +22,7 @@ JuniperQueryAdapter::~JuniperQueryAdapter() = default;
 
 // TODO: put this functionality into the stack dump iterator
 bool
-JuniperQueryAdapter::SkipItem(search::SimpleQueryStackDumpIterator *iterator) const
+JuniperQueryAdapter::skipItem(search::SimpleQueryStackDumpIterator *iterator) const
 {
     uint32_t skipCount = iterator->getArity();
 
@@ -53,19 +53,19 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_EQUIV:
         case search::ParseItem::ITEM_WORD_ALTERNATIVES:
             if (!v->VisitOR(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_AND:
             if (!v->VisitAND(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_NOT:
             if (!v->VisitANDNOT(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_RANK:
             if (!v->VisitRANK(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_TERM:
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
@@ -98,7 +98,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_PHRASE:
             if (!v->VisitPHRASE(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_PREFIXTERM:
         case search::ParseItem::ITEM_SUBSTRINGTERM:
@@ -109,15 +109,15 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_ANY:
             if (!v->VisitANY(&item, iterator.getArity()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_NEAR:
             if (!v->VisitNEAR(&item, iterator.getArity(),iterator.getNearDistance()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_ONEAR:
             if (!v->VisitWITHIN(&item, iterator.getArity(),iterator.getNearDistance()))
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             break;
         case search::ParseItem::ITEM_TRUE:
         case search::ParseItem::ITEM_FALSE:
@@ -134,7 +134,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_NEAREST_NEIGHBOR:
         case search::ParseItem::ITEM_GEO_LOCATION_TERM:
             if (!v->VisitOther(&item, iterator.getArity())) {
-                rc = SkipItem(&iterator);
+                rc = skipItem(&iterator);
             }
             break;
         default:
@@ -158,7 +158,7 @@ JuniperQueryAdapter::UsefulIndex(const juniper::QueryItem* item) const
         return true;
     }
     auto index = item->get_index();
-    return _kwExtractor->IsLegalIndex(index);
+    return _kwExtractor->isLegalIndex(index);
 }
 
 }
