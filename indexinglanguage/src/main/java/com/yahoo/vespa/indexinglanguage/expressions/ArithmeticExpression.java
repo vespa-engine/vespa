@@ -166,13 +166,19 @@ public final class ArithmeticExpression extends CompositeExpression {
         }
         BigDecimal lhsVal = asBigDecimal((NumericFieldValue)lhs);
         BigDecimal rhsVal = asBigDecimal((NumericFieldValue)rhs);
-        return switch (op) {
-            case ADD -> createFieldValue(lhs, rhs, lhsVal.add(rhsVal));
-            case SUB -> createFieldValue(lhs, rhs, lhsVal.subtract(rhsVal));
-            case MUL -> createFieldValue(lhs, rhs, lhsVal.multiply(rhsVal));
-            case DIV -> createFieldValue(lhs, rhs, lhsVal.divide(rhsVal, MathContext.DECIMAL64));
-            case MOD -> createFieldValue(lhs, rhs, lhsVal.remainder(rhsVal));
-        };
+        switch (op) {
+        case ADD:
+            return createFieldValue(lhs, rhs, lhsVal.add(rhsVal));
+        case SUB:
+            return createFieldValue(lhs, rhs, lhsVal.subtract(rhsVal));
+        case MUL:
+            return createFieldValue(lhs, rhs, lhsVal.multiply(rhsVal));
+        case DIV:
+            return createFieldValue(lhs, rhs, lhsVal.divide(rhsVal, MathContext.DECIMAL64));
+        case MOD:
+            return createFieldValue(lhs, rhs, lhsVal.remainder(rhsVal));
+        }
+        throw new IllegalStateException("Unsupported operation: " + op);
     }
 
     private FieldValue createFieldValue(FieldValue lhs, FieldValue rhs, BigDecimal val) {
