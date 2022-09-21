@@ -566,7 +566,7 @@ public:
 
         // Need a cluster state to work with initially, so that processing
         // bucket requests can calculate a target distributor.
-        updater_internal_cluster_state_with_current();
+        update_internal_cluster_state_with_current();
     }
 
     void setUp(const WithBuckets& buckets) {
@@ -575,14 +575,24 @@ public:
         }
     }
 
-    void updater_internal_cluster_state_with_current() {
+    void update_internal_cluster_state_with_current() {
         _self._node->setClusterState(*_state);
-        _self._manager->onDown(std::make_shared<api::SetSystemStateCommand>(*_state));
+        auto cmd = std::make_shared<api::SetSystemStateCommand>(*_state);
+        _self._manager->onDown(cmd);
+        // Also send up reply to release internal state transition barrier.
+        // We expect there to be no other pending messages at this point.
+        std::shared_ptr<api::StorageReply> reply(cmd->makeReply());
+        auto as_state_reply = std::dynamic_pointer_cast<api::SetSystemStateReply>(reply);
+        assert(as_state_reply);
+        assert(_self._top->getNumReplies() == 0);
+        _self._manager->onUp(as_state_reply);
+        assert(_self._top->getNumReplies() == 1);
+        (void)_self._top->getRepliesOnce(); // Clear state reply sent up chain
     }
 
     void update_cluster_state(const lib::ClusterState& state) {
         _state = std::make_shared<lib::ClusterState>(state);
-        updater_internal_cluster_state_with_current();
+        update_internal_cluster_state_with_current();
     }
 
     auto acquireBucketLock(const document::BucketId& bucket) {
@@ -1225,6 +1235,48 @@ TEST_F(BucketManagerTest, bounce_request_on_internal_cluster_state_version_misma
     auto replies = f.awaitAndGetReplies(1);
     auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
     EXPECT_EQ(api::ReturnCode::REJECTED, reply.getResult().getResult());
+}
+
+// This tests a slightly different inconsistency than the above test; the node has
+// locally enabled the cluster state (i.e. initially observed version == enabled version),
+// but is not yet done processing side effects from doing so.
+// See comments in BucketManager::onSetSystemState[Reply]() for rationale
+TEST_F(BucketManagerTest, bounce_request_on_state_change_barrier_not_reached) {
+    ConcurrentOperationFixture f(*this);
+
+    // Make manager-internal and component-internal version state inconsistent
+    f.update_cluster_state(lib::ClusterState("version:2 distributor:1 storage:1"));
+    auto new_state = lib::ClusterState("version:3 distributor:1 storage:1");
+    auto state_cmd = std::make_shared<api::SetSystemStateCommand>(new_state);
+    _top->sendDown(state_cmd);
+    _bottom->waitForMessage(api::MessageType::SETSYSTEMSTATE, MESSAGE_WAIT_TIME);
+    (void)_bottom->getCommandsOnce();
+    _node->setClusterState(new_state);
+
+    // At this point, the node's internal cluster state matches that of the state command
+    // which was observed on the way down. But there may still be side effects pending from
+    // enabling the cluster state. So we must still reject requests until we have observed
+    // the reply for the state command (which must order after any and all side effects).
+
+    _top->sendDown(f.createFullFetchCommand());
+    auto replies = f.awaitAndGetReplies(1);
+    {
+        auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
+        EXPECT_EQ(api::ReturnCode::REJECTED, reply.getResult().getResult());
+    }
+    (void)_top->getRepliesOnce();
+
+    // Once the cluster state reply has been observed, requests can go through as expected.
+    _manager->onUp(std::shared_ptr<api::StorageReply>(state_cmd->makeReply()));
+    _top->waitForMessage(api::MessageType::SETSYSTEMSTATE_REPLY, MESSAGE_WAIT_TIME);
+    (void)_top->getRepliesOnce();
+
+    _top->sendDown(f.createFullFetchCommand());
+    replies = f.awaitAndGetReplies(1);
+    {
+        auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
+        EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
+    }
 }
 
 } // storage
