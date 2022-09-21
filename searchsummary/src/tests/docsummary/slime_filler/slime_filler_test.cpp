@@ -183,9 +183,10 @@ protected:
     void expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv, SlimeFillerFilter& filter);
     void expect_insert_callback(const std::vector<vespalib::string>& exp, const FieldValue& fv);
-    // Following 3 member functions tests static member functions in SlimeFiller
+    // Following 4 member functions tests static member functions in SlimeFiller
     void expect_insert_summary_field(const vespalib::string& exp, const FieldValue& fv);
     void expect_insert_summary_field_with_filter(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
+    void expect_insert_summary_field_with_field_filter(const vespalib::string& exp, const FieldValue& fv, const SlimeFillerFilter* filter);
     void expect_insert_juniper_field(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv);
 };
 
@@ -341,6 +342,16 @@ SlimeFillerTest::expect_insert_summary_field_with_filter(const vespalib::string&
     Slime slime;
     SlimeInserter inserter(slime);
     SlimeFiller::insert_summary_field_with_filter(fv, inserter, matching_elems);
+    auto act = slime_to_string(slime);
+    EXPECT_EQ(exp, act);
+}
+
+void
+SlimeFillerTest::expect_insert_summary_field_with_field_filter(const vespalib::string& exp, const FieldValue& fv, const SlimeFillerFilter* filter)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, filter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -607,6 +618,16 @@ TEST_F(SlimeFillerTest, insert_summary_field_with_filter)
     expect_insert_summary_field_with_filter("null", make_empty_weighted_set(), {});
     expect_insert_summary_field_with_filter(R"([{"key":"key3","value":"value3"}])", make_map(), {2});
     expect_insert_summary_field_with_filter("null", make_empty_map(), {});
+}
+
+TEST_F(SlimeFillerTest, insert_summary_field_with_field_filter)
+{
+    auto nested = make_nested_value(0);
+    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in slime
+    expect_insert_summary_field_with_field_filter(R"({"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}})", nested, nullptr);
+    SlimeFillerFilter filter;
+    filter.add("a").add("c").add("f.a").add("d");
+    expect_insert_summary_field_with_field_filter(R"({"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}})", nested, &filter);
 }
 
 TEST_F(SlimeFillerTest, insert_juniper_field)

@@ -365,6 +365,17 @@ SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib:
 }
 
 void
+SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, const SlimeFillerFilter* filter)
+{
+    CheckUndefinedValueVisitor check_undefined;
+    value.accept(check_undefined);
+    if (!check_undefined.is_undefined()) {
+        SlimeFiller visitor(inserter, nullptr, filter);
+        value.accept(visitor);
+    }
+}
+
+void
 SlimeFiller::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter)
 {
     CheckUndefinedValueVisitor check_undefined;

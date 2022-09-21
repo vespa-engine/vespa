@@ -38,9 +38,6 @@ private:
                                                VsmsummaryConfig::Fieldmap::Command command,
                                                const Document & docsum, bool & modified);
     bool write_flatten_field(const DocsumFieldSpec& field_spec, const Document & docsum);
-
-    search::docsummary::DocsumStoreFieldValue get_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc);
-    void insert_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter);
 public:
     DocsumFilter(DocsumToolsPtr tools, const IDocSumCache & docsumCache);
     DocsumFilter(const DocsumFilter &) = delete;
