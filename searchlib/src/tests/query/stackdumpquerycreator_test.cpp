@@ -19,12 +19,6 @@ using namespace search::query;
 
 namespace {
 
-template <typename T>
-void append(RawBuf &buf, T i) {
-    buf.preAlloc(sizeof(T));
-    buf.PutToInet(i);
-}
-
 void appendString(RawBuf &buf, const string &s) {
     buf.preAlloc(sizeof(uint32_t) + s.size());
     buf.appendCompressedPositiveNumber(s.size());
@@ -50,7 +44,7 @@ TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
     SimpleQueryStackDumpIterator query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
-    NumberTerm *term = dynamic_cast<NumberTerm *>(node.get());
+    auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
     EXPECT_EQUAL(term_string, term->getTerm());
 }
@@ -65,7 +59,7 @@ TEST("requireThatTooLargeFloatNumTermIsTreatedAsFloat") {
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
-    NumberTerm *term = dynamic_cast<NumberTerm *>(node.get());
+    auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
     EXPECT_EQUAL(term_string, term->getTerm());
 }
@@ -97,7 +91,7 @@ TEST("require that PredicateQueryItem stack dump item can be read") {
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
-    PredicateQuery *p = dynamic_cast<PredicateQuery *>(node.get());
+    auto *p = dynamic_cast<PredicateQuery *>(node.get());
     ASSERT_TRUE(p);
     const PredicateQueryTerm &term = *p->getTerm();
     ASSERT_EQUAL(2u, term.getFeatures().size());

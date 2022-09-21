@@ -40,11 +40,6 @@ class QueryNodeConverter : public QueryVisitor {
         _buf.appendCompressedNumber(n);
     }
 
-    void appendInt(uint32_t i) {
-        _buf.preAlloc(sizeof(uint32_t));
-        _buf.PutToInet(i);
-    }
-
     void appendLong(uint64_t l) {
         _buf.preAlloc(sizeof(uint64_t));
         _buf.Put64ToInet(l);

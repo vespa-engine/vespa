@@ -20,8 +20,6 @@ private:
     char* _bufEnd;          // ref. to byte after last in buffer (don't mo)
     char* _bufFillPos;      // ref. to byte where next should be put in
     char* _bufDrainPos;     // ref. to next byte to take out of buffer
-    char* _initialBufStart;
-    size_t _initialSize;
 
     void ensureSizeInternal(size_t size);
     void    expandBuf(size_t needlen);
@@ -50,26 +48,16 @@ public:
     explicit RawBuf(size_t size);    // malloc-s given size, assigns to _bufStart
     ~RawBuf();      // Frees _bufStart, i.e. the char[].
 
-    void    addNum(size_t num, size_t fieldw, char fill);
-    void    addNum32(int32_t num, size_t fieldw, char fill);
-    void    addNum64(int64_t num, size_t fieldw, char fill);
-
     void    append(const void *data, size_t len);
-    void    append(const char *data);
     void    append(uint8_t byte);
     void    appendCompressedPositiveNumber(uint64_t n);
     void    appendCompressedNumber(int64_t n);
     size_t      GetFreeLen() const { return _bufEnd - _bufFillPos; }
-    size_t      GetDrainLen() const { return _bufDrainPos - _bufStart; }
     const char *GetDrainPos() const { return _bufDrainPos; }
-    const char *GetFillPos() const { return _bufFillPos; }
     char *      GetWritableFillPos(size_t len) { preAlloc(len); return _bufFillPos; }
     void    preAlloc(size_t len);   // Ensure room for 'len' more bytes.
     void    reset() { _bufDrainPos = _bufFillPos = _bufStart; }
-    void    Reuse();
-    size_t  GetUsedAndDrainLen() const { return _bufFillPos - _bufStart; }
     size_t  GetUsedLen() const { return _bufFillPos - _bufDrainPos; }
-    void    Drain(size_t len);  // Adjust drain pos.
     void    Fill(size_t len) { _bufFillPos += len; }
 
     void ensureSize(size_t size) {
@@ -77,11 +65,6 @@ public:
             ensureSizeInternal(size);
         }
     }
-
-    void PutToInet(uint32_t src) {
-        ensureSize(4);
-        _bufFillPos = reinterpret_cast<char *>(ToInet(src,reinterpret_cast<unsigned char*>(_bufFillPos)));
-    };
 
     void Put64ToInet(uint64_t src) {
         ensureSize(8);
