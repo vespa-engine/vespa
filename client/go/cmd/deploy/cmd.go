@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -73,9 +74,9 @@ func newUploadCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdUpload
 			if opts.Verbose {
-				AdjustVerbosity(1)
+				trace.AdjustVerbosity(1)
 			}
-			PutTrace("upload with", opts, args)
+			trace.Trace("upload with", opts, args)
 			err := RunUpload(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -95,9 +96,9 @@ func newPrepareCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdPrepare
 			if opts.Verbose {
-				AdjustVerbosity(1)
+				trace.AdjustVerbosity(1)
 			}
-			PutTrace("prepare with", opts, args)
+			trace.Trace("prepare with", opts, args)
 			err := RunPrepare(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -116,9 +117,9 @@ func newActivateCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdActivate
 			if opts.Verbose {
-				AdjustVerbosity(1)
+				trace.AdjustVerbosity(1)
 			}
-			PutTrace("activate with", opts, args)
+			trace.Trace("activate with", opts, args)
 			err := RunActivate(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -137,9 +138,9 @@ func newFetchCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdFetch
 			if opts.Verbose {
-				AdjustVerbosity(1)
+				trace.AdjustVerbosity(1)
 			}
-			PutTrace("fetch with", opts, args)
+			trace.Trace("fetch with", opts, args)
 			err := RunFetch(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())

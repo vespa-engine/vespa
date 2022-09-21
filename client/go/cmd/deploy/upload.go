@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 // main entry point for vespa-deploy upload
@@ -80,7 +82,7 @@ func uploadFrom(opts *Options, src string) (string, error) {
 	url := src + pathPrefix(opts)
 	url = addUrlPropertyFromOption(url, opts.From, "from")
 	url = addUrlPropertyFromFlag(url, opts.Verbose, "verbose")
-	PutTrace("Upload from URL", opts.From, "using", urlWithoutQuery(url))
+	trace.Trace("Upload from URL", opts.From, "using", urlWithoutQuery(url))
 	output, err := curlPost(url, nil)
 	return output, err
 }

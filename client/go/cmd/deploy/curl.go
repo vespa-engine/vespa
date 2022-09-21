@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/curl"
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -91,7 +92,7 @@ func getOutputFromCmd(program string, args ...string) (string, error) {
 }
 
 func runCurl(cmd *curl.Command, stdout io.Writer) error {
-	PutTrace("running curl:", cmd.String())
+	trace.Trace("running curl:", cmd.String())
 	err := cmd.Run(stdout, os.Stderr)
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {

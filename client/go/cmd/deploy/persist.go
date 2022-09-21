@@ -5,9 +5,10 @@
 package deploy
 
 import (
-	// "fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 const (
@@ -67,7 +68,7 @@ func writeSessionIdToFile(tenant, newSessionId string) {
 		dir := createTenantDir(tenant)
 		fn := filepath.Join(dir, sessionIdFileName)
 		os.WriteFile(fn, []byte(newSessionId), 0600)
-		PutTrace("wrote", newSessionId, "to", fn)
+		trace.Trace("wrote", newSessionId, "to", fn)
 	}
 }
 
@@ -76,7 +77,7 @@ func getSessionIdFromFile(tenant string) string {
 	fn := filepath.Join(dir, sessionIdFileName)
 	bytes, err := os.ReadFile(fn)
 	if err == nil {
-		PutTrace("Session-id", string(bytes), "found from file", fn)
+		trace.Trace("Session-id", string(bytes), "found from file", fn)
 		return string(bytes)
 	}
 	panic("Could not read session id from file, and no session id supplied as argument. Exiting.")
