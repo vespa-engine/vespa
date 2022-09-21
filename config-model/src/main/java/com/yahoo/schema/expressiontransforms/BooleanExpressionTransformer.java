@@ -15,6 +15,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Transforms
@@ -69,9 +70,37 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
             combination = andByIfNode(lhs.child, rhs.child);
         else if (rhs.op == ArithmeticOperator.OR)
             combination = orByIfNode(lhs.child, rhs.child);
-        else
-            combination = new ArithmeticNode(List.of(lhs.child, rhs.child), List.of(rhs.op));
+        else {
+            combination = resolve(lhs, rhs);
+            lhs.artificial = true;
+        }
         lhs.child = combination;
+    }
+
+    private static ArithmeticNode resolve(ChildNode left, ChildNode right) {
+        if ( ! (left.child instanceof ArithmeticNode) && ! (right.child instanceof ArithmeticNode))
+            return new ArithmeticNode(left.child, right.op, right.child);
+
+        // Collapse inserted ArithmeticNodes
+        List<ArithmeticOperator> joinedOps = new ArrayList<>();
+        joinOps(left, joinedOps);
+        joinedOps.add(right.op);
+        joinOps(right, joinedOps);
+        List<ExpressionNode> joinedChildren = new ArrayList<>();
+        joinChildren(left, joinedChildren);
+        joinChildren(right, joinedChildren);
+        return new ArithmeticNode(joinedChildren, joinedOps);
+    }
+
+    private static void joinOps(ChildNode node, List<ArithmeticOperator> joinedOps) {
+        if (node.artificial && node.child instanceof ArithmeticNode arithmeticNode)
+            joinedOps.addAll(arithmeticNode.operators());
+    }
+    private static void joinChildren(ChildNode node, List<ExpressionNode> joinedChildren) {
+        if (node.artificial && node.child instanceof ArithmeticNode arithmeticNode)
+            joinedChildren.addAll(arithmeticNode.children());
+        else
+            joinedChildren.add(node.child);
     }
 
 
@@ -88,6 +117,7 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
 
         final ArithmeticOperator op;
         ExpressionNode child;
+        boolean artificial;
 
         public ChildNode(ArithmeticOperator op, ExpressionNode child) {
             this.op = op;
