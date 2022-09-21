@@ -20,6 +20,7 @@ func basename(s string) string {
 }
 
 func main() {
+	defer handleSimplePanic()
 	action := basename(os.Args[0])
 	if action == "script-utils" && len(os.Args) > 1 {
 		action = os.Args[1]
@@ -56,5 +57,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
 		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env")
 		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
+	}
+}
+
+func handleSimplePanic() {
+	if r := recover(); r != nil {
+		if je, ok := r.(error); ok {
+			fmt.Fprintln(os.Stderr, je)
+			os.Exit(1)
+		} else {
+			panic(r)
+		}
 	}
 }
