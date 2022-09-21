@@ -6,6 +6,7 @@ vespa_add_library(searchlib_searchlib_index OBJECT
     docidandfeatures.cpp
     doctypebuilder.cpp
     dummyfileheadercontext.cpp
+    empty_doc_builder.cpp
     indexbuilder.cpp
     postinglisthandle.cpp
     postinglistcounts.cpp

@@ -17,8 +17,8 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -32,7 +32,14 @@
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -75,7 +82,7 @@ using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::index::DummyFileHeaderContext;
-using search::index::schema::CollectionType;
+using search::index::EmptyDocBuilder;
 using search::predicate::PredicateHash;
 using search::predicate::PredicateIndex;
 using search::tensor::DenseTensorAttribute;
@@ -214,14 +221,12 @@ AttributeWriterTest::~AttributeWriterTest() = default;
 
 TEST_F(AttributeWriterTest, handles_put)
 {
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::ARRAY));
-    s.addAttributeField(Schema::AttributeField("a3", schema::DataType::FLOAT, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a4", schema::DataType::STRING, CollectionType::SINGLE));
-
-    DocBuilder idb(s);
-
+    EmptyDocBuilder edb([](auto& header)
+                            { using namespace document::config_builder;
+                                header.addField("a1", DataType::T_INT)
+                                    .addField("a2", Array(DataType::T_INT))
+                                    .addField("a3", DataType::T_FLOAT)
+                                    .addField("a4", DataType::T_STRING); });
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
     auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
@@ -233,7 +238,7 @@ TEST_F(AttributeWriterTest, handles_put)
     attribute::ConstCharContent sbuf;
     { // empty document should give default values
         EXPECT_EQ(1u, a1->getNumDocs());
-        put(1, *idb.startDocument("id:ns:searchdocument::1").endDocument(), 1);
+        put(1, *edb.make_document("id:ns:searchdocument::1"), 1);
         EXPECT_EQ(2u, a1->getNumDocs());
         EXPECT_EQ(2u, a2->getNumDocs());
         EXPECT_EQ(2u, a3->getNumDocs());
@@ -255,10 +260,12 @@ TEST_F(AttributeWriterTest, handles_put)
         EXPECT_EQ(strcmp("", sbuf[0]), 0);
     }
     { // document with single value & multi value attribute
-        auto doc = idb.startDocument("id:ns:searchdocument::2").
-            startAttributeField("a1").addInt(10).endField().
-            startAttributeField("a2").startElement().addInt(20).endElement().
-                                      startElement().addInt(30).endElement().endField().endDocument();
+        auto doc = edb.make_document("id:ns:searchdocument::2");
+        doc->setValue("a1", IntFieldValue(10));
+        ArrayFieldValue int_array(edb.get_data_type("Array<Int>"));
+        int_array.add(IntFieldValue(20));
+        int_array.add(IntFieldValue(30));
+        doc->setValue("a2",int_array);
         put(2, *doc, 2);
         EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_EQ(3u, a2->getNumDocs());
@@ -275,11 +282,13 @@ TEST_F(AttributeWriterTest, handles_put)
         EXPECT_EQ(30u, ibuf[1]);
     }
     { // replace existing document
-        auto doc = idb.startDocument("id:ns:searchdocument::2").
-            startAttributeField("a1").addInt(100).endField().
-            startAttributeField("a2").startElement().addInt(200).endElement().
-                                      startElement().addInt(300).endElement().
-                                      startElement().addInt(400).endElement().endField().endDocument();
+        auto doc = edb.make_document("id:ns:searchdocument::2");
+        doc->setValue("a1", IntFieldValue(100));
+        ArrayFieldValue int_array(edb.get_data_type("Array<Int>"));
+        int_array.add(IntFieldValue(200));
+        int_array.add(IntFieldValue(300));
+        int_array.add(IntFieldValue(400));
+        doc->setValue("a2",int_array);
         put(3, *doc, 2);
         EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_EQ(3u, a2->getNumDocs());
@@ -300,10 +309,7 @@ TEST_F(AttributeWriterTest, handles_put)
 
 TEST_F(AttributeWriterTest, handles_predicate_put)
 {
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
-    DocBuilder idb(s);
-
+    EmptyDocBuilder edb([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
@@ -311,17 +317,15 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
 
     // empty document should give default values
     EXPECT_EQ(1u, a1->getNumDocs());
-    put(1, *idb.startDocument("id:ns:searchdocument::1").endDocument(), 1);
+    put(1, *edb.make_document("id:ns:searchdocument::1"), 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_EQ(1u, a1->getStatus().getLastSyncToken());
     EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
 
     // document with single value attribute
     PredicateSlimeBuilder builder;
-    auto doc =
-        idb.startDocument("id:ns:searchdocument::2").startAttributeField("a1")
-        .addPredicate(builder.true_predicate().build())
-        .endField().endDocument();
+    auto doc = edb.make_document("id:ns:searchdocument::2");
+    doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(2, *doc, 2);
     EXPECT_EQ(3u, a1->getNumDocs());
     EXPECT_EQ(2u, a1->getStatus().getLastSyncToken());
@@ -331,9 +335,8 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
     EXPECT_FALSE(it.valid());
 
     // replace existing document
-    doc = idb.startDocument("id:ns:searchdocument::2").startAttributeField("a1")
-          .addPredicate(builder.feature("foo").value("bar").build())
-          .endField().endDocument();
+    doc = edb.make_document("id:ns:searchdocument::2");
+    doc->setValue("a1", PredicateFieldValue(builder.feature("foo").value("bar").build()));
     put(3, *doc, 2);
     EXPECT_EQ(3u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
@@ -403,14 +406,12 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
-    DocBuilder idb(s);
+
+    EmptyDocBuilder edb([](auto& header) { header.addField("a1", DataType::T_STRING); });
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(0u, a1->getStatus().getLastSyncToken());
-    Document::UP doc = idb.startDocument("id:ns:searchdocument::1")
-                              .startAttributeField("a1").addStr("10").endField()
-                          .endDocument();
+    auto doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", StringFieldValue("10"));
     put(3, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
@@ -432,12 +433,15 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
 
     verifyAttributeContent(*a1, 2, "10");
-    awDelayed.put(9, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("11").endField().endDocument(),
-            2, emptyCallback);
-    awDelayed.put(10, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("20").endField().endDocument(),
-            2, emptyCallback);
-    awDelayed.put(11, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("30").endField().endDocument(),
-            2, emptyCallback);
+    doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", StringFieldValue("11"));
+    awDelayed.put(9, *doc, 2, emptyCallback);
+    doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", StringFieldValue("20"));
+    awDelayed.put(10, *doc, 2, emptyCallback);
+    doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", StringFieldValue("30"));
+    awDelayed.put(11, *doc, 2, emptyCallback);
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "10");
     awDelayed.forceCommit(12, emptyCallback);
@@ -449,16 +453,12 @@ TEST_F(AttributeWriterTest, handles_predicate_remove)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
-    Schema s;
-    s.addAttributeField(
-            Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
-    DocBuilder idb(s);
+    EmptyDocBuilder edb([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
+
     PredicateSlimeBuilder builder;
-    auto doc =
-        idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1")
-        .addPredicate(builder.true_predicate().build())
-        .endField().endDocument();
+    auto doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
 
@@ -477,12 +477,10 @@ TEST_F(AttributeWriterTest, handles_update)
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
 
-    Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
-    schema.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
-    DocBuilder idb(schema);
-    const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
+    EmptyDocBuilder edb([](auto& header)
+                            { header.addField("a1", DataType::T_INT)
+                                    .addField("a2", DataType::T_INT); });
+    DocumentUpdate upd(edb.get_repo(), edb.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
@@ -513,20 +511,14 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
-    Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
-
-    DocBuilder idb(schema);
+    EmptyDocBuilder edb([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
     PredicateSlimeBuilder builder;
-    auto doc =
-        idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1")
-        .addPredicate(builder.true_predicate().build())
-        .endField().endDocument();
+    auto doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
 
-    const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
+    DocumentUpdate upd(edb.get_repo(), edb.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<PredicateFieldValue>(builder.feature("foo").value("bar").build()))));
 
@@ -669,18 +661,13 @@ createTensorAttribute(AttributeWriterTest &t) {
     return ret;
 }
 
-Schema
-createTensorSchema(const vespalib::string& tensor_spec = sparse_tensor) {
-    Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::TENSOR, CollectionType::SINGLE, tensor_spec));
-    return schema;
-}
-
 Document::UP
-createTensorPutDoc(DocBuilder &builder, const Value &tensor) {
-    return builder.startDocument("id:ns:searchdocument::1").
-        startAttributeField("a1").
-        addTensor(SimpleValue::from_value(tensor)).endField().endDocument();
+createTensorPutDoc(EmptyDocBuilder& builder, const Value &tensor) {
+    auto doc = builder.make_document("id:ns:searchdocument::1");
+    TensorFieldValue fv(*doc->getField("a1").getDataType().cast_tensor());
+    fv = SimpleValue::from_value(tensor);
+    doc->setValue("a1", fv);
+    return doc;
 }
 
 }
@@ -689,8 +676,7 @@ TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
 {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
-    Schema s = createTensorSchema();
-    DocBuilder builder(s);
+    EmptyDocBuilder builder([](auto& header) { header.addTensorField("a1", sparse_tensor); });
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
                               .add({{"x", "4"}, {"y", "5"}}, 7));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
@@ -707,8 +693,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
 {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
-    Schema s = createTensorSchema();
-    DocBuilder builder(s);
+    EmptyDocBuilder builder([](auto& header) { header.addTensorField("a1", sparse_tensor); });
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
                               .add({{"x", "6"}, {"y", "7"}}, 9));
     auto doc = createTensorPutDoc(builder, *tensor);
@@ -720,8 +705,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
     EXPECT_TRUE(static_cast<bool>(tensor2));
     EXPECT_EQ(*tensor, *tensor2);
 
-    const document::DocumentType &dt(builder.getDocumentType());
-    DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
+    DocumentUpdate upd(builder.get_repo(), builder.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     auto new_tensor = make_tensor(TensorSpec(sparse_tensor)
                                   .add({{"x", "8"}, {"y", "9"}}, 11));
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec(sparse_tensor));
@@ -762,12 +746,10 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     vespalib::string a2_name = "a2x";
     vespalib::string a3_name = "a3y";
 
-    Schema s;
-    s.addAttributeField(Schema::AttributeField(a1_name, schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField(a2_name, schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField(a3_name, schema::DataType::INT32, CollectionType::SINGLE));
-
-    DocBuilder idb(s);
+    EmptyDocBuilder edb([&](auto& header)
+                        { header.addField(a1_name, DataType::T_INT)
+                                .addField(a2_name, DataType::T_INT)
+                                .addField(a3_name, DataType::T_INT); });
 
     auto a1 = t.addAttribute(a1_name);
     auto a2 = t.addAttribute(a2_name);
@@ -777,11 +759,11 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(1u, a2->getNumDocs());
     EXPECT_EQ(1u, a3->getNumDocs());
-    t.put(1, *idb.startDocument("id:ns:searchdocument::1").
-          startAttributeField(a1_name).addInt(10).endField().
-          startAttributeField(a2_name).addInt(15).endField().
-          startAttributeField(a3_name).addInt(20).endField().
-          endDocument(), 1);
+    auto doc = edb.make_document("id:ns:searchdocument::1");
+    doc->setValue(a1_name, IntFieldValue(10));
+    doc->setValue(a2_name, IntFieldValue(15));
+    doc->setValue(a3_name, IntFieldValue(20));
+    t.put(1, *doc, 1);
     assertPutDone(*a1, 10);
     assertPutDone(*a2, 15);
     assertPutDone(*a3, 20);
@@ -889,16 +871,14 @@ TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separat
 
 class TwoPhasePutTest : public AttributeWriterTest {
 public:
-    Schema schema;
-    DocBuilder builder;
+    EmptyDocBuilder builder;
     vespalib::string doc_id;
     std::shared_ptr<MockDenseTensorAttribute> attr;
     std::unique_ptr<Value> tensor;
 
     TwoPhasePutTest()
         : AttributeWriterTest(),
-          schema(createTensorSchema(dense_tensor)),
-          builder(schema),
+          builder([&](auto& header) { header.addTensorField("a1", dense_tensor); }),
           doc_id("id:ns:searchdocument::1"),
           attr()
     {
@@ -923,16 +903,17 @@ public:
         return createTensorPutDoc(builder, *tensor);
     }
     Document::UP make_no_field_doc() {
-        return builder.startDocument(doc_id).endDocument();
+        return builder.make_document(doc_id);
     }
     Document::UP make_no_tensor_doc() {
-        return builder.startDocument(doc_id).
-                startAttributeField("a1").
-            addTensor(std::unique_ptr<vespalib::eval::Value>()).endField().endDocument();
+        auto doc = builder.make_document(doc_id);
+        TensorFieldValue fv(*doc->getField("a1").getDataType().cast_tensor());
+        doc->setValue("a1", fv);
+        return doc;
     }
     DocumentUpdate::UP make_assign_update() {
-       auto upd = std::make_unique<DocumentUpdate>(*builder.getDocumentTypeRepo(),
-                                                   builder.getDocumentType(),
+       auto upd = std::make_unique<DocumentUpdate>(builder.get_repo(),
+                                                   builder.get_document_type(),
                                                    DocumentId(doc_id));
         TensorDataType tensor_type(vespalib::eval::ValueType::from_spec(dense_tensor));
         auto tensor_value = std::make_unique<TensorFieldValue>(tensor_type);
