@@ -40,6 +40,19 @@ bool is_struct_or_multivalue_field_type(const FieldPath& fp)
     return false;
 }
 
+
+std::optional<FieldIdT>
+get_single_source_field_id(const DocsumFieldSpec &field_spec)
+{
+    if (field_spec.is_struct_or_multivalue()) {
+        return field_spec.getOutputField().getId();
+    }
+    if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+        return field_spec.getInputFields()[0].getId();
+    }
+    return std::nullopt; // No single source
+}
+
 FieldPath
 copyPathButFirst(const FieldPath & rhs) {
     // skip the element that correspond to the start field value
@@ -97,34 +110,6 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
     }
     if (filter && !filter->empty()) {
         spec.set_filter(std::move(filter));
-    }
-}
-
-search::docsummary::DocsumStoreFieldValue
-get_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc)
-{
-    // Filtering not yet implemented, return whole struct or multivalue field
-    const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getOutputField();
-    const document::FieldValue* field_value = doc.getField(fieldId.getId());
-    return DocsumStoreFieldValue(field_value);
-}
-
-void
-insert_struct_or_multivalue_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter)
-{
-    if (field_spec.getCommand() != VsmsummaryConfig::Fieldmap::Command::NONE) {
-        return;
-    }
-    const DocsumFieldSpec::FieldIdentifier& fieldId = field_spec.getOutputField();
-    const document::FieldValue* fv = doc.getField(fieldId.getId());
-    if (fv == nullptr) {
-        return;
-    }
-    CheckUndefinedValueVisitor check_undefined;
-    fv->accept(check_undefined);
-    if (!check_undefined.is_undefined()) {
-        SlimeFiller writer(inserter, nullptr, field_spec.get_filter());
-        fv->accept(writer);
     }
 }
 
@@ -392,8 +377,14 @@ DocsumFilter::getMappedDocsum(uint32_t id)
 }
 
 search::docsummary::DocsumStoreFieldValue
-DocsumFilter::get_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc)
+DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
 {
+    const auto& field_spec = _fields[entry_idx];
+    auto single_source_field_id = get_single_source_field_id(field_spec);
+    if (single_source_field_id.has_value()) {
+        auto field_value = doc.getField(single_source_field_id.value());
+        return DocsumStoreFieldValue(field_value);
+    }
     if (!write_flatten_field(field_spec, doc)) {
         return {};
     }
@@ -403,54 +394,29 @@ DocsumFilter::get_flattened_summary_field(const DocsumFieldSpec& field_spec, con
     return DocsumStoreFieldValue(std::move(value));
 }
 
-search::docsummary::DocsumStoreFieldValue
-DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
+void
+DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter)
 {
     const auto& field_spec = _fields[entry_idx];
-    if (field_spec.is_struct_or_multivalue()) {
-        return get_struct_or_multivalue_summary_field(field_spec, doc);
-    } else {
-        if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
-            const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getInputFields()[0];
-            const document::FieldValue* field_value = doc.getField(fieldId.getId());
-            return DocsumStoreFieldValue(field_value);
-        } else if (field_spec.getInputFields().empty() && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
-            return {};
-        } else {
-            return get_flattened_summary_field(field_spec, doc);
+    auto single_source_field_id = get_single_source_field_id(field_spec);
+    if (single_source_field_id.has_value()) {
+        auto field_value = doc.getField(single_source_field_id.value());
+        if (field_value != nullptr) {
+            CheckUndefinedValueVisitor check_undefined;
+            field_value->accept(check_undefined);
+            if (!check_undefined.is_undefined()) {
+                SlimeFiller writer(inserter, nullptr, field_spec.get_filter());
+                field_value->accept(writer);
+            }
         }
+        return;
     }
-}
-
-void
-DocsumFilter::insert_flattened_summary_field(const DocsumFieldSpec& field_spec, const Document& doc, vespalib::slime::Inserter& inserter)
-{
     if (!write_flatten_field(field_spec, doc)) {
         return;
     }
     const CharBuffer& buf = _flattenWriter.getResult();
     inserter.insertString(vespalib::Memory(buf.getBuffer(), buf.getPos()));
     _flattenWriter.clear();
-}
-
-void
-DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter)
-{
-    const auto& field_spec = _fields[entry_idx];
-    if (field_spec.is_struct_or_multivalue()) {
-        insert_struct_or_multivalue_summary_field(field_spec, doc, inserter);
-    } else {
-        if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
-            const DocsumFieldSpec::FieldIdentifier & fieldId = field_spec.getInputFields()[0];
-            const document::FieldValue* field_value = doc.getField(fieldId.getId());
-            if (field_value != nullptr) {
-                SlimeFiller::insert_summary_field(*field_value, inserter);
-            }
-        } else if (field_spec.getInputFields().empty() && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
-        } else {
-            insert_flattened_summary_field(field_spec, doc, inserter);
-        }
-    }
 }
 
 FieldModifier*
