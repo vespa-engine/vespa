@@ -513,16 +513,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <nodes>",
                 "    <environment-variables>",
                 "      <KMP_SETTING>1</KMP_SETTING>",
+                "      <valid_name>some value</valid_name>",
                 "      <KMP_AFFINITY>granularity=fine,verbose,compact,1,0</KMP_AFFINITY>",
                 "    </environment-variables>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
                 "</container>");
         createModel(root, clusterElem);
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        root.getConfig(qrStartBuilder, "container/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals("KMP_SETTING=1 KMP_AFFINITY=granularity=fine,verbose,compact,1,0 ", qrStartConfig.qrs().env());
+        var container = (AbstractService) root.getProducer("container/container.0");
+        var env = container.getEnvVars();
+        assertEquals("1", env.get("KMP_SETTING"));
+        assertEquals("granularity=fine,verbose,compact,1,0", env.get("KMP_AFFINITY"));
     }
 
     private void verifyAvailableprocessors(boolean isHosted, Flavor flavor, int expectProcessors) {
