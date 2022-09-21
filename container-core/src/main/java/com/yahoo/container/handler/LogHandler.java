@@ -4,15 +4,21 @@ package com.yahoo.container.handler;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.core.LogHandlerConfig;
 import com.yahoo.container.jdisc.AsyncHttpResponse;
+import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 
+import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class LogHandler extends ThreadedHttpRequestHandler {
@@ -36,8 +42,6 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                                .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MIN);
         Instant to = Optional.ofNullable(request.getProperty("to"))
                              .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MAX);
-        long maxLines = Optional.ofNullable(request.getProperty("maxLines"))
-                                .map(Long::valueOf).orElse(100_000L);
         Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
 
         return new AsyncHttpResponse(200) {
@@ -46,7 +50,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             @Override
             public void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler) {
                 try (output) {
-                    logReader.writeLogs(output, from, to, maxLines, hostname);
+                    logReader.writeLogs(output, from, to, hostname);
                 }
                 catch (Throwable t) {
                     log.log(Level.WARNING, "Failed reading logs from " + from + " to " + to, t);
@@ -57,5 +61,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             }
         };
     }
+
+
 
 }

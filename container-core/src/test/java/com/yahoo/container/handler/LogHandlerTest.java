@@ -51,7 +51,7 @@ public class LogHandlerTest {
         }
 
         @Override
-        protected void writeLogs(OutputStream out, Instant from, Instant to, long maxLines, Optional<String> hostname)  {
+        protected void writeLogs(OutputStream out, Instant from, Instant to, Optional<String> hostname)  {
             try {
                 if (to.isAfter(Instant.ofEpochMilli(1000))) {
                     out.write("newer log".getBytes());

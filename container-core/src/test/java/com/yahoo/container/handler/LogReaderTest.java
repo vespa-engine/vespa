@@ -37,7 +37,7 @@ public class LogReaderTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        logDirectory = Files.createDirectories(folder.toPath().resolve("opt/vespa/logs"));
+        logDirectory = newFolder(folder, "opt/vespa/logs").toPath();
         // Log archive paths and file names indicate what hour they contain logs for, with the start of that hour.
         // Multiple entries may exist for each hour.
         Files.createDirectories(logDirectory.resolve("1970/01/01"));
@@ -59,7 +59,7 @@ public class LogReaderTest {
     void testThatLogsOutsideRangeAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050), 100, Optional.empty());
+        logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(3601050), Optional.empty());
 
         assertEquals(log100 + logv11 + log110, baos.toString(UTF_8));
     }
@@ -68,7 +68,7 @@ public class LogReaderTest {
     void testThatLogsNotMatchingRegexAreExcluded() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*-1.*"));
-        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), 100, Optional.empty());
+        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
 
         assertEquals(log101 + logv11, baos.toString(UTF_8));
     }
@@ -78,7 +78,7 @@ public class LogReaderTest {
     void testZippedStreaming() {
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), 100, Optional.empty());
+        logReader.writeLogs(zippedBaos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.empty());
 
         assertEquals(log101 + log100 + logv11 + log110 + log200 + logv, zippedBaos.toString(UTF_8));
     }
@@ -87,18 +87,9 @@ public class LogReaderTest {
     void logsForSingeNodeIsRetrieved() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), 100, Optional.of("node2.com"));
+        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), Optional.of("node2.com"));
 
         assertEquals(log101 + log100 + log200, baos.toString(UTF_8));
-    }
-
-    @Test
-    void logsLimitedToMaxLines() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(baos, Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(2)), 2, Optional.of("node2.com"));
-
-        assertEquals(log101 + log100, baos.toString(UTF_8));
     }
 
     private byte[] compress1(String input) throws IOException {
@@ -109,9 +100,18 @@ public class LogReaderTest {
         return baos.toByteArray();
     }
 
-    private byte[] compress2(String input) {
+    private byte[] compress2(String input) throws IOException {
         byte[] data = input.getBytes();
         return new ZstdCompressor().compress(data, 0, data.length);
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 
 }
