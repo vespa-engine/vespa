@@ -187,16 +187,7 @@ class LogReader {
 
     }
 
-    private static class LineWithTimestamp {
-        final String line;
-        final double timestamp;
-        LineWithTimestamp(String line, double timestamp) {
-            this.line = line;
-            this.timestamp = timestamp;
-        }
-        String line() { return line; }
-        double timestamp() { return timestamp; }
-    }
+    private record LineWithTimestamp(String line, double timestamp) { }
 
     /** Returns log files which may have relevant entries, grouped and sorted by {@link #extractTimestamp(Path)} — the first and last group must be filtered. */
     private List<List<Path>> getMatchingFiles(Instant from, Instant to) {

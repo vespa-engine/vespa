@@ -4,21 +4,15 @@ package com.yahoo.container.handler;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.core.LogHandlerConfig;
 import com.yahoo.container.jdisc.AsyncHttpResponse;
-import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class LogHandler extends ThreadedHttpRequestHandler {
@@ -61,7 +55,5 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             }
         };
     }
-
-
 
 }
