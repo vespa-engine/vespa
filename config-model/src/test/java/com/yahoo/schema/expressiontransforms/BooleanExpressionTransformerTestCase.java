@@ -77,8 +77,8 @@ public class BooleanExpressionTransformerTestCase {
 
         MapContext context = contextWithSingleLetterVariables();
         var inputExpression = new RankingExpression(input);
-        assertEquals(inputExpression.evaluate(new MapContext()).asBoolean(),
-                     transformedExpression.evaluate(new MapContext()).asBoolean(),
+        assertEquals(inputExpression.evaluate(context).asBoolean(),
+                     transformedExpression.evaluate(context).asBoolean(),
                      "Transform and original input are equivalent");
     }
 
