@@ -4,19 +4,14 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class DocumentSummary
 {
 public:
-    static bool
-    readDocIdLimit(const vespalib::string &dir, uint32_t &docIdLimit);
-
-    static bool
-    writeDocIdLimit(const vespalib::string &dir, uint32_t docIdLimit);
+    static bool readDocIdLimit(const vespalib::string &dir, uint32_t &docIdLimit);
+    static bool writeDocIdLimit(const vespalib::string &dir, uint32_t docIdLimit);
 };
 
-}
 }
 

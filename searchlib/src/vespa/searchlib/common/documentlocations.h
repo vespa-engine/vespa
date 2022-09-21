@@ -4,12 +4,10 @@
 
 #include <memory>
 
-namespace search {
+namespace search { class AttributeGuard; }
+namespace search::attribute { class IAttributeVector; }
 
-namespace attribute { class IAttributeVector; }
-class AttributeGuard;
-
-namespace common {
+namespace search::common {
 
 
 /**
@@ -37,7 +35,4 @@ public:
     }
 };
 
-
 }
-}
-

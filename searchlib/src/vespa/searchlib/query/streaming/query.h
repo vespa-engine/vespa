@@ -3,7 +3,6 @@
 
 #include "queryterm.h"
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/query/base.h>
 
 namespace search::streaming {
 
@@ -187,9 +186,9 @@ class Query
 {
 public:
     Query();
-    Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
+    Query(const QueryNodeResultFactory & factory, vespalib::stringref queryRep);
     /// Will build the query tree
-    bool build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
+    bool build(const QueryNodeResultFactory & factory, vespalib::stringref queryRep);
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.
@@ -201,7 +200,7 @@ public:
     bool evaluate() const;
     size_t depth() const;
     size_t width() const;
-    bool valid() const { return _root.get() != NULL; }
+    bool valid() const { return _root.get() != nullptr; }
     const QueryNode & getRoot() const { return *_root; }
     QueryNode & getRoot() { return *_root; }
     static QueryNode::UP steal(Query && query) { return std::move(query._root); }

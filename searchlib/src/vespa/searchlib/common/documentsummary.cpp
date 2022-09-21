@@ -2,7 +2,6 @@
 
 #include "documentsummary.h"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/error.h>
 
@@ -11,8 +10,7 @@ LOG_SETUP(".searchlib.docsummary.documentsummary");
 
 using vespalib::getLastErrorString;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 bool
 DocumentSummary::readDocIdLimit(const vespalib::string &dir, uint32_t &count)
@@ -62,5 +60,4 @@ DocumentSummary::writeDocIdLimit(const vespalib::string &dir, uint32_t count)
     return true;
 }
 
-}
 }
