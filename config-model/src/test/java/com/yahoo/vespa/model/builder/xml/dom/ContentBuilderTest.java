@@ -307,8 +307,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(200000, b.getRootGroup().getMmapNoCoreLimit().get().longValue());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
-        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+        assertTrue(s.getSearchNodes().get(0).getEnvStringForTesting().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+        assertTrue(s.getSearchNodes().get(1).getEnvStringForTesting().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
     }
 
     @Test
@@ -334,12 +334,12 @@ public class ContentBuilderTest extends DomBuilderTest {
         AbstractService node = s.getSearchNodes().get(0);
         node.addEnvironmentVariable("MY_ENV_1", 7);
         node.addEnvironmentVariable("MY_ENV_2", "7 8");
-        assertTrue(node.getEnv().contains("MY_ENV_1=7"));
-        assertTrue(node.getEnv().contains("MY_ENV_2=\"7 8\""));
+        assertTrue(node.getEnvStringForTesting().contains("MY_ENV_1=7"));
+        assertTrue(node.getEnvStringForTesting().contains("MY_ENV_2=\"7 8\""));
         node.addEnvironmentVariable("MY_PARSED_ENV_1=7");
         node.addEnvironmentVariable("MY_PARSED_ENV_2=7 8");
-        assertTrue(node.getEnv().contains("MY_PARSED_ENV_1=\"7\""));
-        assertTrue(node.getEnv().contains("MY_PARSED_ENV_2=\"7 8\""));
+        assertTrue(node.getEnvStringForTesting().contains("MY_PARSED_ENV_1=\"7\""));
+        assertTrue(node.getEnvStringForTesting().contains("MY_PARSED_ENV_2=\"7 8\""));
     }
 
     @Test
@@ -363,8 +363,8 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         assertEquals(1, s.getSearchNodes().size());
         AbstractService node = s.getSearchNodes().get(0);
-        assertTrue(node.getEnv().contains("MY_1_ENV=\"xyz abc\""));
-        assertTrue(node.getEnv().contains("MY_2_ENV=\"2\""));
+        assertTrue(node.getEnvStringForTesting().contains("MY_1_ENV=\"xyz abc\""));
+        assertTrue(node.getEnvStringForTesting().contains("MY_2_ENV=\"2\""));
     }
 
     @Test
@@ -390,8 +390,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(b.getRootGroup().getCoreOnOOM().get());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertFalse(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
-        assertFalse(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertFalse(s.getSearchNodes().get(0).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertFalse(s.getSearchNodes().get(1).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -414,8 +414,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
-        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertTrue(s.getSearchNodes().get(0).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertTrue(s.getSearchNodes().get(1).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -438,8 +438,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getMmapNoCoreLimit().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
-        assertFalse(s.getSearchNodes().get(1).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT="));
+        assertTrue(s.getSearchNodes().get(0).getEnvStringForTesting().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+        assertFalse(s.getSearchNodes().get(1).getEnvStringForTesting().contains("VESPA_MMAP_NOCORE_LIMIT="));
     }
 
     @Test
@@ -462,8 +462,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertFalse(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
-        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertFalse(s.getSearchNodes().get(0).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertTrue(s.getSearchNodes().get(1).getEnvStringForTesting().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -496,7 +496,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         assertEquals(4, s.getSearchNodes().size());
         for (SearchNode n : s.getSearchNodes()) {
-            assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\"", n.getEnv());
+            assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\"", n.getEnvStringForTesting());
         }
     }
 
@@ -525,10 +525,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
 
         assertEquals(4, s.getSearchNodes().size());
-        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\"", s.getSearchNodes().get(0).getEnv());
-        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\"", s.getSearchNodes().get(1).getEnv());
-        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\"", s.getSearchNodes().get(2).getEnv());
-        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\"", s.getSearchNodes().get(3).getEnv());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\"", s.getSearchNodes().get(0).getEnvStringForTesting());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\"", s.getSearchNodes().get(1).getEnvStringForTesting());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\"", s.getSearchNodes().get(2).getEnvStringForTesting());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\"", s.getSearchNodes().get(3).getEnvStringForTesting());
     }
 
     @Test
