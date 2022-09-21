@@ -24,14 +24,13 @@ TEST("testSearchDocType") {
     s.addAttributeField(Schema::AttributeField("spos", DataType::INT64));
     s.addAttributeField(Schema::AttributeField("apos", DataType::INT64, CollectionType::ARRAY));
     s.addAttributeField(Schema::AttributeField("wpos", DataType::INT64, CollectionType::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("sa", DataType::STRING));
 
     DocTypeBuilder docTypeBuilder(s);
     document::config::DocumenttypesConfig config = docTypeBuilder.makeConfig();
     DocumentTypeRepo repo(config);
     const DocumentType *docType = repo.getDocumentType("searchdocument");
     ASSERT_TRUE(docType);
-    EXPECT_EQUAL(11u, docType->getFieldCount());
+    EXPECT_EQUAL(10u, docType->getFieldCount());
 
     EXPECT_EQUAL("String", docType->getField("ia").getDataType().getName());
     EXPECT_EQUAL("Array<String>",
@@ -50,7 +49,6 @@ TEST("testSearchDocType") {
                  docType->getField("apos").getDataType().getName());
     EXPECT_EQUAL("WeightedSet<Long>",
                  docType->getField("wpos").getDataType().getName());
-    EXPECT_EQUAL("String", docType->getField("sa").getDataType().getName());
 }
 
 TEST("require that multiple fields can have the same type") {

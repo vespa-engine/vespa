@@ -51,17 +51,6 @@ TEST("test docBuilder")
     s.addAttributeField(Schema::AttributeField("awp1", schema::DataType::INT32, CollectionType::WEIGHTEDSET));
     s.addAttributeField(Schema::AttributeField("awp2", schema::DataType::INT64, CollectionType::WEIGHTEDSET));
 
-    s.addSummaryField(Schema::SummaryField("sa", schema::DataType::INT8));
-    s.addSummaryField(Schema::SummaryField("sb", schema::DataType::INT16));
-    s.addSummaryField(Schema::SummaryField("sc", schema::DataType::INT32));
-    s.addSummaryField(Schema::SummaryField("sd", schema::DataType::INT64));
-    s.addSummaryField(Schema::SummaryField("se", schema::DataType::FLOAT));
-    s.addSummaryField(Schema::SummaryField("sf", schema::DataType::DOUBLE));
-    s.addSummaryField(Schema::SummaryField("sg", schema::DataType::STRING));
-    s.addSummaryField(Schema::SummaryField("sh", schema::DataType::RAW));
-    s.addSummaryField(Schema::SummaryField("si", schema::DataType::RAW, CollectionType::ARRAY));
-    s.addSummaryField(Schema::SummaryField("sj", schema::DataType::RAW, CollectionType::WEIGHTEDSET));
-
     DocBuilder b(s);
     Document::UP doc;
     std::vector<std::string> lines;
@@ -251,46 +240,11 @@ TEST("test docBuilder")
             startElement(43).addPosition(1012, 1013).endElement().
             startElement(44).addPosition(1014, 1015).endElement().
             endField();
-        b.startSummaryField("sa").addInt(127).endField();
-        b.startSummaryField("sb").addInt(32767).endField();
-        b.startSummaryField("sc").addInt(2147483647).endField();
-        b.startSummaryField("sd").addInt(2147483648).endField();
-        b.startSummaryField("se").addFloat(1234.56).endField();
-        b.startSummaryField("sf").addFloat(9876.54).endField();
-        b.startSummaryField("sg").addStr("foo bar").endField();
-        b.startSummaryField("sh").
-            addRaw(raw1s.c_str(), raw1s.size()).
-            endField();
-        b.startSummaryField("si").
-            startElement().
-            addRaw(raw1a0.c_str(), raw1a0.size()).
-            endElement().
-            startElement().
-            addRaw(raw1a1.c_str(), raw1a1.size()).
-            endElement().
-            endField();
-        b.startSummaryField("sj").
-            startElement(46).
-            addRaw(raw1w1.c_str(), raw1w1.size()).
-            endElement().
-            startElement(45).
-            addRaw(raw1w0.c_str(), raw1w0.size()).
-            endElement().
-            endField();
         doc = b.endDocument();
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
         EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::1\">", *itr++);
-        EXPECT_EQUAL("<sj>", *itr++);
-        EXPECT_EQUAL(empty +"<item weight=\"46\" binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1w1) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL(empty + "<item weight=\"45\" binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1w0) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL("</sj>", *itr++);
-        EXPECT_EQUAL("<sa>127</sa>", *itr++);
         EXPECT_EQUAL("<iu>", *itr++);
         EXPECT_EQUAL("<all>http://www.example.com:81/fluke?ab=2#4</all>", *itr++);
         EXPECT_EQUAL("<host>www.example.com</host>", *itr++);
@@ -300,23 +254,12 @@ TEST("test docBuilder")
         EXPECT_EQUAL("<query>ab=2</query>", *itr++);
         EXPECT_EQUAL("<fragment>4</fragment>", *itr++);
         EXPECT_EQUAL("</iu>", *itr++);
-        EXPECT_EQUAL("<sf>9876.54</sf>", *itr++);
         EXPECT_EQUAL("<aa>2147483647</aa>", *itr++);
         EXPECT_EQUAL("<aap2>", *itr++);
         EXPECT_EQUAL("<item>1047806</item>", *itr++);
         EXPECT_EQUAL("<item>1048322</item>", *itr++);
         EXPECT_EQUAL("</aap2>", *itr++);
-        EXPECT_EQUAL("<se>1234.56</se>", *itr++);
-        EXPECT_EQUAL("<sg>foo bar</sg>", *itr++);
         EXPECT_EQUAL("<ia>foo bar baz</ia>", *itr++);
-        EXPECT_EQUAL("<si>", *itr++);
-        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1a0) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1a1) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL("</si>", *itr++);
         EXPECT_EQUAL("<ae>", *itr++);
         EXPECT_EQUAL("<item>10.5</item>", *itr++);
         EXPECT_EQUAL("</ae>", *itr++);
@@ -324,11 +267,9 @@ TEST("test docBuilder")
         EXPECT_EQUAL("<item>foo</item>", *itr++);
         EXPECT_EQUAL("<item>bar baz</item>", *itr++);
         EXPECT_EQUAL("</ib>", *itr++);
-        EXPECT_EQUAL("<sd>2147483648</sd>", *itr++);
         EXPECT_EQUAL("<ah>", *itr++);
         EXPECT_EQUAL("<item weight=\"3\">20.5</item>", *itr++);
         EXPECT_EQUAL("</ah>", *itr++);
-        EXPECT_EQUAL("<sb>32767</sb>", *itr++);
         EXPECT_EQUAL("<ic>", *itr++);
         EXPECT_EQUAL("<item weight=\"20\">bar baz</item>", *itr++);
         EXPECT_EQUAL("<item weight=\"1\">foo</item>", *itr++);
@@ -359,7 +300,6 @@ TEST("test docBuilder")
         EXPECT_EQUAL("</item>", *itr++);
         EXPECT_EQUAL("</iau>", *itr++);
         EXPECT_EQUAL("<asp2>1047758</asp2>", *itr++);
-        EXPECT_EQUAL("<sc>2147483647</sc>", *itr++);
         EXPECT_EQUAL("<ai>", *itr++);
         EXPECT_EQUAL("<item weight=\"4\">bar</item>", *itr++);
         EXPECT_EQUAL("</ai>", *itr++);
@@ -399,9 +339,6 @@ TEST("test docBuilder")
         EXPECT_EQUAL("<item>1004</item>", *itr++);
         EXPECT_EQUAL("<item>1005</item>", *itr++);
         EXPECT_EQUAL("</aap1>", *itr++);
-        EXPECT_EQUAL(empty + "<sh binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1s) +
-                   "</sh>", *itr++);
         EXPECT_EQUAL("<af>", *itr++);
         EXPECT_EQUAL("<item>foo</item>", *itr++);
         EXPECT_EQUAL("</af>", *itr++);
@@ -420,13 +357,11 @@ TEST("test docBuilder")
         b.startDocument("id:ns:searchdocument::2");
         b.startIndexField("ia").addStr("yes").endField();
         b.startAttributeField("aa").addInt(20).endField();
-        b.startSummaryField("sa").addInt(10).endField();
         doc = b.endDocument();
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
         EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::2\">", *itr++);
-        EXPECT_EQUAL("<sa>10</sa>", *itr++);
         EXPECT_EQUAL("<aa>20</aa>", *itr++);
         EXPECT_EQUAL("<ia>yes</ia>", *itr++);
         EXPECT_EQUAL("</document>", *itr++);
