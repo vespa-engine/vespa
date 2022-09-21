@@ -94,7 +94,8 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     auto resultConfig = std::make_unique<ResultConfig>();
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this);
-    if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(), *docsum_field_writer_factory)) {
+    if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(),
+                                  *docsum_field_writer_factory)) {
         std::ostringstream oss;
         ::config::OstreamConfigWriter writer(oss);
         writer.write(summaryCfg);

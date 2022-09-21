@@ -49,8 +49,8 @@ public:
     search::engine::DocsumReply::UP getDocsums();
 
     // Implements GetDocsumsStateCallback
-    void FillSummaryFeatures(search::docsummary::GetDocsumsState& state) override;
-    void FillRankFeatures(search::docsummary::GetDocsumsState& state) override;
+    void fillSummaryFeatures(search::docsummary::GetDocsumsState& state) override;
+    void fillRankFeatures(search::docsummary::GetDocsumsState& state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields &fields) override;
 };
 

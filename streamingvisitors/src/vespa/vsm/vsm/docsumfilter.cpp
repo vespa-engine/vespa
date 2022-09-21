@@ -206,9 +206,9 @@ DocsumStoreFieldValue
 DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
-        auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
         if (entry_idx >= 0) {
-            assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+            assert((uint32_t) entry_idx < _result_class.getNumEntries());
             return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
         }
         try {
@@ -230,9 +230,9 @@ void
 DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
 {
     if (_document != nullptr) {
-        auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
         if (entry_idx >= 0) {
-            assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+            assert((uint32_t) entry_idx < _result_class.getNumEntries());
             _docsum_filter.insert_summary_field(entry_idx, _vsm_document, inserter);
             return;
         }
@@ -257,9 +257,9 @@ DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name,
     if (field_value) {
         FieldModifier* modifier = nullptr;
         if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
-            auto entry_idx = _result_class.GetIndexFromName(field_name.c_str());
+            auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
             if (entry_idx >= 0) {
-                assert((uint32_t) entry_idx < _result_class.GetNumEntries());
+                assert((uint32_t) entry_idx < _result_class.getNumEntries());
                 modifier = _docsum_filter.get_field_modifier(entry_idx);
             }
         } else {
@@ -324,10 +324,10 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
         const ResultClass *resClass = _tools->getResultClass();
         const std::vector<DocsumTools::FieldSpec> & inputSpecs = _tools->getFieldSpecs();
         if (resClass != nullptr) {
-            uint32_t entryCnt = resClass->GetNumEntries();
+            uint32_t entryCnt = resClass->getNumEntries();
             assert(entryCnt == inputSpecs.size());
             for (uint32_t i = 0; i < entryCnt; ++i) {
-                const ResConfigEntry &entry = *resClass->GetEntry(i);
+                const ResConfigEntry &entry = *resClass->getEntry(i);
                 const DocsumTools::FieldSpec & toolsSpec = inputSpecs[i];
                 _fields.push_back(DocsumFieldSpec(toolsSpec.getCommand()));
                 LOG(debug, "About to prepare field spec for summary field '%s'", entry.name().c_str());
@@ -336,12 +336,6 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
             assert(entryCnt == _fields.size());
         }
     }
-}
-
-uint32_t
-DocsumFilter::getNumDocs() const
-{
-    return std::numeric_limits<uint32_t>::max();
 }
 
 bool
@@ -379,7 +373,7 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
 }
 
 std::unique_ptr<const IDocsumStoreDocument>
-DocsumFilter::getMappedDocsum(uint32_t id)
+DocsumFilter::get_document(uint32_t id)
 {
     const ResultClass *resClass = _tools->getResultClass();
     if (resClass == nullptr) {

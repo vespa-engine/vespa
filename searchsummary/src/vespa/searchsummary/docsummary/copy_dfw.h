@@ -20,7 +20,7 @@ public:
     explicit CopyDFW(const vespalib::string& inputField);
     ~CopyDFW() override;
 
-    bool IsGenerated() const override { return false; }
+    bool isGenerated() const override { return false; }
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
 };
 

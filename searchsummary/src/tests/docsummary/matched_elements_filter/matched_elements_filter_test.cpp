@@ -95,10 +95,10 @@ public:
         _doc_type.addField(Field("map2", _map_type));
         _doc_type.addField(Field("wset", _wset_type));
 
-        auto* result_class = _config.AddResultClass("test", class_id);
-        EXPECT_TRUE(result_class->AddConfigEntry("array"));
-        EXPECT_TRUE(result_class->AddConfigEntry("map"));
-        EXPECT_TRUE(result_class->AddConfigEntry("map2"));
+        auto* result_class = _config.addResultClass("test", class_id);
+        EXPECT_TRUE(result_class->addConfigEntry("array"));
+        EXPECT_TRUE(result_class->addConfigEntry("map"));
+        EXPECT_TRUE(result_class->addConfigEntry("map2"));
     }
     ~DocsumStore();
     std::unique_ptr<IDocsumStoreDocument> getMappedDocsum() {
@@ -190,8 +190,8 @@ public:
     {
     }
     ~StateCallback() override;
-    void FillSummaryFeatures(GetDocsumsState&) override {}
-    void FillRankFeatures(GetDocsumsState&) override {}
+    void fillSummaryFeatures(GetDocsumsState&) override {}
+    void fillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields&) override {
         auto result = std::make_unique<MatchingElements>();
         result->add_matching_elements(doc_id, _field_name, _matching_elements);
@@ -317,7 +317,7 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_fiel
 TEST_F(MatchedElementsFilterTest, field_writer_is_not_generated_as_it_depends_on_data_from_document_store)
 {
     auto writer = make_field_writer("array");
-    EXPECT_FALSE(writer->IsGenerated());
+    EXPECT_FALSE(writer->isGenerated());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -18,8 +18,7 @@ public:
                          const document::DocumentTypeRepo &repo);
     ~DocumentStoreAdapter();
 
-    uint32_t getNumDocs() const override { return _docStore.getDocIdLimit(); }
-    std::unique_ptr<const search::docsummary::IDocsumStoreDocument> getMappedDocsum(uint32_t docId) override;
+    std::unique_ptr<const search::docsummary::IDocsumStoreDocument> get_document(uint32_t docId) override;
 };
 
 } // namespace proton

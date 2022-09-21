@@ -28,7 +28,7 @@ private:
     std::vector<IndexPrefix>  _legalPrefixes;
     Set                       _legalIndexes;
 
-    bool IsLegalIndexPrefix(const char *idxName) const {
+    bool isLegalIndexPrefix(const char *idxName) const {
         for (auto& prefix : _legalPrefixes ) {
             if (prefix.Match(idxName)) {
                 return true;
@@ -37,14 +37,14 @@ private:
         return false;
     }
 
-    void AddLegalIndexPrefix(const char *prefix) {
+    void addLegalIndexPrefix(const char *prefix) {
         _legalPrefixes.emplace_back(prefix);
     }
 
-    void AddLegalIndexName(const char *idxName) {
+    void addLegalIndexName(const char *idxName) {
         _legalIndexes.insert(idxName);
     }
-    bool IsLegalIndexName(const char *idxName) const;
+    bool isLegalIndexName(const char *idxName) const;
 public:
     explicit KeywordExtractor(const IDocsumEnvironment * env);
     KeywordExtractor(const KeywordExtractor &) = delete;
@@ -60,17 +60,17 @@ public:
      *
      * @param spec list of legal index names and prefixes.
      **/
-    void AddLegalIndexSpec(const char *spec);
+    void addLegalIndexSpec(const char *spec);
 
 
     /**
      * Create a spec on the same format as accepted by the @ref
-     * AddLegalIndexSpec method. Freeing the returned spec is the
+     * addLegalIndexSpec method. Freeing the returned spec is the
      * responsibility of the caller of this method.
      *
      * @return spec defining legal index names and prefixes.
      **/
-    vespalib::string GetLegalIndexSpec();
+    vespalib::string getLegalIndexSpec();
 
 
     /**
@@ -80,7 +80,7 @@ public:
      *
      * @return true if the given index name is legal.
      **/
-    bool IsLegalIndex(vespalib::stringref idx) const;
+    bool isLegalIndex(vespalib::stringref idx) const;
 };
 
 }

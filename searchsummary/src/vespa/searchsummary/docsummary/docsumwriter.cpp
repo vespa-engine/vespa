@@ -24,9 +24,9 @@ DynamicDocsumWriter::resolveClassInfo(vespalib::stringref class_name,
                                       const vespalib::hash_set<vespalib::string>& fields) const
 {
     DynamicDocsumWriter::ResolveClassInfo result;
-    auto id = _resultConfig->LookupResultClassId(class_name);
+    auto id = _resultConfig->lookupResultClassId(class_name);
 
-    const auto* res_class = (id != ResultConfig::NoClassID()) ? _resultConfig->LookupResultClass(id) : nullptr;
+    const auto* res_class = (id != ResultConfig::noClassID()) ? _resultConfig->lookupResultClass(id) : nullptr;
     if (res_class == nullptr) {
         Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
                       vespalib::string(class_name).c_str());
@@ -39,7 +39,7 @@ DynamicDocsumWriter::resolveClassInfo(vespalib::stringref class_name,
 
 void
 DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState& state,
-                                  IDocsumStore *docinfos, Inserter& topInserter)
+                                  IDocsumStore &docinfos, Inserter& topInserter)
 {
     if (rci.res_class == nullptr) {
         // Use empty docsum when illegal docsum class has been requested
@@ -48,8 +48,8 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
     if (rci.all_fields_generated) {
         // generate docsum entry on-the-fly
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
-        for (uint32_t i = 0; i < rci.res_class->GetNumEntries(); ++i) {
-            const ResConfigEntry *resCfg = rci.res_class->GetEntry(i);
+        for (uint32_t i = 0; i < rci.res_class->getNumEntries(); ++i) {
+            const ResConfigEntry *resCfg = rci.res_class->getEntry(i);
             const DocsumFieldWriter *writer = resCfg->writer();
             if (state._args.need_field(resCfg->name()) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->name().data(), resCfg->name().size());
@@ -59,14 +59,14 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         }
     } else {
         // look up docsum entry
-        auto doc = docinfos->getMappedDocsum(docid);
+        auto doc = docinfos.get_document(docid);
         if (!doc) {
             return; // Use empty docsum when document is gone
         }
         // insert docsum blob
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
-        for (uint32_t i = 0; i < rci.res_class->GetNumEntries(); ++i) {
-            const ResConfigEntry *outCfg = rci.res_class->GetEntry(i);
+        for (uint32_t i = 0; i < rci.res_class->getNumEntries(); ++i) {
+            const ResConfigEntry *outCfg = rci.res_class->getEntry(i);
             if (!state._args.need_field(outCfg->name())) {
                 continue;
             }
@@ -96,7 +96,7 @@ DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, s
 DynamicDocsumWriter::~DynamicDocsumWriter() = default;
 
 void
-DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci)
+DynamicDocsumWriter::initState(const IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci)
 {
     state._kwExtractor = _keywordExtractor.get();
     state._attrCtx = attrMan.createContext();
@@ -104,11 +104,11 @@ DynamicDocsumWriter::InitState(const IAttributeManager & attrMan, GetDocsumsStat
     if (result_class == nullptr) {
         return;
     }
-    size_t num_entries = result_class->GetNumEntries();
+    size_t num_entries = result_class->getNumEntries();
     state._attributes.resize(num_entries);
     state._fieldWriterStates.resize(result_class->get_num_field_writer_states());
     for (size_t i(0); i < num_entries; i++) {
-        const DocsumFieldWriter *fw = result_class->GetEntry(i)->writer();
+        const DocsumFieldWriter *fw = result_class->getEntry(i)->writer();
         if (fw) {
             const vespalib::string & attributeName = fw->getAttributeName();
             if (!attributeName.empty()) {

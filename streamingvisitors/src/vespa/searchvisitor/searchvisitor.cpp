@@ -161,9 +161,9 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
         ds._args.setLocation(_location.value());
     }
     if (_stack_dump.has_value()) {
-        ds._args.SetStackDump(_stack_dump.value().size(), _stack_dump.value().data());
+        ds._args.setStackDump(_stack_dump.value().size(), _stack_dump.value().data());
     }
-    _docsumWriter->InitState(_attr_manager, ds, state->get_resolve_class_info());
+    _docsumWriter->initState(_attr_manager, ds, state->get_resolve_class_info());
     auto insres = _docsum_states.insert(std::make_pair(summary_class, std::move(state)));
     return *insres.first->second;
 }
@@ -175,7 +175,7 @@ SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const H
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         auto& sds = get_streaming_docsums_state(summaryClass);
-        _docsumWriter->insertDocsum(sds.get_resolve_class_info(), lid, sds.get_state(), _docsumFilter.get(), inserter);
+        _docsumWriter->insertDocsum(sds.get_resolve_class_info(), lid, sds.get_state(), *_docsumFilter, inserter);
         _buf.reset();
         vespalib::WritableMemory magicId = _buf.reserve(4);
         memcpy(magicId.data, &search::docsummary::SLIME_MAGIC_ID, 4);

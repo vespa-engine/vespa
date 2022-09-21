@@ -102,7 +102,7 @@ DocsumReply::UP
 SearchView::getDocsums(const DocsumRequest & req)
 {
     LOG(spam, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
-    if (_summarySetup->getResultConfig().  LookupResultClassId(req.resultClassName.c_str()) == ResultConfig::NoClassID()) {
+    if (_summarySetup->getResultConfig().lookupResultClassId(req.resultClassName.c_str()) == ResultConfig::noClassID()) {
         Issue::report("There is no summary class with name '%s' in the summary config. Returning empty document summary for %zu hit(s)",
                      req.resultClassName.c_str(), req.hits.size());
         return createEmptyReply(req);

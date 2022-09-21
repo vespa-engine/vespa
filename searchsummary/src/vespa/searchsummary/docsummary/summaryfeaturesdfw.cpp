@@ -24,7 +24,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib
         return;
     }
     if ( ! state._summaryFeatures) {
-        state._callback.FillSummaryFeatures(state);
+        state._callback.fillSummaryFeatures(state);
         if ( !state._summaryFeatures) { // still no summary features to write
             return;
         }

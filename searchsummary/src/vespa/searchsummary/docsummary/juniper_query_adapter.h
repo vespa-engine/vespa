@@ -29,7 +29,7 @@ public:
     JuniperQueryAdapter(KeywordExtractor *kwExtractor, vespalib::stringref buf,
                         const search::fef::Properties *highlightTerms = nullptr);
     ~JuniperQueryAdapter() override;
-    bool SkipItem(search::SimpleQueryStackDumpIterator *iterator) const;
+    bool skipItem(search::SimpleQueryStackDumpIterator *iterator) const;
     bool Traverse(juniper::IQueryVisitor *v) const override;
     bool UsefulIndex(const juniper::QueryItem* item) const override;
 };

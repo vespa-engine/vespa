@@ -42,7 +42,7 @@ private:
 public:
     explicit AbsDistanceDFW(const vespalib::string & attrName);
 
-    bool IsGenerated() const override { return true; }
+    bool isGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState& state,
                      vespalib::slime::Inserter &target) const override;
 
@@ -59,7 +59,7 @@ private:
 public:
     using UP = std::unique_ptr<PositionsDFW>;
     PositionsDFW(const vespalib::string & attrName, bool useV8geoPositions);
-    bool IsGenerated() const override { return true; }
+    bool isGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
     static UP create(const char *attribute_name, const IAttributeManager *index_man, bool useV8geoPositions);
 };

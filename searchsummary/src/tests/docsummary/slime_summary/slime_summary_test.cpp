@@ -56,13 +56,12 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
         Slime slimeOut;
         SlimeInserter inserter(slimeOut);
         auto rci = writer->resolveClassInfo(state._args.getResultClassName(), {});
-        writer->insertDocsum(rci, 1u, state, this, inserter);
+        writer->insertDocsum(rci, 1u, state, *this, inserter);
         vespalib::SmartBuffer buf(4_Ki);
         BinaryFormat::encode(slimeOut, buf);
         EXPECT_GT(BinaryFormat::decode(buf.obtain(), slime), 0u);
     }
-    uint32_t getNumDocs() const override { return 2; }
-    std::unique_ptr<const IDocsumStoreDocument> getMappedDocsum(uint32_t docid) override {
+    std::unique_ptr<const IDocsumStoreDocument> get_document(uint32_t docid) override {
         EXPECT_EQ(1u, docid);
         if (fail_get_mapped_docsum) {
             return {};
@@ -89,8 +88,8 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
-    void FillSummaryFeatures(GetDocsumsState&) override { }
-    void FillRankFeatures(GetDocsumsState&) override { }
+    void fillSummaryFeatures(GetDocsumsState&) override { }
+    void fillRankFeatures(GetDocsumsState&) override { }
     std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields &) override { abort(); }
 };
 
@@ -104,19 +103,19 @@ SlimeSummaryTest::SlimeSummaryTest()
       empty_get_mapped_docsum(false)
 {
     auto config = std::make_unique<ResultConfig>();
-    ResultClass *cfg = config->AddResultClass("default", 0);
+    ResultClass *cfg = config->addResultClass("default", 0);
     EXPECT_TRUE(cfg != nullptr);
-    EXPECT_TRUE(cfg->AddConfigEntry("int_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("short_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("byte_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("float_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("double_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("int64_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("string_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("data_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("longstring_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("longdata_field"));
-    EXPECT_TRUE(cfg->AddConfigEntry("int_pair_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("int_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("short_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("byte_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("float_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("double_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("int64_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("string_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("data_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("longstring_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("longdata_field"));
+    EXPECT_TRUE(cfg->addConfigEntry("int_pair_field"));
     config->set_default_result_class_id(0);
     writer = std::make_unique<DynamicDocsumWriter>(std::move(config), std::unique_ptr<KeywordExtractor>());
     int_pair_type.addField(Field("foo", *DataType::INT));

@@ -29,7 +29,7 @@ public:
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
     void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
-    void SetStackDump(uint32_t stackDumpLen, const char *stackDump);
+    void setStackDump(uint32_t stackDumpLen, const char *stackDump);
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
     const vespalib::string &getLocation() const { return _location; }
