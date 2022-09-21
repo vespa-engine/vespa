@@ -83,7 +83,7 @@ FastCells<T>::FastCells(size_t initial_capacity)
       memory(alloc::Alloc::alloc(elem_size * capacity))
 {
     static_assert(std::is_trivially_copyable_v<T>);
-    static_assert(can_skip_destruction<T>::value);
+    static_assert(can_skip_destruction<T>);
 }
 
 template <typename T>

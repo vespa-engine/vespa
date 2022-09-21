@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "traits.h"
 #include <cstdint>
 #include <cstdlib>
 #include <cassert>
 #include <algorithm>
+#include <concepts>
 
 namespace vespalib {
 
@@ -119,8 +119,7 @@ public:
      *
      * @param q the queue that should be copied
      **/
-    ArrayQueue(typename std::conditional<is_copyable<T>::value, void_tag, const ArrayQueue &>::type q) = delete;
-    ArrayQueue(typename std::conditional<is_copyable<T>::value, const ArrayQueue &, void_tag>::type q)
+    ArrayQueue(const ArrayQueue &q) requires std::copy_constructible<T>
         : _data((T*)malloc(sizeof(T) * q._capacity)), _capacity(q._capacity), _used(0), _skew(0)
     {
         try {
