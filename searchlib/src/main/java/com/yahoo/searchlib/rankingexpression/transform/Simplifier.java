@@ -110,9 +110,8 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
     }
 
     private ExpressionNode transformNegativeNode(NegativeNode node) {
-        if ( ! (node.getValue() instanceof ConstantNode) ) return node;
+        if ( ! (node.getValue() instanceof ConstantNode constant) ) return node;
 
-        ConstantNode constant = (ConstantNode) node.getValue();
         if ( ! (constant.getValue() instanceof DoubleCompatibleValue)) return node;
         return new ConstantNode(constant.getValue().negate() );
     }
@@ -141,8 +140,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
     }
 
     private boolean isZero(ExpressionNode node) {
-        if ( ! (node instanceof ConstantNode)) return false;
-        ConstantNode constant = (ConstantNode)node;
+        if ( ! (node instanceof ConstantNode constant)) return false;
         if ( ! constant.getValue().hasDouble()) return false;
         return constant.getValue().asDouble() == 0.0;
     }

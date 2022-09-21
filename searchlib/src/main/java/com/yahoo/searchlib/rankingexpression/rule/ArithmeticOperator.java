@@ -3,8 +3,6 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -40,7 +38,7 @@ public enum ArithmeticOperator {
     }};
 
     /** A list of all the operators in this in order of decreasing precedence */
-    public static final List<ArithmeticOperator> operatorsByPrecedence = operatorsByPrecedence();
+    public static final List<ArithmeticOperator> operatorsByPrecedence = List.of(POWER, MODULO, DIVIDE, MULTIPLY, MINUS, PLUS, AND, OR);
 
     private final int precedence;
     private final String image;
@@ -60,19 +58,6 @@ public enum ArithmeticOperator {
     @Override
     public String toString() {
         return image;
-    }
-
-    private static List<ArithmeticOperator> operatorsByPrecedence() {
-        List<ArithmeticOperator> operators = new ArrayList<>();
-        operators.add(POWER);
-        operators.add(MODULO);
-        operators.add(DIVIDE);
-        operators.add(MULTIPLY);
-        operators.add(MINUS);
-        operators.add(PLUS);
-        operators.add(AND);
-        operators.add(OR);
-        return Collections.unmodifiableList(operators);
     }
 
 }

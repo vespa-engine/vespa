@@ -25,7 +25,8 @@ public class GetDocumentReply extends DocumentAcceptedReply {
 
     /**
      * Constructs a new reply to lazily deserialize from a byte buffer.
-     *  @param decoder The decoder to use for deserialization.
+     *
+     * @param decoder The decoder to use for deserialization.
      * @param buf     A byte buffer that contains a serialized reply.
      */
     GetDocumentReply(LazyDecoder decoder, DocumentDeserializer buf) {
