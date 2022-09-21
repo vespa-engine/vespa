@@ -36,6 +36,8 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                                .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MIN);
         Instant to = Optional.ofNullable(request.getProperty("to"))
                              .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MAX);
+        long maxLines = Optional.ofNullable(request.getProperty("maxLines"))
+                                .map(Long::valueOf).orElse(100_000L);
         Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
 
         return new AsyncHttpResponse(200) {
@@ -44,7 +46,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             @Override
             public void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler) {
                 try (output) {
-                    logReader.writeLogs(output, from, to, hostname);
+                    logReader.writeLogs(output, from, to, maxLines, hostname);
                 }
                 catch (Throwable t) {
                     log.log(Level.WARNING, "Failed reading logs from " + from + " to " + to, t);
