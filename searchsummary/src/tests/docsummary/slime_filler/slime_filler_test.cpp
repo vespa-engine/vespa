@@ -27,7 +27,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchsummary/docsummary/i_string_field_converter.h>
-#include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
 #include <vespa/searchsummary/docsummary/slime_filler_filter.h>
@@ -69,8 +68,6 @@ using search::docsummary::IStringFieldConverter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
 using search::docsummary::SlimeFillerFilter;
-using search::linguistics::SPANTREE_NAME;
-using search::linguistics::TERM;
 using vespalib::SimpleBuffer;
 using vespalib::Slime;
 using vespalib::eval::SimpleValue;
@@ -148,7 +145,7 @@ get_document_types_config()
 
 class MockStringFieldConverter : public IStringFieldConverter
 {
-    vespalib::string _result;
+    std::vector<vespalib::string> _result;
 public:
     MockStringFieldConverter()
         : IStringFieldConverter(),
@@ -157,9 +154,9 @@ public:
     }
     ~MockStringFieldConverter() override = default;
     void convert(const document::StringFieldValue& input, vespalib::slime::Inserter&) override {
-        _result = input.getValueRef();
+        _result.emplace_back(input.getValueRef());
     }
-    const vespalib::string& get_result() const noexcept { return _result; }
+    const std::vector<vespalib::string>& get_result() const noexcept { return _result; }
 };
 
 }
@@ -175,14 +172,21 @@ protected:
     const DataType& get_data_type(const vespalib::string& name) const;
     const ReferenceDataType& get_as_ref_type(const vespalib::string& name) const;
     ArrayFieldValue make_array();
+    ArrayFieldValue make_empty_array();
     WeightedSetFieldValue make_weighted_set();
+    WeightedSetFieldValue make_empty_weighted_set();
     MapFieldValue make_map();
+    MapFieldValue make_empty_map();
     StructFieldValue make_nested_value(int i);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv);
     void expect_insert_filtered(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
     void expect_insert(const vespalib::string& exp, const FieldValue& fv, SlimeFillerFilter& filter);
-    void expect_insert_callback(const vespalib::string& exp, const FieldValue& fv);
+    void expect_insert_callback(const std::vector<vespalib::string>& exp, const FieldValue& fv);
+    // Following 3 member functions tests static member functions in SlimeFiller
+    void expect_insert_summary_field(const vespalib::string& exp, const FieldValue& fv);
+    void expect_insert_summary_field_with_filter(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
+    void expect_insert_juniper_field(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv);
 };
 
 SlimeFillerTest::SlimeFillerTest()
@@ -217,6 +221,13 @@ SlimeFillerTest::make_array()
     return array;
 }
 
+ArrayFieldValue
+SlimeFillerTest::make_empty_array()
+{
+    ArrayFieldValue array(get_data_type("Array<String>"));
+    return array;
+}
+
 WeightedSetFieldValue
 SlimeFillerTest::make_weighted_set()
 {
@@ -227,6 +238,13 @@ SlimeFillerTest::make_weighted_set()
     return wset;
 }
 
+WeightedSetFieldValue
+SlimeFillerTest::make_empty_weighted_set()
+{
+    WeightedSetFieldValue wset(get_data_type("WeightedSet<String>"));
+    return wset;
+}
+
 MapFieldValue
 SlimeFillerTest::make_map()
 {
@@ -234,6 +252,13 @@ SlimeFillerTest::make_map()
     map.put(StringFieldValue("key1"), StringFieldValue("value1"));
     map.put(StringFieldValue("key2"), StringFieldValue("value2"));
     map.put(StringFieldValue("key3"), StringFieldValue("value3"));
+    return map;
+}
+
+MapFieldValue
+SlimeFillerTest::make_empty_map()
+{
+    MapFieldValue map(get_data_type("Map<String,String>"));
     return map;
 }
 
@@ -287,7 +312,7 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
 }
 
 void
-SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const FieldValue& fv)
+SlimeFillerTest::expect_insert_callback(const std::vector<vespalib::string>& exp, const FieldValue& fv)
 {
     Slime slime;
     SlimeInserter inserter(slime);
@@ -296,6 +321,39 @@ SlimeFillerTest::expect_insert_callback(const vespalib::string& exp, const Field
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
+    auto act = converter.get_result();
+    EXPECT_EQ(exp, act);
+}
+
+void
+SlimeFillerTest::expect_insert_summary_field(const vespalib::string& exp, const FieldValue& fv)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    SlimeFiller::insert_summary_field(fv, inserter);
+    auto act = slime_to_string(slime);
+    EXPECT_EQ(exp, act);
+}
+
+void
+SlimeFillerTest::expect_insert_summary_field_with_filter(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    SlimeFiller::insert_summary_field_with_filter(fv, inserter, matching_elems);
+    auto act = slime_to_string(slime);
+    EXPECT_EQ(exp, act);
+}
+
+void
+SlimeFillerTest::expect_insert_juniper_field(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    MockStringFieldConverter converter;
+    SlimeFiller::insert_juniper_field(fv, inserter, converter);
+    auto act_slime = slime_to_string(slime);
+    EXPECT_EQ(exp_slime, act_slime);
     auto act = converter.get_result();
     EXPECT_EQ(exp, act);
 }
@@ -526,7 +584,37 @@ TEST_F(SlimeFillerTest, insert_string_with_callback)
 {
     vespalib::string exp("Foo Bar Baz");
     StringFieldValue plain_string(exp);
-    expect_insert_callback(exp, plain_string);
+    expect_insert_callback({exp}, plain_string);
+}
+
+TEST_F(SlimeFillerTest, insert_summary_field)
+{
+    expect_insert_summary_field(R"("Hello")", StringFieldValue("Hello"));
+    expect_insert_summary_field("null", StringFieldValue(""));
+    expect_insert_summary_field(R"(["foo","bar","baz"])", make_array());
+    expect_insert_summary_field("null", make_empty_array());
+    expect_insert_summary_field(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", make_weighted_set());
+    expect_insert_summary_field("null", make_empty_weighted_set());
+    expect_insert_summary_field(R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", make_map());
+    expect_insert_summary_field("null", make_empty_map());
+}
+
+TEST_F(SlimeFillerTest, insert_summary_field_with_filter)
+{
+    expect_insert_summary_field_with_filter(R"(["baz"])", make_array(), {2});
+    expect_insert_summary_field_with_filter("null", make_empty_array(), {});
+    expect_insert_summary_field_with_filter(R"([{"item":"baz","weight":6}])", make_weighted_set(), {2});
+    expect_insert_summary_field_with_filter("null", make_empty_weighted_set(), {});
+    expect_insert_summary_field_with_filter(R"([{"key":"key3","value":"value3"}])", make_map(), {2});
+    expect_insert_summary_field_with_filter("null", make_empty_map(), {});
+}
+
+TEST_F(SlimeFillerTest, insert_juniper_field)
+{
+    expect_insert_juniper_field({"Hello"}, "null", StringFieldValue("Hello"));
+    expect_insert_juniper_field({}, "null", StringFieldValue(""));
+    expect_insert_juniper_field({"foo","bar","baz"}, "[]", make_array());
+    expect_insert_juniper_field({}, "null", make_empty_array());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
