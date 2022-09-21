@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
@@ -194,7 +195,7 @@ public class FleetControllerOptions {
         this.minRatioOfDistributorNodesUp = minRatioOfDistributorNodesUp;
         this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
-        this.cycleWaitTime = cycleWaitTime;
+        this.cycleWaitTime = Validation.requireAtLeast(cycleWaitTime, "cycleWaitTime must be positive", 1);
         this.minTimeBeforeFirstSystemStateBroadcast = minTimeBeforeFirstSystemStateBroadcast;
         this.nodeStateRequestTimeoutMS = nodeStateRequestTimeoutMS;
         this.nodeStateRequestTimeoutEarliestPercentage = nodeStateRequestTimeoutEarliestPercentage;

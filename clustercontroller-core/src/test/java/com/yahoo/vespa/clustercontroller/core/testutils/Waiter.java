@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.testutils;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
@@ -90,6 +91,7 @@ public interface Waiter {
 
         public final void wait(WaitCondition c, WaitTask wt, Duration timeout) {
             Objects.requireNonNull(wt, "wait task cannot be null");
+            Validation.requireAtLeast(timeout.toMillis(), "timeout must be positive", 1L);
 
             log.log(Level.INFO, "Waiting for " + c + " with wait task " + wt);
             Instant endTime = Instant.now().plus(timeout);
@@ -112,7 +114,7 @@ public interface Waiter {
                             allowWait = false;
                         }
                         Duration timeLeft = Duration.between(Instant.now(), endTime);
-                        if (timeLeft.isNegative())
+                        if (timeLeft.isNegative() || timeLeft.isZero())
                             throw new IllegalStateException("Timed out waiting max " + timeout + " ms for " + c + "\n  with wait task " + wt + ",\n  reason: " + reason);
                         if (allowWait)
                             data.getMonitor().wait(Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
