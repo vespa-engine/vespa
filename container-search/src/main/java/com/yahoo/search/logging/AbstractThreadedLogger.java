@@ -68,7 +68,7 @@ abstract class AbstractThreadedLogger implements Logger {
             try {
                 super.run();
             } catch (Exception e) {
-                log.error(String.format("Error while sending to DH: %s", e), e);
+                log.error(String.format("Error while sending logger entry: %s", e), e);
             }
         }
 

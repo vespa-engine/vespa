@@ -33,6 +33,19 @@ public class LoggerEntry {
         return query;
     }
 
+    public String queryString() {
+        String queryString = null;
+        if (query != null) {
+            if (query.getHttpRequest() != null && query.getHttpRequest().getUri() != null) {
+                queryString = query.getHttpRequest().getUri().getPath();
+                if (query.getHttpRequest().getUri().getQuery() != null) {
+                    queryString += "?" + query.getHttpRequest().getUri().getRawQuery();
+                }
+            }
+        }
+        return queryString;
+    }
+
     public ByteBuffer blob() {
         return blob;
     }
@@ -47,6 +60,8 @@ public class LoggerEntry {
             JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
             g.writeStartObject();
 
+            g.writeNumberField("timestamp", timestamp);
+            g.writeStringField("query", queryString());
             g.writeStringField("blob", Base64.getEncoder().encodeToString(blob.array()));
 
             g.writeEndObject();
