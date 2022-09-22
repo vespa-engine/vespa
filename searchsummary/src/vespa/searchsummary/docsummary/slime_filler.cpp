@@ -67,14 +67,14 @@ private:
     Cursor& _array;
     Symbol _key_sym;
     Symbol _val_sym;
-    std::optional<const SlimeFillerFilter*> _filter;
+    SlimeFillerFilter::Iterator _filter;
 
 public:
-    MapFieldValueInserter(Inserter& parent_inserter, std::optional<const SlimeFillerFilter*> filter)
+    MapFieldValueInserter(Inserter& parent_inserter, SlimeFillerFilter::Iterator filter)
         : _array(parent_inserter.insertArray()),
           _key_sym(_array.resolve("key")),
           _val_sym(_array.resolve("value")),
-          _filter(std::move(filter))
+          _filter(filter)
     {
     }
     void insert_entry(const FieldValue& key, const FieldValue& value) {
@@ -83,9 +83,9 @@ public:
         SlimeFiller key_conv(ki);
 
         key.accept(key_conv);
-        if (_filter.has_value()) {
+        if (_filter.should_render()) {
             ObjectSymbolInserter vi(c, _val_sym);
-            SlimeFiller val_conv(vi, nullptr, _filter.value());
+            SlimeFiller val_conv(vi, nullptr, _filter);
             value.accept(val_conv);
         }
     }
@@ -97,7 +97,7 @@ SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
       _matching_elems(nullptr),
       _string_converter(nullptr),
-      _filter(nullptr)
+      _filter(SlimeFillerFilter::all())
 {
 }
 
@@ -105,11 +105,11 @@ SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matchi
     : _inserter(inserter),
       _matching_elems(matching_elems),
       _string_converter(nullptr),
-      _filter(nullptr)
+      _filter(SlimeFillerFilter::all())
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter, const SlimeFillerFilter* filter)
+SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter, SlimeFillerFilter::Iterator filter)
     : _inserter(inserter),
       _matching_elems(nullptr),
       _string_converter(string_converter),
@@ -145,7 +145,7 @@ SlimeFiller::visit(const MapFieldValue& v)
     if (empty_or_empty_after_filtering(v)) {
         return;
     }
-    MapFieldValueInserter map_inserter(_inserter, SlimeFillerFilter::get_filter(_filter, "value"));
+    MapFieldValueInserter map_inserter(_inserter, _filter.check_field("value"));
     if (filter_matching_elements()) {
         assert(v.has_no_erased_keys());
         for (uint32_t id_to_keep : (*_matching_elems)) {
@@ -276,11 +276,11 @@ SlimeFiller::visit(const StructFieldValue& value)
     Cursor& c = _inserter.insertObject();
     for (StructFieldValue::const_iterator itr = value.begin(); itr != value.end(); ++itr) {
         auto& name = itr.field().getName();
-        auto sub_filter = SlimeFillerFilter::get_filter(_filter, name);
-        if (sub_filter.has_value()) {
+        auto sub_filter = _filter.check_field(name);
+        if (sub_filter.should_render()) {
             Memory keymem(name);
             ObjectInserter vi(c, keymem);
-            SlimeFiller conv(vi, nullptr, sub_filter.value());
+            SlimeFiller conv(vi, nullptr, sub_filter);
             FieldValue::UP nextValue(value.getValue(itr.field()));
             (*nextValue).accept(conv);
         }
@@ -370,7 +370,7 @@ SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& 
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, nullptr, filter);
+        SlimeFiller visitor(inserter, nullptr, (filter != nullptr) ? filter->begin() : SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }
@@ -381,7 +381,7 @@ SlimeFiller::insert_juniper_field(const document::FieldValue& value, vespalib::s
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, &converter, nullptr);
+        SlimeFiller visitor(inserter, &converter, SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }

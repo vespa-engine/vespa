@@ -6,6 +6,25 @@
 
 namespace search::docsummary {
 
+SlimeFillerFilter::Iterator::Iterator(bool should_render_in) noexcept
+    : _should_render(should_render_in),
+      _next()
+{
+}
+
+SlimeFillerFilter::Iterator::Iterator(const SlimeFillerFilter* next) noexcept
+    : _should_render(true),
+      _next(next)
+{
+}
+
+SlimeFillerFilter::Iterator
+SlimeFillerFilter::Iterator::check_field(vespalib::stringref field_name) const
+{
+    assert(_should_render);
+    return (_next != nullptr) ? _next->check_field(field_name) : SlimeFillerFilter::Iterator(true);
+}
+
 SlimeFillerFilter::SlimeFillerFilter()
     : _filter()
 {
@@ -13,20 +32,23 @@ SlimeFillerFilter::SlimeFillerFilter()
 
 SlimeFillerFilter::~SlimeFillerFilter() = default;
 
-std::optional<const SlimeFillerFilter*>
-SlimeFillerFilter::get_filter(vespalib::stringref field_name) const
+SlimeFillerFilter::Iterator
+SlimeFillerFilter::check_field(vespalib::stringref field_name) const
 {
     auto itr = _filter.find(field_name);
     if (itr == _filter.end()) {
-        return std::nullopt;
+        // This field does not pass the filter -> should NOT be rendered.
+        return SlimeFillerFilter::Iterator(false);
     }
-    return itr->second.get();
+    // This field passes the filter -> should be rendered.
+    // We also keep track of the next filter in the hierarchy.
+    return SlimeFillerFilter::Iterator(itr->second.get());
 }
 
-std::optional<const SlimeFillerFilter*>
-SlimeFillerFilter::get_filter(const SlimeFillerFilter* filter, vespalib::stringref field_name)
+SlimeFillerFilter::Iterator
+SlimeFillerFilter::begin() const
 {
-    return (filter != nullptr) ? filter->get_filter(field_name) : nullptr;
+    return SlimeFillerFilter::Iterator(this);
 }
 
 bool
@@ -80,6 +102,12 @@ SlimeFillerFilter::add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, ves
             filter.reset();
         }
     }
+}
+
+SlimeFillerFilter::Iterator
+SlimeFillerFilter::all()
+{
+    return SlimeFillerFilter::Iterator(true);
 }
 
 }

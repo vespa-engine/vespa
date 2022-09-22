@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "slime_filler_filter.h"
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <cstdint>
 #include <vector>
@@ -13,7 +14,6 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::docsummary {
 
 class IStringFieldConverter;
-class SlimeFillerFilter;
 
 /*
  * Class inserting a field value into a slime object.
@@ -23,7 +23,7 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
     vespalib::slime::Inserter&   _inserter;
     const std::vector<uint32_t>* _matching_elems;
     IStringFieldConverter*       _string_converter;
-    const SlimeFillerFilter*     _filter;
+    SlimeFillerFilter::Iterator  _filter;
 
     bool filter_matching_elements() const {
         return _matching_elems != nullptr;
@@ -55,7 +55,8 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
 public:
     SlimeFiller(vespalib::slime::Inserter& inserter);
     SlimeFiller(vespalib::slime::Inserter& inserter, const std::vector<uint32_t>* matching_elems);
-    SlimeFiller(vespalib::slime::Inserter& inserter, IStringFieldConverter* string_converter, const SlimeFillerFilter* filter);
+    SlimeFiller(vespalib::slime::Inserter& inserter, IStringFieldConverter* string_converter,
+                SlimeFillerFilter::Iterator filter);
     ~SlimeFiller() override;
 
     static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter);
