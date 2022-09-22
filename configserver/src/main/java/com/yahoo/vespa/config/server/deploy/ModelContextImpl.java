@@ -223,7 +223,6 @@ public class ModelContextImpl implements ModelContext {
         private final int mbus_cpp_events_before_wakeup;
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
-        private final int clusterControllerStateGatherCount;
         private final boolean useRestrictedDataPlaneBindings;
         private final boolean computeCoverageFromTargetActiveDocs;
 
@@ -285,7 +284,6 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
             this.phraseOptimization = flagValue(source, appId, version, Flags.PHRASE_OPTIMIZATION);
-            this.clusterControllerStateGatherCount = flagValue(source, appId, version, Flags.CLUSTER_CONTROLLER_STATE_GATHER_COUNT);
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.computeCoverageFromTargetActiveDocs = flagValue(source, appId, version, Flags.COMPUTE_COVERAGE_FROM_TARGET_ACTIVE_DOCS);
         }
@@ -355,7 +353,6 @@ public class ModelContextImpl implements ModelContext {
             return defVal;
         }
         @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
-        @Override public int clusterControllerStateGatherCount() { return clusterControllerStateGatherCount; }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
         @Override public boolean computeCoverageFromTargetActiveDocs() { return computeCoverageFromTargetActiveDocs; }
 

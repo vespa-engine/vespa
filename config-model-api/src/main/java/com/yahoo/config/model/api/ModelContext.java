@@ -131,7 +131,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int clusterControllerStateGatherCount() { return 2; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.58") default int clusterControllerStateGatherCount() { return 1; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "vekterli"}) default boolean computeCoverageFromTargetActiveDocs() { return false; }
     }

@@ -502,7 +502,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag CLUSTER_CONTROLLER_STATE_GATHER_COUNT = defineIntFlag(
-            "cluster-controller-state-gather-count", 2,
+            "cluster-controller-state-gather-count", 1,
             List.of("hmusum"), "2022-09-05", "2022-11-01",
             "Count of how many cluster controllers should gather node state (range: [1, # of cluster controllers])",
             "Takes effect at redeployment",
