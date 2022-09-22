@@ -79,7 +79,7 @@ template <size_t N, typename Typifier, typename Target, typename ...Rs> struct T
             return Typifier::resolve(value, [&](auto t)->decltype(auto)
                                      {
                                          using X = decltype(t);
-                                         if constexpr (has_type_type_v<X>) {
+                                         if constexpr (has_type_type<X>) {
                                              return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
                                          } else {
                                              return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);

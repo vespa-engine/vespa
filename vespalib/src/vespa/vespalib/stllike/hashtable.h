@@ -170,7 +170,7 @@ public:
     bool hasNext()       const noexcept { return valid() && (_next != npos); }
 private:
     void destruct() noexcept {
-        if constexpr (!can_skip_destruction<V>::value) {
+        if constexpr (!can_skip_destruction<V>) {
             if (valid()) {
                 getValue().~V();
             }

@@ -70,9 +70,9 @@ struct Chunk {
  * memory.
  *
  * When a stash is destructed, destruction of internal objects will be
- * performed in reverse creation order. Objects for which the
- * vespalib::can_skip_destruction trait is true are not
- * destructed. This will save both time and space.
+ * performed in reverse creation order. Objects that satisfy the
+ * vespalib::can_skip_destruction concept are not destructed. This
+ * will save both time and space.
  *
  * The minimal chunk size of a stash is 4k. Any object larger than 1/4
  * of the chunk size will be allocated separately.
@@ -153,7 +153,7 @@ public:
 
     template <typename T, typename ... Args>
     T &create(Args && ... args) {
-        if (can_skip_destruction<T>::value) {
+        if (can_skip_destruction<T>) {
             return *(new (alloc(sizeof(T))) T(std::forward<Args>(args)...));
         }
         using DeleteHook = stash::DestructObject<T>;
@@ -165,7 +165,7 @@ public:
 
     template <typename T, typename ... Args>
     ArrayRef<T> create_array(size_t size, Args && ... args) {
-        if (can_skip_destruction<T>::value) {
+        if (can_skip_destruction<T>) {
             return ArrayRef<T>(init_array<T, Args...>(alloc(size * sizeof(T)), size, std::forward<Args>(args)...), size);
         }
         using DeleteHook = stash::DestructArray<T>;
@@ -178,13 +178,13 @@ public:
     template <typename T>
     ArrayRef<T> create_uninitialized_array(size_t size) {
         static_assert(std::is_trivially_copyable_v<T>);
-        static_assert(can_skip_destruction<T>::value);
+        static_assert(can_skip_destruction<T>);
         return ArrayRef<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
     }
 
     template <typename T>
     ArrayRef<T> copy_array(ConstArrayRef<T> src) {
-        if (can_skip_destruction<T>::value) {
+        if (can_skip_destruction<T>) {
             return ArrayRef<T>(copy_elements<T>(alloc(src.size() * sizeof(T)), src), src.size());
         }
         using DeleteHook = stash::DestructArray<T>;

@@ -158,8 +158,8 @@ using ByteFixture = Fixture<uint8_t>;
 
 TEST("require that we test with trivial and non-trivial types")
 {
-    EXPECT_TRUE(vespalib::can_skip_destruction<NumberFixture::value_type>::value);
-    EXPECT_FALSE(vespalib::can_skip_destruction<StringFixture::value_type>::value);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberFixture::value_type>);
+    EXPECT_FALSE(vespalib::can_skip_destruction<StringFixture::value_type>);
 }
 
 TEST_F("control static sizes", NumberFixture(3)) {

@@ -304,8 +304,8 @@ using SmallOffsetNumberTest = TestBase<BTreeSmallOffsetNumberUniqueStore>;
 
 TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
 {
-    EXPECT_TRUE(vespalib::can_skip_destruction<NumberTest::ValueType>::value);
-    EXPECT_FALSE(vespalib::can_skip_destruction<StringTest::ValueType>::value);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberTest::ValueType>);
+    EXPECT_FALSE(vespalib::can_skip_destruction<StringTest::ValueType>);
 }
 
 TYPED_TEST(TestBase, can_add_and_get_values)

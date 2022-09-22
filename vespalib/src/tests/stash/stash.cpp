@@ -221,8 +221,8 @@ TEST("require that constructor parameters are passed correctly") {
 
 TEST("require that trivially destructable objects are detected") {
     Stash stash;
-    EXPECT_TRUE(can_skip_destruction<Pair>::value);
-    EXPECT_FALSE(can_skip_destruction<PairD>::value);
+    EXPECT_TRUE(can_skip_destruction<Pair>);
+    EXPECT_FALSE(can_skip_destruction<PairD>);
     stash.create<Pair>();
     EXPECT_EQUAL(sum({chunk_header_size(), sizeof(Pair)}), stash.count_used());
     stash.create<PairD>();

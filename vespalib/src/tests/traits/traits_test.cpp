@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
+#include <concepts>
 
 using namespace vespalib;
 
@@ -27,19 +28,19 @@ struct Child2 : Base {
 
 VESPA_CAN_SKIP_DESTRUCTION(Child2);
 
-TEST("require that is_copyable works") {
-    EXPECT_EQUAL(is_copyable<Simple>::value, true);
-    EXPECT_EQUAL(is_copyable<Hard>::value, false);
-    EXPECT_EQUAL(is_copyable<ArrayQueue<Simple> >::value, true);
-    EXPECT_EQUAL(is_copyable<ArrayQueue<Hard> >::value, false);
-    EXPECT_EQUAL(is_copyable<std::unique_ptr<Hard> >::value, false);
+TEST("require that copy ctor detection works") {
+    EXPECT_EQUAL(std::copy_constructible<Simple>, true);
+    EXPECT_EQUAL(std::copy_constructible<Hard>, false);
+    EXPECT_EQUAL(std::copy_constructible<ArrayQueue<Simple> >, true);
+    EXPECT_EQUAL(std::copy_constructible<ArrayQueue<Hard> >, false);
+    EXPECT_EQUAL(std::copy_constructible<std::unique_ptr<Hard> >, false);
 }
 
 TEST("require that can_skip_destruction works") {
-    EXPECT_EQUAL(can_skip_destruction<Simple>::value, true);
-    EXPECT_EQUAL(can_skip_destruction<Hard>::value, false);
-    EXPECT_EQUAL(can_skip_destruction<Child1>::value, false);
-    EXPECT_EQUAL(can_skip_destruction<Child2>::value, true);
+    EXPECT_EQUAL(can_skip_destruction<Simple>, true);
+    EXPECT_EQUAL(can_skip_destruction<Hard>, false);
+    EXPECT_EQUAL(can_skip_destruction<Child1>, false);
+    EXPECT_EQUAL(can_skip_destruction<Child2>, true);
 }
 
 struct NoType {};
@@ -47,9 +48,9 @@ struct TypeType { using type = NoType; };
 struct NoTypeType { static constexpr int type = 3; };
 
 TEST("require that type type member can be detected") {
-    EXPECT_FALSE(has_type_type_v<NoType>);
-    EXPECT_TRUE(has_type_type_v<TypeType>);
-    EXPECT_FALSE(has_type_type_v<NoTypeType>);
+    EXPECT_FALSE(has_type_type<NoType>);
+    EXPECT_TRUE(has_type_type<TypeType>);
+    EXPECT_FALSE(has_type_type<NoTypeType>);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

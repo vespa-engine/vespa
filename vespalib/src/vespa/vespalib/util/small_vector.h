@@ -62,7 +62,7 @@ void create_objects(T *dst, uint32_t n, Args &&...args) {
 
 template <typename T>
 void destroy_objects(T *src, uint32_t n) {
-    if (!can_skip_destruction_v<T>) {
+    if (!can_skip_destruction<T>) {
         std::destroy_n(src, n);
     }
 }
