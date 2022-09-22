@@ -25,7 +25,7 @@ public:
 
     /**
      * A single field has a name, data type and collection
-     * type. Various aspects (index/attribute/summary) may have
+     * type. Various aspects (index/attribute) may have
      * limitations on what types are supported in the back-end.
      **/
     class Field
@@ -109,7 +109,6 @@ public:
     };
 
     using AttributeField = Field;
-    using SummaryField = Field;
     using ImportedAttributeField = Field;
 
     /**
@@ -154,13 +153,11 @@ public:
 private:
     std::vector<IndexField>      _indexFields;
     std::vector<AttributeField>  _attributeFields;
-    std::vector<SummaryField>    _summaryFields;
     std::vector<FieldSet> _fieldSets;
     std::vector<ImportedAttributeField> _importedAttributeFields;
     using Name2IdMap = vespalib::hash_map<vespalib::string, uint32_t>;
     Name2IdMap _indexIds;
     Name2IdMap _attributeIds;
-    Name2IdMap _summaryIds;
     Name2IdMap _fieldSetIds;
     Name2IdMap _importedAttributeIds;
 
@@ -218,14 +215,6 @@ public:
     addAttributeField(const AttributeField &field);
 
     /**
-     * Add a summary field to this schema
-     *
-     * @param field the field to add
-     **/
-    Schema &
-    addSummaryField(const SummaryField &field);
-
-    /**
      * Add a field set to this schema.
      *
      * @param collection the field set to add.
@@ -248,13 +237,6 @@ public:
      * @return number of fields
      **/
     uint32_t getNumAttributeFields() const { return _attributeFields.size(); }
-
-    /**
-     * Obtain the number of summary fields in this schema.
-     *
-     * @return number of fields
-     **/
-    uint32_t getNumSummaryFields() const { return _summaryFields.size(); }
 
     /**
      * Obtain the number of field sets in this schema.
@@ -301,14 +283,6 @@ public:
     bool isIndexField(vespalib::stringref name) const;
 
     /**
-     * Check if a field is a summary field
-     *
-     * @return true if field is an summary field.
-     * @param name the name of the field.
-     **/
-    bool isSummaryField(vespalib::stringref name) const;
-
-    /**
      * Check if a field is a attribute field
      *
      * @return true if field is an attribute field.
@@ -342,33 +316,6 @@ public:
      * @param name the name of the field.
      **/
     uint32_t getAttributeFieldId(vespalib::stringref name) const;
-
-    /**
-     * Get information about a specific summary field using the given fieldId.
-     *
-     * @return the field
-     * @param idx an index in the range [0, size - 1]
-     **/
-    const SummaryField &
-    getSummaryField(uint32_t fieldId) const
-    {
-        return _summaryFields[fieldId];
-    }
-
-    /**
-     * Returns const view of the summary fields.
-     */
-    const std::vector<SummaryField> &getSummaryFields() const {
-        return _summaryFields;
-    }
-
-    /**
-     * Get the field id for the summary field with the given name.
-     *
-     * @return the field id or UNKNOWN_FIELD_ID if not found.
-     * @param name the name of the field.
-     **/
-    uint32_t getSummaryFieldId(vespalib::stringref name) const;
 
     /**
      * Get information about a specific field set

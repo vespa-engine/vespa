@@ -74,7 +74,6 @@ DocumentDBConfigManager::createConfigKeySet() const
 
 Schema::SP
 DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
-                                     const SummaryConfig &newSummaryConfig,
                                      const IndexschemaConfig &newIndexschemaConfig)
 {
     // Called with lock held
@@ -83,14 +82,13 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
     if (!oldSchema) {
-        return DocumentDBConfig::build_schema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
+        return DocumentDBConfig::build_schema(newAttributesConfig, newIndexschemaConfig);
     }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;
     if (old.getAttributesConfig() != newAttributesConfig ||
-        old.getSummaryConfig() != newSummaryConfig ||
         old.getIndexschemaConfig() != newIndexschemaConfig)
     {
-        auto schema = DocumentDBConfig::build_schema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
+        auto schema = DocumentDBConfig::build_schema(newAttributesConfig, newIndexschemaConfig);
         return (*oldSchema == *schema) ? oldSchema : schema;
     }
     return oldSchema;
@@ -376,7 +374,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     JuniperrcConfigSP newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     ImportedFieldsConfigSP newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
 
-    Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
+    Schema::SP schema(buildSchema(*newAttributesConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
     search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(),
                                                                     _bootstrapConfig->getHwInfo());

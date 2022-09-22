@@ -34,7 +34,6 @@ private:
 
     search::index::Schema::SP
     buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
-                const DocumentDBConfig::SummaryConfig & newSummaryConfig,
                 const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
 
 public:

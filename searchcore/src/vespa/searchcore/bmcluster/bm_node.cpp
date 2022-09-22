@@ -176,7 +176,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
     auto indexschema = std::make_shared<IndexschemaConfig>();
     auto attributes = make_attributes_config();
     auto summary = std::make_shared<SummaryConfig>();
-    auto schema = DocumentDBConfig::build_schema(*attributes, *summary, *indexschema);
+    auto schema = DocumentDBConfig::build_schema(*attributes, *indexschema);
     return std::make_shared<DocumentDBConfig>(
             1,
             std::make_shared<RankProfilesConfig>(),

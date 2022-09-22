@@ -213,7 +213,6 @@ void
 Schema::writeToStream(vespalib::asciistream &os, bool saveToDisk) const
 {
     writeFields(os, "attributefield", _attributeFields);
-    writeFields(os, "summaryfield", _summaryFields);
     writeFieldSets(os, "fieldset", _fieldSets);
     writeFields(os, "indexfield", _indexFields);
     if (!saveToDisk) {
@@ -245,7 +244,6 @@ Schema::loadFromFile(const vespalib::string & fileName)
     }
     _indexFields = ConfigParser::parseArray<std::vector<IndexField>>("indexfield", lines);
     _attributeFields = ConfigParser::parseArray<std::vector<AttributeField>>("attributefield", lines);
-    _summaryFields = ConfigParser::parseArray<std::vector<SummaryField>>("summaryfield", lines);
     _fieldSets = ConfigParser::parseArray<std::vector<FieldSet>>("fieldset", lines);
     _importedAttributeFields.clear(); // NOTE: these are not persisted to disk
     _indexIds.clear();
@@ -255,10 +253,6 @@ Schema::loadFromFile(const vespalib::string & fileName)
     _attributeIds.clear();
     for (size_t i(0), m(_attributeFields.size()); i < m; i++) {
         _attributeIds[_attributeFields[i].getName()] = i;
-    }
-    _summaryIds.clear();
-    for (size_t i(0), m(_summaryFields.size()); i < m; i++) {
-        _summaryIds[_summaryFields[i].getName()] = i;
     }
     _fieldSetIds.clear();
     for (size_t i(0), m(_fieldSets.size()); i < m; i++) {
@@ -357,12 +351,6 @@ Schema::addAttributeField(const AttributeField &field)
 }
 
 Schema &
-Schema::addSummaryField(const SummaryField &field)
-{
-    return addField(field, *this, _summaryFields, _summaryIds);
-}
-
-Schema &
 Schema::addImportedAttributeField(const ImportedAttributeField &field)
 {
     return addField(field, *this, _importedAttributeFields, _importedAttributeIds);
@@ -387,12 +375,6 @@ Schema::getAttributeFieldId(vespalib::stringref name) const
 }
 
 uint32_t
-Schema::getSummaryFieldId(vespalib::stringref name) const
-{
-    return getFieldId(name, _summaryIds);
-}
-
-uint32_t
 Schema::getFieldSetId(vespalib::stringref name) const
 {
     return getFieldId(name, _fieldSetIds);
@@ -402,12 +384,6 @@ bool
 Schema::isIndexField(vespalib::stringref name) const
 {
     return _indexIds.find(name) != _indexIds.end();
-}
-
-bool
-Schema::isSummaryField(vespalib::stringref name) const
-{
-    return _summaryIds.find(name) != _summaryIds.end();
 }
 
 bool
@@ -422,12 +398,10 @@ Schema::swap(Schema &rhs)
 {
     _indexFields.swap(rhs._indexFields);
     _attributeFields.swap(rhs._attributeFields);
-    _summaryFields.swap(rhs._summaryFields);
     _fieldSets.swap(rhs._fieldSets);
     _importedAttributeFields.swap(rhs._importedAttributeFields);
     _indexIds.swap(rhs._indexIds);
     _attributeIds.swap(rhs._attributeIds);
-    _summaryIds.swap(rhs._summaryIds);
     _fieldSetIds.swap(rhs._fieldSetIds);
     _importedAttributeIds.swap(rhs._importedAttributeIds);
 }
@@ -437,12 +411,10 @@ Schema::clear()
 {
     _indexFields.clear();
     _attributeFields.clear();
-    _summaryFields.clear();
     _fieldSets.clear();
     _importedAttributeFields.clear();
     _indexIds.clear();
     _attributeIds.clear();
-    _summaryIds.clear();
     _fieldSetIds.clear();
     _importedAttributeIds.clear();
 }
@@ -515,8 +487,6 @@ Schema::intersect(const Schema &lhs, const Schema &rhs)
                 h.schema->_indexFields, h.schema->_indexIds);
     h.intersect(lhs._attributeFields, rhs._attributeFields, rhs._attributeIds,
                 h.schema->_attributeFields, h.schema->_attributeIds);
-    h.intersect(lhs._summaryFields, rhs._summaryFields, rhs._summaryIds,
-                h.schema->_summaryFields, h.schema->_summaryIds);
     h.intersect(lhs._fieldSets, rhs._fieldSets, rhs._fieldSetIds,
                 h.schema->_fieldSets, h.schema->_fieldSetIds);
     return std::move(h.schema);
@@ -528,7 +498,6 @@ Schema::make_union(const Schema &lhs, const Schema &rhs)
     Schema::UP schema(new Schema(lhs));
     addEntries(rhs._indexFields, schema->_indexFields, schema->_indexIds);
     addEntries(rhs._attributeFields, schema->_attributeFields, schema->_attributeIds);
-    addEntries(rhs._summaryFields, schema->_summaryFields, schema->_summaryIds);
     addEntries(rhs._fieldSets, schema->_fieldSets, schema->_fieldSetIds);
     return schema;
 }
@@ -541,8 +510,6 @@ Schema::set_difference(const Schema &lhs, const Schema &rhs)
                schema->_indexFields, schema->_indexIds);
     difference(lhs._attributeFields, rhs._attributeIds,
                schema->_attributeFields, schema->_attributeIds);
-    difference(lhs._summaryFields, rhs._summaryIds,
-               schema->_summaryFields, schema->_summaryIds);
     difference(lhs._fieldSets, rhs._fieldSetIds,
                schema->_fieldSets, schema->_fieldSetIds);
     return schema;
@@ -553,7 +520,6 @@ Schema::operator==(const Schema &rhs) const
 {
     return _indexFields == rhs._indexFields &&
             _attributeFields == rhs._attributeFields &&
-            _summaryFields == rhs._summaryFields &&
             _fieldSets == rhs._fieldSets &&
             _importedAttributeFields == rhs._importedAttributeFields;
 }
@@ -563,7 +529,6 @@ Schema::operator!=(const Schema &rhs) const
 {
     return _indexFields != rhs._indexFields ||
             _attributeFields != rhs._attributeFields ||
-            _summaryFields != rhs._summaryFields ||
             _fieldSets != rhs._fieldSets ||
             _importedAttributeFields != rhs._importedAttributeFields;
 }
@@ -573,7 +538,6 @@ Schema::empty() const
 {
     return _indexFields.empty() &&
             _attributeFields.empty() &&
-            _summaryFields.empty() &&
             _fieldSets.empty() &&
             _importedAttributeFields.empty();
 }

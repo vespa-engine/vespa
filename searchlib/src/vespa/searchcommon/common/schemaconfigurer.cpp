@@ -103,37 +103,6 @@ convertCollectionType(const ConfigType &type)
     return CollectionType::SINGLE;
 }
 
-
-Schema::DataType
-convertSummaryType(const vespalib::string &type)
-{
-    if (type == "byte") {
-        return DataType::INT8;
-    } else if (type == "short") {
-        return DataType::INT16;
-    } else if (type == "integer") {
-        return DataType::INT32;
-    } else if (type == "int64") {
-        return DataType::INT64;
-    } else if (type == "float") {
-        return DataType::FLOAT;
-    } else if (type == "double") {
-        return DataType::DOUBLE;
-    } else if (type == "string" ||
-               type == "longstring" ||
-               type == "xmlstring" ||
-               type == "featuredata" ||
-               type == "jsonstring")
-    {
-        return DataType::STRING;
-    } else if (type == "data" ||
-               type == "longdata")
-    {
-        return DataType::RAW;
-    }
-    return DataType::RAW;
-}
-
 }
 
 void
@@ -175,36 +144,6 @@ SchemaBuilder::build(const AttributesConfig &cfg, Schema &schema)
 
 
 void
-SchemaBuilder::build(const SummaryConfig &cfg, Schema &schema)
-{
-    for (size_t i = 0; i < cfg.classes.size(); ++i) {
-        LOG(debug, "class with index %lu has id %d (default has id %d)",
-            i, cfg.classes[i].id, cfg.defaultsummaryid);
-    }
-    for (size_t i = 0; i < cfg.classes.size(); ++i) {
-        // use the default summary class that has all fields
-        if (cfg.classes[i].id == cfg.defaultsummaryid) {
-            for (size_t j = 0; j < cfg.classes[i].fields.size(); ++j) {
-                const SummaryConfig::Classes::Fields & f =
-                    cfg.classes[i].fields[j];
-                schema.addSummaryField(Schema::Field(f.name,
-                                               convertSummaryType(f.type)));
-            }
-            return;
-        }
-    }
-    if (cfg.classes.empty()) {
-        LOG(debug,
-            "No summary class configured that match the default summary id %d",
-            cfg.defaultsummaryid);
-    } else {
-        LOG(warning,
-            "No summary class configured that match the default summary id %d",
-            cfg.defaultsummaryid);
-    }
-}
-
-void
 SchemaConfigurer::configure(const IndexschemaConfig &cfg)
 {
     SchemaBuilder::build(cfg, _schema);
@@ -216,12 +155,6 @@ SchemaConfigurer::configure(const AttributesConfig &cfg)
     SchemaBuilder::build(cfg, _schema);
 }
 
-void
-SchemaConfigurer::configure(const SummaryConfig & cfg)
-{
-    SchemaBuilder::build(cfg, _schema);
-}
-
 SchemaConfigurer::SchemaConfigurer(Schema &schema, const vespalib::string &configId)
     : _schema(schema)
 {
@@ -229,11 +162,8 @@ SchemaConfigurer::SchemaConfigurer(Schema &schema, const vespalib::string &confi
         indexSchemaSubscriber(*this, &SchemaConfigurer::configure);
     search::SubscriptionProxyNg<SchemaConfigurer, AttributesConfig>
         attributesSubscriber(*this, &SchemaConfigurer::configure);
-    search::SubscriptionProxyNg<SchemaConfigurer, SummaryConfig>
-        summarySubscriber(*this, &SchemaConfigurer::configure);
     indexSchemaSubscriber.subscribe(configId.c_str());
     attributesSubscriber.subscribe(configId.c_str());
-    summarySubscriber.subscribe(configId.c_str());
 }
 
 }

@@ -1,0 +1,32 @@
+attributefield[2]
+attributefield[0].name afoo
+attributefield[0].datatype STRING
+attributefield[0].collectiontype SINGLE
+attributefield[1].name abar
+attributefield[1].datatype INT32
+attributefield[1].collectiontype SINGLE
+summaryfield[2]
+summaryfield[0].name sfoo
+summaryfield[0].datatype STRING
+summaryfield[0].collectiontype SINGLE
+summaryfield[1].name sbar
+summaryfield[1].datatype INT32
+summaryfield[1].collectiontype SINGLE
+fieldset[0]
+indexfield[2]
+indexfield[0].name ifoo
+indexfield[0].datatype STRING
+indexfield[0].collectiontype SINGLE
+indexfield[0].averageelementlen 512
+indexfield[0].interleavedfeatures false
+indexfield[0].prefix false
+indexfield[0].phrases false
+indexfield[0].positions true
+indexfield[1].name ibar
+indexfield[1].datatype INT32
+indexfield[1].collectiontype SINGLE
+indexfield[1].averageelementlen 512
+indexfield[1].interleavedfeatures false
+indexfield[1].prefix false
+indexfield[1].phrases false
+indexfield[1].positions true

@@ -57,10 +57,6 @@ assertSchema(const Schema& exp, const Schema& act)
     for (size_t i = 0; i < exp.getNumAttributeFields(); ++i) {
         assertField(exp.getAttributeField(i), act.getAttributeField(i));
     }
-    ASSERT_EQ(exp.getNumSummaryFields(), act.getNumSummaryFields());
-    for (size_t i = 0; i < exp.getNumSummaryFields(); ++i) {
-        assertField(exp.getSummaryField(i), act.getSummaryField(i));
-    }
     ASSERT_EQ(exp.getNumFieldSets(), act.getNumFieldSets());
     for (size_t i = 0; i < exp.getNumFieldSets(); ++i) {
         assertSet(exp.getFieldSet(i), act.getFieldSet(i));
@@ -78,7 +74,6 @@ TEST(SchemaTest, test_basic)
     Schema s;
     EXPECT_EQ(0u, s.getNumIndexFields());
     EXPECT_EQ(0u, s.getNumAttributeFields());
-    EXPECT_EQ(0u, s.getNumSummaryFields());
     EXPECT_EQ(0u, s.getNumImportedAttributeFields());
 
     s.addIndexField(Schema::IndexField("foo", DataType::STRING));
@@ -87,11 +82,6 @@ TEST(SchemaTest, test_basic)
     s.addAttributeField(Schema::AttributeField("foo", DataType::STRING, CollectionType::ARRAY));
     s.addAttributeField(Schema::AttributeField("bar", DataType::INT32,  CollectionType::WEIGHTEDSET));
     s.addAttributeField(Schema::AttributeField("cox", DataType::STRING));
-
-    s.addSummaryField(Schema::SummaryField("foo", DataType::STRING, CollectionType::ARRAY));
-    s.addSummaryField(Schema::SummaryField("bar", DataType::INT32,  CollectionType::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("cox", DataType::STRING));
-    s.addSummaryField(Schema::SummaryField("fox", DataType::RAW));
 
     s.addFieldSet(Schema::FieldSet("default").addField("foo").addField("bar"));
 
@@ -130,30 +120,6 @@ TEST(SchemaTest, test_basic)
         EXPECT_EQ(2u, s.getAttributeFieldId("cox"));
         EXPECT_EQ(Schema::UNKNOWN_FIELD_ID, s.getIndexFieldId("fox"));
     }
-    ASSERT_EQ(4u, s.getNumSummaryFields());
-    {
-        EXPECT_EQ("foo", s.getSummaryField(0).getName());
-        EXPECT_EQ(DataType::STRING, s.getSummaryField(0).getDataType());
-        EXPECT_EQ(CollectionType::ARRAY, s.getSummaryField(0).getCollectionType());
-
-        EXPECT_EQ("bar", s.getSummaryField(1).getName());
-        EXPECT_EQ(DataType::INT32, s.getSummaryField(1).getDataType());
-        EXPECT_EQ(CollectionType::WEIGHTEDSET, s.getSummaryField(1).getCollectionType());
-
-        EXPECT_EQ("cox", s.getSummaryField(2).getName());
-        EXPECT_EQ(DataType::STRING, s.getSummaryField(2).getDataType());
-        EXPECT_EQ(CollectionType::SINGLE, s.getSummaryField(2).getCollectionType());
-
-        EXPECT_EQ("fox", s.getSummaryField(3).getName());
-        EXPECT_EQ(DataType::RAW, s.getSummaryField(3).getDataType());
-        EXPECT_EQ(CollectionType::SINGLE, s.getSummaryField(3).getCollectionType());
-
-        EXPECT_EQ(0u, s.getSummaryFieldId("foo"));
-        EXPECT_EQ(1u, s.getSummaryFieldId("bar"));
-        EXPECT_EQ(2u, s.getSummaryFieldId("cox"));
-        EXPECT_EQ(3u, s.getSummaryFieldId("fox"));
-        EXPECT_EQ(Schema::UNKNOWN_FIELD_ID, s.getSummaryFieldId("not"));
-    }
     ASSERT_EQ(1u, s.getNumFieldSets());
     {
         EXPECT_EQ("default", s.getFieldSet(0).getName());
@@ -172,7 +138,6 @@ TEST(SchemaTest, test_basic)
 TEST(SchemaTest, test_load_and_save)
 {
     using SAF = Schema::AttributeField;
-    using SSF = Schema::SummaryField;
     using SDT = schema::DataType;
     using SCT = schema::CollectionType;
     using SFS = Schema::FieldSet;
@@ -197,20 +162,6 @@ TEST(SchemaTest, test_load_and_save)
         assertField(SAF("g", SDT::DOUBLE),      s.getAttributeField(6));
         assertField(SAF("h", SDT::BOOLEANTREE), s.getAttributeField(7));
         assertField(SAF("i", SDT::TENSOR), s.getAttributeField(8));
-
-        EXPECT_EQ(12u, s.getNumSummaryFields());
-        assertField(SSF("a", SDT::INT8),   s.getSummaryField(0));
-        assertField(SSF("b", SDT::INT16),  s.getSummaryField(1));
-        assertField(SSF("c", SDT::INT32),  s.getSummaryField(2));
-        assertField(SSF("d", SDT::INT64),  s.getSummaryField(3));
-        assertField(SSF("e", SDT::FLOAT),  s.getSummaryField(4));
-        assertField(SSF("f", SDT::DOUBLE), s.getSummaryField(5));
-        assertField(SSF("g", SDT::STRING), s.getSummaryField(6));
-        assertField(SSF("h", SDT::STRING), s.getSummaryField(7));
-        assertField(SSF("i", SDT::STRING), s.getSummaryField(8));
-        assertField(SSF("j", SDT::STRING), s.getSummaryField(9));
-        assertField(SSF("k", SDT::RAW),    s.getSummaryField(10));
-        assertField(SSF("l", SDT::RAW),    s.getSummaryField(11));
 
         EXPECT_EQ(1u, s.getNumFieldSets());
         assertSet(SFS("default").addField("a").addField("c"),
@@ -252,9 +203,6 @@ addAllFieldTypes(const string& name, Schema& schema)
     Schema::AttributeField attribute_field(name, DataType::STRING);
     schema.addAttributeField(attribute_field);
 
-    Schema::SummaryField summary_field(name, DataType::STRING);
-    schema.addSummaryField(summary_field);
-
     schema.addFieldSet(Schema::FieldSet(name));
 }
 
@@ -278,11 +226,6 @@ TEST(SchemaTest, require_that_schemas_can_be_added)
                 sum->getAttributeField(sum->getAttributeFieldId(name1)));
     EXPECT_TRUE(s2.getAttributeField(0) ==
                 sum->getAttributeField(sum->getAttributeFieldId(name2)));
-    ASSERT_EQ(2u, sum->getNumSummaryFields());
-    EXPECT_TRUE(s1.getSummaryField(0) ==
-                sum->getSummaryField(sum->getSummaryFieldId(name1)));
-    EXPECT_TRUE(s2.getSummaryField(0) ==
-                sum->getSummaryField(sum->getSummaryFieldId(name2)));
     ASSERT_EQ(2u, sum->getNumFieldSets());
     EXPECT_TRUE(s1.getFieldSet(0) ==
                 sum->getFieldSet(sum->getFieldSetId(name1)));
@@ -389,6 +332,19 @@ TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_pro
                              set_interleaved_features(false),
                      index_fields[0]);
     assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE), index_fields[0]);
+}
+
+TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields)
+{
+    vespalib::string schema_name("old-schema-with-summary-fields.txt");
+    Schema s;
+    s.addIndexField(Schema::IndexField("ifoo", DataType::STRING));
+    s.addIndexField(Schema::IndexField("ibar", DataType::INT32));
+    s.addAttributeField(Schema::AttributeField("afoo", DataType::STRING));
+    s.addAttributeField(Schema::AttributeField("abar", DataType::INT32));
+    Schema s2;
+    EXPECT_TRUE(s2.loadFromFile(schema_name));
+    assertSchema(s, s2);
 }
 
 }

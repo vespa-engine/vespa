@@ -237,7 +237,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
     const DocumentDBConfig &o = *orig;
 
     auto replay_summary_config = emptyConfig(o._summary);
-    auto replay_schema = build_schema(*o._attributes, *replay_summary_config, *o._indexschema);
+    auto replay_schema = build_schema(*o._attributes, *o._indexschema);
     if (*replay_schema == *o._schema) {
         replay_schema = o._schema;
     }
@@ -356,12 +356,10 @@ DocumentDBConfig::getDocumentType() const
 
 std::shared_ptr<Schema>
 DocumentDBConfig::build_schema(const AttributesConfig& attributes_config,
-                               const SummaryConfig& summary_config,
                                const IndexschemaConfig &indexschema_config)
 {
     auto schema = std::make_shared<Schema>();
     SchemaBuilder::build(attributes_config, *schema);
-    SchemaBuilder::build(summary_config, *schema);
     SchemaBuilder::build(indexschema_config, *schema);
     return schema;
 }

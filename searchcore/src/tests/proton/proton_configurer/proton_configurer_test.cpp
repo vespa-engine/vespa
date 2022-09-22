@@ -56,7 +56,7 @@ struct DBConfigFixture {
 
     Schema::SP buildSchema()
     {
-        return DocumentDBConfig::build_schema(_attributesBuilder, _summaryBuilder, _indexschemaBuilder);
+        return DocumentDBConfig::build_schema(_attributesBuilder, _indexschemaBuilder);
     }
 
     static RankingConstants::SP buildRankingConstants()
