@@ -57,21 +57,12 @@ private:
     using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::hash>;
     ReplyQueue _queuedReplies;
     ConflictingBuckets _conflictingBuckets;
-    /**
-     * Keeps the version number of the first cluster state version seen that
-     * after distributor unification is equal to all cluster states seen after.
-     */
-    uint32_t _firstEqualClusterStateVersion;
     // The most current cluster state versions that we've observed on the way _down_
     // through the chain, i.e. prior to being enabled on the node.
     uint32_t _last_cluster_state_version_initiated;
     // The most current cluster state we've observed on the way _up_ through the
     // chain, i.e. after being enabled on the node.
     uint32_t _last_cluster_state_version_completed;
-    /**
-     * The unified version of the last cluster state.
-     */
-    std::string _lastUnifiedClusterState;
     bool _doneInitialized;
     size_t _requestsCurrentlyProcessing;
     ServiceLayerComponent _component;
