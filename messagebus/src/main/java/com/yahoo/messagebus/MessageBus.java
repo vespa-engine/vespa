@@ -150,7 +150,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         // Attach and start network.
         this.net = net;
         net.attach(this);
-        if ( ! net.net().waitUntilReady(120)) {
+        if ( ! net.net().waitUntilReady(180)) {
             Process.dumpThreads();
             String fn = "var/crash/java_pid." + ProcessHandle.current().pid() + ".hprof";
             Process.dumpHeap(Defaults.getDefaults().underVespaHome(fn), true);
