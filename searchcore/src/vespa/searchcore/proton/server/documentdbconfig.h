@@ -253,7 +253,6 @@ public:
 
     static std::shared_ptr<search::index::Schema>
     build_schema(const AttributesConfig& attributes_config,
-                 const SummaryConfig& summary_config,
                  const IndexschemaConfig &indexschema_config);
 };
 

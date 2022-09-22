@@ -7,7 +7,6 @@
 namespace vespa::config::search::internal {
     class InternalIndexschemaType;
     class InternalAttributesType;
-    class InternalSummaryType;
 }
 
 namespace search::index {
@@ -23,7 +22,6 @@ class SchemaBuilder
 public:
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
-    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     /**
      * Build from indexschema config.
      *
@@ -36,13 +34,6 @@ public:
      * @param attributeCfg AttributesConfig to use
      **/
     static void build(const AttributesConfig &cfg, Schema &schema);
-    /**
-     * Build from summary config.
-     *
-     * @param summaryCfg SummaryConfig to use
-     **/
-    static void build(const SummaryConfig &cfg, Schema &schema);
-
 };
 
 class SchemaConfigurer
@@ -50,11 +41,9 @@ class SchemaConfigurer
 private:
     using IndexschemaConfig = SchemaBuilder::IndexschemaConfig;
     using AttributesConfig = SchemaBuilder::AttributesConfig;
-    using SummaryConfig = SchemaBuilder::SummaryConfig;
     Schema & _schema;
     void configure(const IndexschemaConfig & cfg);
     void configure(const AttributesConfig & cfg);
-    void configure(const SummaryConfig & cfg);
 
 public:
     /**

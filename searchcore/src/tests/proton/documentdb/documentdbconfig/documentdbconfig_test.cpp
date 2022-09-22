@@ -141,7 +141,6 @@ struct Fixture {
     {
         basic_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
         full_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
-        full_schema->addSummaryField(Schema::SummaryField("my_attribute", schema::DataType::INT32));
         basicCfg = MyConfigBuilder(4, basic_schema, repo).addAttribute().addSummary(false, false).build();
         fullCfg = MyConfigBuilder(4, full_schema, repo).addAttribute().
                                                    addRankProfile().

@@ -124,7 +124,7 @@ public:
         CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
         CS::AttributesConfigSP attributes = _schemaFactory->createAttributes(*docType);
         CS::SummaryConfigSP summary = _schemaFactory->createSummary(*docType);
-        auto schema = DocumentDBConfig::build_schema(*attributes, *summary, *indexschema);
+        auto schema = DocumentDBConfig::build_schema(*attributes, *indexschema);
         return std::make_shared<DocumentDBConfig>(
                         1,
                         std::make_shared<RankProfilesConfig>(),
