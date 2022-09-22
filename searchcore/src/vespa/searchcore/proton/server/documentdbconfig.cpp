@@ -250,7 +250,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._indexschema,
                 o._attributes,
                 replay_summary_config,
-                o._juniperrc,
+                emptyConfig(o._juniperrc),
                 o._documenttypes,
                 o._repo,
                 std::make_shared<ImportedFieldsConfig>(),
