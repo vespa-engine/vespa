@@ -367,11 +367,13 @@ public class VersionStatusTest {
         default1.failDeployment(stagingTest);
         default2.failDeployment(stagingTest);
         default3.failDeployment(stagingTest);
+        default4.failDeployment(stagingTest);
+        default5.failDeployment(stagingTest);
         tester.controllerTester().computeVersionStatus();
 
         assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
         assertEquals(Confidence.high, confidence(tester.controller(), version2), "Confidence remains unchanged for version2: High");
-        assertEquals(VespaVersion.Confidence.broken, confidence(tester.controller(), version3), "40% of defaults failed: Broken");
+        assertEquals(VespaVersion.Confidence.broken, confidence(tester.controller(), version3), "60% of defaults failed: Broken");
 
         // Test version order
         List<VespaVersion> versions = tester.controller().readVersionStatus().versions();

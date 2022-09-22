@@ -44,7 +44,7 @@ public record VespaVersion(Version version,
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 5% of all
+        // 'broken' if 6 non-canary was broken by this, and that is at least 5% of all
         if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis))
             return Confidence.broken;
 
@@ -161,9 +161,9 @@ public record VespaVersion(Version version,
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 5% of all
+        // 'broken' if 6 non-canary was broken by this, and that is at least 5% of all
         int brokenByThisVersion = failingNonCanaries.size();
-        return brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.05;
+        return brokenByThisVersion >= 6 && brokenByThisVersion >= productionOnThis.size() * 0.05;
      }
 
 }
