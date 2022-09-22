@@ -207,18 +207,6 @@ private:
     };
 
     /**
-     * Class for handling the construction of the content of a summary field.
-     **/
-    class SummaryFieldHandle : public CollectionFieldHandle {
-    public:
-        SummaryFieldHandle(const document::Field & dfield, const Schema::Field & sfield);
-        void addStr(const vespalib::string & val) override;
-        void addInt(int64_t val) override;
-        void addFloat(double val) override;
-        void addRaw(const void *buf, size_t len) override;
-    };
-
-    /**
      * Class for handling the construction of a document (set of fields).
      **/
     class DocumentHandle {
@@ -235,7 +223,6 @@ private:
         const FieldHandle::SP & getFieldHandle() const { return _fieldHandle; }
         void startIndexField(const Schema::Field & sfield);
         void startAttributeField(const Schema::Field & sfield);
-        void startSummaryField(const Schema::Field & sfield);
         void endField();
         void endDocument(const document::Document::UP & doc) {
             (void) doc;
@@ -260,7 +247,6 @@ public:
 
     DocBuilder & startIndexField(const vespalib::string & name);
     DocBuilder & startAttributeField(const vespalib::string & name);
-    DocBuilder & startSummaryField(const vespalib::string & name);
     DocBuilder & endField();
     DocBuilder & startElement(int32_t weight = 1);
     DocBuilder & endElement();

@@ -98,19 +98,6 @@ insertPosition(const Schema::Field & sfield,
     zvalue->setValue(zpos);
 }
 
-
-void
-insertRaw(const Schema::Field & sfield,
-          document::FieldValue *fvalue, const void *buf, size_t len)
-{
-    assert(*fvalue->getDataType() == *DataType::RAW);
-    assert(sfield.getDataType() == schema::DataType::RAW);
-    (void) sfield;
-    document::RawFieldValue *rfvalue =
-        dynamic_cast<RawFieldValue *>(fvalue);
-    rfvalue->setValue(static_cast<const char *>(buf), len);
-}
-
 }
 
 namespace docbuilderkludge
@@ -543,53 +530,6 @@ DocBuilder::AttributeFieldHandle::addPosition(int32_t xpos, int32_t ypos)
     }
 }
 
-DocBuilder::SummaryFieldHandle::
-SummaryFieldHandle(const document::Field & dfield,
-                   const Schema::Field & sfield)
-    : CollectionFieldHandle(dfield, sfield)
-{
-}
-
-void
-DocBuilder::SummaryFieldHandle::addStr(const vespalib::string & val)
-{
-    if (_element) {
-        insertStr(_sfield, _element.get(), val);
-    } else {
-        insertStr(_sfield, _value.get(), val);
-    }
-}
-
-void
-DocBuilder::SummaryFieldHandle::addInt(int64_t val)
-{
-    if (_element) {
-        insertInt(_sfield, _element.get(), val);
-    } else {
-        insertInt(_sfield, _value.get(), val);
-    }
-}
-
-void
-DocBuilder::SummaryFieldHandle::addFloat(double val)
-{
-    if (_element) {
-        insertFloat(_sfield, _element.get(), val);
-    } else {
-        insertFloat(_sfield, _value.get(), val);
-    }
-}
-
-void
-DocBuilder::SummaryFieldHandle::addRaw(const void *buf, size_t len)
-{
-    if (_element) {
-        insertRaw(_sfield, _element.get(), buf, len);
-    } else {
-        insertRaw(_sfield, _value.get(), buf, len);
-    }
-}
-
 DocBuilder::DocumentHandle::DocumentHandle(document::Document &doc, const vespalib::string & docId)
     : _type(&doc.getType()),
       _doc(&doc),
@@ -609,10 +549,7 @@ void
 DocBuilder::DocumentHandle::startAttributeField(const Schema::Field & sfield) {
     _fieldHandle.reset(new AttributeFieldHandle(_type->getField(sfield.getName()), sfield));
 }
-void
-DocBuilder::DocumentHandle::startSummaryField(const Schema::Field & sfield) {
-    _fieldHandle.reset(new SummaryFieldHandle(_type->getField(sfield.getName()), sfield));
-}
+
 void
 DocBuilder::DocumentHandle::endField() {
     _fieldHandle->onEndField();
@@ -669,21 +606,6 @@ DocBuilder::startAttributeField(const vespalib::string & name)
     field_id = _schema.getAttributeFieldId(name);
     assert(field_id != Schema::UNKNOWN_FIELD_ID);
     _handleDoc->startAttributeField(_schema.getAttributeField(field_id));
-    _currDoc = _handleDoc.get();
-    return *this;
-}
-
-DocBuilder &
-DocBuilder::startSummaryField(const vespalib::string & name)
-{
-    assert(!_handleDoc->getFieldHandle());
-    uint32_t field_id = _schema.getIndexFieldId(name);
-    assert(field_id == Schema::UNKNOWN_FIELD_ID);
-    field_id = _schema.getAttributeFieldId(name);
-    assert(field_id == Schema::UNKNOWN_FIELD_ID);
-    field_id = _schema.getSummaryFieldId(name);
-    assert(field_id != Schema::UNKNOWN_FIELD_ID);
-    _handleDoc->startSummaryField(_schema.getSummaryField(field_id));
     _currDoc = _handleDoc.get();
     return *this;
 }

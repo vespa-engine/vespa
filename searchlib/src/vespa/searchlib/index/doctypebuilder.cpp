@@ -148,22 +148,6 @@ document::config::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         usedFields.insert(field.getName());
     }
 
-    for (uint32_t i = 0; i < _schema.getNumSummaryFields(); ++i) {
-        const Schema::SummaryField &field = _schema.getSummaryField(i);
-        UsedFields::const_iterator usf = usedFields.find(field.getName());
-        if (usf != usedFields.end()) {
-            continue;   // taken as index field or attribute field
-        }
-        auto type_id  = convert(field.getDataType());
-        if (type_id == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
-        } else {
-            header_struct.addField(field.getName(), type_cache.getType(
-                    type_id, field.getCollectionType()));
-        }
-        usedFields.insert(field.getName());
-    }
-
     DocumenttypesConfigBuilderHelper builder;
     builder.document(-645763131, "searchdocument",
                      header_struct, Struct("searchdocument.body"));
