@@ -83,6 +83,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
     private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
+    private final LegacyIndexPageRequestHandler indexPageRequestHandler;
 
     private boolean isMaster = false;
     private boolean inMasterMoratorium = false;
@@ -141,9 +142,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         this.statusRequestRouter.addHandler(
                 "^/clusterstate",
                 new ClusterStateRequestHandler(stateVersionTracker));
+        this.indexPageRequestHandler = new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog, options);
         this.statusRequestRouter.addHandler(
                 "^/$",
-                new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog, options));
+                indexPageRequestHandler);
 
         propagateOptions();
     }
@@ -488,6 +490,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         stateVersionTracker.setMinMergeCompletionRatio(options.minMergeCompletionRatio());
 
         communicator.propagateOptions(options);
+        indexPageRequestHandler.propagateOptions(options);
 
         if (nodeLookup instanceof SlobrokClient) {
             ((SlobrokClient) nodeLookup).setSlobrokConnectionSpecs(options.slobrokConnectionSpecs());
@@ -677,7 +680,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
         boolean sentAny = false;
         // Give nodes a fair chance to respond first time to state gathering requests, so we don't
-        // disturb system when we take over. Allow anyways if we have states from all nodes.
+        // disturb system when we take over. Allow anyway if we have states from all nodes.
         long currentTime = timer.getCurrentTimeInMillis();
         if ((currentTime >= firstAllowedStateBroadcast || cluster.allStatesReported())
             && currentTime >= nextStateSendTime)
