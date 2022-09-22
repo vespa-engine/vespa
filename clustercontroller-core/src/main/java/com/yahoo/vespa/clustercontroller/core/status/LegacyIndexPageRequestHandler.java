@@ -172,8 +172,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                                           HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
         }
 
-        List<Group> groups = LeafGroups.enumerateFrom(options.storageDistribution().getRootGroup());
-
+        List<Group> groups = LeafGroups.enumerateFrom(cluster.getDistribution().getRootGroup());
         for (Group group : groups) {
             assert (group != null);
             String localName = group.getUnixStylePath();
