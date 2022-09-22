@@ -416,13 +416,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
-            "fail-deployment-for-files-with-unknown-extension", "FAIL",
-            List.of("hmusum"), "2022-04-27", "2022-10-01",
-            "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
             "dispatch-notifications", false,
             List.of("enygaard"), "2022-05-02", "2022-09-30",
