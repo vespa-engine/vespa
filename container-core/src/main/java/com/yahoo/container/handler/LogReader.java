@@ -59,9 +59,10 @@ class LogReader {
         this.logFilePattern = logFilePattern;
     }
 
-    void writeLogs(OutputStream out, Instant from, Instant to, Optional<String> hostname) {
+    void writeLogs(OutputStream out, Instant from, Instant to, long maxLines, Optional<String> hostname) {
         double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
         double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
+        long linesWritten = 0;
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
         for (List<Path> logs : getMatchingFiles(from, to)) {
             List<LogLineIterator> logLineIterators = new ArrayList<>();
@@ -73,6 +74,7 @@ class LogReader {
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
                 while (lines.hasNext()) {
+                    if (linesWritten++ >= maxLines) return;
                     String line = lines.next().line();
                     writer.write(line);
                     writer.newLine();
