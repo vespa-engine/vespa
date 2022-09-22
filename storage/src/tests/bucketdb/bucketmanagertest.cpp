@@ -631,6 +631,10 @@ public:
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state);
     }
 
+    auto createFullFetchCommand(const lib::ClusterState& explicit_state) const {
+        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, explicit_state);
+    }
+
     auto createFullFetchCommandWithHash(vespalib::stringref hash) const {
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state, hash);
     }
@@ -1271,7 +1275,7 @@ TEST_F(BucketManagerTest, bounce_request_on_state_change_barrier_not_reached) {
     _top->waitForMessage(api::MessageType::SETSYSTEMSTATE_REPLY, MESSAGE_WAIT_TIME);
     (void)_top->getRepliesOnce();
 
-    _top->sendDown(f.createFullFetchCommand());
+    _top->sendDown(f.createFullFetchCommand(new_state));
     replies = f.awaitAndGetReplies(1);
     {
         auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);

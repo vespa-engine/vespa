@@ -40,10 +40,8 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _clusterStateLock(),
       _queueProcessingLock(),
       _queuedReplies(),
-      _firstEqualClusterStateVersion(0),
       _last_cluster_state_version_initiated(0),
       _last_cluster_state_version_completed(0),
-      _lastUnifiedClusterState(""),
       _doneInitialized(false),
       _requestsCurrentlyProcessing(0),
       _component(compReg, "bucketmanager"),
@@ -460,24 +458,6 @@ bool BucketManager::onRequestBucketInfo(
     return true;
 }
 
-namespace {
-    std::string unifyState(const lib::ClusterState& state) {
-        std::vector<char> distributors(
-                state.getNodeCount(lib::NodeType::DISTRIBUTOR), 'd');
-
-        uint32_t length = 0;
-        for (uint32_t i = 0; i < distributors.size(); ++i) {
-            const lib::NodeState& ns(state.getNodeState(
-                    lib::Node(lib::NodeType::DISTRIBUTOR, i)));
-            if (ns.getState().oneOf("uirm")) {
-                distributors[i] = 'u';
-                length = i + 1;
-            }
-        }
-        return std::string(&distributors[0], length);
-    }
-}
-
 BucketManager::ScopedQueueDispatchGuard::ScopedQueueDispatchGuard(
         BucketManager& mgr)
     : _mgr(mgr)
@@ -567,17 +547,10 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
                   << " so it can be retried. Node version is " << clusterState->getVersion()
                   << ", last version seen by the bucket manager is " << _last_cluster_state_version_initiated
                   << ", last internally converged version is " << _last_cluster_state_version_completed;
-        } else if ((*it)->getSystemState().getVersion() > _last_cluster_state_version_initiated) {
+        } else if ((*it)->getSystemState().getVersion() != _last_cluster_state_version_initiated) {
             error << "Ignoring bucket info request for cluster state version "
                   << (*it)->getSystemState().getVersion() << " as newest "
                   << "version we know of is " << _last_cluster_state_version_initiated;
-        } else if ((*it)->getSystemState().getVersion()
-                    < _firstEqualClusterStateVersion)
-        {
-            error << "Ignoring bucket info request for cluster state version "
-                  << (*it)->getSystemState().getVersion() << " as versions "
-                  << "from version " << _firstEqualClusterStateVersion
-                  << " differs from this state.";
         } else if (!their_hash.empty() && their_hash != our_hash) {
             // Mismatching config hash indicates nodes are out of sync with their config generations
             error << "Distributor config hash is not equal to our own; must reject request (our hash: "
@@ -722,14 +695,7 @@ BucketManager::onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand
 {
     LOG(debug, "onSetSystemState(%s)", cmd->toString().c_str());
     const lib::ClusterState& state(cmd->getSystemState());
-    std::string unified(unifyState(state));
     std::lock_guard lock(_clusterStateLock);
-    if (unified != _lastUnifiedClusterState
-        || state.getVersion() != _last_cluster_state_version_initiated + 1)
-    {
-        _lastUnifiedClusterState = unified;
-        _firstEqualClusterStateVersion = state.getVersion();
-    }
     // At this point, the incoming cluster state version has not yet been enabled on this node;
     // it's on its merry way down to the StateManager which handles internal transitions.
     // We must take note of the fact that it will _soon_ be enabled, and must avoid processing
