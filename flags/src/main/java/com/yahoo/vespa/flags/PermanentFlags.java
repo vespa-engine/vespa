@@ -284,6 +284,12 @@ public class PermanentFlags {
             "Takes effect on next deployment through controller",
             TENANT_ID);
 
+    public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
+            "fail-deployment-for-files-with-unknown-extension", "FAIL",
+            "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

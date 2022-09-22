@@ -43,7 +43,7 @@ import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundStringFlag;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
@@ -724,7 +724,7 @@ public class SessionRepository {
             app.validateFileExtensions();
         } catch (IllegalArgumentException e) {
             if (configserverConfig.hostedVespa()) {
-                UnboundStringFlag flag = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
+                UnboundStringFlag flag = PermanentFlags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
                 String value = flag.bindTo(flagSource).with(APPLICATION_ID, applicationId.serializedForm()).value();
                 switch (value) {
                     case "FAIL" -> throw e;
