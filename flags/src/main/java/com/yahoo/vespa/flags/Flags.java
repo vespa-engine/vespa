@@ -345,13 +345,6 @@ public class Flags {
                 "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
-            "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-10-01",
-            "Enable Data Highway in AWS",
-            "Takes effect on restart of Docker container",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
             "merge-throttling-policy", "STATIC",
             List.of("vekterli"), "2022-01-25", "2022-10-01",
