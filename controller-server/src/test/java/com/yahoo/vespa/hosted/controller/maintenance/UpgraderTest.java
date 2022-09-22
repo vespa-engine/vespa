@@ -189,6 +189,7 @@ public class UpgraderTest {
         // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
         var default3 = createAndDeploy("default3", "default");
         var default4 = createAndDeploy("default4", "default");
+        var default5 = createAndDeploy("default5", "default");
         Version version4 = Version.fromString("6.6");
         tester.controllerTester().upgradeSystem(version4);
         tester.upgrader().maintain(); // cause canary upgrades to new version
@@ -200,8 +201,8 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         tester.triggerJobs();
 
-        assertEquals(10, tester.jobs().active().size(), "Upgrade of defaults are scheduled");
-        for (var context : List.of(default0, default1, default2, default3, default4))
+        assertEquals(12, tester.jobs().active().size(), "Upgrade of defaults are scheduled");
+        for (var context : List.of(default0, default1, default2, default3, default4, default5))
             assertEquals(version4, context.instance().change().platform().get());
 
         default0.deployPlatform(version4);
@@ -218,9 +219,9 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         tester.triggerJobs();
 
-        assertEquals(10, tester.jobs().active().size(), "Upgrade of defaults are scheduled");
+        assertEquals(12, tester.jobs().active().size(), "Upgrade of defaults are scheduled");
         assertEquals(version5, default0.instance().change().platform().get());
-        for (var context : List.of(default1, default2, default3, default4))
+        for (var context : List.of(default1, default2, default3, default4, default5))
             assertEquals(version4, context.instance().change().platform().get());
 
         default1.deployPlatform(version4);
@@ -230,6 +231,10 @@ public class UpgraderTest {
                 .failDeployment(stagingTest);
 
         default4.runJob(systemTest)
+                .runJob(stagingTest)
+                .failDeployment(productionUsWest1);
+
+        default5.runJob(systemTest)
                 .runJob(stagingTest)
                 .failDeployment(productionUsWest1);
 
@@ -247,9 +252,11 @@ public class UpgraderTest {
         default3.runJob(systemTest)
                 .runJob(stagingTest)
                 .failDeployment(productionUsWest1);
+        default4.failDeployment(systemTest);
+        default5.failDeployment(systemTest);
+
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().readVersionStatus().systemVersion().get().confidence());
-
 
         tester.upgrader().maintain();
         assertEquals(version4, default3.instance().change().platform().get());
@@ -311,10 +318,10 @@ public class UpgraderTest {
         assertEquals(20, tester.jobs().active().size(), "Canaries done: Should upgrade defaults");
 
         default0.deployPlatform(version);
-        for (var context : List.of(default1, default2, default3, default4))
+        for (var context : List.of(default1, default2, default3, default4, default5, default6))
             context.failDeployment(systemTest);
 
-        // > 40% and at least 4 failed - version is broken
+        // > 60% and at least 6 failed - version is broken
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.abortAll();
@@ -342,6 +349,8 @@ public class UpgraderTest {
         var default2 = createAndDeploy("default2", "default");
         var default3 = createAndDeploy("default3", "default");
         var default4 = createAndDeploy("default4", "default");
+        var default5 = createAndDeploy("default5", "default");
+        var default6 = createAndDeploy("default6", "default");
 
         // V1 is released
         Version v1 = Version.fromString("6.3");
@@ -372,27 +381,33 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.normal, tester.controller().readVersionStatus().systemVersion().get().confidence());
 
         // We "manually" cancel upgrades to V1 so that we can use the applications to make V2 fail instead
-        // But we keep one (default4) to avoid V1 being garbage collected
+        // But we keep one (default6) to avoid V1 being garbage collected
         tester.deploymentTrigger().cancelChange(default0.instanceId(), ALL);
         tester.deploymentTrigger().cancelChange(default1.instanceId(), ALL);
         tester.deploymentTrigger().cancelChange(default2.instanceId(), ALL);
         tester.deploymentTrigger().cancelChange(default3.instanceId(), ALL);
+        tester.deploymentTrigger().cancelChange(default4.instanceId(), ALL);
+        tester.deploymentTrigger().cancelChange(default5.instanceId(), ALL);
         default0.abortJob(systemTest).abortJob(stagingTest);
         default1.abortJob(systemTest).abortJob(stagingTest);
         default2.abortJob(systemTest).abortJob(stagingTest);
         default3.abortJob(systemTest).abortJob(stagingTest);
+        default4.abortJob(systemTest).abortJob(stagingTest);
+        default5.abortJob(systemTest).abortJob(stagingTest);
 
         // Applications with default policy start upgrading to V2
         tester.upgrader().maintain();
         tester.triggerJobs();
-        assertEquals(10, tester.jobs().active().size(), "Upgrade scheduled for remaining apps");
-        assertEquals(v1, default4.instance().change().platform().get(), "default4 is still upgrading to 6.3");
+        assertEquals(14, tester.jobs().active().size(), "Upgrade scheduled for remaining apps");
+        assertEquals(v1, default6.instance().change().platform().get(), "default6 is still upgrading to 6.3");
 
         // 4/5 applications fail (in the last prod zone) and lowers confidence
         default0.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
         default1.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
         default2.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
         default3.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
+        default4.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
+        default5.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).failDeployment(productionUsEast3);
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().readVersionStatus().systemVersion().get().confidence());
 
@@ -402,7 +417,7 @@ public class UpgraderTest {
         tester.abortAll();
         tester.triggerJobs();
 
-        assertEquals(10, tester.jobs().active().size(), "Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2");
+        assertEquals(14, tester.jobs().active().size(), "Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2");
 
         // prod zone on 5.2 (usWest1) is skipped, but we still trigger the next zone from triggerReadyJobs:
         default0.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
