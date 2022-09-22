@@ -297,10 +297,6 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     assert(saveSchemaRes);
     (void) saveSchemaRes;
 
-    search::index::Schema historySchema;
-    bool saveHistorySchemaRes = historySchema.saveToFile(snapDir + "/historyschema.txt");
-    assert(saveHistorySchemaRes);
-    (void) saveHistorySchemaRes;
     vespalib::File::sync(snapDir);
     vespalib::File::sync(_baseDir);
 
