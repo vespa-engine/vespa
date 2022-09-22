@@ -306,7 +306,7 @@ SlimeFillerTest::expect_insert(const vespalib::string& exp, const FieldValue& fv
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, nullptr, &filter);
+    SlimeFiller filler(inserter, nullptr, filter.begin());
     fv.accept(filler);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
@@ -318,7 +318,7 @@ SlimeFillerTest::expect_insert_callback(const std::vector<vespalib::string>& exp
     Slime slime;
     SlimeInserter inserter(slime);
     MockStringFieldConverter converter;
-    SlimeFiller filler(inserter, &converter, nullptr);
+    SlimeFiller filler(inserter, &converter, SlimeFillerFilter::all());
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
