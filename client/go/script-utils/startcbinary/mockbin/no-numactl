@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# emulate inoperational numactl
+
+echo "No NUMA available on this system"
+exit 1

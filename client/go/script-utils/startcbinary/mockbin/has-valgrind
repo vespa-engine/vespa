@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# emulate "which" that finds valgrind
+
+echo "/opt/vespa-deps/bin/valgrind"
+exit 0
