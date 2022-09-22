@@ -293,10 +293,6 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     save(snapDir, snapshot.getDocumenttypesConfig());
     addEmptyFile(snapDir, "summarymap.cfg");
 
-    bool saveSchemaRes = snapshot.getSchemaSP()->saveToFile(snapDir + "/schema.txt");
-    assert(saveSchemaRes);
-    (void) saveSchemaRes;
-
     vespalib::File::sync(snapDir);
     vespalib::File::sync(_baseDir);
 
