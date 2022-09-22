@@ -42,7 +42,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     private final StateVersionTracker stateVersionTracker;
     private final EventLog eventLog;
     private final long startedTime;
-    private final FleetControllerOptions options;
+
+    private FleetControllerOptions options;
 
     public LegacyIndexPageRequestHandler(Timer timer,
                                          ContentCluster cluster,
@@ -56,6 +57,10 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         this.stateVersionTracker = stateVersionTracker;
         this.eventLog = eventLog;
         this.startedTime = timer.getCurrentTimeInMillis();
+        this.options = options;
+    }
+
+    public void propagateOptions(FleetControllerOptions options) {
         this.options = options;
     }
 
