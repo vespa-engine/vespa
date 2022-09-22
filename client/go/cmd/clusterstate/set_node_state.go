@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 const (
@@ -70,7 +71,7 @@ func NewSetNodeStateCmd() *cobra.Command {
 
 func runSetNodeState(opts *Options, args []string) {
 	if opts.Silent {
-		currentOutputLevel = levelNone
+		trace.Silent()
 	}
 	if opts.NoColors || os.Getenv("TERM") == "" {
 		color.NoColor = true

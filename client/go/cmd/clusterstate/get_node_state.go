@@ -13,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 const (
@@ -54,12 +55,12 @@ func NewGetNodeStateCmd() *cobra.Command {
 
 func runGetNodeState(opts *Options) {
 	if opts.Silent {
-		currentOutputLevel = levelNone
+		trace.Silent()
 	}
 	if opts.NoColors || os.Getenv("TERM") == "" {
 		color.NoColor = true
 	}
-	PutInfo(header)
+	trace.Info(header)
 	m := detectModel(opts)
 	sss := m.findSelectedServices(opts)
 	clusters := make(map[string]*ClusterState)
@@ -70,7 +71,7 @@ func runGetNodeState(opts *Options) {
 			clusters[s.cluster] = state
 		}
 		if state == nil {
-			PutWarning("no state for cluster: ", s.cluster)
+			trace.Warning("no state for cluster: ", s.cluster)
 			continue
 		}
 		if nodes, ok := state.Service[s.serviceType]; ok {
@@ -83,7 +84,7 @@ func runGetNodeState(opts *Options) {
 				}
 			}
 		} else {
-			PutWarning("no nodes for service type: ", s.serviceType)
+			trace.Warning("no nodes for service type: ", s.serviceType)
 			continue
 		}
 

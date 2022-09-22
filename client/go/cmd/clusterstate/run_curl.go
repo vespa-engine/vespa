@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/curl"
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -47,7 +48,7 @@ func curlGet(url string, output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	PutTrace("running curl:", cmd.String())
+	trace.Trace("running curl:", cmd.String())
 	err = cmd.Run(output, os.Stderr)
 	return err
 }
@@ -58,8 +59,8 @@ func curlPost(url string, input []byte) (string, error) {
 	cmd.Header("Content-Type", "application/json")
 	cmd.WithBodyInput(bytes.NewReader(input))
 	var out bytes.Buffer
-	PutDebug("POST input: " + string(input))
-	PutTrace("running curl:", cmd.String())
+	trace.Debug("POST input: " + string(input))
+	trace.Trace("running curl:", cmd.String())
 	err = cmd.Run(&out, os.Stderr)
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
