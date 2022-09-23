@@ -263,7 +263,6 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
     auto word_pos_iterator_end(fw._wordPosFeatures.end());
     DocIdAndPosOccFeatures check_features;
     DocIdAndFeatures features;
-    uint32_t hits = 0;
     for (const auto &doc : fw._postings) {
         if (_posting_params._encode_features) {
             fw.setupFeatures(doc, &*word_pos_iterator, check_features);
@@ -279,7 +278,6 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
             assert(features.field_length() == doc._collapsedDocWordFeatures._field_len);
             assert(features.num_occs() == doc._collapsedDocWordFeatures._num_occs);
         }
-        ++hits;
     }
     if (_posting_params._encode_features) {
         assert(word_pos_iterator == word_pos_iterator_end);

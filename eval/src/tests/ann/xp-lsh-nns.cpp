@@ -208,23 +208,16 @@ RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVect
     LsMaskHash query_hash = mask_hash_from_pv(vector, _transformationMatrix);
     LshHitHeap heap(std::max(k, search_k));
     int limit_hash_dist = 99999;
-    int skipCnt = 0;
-    int fullCnt = 0;
-    int whdcCnt = 0;
     size_t docidLimit = _generated_doc_hashes.size();
     for (uint32_t docid = 0; docid < docidLimit; ++docid) {
         if (skipDocIds.isSet(docid)) continue;
         int hd = hash_dist(query_hash, _generated_doc_hashes[docid]);
         if (hd <= limit_hash_dist) {
-            ++fullCnt;
             double dist = l2distCalc.l2sq_dist(vector, _dva.get(docid), tmpArr);
             LshHit h(docid, dist, hd);
             if (heap.maybe_use(h)) {
-                ++whdcCnt;
                 limit_hash_dist = heap.limitHashDistance();
             }
-        } else {
-            ++skipCnt;
         }
     }
     std::vector<LshHit> best = heap.bestLshHits();
@@ -248,24 +241,17 @@ RpLshNns::topK(uint32_t k, Vector vector, uint32_t search_k)
     LshHitHeap heap(std::max(k, search_k));
     int limit_hash_dist = 99999;
     int histogram[HIST_SIZE];
-    int skipCnt = 0;
-    int fullCnt = 0;
-    int whdcCnt = 0;
     memset(histogram, 0, sizeof histogram);
     size_t docidLimit = _generated_doc_hashes.size();
     for (uint32_t docid = 0; docid < docidLimit; ++docid) {
         int hd = hash_dist(query_hash, _generated_doc_hashes[docid]);
         histogram[hd]++;
         if (hd <= limit_hash_dist) {
-            ++fullCnt;
             double dist = l2distCalc.l2sq_dist(vector, _dva.get(docid), tmpArr);
             LshHit h(docid, dist, hd);
             if (heap.maybe_use(h)) {
-                ++whdcCnt;
                 limit_hash_dist = heap.limitHashDistance();
             }
-        } else {
-            ++skipCnt;
         }
     }
     std::vector<LshHit> best = heap.bestLshHits();

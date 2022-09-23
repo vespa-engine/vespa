@@ -115,7 +115,7 @@ MmapMemory::setupHugePages()
                     ASSERT_STACKTRACE((sz < int(sizeof(mounts))) && (sz >= 0));
                     (void) sz;
                     const char * c = mounts;
-                    for (size_t lineNo(0); *c; lineNo++) {
+                    while (*c) {
                         const char *e = c;
                         for (; e[0] && (e[0] != '\n'); e++) { }
                         const char *dev = getToken(c, e);

@@ -166,7 +166,7 @@ DomainPart::readPacket(FastOS_FileInterface & transLog, SerialNumRange wanted, s
     Packet packet(targetSize);
     int64_t fSize(transLog.GetSize());
     int64_t currPos(transLog.GetPosition());
-    for(size_t i(0); (packet.sizeBytes() < targetSize) && (currPos < fSize) && (packet.range().to() < wanted.to()); i++) {
+    while ((packet.sizeBytes() < targetSize) && (currPos < fSize) && (packet.range().to() < wanted.to())) {
         IChunk::UP chunk;
         if (read(transLog, chunk, buf, allowTruncate)) {
             if (chunk) {
