@@ -60,7 +60,7 @@ public class LoggerEntry {
             JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
             g.writeStartObject();
 
-            g.writeNumberField("timestamp", timestamp);
+            g.writeNumberField("timestamp", timestamp == null ? 0 : timestamp);
             g.writeStringField("query", queryString());
             g.writeStringField("blob", Base64.getEncoder().encodeToString(blob.array()));
 
