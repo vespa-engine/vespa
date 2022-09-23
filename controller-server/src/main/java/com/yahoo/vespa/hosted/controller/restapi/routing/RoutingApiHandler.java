@@ -60,12 +60,12 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             var path = new Path(request.getUri());
-            switch (request.getMethod()) {
-                case GET: return get(path, request);
-                case POST: return post(path, request);
-                case DELETE: return delete(path, request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(path, request);
+                case POST -> post(path, request);
+                case DELETE -> delete(path, request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            };
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
@@ -106,7 +106,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         List<DeploymentId> deployments = endpoints.stream()
                                                   .flatMap(e -> e.deployments().stream())
                                                   .distinct()
-                                                  .collect(Collectors.toList());
+                                                  .toList();
 
         Map<DeploymentId, RoutingStatus> deploymentsStatus = deployments.stream()
                                                                         .collect(Collectors.toMap(
@@ -256,8 +256,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application);
             for (var instance : instances) {
                 var zones = zoneId == null
-                        ? instance.deployments().keySet().stream().sorted(Comparator.comparing(ZoneId::value))
-                                  .collect(Collectors.toList())
+                        ? instance.deployments().keySet().stream().sorted(Comparator.comparing(ZoneId::value)).toList()
                         : List.of(zoneId);
                 for (var zone : zones) {
                     DeploymentId deploymentId = requireDeployment(new DeploymentId(instance.id(), zone), instance);
@@ -350,28 +349,26 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private static String asString(RoutingStatus.Value value) {
-        switch (value) {
-            case in: return "in";
-            case out: return "out";
-            default: return "unknown";
-        }
+        return switch (value) {
+            case in -> "in";
+            case out -> "out";
+        };
     }
 
     private static String asString(RoutingStatus.Agent agent) {
-        switch (agent) {
-            case operator: return "operator";
-            case system: return "system";
-            case tenant: return "tenant";
-            default: return "unknown";
-        }
+        return switch (agent) {
+            case operator -> "operator";
+            case system -> "system";
+            case tenant -> "tenant";
+            case unknown -> "unknown";
+        };
     }
 
     private static String asString(RoutingMethod method) {
-        switch (method) {
-            case exclusive: return "exclusive";
-            case sharedLayer4: return "sharedLayer4";
-            default: return "unknown";
-        }
+        return switch (method) {
+            case exclusive -> "exclusive";
+            case sharedLayer4 -> "sharedLayer4";
+        };
     }
 
 }

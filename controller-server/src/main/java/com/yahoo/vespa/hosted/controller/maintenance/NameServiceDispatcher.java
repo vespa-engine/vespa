@@ -38,7 +38,7 @@ public class NameServiceDispatcher extends ControllerMaintainer {
             var queue = db.readNameServiceQueue();
             var instant = clock.instant();
             var remaining = queue.dispatchTo(nameService, requestCount);
-            if (queue == remaining) return 1.0; // Queue unchanged
+            if (queue.equals(remaining)) return 1.0; // Queue unchanged
 
             var dispatched = queue.first(requestCount);
             if (!dispatched.requests().isEmpty()) {

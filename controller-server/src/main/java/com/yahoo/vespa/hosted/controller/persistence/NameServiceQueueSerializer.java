@@ -63,16 +63,10 @@ public class NameServiceQueueSerializer {
         root.field(requestsField).traverse((ArrayTraverser) (i, object) -> {
             var request = Request.valueOf(object.field(requestType).asString());
             switch (request) {
-                case createRecords:
-                    items.add(createRecordsFromSlime(object));
-                    break;
-                case createRecord:
-                    items.add(createRecordFromSlime(object));
-                    break;
-                case removeRecords:
-                    items.add(removeRecordsFromSlime(object));
-                    break;
-                default: throw new IllegalArgumentException("No serialization defined for request " + request);
+                case createRecords -> items.add(createRecordsFromSlime(object));
+                case createRecord -> items.add(createRecordFromSlime(object));
+                case removeRecords -> items.add(removeRecordsFromSlime(object));
+                default -> throw new IllegalArgumentException("No serialization defined for request " + request);
             }
         });
         return new NameServiceQueue(items);
