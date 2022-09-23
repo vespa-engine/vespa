@@ -102,6 +102,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -1647,7 +1648,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    void create_application_on_deploy() {
+    void create_application_on_deploy_with_okta() {
         // Setup
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
@@ -1669,11 +1670,40 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
                         .data(entity)
                         .oAuthCredentials(OKTA_CREDENTIALS)
-
                         .userIdentity(USER_ID),
-                "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
+                """
+                        {"message":"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.","run":1}""");
 
         assertTrue(tester.controller().applications().getApplication(appId).isPresent());
+    }
+
+    @Test
+    void create_application_on_deploy_with_athenz() {
+        // Setup
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+
+        // Create tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
+                        .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                        .oAuthCredentials(OKTA_CREDENTIALS),
+                new File("tenant-without-applications.json"));
+
+        // Deploy application
+        var id = ApplicationId.from("tenant1", "application1", "instance1");
+        var appId = TenantAndApplicationId.from(id);
+        var entity = createApplicationDeployData(applicationPackageInstance1);
+
+        assertTrue(tester.controller().applications().getApplication(appId).isEmpty());
+
+        // POST (deploy) an application to start a manual deployment to dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
+                        .data(entity)
+                        .userIdentity(USER_ID),
+                """
+                        {"error-code":"BAD_REQUEST","message":"Application does not exist. Create application in Console first."}""", 400);
+
+        assertFalse(tester.controller().applications().getApplication(appId).isPresent());
     }
 
     private static String serializeInstant(Instant i) {

@@ -3043,9 +3043,23 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private void ensureApplicationExists(TenantAndApplicationId id, HttpRequest request) {
         if (controller.applications().getApplication(id).isEmpty()) {
-            log.fine("Application does not exist in public, creating: " + id);
-            var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
-            controller.applications().createApplication(id, credentials);
+            if (controller.system().isPublic() || hasOktaContext(request)) {
+                log.fine("Application does not exist in public, creating: " + id);
+                var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
+                controller.applications().createApplication(id, credentials);
+            } else {
+                log.fine("Application does not exist in hosted, failing: " + id);
+                throw new IllegalArgumentException("Application does not exist. Create application in Console first.");
+            }
+        }
+    }
+
+    private boolean hasOktaContext(HttpRequest request) {
+        try {
+            OAuthCredentials.fromOktaRequestContext(request.getJDiscRequest().context());
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
