@@ -20,7 +20,7 @@ import java.util.Map;
 public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
 
     private final String localAddress;
-    private Map<String, CacheEntry> cache = new HashMap<>();
+    private final Map<String, CacheEntry> cache = new HashMap<>();
 
     /**
      * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occured.
@@ -32,14 +32,12 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
         localAddress = (param != null && param.length() > 0) ? param : null;
     }
 
-    // Inherit doc from RoutingPolicy.
     public void select(RoutingContext ctx) {
         Route route = new Route(ctx.getRoute());
         route.setHop(0, getRecipient(ctx));
         ctx.addChild(route);
     }
 
-    // Inherit doc from RoutingPolicy.
     public void merge(RoutingContext ctx) {
         DocumentProtocol.merge(ctx);
     }

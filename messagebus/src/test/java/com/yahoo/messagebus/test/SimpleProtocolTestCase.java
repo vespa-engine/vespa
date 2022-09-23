@@ -58,4 +58,5 @@ public class SimpleProtocolTestCase {
     void requireThatUnknownBufferIsNotDecoded() {
         assertNull(PROTOCOL.decode(VERSION, new byte[]{'U'}));
     }
+
 }

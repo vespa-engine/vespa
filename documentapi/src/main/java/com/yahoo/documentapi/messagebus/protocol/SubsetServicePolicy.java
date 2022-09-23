@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
 
-    private static Logger log = Logger.getLogger(SubsetServicePolicy.class.getName());
+    private static final Logger log = Logger.getLogger(SubsetServicePolicy.class.getName());
     private final int subsetSize;
     private final Map<String, CacheEntry> cache = new HashMap<>();
 

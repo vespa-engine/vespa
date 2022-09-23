@@ -32,13 +32,10 @@ public class LoadBalanceTestCase {
         // set up handlers
         final QueueAdapter sq = new QueueAdapter();
         SourceSession ss = src.mb.createSourceSession(new SourceSessionParams().setTimeout(600.0).setThrottlePolicy(null)
-                .setReplyHandler(new ReplyHandler() {
-                    @Override
-                    public void handleReply(Reply reply) {
-                        System.out.println(Thread.currentThread().getName() + ": Reply '" +
-                                ((SimpleMessage) reply.getMessage()).getValue() + "' received at source.");
-                        sq.handleReply(reply);
-                    }
+                .setReplyHandler(reply -> {
+                    System.out.println(Thread.currentThread().getName() + ": Reply '" +
+                            ((SimpleMessage) reply.getMessage()).getValue() + "' received at source.");
+                    sq.handleReply(reply);
                 }));
         SimpleDestination h1 = new SimpleDestination(dst1.mb, dst1.net.getIdentity());
         SimpleDestination h2 = new SimpleDestination(dst2.mb, dst2.net.getIdentity());

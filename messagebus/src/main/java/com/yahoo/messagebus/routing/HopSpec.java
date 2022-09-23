@@ -78,7 +78,7 @@ public class HopSpec {
     }
 
     /**
-     * Returns whether or not there are any recipients that the selector can choose from.
+     * Returns whether there are any recipients that the selector can choose from.
      *
      * @return True if there is at least one recipient.
      */
@@ -160,7 +160,7 @@ public class HopSpec {
     }
 
     /**
-     * Returns whether or not to ignore the result when routing through this hop.
+     * Returns whether to ignore the result when routing through this hop.
      *
      * @return True to ignore the result.
      */
@@ -169,9 +169,9 @@ public class HopSpec {
     }
 
     /**
-     * Sets whether or not to ignore the result when routing through this hop.
+     * Sets whether to ignore the result when routing through this hop.
      *
-     * @param ignoreResult Whether or not to ignore the result.
+     * @param ignoreResult Whether to ignore the result.
      * @return This, to allow chaining.
      */
     public HopSpec setIgnoreResult(boolean ignoreResult) {

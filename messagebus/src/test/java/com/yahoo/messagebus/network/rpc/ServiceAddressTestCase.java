@@ -29,7 +29,7 @@ public class ServiceAddressTestCase {
         network = new RPCNetwork(new RPCNetworkParams()
                                  .setIdentity(new Identity("foo"))
                                  .setSlobrokConfigId("raw:slobrok[1]\nslobrok[0].connectionspec \"" +
-                                                     new Spec("localhost", slobrok.port()).toString() + "\"\n"));
+                                                     new Spec("localhost", slobrok.port()) + "\"\n"));
     }
 
     @AfterEach

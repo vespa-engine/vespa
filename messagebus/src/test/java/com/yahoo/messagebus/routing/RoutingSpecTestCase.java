@@ -70,11 +70,11 @@ public class RoutingSpecTestCase {
 
     @Test
     void testApplicationSpec() {
-        assertApplicationSpec(Arrays.asList("foo"),
-                Arrays.asList("foo",
+        assertApplicationSpec(List.of("foo"),
+                              Arrays.asList("foo",
                         "*"));
-        assertApplicationSpec(Arrays.asList("foo/bar"),
-                Arrays.asList("foo/bar",
+        assertApplicationSpec(List.of("foo/bar"),
+                              Arrays.asList("foo/bar",
                         "foo/*",
                         "*/bar",
                         "*/*"));
@@ -149,7 +149,7 @@ public class RoutingSpecTestCase {
                         .addTable(new RoutingTableSpec("mytable"))
                         .addTable(new RoutingTableSpec("mytable")),
                 new ApplicationSpec(),
-                Arrays.asList("Routing table 'mytable' is defined 2 times."));
+                         List.of("Routing table 'mytable' is defined 2 times."));
 
         // Duplicate hop.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
@@ -158,7 +158,7 @@ public class RoutingSpecTestCase {
                 new ApplicationSpec()
                         .addService("mytable", "bar")
                         .addService("mytable", "baz"),
-                Arrays.asList("Hop 'foo' in routing table 'mytable' is defined 2 times."));
+                         List.of("Hop 'foo' in routing table 'mytable' is defined 2 times."));
 
         // Duplicate route.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
@@ -167,67 +167,67 @@ public class RoutingSpecTestCase {
                 new ApplicationSpec()
                         .addService("mytable", "bar")
                         .addService("mytable", "baz"),
-                Arrays.asList("Route 'foo' in routing table 'mytable' is defined 2 times."));
+                         List.of("Route 'foo' in routing table 'mytable' is defined 2 times."));
 
         // Empty hop.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", ""))),
                 new ApplicationSpec(),
-                Arrays.asList("For hop 'foo' in routing table 'mytable'; Failed to parse empty string."));
+                         List.of("For hop 'foo' in routing table 'mytable'; Failed to parse empty string."));
 
         // Empty route.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addRoute(new RouteSpec("foo"))),
                 new ApplicationSpec(),
-                Arrays.asList("Route 'foo' in routing table 'mytable' has no hops."));
+                         List.of("Route 'foo' in routing table 'mytable' has no hops."));
 
         // Hop error.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", "bar/baz cox"))),
                 new ApplicationSpec(),
-                Arrays.asList("For hop 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
+                         List.of("For hop 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
 
         // Hop error in recipient.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", "[bar]").addRecipient("bar/baz cox"))),
                 new ApplicationSpec(),
-                Arrays.asList("For recipient 'bar/baz cox' in hop 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
+                         List.of("For recipient 'bar/baz cox' in hop 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
 
         // Hop error in route.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addRoute(new RouteSpec("foo").addHop("bar/baz cox"))),
                 new ApplicationSpec(),
-                Arrays.asList("For hop 1 in route 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
+                         List.of("For hop 1 in route 'foo' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'."));
 
         // Hop not found.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addRoute(new RouteSpec("foo").addHop("bar"))),
                 new ApplicationSpec(),
-                Arrays.asList("Hop 1 in route 'foo' in routing table 'mytable' references 'bar' which is neither a service, a route nor another hop."));
+                         List.of("Hop 1 in route 'foo' in routing table 'mytable' references 'bar' which is neither a service, a route nor another hop."));
 
         // Mismatched recipient.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", "bar/[baz]/cox").addRecipient("cox/0/bar"))),
                 new ApplicationSpec(),
-                Arrays.asList("Selector 'bar/[baz]/cox' does not match recipient 'cox/0/bar' in hop 'foo' in routing table 'mytable'."));
+                         List.of("Selector 'bar/[baz]/cox' does not match recipient 'cox/0/bar' in hop 'foo' in routing table 'mytable'."));
 
         // Route not found.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", "route:bar"))),
                 new ApplicationSpec(),
-                Arrays.asList("Hop 'foo' in routing table 'mytable' references route 'bar' which does not exist."));
+                         List.of("Hop 'foo' in routing table 'mytable' references route 'bar' which does not exist."));
 
         // Route not found in route.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addRoute(new RouteSpec("foo").addHop("route:bar"))),
                 new ApplicationSpec(),
-                Arrays.asList("Hop 1 in route 'foo' in routing table 'mytable' references route 'bar' which does not exist."));
+                         List.of("Hop 1 in route 'foo' in routing table 'mytable' references route 'bar' which does not exist."));
 
         // Service not found.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("foo", "bar/baz"))),
                 new ApplicationSpec(),
-                Arrays.asList("Hop 'foo' in routing table 'mytable' references 'bar/baz' which is neither a service, a route nor another hop."));
+                         List.of("Hop 'foo' in routing table 'mytable' references 'bar/baz' which is neither a service, a route nor another hop."));
 
         // Unexpected recipient.
         assertVerifyFail(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
@@ -235,7 +235,7 @@ public class RoutingSpecTestCase {
                 new ApplicationSpec()
                         .addService("mytable", "bar")
                         .addService("mytable", "baz"),
-                Arrays.asList("Hop 'foo' in routing table 'mytable' has recipients but no policy directive."));
+                         List.of("Hop 'foo' in routing table 'mytable' has recipients but no policy directive."));
 
         // Multiple errors.
         assertVerifyFail(new RoutingSpec()
@@ -284,6 +284,8 @@ public class RoutingSpecTestCase {
         routing.verify(app, errors);
 
         Collections.sort(errors);
+
+        expectedErrors = new ArrayList<>(expectedErrors);
         Collections.sort(expectedErrors);
         assertEquals(expectedErrors.toString(), errors.toString());
     }

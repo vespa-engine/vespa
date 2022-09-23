@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
 
-    private final Map<String, CacheEntry> cache = new HashMap<String, CacheEntry>();
+    private final Map<String, CacheEntry> cache = new HashMap<>();
 
     // Inherit doc from RoutingPolicy.
     public void select(RoutingContext ctx) {
@@ -117,4 +117,5 @@ public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
 
     public void destroy() {
     }
+
 }

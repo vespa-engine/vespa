@@ -20,4 +20,5 @@ public class SimpleMessageTestCase {
         msg.setValue("bar");
         assertEquals("bar", msg.getValue());
     }
+
 }

@@ -96,7 +96,6 @@ public class RoutingContextTestCase {
             assertTrue(srcSession.send(createMessage("msg"), "myroute").isAccepted());
             Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
-            System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
         }
     }
@@ -104,8 +103,8 @@ public class RoutingContextTestCase {
     @Test
     void testRecipientsRemain() {
         SimpleProtocol protocol = new SimpleProtocol();
-        protocol.addPolicyFactory("First", new CustomPolicyFactory(true, Arrays.asList("foo/bar"), Arrays.asList("foo/[Second]")));
-        protocol.addPolicyFactory("Second", new CustomPolicyFactory(false, Arrays.asList("foo/bar"), Arrays.asList("foo/bar")));
+        protocol.addPolicyFactory("First", new CustomPolicyFactory(true, List.of("foo/bar"), List.of("foo/[Second]")));
+        protocol.addPolicyFactory("Second", new CustomPolicyFactory(false, List.of("foo/bar"), List.of("foo/bar")));
         srcServer.mb.putProtocol(protocol);
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))
@@ -115,7 +114,6 @@ public class RoutingContextTestCase {
             assertTrue(srcSession.send(createMessage("msg"), "myroute").isAccepted());
             Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
-            System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
         }
     }
@@ -129,7 +127,7 @@ public class RoutingContextTestCase {
     void testConstRoute() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("DocumentRouteSelector",
-                new CustomPolicyFactory(true, Arrays.asList("dst"), Arrays.asList("dst")));
+                new CustomPolicyFactory(true, List.of("dst"), List.of("dst")));
         srcServer.mb.putProtocol(protocol);
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("default").addHop("indexing"))
@@ -142,7 +140,6 @@ public class RoutingContextTestCase {
             dstSession.acknowledge(msg);
             Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(TIMEOUT_SECS);
             assertNotNull(reply);
-            System.out.println(reply.getTrace());
             assertFalse(reply.hasErrors());
         }
     }

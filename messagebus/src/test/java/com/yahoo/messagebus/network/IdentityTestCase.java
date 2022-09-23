@@ -25,4 +25,5 @@ public class IdentityTestCase {
         assertEquals(lhs.getHostname(), rhs.getHostname());
         assertEquals(lhs.getServicePrefix(), rhs.getServicePrefix());
     }
+
 }

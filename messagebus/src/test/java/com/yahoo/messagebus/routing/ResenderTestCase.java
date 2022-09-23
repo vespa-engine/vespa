@@ -67,7 +67,7 @@ public class ResenderTestCase {
         assertNotNull(msg);
         for (int i = 0; i < 5; ++i) {
             assertEquals(i, msg.getRetry());
-            assertEquals(true, msg.getRetryEnabled());
+            assertTrue(msg.getRetryEnabled());
             replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
             assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
         }
@@ -76,7 +76,6 @@ public class ResenderTestCase {
         assertNotNull(reply);
         assertFalse(reply.hasErrors());
         assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
-        System.out.println(reply.getTrace());
     }
 
     @Test
@@ -85,13 +84,12 @@ public class ResenderTestCase {
         msg.setRetryEnabled(false);
         assertTrue(srcSession.send(msg, Route.parse("dst/session")).isAccepted());
         assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
-        assertEquals(false, msg.getRetryEnabled());
+        assertFalse(msg.getRetryEnabled());
         replyFromDestination(msg, ErrorCode.APP_TRANSIENT_ERROR, 0);
         Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertTrue(reply.hasErrors());
         assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
-        System.out.println(reply.getTrace());
     }
 
     @Test
@@ -174,7 +172,6 @@ public class ResenderTestCase {
         assertNull(((Receptor) dstSession.getMessageHandler()).getMessage(0));
 
         String trace = reply.getTrace().toString();
-        System.out.println(trace);
         assertTrue(trace.contains("retry 1 in 0"));
         assertTrue(trace.contains("retry 2 in 0.02"));
         assertTrue(trace.contains("retry 3 in 0.04"));

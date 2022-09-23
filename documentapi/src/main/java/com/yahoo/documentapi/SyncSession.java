@@ -14,8 +14,9 @@ import java.time.Duration;
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 
 /**
- * A session for synchronous access to a document repository. This class
+ * A session for synchronous access to a document repository,
  * provides simple document access where throughput is not a concern.
+ * This is multithread safe.
  *
  * @author Simon Thoresen Hult
  * @author bjorncs

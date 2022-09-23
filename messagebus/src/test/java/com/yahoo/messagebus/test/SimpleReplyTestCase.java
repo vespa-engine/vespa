@@ -19,4 +19,5 @@ public class SimpleReplyTestCase {
         reply.setValue("bar");
         assertEquals("bar", reply.getValue());
     }
+
 }

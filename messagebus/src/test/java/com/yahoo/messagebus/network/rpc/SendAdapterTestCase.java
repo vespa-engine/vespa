@@ -37,12 +37,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class SendAdapterTestCase {
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     Slobrok slobrok;
     TestServer srcServer, itrServer, dstServer;
     SourceSession srcSession;
@@ -82,12 +76,6 @@ public class SendAdapterTestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     @Test
     void requireCorrectVersionSelection() {
         assertNull(srcServer.net.getSendAdapter(new Version(4, 999)));
@@ -113,14 +101,7 @@ public class SendAdapterTestCase {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     private void assertVersionedSend(Version srcVersion, Version itrVersion, Version dstVersion) {
-        System.out.println("Sending from " + srcVersion + " through " + itrVersion + " to " + dstVersion + ":");
         srcServer.net.setVersion(srcVersion);
         itrServer.net.setVersion(itrVersion);
         dstServer.net.setVersion(dstVersion);
@@ -129,36 +110,28 @@ public class SendAdapterTestCase {
         msg.getTrace().setLevel(9);
         assertTrue(srcSession.send(msg, Route.parse("itr/session dst/session")).isAccepted());
         assertNotNull(msg = ((Receptor)itrSession.getMessageHandler()).getMessage(300));
-        System.out.println("\tMessage version " + srcProtocol.lastVersion + " serialized at source.");
         Version minVersion = srcVersion.compareTo(itrVersion) < 0 ? srcVersion : itrVersion;
         assertEquals(minVersion, srcProtocol.lastVersion);
 
-        System.out.println("\tMessage version " + itrProtocol.lastVersion + " reached intermediate.");
         assertEquals(minVersion, itrProtocol.lastVersion);
         itrSession.forward(msg);
         assertNotNull(msg = ((Receptor)dstSession.getMessageHandler()).getMessage(300));
-        System.out.println("\tMessage version " + itrProtocol.lastVersion + " serialized at intermediate.");
         minVersion = itrVersion.compareTo(dstVersion) < 0 ? itrVersion : dstVersion;
         assertEquals(minVersion, itrProtocol.lastVersion);
 
-        System.out.println("\tMessage version " + dstProtocol.lastVersion + " reached destination.");
         assertEquals(minVersion, dstProtocol.lastVersion);
         Reply reply = new SimpleReply("bar");
         reply.swapState(msg);
         dstSession.reply(reply);
         assertNotNull(reply = ((Receptor)itrSession.getReplyHandler()).getReply(300));
-        System.out.println("\tReply version " + dstProtocol.lastVersion + " serialized at destination.");
         assertEquals(minVersion, dstProtocol.lastVersion);
 
-        System.out.println("\tReply version " + itrProtocol.lastVersion + " reached intermediate.");
         assertEquals(minVersion, itrProtocol.lastVersion);
         itrSession.forward(reply);
         assertNotNull(((Receptor)srcSession.getReplyHandler()).getReply(300));
-        System.out.println("\tReply version " + itrProtocol.lastVersion + " serialized at intermediate.");
         minVersion = srcVersion.compareTo(itrVersion) < 0 ? srcVersion : itrVersion;
         assertEquals(minVersion, itrProtocol.lastVersion);
 
-        System.out.println("\tReply version " + srcProtocol.lastVersion + " reached source.");
         assertEquals(minVersion, srcProtocol.lastVersion);
     }
 
@@ -177,4 +150,5 @@ public class SendAdapterTestCase {
             return super.decode(version, payload);
         }
     }
+
 }
