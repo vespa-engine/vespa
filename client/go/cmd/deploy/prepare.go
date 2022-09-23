@@ -78,6 +78,6 @@ func doPrepare(opts *Options, sessionId string) (output string, err error) {
 	url = addUrlPropertyFromOption(url, opts.Rotations, "rotations")
 	url = addUrlPropertyFromOption(url, opts.VespaVersion, "vespaVersion")
 	fmt.Printf("Preparing session %s using %s\n", sessionId, urlWithoutQuery(url))
-	output, err = curlPut(url, src)
+	output, err = curlPutNothing(url)
 	return
 }

@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 // main entry point for vespa-deploy upload
@@ -80,9 +82,8 @@ func uploadFrom(opts *Options, src string) (string, error) {
 	url := src + pathPrefix(opts)
 	url = addUrlPropertyFromOption(url, opts.From, "from")
 	url = addUrlPropertyFromFlag(url, opts.Verbose, "verbose")
-	// disallowed by system test:
-	// fmt.Printf("Upload from URL %s using %s\n", opts.From, urlWithoutQuery(url))
-	output, err := curlPost(url, nil, src)
+	trace.Trace("Upload from URL", opts.From, "using", urlWithoutQuery(url))
+	output, err := curlPost(url, nil)
 	return output, err
 }
 
@@ -90,7 +91,7 @@ func uploadFile(opts *Options, src string, f *os.File, fileName string) (string,
 	url := src + pathPrefix(opts)
 	url = addUrlPropertyFromFlag(url, opts.Verbose, "verbose")
 	fmt.Printf("Uploading application '%s' using %s\n", fileName, urlWithoutQuery(url))
-	output, err := curlPostZip(url, f, src)
+	output, err := curlPostZip(url, f)
 	return output, err
 }
 
@@ -107,7 +108,7 @@ func uploadDirectory(opts *Options, src string, dirName string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	output, err := curlPost(url, pipe, src)
+	output, err := curlPost(url, pipe)
 	tarCmd.Wait()
 	return output, err
 }

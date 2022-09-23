@@ -23,7 +23,7 @@ func RunActivate(opts *Options, args []string) error {
 	url = addUrlPropertyFromFlag(url, opts.Verbose, "verbose")
 	url = addUrlPropertyFromOption(url, strconv.Itoa(opts.Timeout), "timeout")
 	fmt.Printf("Activating session %s using %s\n", sessId, urlWithoutQuery(url))
-	output, err := curlPut(url, src)
+	output, err := curlPutNothing(url)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func reallySimpleHelp(cmd *cobra.Command, args []string) {
@@ -20,6 +22,9 @@ func NewDeployCmd() *cobra.Command {
 	var (
 		curOptions Options
 	)
+	if err := vespa.LoadDefaultEnv(); err != nil {
+		panic(err)
+	}
 	cobra.EnableCommandSorting = false
 	cmd := &cobra.Command{
 		Use:   "vespa-deploy [-h] [-v] [-f] [-t] [-c] [-p] [-z] [-V] [<command>] [args]",
@@ -69,8 +74,9 @@ func newUploadCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdUpload
 			if opts.Verbose {
-				fmt.Printf("upload %v [%v]\n", opts, args)
+				trace.AdjustVerbosity(1)
 			}
+			trace.Trace("upload with", opts, args)
 			err := RunUpload(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -90,8 +96,9 @@ func newPrepareCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdPrepare
 			if opts.Verbose {
-				fmt.Printf("prepare %v [%v]\n", opts, args)
+				trace.AdjustVerbosity(1)
 			}
+			trace.Trace("prepare with", opts, args)
 			err := RunPrepare(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -110,8 +117,9 @@ func newActivateCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdActivate
 			if opts.Verbose {
-				fmt.Printf("activate %v [%v]\n", opts, args)
+				trace.AdjustVerbosity(1)
 			}
+			trace.Trace("activate with", opts, args)
 			err := RunActivate(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -130,8 +138,9 @@ func newFetchCmd(opts *Options) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			opts.Command = CmdFetch
 			if opts.Verbose {
-				fmt.Printf("fetch %v [%v]\n", opts, args)
+				trace.AdjustVerbosity(1)
 			}
+			trace.Trace("fetch with", opts, args)
 			err := RunFetch(opts, args)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
