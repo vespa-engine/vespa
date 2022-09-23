@@ -523,6 +523,18 @@ public class Flags {
             "Takes effect when restarting zookeeper server",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag CSRF_MODE = defineStringFlag(
+            "csrf-mode", "disabled",
+            List.of("bjorncs", "tokle"), "2022-09-22", "2023-06-01",
+            "Set mode for CSRF filter ('disabled', 'log_only', 'enabled')",
+            "Takes effect on controller restart/redeployment");
+
+    public static final UnboundListFlag<String> CSRF_USERS = defineListFlag(
+            "csrf-users", List.of(), String.class,
+            List.of("bjorncs", "tokle"), "2022-09-22", "2023-06-01",
+            "List of users to enable CSRF filter for. Use empty list for everyone.",
+            "Takes effect on controller restart/redeployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
