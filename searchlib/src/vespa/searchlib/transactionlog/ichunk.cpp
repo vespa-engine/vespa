@@ -146,7 +146,7 @@ SerializedChunk::SerializedChunk(std::unique_ptr<CommitChunk> commitChunk, Encod
 
     IChunk::UP chunk = IChunk::create(encoding, compressionLevel);
     SerialNum prev = 0;
-    for (size_t i(0); h.size() > 0; i++) {
+    while (h.size() > 0) {
         //LOG(spam,
         //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
         //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());

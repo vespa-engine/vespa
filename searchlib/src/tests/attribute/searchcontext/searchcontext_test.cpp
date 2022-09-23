@@ -1144,13 +1144,11 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
         //std::cout << "}" << std::endl;
     }
     ptr->commit(true);
-    uint32_t smallHits = 0;
     ValueType zeroValue = 0;
     bool smallUInt = isUnsignedSmallIntAttribute(vec);
     if (smallUInt) {
         for (uint32_t i = docCnt ; i < numDocs; ++i) {
             postingList[zeroValue].insert(i + 1u);
-            ++smallHits;
         }
     }
 

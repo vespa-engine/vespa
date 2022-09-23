@@ -95,10 +95,8 @@ calcSegments(uint32_t maxLen)
     BitBuffer bb;
     PostingListCounts counts = makeBaseCounts();
     uint32_t len = bb.getSize(counts);
-    unsigned int i = 0;
     while (len <= maxLen) {
         addSegment(counts);
-        ++i;
         len = bb.getSize(counts);
     }
     return counts._segments.size() - 1;
