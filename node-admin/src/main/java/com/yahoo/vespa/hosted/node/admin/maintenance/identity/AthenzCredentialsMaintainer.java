@@ -63,8 +63,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
 
     private final URI ztsEndpoint;
-    private final Path jksTrustStorePath;
-    private final Path pemTrustStorePath;
+    private final Path ztsTrustStoreJksPath;
+    private final Path ztsTrustStorePemPath;
     private final AthenzIdentity configserverIdentity;
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
@@ -76,16 +76,16 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
 
     public AthenzCredentialsMaintainer(URI ztsEndpoint,
-                                       Path jksTrustStorePath,
-                                       Path pemTrustStorePath,
+                                       Path ztsTrustStoreJksPath,
+                                       Path ztsTrustStorePemPath,
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        boolean useInternalZts,
                                        Clock clock) {
         this.ztsEndpoint = ztsEndpoint;
-        this.jksTrustStorePath = jksTrustStorePath;
-        this.pemTrustStorePath = pemTrustStorePath;
+        this.ztsTrustStoreJksPath = ztsTrustStoreJksPath;
+        this.ztsTrustStorePemPath = ztsTrustStorePemPath;
         this.configserverIdentity = configServerInfo.getConfigServerIdentity();
         this.csrGenerator = new CsrGenerator(certificateDnsSuffix, configserverIdentity.getFullName());
         this.hostIdentityProvider = hostIdentityProvider;
@@ -212,10 +212,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
 
         var sslContextBuilder = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile);
-        if (pemTrustStorePath != null) {
-            sslContextBuilder.withTrustStore(pemTrustStorePath);
+        if (ztsTrustStorePemPath != null) {
+            sslContextBuilder.withTrustStore(ztsTrustStorePemPath);
         } else {
-            sslContextBuilder.withTrustStore(jksTrustStorePath, KeyStoreType.JKS);
+            sslContextBuilder.withTrustStore(ztsTrustStoreJksPath, KeyStoreType.JKS);
         }
         SSLContext containerIdentitySslContext = sslContextBuilder.build();
 
