@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/subscription/confighandle.h>
@@ -14,7 +13,7 @@ namespace slobrok {
 class Configurable {
 public:
     virtual void setup(const std::vector<std::string> &slobrokSpecs) = 0;
-    virtual ~Configurable() { }
+    virtual ~Configurable() = default;
 };
 
 

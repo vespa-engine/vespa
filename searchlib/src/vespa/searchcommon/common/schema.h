@@ -5,7 +5,6 @@
 #include "datatype.h"
 #include <vespa/config/common/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/ptrholder.h>
 
 namespace vespalib { class asciistream; }
 namespace search::index {
@@ -90,7 +89,7 @@ public:
         /**
          * Create this index field based on the given config lines.
          **/
-        IndexField(const config::StringVector &lines);
+        explicit IndexField(const config::StringVector &lines);
 
         IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
         IndexField &set_interleaved_features(bool value) {
@@ -121,7 +120,7 @@ public:
         std::vector<vespalib::string> _fields;
 
     public:
-        FieldSet(vespalib::stringref n) : _name(n), _fields() {}
+        explicit FieldSet(vespalib::stringref n) : _name(n), _fields() {}
         FieldSet(const FieldSet &);
         FieldSet & operator =(const FieldSet &);
         FieldSet(FieldSet &&) noexcept = default;
@@ -130,12 +129,12 @@ public:
         /**
          * Create this field collection based on the given config lines.
          **/
-        FieldSet(const config::StringVector & lines);
+        explicit FieldSet(const config::StringVector & lines);
 
         ~FieldSet();
 
         FieldSet &addField(vespalib::stringref fieldName) {
-            _fields.push_back(fieldName);
+            _fields.emplace_back(fieldName);
             return *this;
         }
 
@@ -170,8 +169,8 @@ public:
     Schema();
     Schema(const Schema & rhs);
     Schema & operator=(const Schema & rhs);
-    Schema(Schema && rhs);
-    Schema & operator=(Schema && rhs);
+    Schema(Schema && rhs) noexcept;
+    Schema & operator=(Schema && rhs) noexcept;
     ~Schema();
 
     /**
