@@ -284,6 +284,8 @@ public class RoutingSpecTestCase {
         routing.verify(app, errors);
 
         Collections.sort(errors);
+
+        expectedErrors = new ArrayList<>(expectedErrors);
         Collections.sort(expectedErrors);
         assertEquals(expectedErrors.toString(), errors.toString());
     }

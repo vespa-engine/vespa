@@ -23,7 +23,7 @@ import com.yahoo.search.searchchain.Execution;
  *
  * <p>This supports multi-phase search.</p>
  *
- * <p>To avoid having to add type information for the fields, a quck hack is used to
+ * <p>To avoid having to add type information for the fields, a quick hack is used to
  * support testing of attribute prefetching.
  * Any field in the configured hits which has a name starting by attribute
  * will be returned when attribute prefetch filling is requested.</p>
