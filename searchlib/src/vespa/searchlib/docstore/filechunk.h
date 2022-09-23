@@ -12,7 +12,6 @@
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/util/time.h>
 
 class FastOS_FileInterface;

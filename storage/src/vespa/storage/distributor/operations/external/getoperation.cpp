@@ -6,6 +6,7 @@
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -47,7 +48,7 @@ GetOperation::GroupId::operator==(const GroupId& other) const
 
 GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
                            const DistributorBucketSpace &bucketSpace,
-                           std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
+                           const std::shared_ptr<BucketDatabase::ReadGuard> & read_guard,
                            std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric,
                            api::InternalReadConsistency desired_read_consistency)
@@ -135,7 +136,7 @@ GetOperation::onStart(DistributorStripeMessageSender& sender)
         LOG(debug, "No useful bucket copies for get on document %s. Returning without document", _msg->getDocumentId().toString().c_str());
         sendReply(sender);
     }
-};
+}
 
 void
 GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
@@ -251,9 +252,7 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
 
     auto entries = read_guard.find_parents_and_self(bid);
 
-    for (uint32_t j = 0; j < entries.size(); ++j) {
-        const BucketDatabase::Entry& e = entries[j];
-
+    for (const auto & e : entries) {
         LOG(spam, "Entry for %s: %s", e.getBucketId().toString().c_str(),
             e->toString().c_str());
 

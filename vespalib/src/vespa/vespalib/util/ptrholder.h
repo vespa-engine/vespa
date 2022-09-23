@@ -46,7 +46,7 @@ public:
      * std::shared_ptr instances are used internally to track shared
      * resources
      **/
-    virtual ~PtrHolder() {}
+    virtual ~PtrHolder();
 
     /**
      * @brief Check if the current value is set (not 0)
@@ -123,5 +123,8 @@ public:
         }
     }
 };
+
+template<typename T>
+PtrHolder<T>::~PtrHolder() = default;
 
 } // namespace vespalib

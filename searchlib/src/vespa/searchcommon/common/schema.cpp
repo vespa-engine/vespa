@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/fastos/file.h>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".index.schema");
@@ -48,7 +49,7 @@ writeFieldSets(vespalib::asciistream &os,
 
 struct FieldName {
     vespalib::string name;
-    FieldName(const config::StringVector & lines)
+    explicit FieldName(const config::StringVector & lines)
         : name(ConfigParser::parse<vespalib::string>("name", lines))
     {
     }
@@ -184,9 +185,9 @@ Schema::FieldSet::FieldSet(const config::StringVector & lines) :
     _name(ConfigParser::parse<vespalib::string>("name", lines)),
     _fields()
 {
-    std::vector<FieldName> fn = ConfigParser::parseArray<std::vector<FieldName>>("field", lines);
-    for (size_t i = 0; i < fn.size(); ++i) {
-        _fields.push_back(fn[i].name);
+    auto fn = ConfigParser::parseArray<std::vector<FieldName>>("field", lines);
+    for (const auto & fname : fn) {
+        _fields.push_back(fname.name);
     }
 }
 
@@ -224,8 +225,8 @@ Schema::Schema() = default;
 
 Schema::Schema(const Schema & rhs) = default;
 Schema & Schema::operator=(const Schema & rhs) = default;
-Schema::Schema(Schema && rhs) = default;
-Schema & Schema::operator=(Schema && rhs) = default;
+Schema::Schema(Schema && rhs) noexcept = default;
+Schema & Schema::operator=(Schema && rhs) noexcept = default;
 Schema::~Schema() = default;
 
 bool
