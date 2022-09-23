@@ -113,7 +113,6 @@ public class SummaryClass extends Derived {
         for (SummaryClassField field : fields.values() ) {
             classBuilder.fields(new SummaryConfig.Classes.Fields.Builder().
                     name(field.getName()).
-                    type(field.getType().getName()).
                     command(field.getCommand()).
                     source(field.getSource()));
         }

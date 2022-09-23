@@ -9,7 +9,6 @@ classes[].id int
 classes[].name string
 classes[].omitsummaryfeatures bool default=false
 classes[].fields[].name string
-classes[].fields[].type string
 # The name of the command that is writing this field.
 # See docsumconfig.cpp for all supported commands (DocsumFieldWriter implementations).
 classes[].fields[].command string default=""

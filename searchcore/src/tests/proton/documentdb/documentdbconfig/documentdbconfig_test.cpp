@@ -108,7 +108,6 @@ public:
         if (hasField) {
             builder.classes.back().fields.resize(1);
             builder.classes.back().fields.back().name = "my_attribute";
-            builder.classes.back().fields.back().type = "integer";
             if (has_attribute) {
                 builder.classes.back().fields.back().command = "attribute";
                 builder.classes.back().fields.back().source = "my_attribute";
