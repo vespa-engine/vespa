@@ -9,7 +9,7 @@ namespace vespalib {
 //-----------------------------------------------------------------------------
 
 template <typename T>
-constexpr bool enable_skip_destruction = false;
+inline constexpr bool enable_skip_destruction = false;
 
 template <typename T>
 concept can_skip_destruction = std::is_trivially_destructible_v<T> || enable_skip_destruction<T>;
@@ -22,7 +22,7 @@ concept can_skip_destruction = std::is_trivially_destructible_v<T> || enable_ski
 #define VESPA_CAN_SKIP_DESTRUCTION(MyType)                     \
     namespace vespalib {                                       \
         template <>                                            \
-        constexpr bool enable_skip_destruction<MyType> = true; \
+        inline constexpr bool enable_skip_destruction<MyType> = true; \
     }
 
 //-----------------------------------------------------------------------------
