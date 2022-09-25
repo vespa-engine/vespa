@@ -2,6 +2,7 @@
 #pragma once
 
 #include "cfg.h"
+#include <mutex>
 
 namespace slobrok::api {
 
