@@ -2,7 +2,6 @@
 
 #include "compare.h"
 #include "valuenode.h"
-#include "compare.h"
 #include "visitor.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
