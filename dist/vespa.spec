@@ -142,13 +142,6 @@ BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
-%if 0%{?fc35}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 13.0.0
-BuildRequires: boost-devel >= 1.76
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %if 0%{?fc36}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 14.0.0
@@ -265,9 +258,6 @@ Requires: gtest
 Requires: gtest
 %if 0%{?amzn2022}
 %define _vespa_llvm_version 14
-%endif
-%if 0%{?fc35}
-%define _vespa_llvm_version 13
 %endif
 %if 0%{?fc36}
 %define _vespa_llvm_version 14
@@ -386,9 +376,6 @@ Requires: protobuf
 Requires: protobuf
 %if 0%{?amzn2022}
 Requires: llvm-libs >= 14.0.5
-%endif
-%if 0%{?fc35}
-Requires: llvm-libs >= 13.0.0
 %endif
 %if 0%{?fc36}
 Requires: llvm-libs >= 14.0.0
