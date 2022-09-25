@@ -7,10 +7,6 @@
  * @brief   Permuter class.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "permuter.h"
 
 namespace fsa {

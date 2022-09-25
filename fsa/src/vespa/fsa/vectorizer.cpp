@@ -7,10 +7,6 @@
  * @brief   Simple document vectorizer based on %FSA (%Finite %State %Automaton) (implementation)
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <list>
 #include <algorithm>
 #include <cmath>
