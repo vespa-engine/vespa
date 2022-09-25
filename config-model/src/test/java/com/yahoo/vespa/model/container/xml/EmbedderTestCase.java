@@ -92,7 +92,7 @@ public class EmbedderTestCase {
                           "</component>";
         assertTransformThrows(embedder,
                               "Unknown model id 'my_model_id' on 'transformerModel'. " +
-                              "Available models are [bert-base-uncased, minilm-l6-v2]",
+                              "Available models are [bert-base-uncased, minilm-l6-v2, mpnet-base-v2]",
                               true);
     }
 
