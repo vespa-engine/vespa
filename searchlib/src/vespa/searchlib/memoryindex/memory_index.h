@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
+#include <mutex>
 
 namespace search::index {
     class IFieldLengthInspector;
