@@ -138,7 +138,7 @@ public class SimpleTokenTestCase {
     }
 
     @Test
-    public void requireThatToStringIsExpressive() {
+    public void testDetailString() {
         SimpleToken token = new SimpleToken("my_orig");
         token.addComponent(new SimpleToken("my_component_1"));
         token.addComponent(new SimpleToken("my_component_2"));
@@ -177,7 +177,7 @@ public class SimpleTokenTestCase {
                           "    token string : 'my_token_string'\n" +
                           "    type : ALPHABETIC\n" +
                           "}";
-        assertEquals(expected, token.toString());
+        assertEquals(expected, token.toDetailString());
     }
 
     @Test
