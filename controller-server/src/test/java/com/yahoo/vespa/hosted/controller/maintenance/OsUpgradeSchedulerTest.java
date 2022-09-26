@@ -60,7 +60,7 @@ public class OsUpgradeSchedulerTest {
         Version version1 = Version.fromString("7.0.0.20220301");
         tester.clock().advance(Duration.ofDays(16));
         assertEquals("2022-03-03T09:05:00", formatInstant(tester.clock().instant()));
-        assertEquals(version1, scheduler.changeIn(cloud).get().version());
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().version());
         scheduler.maintain();
         assertEquals(version0,
                      tester.controller().osVersionTarget(cloud).get().osVersion().version(),
@@ -75,7 +75,7 @@ public class OsUpgradeSchedulerTest {
                      "Target is unchanged because we're outside trigger period");
         tester.clock().advance(Duration.ofHours(5));
         assertEquals("2022-03-07T08:05:00", formatInstant(tester.clock().instant()));
-        Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud);
+        Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(change.isPresent());
         scheduler.maintain();
         assertEquals(version1,
@@ -88,7 +88,7 @@ public class OsUpgradeSchedulerTest {
         assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
 
         // Estimate next change
-        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud);
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(nextChange.isPresent());
         assertEquals("7.0.0.20220426", nextChange.get().version().toFullString());
         assertEquals("2022-05-02T07:00:00", formatInstant(nextChange.get().scheduleAt()));
@@ -116,12 +116,12 @@ public class OsUpgradeSchedulerTest {
         assertEquals(version0, tester.controller().osVersionTarget(cloud).get().osVersion().version());
         // Cool-down passes
         tester.clock().advance(Duration.ofDays(1));
-        assertEquals(version1, scheduler.changeIn(cloud).get().version());
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().version());
         scheduler.maintain();
         assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
 
         // Estimate next change
-        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud);
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(nextChange.isPresent());
         assertEquals("7.0.0.20220426", nextChange.get().version().toFullString());
         assertEquals("2022-04-27T02:00:00", formatInstant(nextChange.get().scheduleAt()));
@@ -144,7 +144,7 @@ public class OsUpgradeSchedulerTest {
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.stable,
                                                                                Instant.parse("2021-06-21T23:59:00.00Z")));
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
-        OsUpgradeScheduler.Change nextChange = scheduler.changeIn(cloud).get();
+        OsUpgradeScheduler.Change nextChange = scheduler.changeIn(cloud, tester.clock().instant()).get();
         assertEquals(version1, nextChange.version());
         assertEquals("2021-06-22T07:00:00", formatInstant(nextChange.scheduleAt()));
         scheduleUpgradeAfter(Duration.ofHours(7), version1, scheduler, tester); // Inside trigger period
@@ -155,7 +155,7 @@ public class OsUpgradeSchedulerTest {
 
         // Nothing happens in next iteration as tagged release is older than manually triggered version
         scheduleUpgradeAfter(Duration.ofDays(7), version3, scheduler, tester);
-        assertTrue(scheduler.changeIn(cloud).isEmpty());
+        assertTrue(scheduler.changeIn(cloud, tester.clock().instant()).isEmpty());
     }
 
     @Test
@@ -174,13 +174,13 @@ public class OsUpgradeSchedulerTest {
         Version version1 = Version.fromString("8.1");
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.latest,
                 tester.clock().instant()));
-        assertEquals(version1, scheduler.changeIn(cloud).get().version());
-        assertEquals("2021-06-22T07:05:00", formatInstant(scheduler.changeIn(cloud).get().scheduleAt()),
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().version());
+        assertEquals("2021-06-22T07:05:00", formatInstant(scheduler.changeIn(cloud, tester.clock().instant()).get().scheduleAt()),
                      "Not valid until cool-down period passes");
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
 
         // Cooldown period passes and latest release is scheduled
-        scheduleUpgradeAfter(Duration.ofDays(1), version1, scheduler, tester);
+        scheduleUpgradeAfter(Duration.ofDays(1).plusMinutes(3), version1, scheduler, tester);
     }
 
     @Test

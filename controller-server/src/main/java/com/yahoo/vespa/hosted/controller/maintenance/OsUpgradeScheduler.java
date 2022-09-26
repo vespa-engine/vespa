@@ -35,7 +35,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     protected double maintain() {
         Instant now = controller().clock().instant();
         for (var cloud : controller().clouds()) {
-            Optional<Change> change = changeIn(cloud);
+            Optional<Change> change = changeIn(cloud, now);
             if (change.isEmpty()) continue;
             if (!change.get().scheduleAt(now)) continue;
             controller().upgradeOsIn(cloud, change.get().version(), change.get().upgradeBudget(), false);
@@ -43,15 +43,14 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return 1.0;
     }
 
-    /** Returns the wanted change for given cloud, if any */
-    public Optional<Change> changeIn(CloudName cloud) {
+    /** Returns the wanted change for cloud at given instant, if any */
+    public Optional<Change> changeIn(CloudName cloud, Instant instant) {
         Optional<OsVersionTarget> currentTarget = controller().osVersionTarget(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
         Release release = releaseIn(cloud);
-        Instant now = controller().clock().instant();
-        return release.change(currentTarget.get().version(), now);
+        return release.change(currentTarget.get().version(), instant);
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
