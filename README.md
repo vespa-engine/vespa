@@ -2,8 +2,7 @@
 
 [![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
-The open big data serving engine - Store, search, organize and make machine-learned inferences
-over big data at serving time.
+The open big data serving engine - Store, search, organize and make machine-learned inferences over big data at serving time.
 
 This is the primary repository for Vespa where all development is happening.
 New production releases from this repository's master branch are made each weekday from Monday through Thursday.
@@ -87,3 +86,8 @@ Use this if you only need to build the Java modules, otherwise follow the comple
 ## License
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
+
+## Thanks to all contributors ❤
+ <a href = "https://github.com/vespa-engine/vespa/graphs/contributors">
+   <img src = "https://contrib.rocks/image?repo=vespa-engine/vespa"/>
+ </a>
