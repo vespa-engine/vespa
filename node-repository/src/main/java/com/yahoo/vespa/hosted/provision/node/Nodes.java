@@ -289,16 +289,13 @@ public class Nodes {
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isHost() ?
                  Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
-                 Stream.of(nodeToDirty))
-                        .filter(node -> node.state() != Node.State.dirty)
-                        .collect(Collectors.toList());
+                 Stream.of(nodeToDirty)).filter(node -> node.state() != Node.State.dirty).toList();
         List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
                                                               .filter(node -> node.state() != Node.State.provisioned)
                                                               .filter(node -> node.state() != Node.State.failed)
                                                               .filter(node -> node.state() != Node.State.parked)
                                                               .filter(node -> node.state() != Node.State.breakfixed)
-                                                              .map(Node::hostname)
-                                                              .collect(Collectors.toList());
+                                                              .map(Node::hostname).toList();
         if ( ! hostnamesNotAllowedToDirty.isEmpty())
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
