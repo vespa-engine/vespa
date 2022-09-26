@@ -35,7 +35,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _stateLock(),
       _stateCond(),
       _listenerLock(),
-      _nodeState(std::make_shared<lib::NodeState>(_component.getNodeType(), lib::State::INITIALIZING)),
+      _nodeState(std::make_shared<lib::NodeState>(_component.getNodeType(), lib::State::DOWN)),
       _nextNodeState(),
       _systemState(std::make_shared<const ClusterStateBundle>(lib::ClusterState())),
       _nextSystemState(),
@@ -43,8 +43,6 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _stateListeners(),
       _queuedStateRequests(),
       _threadLock(),
-      _lastProgressUpdateCausingSend(0),
-      _progressLastInitStateSend(-1),
       _systemStateHistory(),
       _systemStateHistorySize(50),
       _hostInfo(std::move(hostInfo)),
@@ -238,31 +236,8 @@ StateManager::notifyStateListeners()
                 break; // No change
             }
             if (_nextNodeState) {
-                assert(!(_nodeState->getState() == State::UP
-                         && _nextNodeState->getState() == State::INITIALIZING));
-
-                if (_nodeState->getState() == State::INITIALIZING
-                    && _nextNodeState->getState() == State::INITIALIZING
-                    && ((_component.getClock().getTimeInMillis() - _lastProgressUpdateCausingSend)
-                        < framework::MilliSecTime(1000))
-                    && _nextNodeState->getInitProgress() < 1
-                    && (_nextNodeState->getInitProgress() - _progressLastInitStateSend) < 0.01)
-                {
-                    // For this special case, where we only have gotten a little
-                    // initialization progress and we have reported recently,
-                    // don't trigger sending get node state reply yet.
-                } else {
-                    newState = _nextNodeState;
-                    if (!_queuedStateRequests.empty()
-                        && _nextNodeState->getState() == State::INITIALIZING)
-                    {
-                        _lastProgressUpdateCausingSend = _component.getClock().getTimeInMillis();
-                        _progressLastInitStateSend = newState->getInitProgress();
-                    } else {
-                        _lastProgressUpdateCausingSend = framework::MilliSecTime(0);
-                        _progressLastInitStateSend = -1;
-                    }
-                }
+                assert(_nextNodeState->getState() != State::INITIALIZING);
+                newState   = _nextNodeState;
                 _nodeState = _nextNodeState;
                 _nextNodeState.reset();
             }
@@ -414,14 +389,14 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
                        "%" PRId64 " milliseconds unless a node state change "
                        "happens before that time.",
                 msTimeout, msTimeout * 800 / 1000);
-            TimeStatePair pair(
+            TimeStateCmdPair pair(
                     _component.getClock().getTimeInMillis()
                     + framework::MilliSecTime(msTimeout * 800 / 1000),
                     cmd);
             _queuedStateRequests.emplace_back(std::move(pair));
         } else {
             LOG(debug, "Answered get node state request right away since it "
-                       "thought we were in nodestate %s, while our actual "
+                       "thought we were in node state %s, while our actual "
                        "node state is currently %s and we didn't just reply to "
                        "existing request.",
                 cmd->getExpectedState() == nullptr ? "unknown"

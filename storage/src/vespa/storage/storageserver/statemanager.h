@@ -41,36 +41,35 @@ class StateManager : public NodeStateUpdater,
                      private framework::Runnable,
                      private vespalib::JsonStreamTypes
 {
-    StorageComponent _component;
-    metrics::MetricManager& _metricManager;
-    mutable std::mutex _stateLock;
-    std::condition_variable _stateCond;
-    std::mutex _listenerLock;
-    std::shared_ptr<lib::NodeState> _nodeState;
-    std::shared_ptr<lib::NodeState> _nextNodeState;
     using ClusterStateBundle = lib::ClusterStateBundle;
+    using TimeStateCmdPair   = std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP>;
+    using TimeSysStatePair   = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
+
+    StorageComponent                          _component;
+    metrics::MetricManager&                   _metricManager;
+    mutable std::mutex                        _stateLock;
+    std::condition_variable                   _stateCond;
+    std::mutex                                _listenerLock;
+    std::shared_ptr<lib::NodeState>           _nodeState;
+    std::shared_ptr<lib::NodeState>           _nextNodeState;
     std::shared_ptr<const ClusterStateBundle> _systemState;
     std::shared_ptr<const ClusterStateBundle> _nextSystemState;
-    uint32_t _reported_host_info_cluster_state_version;
-    std::list<StateListener*> _stateListeners;
-    typedef std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP> TimeStatePair;
-    std::list<TimeStatePair> _queuedStateRequests;
-    mutable std::mutex _threadLock;
-    std::condition_variable _threadCond;
-    framework::MilliSecTime _lastProgressUpdateCausingSend;
-    vespalib::Double _progressLastInitStateSend;
-    using TimeSysStatePair = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
-    std::deque<TimeSysStatePair> _systemStateHistory;
-    uint32_t _systemStateHistorySize;
-    std::unique_ptr<HostInfo> _hostInfo;
-    framework::Thread::UP _thread;
+    uint32_t                                  _reported_host_info_cluster_state_version;
+    std::list<StateListener*>                 _stateListeners;
+    std::list<TimeStateCmdPair>               _queuedStateRequests;
+    mutable std::mutex                        _threadLock;
+    std::condition_variable                   _threadCond;
+    std::deque<TimeSysStatePair>              _systemStateHistory;
+    uint32_t                                  _systemStateHistorySize;
+    std::unique_ptr<HostInfo>                 _hostInfo;
+    framework::Thread::UP                     _thread;
     // Controllers that have observed a GetNodeState response sent _after_
     // immediately_send_get_node_state_replies() has been invoked.
-    std::unordered_set<uint16_t> _controllers_observed_explicit_node_state;
-    bool _noThreadTestMode;
-    bool _grabbedExternalLock;
-    std::atomic<bool> _notifyingListeners;
-    std::atomic<bool> _requested_almost_immediate_node_state_replies;
+    std::unordered_set<uint16_t>              _controllers_observed_explicit_node_state;
+    bool                                      _noThreadTestMode;
+    bool                                      _grabbedExternalLock;
+    std::atomic<bool>                         _notifyingListeners;
+    std::atomic<bool>                         _requested_almost_immediate_node_state_replies;
 
 public:
     explicit StateManager(StorageComponentRegister&, metrics::MetricManager&,
