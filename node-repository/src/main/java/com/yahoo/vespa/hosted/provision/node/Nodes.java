@@ -132,9 +132,7 @@ public class Nodes {
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");
             Optional<Node> existing = node(node.hostname());
             if (existing.isPresent())
-                illegal("Cannot add " + node + ": A node with this name already exists (" +
-                        existing.get() + ", " + existing.get().history() + "). Node to be added: " +
-                        node + ", " + node.history());
+                illegal("Cannot add " + node + ": A node with this name already exists");
         }
         return db.addNodesInState(nodes.asList(), Node.State.reserved, Agent.system);
     }
