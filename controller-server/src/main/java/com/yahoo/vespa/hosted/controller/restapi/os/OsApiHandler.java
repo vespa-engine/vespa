@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -158,6 +159,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Set<OsVersionTarget> targets = controller.osVersionTargets();
 
         Cursor versions = root.setArray("versions");
+        Instant now = controller.clock().instant();
         controller.osVersionStatus().versions().forEach((osVersion, nodeVersions) -> {
             Cursor currentVersionObject = versions.addObject();
             currentVersionObject.setString("version", osVersion.version().toFullString());
@@ -166,7 +168,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             target.ifPresent(t -> {
                 currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
-                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud());
+                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
                 nextChange.ifPresent(c -> {
                     currentVersionObject.setString("nextVersion", c.version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
