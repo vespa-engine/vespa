@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "btreeroot.h"
-#include "btreenodeallocator.h"
-#include "btreeiterator.hpp"
 #include "btreeroot.hpp"
+#include "btreeiterator.hpp"
 #include "btreenode.hpp"
 
 namespace vespalib::btree {
