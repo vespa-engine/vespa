@@ -1471,15 +1471,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
 
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
-        // JobType.fromJobName doesn't properly initiate test jobs. Triggering these without context isn't _really_
-        // necessary, but triggering a test in the default cloud is better than failing with a weird error.
-        ZoneRegistry zones = controller.zoneRegistry();
-        type = switch (type.environment()) {
-            case test -> JobType.systemTest(zones, zones.systemZone().getCloudName());
-            case staging -> JobType.stagingTest(zones, zones.systemZone().getCloudName());
-            default -> type;
-        };
-
         Inspector requestObject = toSlime(request.getData()).get();
         boolean requireTests = ! requestObject.field("skipTests").asBool();
         boolean reTrigger = requestObject.field("reTrigger").asBool();

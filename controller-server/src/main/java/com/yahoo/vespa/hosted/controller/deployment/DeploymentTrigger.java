@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Mutex;
@@ -199,11 +200,17 @@ public class DeploymentTrigger {
                                     boolean upgradeRevision, boolean upgradePlatform) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        if (jobType.environment().isTest()) {
+            CloudName cloud = status.firstDependentProductionJobsWithDeployment(applicationId.instance()).keySet().stream().findFirst()
+                                    .orElse(controller.zoneRegistry().systemZone().getCloudName());
+            jobType = jobType.isSystemTest() ? JobType.systemTest(controller.zoneRegistry(), cloud)
+                                             : JobType.stagingTest(controller.zoneRegistry(), cloud);
+        }
         JobId job = new JobId(instance.id(), jobType);
         if (job.type().environment().isManuallyDeployed())
             return forceTriggerManualJob(job, reason);
 
-        DeploymentStatus status = jobs.deploymentStatus(application);
         Change change = instance.change();
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();

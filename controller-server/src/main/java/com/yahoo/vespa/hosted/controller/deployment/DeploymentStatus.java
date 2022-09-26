@@ -312,7 +312,7 @@ public class DeploymentStatus {
      * if no such deployments exist, all clouds the application deploy to, and their first production deployments; or
      * if no clouds are deployed to at all, the system default cloud.
      */
-    Map<CloudName, Optional<JobId>> firstDependentProductionJobsWithDeployment(InstanceName testInstance) {
+    public Map<CloudName, Optional<JobId>> firstDependentProductionJobsWithDeployment(InstanceName testInstance) {
         // Find instances' dependencies on each other: these are topologically ordered, so a simple traversal does it.
         Map<InstanceName, Set<InstanceName>> dependencies = new HashMap<>();
         instanceSteps().forEach((name, step) -> {
