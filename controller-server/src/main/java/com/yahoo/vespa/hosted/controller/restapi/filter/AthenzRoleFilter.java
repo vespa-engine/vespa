@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.Payload;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
@@ -79,14 +81,17 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         try {
             Principal principal = request.getUserPrincipal();
             if (principal instanceof AthenzPrincipal) {
-                Instant issuedAt = request.getClientCertificateChain().stream().findFirst()
-                        .map(X509Certificate::getNotBefore)
-                        .or(() -> Optional.ofNullable((String) request.getAttribute("okta.access-token")).map(iat -> JWT.decode(iat).getIssuedAt()))
-                        .map(Date::toInstant)
-                        .orElse(Instant.EPOCH);
+                Optional<DecodedJWT> oktaAt = Optional.ofNullable((String) request.getAttribute("okta.access-token")).map(JWT::decode);
+                Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
+                Instant issuedAt = cert.map(X509Certificate::getNotBefore)
+                        .or(() -> oktaAt.map(Payload::getIssuedAt))
+                        .map(Date::toInstant).orElse(Instant.EPOCH);
+                Instant expireAt = cert.map(X509Certificate::getNotAfter)
+                        .or(() -> oktaAt.map(Payload::getExpiresAt))
+                        .map(Date::toInstant).orElse(Instant.MAX);
                 request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal,
                         roles((AthenzPrincipal) principal, request.getUri()),
-                        issuedAt));
+                        issuedAt, expireAt));
             }
         }
         catch (Exception e) {
