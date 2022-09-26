@@ -5,7 +5,6 @@
 #include "btreeinserter.h"
 #include "btreerootbase.hpp"
 #include "btreeiterator.hpp"
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib::btree {
 
