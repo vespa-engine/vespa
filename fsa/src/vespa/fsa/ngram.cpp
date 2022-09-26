@@ -7,10 +7,6 @@
  * @brief   n-gram class for tokenized text.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "ngram.h"
 #include "wordchartokenizer.h"
 

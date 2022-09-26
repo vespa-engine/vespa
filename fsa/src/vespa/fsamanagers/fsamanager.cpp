@@ -8,21 +8,7 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "fsamanager.h"
-
-#ifdef HAVE_CURL
-#include <stdio.h>
-#include <unistd.h>
-#include <curl/curl.h>
-#include <curl/types.h>
-#include <curl/easy.h>
-#endif
-
-
 
 namespace fsa {
 
@@ -80,45 +66,8 @@ bool FSAManager::load(const std::string &id, const std::string &url)
 
 bool FSAManager::getUrl(const std::string &url, const std::string &file)
 {
-#ifdef HAVE_CURL
-  CURL *curl_handle;
-  FILE *filehandle;
-  long  response_code;
-
-  filehandle = fopen(file.c_str(),"r");
-  if(filehandle!=NULL){
-    fclose(filehandle);
-    return true;
-  }
-
-  filehandle = fopen(file.c_str(),"w");
-  if(filehandle==NULL)
-    return false;
-
-  curl_handle  = curl_easy_init();
-
-  curl_easy_setopt(curl_handle, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)filehandle);
-  curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libfsa-url-agent/0.1");
-
-  curl_easy_perform(curl_handle);
-
-  curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &response_code);
-
-  curl_easy_cleanup(curl_handle);
-
-  fclose(filehandle);
-
-  if(response_code!=200){
-    unlink(file.c_str());
-    return false;
-  }
-
-  return true;
-#else  // HAVE_CURL
   (void)url;(void)file;
   return false;
-#endif // HAVE_CURL
 }
 
 // }}}
