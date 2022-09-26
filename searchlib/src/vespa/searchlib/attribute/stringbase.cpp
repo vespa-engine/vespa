@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "stringbase.h"
 #include "attributevector.hpp"
 #include "load_utils.h"
 #include "readerbase.h"
-#include "stringbase.h"
 #include "enum_store_loaders.h"
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>

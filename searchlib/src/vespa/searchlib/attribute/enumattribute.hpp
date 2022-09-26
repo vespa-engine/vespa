@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "enumattribute.h"
 #include "address_space_components.h"
+#include "enumstore.hpp"
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/searchlib/attribute/enumattribute.h>
-#include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchcommon/attribute/config.h>
 
 namespace search {

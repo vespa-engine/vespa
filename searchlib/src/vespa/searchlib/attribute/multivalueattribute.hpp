@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "multivalueattribute.h"
 #include "address_space_components.h"
 #include "raw_multi_value_read_view.h"
 #include "copy_multi_value_read_view.h"
-#include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>

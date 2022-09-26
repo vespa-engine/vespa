@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "readerbase.h"
 #include "attributevector.h"
 #include "load_utils.h"
-#include "readerbase.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>

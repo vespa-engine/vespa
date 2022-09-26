@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attrvector.h"
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
 #include "load_utils.h"

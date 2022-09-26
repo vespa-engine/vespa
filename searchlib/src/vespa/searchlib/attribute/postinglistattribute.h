@@ -3,12 +3,12 @@
 #pragma once
 
 #include "dociditerator.h"
+#include "enumattribute.h"
 #include "ipostinglistattributebase.h"
+#include "numericbase.h"
 #include "postingchange.h"
 #include "postinglistsearchcontext.h"
-#include <vespa/searchlib/attribute/enumattribute.h>
-#include <vespa/searchlib/attribute/numericbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
+#include "stringbase.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/entry_comparator.h>

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/enumattribute.h>
-#include <vespa/searchlib/attribute/singleenumattribute.h>
+#include "enumattribute.h"
+#include "singleenumattribute.h"
+#include "stringbase.h"
 
 namespace search {
 

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "i_enum_store.h"
 #include "load_utils.hpp"
+#include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "multi_value_mapping.h"
 #include <vespa/fastos/file.h>

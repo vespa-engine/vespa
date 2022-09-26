@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributefilewriter.h"
 #include "attribute_header.h"
 #include "attributefilebufferwriter.h"
-#include "attributefilewriter.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
