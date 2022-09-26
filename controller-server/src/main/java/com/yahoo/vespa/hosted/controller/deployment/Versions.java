@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -111,7 +112,7 @@ public class Versions {
 
     /** Create versions using given change and application */
     public static Versions from(Change change, Application application, Optional<Version> existingPlatform,
-                                Optional<RevisionId> existingRevision, Version defaultPlatformVersion) {
+                                Optional<RevisionId> existingRevision, Supplier<Version> defaultPlatformVersion) {
         return new Versions(targetPlatform(application, change, existingPlatform, defaultPlatformVersion),
                             targetRevision(application, change, existingRevision),
                             existingPlatform,
@@ -119,17 +120,17 @@ public class Versions {
     }
 
     /** Create versions using given change and application */
-    public static Versions from(Change change, Application application, Optional<Deployment> deployment, Version defaultPlatformVersion) {
+    public static Versions from(Change change, Application application, Optional<Deployment> deployment, Supplier<Version> defaultPlatformVersion) {
         return from(change, application, deployment.map(Deployment::version), deployment.map(Deployment::revision), defaultPlatformVersion);
     }
 
     private static Version targetPlatform(Application application, Change change, Optional<Version> existing,
-                                          Version defaultVersion) {
+                                          Supplier<Version> defaultVersion) {
         if (change.isPinned() && change.platform().isPresent())
             return change.platform().get();
 
         return max(change.platform(), existing)
-                .orElseGet(() -> application.oldestDeployedPlatform().orElse(defaultVersion));
+                .orElseGet(() -> application.oldestDeployedPlatform().orElseGet(defaultVersion));
     }
 
     private static RevisionId targetRevision(Application application, Change change,

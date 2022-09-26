@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -349,26 +350,28 @@ public class DeploymentStatus {
 
 
     /** Fall back to the newest, deployable platform, which is compatible with what we want to deploy. */
-    public Version fallbackPlatform(Change change, JobId job) {
-        InstanceName instance = job.application().instance();
-        Optional<Version> compileVersion = change.revision().map(application.revisions()::get).flatMap(ApplicationVersion::compileVersion);
-        List<Version> targets = targetsForPolicy(versionStatus,
-                                                 systemVersion,
-                                                 application.deploymentSpec().instance(instance)
-                                                            .map(DeploymentInstanceSpec::upgradePolicy)
-                                                            .orElse(UpgradePolicy.defaultPolicy));
+    public Supplier<Version> fallbackPlatform(Change change, JobId job) {
+        return () -> {
+            InstanceName instance = job.application().instance();
+            Optional<Version> compileVersion = change.revision().map(application.revisions()::get).flatMap(ApplicationVersion::compileVersion);
+            List<Version> targets = targetsForPolicy(versionStatus,
+                                                     systemVersion,
+                                                     application.deploymentSpec().instance(instance)
+                                                                .map(DeploymentInstanceSpec::upgradePolicy)
+                                                                .orElse(UpgradePolicy.defaultPolicy));
 
-        // Prefer fallback with proper confidence.
-        for (Version target : targets)
-            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target, compileVersion.get()))
-                return target;
+            // Prefer fallback with proper confidence.
+            for (Version target : targets)
+                if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target, compileVersion.get()))
+                    return target;
 
-        // Try fallback with any confidence.
-        for (VespaVersion target : reversed(versionStatus.deployableVersions()))
-            if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target.versionNumber(), compileVersion.get()))
-                return target.versionNumber();
+            // Try fallback with any confidence.
+            for (VespaVersion target : reversed(versionStatus.deployableVersions()))
+                if (compileVersion.isEmpty() || versionCompatibility.apply(instance).accept(target.versionNumber(), compileVersion.get()))
+                    return target.versionNumber();
 
-        throw new IllegalArgumentException("no legal platform version exists in this system for compile version " + compileVersion.get());
+            return compileVersion.orElseThrow(() -> new IllegalArgumentException("no legal platform version exists in this system for compile version " + compileVersion.get()));
+        };
     }
 
 
@@ -639,7 +642,7 @@ public class DeploymentStatus {
         boolean platformReadyFirst = platformReadyAt.get().isBefore(revisionReadyAt.get());
         boolean revisionReadyFirst = revisionReadyAt.get().isBefore(platformReadyAt.get());
         boolean failingUpgradeOnlyTests = ! jobs().type(systemTest(job.type()), stagingTest(job.type()))
-                                                  .failingHardOn(Versions.from(change.withoutApplication(), application, deploymentFor(job), systemVersion))
+                                                  .failingHardOn(Versions.from(change.withoutApplication(), application, deploymentFor(job), () -> systemVersion))
                                                   .isEmpty();
         switch (rollout) {
             case separate:      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
