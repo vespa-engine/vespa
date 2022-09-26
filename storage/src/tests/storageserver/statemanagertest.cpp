@@ -176,9 +176,9 @@ TEST_F(StateManagerTest, reported_node_state) {
     // Add a state listener to check that we get events.
     MyStateListener stateListener(*_manager);
     _manager->addStateListener(stateListener);
-    // Test that initial state is initializing
+    // Test that initial state is Down
     auto nodeState = _manager->getReportedNodeState();
-    EXPECT_EQ("s:i b:58 i:0 t:1", nodeState->toString(false));
+    EXPECT_EQ("s:d b:58 t:1", nodeState->toString(false));
     // Test that it works to update the state
     {
         auto lock = _manager->grabStateChangeLock();
@@ -236,7 +236,7 @@ TEST_F(StateManagerTest, reported_node_state) {
         _manager->setReportedNodeState(ns);
     }
     std::string expectedEvents =
-            "s:i b:58 i:0 t:1 -> s:u b:58 t:1\n"
+            "s:d b:58 t:1 -> s:u b:58 t:1\n"
             "s:u b:58 t:1 -> s:s b:58 t:1 m:Stopping\\x20node\n";
     EXPECT_EQ(expectedEvents, stateListener.ost.str());
 }
