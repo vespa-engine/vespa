@@ -18,7 +18,8 @@ class CorsLogic {
 
     static final Map<String, String> ACCESS_CONTROL_HEADERS = Map.of(
             "Access-Control-Max-Age", CORS_PREFLIGHT_REQUEST_CACHE_TTL,
-            "Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Yahoo-Principal-Auth,Okta-Identity-Token,Okta-Access-Token,Okta-Refresh-Token",
+            "Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Yahoo-Principal-Auth,Okta-Identity-Token," +
+                    "Okta-Access-Token,Okta-Refresh-Token,Vespa-Csrf-Token",
             "Access-Control-Allow-Methods", "OPTIONS,GET,PUT,DELETE,POST,PATCH",
             "Access-Control-Allow-Credentials", "true",
             "Vary", "Origin"
