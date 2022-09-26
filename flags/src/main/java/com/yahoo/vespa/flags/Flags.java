@@ -542,6 +542,13 @@ public class Flags {
             "Takes effect at next tick",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag CONSOLE_CSRF = defineFeatureFlag(
+            "console-csrf", false,
+            List.of("bjorncs", "tokle"), "2022-09-26", "2023-06-01",
+            "Enable CSRF token in console",
+            "Takes effect immediately",
+            CONSOLE_USER_EMAIL);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
