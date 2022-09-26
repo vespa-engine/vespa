@@ -410,7 +410,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_BIT_VECTORS = defineFeatureFlag(
-            "enable-bit-vectors", false,
+            "enable-bit-vectors", true,
             List.of("baldersheim"), "2022-05-03", "2022-12-31",
             "Enables bit vector by default for fast-search attributes",
             "Takes effect at redeployment",
