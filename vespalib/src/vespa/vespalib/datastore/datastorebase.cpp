@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "datastore.h"
+#include "datastorebase.h"
 #include "compact_buffer_candidates.h"
 #include "compaction_spec.h"
 #include "compaction_strategy.h"
