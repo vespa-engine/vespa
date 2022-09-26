@@ -17,7 +17,8 @@ func getConfigServerHosts(s string) []string {
 	if s != "" {
 		return []string{s}
 	}
-	got, err := util.GetOutputFromProgram(vespa.FindHome()+"/bin/vespa-print-default", "configservers")
+	backticks := util.BackTicksForwardStderr
+	got, err := backticks.Run(vespa.FindHome()+"/bin/vespa-print-default", "configservers")
 	res := strings.Fields(got)
 	if err != nil || len(res) < 1 {
 		panic("bad configservers: " + got)
@@ -30,7 +31,8 @@ func getConfigServerPort(i int) int {
 	if i > 0 {
 		return i
 	}
-	got, err := util.GetOutputFromProgram(vespa.FindHome()+"/bin/vespa-print-default", "configserver_rpc_port")
+	backticks := util.BackTicksForwardStderr
+	got, err := backticks.Run(vespa.FindHome()+"/bin/vespa-print-default", "configserver_rpc_port")
 	if err == nil {
 		i, err = strconv.Atoi(strings.TrimSpace(got))
 	}
@@ -53,7 +55,8 @@ func detectModel(opts *Options) *VespaModelConfig {
 			"-p", strconv.Itoa(cfgPort),
 			"-s", cfgHost,
 		}
-		data, err := util.GetOutputFromProgram(vespa.FindHome()+"/bin/vespa-get-config", args...)
+		backticks := util.BackTicksForwardStderr
+		data, err := backticks.Run(vespa.FindHome()+"/bin/vespa-get-config", args...)
 		parsed := parseModelConfig(data)
 		if err == nil && parsed != nil {
 			return parsed

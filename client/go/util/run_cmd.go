@@ -12,12 +12,26 @@ import (
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
-// this is basically shell backticks:
-func GetOutputFromProgram(program string, args ...string) (string, error) {
+type BackTicks int
+
+const (
+	BackTicksWithStderr BackTicks = iota
+	BackTicksIgnoreStderr
+	BackTicksForwardStderr
+)
+
+func (b BackTicks) Run(program string, args ...string) (string, error) {
 	cmd := exec.Command(program, args...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	cmd.Stderr = os.Stderr
+	switch b {
+	case BackTicksWithStderr:
+		cmd.Stderr = &out
+	case BackTicksIgnoreStderr:
+		cmd.Stderr = nil
+	case BackTicksForwardStderr:
+		cmd.Stderr = os.Stderr
+	}
 	trace.Debug("running command:", program, strings.Join(args, " "))
 	err := cmd.Run()
 	return out.String(), err

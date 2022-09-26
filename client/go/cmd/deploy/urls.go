@@ -28,7 +28,8 @@ func makeConfigsourceUrls(opts *Options) []string {
 	var results = make([]string, 0, 3)
 	if opts.ServerHost == "" {
 		home := vespa.FindHome()
-		configsources, _ := util.GetOutputFromProgram(home+"/bin/vespa-print-default", "configservers_http")
+		backticks := util.BackTicksForwardStderr
+		configsources, _ := backticks.Run(home+"/bin/vespa-print-default", "configservers_http")
 		for _, src := range strings.Split(configsources, "\n") {
 			colonParts := strings.Split(src, ":")
 			if len(colonParts) > 1 {
