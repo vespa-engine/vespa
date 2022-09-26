@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "allocator.hpp"
 #include "datastore.h"
+#include "allocator.hpp"
 #include "free_list_allocator.hpp"
 #include "free_list_raw_allocator.hpp"
 #include "raw_allocator.hpp"
