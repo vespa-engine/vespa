@@ -116,6 +116,9 @@ private:
 class AttributeFieldBlueprint : public SimpleLeafBlueprint
 {
 private:
+    // Must take a copy of the query term for visitMembers()
+    // as only a few ISearchContext implementations exposes the query term.
+    vespalib::string _query_term;
     ISearchContext::UP _search_context;
     enum Type {INT, FLOAT, OTHER};
     Type _type;
@@ -123,6 +126,7 @@ private:
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
                             QueryTermSimple::UP term, const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
+          _query_term(term->getTermString()),
           _search_context(attribute.createSearchContext(std::move(term), params)),
           _type(OTHER)
     {
@@ -196,6 +200,7 @@ AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     LeafBlueprint::visitMembers(visitor);
     visit(visitor, "attribute", _search_context->attributeName());
+    visit(visitor, "query_term", _query_term);
 }
 
 //-----------------------------------------------------------------------------

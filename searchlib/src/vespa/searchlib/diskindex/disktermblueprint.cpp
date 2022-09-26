@@ -3,8 +3,9 @@
 #include "disktermblueprint.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
-#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -14,7 +15,7 @@ using search::BitVectorIterator;
 using search::fef::TermFieldMatchDataArray;
 using search::index::Schema;
 using search::queryeval::BooleanMatchIteratorWrapper;
-using search::queryeval::FieldSpecBase;
+using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::SearchIterator;
 using search::queryeval::LeafBlueprint;
@@ -32,13 +33,15 @@ getName(uint32_t indexId)
 
 }
 
-DiskTermBlueprint::DiskTermBlueprint(const FieldSpecBase & field,
+DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
                                      const DiskIndex & diskIndex,
+                                     const vespalib::string& query_term,
                                      DiskIndex::LookupResult::UP lookupRes,
                                      bool useBitVector) :
     SimpleLeafBlueprint(field),
     _field(field),
     _diskIndex(diskIndex),
+    _query_term(query_term),
     _lookupRes(std::move(lookupRes)),
     _useBitVector(useBitVector),
     _fetchPostingsDone(false),
@@ -92,6 +95,14 @@ DiskTermBlueprint::createFilterSearch(bool strict, FilterConstraint) const
         wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
     }
     return wrapper;
+}
+
+void
+DiskTermBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
+{
+    SimpleLeafBlueprint::visitMembers(visitor);
+    visit(visitor, "field_name", _field.getName());
+    visit(visitor, "query_term", _query_term);
 }
 
 } // namespace

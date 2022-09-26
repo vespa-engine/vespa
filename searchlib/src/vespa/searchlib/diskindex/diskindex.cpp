@@ -388,7 +388,7 @@ public:
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, std::make_unique<DiskIndex::LookupResult>(lookupRes), useBitVector));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, termStr, std::make_unique<DiskIndex::LookupResult>(lookupRes), useBitVector));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

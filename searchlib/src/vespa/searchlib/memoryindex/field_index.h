@@ -103,7 +103,7 @@ public:
                                                        fef::TermFieldMatchDataArray match_data) const;
 
     std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
-                                                                        const queryeval::FieldSpecBase& field,
+                                                                        const queryeval::FieldSpec& field,
                                                                         uint32_t field_id) override;
 };
 
