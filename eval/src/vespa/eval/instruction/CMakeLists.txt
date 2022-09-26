@@ -37,6 +37,7 @@ vespa_add_library(eval_instruction OBJECT
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
     replace_type_function.cpp
+    simple_join_count.cpp
     sparse_112_dot_product.cpp
     sparse_dot_product_function.cpp
     sparse_full_overlap_join_function.cpp
