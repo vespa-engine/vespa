@@ -13,6 +13,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
@@ -149,6 +150,16 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
 
         GenericMetrics dummy1Metrics = getMetricsForService("dummy1", dummyService);
         assertEquals("custom-val", dummy1Metrics.dimensions.get(REASON));
+    }
+
+    @Test
+    public void consumer_name_is_case_insensitive() {
+        GenericJsonModel jsonModel = getResponseAsGenericJsonModel(CUSTOM_CONSUMER.toUpperCase(Locale.ROOT));
+        GenericService dummyService = jsonModel.services.get(0);
+        GenericMetrics dummy0Metrics = getMetricsForService("dummy0", dummyService);
+
+        // If name was case-sensitive, this would be the default value.
+        assertEquals("custom-val", dummy0Metrics.dimensions.get(REASON));
     }
 
     private static GenericMetrics getMetricsForService(String serviceInstance, GenericService service) {
