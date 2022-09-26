@@ -168,6 +168,8 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
     ret->setDistributionKey(_distributionKey);
     if ((ret->request->trace().getLevel() > 0) && ret->request->trace().hasTrace()) {
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
+        DocTypeName doc_type(*ret->request);
+        ret->request->trace().getRoot().setString("document-type", doc_type.getName());
         ret->request->trace().done();
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
         vespalib::SmartBuffer output(4_Ki);

@@ -36,7 +36,7 @@ public:
     virtual void dump(search::index::IndexBuilder& indexBuilder) = 0;
 
     virtual std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
-                                                                                const queryeval::FieldSpecBase& field,
+                                                                                const queryeval::FieldSpec& field,
                                                                                 uint32_t field_id) = 0;
 
     // Should only be directly used by unit tests
