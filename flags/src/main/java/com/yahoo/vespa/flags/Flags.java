@@ -535,6 +535,13 @@ public class Flags {
             "List of users to enable CSRF filter for. Use empty list for everyone.",
             "Takes effect on controller restart/redeployment");
 
+    public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
+            "enable-otel-collector", false,
+            List.of("olaa"), "2022-09-23", "2023-01-01",
+            "Whether an OpenTelemetry collector should be enabled",
+            "Takes effect at next tick",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
