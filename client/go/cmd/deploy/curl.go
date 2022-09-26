@@ -82,15 +82,6 @@ func newCurlCommand(url string, args []string) *curl.Command {
 	return cmd
 }
 
-func getOutputFromCmd(program string, args ...string) (string, error) {
-	cmd := exec.Command(program, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	return out.String(), err
-}
-
 func runCurl(cmd *curl.Command, stdout io.Writer) error {
 	trace.Trace("running curl:", cmd.String())
 	err := cmd.Run(stdout, os.Stderr)
