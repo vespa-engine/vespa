@@ -2352,6 +2352,33 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    void operatorMayForceUnknownVersion() {
+        Version oldVersion = Version.fromString("6");
+        Version currentVersion = Version.fromString("7");
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("7"), String.class);
+        tester.controllerTester().upgradeSystem(currentVersion);
+        assertEquals(List.of(currentVersion),
+                     tester.controller().readVersionStatus().versions().stream().map(VespaVersion::versionNumber).toList());
+
+        DeploymentContext app = tester.newDeploymentContext();
+        assertEquals("compile version 6 is incompatible with the current major version of this system",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                                                  .majorVersion(6)
+                                                                                  .compileVersion(oldVersion)
+                                                                                  .build()))
+                             .getMessage());
+
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(oldVersion).with(app.application().revisions().last().get().id()).withPin());
+        app.deploy();
+        assertEquals(oldVersion, app.deployment(ZoneId.from("prod", "us-east-3")).version());
+
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(List.of(oldVersion, currentVersion),
+                     tester.controller().readVersionStatus().versions().stream().map(VespaVersion::versionNumber).toList());
+    }
+
+    @Test
     void testInitialDeploymentPlatform() {
         Version version0 = tester.controllerTester().controller().readSystemVersion();
         Version version1 = new Version("6.2");
