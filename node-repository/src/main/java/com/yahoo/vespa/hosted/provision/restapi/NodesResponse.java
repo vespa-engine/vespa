@@ -66,11 +66,10 @@ class NodesResponse extends SlimeJsonResponse {
 
         Cursor root = slime.setObject();
         switch (responseType) {
-            case nodeList: nodesToSlime(filter.states(), root); break;
-            case stateList : statesToSlime(root); break;
-            case nodesInStateList: nodesToSlime(Set.of(NodeSerializer.stateFrom(lastElement(parentUrl))), root); break;
-            case singleNode : nodeToSlime(lastElement(parentUrl), root); break;
-            default: throw new IllegalArgumentException();
+            case nodeList -> nodesToSlime(filter.states(), root);
+            case stateList -> statesToSlime(root);
+            case nodesInStateList -> nodesToSlime(Set.of(NodeSerializer.stateFrom(lastElement(parentUrl))), root);
+            case singleNode -> nodeToSlime(lastElement(parentUrl), root);
         }
     }
 
