@@ -502,7 +502,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag COMPUTE_COVERAGE_FROM_TARGET_ACTIVE_DOCS = defineFeatureFlag(
-            "compute-coverage-from-target-active-docs", false,
+            "compute-coverage-from-target-active-docs", true,
             List.of("baldersheim", "vekterli"), "2022-09-13", "2022-11-01",
             "Whether degraded coverage computation will take target active docs into " +
             "account, not just currently active docs",
