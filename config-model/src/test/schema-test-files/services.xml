@@ -141,6 +141,7 @@
     </document-api>
 
     <search>
+      <binding>http://*/mysearch/</binding>
       <searcher id='outer-searcher' />
       <chain id='common'>
         <searcher id='outer-searcher' />
