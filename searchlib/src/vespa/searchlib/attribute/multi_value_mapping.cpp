@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "multi_value_mapping.hpp"
 #include "attributevector.h"
 #include "i_enum_store.h"
-#include "multi_value_mapping.h"
-#include "multi_value_mapping.hpp"
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "postinglistsearchcontext.h"
 #include "dociditerator.h"
 #include "attributeiterators.h"
 #include "diversity.h"

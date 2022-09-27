@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "singlenumericenumattribute.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "primitivereader.h"
 #include "singleenumattribute.hpp"
-#include "singlenumericenumattribute.h"
 #include "single_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>

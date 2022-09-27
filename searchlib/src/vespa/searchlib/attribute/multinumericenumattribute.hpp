@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "multinumericenumattribute.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "enumerated_multi_value_read_view.h"
-#include "multinumericenumattribute.h"
 #include "multi_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>

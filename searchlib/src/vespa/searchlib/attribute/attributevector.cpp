@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributevector.h"
+#include "attributevector.hpp"
 #include "address_space_components.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributesaver.h"
-#include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
 #include "ipostinglistattributebase.h"

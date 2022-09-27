@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "stringattribute.h"
 #include "multistringattribute.h"
+#include "stringattribute.h"
 #include "enumattribute.hpp"
 #include "enumerated_multi_value_read_view.h"
 #include "multienumattribute.hpp"

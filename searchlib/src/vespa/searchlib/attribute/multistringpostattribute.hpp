@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "stringattribute.h"
 #include "multistringpostattribute.h"
+#include "stringattribute.h"
 #include "multistringattribute.hpp"
 #include "multi_string_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>

@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "predicate_attribute.h"
 #include "attribute_header.h"
 #include "iattributesavetarget.h"
 #include "load_utils.h"
-#include "predicate_attribute.h"
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/searchlib/predicate/predicate_index.h>

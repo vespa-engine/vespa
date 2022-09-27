@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributememoryfilebufferwriter.h"
 #include "attributememoryfilewriter.h"
+#include "attributememoryfilebufferwriter.h"
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>

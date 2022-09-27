@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "reference_attribute.h"
 #include "attributesaver.h"
 #include "load_utils.h"
 #include "readerbase.h"
-#include "reference_attribute.h"
 #include "reference_attribute_saver.h"
 #include "search_context.h"
 #include <vespa/document/base/documentid.h>
