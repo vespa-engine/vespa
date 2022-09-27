@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "valuefeature.h"
 #include "euclidean_distance_feature.h"
+#include "valuefeature.h"
 #include "array_parser.hpp"
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/fef/properties.h>

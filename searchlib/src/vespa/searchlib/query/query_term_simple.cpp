@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "base.h"
 #include "query_term_simple.h"
+#include "base.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/locale/c.h>

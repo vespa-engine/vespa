@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "distance_calculator_bundle.h"
 #include "distancefeature.h"
+#include "distance_calculator_bundle.h"
 #include "utils.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/common/schema.h>

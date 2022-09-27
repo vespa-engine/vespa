@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "memory_index.h"
 #include "document_inverter.h"
 #include "document_inverter_collection.h"
 #include "document_inverter_context.h"
 #include "field_index_collection.h"
-#include "memory_index.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>

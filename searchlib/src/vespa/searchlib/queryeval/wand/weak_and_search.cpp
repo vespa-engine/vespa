@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "wand_parts.h"
 #include "weak_and_search.h"
+#include "wand_parts.h"
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/priority_queue.h>

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "constant_tensor_executor.h"
 #include "queryfeature.h"
+#include "constant_tensor_executor.h"
 #include "utils.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/featureexecutor.h>

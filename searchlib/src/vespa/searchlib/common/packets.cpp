@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "mapnames.h"
 #include "packets.h"
+#include "mapnames.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/databuffer.h>
 

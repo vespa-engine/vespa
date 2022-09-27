@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "hnsw_index.h"
 #include "bitvector_visited_tracker.h"
 #include "distance_function.h"
 #include "hash_set_visited_tracker.h"
-#include "hnsw_index.h"
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"

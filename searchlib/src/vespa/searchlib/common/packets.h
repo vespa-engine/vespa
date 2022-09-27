@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vector>

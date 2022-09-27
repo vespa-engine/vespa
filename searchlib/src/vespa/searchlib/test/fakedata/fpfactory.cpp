@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fpfactory.h"
 #include "fakeegcompr64filterocc.h"
 #include "fakefilterocc.h"
 #include "fakezcbfilterocc.h"
 #include "fakezcfilterocc.h"
 #include "fakememtreeocc.h"
-#include "fpfactory.h"
 #include "fakewordset.h"
 
 namespace search::fakedata {
