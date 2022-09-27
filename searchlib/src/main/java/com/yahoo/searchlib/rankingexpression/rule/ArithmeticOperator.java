@@ -39,16 +39,22 @@ struct Or           : OperatorHelper<Or>           { Or()           : Helper("||
     MULTIPLY("*", (x, y) -> x.multiply(y)),
     DIVIDE("/", (x, y) -> x.divide(y)),
     MODULO("%", (x, y) -> x.modulo(y)),
-    POWER("^", (x, y) -> x.power(y));
+    POWER("^", true, (x, y) -> x.power(y));
 
     /** A list of all the operators in this in order of decreasing precedence */
     public static final List<ArithmeticOperator> operatorsByPrecedence = Arrays.stream(ArithmeticOperator.values()).toList();
 
     private final String image;
+    private final boolean bindsRight; // TODO: Implement
     private final BiFunction<Value, Value, Value> function;
 
     ArithmeticOperator(String image, BiFunction<Value, Value, Value> function) {
+        this(image, false, function);
+    }
+
+    ArithmeticOperator(String image, boolean bindsRight, BiFunction<Value, Value, Value> function) {
         this.image = image;
+        this.bindsRight = bindsRight;
         this.function = function;
     }
 
