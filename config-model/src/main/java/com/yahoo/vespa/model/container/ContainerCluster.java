@@ -148,7 +148,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
-    private final int numAvailableProcessors;
     private final String compressionType;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
@@ -163,13 +162,15 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+        this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
+    }
     public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
-        this.numAvailableProcessors = deployState.featureFlags().availableProcessors();
         this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
 
         componentGroup = new ComponentGroup<>(this, "component");
@@ -359,10 +360,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.containerDocproc = containerDocproc;
     }
 
-    public ContainerDocumentApi getDocumentApi() {
-        return containerDocumentApi;
-    }
-
     public void setDocumentApi(ContainerDocumentApi containerDocumentApi) {
         this.containerDocumentApi = containerDocumentApi;
     }
@@ -514,7 +511,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(QrStartConfig.Builder builder) {
         builder.jvm
                 .verbosegc(false)
-                .availableProcessors(numAvailableProcessors)
+                .availableProcessors(1)
                 .compressedClassSpaceSize(32)
                 .minHeapsize(32)
                 .heapsize(256)
