@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model;
 
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -10,7 +9,9 @@ import java.util.Objects;
 public class ConsumerId {
 
     public final String id;
-    private ConsumerId(String id) { this.id = id; }
+    private ConsumerId(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
 
     public static ConsumerId toConsumerId(String id) { return new ConsumerId(id); }
 
