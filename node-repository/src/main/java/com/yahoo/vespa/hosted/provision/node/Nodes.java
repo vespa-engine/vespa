@@ -132,9 +132,7 @@ public class Nodes {
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");
             Optional<Node> existing = node(node.hostname());
             if (existing.isPresent())
-                illegal("Cannot add " + node + ": A node with this name already exists (" +
-                        existing.get() + ", " + existing.get().history() + "). Node to be added: " +
-                        node + ", " + node.history());
+                illegal("Cannot add " + node + ": A node with this name already exists");
         }
         return db.addNodesInState(nodes.asList(), Node.State.reserved, Agent.system);
     }
@@ -291,16 +289,13 @@ public class Nodes {
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isHost() ?
                  Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
-                 Stream.of(nodeToDirty))
-                        .filter(node -> node.state() != Node.State.dirty)
-                        .collect(Collectors.toList());
+                 Stream.of(nodeToDirty)).filter(node -> node.state() != Node.State.dirty).toList();
         List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
                                                               .filter(node -> node.state() != Node.State.provisioned)
                                                               .filter(node -> node.state() != Node.State.failed)
                                                               .filter(node -> node.state() != Node.State.parked)
                                                               .filter(node -> node.state() != Node.State.breakfixed)
-                                                              .map(Node::hostname)
-                                                              .collect(Collectors.toList());
+                                                              .map(Node::hostname).toList();
         if ( ! hostnamesNotAllowedToDirty.isEmpty())
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
