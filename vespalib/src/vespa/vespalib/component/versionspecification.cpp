@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "version.h"
 #include "versionspecification.h"
+#include "version.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
