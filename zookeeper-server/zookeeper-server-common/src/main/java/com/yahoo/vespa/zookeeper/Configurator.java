@@ -48,6 +48,8 @@ public class Configurator {
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
         System.setProperty("zookeeper.leader.closeSocketAsync", String.valueOf(zookeeperServerConfig.leaderCloseSocketAsync()));
         System.setProperty("zookeeper.learner.asyncSending", String.valueOf(zookeeperServerConfig.learnerAsyncSending()));
+        // Enable creation of TTL Nodes.
+        System.setProperty("zookeeper.extendedTypesEnabled", "true");
     }
 
     void writeConfigToDisk() {
