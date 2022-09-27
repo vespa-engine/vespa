@@ -301,13 +301,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag AVAILABLE_PROCESSORS = defineIntFlag(
-            "available-processors", 1,
-            List.of("balder"), "2022-01-18", "2023-01-01",
-            "Number of processors the jvm sees in non-application clusters",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
             List.of("olaa"), "2021-09-13", "2022-10-01",
