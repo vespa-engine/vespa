@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -30,31 +31,30 @@ struct And          : OperatorHelper<And>          { And()          : Helper("&&
 struct Or           : OperatorHelper<Or>           { Or()           : Helper("||",  1, LEFT)  {}};
  */
 
-    OR(0, "||", (x, y) -> x.or(y)),
-    AND(1, "&&", (x, y) -> x.and(y)),
-    PLUS(2, "+", (x, y) -> x.add(y)),
-    MINUS(3, "-", (x, y) -> x.subtract(y)),
-    MULTIPLY(4, "*", (x, y) -> x.multiply(y)),
-    DIVIDE(5, "/", (x, y) -> x.divide(y)),
-    MODULO(6, "%", (x, y) -> x.modulo(y)),
-    POWER(7, "^", (x, y) -> x.power(y));
+    // In order from lowest to highest precedence
+    OR("||", (x, y) -> x.or(y)),
+    AND("&&", (x, y) -> x.and(y)),
+    PLUS("+", (x, y) -> x.add(y)),
+    MINUS("-", (x, y) -> x.subtract(y)),
+    MULTIPLY("*", (x, y) -> x.multiply(y)),
+    DIVIDE("/", (x, y) -> x.divide(y)),
+    MODULO("%", (x, y) -> x.modulo(y)),
+    POWER("^", (x, y) -> x.power(y));
 
     /** A list of all the operators in this in order of decreasing precedence */
-    public static final List<ArithmeticOperator> operatorsByPrecedence = List.of(POWER, MODULO, DIVIDE, MULTIPLY, MINUS, PLUS, AND, OR);
+    public static final List<ArithmeticOperator> operatorsByPrecedence = Arrays.stream(ArithmeticOperator.values()).toList();
 
-    private final int precedence;
     private final String image;
     private final BiFunction<Value, Value, Value> function;
 
-    ArithmeticOperator(int precedence, String image, BiFunction<Value, Value, Value> function) {
-        this.precedence = precedence;
+    ArithmeticOperator(String image, BiFunction<Value, Value, Value> function) {
         this.image = image;
         this.function = function;
     }
 
     /** Returns true if this operator has precedence over the given operator */
     public boolean hasPrecedenceOver(ArithmeticOperator op) {
-        return precedence > op.precedence;
+        return operatorsByPrecedence.indexOf(this) > operatorsByPrecedence.indexOf(op);
     }
 
     public final Value evaluate(Value x, Value y) {
