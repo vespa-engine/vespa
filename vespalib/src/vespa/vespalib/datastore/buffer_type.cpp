@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "atomic_entry_ref.h"
 #include "buffer_type.hpp"
 #include <algorithm>
 #include <cassert>

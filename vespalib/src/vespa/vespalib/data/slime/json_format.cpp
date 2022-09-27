@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "strfmt.h"
 #include "json_format.h"
+#include "strfmt.h"
 #include "inserter.h"
 #include "slime.h"
 #include <vespa/vespalib/data/memory_input.h>

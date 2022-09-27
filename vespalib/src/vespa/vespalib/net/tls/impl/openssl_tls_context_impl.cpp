@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "iana_cipher_map.h"
+
 #include "openssl_tls_context_impl.h"
+#include "iana_cipher_map.h"
 #include "openssl_crypto_codec_impl.h"
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
