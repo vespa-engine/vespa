@@ -294,13 +294,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
-            "metricsproxy-num-threads", 1,
-            List.of("balder"), "2021-09-01", "2023-01-01",
-            "Number of threads for metrics proxy",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
             List.of("olaa"), "2021-09-13", "2022-10-01",
