@@ -76,6 +76,33 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    void testInlinedComparison() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema("search test {\n" +
+                          "    document test { \n" +
+                          "    }\n" +
+                          "    \n" +
+                          "    rank-profile parent {\n" +
+                          "function foo() {\n" +
+                          "   expression: 3 * bar\n" +
+                          "}\n" +
+                          "\n" +
+                          "function inline bar() {\n" +
+                          "   expression: query(test) > 2.0\n" +
+                          "}\n" +
+                          "}\n" +
+                          "}\n");
+        builder.build(true);
+        Schema s = builder.getSchema();
+
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
+        assertEquals("3 * ( query(test) > 2.0 )",
+                     parent.getFunctions().get("foo").function().getBody().getRoot().toString());
+
+    }
+
+    @Test
     void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
