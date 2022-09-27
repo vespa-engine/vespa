@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributefieldvaluenode.h"
 #include "cachedselect.h"
+#include "attributefieldvaluenode.h"
 #include "select_utils.h"
 #include "selectcontext.h"
 #include "selectpruner.h"

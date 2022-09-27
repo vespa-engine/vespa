@@ -3,6 +3,7 @@
 
 #include <vespa/document/select/resultset.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 #include <vector>
 
 namespace document {

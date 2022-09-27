@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "matcher.h"
 #include "isearchcontext.h"
 #include "match_master.h"
 #include "match_context.h"
 #include "match_tools.h"
 #include "match_params.h"
-#include "matcher.h"
 #include "sessionmanager.h"
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>

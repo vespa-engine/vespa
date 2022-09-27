@@ -4,8 +4,10 @@
 
 #include "metricswireservice.h"
 #include <vespa/metrics/state_api_adapter.h>
+#include <memory>
 
 namespace metrics {
+    class Metric;
     class Metricmanager;
     class UpdateHook;
 }

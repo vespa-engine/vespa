@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "executor_explorer_utils.h"
 #include "executor_threading_service_explorer.h"
+#include "executor_explorer_utils.h"
 #include "executorthreadingservice.h"
 #include <vespa/vespalib/data/slime/cursor.h>
 

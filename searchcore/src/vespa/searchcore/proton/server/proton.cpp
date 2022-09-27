@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "proton.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
 #include "fileconfigmanager.h"
@@ -8,7 +9,6 @@
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "prepare_restart_handler.h"
-#include "proton.h"
 #include "proton_config_snapshot.h"
 #include "proton_disk_layout.h"
 #include "proton_thread_pools_explorer.h"

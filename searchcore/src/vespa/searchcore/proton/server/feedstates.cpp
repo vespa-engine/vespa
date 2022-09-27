@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "feedconfigstore.h"
 #include "feedstates.h"
+#include "feedconfigstore.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "replaypacketdispatcher.h"

@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fast_access_doc_subdb.h"
 #include "attribute_writer_factory.h"
 #include "emptysearchview.h"
-#include "fast_access_doc_subdb.h"
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"

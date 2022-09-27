@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "documentdb.h"
 #include "bootstrapconfig.h"
 #include "combiningfeedview.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
-#include "documentdb.h"
 #include "documentdbconfigscout.h"
 #include "feedhandler.h"
 #include "i_shared_threading_service.h"
