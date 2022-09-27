@@ -3,6 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/lid_usage_stats.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
 #include <vector>
 
 namespace vespalib { class IDestructorCallback; }
@@ -76,4 +78,3 @@ struct ILidSpaceCompactionHandler
 };
 
 } // namespace proton
-

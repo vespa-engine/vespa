@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "indexmaintainer.h"
 #include "diskindexcleaner.h"
 #include "eventlogger.h"
 #include "fusionrunner.h"
 #include "indexflushtarget.h"
 #include "indexfusiontarget.h"
-#include "indexmaintainer.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
 #include "index_disk_dir.h"

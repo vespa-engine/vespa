@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <atomic>
+#include <memory>
 
 namespace proton {
 

@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "metrics_engine.h"
 #include "attribute_metrics.h"
 #include "documentdb_tagged_metrics.h"
-#include "metrics_engine.h"
 #include "content_proton_metrics.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>

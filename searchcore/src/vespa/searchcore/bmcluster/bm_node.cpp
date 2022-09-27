@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bm_node.h"
 #include "bm_cluster.h"
 #include "bm_cluster_params.h"
 #include "bm_message_bus.h"
-#include "bm_node.h"
 #include "bm_node_stats.h"
 #include "bm_storage_chain_builder.h"
 #include "bm_storage_link_context.h"

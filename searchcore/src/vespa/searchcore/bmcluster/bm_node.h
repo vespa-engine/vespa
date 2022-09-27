@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <memory>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <memory>
 #include <vector>
 
 namespace document {

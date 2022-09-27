@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "lid_space_compaction_handler.h"
 #include "document_scan_iterator.h"
 #include "ifeedview.h"
-#include "lid_space_compaction_handler.h"
 #include "maintenancedocumentsubdb.h"
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>

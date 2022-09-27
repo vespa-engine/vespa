@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributemanager.h"
 #include "attribute_directory.h"
 #include "attribute_factory.h"
 #include "attribute_type_matcher.h"
 #include "attributedisklayout.h"
-#include "attributemanager.h"
 #include "flushableattribute.h"
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"

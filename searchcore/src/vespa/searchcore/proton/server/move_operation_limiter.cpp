@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "i_blockable_maintenance_job.h"
 #include "move_operation_limiter.h"
+#include "i_blockable_maintenance_job.h"
 #include <cassert>
 
 namespace proton {
