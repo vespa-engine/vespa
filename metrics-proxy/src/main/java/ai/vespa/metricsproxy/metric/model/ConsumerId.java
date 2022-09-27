@@ -9,7 +9,9 @@ import java.util.Objects;
 public class ConsumerId {
 
     public final String id;
-    private ConsumerId(String id) { this.id = id; }
+    private ConsumerId(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
 
     public static ConsumerId toConsumerId(String id) { return new ConsumerId(id); }
 

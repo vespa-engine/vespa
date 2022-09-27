@@ -10,6 +10,7 @@ import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -65,12 +66,14 @@ public class ValuesFetcher {
     public static ConsumerId getConsumerOrDefault(String requestedConsumer, MetricsConsumers consumers) {
         if (requestedConsumer == null) return defaultMetricsConsumerId;
 
-        ConsumerId consumerId = toConsumerId(requestedConsumer);
-        if (! consumers.getAllConsumers().contains(consumerId)) {
-            log.info("No consumer with id '" + requestedConsumer + "' - using the default consumer instead.");
-            return defaultMetricsConsumerId;
-        }
-        return consumerId;
+        Optional<ConsumerId> consumerId = consumers.getAllConsumers().stream()
+                .filter(consumer -> consumer.id.equalsIgnoreCase(requestedConsumer))
+                .findFirst();
+
+        if (consumerId.isPresent()) return consumerId.get();
+
+        log.info("No consumer with id '" + requestedConsumer + "' - using the default consumer instead.");
+        return defaultMetricsConsumerId;
     }
 
 }
