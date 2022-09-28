@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include "searchrequest.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/array.h>
-#include <vespa/searchlib/engine/searchrequest.h>
 #include <vector>
 
 namespace search::engine {

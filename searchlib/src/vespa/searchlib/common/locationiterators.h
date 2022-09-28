@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "location.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search::common {

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vector>
+#include "docsumrequest.h"
 #include <vespa/document/base/globalid.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/searchlib/common/unique_issues.h>
-#include <memory>
-#include <vespa/searchlib/engine/docsumrequest.h>
+#include <vespa/vespalib/util/memory.h>
 #include <cassert>
+#include <memory>
+#include <vector>
 
 namespace vespalib { class Slime; }
 namespace vespalib::slime { struct Inspector; }

@@ -3,10 +3,10 @@
 #pragma once
 
 #include "i_reprocessing_handler.h"
+#include "i_reprocessing_initializer.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
-#include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {

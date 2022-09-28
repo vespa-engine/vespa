@@ -4,13 +4,13 @@
 #include "attributemanager.h"
 #include "document_field_extractor.h"
 #include "ifieldupdatecallback.h"
+#include "imported_attributes_repo.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/tensor/prepare_result.h>

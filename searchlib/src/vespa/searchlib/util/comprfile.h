@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "comprbuffer.h"
 #include <utility>
-#include <vespa/searchlib/util/comprbuffer.h>
 
 class FastOS_FileInterface;
 

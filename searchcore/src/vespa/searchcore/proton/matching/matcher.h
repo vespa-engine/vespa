@@ -3,12 +3,12 @@
 #pragma once
 
 #include "i_ranking_assets_repo.h"
+#include "docsum_matcher.h"
 #include "indexenvironment.h"
 #include "matching_stats.h"
+#include "querylimiter.h"
 #include "search_session.h"
 #include "viewresolver.h"
-#include "docsum_matcher.h"
-#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/common/featureset.h>

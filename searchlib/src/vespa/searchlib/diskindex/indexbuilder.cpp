@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexbuilder.h"
+#include "fieldwriter.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/error.h>
 #include <filesystem>
