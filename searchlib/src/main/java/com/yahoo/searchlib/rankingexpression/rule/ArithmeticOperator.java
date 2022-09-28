@@ -14,26 +14,16 @@ import java.util.function.BiFunction;
  */
 public enum ArithmeticOperator {
 
-/*
-struct Sub          : OperatorHelper<Sub>          { Sub()          : Helper("-", 101, LEFT)  {}};
-struct Mul          : OperatorHelper<Mul>          { Mul()          : Helper("*", 102, LEFT)  {}};
-struct Div          : OperatorHelper<Div>          { Div()          : Helper("/", 102, LEFT)  {}};
-struct Mod          : OperatorHelper<Mod>          { Mod()          : Helper("%", 102, LEFT)  {}};
-struct Pow          : OperatorHelper<Pow>          { Pow()          : Helper("^", 103, RIGHT) {}};
-struct Equal        : OperatorHelper<Equal>        { Equal()        : Helper("==", 10, LEFT)  {}};
-struct NotEqual     : OperatorHelper<NotEqual>     { NotEqual()     : Helper("!=", 10, LEFT)  {}};
-struct Approx       : OperatorHelper<Approx>       { Approx()       : Helper("~=", 10, LEFT)  {}};
-struct Less         : OperatorHelper<Less>         { Less()         : Helper("<",  10, LEFT)  {}};
-struct LessEqual    : OperatorHelper<LessEqual>    { LessEqual()    : Helper("<=", 10, LEFT)  {}};
-struct Greater      : OperatorHelper<Greater>      { Greater()      : Helper(">",  10, LEFT)  {}};
-struct GreaterEqual : OperatorHelper<GreaterEqual> { GreaterEqual() : Helper(">=", 10, LEFT)  {}};
-struct And          : OperatorHelper<And>          { And()          : Helper("&&",  2, LEFT)  {}};
-struct Or           : OperatorHelper<Or>           { Or()           : Helper("||",  1, LEFT)  {}};
- */
-
     // In order from lowest to highest precedence
     OR("||", (x, y) -> x.or(y)),
     AND("&&", (x, y) -> x.and(y)),
+    GREATEREQUAL(">=", (x, y) -> x.greaterEqual(y)),
+    GREATER(">", (x, y) -> x.greater(y)),
+    LESSEQUAL("<=", (x, y) -> x.lessEqual(y)),
+    LESS("<", (x, y) -> x.less(y)),
+    APPROX("~=", (x, y) -> x.approx(y)),
+    NOTEQUAL("!=", (x, y) -> x.notEqual(y)),
+    EQUAL("==", (x, y) -> x.equal(y)),
     PLUS("+", (x, y) -> x.add(y)),
     MINUS("-", (x, y) -> x.subtract(y)),
     MULTIPLY("*", (x, y) -> x.multiply(y)),

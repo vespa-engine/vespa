@@ -5,7 +5,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
-import com.yahoo.searchlib.rankingexpression.rule.ComparisonNode;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
@@ -13,7 +12,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
-import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Generate;
@@ -141,10 +139,10 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
         ExpressionNode queryLengthExpr = createLengthExpr(2, tokenSequence);
         ExpressionNode restLengthExpr = createLengthExpr(tokenSequence.size() - 1, tokenSequence);
         ExpressionNode expr = new IfNode(
-                new ComparisonNode(new ReferenceNode("d1"), TruthOperator.SMALLER, queryLengthExpr),
+                new ArithmeticNode(new ReferenceNode("d1"), ArithmeticOperator.LESS, queryLengthExpr),
                 ZERO,
                 new IfNode(
-                        new ComparisonNode(new ReferenceNode("d1"), TruthOperator.SMALLER, restLengthExpr),
+                        new ArithmeticNode(new ReferenceNode("d1"), ArithmeticOperator.LESS, restLengthExpr),
                         ONE,
                         ZERO
                 )
@@ -176,7 +174,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
 
         List<ExpressionNode> tokenSequence = createTokenSequence(feature);
         ExpressionNode lengthExpr = createLengthExpr(tokenSequence.size() - 1, tokenSequence);
-        ComparisonNode comparison = new ComparisonNode(new ReferenceNode("d1"), TruthOperator.SMALLER, lengthExpr);
+        ArithmeticNode comparison = new ArithmeticNode(new ReferenceNode("d1"), ArithmeticOperator.LESS, lengthExpr);
         ExpressionNode expr = new IfNode(comparison, ONE, ZERO);
         return new TensorFunctionNode(Generate.bound(type, wrapScalar(expr)));
     }
@@ -256,7 +254,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
      */
     private ExpressionNode createTokenSequenceExpr(int iter, List<ExpressionNode> sequence) {
         ExpressionNode lengthExpr = createLengthExpr(iter, sequence);
-        ComparisonNode comparison = new ComparisonNode(new ReferenceNode("d1"), TruthOperator.SMALLER, lengthExpr);
+        ArithmeticNode comparison = new ArithmeticNode(new ReferenceNode("d1"), ArithmeticOperator.LESS, lengthExpr);
 
         ExpressionNode trueExpr = sequence.get(iter);
         if (sequence.get(iter) instanceof ReferenceNode) {

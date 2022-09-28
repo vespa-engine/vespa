@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
-import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
-import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -51,26 +49,23 @@ public abstract class Value {
 
     public abstract Value negate();
 
-    public abstract Value add(Value value);
-
-    public abstract Value subtract(Value value);
-
-    public abstract Value multiply(Value value);
-
-    public abstract Value divide(Value value);
-
-    public abstract Value modulo(Value value);
-
-    public abstract Value and(Value value);
-
-    public abstract Value or(Value value);
-
     public abstract Value not();
 
+    public abstract Value or(Value value);
+    public abstract Value and(Value value);
+    public abstract Value greaterEqual(Value value);
+    public abstract Value greater(Value value);
+    public abstract Value lessEqual(Value value);
+    public abstract Value less(Value value);
+    public abstract Value approx(Value value);
+    public abstract Value notEqual(Value value);
+    public abstract Value equal(Value value);
+    public abstract Value add(Value value);
+    public abstract Value subtract(Value value);
+    public abstract Value multiply(Value value);
+    public abstract Value divide(Value value);
+    public abstract Value modulo(Value value);
     public abstract Value power(Value value);
-
-    /** Perform the comparison specified by the operator between this value and the given value */
-    public abstract Value compare(TruthOperator operator, Value value);
 
     /** Perform the given binary function on this value and the given value */
     public abstract Value function(Function function, Value value);

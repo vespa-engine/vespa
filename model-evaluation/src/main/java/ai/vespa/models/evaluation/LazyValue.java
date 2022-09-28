@@ -4,7 +4,6 @@ package ai.vespa.models.evaluation;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
-import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -70,6 +69,56 @@ class LazyValue extends Value {
     }
 
     @Override
+    public Value not() {
+        return computedValue().not();
+    }
+
+    @Override
+    public Value or(Value value) {
+        return computedValue().or(value);
+    }
+
+    @Override
+    public Value and(Value value) {
+        return computedValue().and(value);
+    }
+
+    @Override
+    public Value greaterEqual(Value value) {
+        return computedValue().greaterEqual(value);
+    }
+
+    @Override
+    public Value greater(Value value) {
+        return computedValue().greater(value);
+    }
+
+    @Override
+    public Value lessEqual(Value value) {
+        return computedValue().lessEqual(value);
+    }
+
+    @Override
+    public Value less(Value value) {
+        return computedValue().less(value);
+    }
+
+    @Override
+    public Value approx(Value value) {
+        return computedValue().approx(value);
+    }
+
+    @Override
+    public Value notEqual(Value value) {
+        return computedValue().notEqual(value);
+    }
+
+    @Override
+    public Value equal(Value value) {
+        return computedValue().equal(value);
+    }
+
+    @Override
     public Value add(Value value) {
         return computedValue().add(value);
     }
@@ -95,28 +144,8 @@ class LazyValue extends Value {
     }
 
     @Override
-    public Value and(Value value) {
-        return computedValue().and(value);
-    }
-
-    @Override
-    public Value or(Value value) {
-        return computedValue().or(value);
-    }
-
-    @Override
-    public Value not() {
-        return computedValue().not();
-    }
-
-    @Override
     public Value power(Value value) {
         return computedValue().power(value);
-    }
-
-    @Override
-    public Value compare(TruthOperator operator, Value value) {
-        return computedValue().compare(operator, value);
     }
 
     @Override

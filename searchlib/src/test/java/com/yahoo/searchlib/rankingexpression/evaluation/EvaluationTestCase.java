@@ -198,9 +198,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
                                "tensor0 % 2 == map(tensor0, f(x) (x % 2))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
-                               "tensor0 || 1 == map(tensor0, f(x) (x || 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+                               "(tensor0 || 1) == map(tensor0, f(x) (x || 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
-                               "tensor0 && 1 == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+                               "(tensor0 && 1) == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
                                "!tensor0 == map(tensor0, f(x) (!x))", "{ {d1:0}:0, {d1:1}:1, {d1:2}:0 }");
 

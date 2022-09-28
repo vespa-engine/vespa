@@ -3,7 +3,6 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
-import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -57,6 +56,56 @@ public class StringValue extends Value {
     }
 
     @Override
+    public Value not() {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support not");
+    }
+
+    @Override
+    public Value or(Value value) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support or");
+    }
+
+    @Override
+    public Value and(Value value) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support and");
+    }
+
+    @Override
+    public Value greaterEqual(Value argument) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support greaterEqual");
+    }
+
+    @Override
+    public Value greater(Value argument) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support greater");
+    }
+
+    @Override
+    public Value lessEqual(Value argument) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support lessEqual");
+    }
+
+    @Override
+    public Value less(Value argument) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support less");
+    }
+
+    @Override
+    public Value approx(Value argument) {
+        return new BooleanValue(this.asDouble() == argument.asDouble());
+    }
+
+    @Override
+    public Value notEqual(Value argument) {
+        return new BooleanValue(this.asDouble() != argument.asDouble());
+    }
+
+    @Override
+    public Value equal(Value argument) {
+        return new BooleanValue(this.asDouble() == argument.asDouble());
+    }
+
+    @Override
     public Value add(Value value) {
         return new StringValue(value + value.toString());
     }
@@ -82,30 +131,8 @@ public class StringValue extends Value {
     }
 
     @Override
-    public Value and(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') do not support and");
-    }
-
-    @Override
-    public Value or(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') do not support or");
-    }
-
-    @Override
-    public Value not() {
-        throw new UnsupportedOperationException("String values ('" + value + "') do not support not");
-    }
-
-    @Override
     public Value power(Value value) {
         throw new UnsupportedOperationException("String values ('" + value + "') do not support ^");
-    }
-
-    @Override
-    public Value compare(TruthOperator operator, Value value) {
-        if (operator.equals(TruthOperator.EQUAL))
-            return new BooleanValue(this.equals(value));
-        throw new UnsupportedOperationException("String values ('" + value + "') cannot be compared except with '=='");
     }
 
     @Override
