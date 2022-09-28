@@ -72,7 +72,7 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public Value greaterEqual(Value argument) {
+    public Value largerOrEqual(Value argument) {
         if (argument instanceof TensorValue)
             return new TensorValue(value.largerOrEqual(((TensorValue)argument).value));
         else
@@ -80,7 +80,7 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public Value greater(Value argument) {
+    public Value larger(Value argument) {
         if (argument instanceof TensorValue)
             return new TensorValue(value.larger(((TensorValue)argument).value));
         else
@@ -88,7 +88,7 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public Value lessEqual(Value argument) {
+    public Value smallerOrEqual(Value argument) {
         if (argument instanceof TensorValue)
             return new TensorValue(value.smallerOrEqual(((TensorValue)argument).value));
         else
@@ -96,7 +96,7 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public Value less(Value argument) {
+    public Value smaller(Value argument) {
         if (argument instanceof TensorValue)
             return new TensorValue(value.smaller(((TensorValue)argument).value));
         else
@@ -104,7 +104,7 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public Value approx(Value argument) {
+    public Value approxEqual(Value argument) {
         if (argument instanceof TensorValue)
             return new TensorValue(value.approxEqual(((TensorValue)argument).value));
         else

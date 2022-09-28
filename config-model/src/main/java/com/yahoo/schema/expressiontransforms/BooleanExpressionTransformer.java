@@ -66,9 +66,9 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         ChildNode lhs = stack.peek();
 
         ExpressionNode combination;
-        if (rhs.op == Operator.AND)
+        if (rhs.op == Operator.and)
             combination = andByIfNode(lhs.child, rhs.child);
-        else if (rhs.op == Operator.OR)
+        else if (rhs.op == Operator.or)
             combination = orByIfNode(lhs.child, rhs.child);
         else {
             combination = resolve(lhs, rhs);

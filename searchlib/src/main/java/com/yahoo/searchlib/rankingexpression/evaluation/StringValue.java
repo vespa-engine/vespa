@@ -71,27 +71,27 @@ public class StringValue extends Value {
     }
 
     @Override
-    public Value greaterEqual(Value argument) {
+    public Value largerOrEqual(Value argument) {
         throw new UnsupportedOperationException("String values ('" + value + "') do not support greaterEqual");
     }
 
     @Override
-    public Value greater(Value argument) {
+    public Value larger(Value argument) {
         throw new UnsupportedOperationException("String values ('" + value + "') do not support greater");
     }
 
     @Override
-    public Value lessEqual(Value argument) {
+    public Value smallerOrEqual(Value argument) {
         throw new UnsupportedOperationException("String values ('" + value + "') do not support lessEqual");
     }
 
     @Override
-    public Value less(Value argument) {
+    public Value smaller(Value argument) {
         throw new UnsupportedOperationException("String values ('" + value + "') do not support less");
     }
 
     @Override
-    public Value approx(Value argument) {
+    public Value approxEqual(Value argument) {
         return new BooleanValue(this.asDouble() == argument.asDouble());
     }
 

@@ -15,21 +15,21 @@ import java.util.function.BiFunction;
 public enum Operator {
 
     // In order from lowest to highest precedence
-    OR("||", (x, y) -> x.or(y)),
-    AND("&&", (x, y) -> x.and(y)),
-    GREATEREQUAL(">=", (x, y) -> x.greaterEqual(y)),
-    GREATER(">", (x, y) -> x.greater(y)),
-    LESSEQUAL("<=", (x, y) -> x.lessEqual(y)),
-    LESS("<", (x, y) -> x.less(y)),
-    APPROX("~=", (x, y) -> x.approx(y)),
-    NOTEQUAL("!=", (x, y) -> x.notEqual(y)),
-    EQUAL("==", (x, y) -> x.equal(y)),
-    PLUS("+", (x, y) -> x.add(y)),
-    MINUS("-", (x, y) -> x.subtract(y)),
-    MULTIPLY("*", (x, y) -> x.multiply(y)),
-    DIVIDE("/", (x, y) -> x.divide(y)),
-    MODULO("%", (x, y) -> x.modulo(y)),
-    POWER("^", true, (x, y) -> x.power(y));
+    or("||", (x, y) -> x.or(y)),
+    and("&&", (x, y) -> x.and(y)),
+    largerOrEqual(">=", (x, y) -> x.largerOrEqual(y)),
+    larger(">", (x, y) -> x.larger(y)),
+    smallerOrEqual("<=", (x, y) -> x.smallerOrEqual(y)),
+    smaller("<", (x, y) -> x.smaller(y)),
+    approxEqual("~=", (x, y) -> x.approxEqual(y)),
+    notEqual("!=", (x, y) -> x.notEqual(y)),
+    equal("==", (x, y) -> x.equal(y)),
+    plus("+", (x, y) -> x.add(y)),
+    minus("-", (x, y) -> x.subtract(y)),
+    multiply("*", (x, y) -> x.multiply(y)),
+    divide("/", (x, y) -> x.divide(y)),
+    modulo("%", (x, y) -> x.modulo(y)),
+    power("^", true, (x, y) -> x.power(y));
 
     /** A list of all the operators in this in order of increasing precedence */
     public static final List<Operator> operatorsByPrecedence = Arrays.stream(Operator.values()).toList();
@@ -52,6 +52,9 @@ public enum Operator {
     public boolean hasPrecedenceOver(Operator op) {
         return operatorsByPrecedence.indexOf(this) > operatorsByPrecedence.indexOf(op);
     }
+
+    /** Returns true if a sequence of these operations should be evaluated from right to left rather than left to right. */
+    public boolean bindsRight() { return bindsRight; }
 
     public final Value evaluate(Value x, Value y) {
         return function.apply(x, y);

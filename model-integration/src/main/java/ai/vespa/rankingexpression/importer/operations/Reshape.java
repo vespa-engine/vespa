@@ -157,13 +157,13 @@ public class Reshape extends IntermediateOperation {
                 inputDimensionExpression = new EmbracedNode(new ConstantNode(DoubleValue.zero));
             } else if (dim == (inputType.rank() - 1)) {
                 ExpressionNode size = new ConstantNode(new DoubleValue(inputDimensionSize));
-                ExpressionNode div = new OperationNode(unrolled, Operator.MODULO, size);
+                ExpressionNode div = new OperationNode(unrolled, Operator.modulo, size);
                 inputDimensionExpression = new EmbracedNode(div);
             } else {
                 ExpressionNode size = new ConstantNode(new DoubleValue(innerSize));
                 ExpressionNode previousSize = new ConstantNode(new DoubleValue(previousInnerSize));
-                ExpressionNode mod = new OperationNode(unrolled, Operator.MODULO, previousSize);
-                ExpressionNode div = new OperationNode(new EmbracedNode(mod), Operator.DIVIDE, size);
+                ExpressionNode mod = new OperationNode(unrolled, Operator.modulo, previousSize);
+                ExpressionNode div = new OperationNode(new EmbracedNode(mod), Operator.divide, size);
                 inputDimensionExpression = new EmbracedNode(div);
             }
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(inputDimensionExpression)));
@@ -187,12 +187,12 @@ public class Reshape extends IntermediateOperation {
             TensorType.Dimension dimension = type.dimensions().get(i);
             children.add(0, new ReferenceNode(dimension.name()));
             if (size > 1) {
-                operators.add(0, Operator.MULTIPLY);
+                operators.add(0, Operator.multiply);
                 children.add(0, new ConstantNode(new DoubleValue(size)));
             }
             size *= OrderedTensorType.dimensionSize(dimension);
             if (i > 0) {
-                operators.add(0, Operator.PLUS);
+                operators.add(0, Operator.plus);
             }
         }
         return new OperationNode(children, operators);

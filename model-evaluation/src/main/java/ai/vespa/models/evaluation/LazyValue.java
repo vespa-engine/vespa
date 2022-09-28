@@ -84,28 +84,28 @@ class LazyValue extends Value {
     }
 
     @Override
-    public Value greaterEqual(Value value) {
-        return computedValue().greaterEqual(value);
+    public Value largerOrEqual(Value value) {
+        return computedValue().largerOrEqual(value);
     }
 
     @Override
-    public Value greater(Value value) {
-        return computedValue().greater(value);
+    public Value larger(Value value) {
+        return computedValue().larger(value);
     }
 
     @Override
-    public Value lessEqual(Value value) {
-        return computedValue().lessEqual(value);
+    public Value smallerOrEqual(Value value) {
+        return computedValue().smallerOrEqual(value);
     }
 
     @Override
-    public Value less(Value value) {
-        return computedValue().less(value);
+    public Value smaller(Value value) {
+        return computedValue().smaller(value);
     }
 
     @Override
-    public Value approx(Value value) {
-        return computedValue().approx(value);
+    public Value approxEqual(Value value) {
+        return computedValue().approxEqual(value);
     }
 
     @Override

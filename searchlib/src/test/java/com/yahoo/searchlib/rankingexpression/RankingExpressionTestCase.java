@@ -66,7 +66,7 @@ public class RankingExpressionTestCase {
     public void testProgrammaticBuilding() throws ParseException {
         ReferenceNode input = new ReferenceNode("input");
         ReferenceNode constant = new ReferenceNode("constant");
-        OperationNode product = new OperationNode(input, Operator.MULTIPLY, constant);
+        OperationNode product = new OperationNode(input, Operator.multiply, constant);
         Reduce<Reference> sum = new Reduce<>(new TensorFunctionNode.ExpressionTensorFunction(product), Reduce.Aggregator.sum);
         RankingExpression expression = new RankingExpression(new TensorFunctionNode(sum));
 

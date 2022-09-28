@@ -139,10 +139,10 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
         ExpressionNode queryLengthExpr = createLengthExpr(2, tokenSequence);
         ExpressionNode restLengthExpr = createLengthExpr(tokenSequence.size() - 1, tokenSequence);
         ExpressionNode expr = new IfNode(
-                new OperationNode(new ReferenceNode("d1"), Operator.LESS, queryLengthExpr),
+                new OperationNode(new ReferenceNode("d1"), Operator.smaller, queryLengthExpr),
                 ZERO,
                 new IfNode(
-                        new OperationNode(new ReferenceNode("d1"), Operator.LESS, restLengthExpr),
+                        new OperationNode(new ReferenceNode("d1"), Operator.smaller, restLengthExpr),
                         ONE,
                         ZERO
                 )
@@ -174,7 +174,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
 
         List<ExpressionNode> tokenSequence = createTokenSequence(feature);
         ExpressionNode lengthExpr = createLengthExpr(tokenSequence.size() - 1, tokenSequence);
-        OperationNode comparison = new OperationNode(new ReferenceNode("d1"), Operator.LESS, lengthExpr);
+        OperationNode comparison = new OperationNode(new ReferenceNode("d1"), Operator.smaller, lengthExpr);
         ExpressionNode expr = new IfNode(comparison, ONE, ZERO);
         return new TensorFunctionNode(Generate.bound(type, wrapScalar(expr)));
     }
@@ -254,7 +254,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
      */
     private ExpressionNode createTokenSequenceExpr(int iter, List<ExpressionNode> sequence) {
         ExpressionNode lengthExpr = createLengthExpr(iter, sequence);
-        OperationNode comparison = new OperationNode(new ReferenceNode("d1"), Operator.LESS, lengthExpr);
+        OperationNode comparison = new OperationNode(new ReferenceNode("d1"), Operator.smaller, lengthExpr);
 
         ExpressionNode trueExpr = sequence.get(iter);
         if (sequence.get(iter) instanceof ReferenceNode) {
@@ -286,7 +286,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
                 factors.add(new ReferenceNode(lengthFunctionName((ReferenceNode) sequence.get(i))));
             }
             if (i >= 1) {
-                operators.add(Operator.PLUS);
+                operators.add(Operator.plus);
             }
         }
         return new OperationNode(factors, operators);
@@ -299,7 +299,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
         ExpressionNode expr;
         if (iter >= 1) {
             ExpressionNode lengthExpr = new EmbracedNode(createLengthExpr(iter - 1, sequence));
-            expr = new EmbracedNode(new OperationNode(new ReferenceNode("d1"), Operator.MINUS, lengthExpr));
+            expr = new EmbracedNode(new OperationNode(new ReferenceNode("d1"), Operator.minus, lengthExpr));
         } else {
             expr = new ReferenceNode("d1");
         }

@@ -92,7 +92,7 @@ public class Gather extends IntermediateOperation {
             ExpressionNode indexExpression = new ConstantNode(new DoubleValue(constantValue));
             if (constantValue < 0) {
                 ExpressionNode axisSize = new ConstantNode(new DoubleValue(dataType.dimensions().get(axis).size().get()));
-                indexExpression = new EmbracedNode(new OperationNode(indexExpression, Operator.PLUS, axisSize));
+                indexExpression = new EmbracedNode(new OperationNode(indexExpression, Operator.plus, axisSize));
             }
             addSliceDimension(dataSliceDimensions, dataType.dimensions().get(axis).name(), indexExpression);
         } else {
@@ -125,8 +125,8 @@ public class Gather extends IntermediateOperation {
     /** to support negative indexing */
     private ExpressionNode createIndexExpression(OrderedTensorType dataType, ExpressionNode slice) {
         ExpressionNode axisSize = new ConstantNode(new DoubleValue(dataType.dimensions().get(axis).size().get()));
-        ExpressionNode plus = new EmbracedNode(new OperationNode(slice, Operator.PLUS, axisSize));
-        ExpressionNode mod = new OperationNode(plus, Operator.MODULO, axisSize);
+        ExpressionNode plus = new EmbracedNode(new OperationNode(slice, Operator.plus, axisSize));
+        ExpressionNode mod = new OperationNode(plus, Operator.modulo, axisSize);
         return mod;
     }
 

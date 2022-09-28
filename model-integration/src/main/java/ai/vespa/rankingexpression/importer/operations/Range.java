@@ -65,8 +65,8 @@ public class Range extends IntermediateOperation {
         ExpressionNode startExpr = new ConstantNode(new DoubleValue(start));
         ExpressionNode deltaExpr = new ConstantNode(new DoubleValue(delta));
         ExpressionNode dimExpr = new EmbracedNode(new ReferenceNode(dimensionName));
-        ExpressionNode stepExpr = new OperationNode(deltaExpr, Operator.MULTIPLY, dimExpr);
-        ExpressionNode addExpr = new OperationNode(startExpr, Operator.PLUS, stepExpr);
+        ExpressionNode stepExpr = new OperationNode(deltaExpr, Operator.multiply, dimExpr);
+        ExpressionNode addExpr = new OperationNode(startExpr, Operator.plus, stepExpr);
         TensorFunction<Reference> function = Generate.bound(type.type(), wrapScalar(addExpr));
         return function;
     }

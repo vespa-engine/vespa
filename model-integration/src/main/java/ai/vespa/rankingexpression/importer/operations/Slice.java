@@ -166,8 +166,8 @@ public class Slice extends IntermediateOperation {
 
             // step * (d0 + start)
             ExpressionNode reference = new ReferenceNode(outputDimensionName);
-            ExpressionNode plus = new EmbracedNode(new OperationNode(reference, Operator.PLUS, startIndex));
-            ExpressionNode mul = new OperationNode(stepSize, Operator.MULTIPLY, plus);
+            ExpressionNode plus = new EmbracedNode(new OperationNode(reference, Operator.plus, startIndex));
+            ExpressionNode mul = new OperationNode(stepSize, Operator.multiply, plus);
 
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(new EmbracedNode(mul))));
         }

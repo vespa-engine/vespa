@@ -123,14 +123,14 @@ public class LambdaFunctionNode extends CompositeNode {
         }
         Operator operator = node.operators().get(0);
         switch (operator) {
-            case OR: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
-            case AND: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
-            case PLUS: return asFunctionExpression((left, right) -> left + right);
-            case MINUS: return asFunctionExpression((left, right) -> left - right);
-            case MULTIPLY: return asFunctionExpression((left, right) -> left * right);
-            case DIVIDE: return asFunctionExpression((left, right) -> left / right);
-            case MODULO: return asFunctionExpression((left, right) -> left % right);
-            case POWER: return asFunctionExpression(Math::pow);
+            case or: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
+            case and: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
+            case plus: return asFunctionExpression((left, right) -> left + right);
+            case minus: return asFunctionExpression((left, right) -> left - right);
+            case multiply: return asFunctionExpression((left, right) -> left * right);
+            case divide: return asFunctionExpression((left, right) -> left / right);
+            case modulo: return asFunctionExpression((left, right) -> left % right);
+            case power: return asFunctionExpression(Math::pow);
         }
         return Optional.empty();
     }

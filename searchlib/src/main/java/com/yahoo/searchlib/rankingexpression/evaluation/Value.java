@@ -53,11 +53,11 @@ public abstract class Value {
 
     public abstract Value or(Value value);
     public abstract Value and(Value value);
-    public abstract Value greaterEqual(Value value);
-    public abstract Value greater(Value value);
-    public abstract Value lessEqual(Value value);
-    public abstract Value less(Value value);
-    public abstract Value approx(Value value);
+    public abstract Value largerOrEqual(Value value);
+    public abstract Value larger(Value value);
+    public abstract Value smallerOrEqual(Value value);
+    public abstract Value smaller(Value value);
+    public abstract Value approxEqual(Value value);
     public abstract Value notEqual(Value value);
     public abstract Value equal(Value value);
     public abstract Value add(Value value);

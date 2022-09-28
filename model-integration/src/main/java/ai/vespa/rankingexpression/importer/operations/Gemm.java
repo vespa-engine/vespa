@@ -99,7 +99,7 @@ public class Gemm extends IntermediateOperation {
         TensorFunction<Reference> alphaxAxB = new TensorFunctionNode.ExpressionTensorFunction(
                 new OperationNode(
                         new TensorFunctionNode(AxB),
-                        Operator.MULTIPLY,
+                        Operator.multiply,
                         new ConstantNode(new DoubleValue(alpha))));
 
         if (inputs.size() == 3) {
@@ -107,7 +107,7 @@ public class Gemm extends IntermediateOperation {
             TensorFunction<Reference> betaxC = new TensorFunctionNode.ExpressionTensorFunction(
                     new OperationNode(
                             new TensorFunctionNode(cFunction.get()),
-                            Operator.MULTIPLY,
+                            Operator.multiply,
                             new ConstantNode(new DoubleValue(beta))));
             return new com.yahoo.tensor.functions.Join<>(alphaxAxB, betaxC, ScalarFunctions.add());
         }

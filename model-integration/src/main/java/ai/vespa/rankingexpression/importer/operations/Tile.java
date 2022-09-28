@@ -77,7 +77,7 @@ public class Tile extends IntermediateOperation {
 
             ExpressionNode size = new ConstantNode(new DoubleValue(inputDimensionSize));
             ExpressionNode reference = new ReferenceNode(inputDimensionName);
-            ExpressionNode mod = new OperationNode(reference, Operator.MODULO, size);
+            ExpressionNode mod = new OperationNode(reference, Operator.modulo, size);
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(new EmbracedNode(mod))));
         }
 

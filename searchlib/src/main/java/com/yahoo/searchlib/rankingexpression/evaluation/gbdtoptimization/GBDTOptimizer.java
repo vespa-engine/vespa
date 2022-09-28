@@ -116,9 +116,9 @@ public class GBDTOptimizer extends Optimizer {
     private int consumeIfCondition(ExpressionNode condition, List<Double> values, ContextIndex context) {
         if (isBinaryComparison(condition)) {
             OperationNode comparison = (OperationNode)condition;
-            if (comparison.operators().get(0) == Operator.LESS)
+            if (comparison.operators().get(0) == Operator.smaller)
                 values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*0 + getVariableIndex(comparison.children().get(0), context));
-            else if (comparison.operators().get(0) == Operator.EQUAL)
+            else if (comparison.operators().get(0) == Operator.equal)
                 values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*1 + getVariableIndex(comparison.children().get(0), context));
             else
                 throw new IllegalArgumentException("Cannot optimize other conditions than < and ==, encountered: " + comparison.operators().get(0));
@@ -135,7 +135,7 @@ public class GBDTOptimizer extends Optimizer {
             if (notNode.children().size() == 1 && notNode.children().get(0) instanceof EmbracedNode embracedNode) {
                 if (embracedNode.children().size() == 1 && isBinaryComparison(embracedNode.children().get(0))) {
                     OperationNode comparison = (OperationNode)embracedNode.children().get(0);
-                    if (comparison.operators().get(0) == Operator.GREATEREQUAL)
+                    if (comparison.operators().get(0) == Operator.largerOrEqual)
                         values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*3 + getVariableIndex(comparison.children().get(0), context));
                     else
                         throw new IllegalArgumentException("Cannot optimize other conditions than >=, encountered: " + comparison.operators().get(0));
@@ -153,13 +153,13 @@ public class GBDTOptimizer extends Optimizer {
     private boolean isBinaryComparison(ExpressionNode condition) {
         if ( ! (condition instanceof OperationNode binaryNode)) return false;
         if (binaryNode.operators().size() != 1) return false;
-        if (binaryNode.operators().get(0) == Operator.GREATEREQUAL) return true;
-        if (binaryNode.operators().get(0) == Operator.GREATER) return true;
-        if (binaryNode.operators().get(0) == Operator.LESSEQUAL) return true;
-        if (binaryNode.operators().get(0) == Operator.LESS) return true;
-        if (binaryNode.operators().get(0) == Operator.APPROX) return true;
-        if (binaryNode.operators().get(0) == Operator.NOTEQUAL) return true;
-        if (binaryNode.operators().get(0) == Operator.EQUAL) return true;
+        if (binaryNode.operators().get(0) == Operator.largerOrEqual) return true;
+        if (binaryNode.operators().get(0) == Operator.larger) return true;
+        if (binaryNode.operators().get(0) == Operator.smallerOrEqual) return true;
+        if (binaryNode.operators().get(0) == Operator.smaller) return true;
+        if (binaryNode.operators().get(0) == Operator.approxEqual) return true;
+        if (binaryNode.operators().get(0) == Operator.notEqual) return true;
+        if (binaryNode.operators().get(0) == Operator.equal) return true;
         return false;
     }
 

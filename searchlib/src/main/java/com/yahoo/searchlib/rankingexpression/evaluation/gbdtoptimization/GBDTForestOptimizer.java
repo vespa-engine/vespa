@@ -89,7 +89,7 @@ public class GBDTForestOptimizer extends Optimizer {
         }
         OperationNode aNode = (OperationNode)node;
         for (Operator op : aNode.operators()) {
-            if (op != Operator.PLUS) {
+            if (op != Operator.plus) {
                 return false;
             }
         }

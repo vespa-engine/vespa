@@ -779,8 +779,8 @@ public class EvaluationTestCase {
 
     @Test
     public void testProgrammaticBuildingAndPrecedence() {
-        RankingExpression standardPrecedence = new RankingExpression(new OperationNode(constant(2), Operator.PLUS, new OperationNode(constant(3), Operator.MULTIPLY, constant(4))));
-        RankingExpression oppositePrecedence = new RankingExpression(new OperationNode(new OperationNode(constant(2), Operator.PLUS, constant(3)), Operator.MULTIPLY, constant(4)));
+        RankingExpression standardPrecedence = new RankingExpression(new OperationNode(constant(2), Operator.plus, new OperationNode(constant(3), Operator.multiply, constant(4))));
+        RankingExpression oppositePrecedence = new RankingExpression(new OperationNode(new OperationNode(constant(2), Operator.plus, constant(3)), Operator.multiply, constant(4)));
         assertEquals(14.0, standardPrecedence.evaluate(null).asDouble(), tolerance);
         assertEquals(20.0, oppositePrecedence.evaluate(null).asDouble(), tolerance);
         assertEquals("2.0 + 3.0 * 4.0", standardPrecedence.toString());

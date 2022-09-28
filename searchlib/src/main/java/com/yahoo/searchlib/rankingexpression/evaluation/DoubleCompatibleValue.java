@@ -42,27 +42,27 @@ public abstract class DoubleCompatibleValue extends Value {
     }
 
     @Override
-    public Value greaterEqual(Value value) {
+    public Value largerOrEqual(Value value) {
         return new BooleanValue(this.asDouble() >= value.asDouble());
     }
 
     @Override
-    public Value greater(Value value) {
+    public Value larger(Value value) {
         return new BooleanValue(this.asDouble() > value.asDouble());
     }
 
     @Override
-    public Value lessEqual(Value value) {
+    public Value smallerOrEqual(Value value) {
         return new BooleanValue(this.asDouble() <= value.asDouble());
     }
 
     @Override
-    public Value less(Value value) {
+    public Value smaller(Value value) {
         return new BooleanValue(this.asDouble() < value.asDouble());
     }
 
     @Override
-    public Value approx(Value value) {
+    public Value approxEqual(Value value) {
         return new BooleanValue(approxEqual(this.asDouble(), value.asDouble()));
     }
 

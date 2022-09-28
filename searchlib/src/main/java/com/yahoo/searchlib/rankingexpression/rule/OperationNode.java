@@ -127,14 +127,6 @@ public final class OperationNode extends CompositeNode {
     @Override
     public int hashCode() { return Objects.hash(children, operators); }
 
-    @Override
-    public boolean equals(Object o) {
-        if ( ! (o instanceof OperationNode other)) return false;
-        if ( ! this.children().equals(other.children())) return false;
-        if ( ! this.operators().equals(other.operators())) return false;
-        return true;
-    }
-
     public static OperationNode resolve(ExpressionNode left, Operator op, ExpressionNode right) {
         if ( ! (left instanceof OperationNode leftArithmetic)) return new OperationNode(left, op, right);
 

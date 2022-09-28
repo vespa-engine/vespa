@@ -116,7 +116,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
 
     private boolean allMultiplicationOrDivision(OperationNode node) {
         for (Operator o : node.operators())
-            if (o != Operator.MULTIPLY && o != Operator.DIVIDE)
+            if (o != Operator.multiply && o != Operator.divide)
                 return false;
         return true;
     }
@@ -131,7 +131,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
 
     private boolean hasDivisionByZero(OperationNode node) {
         for (int i = 1; i < node.children().size(); i++) {
-            if (node.operators().get(i - 1) == Operator.DIVIDE && isZero(node.children().get(i)))
+            if (node.operators().get(i - 1) == Operator.divide && isZero(node.children().get(i)))
                 return true;
         }
         return false;
