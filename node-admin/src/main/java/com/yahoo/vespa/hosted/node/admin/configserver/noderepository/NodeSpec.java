@@ -70,6 +70,8 @@ public class NodeSpec {
 
     private final List<TrustStoreItem> trustStore;
 
+    private final boolean wantToRebuild;
+
     public NodeSpec(
             String hostname,
             String id,
@@ -101,7 +103,9 @@ public class NodeSpec {
             Optional<String> parentHostname,
             Optional<URI> archiveUri,
             Optional<ApplicationId> exclusiveTo,
-            List<TrustStoreItem> trustStore) {
+            List<TrustStoreItem> trustStore,
+            boolean wantToRebuild) {
+
         if (state == NodeState.active) {
             requireOptional(owner, "owner");
             requireOptional(membership, "membership");
@@ -142,6 +146,7 @@ public class NodeSpec {
         this.archiveUri = Objects.requireNonNull(archiveUri);
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
         this.trustStore = Objects.requireNonNull(trustStore);
+        this.wantToRebuild = wantToRebuild;
     }
 
     public String hostname() {
@@ -291,6 +296,10 @@ public class NodeSpec {
         return trustStore;
     }
 
+    public boolean wantToRebuild() {
+        return wantToRebuild;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -326,7 +335,8 @@ public class NodeSpec {
                 Objects.equals(parentHostname, that.parentHostname) &&
                 Objects.equals(archiveUri, that.archiveUri) &&
                 Objects.equals(exclusiveTo, that.exclusiveTo) &&
-                Objects.equals(trustStore, that.trustStore);
+                Objects.equals(trustStore, that.trustStore) &&
+                Objects.equals(wantToRebuild, that.wantToRebuild);
     }
 
     @Override
@@ -362,7 +372,8 @@ public class NodeSpec {
                 parentHostname,
                 archiveUri,
                 exclusiveTo,
-                trustStore);
+                trustStore,
+                wantToRebuild);
     }
 
     @Override
@@ -399,6 +410,7 @@ public class NodeSpec {
                 + " archiveUri=" + archiveUri
                 + " exclusiveTo=" + exclusiveTo
                 + " trustStore=" + trustStore
+                + " wantToRebuild=" + wantToRebuild
                 + " }";
     }
 
@@ -434,6 +446,7 @@ public class NodeSpec {
         private Optional<URI> archiveUri = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private List<TrustStoreItem> trustStore = List.of();
+        private boolean wantToRebuild = false;
 
         public Builder() {}
 
@@ -468,6 +481,7 @@ public class NodeSpec {
             node.archiveUri.ifPresent(this::archiveUri);
             node.exclusiveTo.ifPresent(this::exclusiveTo);
             trustStore(node.trustStore);
+            wantToRebuild(node.wantToRebuild);
         }
 
         public Builder hostname(String hostname) {
@@ -650,6 +664,11 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder wantToRebuild(boolean wantToRebuild) {
+            this.wantToRebuild = wantToRebuild;
+            return this;
+        }
+
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
             attributes.getHostId().ifPresent(this::id);
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
@@ -765,13 +784,13 @@ public class NodeSpec {
 
         public NodeSpec build() {
             return new NodeSpec(hostname, id, wantedDockerImage, currentDockerImage, state, type, flavor,
-                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
-                    owner, membership,
-                    wantedRestartGeneration, currentRestartGeneration,
-                    wantedRebootGeneration, currentRebootGeneration,
-                    wantedFirmwareCheck, currentFirmwareCheck, modelName,
-                    resources, realResources, ipAddresses, additionalIpAddresses,
-                    reports, events, parentHostname, archiveUri, exclusiveTo, trustStore);
+                                wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
+                                owner, membership,
+                                wantedRestartGeneration, currentRestartGeneration,
+                                wantedRebootGeneration, currentRebootGeneration,
+                                wantedFirmwareCheck, currentFirmwareCheck, modelName,
+                                resources, realResources, ipAddresses, additionalIpAddresses,
+                                reports, events, parentHostname, archiveUri, exclusiveTo, trustStore, wantToRebuild);
         }
 
 

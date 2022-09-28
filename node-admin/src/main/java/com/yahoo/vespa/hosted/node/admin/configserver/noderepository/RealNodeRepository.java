@@ -191,7 +191,8 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
-                trustStore);
+                trustStore,
+                node.wantToRebuild);
     }
 
     private static NodeResources nodeResources(NodeRepositoryNode.NodeResources nodeResources) {
