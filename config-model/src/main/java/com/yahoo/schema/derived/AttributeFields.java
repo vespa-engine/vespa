@@ -183,7 +183,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
         //TODO This is just to get some exporting tests to work, Should be undone and removed
-        getConfig(builder, FieldSet.ALL, 77777, false);
+        getConfig(builder, FieldSet.ALL, 77777);
     }
 
     private boolean isAttributeInFieldSet(Attribute attribute, FieldSet fs) {
@@ -277,12 +277,12 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         };
     }
 
-    public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory, boolean enableBitVectors) {
+    public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory) {
         for (Attribute attribute : attributes.values()) {
             if (isAttributeInFieldSet(attribute, fs)) {
                 AttributesConfig.Attribute.Builder attrBuilder = getConfig(attribute.getName(), attribute, false);
                 attrBuilder.maxuncommittedmemory(maxUnCommittedMemory);
-                if (enableBitVectors && attribute.isFastSearch()) {
+                if (attribute.isFastSearch()) {
                     attrBuilder.enablebitvectors(true);
                 }
                 builder.attribute(attrBuilder);

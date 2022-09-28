@@ -216,7 +216,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     void requireThatMutableConfigIsProperlyPropagated() throws ParseException {
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333, true);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
         assertFalse(cfg.attribute().get(0).ismutable());
@@ -232,7 +232,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     void requireMaxUnCommittedMemoryIsProperlyPropagated() throws ParseException {
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333, true);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
         assertEquals(13333, cfg.attribute().get(0).maxuncommittedmemory());
@@ -244,13 +244,13 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertEquals(13333, cfg.attribute().get(2).maxuncommittedmemory());
     }
 
-    private void verifyEnableBitVectorDefault(Schema schema, boolean enableBitVectors) {
+    private void verifyEnableBitVectorDefault(Schema schema) {
         AttributeFields attributes = new AttributeFields(schema);
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333, enableBitVectors);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
-        assertEquals(enableBitVectors, cfg.attribute().get(0).enablebitvectors());
+        assertTrue(cfg.attribute().get(0).enablebitvectors());
 
         assertEquals("b", cfg.attribute().get(1).name());
         assertFalse(cfg.attribute().get(1).enablebitvectors());
@@ -270,8 +270,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "  }\n" +
                         "}\n");
-        verifyEnableBitVectorDefault(schema, false);
-        verifyEnableBitVectorDefault(schema, true);
+        verifyEnableBitVectorDefault(schema);
     }
 
     @Test

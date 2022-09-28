@@ -395,13 +395,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_BIT_VECTORS = defineFeatureFlag(
-            "enable-bit-vectors", true,
-            List.of("baldersheim"), "2022-05-03", "2022-12-31",
-            "Enables bit vector by default for fast-search attributes",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
             "dispatch-notifications", false,
             List.of("enygaard"), "2022-05-02", "2022-09-30",
