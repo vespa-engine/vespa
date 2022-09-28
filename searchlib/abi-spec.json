@@ -499,11 +499,11 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greaterEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greater(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value lessEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value less(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approx(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value largerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value larger(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smallerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smaller(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approxEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value notEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value equal(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -700,11 +700,11 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greaterEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greater(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value lessEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value less(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approx(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value largerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value larger(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smallerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smaller(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approxEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value notEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value equal(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -738,11 +738,11 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greaterEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value greater(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value lessEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value less(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approx(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value largerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value larger(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smallerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value smaller(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value approxEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value notEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value equal(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -781,11 +781,11 @@
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value greaterEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value greater(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value lessEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value less(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value approx(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value largerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value larger(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value smallerOrEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value smaller(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value approxEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value notEqual(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value equal(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -915,8 +915,8 @@
       "public final java.util.List featureList()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode rankingExpression()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode expression()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode arithmeticExpression()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator arithmetic()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode operationExpression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.Operator binaryOperator()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode value()",
       "public final com.yahoo.searchlib.rankingexpression.rule.IfNode ifExpression()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ReferenceNode feature()",
@@ -1243,61 +1243,6 @@
       "public static final com.yahoo.searchlib.rankingexpression.rule.Arguments EMPTY"
     ]
   },
-  "com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode": {
-    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(java.util.List, java.util.List)",
-      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
-      "public java.util.List operators()",
-      "public java.util.List children()",
-      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
-      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
-      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
-      "public int hashCode()",
-      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode resolve(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods": [
-      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator[] values()",
-      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator valueOf(java.lang.String)",
-      "public boolean hasPrecedenceOver(com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator)",
-      "public final com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Value, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public java.lang.String toString()"
-    ],
-    "fields": [
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator OR",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator AND",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator GREATEREQUAL",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator GREATER",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator LESSEQUAL",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator LESS",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator APPROX",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator NOTEQUAL",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator EQUAL",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator PLUS",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MINUS",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MULTIPLY",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator DIVIDE",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MODULO",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator POWER",
-      "public static final java.util.List operatorsByPrecedence"
-    ]
-  },
   "com.yahoo.searchlib.rankingexpression.rule.BooleanNode": {
     "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
     "interfaces": [],
@@ -1589,6 +1534,61 @@
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
     ],
     "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.OperationNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.util.List, java.util.List)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.Operator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List operators()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
+      "public int hashCode()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.OperationNode resolve(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.Operator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.Operator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.rule.Operator[] values()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.Operator valueOf(java.lang.String)",
+      "public boolean hasPrecedenceOver(com.yahoo.searchlib.rankingexpression.rule.Operator)",
+      "public final com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Value, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator or",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator and",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator largerOrEqual",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator larger",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator smallerOrEqual",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator smaller",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator approxEqual",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator notEqual",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator equal",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator plus",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator minus",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator multiply",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator divide",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator modulo",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Operator power",
+      "public static final java.util.List operatorsByPrecedence"
+    ]
   },
   "com.yahoo.searchlib.rankingexpression.rule.ReferenceNode": {
     "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
