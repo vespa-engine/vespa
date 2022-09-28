@@ -535,6 +535,13 @@ public class Flags {
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
+    public static final UnboundBooleanFlag USE_WIREGUARD_ON_CONFIGSERVERS = defineFeatureFlag(
+            "use-wireguard-on-configservers", false,
+            List.of("andreer", "gjoranv"), "2022-09-28", "2023-04-01",
+            "Set up a WireGuard endpoint on config servers",
+            "Takes effect on configserver restart",
+            ZONE_ID, NODE_TYPE);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
