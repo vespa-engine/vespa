@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
@@ -14,6 +14,7 @@ import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.CreateBuilder;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
@@ -23,9 +24,11 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.EphemeralType;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
@@ -38,12 +41,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -210,17 +211,27 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
         }
     }
 
+    /** @see #create(Path, Duration) */
+    public boolean create(Path path) { return create(path, null); }
+
     /**
      * Creates an empty node at a path, creating any parents as necessary.
      * If the node already exists nothing is done.
      * Returns whether a change was attempted.
      */
-    public boolean create(Path path) {
+    public boolean create(Path path, Duration ttl) {
         if (exists(path)) return false;
 
         String absolutePath = path.getAbsolute();
         try {
-            framework().create().creatingParentsIfNeeded().forPath(absolutePath, new byte[0]);
+            CreateBuilder b = framework().create();
+            if (ttl != null) {
+                long millis = ttl.toMillis();
+                if (millis <= 0 || millis > EphemeralType.TTL.maxValue())
+                    throw new IllegalArgumentException(ttl.toString());
+                b.withTtl(millis).withMode(CreateMode.PERSISTENT_WITH_TTL);
+            }
+            b.creatingParentsIfNeeded().forPath(absolutePath, new byte[0]);
         } catch (org.apache.zookeeper.KeeperException.NodeExistsException e) {
             // Path created between exists() and create() call, do nothing
         } catch (Exception e) {
