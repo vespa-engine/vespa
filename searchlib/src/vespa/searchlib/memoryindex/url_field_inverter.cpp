@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "field_inverter.h"
 #include "url_field_inverter.h"
+#include "field_inverter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>

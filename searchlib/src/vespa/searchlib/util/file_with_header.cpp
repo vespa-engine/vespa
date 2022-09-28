@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "file_settings.h"
 #include "file_with_header.h"
+#include "file_settings.h"
 #include "filesizecalculator.h"
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/size_literals.h>

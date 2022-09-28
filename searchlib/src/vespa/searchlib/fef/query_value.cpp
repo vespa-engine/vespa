@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "query_value.h"
 #include "iindexenvironment.h"
 #include "indexproperties.h"
 #include "iqueryenvironment.h"
-#include "query_value.h"
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>

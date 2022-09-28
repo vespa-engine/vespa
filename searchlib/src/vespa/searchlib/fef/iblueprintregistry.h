@@ -2,7 +2,11 @@
 
 #pragma once
 
+#include <memory>
+
 namespace search::fef {
+
+class Blueprint;
 
 /**
  * This is an interface used during plugin setup to register blueprint
@@ -14,7 +18,7 @@ public:
     /**
      * Add a blueprint prototype to the registry.
      **/
-    virtual void addPrototype(Blueprint::SP proto) = 0;
+    virtual void addPrototype(std::shared_ptr<Blueprint> proto) = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.

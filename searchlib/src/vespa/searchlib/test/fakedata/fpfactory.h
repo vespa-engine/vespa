@@ -1,16 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "fakeposting.h"
 #include <map>
 #include <vector>
 #include <string>
-#include "fakeposting.h"
 
-namespace search
-{
+namespace search::index { class Schema; }
 
-namespace fakedata
-{
+namespace search::fakedata {
 
 class FakeWord;
 class FakeWordSet;
@@ -76,7 +74,4 @@ public:
     forceLink();
 };
 
-} // namespace fakedata
-
-} // namespace search
-
+}

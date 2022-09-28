@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "writeablefilechunk.h"
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
-#include "writeablefilechunk.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>

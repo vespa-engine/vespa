@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "i_field_index_insert_listener.h"
 #include "ordered_field_index_inserter.h"
+#include "i_field_index_insert_listener.h"
 
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/stllike/string.h>

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "wand_parts.h"
+
 #include "parallel_weak_and_blueprint.h"
+#include "wand_parts.h"
 #include "parallel_weak_and_search.h"
 #include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/queryeval/emptysearch.h>

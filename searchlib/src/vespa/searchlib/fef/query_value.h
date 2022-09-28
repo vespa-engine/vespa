@@ -13,6 +13,7 @@ namespace vespalib::eval { struct Value; }
 namespace search::fef {
 
 class IIndexEnvironment;
+class IObjectStore;
 class IQueryEnvironment;
 
 /**
