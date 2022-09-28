@@ -33,82 +33,130 @@ public abstract class DoubleCompatibleValue extends Value {
 
     @Override
     public Value or(Value value) {
-        return new BooleanValue(asBoolean() || value.asBoolean());
+        if (value instanceof TensorValue tensor)
+            return tensor.or(this);
+        else
+            return new BooleanValue(asBoolean() || value.asBoolean());
     }
 
     @Override
     public Value and(Value value) {
-        return new BooleanValue(asBoolean() && value.asBoolean());
+        if (value instanceof TensorValue tensor)
+            return tensor.and(this);
+        else
+            return new BooleanValue(asBoolean() && value.asBoolean());
     }
 
     @Override
     public Value largerOrEqual(Value value) {
-        return new BooleanValue(this.asDouble() >= value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.largerOrEqual(this);
+        else
+            return new BooleanValue(this.asDouble() >= value.asDouble());
     }
 
     @Override
     public Value larger(Value value) {
-        return new BooleanValue(this.asDouble() > value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.larger(this);
+        else
+            return new BooleanValue(this.asDouble() > value.asDouble());
     }
 
     @Override
     public Value smallerOrEqual(Value value) {
-        return new BooleanValue(this.asDouble() <= value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.smallerOrEqual(this);
+        else
+            return new BooleanValue(this.asDouble() <= value.asDouble());
     }
 
     @Override
     public Value smaller(Value value) {
-        return new BooleanValue(this.asDouble() < value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.smaller(this);
+        else
+            return new BooleanValue(this.asDouble() < value.asDouble());
     }
 
     @Override
     public Value approxEqual(Value value) {
-        return new BooleanValue(approxEqual(this.asDouble(), value.asDouble()));
+        if (value instanceof TensorValue tensor)
+            return tensor.approxEqual(this);
+        else
+            return new BooleanValue(approxEqual(this.asDouble(), value.asDouble()));
     }
 
     @Override
     public Value notEqual(Value value) {
-        return new BooleanValue(this.asDouble() != value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.notEqual(this);
+        else
+            return new BooleanValue(this.asDouble() != value.asDouble());
     }
 
     @Override
     public Value equal(Value value) {
-        return new BooleanValue(this.asDouble() == value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.equal(this);
+        else
+            return new BooleanValue(this.asDouble() == value.asDouble());
     }
 
     @Override
     public Value add(Value value) {
-        return new DoubleValue(asDouble() + value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.add(this);
+        else
+            return new DoubleValue(asDouble() + value.asDouble());
     }
 
     @Override
     public Value subtract(Value value) {
-        return new DoubleValue(asDouble() - value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.subtract(this);
+        else
+            return new DoubleValue(asDouble() - value.asDouble());
     }
 
     @Override
     public Value multiply(Value value) {
-        return new DoubleValue(asDouble() * value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.multiply(this);
+        else
+            return new DoubleValue(asDouble() * value.asDouble());
     }
 
     @Override
     public Value divide(Value value) {
-        return new DoubleValue(asDouble() / value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.divide(this);
+        else
+            return new DoubleValue(asDouble() / value.asDouble());
     }
 
     @Override
     public Value modulo(Value value) {
-        return new DoubleValue(asDouble() % value.asDouble());
+        if (value instanceof TensorValue tensor)
+            return tensor.modulo(this);
+        else
+            return new DoubleValue(asDouble() % value.asDouble());
     }
 
     @Override
     public Value power(Value value) {
-        return new DoubleValue(Function.pow.evaluate(asDouble(), value.asDouble()));
+        if (value instanceof TensorValue tensor)
+            return tensor.power(this);
+        else
+            return new DoubleValue(Function.pow.evaluate(asDouble(), value.asDouble()));
     }
 
     @Override
     public Value function(Function function, Value value) {
-        return new DoubleValue(function.evaluate(asDouble(),value.asDouble()));
+        if (value instanceof TensorValue tensor)
+            return tensor.function(function, this);
+        else
+            return new DoubleValue(function.evaluate(asDouble(), value.asDouble()));
     }
 
     static boolean approxEqual(double x, double y) {
