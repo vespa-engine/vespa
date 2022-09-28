@@ -68,14 +68,14 @@ public final class OperationNode extends CompositeNode {
      */
     private boolean nonDefaultPrecedence(CompositeNode parent) {
         if ( parent == null) return false;
-        if ( ! (parent instanceof OperationNode arithmeticParent)) return false;
+        if ( ! (parent instanceof OperationNode operationParent)) return false;
 
         // The line below can only be correct in both only have one operator.
         // Getting this correct is impossible without more work.
         // So for now we only handle the simple case correctly, and use a safe approach by adding
         // extra parenthesis just in case....
-        return arithmeticParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
-                || ((arithmeticParent.operators.size() > 1) || (operators.size() > 1));
+        return operationParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
+                || ((operationParent.operators.size() > 1) || (operators.size() > 1));
     }
 
     @Override

@@ -35,26 +35,25 @@ public enum Operator {
     public static final List<Operator> operatorsByPrecedence = Arrays.stream(Operator.values()).toList();
 
     private final String image;
-    private final boolean bindsRight; // TODO: Implement
+    private final boolean rightPrecedence;
     private final BiFunction<Value, Value, Value> function;
 
     Operator(String image, BiFunction<Value, Value, Value> function) {
         this(image, false, function);
     }
 
-    Operator(String image, boolean bindsRight, BiFunction<Value, Value, Value> function) {
+    Operator(String image, boolean rightPrecedence, BiFunction<Value, Value, Value> function) {
         this.image = image;
-        this.bindsRight = bindsRight;
+        this.rightPrecedence = rightPrecedence;
         this.function = function;
     }
 
     /** Returns true if this operator has precedence over the given operator */
-    public boolean hasPrecedenceOver(Operator op) {
-        return operatorsByPrecedence.indexOf(this) > operatorsByPrecedence.indexOf(op);
+    public boolean hasPrecedenceOver(Operator other) {
+        if (operatorsByPrecedence.indexOf(this) == operatorsByPrecedence.indexOf(other))
+            return rightPrecedence;
+        return operatorsByPrecedence.indexOf(this) > operatorsByPrecedence.indexOf(other);
     }
-
-    /** Returns true if a sequence of these operations should be evaluated from right to left rather than left to right. */
-    public boolean bindsRight() { return bindsRight; }
 
     public final Value evaluate(Value x, Value y) {
         return function.apply(x, y);

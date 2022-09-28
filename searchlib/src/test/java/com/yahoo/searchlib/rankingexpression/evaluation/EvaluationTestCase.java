@@ -88,6 +88,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(10.0, "3 ^ 2 + 1");
         tester.assertEvaluates(18.0, "2 * 3 ^ 2");
         tester.assertEvaluates(-4, "1 - 2 - 3"); // Means 1 + -2 + -3
+        tester.assertEvaluates(Math.pow(4, 9), "4^3^2"); // Right precedence, by 51% majority
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
