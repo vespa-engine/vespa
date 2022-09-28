@@ -89,7 +89,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private boolean useRestrictedDataPlaneBindings = false;
-    private boolean computeCoverageFromTargetActiveDocs = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -154,7 +153,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
     @Override public String phraseOptimization() { return phraseOptimization; }
     @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
-    @Override public boolean computeCoverageFromTargetActiveDocs() { return computeCoverageFromTargetActiveDocs; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -424,11 +422,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseRestrictedDataPlaneBindings(boolean useRestrictedDataPlaneBindings) {
         this.useRestrictedDataPlaneBindings = useRestrictedDataPlaneBindings;
-        return this;
-    }
-
-    public TestProperties setComputeCoverageFromTargetActiveDocs(boolean computeCoverageFromTargetActiveDocs) {
-        this.computeCoverageFromTargetActiveDocs = computeCoverageFromTargetActiveDocs;
         return this;
     }
 

@@ -480,14 +480,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag COMPUTE_COVERAGE_FROM_TARGET_ACTIVE_DOCS = defineFeatureFlag(
-            "compute-coverage-from-target-active-docs", true,
-            List.of("baldersheim", "vekterli"), "2022-09-13", "2022-11-01",
-            "Whether degraded coverage computation will take target active docs into " +
-            "account, not just currently active docs",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ZOOKEEPER_LEADER_CLOSE_SOCKET_ASYNC = defineFeatureFlag(
             "zookeeper-leader-close-socket-async", false,
             List.of("hmusum"), "2022-09-19", "2022-11-01",
