@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -231,24 +232,31 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private HttpResponse listTenantRoleMembers(String tenantName) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("tenant", tenantName);
-        fillRoles(root,
-                  Roles.tenantRoles(TenantName.from(tenantName)),
-                  Collections.emptyList());
-        return new SlimeJsonResponse(slime);
+        if (controller.tenants().get(tenantName).isPresent()) {
+            Slime slime = new Slime();
+            Cursor root = slime.setObject();
+            root.setString("tenant", tenantName);
+            fillRoles(root,
+                    Roles.tenantRoles(TenantName.from(tenantName)),
+                    Collections.emptyList());
+            return new SlimeJsonResponse(slime);
+        }
+        return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
     }
 
     private HttpResponse listApplicationRoleMembers(String tenantName, String applicationName) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("tenant", tenantName);
-        root.setString("application", applicationName);
-        fillRoles(root,
-                  Roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)),
-                  Roles.tenantRoles(TenantName.from(tenantName)));
-        return new SlimeJsonResponse(slime);
+        var id = TenantAndApplicationId.from(tenantName, applicationName);
+        if (controller.applications().getApplication(id).isPresent()) {
+            Slime slime = new Slime();
+            Cursor root = slime.setObject();
+            root.setString("tenant", tenantName);
+            root.setString("application", applicationName);
+            fillRoles(root,
+                    Roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)),
+                    Roles.tenantRoles(TenantName.from(tenantName)));
+            return new SlimeJsonResponse(slime);
+        }
+        return ErrorResponse.notFoundError("Application '" + id + "' does not exist");
     }
 
     private void fillRoles(Cursor root, List<? extends Role> roles, List<? extends Role> superRoles) {
