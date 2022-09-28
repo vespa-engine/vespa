@@ -2,8 +2,8 @@
 package com.yahoo.schema.expressiontransforms;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -35,20 +35,20 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         if (node instanceof CompositeNode composite)
             node = transformChildren(composite, context);
 
-        if (node instanceof ArithmeticNode arithmetic)
+        if (node instanceof OperationNode arithmetic)
             node = transformBooleanArithmetics(arithmetic);
 
         return node;
     }
 
-    private ExpressionNode transformBooleanArithmetics(ArithmeticNode node) {
+    private ExpressionNode transformBooleanArithmetics(OperationNode node) {
         Iterator<ExpressionNode> child = node.children().iterator();
 
         // Transform in precedence order:
         Deque<ChildNode> stack = new ArrayDeque<>();
         stack.push(new ChildNode(null, child.next()));
-        for (Iterator<ArithmeticOperator> it = node.operators().iterator(); it.hasNext() && child.hasNext();) {
-            ArithmeticOperator op = it.next();
+        for (Iterator<Operator> it = node.operators().iterator(); it.hasNext() && child.hasNext();) {
+            Operator op = it.next();
             if ( ! stack.isEmpty()) {
                 while (stack.size() > 1 && ! op.hasPrecedenceOver(stack.peek().op)) {
                     popStack(stack);
@@ -66,9 +66,9 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         ChildNode lhs = stack.peek();
 
         ExpressionNode combination;
-        if (rhs.op == ArithmeticOperator.AND)
+        if (rhs.op == Operator.AND)
             combination = andByIfNode(lhs.child, rhs.child);
-        else if (rhs.op == ArithmeticOperator.OR)
+        else if (rhs.op == Operator.OR)
             combination = orByIfNode(lhs.child, rhs.child);
         else {
             combination = resolve(lhs, rhs);
@@ -77,28 +77,28 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         lhs.child = combination;
     }
 
-    private static ArithmeticNode resolve(ChildNode left, ChildNode right) {
-        if ( ! (left.child instanceof ArithmeticNode) && ! (right.child instanceof ArithmeticNode))
-            return new ArithmeticNode(left.child, right.op, right.child);
+    private static OperationNode resolve(ChildNode left, ChildNode right) {
+        if (! (left.child instanceof OperationNode) && ! (right.child instanceof OperationNode))
+            return new OperationNode(left.child, right.op, right.child);
 
         // Collapse inserted ArithmeticNodes
-        List<ArithmeticOperator> joinedOps = new ArrayList<>();
+        List<Operator> joinedOps = new ArrayList<>();
         joinOps(left, joinedOps);
         joinedOps.add(right.op);
         joinOps(right, joinedOps);
         List<ExpressionNode> joinedChildren = new ArrayList<>();
         joinChildren(left, joinedChildren);
         joinChildren(right, joinedChildren);
-        return new ArithmeticNode(joinedChildren, joinedOps);
+        return new OperationNode(joinedChildren, joinedOps);
     }
 
-    private static void joinOps(ChildNode node, List<ArithmeticOperator> joinedOps) {
-        if (node.artificial && node.child instanceof ArithmeticNode arithmeticNode)
-            joinedOps.addAll(arithmeticNode.operators());
+    private static void joinOps(ChildNode node, List<Operator> joinedOps) {
+        if (node.artificial && node.child instanceof OperationNode operationNode)
+            joinedOps.addAll(operationNode.operators());
     }
     private static void joinChildren(ChildNode node, List<ExpressionNode> joinedChildren) {
-        if (node.artificial && node.child instanceof ArithmeticNode arithmeticNode)
-            joinedChildren.addAll(arithmeticNode.children());
+        if (node.artificial && node.child instanceof OperationNode operationNode)
+            joinedChildren.addAll(operationNode.children());
         else
             joinedChildren.add(node.child);
     }
@@ -115,11 +115,11 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
     /** A child with the operator to be applied to it when combining it with the previous child. */
     private static class ChildNode {
 
-        final ArithmeticOperator op;
+        final Operator op;
         ExpressionNode child;
         boolean artificial;
 
-        public ChildNode(ArithmeticOperator op, ExpressionNode child) {
+        public ChildNode(Operator op, ExpressionNode child) {
             this.op = op;
             this.child = child;
         }

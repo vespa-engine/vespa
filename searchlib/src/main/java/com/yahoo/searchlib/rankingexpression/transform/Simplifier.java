@@ -4,8 +4,8 @@ package com.yahoo.searchlib.rankingexpression.transform;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
@@ -33,8 +33,8 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             node = transformIf((IfNode) node);
         if (node instanceof EmbracedNode e && hasSingleUndividableChild(e))
             node = e.children().get(0);
-        if (node instanceof ArithmeticNode)
-            node = transformArithmetic((ArithmeticNode) node);
+        if (node instanceof OperationNode)
+            node = transformArithmetic((OperationNode) node);
         if (node instanceof NegativeNode)
             node = transformNegativeNode((NegativeNode) node);
         return node;
@@ -42,18 +42,18 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
 
     private boolean hasSingleUndividableChild(EmbracedNode node) {
         if (node.children().size() > 1) return false;
-        if (node.children().get(0) instanceof ArithmeticNode) return false;
+        if (node.children().get(0) instanceof OperationNode) return false;
         return true;
     }
 
-    private ExpressionNode transformArithmetic(ArithmeticNode node) {
+    private ExpressionNode transformArithmetic(OperationNode node) {
         // Fold the subset of expressions that are constant (such that in "1 + 2 + var")
         if (node.children().size() > 1) {
             List<ExpressionNode> children = new ArrayList<>(node.children());
-            List<ArithmeticOperator> operators = new ArrayList<>(node.operators());
-            for (ArithmeticOperator operator : ArithmeticOperator.operatorsByPrecedence)
+            List<Operator> operators = new ArrayList<>(node.operators());
+            for (Operator operator : Operator.operatorsByPrecedence)
                 transform(operator, children, operators);
-            node = new ArithmeticNode(children, operators);
+            node = new OperationNode(children, operators);
         }
 
         if (isConstant(node) && ! node.evaluate(null).isNaN())
@@ -64,8 +64,8 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             return node;
     }
 
-    private void transform(ArithmeticOperator operatorToTransform,
-                           List<ExpressionNode> children, List<ArithmeticOperator> operators) {
+    private void transform(Operator operatorToTransform,
+                           List<ExpressionNode> children, List<Operator> operators) {
         int i = 0;
         while (i < children.size()-1) {
             boolean transformed = false;
@@ -73,7 +73,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
                 ExpressionNode child1 = children.get(i);
                 ExpressionNode child2 = children.get(i + 1);
                 if (isConstant(child1) && isConstant(child2) && hasPrecedence(operators, i)) {
-                    Value evaluated = new ArithmeticNode(child1, operators.get(i), child2).evaluate(null);
+                    Value evaluated = new OperationNode(child1, operators.get(i), child2).evaluate(null);
                     if ( ! evaluated.isNaN()) { // Don't replace by NaN
                         operators.remove(i);
                         children.set(i, new ConstantNode(evaluated.freeze()));
@@ -92,7 +92,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
      * This check works because we simplify by decreasing precedence, so neighbours will either be single constant values
      * or a more complex expression that can't be simplified and hence also prevents the simplification in question here.
      */
-    private boolean hasPrecedence(List<ArithmeticOperator> operators, int i) {
+    private boolean hasPrecedence(List<Operator> operators, int i) {
         if (i > 0 && operators.get(i-1).hasPrecedenceOver(operators.get(i))) return false;
         if (i < operators.size()-1 && operators.get(i+1).hasPrecedenceOver(operators.get(i))) return false;
         return true;
@@ -114,14 +114,14 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
         return new ConstantNode(constant.getValue().negate() );
     }
 
-    private boolean allMultiplicationOrDivision(ArithmeticNode node) {
-        for (ArithmeticOperator o : node.operators())
-            if (o != ArithmeticOperator.MULTIPLY && o != ArithmeticOperator.DIVIDE)
+    private boolean allMultiplicationOrDivision(OperationNode node) {
+        for (Operator o : node.operators())
+            if (o != Operator.MULTIPLY && o != Operator.DIVIDE)
                 return false;
         return true;
     }
 
-    private boolean hasZero(ArithmeticNode node) {
+    private boolean hasZero(OperationNode node) {
         for (ExpressionNode child : node.children()) {
             if (isZero(child))
                 return true;
@@ -129,9 +129,9 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
         return false;
     }
 
-    private boolean hasDivisionByZero(ArithmeticNode node) {
+    private boolean hasDivisionByZero(OperationNode node) {
         for (int i = 1; i < node.children().size(); i++) {
-            if ( node.operators().get(i - 1) == ArithmeticOperator.DIVIDE && isZero(node.children().get(i)))
+            if (node.operators().get(i - 1) == Operator.DIVIDE && isZero(node.children().get(i)))
                 return true;
         }
         return false;

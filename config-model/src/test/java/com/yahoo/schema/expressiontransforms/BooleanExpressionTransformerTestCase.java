@@ -4,7 +4,7 @@ package com.yahoo.schema.expressiontransforms;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +43,8 @@ public class BooleanExpressionTransformerTestCase {
         var expr = new BooleanExpressionTransformer()
                 .transform(new RankingExpression("a + b + c * d + e + f"),
                         new TransformContext(Map.of(), new MapTypeContext()));
-        assertTrue(expr.getRoot() instanceof ArithmeticNode);
-        ArithmeticNode root = (ArithmeticNode) expr.getRoot();
+        assertTrue(expr.getRoot() instanceof OperationNode);
+        OperationNode root = (OperationNode) expr.getRoot();
         assertEquals(5, root.operators().size());
         assertEquals(6, root.children().size());
     }

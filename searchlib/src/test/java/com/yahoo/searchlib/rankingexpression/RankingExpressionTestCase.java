@@ -2,8 +2,8 @@
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -66,7 +66,7 @@ public class RankingExpressionTestCase {
     public void testProgrammaticBuilding() throws ParseException {
         ReferenceNode input = new ReferenceNode("input");
         ReferenceNode constant = new ReferenceNode("constant");
-        ArithmeticNode product = new ArithmeticNode(input, ArithmeticOperator.MULTIPLY, constant);
+        OperationNode product = new OperationNode(input, Operator.MULTIPLY, constant);
         Reduce<Reference> sum = new Reduce<>(new TensorFunctionNode.ExpressionTensorFunction(product), Reduce.Aggregator.sum);
         RankingExpression expression = new RankingExpression(new TensorFunctionNode(sum));
 

@@ -6,8 +6,8 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -166,8 +166,8 @@ public class Slice extends IntermediateOperation {
 
             // step * (d0 + start)
             ExpressionNode reference = new ReferenceNode(outputDimensionName);
-            ExpressionNode plus = new EmbracedNode(new ArithmeticNode(reference, ArithmeticOperator.PLUS, startIndex));
-            ExpressionNode mul = new ArithmeticNode(stepSize, ArithmeticOperator.MULTIPLY, plus);
+            ExpressionNode plus = new EmbracedNode(new OperationNode(reference, Operator.PLUS, startIndex));
+            ExpressionNode mul = new OperationNode(stepSize, Operator.MULTIPLY, plus);
 
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(new EmbracedNode(mul))));
         }

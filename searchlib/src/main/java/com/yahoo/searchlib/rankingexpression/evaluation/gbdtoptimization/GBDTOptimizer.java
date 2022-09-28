@@ -61,13 +61,13 @@ public class GBDTOptimizer extends Optimizer {
      * @return the optimized expression
      */
     private ExpressionNode optimize(ExpressionNode node, ContextIndex context) {
-        if (node instanceof ArithmeticNode) {
-            Iterator<ExpressionNode> childIt = ((ArithmeticNode)node).children().iterator();
+        if (node instanceof OperationNode) {
+            Iterator<ExpressionNode> childIt = ((OperationNode)node).children().iterator();
             ExpressionNode ret = optimize(childIt.next(), context);
 
-            Iterator<ArithmeticOperator> operIt = ((ArithmeticNode)node).operators().iterator();
+            Iterator<Operator> operIt = ((OperationNode)node).operators().iterator();
             while (childIt.hasNext() && operIt.hasNext()) {
-                ret = ArithmeticNode.resolve(ret, operIt.next(), optimize(childIt.next(), context));
+                ret = OperationNode.resolve(ret, operIt.next(), optimize(childIt.next(), context));
             }
             return ret;
         }
@@ -115,10 +115,10 @@ public class GBDTOptimizer extends Optimizer {
     /** Consumes the if condition and return the size of the values resulting, for convenience */
     private int consumeIfCondition(ExpressionNode condition, List<Double> values, ContextIndex context) {
         if (isBinaryComparison(condition)) {
-            ArithmeticNode comparison = (ArithmeticNode)condition;
-            if (comparison.operators().get(0) == ArithmeticOperator.LESS)
+            OperationNode comparison = (OperationNode)condition;
+            if (comparison.operators().get(0) == Operator.LESS)
                 values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*0 + getVariableIndex(comparison.children().get(0), context));
-            else if (comparison.operators().get(0) == ArithmeticOperator.EQUAL)
+            else if (comparison.operators().get(0) == Operator.EQUAL)
                 values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*1 + getVariableIndex(comparison.children().get(0), context));
             else
                 throw new IllegalArgumentException("Cannot optimize other conditions than < and ==, encountered: " + comparison.operators().get(0));
@@ -134,8 +134,8 @@ public class GBDTOptimizer extends Optimizer {
         else if (condition instanceof NotNode notNode) {  // handle if inversion: !(a >= b)
             if (notNode.children().size() == 1 && notNode.children().get(0) instanceof EmbracedNode embracedNode) {
                 if (embracedNode.children().size() == 1 && isBinaryComparison(embracedNode.children().get(0))) {
-                    ArithmeticNode comparison = (ArithmeticNode)embracedNode.children().get(0);
-                    if (comparison.operators().get(0) == ArithmeticOperator.GREATEREQUAL)
+                    OperationNode comparison = (OperationNode)embracedNode.children().get(0);
+                    if (comparison.operators().get(0) == Operator.GREATEREQUAL)
                         values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*3 + getVariableIndex(comparison.children().get(0), context));
                     else
                         throw new IllegalArgumentException("Cannot optimize other conditions than >=, encountered: " + comparison.operators().get(0));
@@ -151,15 +151,15 @@ public class GBDTOptimizer extends Optimizer {
     }
 
     private boolean isBinaryComparison(ExpressionNode condition) {
-        if ( ! (condition instanceof ArithmeticNode binaryNode)) return false;
+        if ( ! (condition instanceof OperationNode binaryNode)) return false;
         if (binaryNode.operators().size() != 1) return false;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.GREATEREQUAL) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.GREATER) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.LESSEQUAL) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.LESS) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.APPROX) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.NOTEQUAL) return true;
-        if (binaryNode.operators().get(0) == ArithmeticOperator.EQUAL) return true;
+        if (binaryNode.operators().get(0) == Operator.GREATEREQUAL) return true;
+        if (binaryNode.operators().get(0) == Operator.GREATER) return true;
+        if (binaryNode.operators().get(0) == Operator.LESSEQUAL) return true;
+        if (binaryNode.operators().get(0) == Operator.LESS) return true;
+        if (binaryNode.operators().get(0) == Operator.APPROX) return true;
+        if (binaryNode.operators().get(0) == Operator.NOTEQUAL) return true;
+        if (binaryNode.operators().get(0) == Operator.EQUAL) return true;
         return false;
     }
 

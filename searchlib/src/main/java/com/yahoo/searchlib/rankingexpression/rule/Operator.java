@@ -12,7 +12,7 @@ import java.util.function.BiFunction;
  *
  * @author bratseth
  */
-public enum ArithmeticOperator {
+public enum Operator {
 
     // In order from lowest to highest precedence
     OR("||", (x, y) -> x.or(y)),
@@ -31,25 +31,25 @@ public enum ArithmeticOperator {
     MODULO("%", (x, y) -> x.modulo(y)),
     POWER("^", true, (x, y) -> x.power(y));
 
-    /** A list of all the operators in this in order of decreasing precedence */
-    public static final List<ArithmeticOperator> operatorsByPrecedence = Arrays.stream(ArithmeticOperator.values()).toList();
+    /** A list of all the operators in this in order of increasing precedence */
+    public static final List<Operator> operatorsByPrecedence = Arrays.stream(Operator.values()).toList();
 
     private final String image;
     private final boolean bindsRight; // TODO: Implement
     private final BiFunction<Value, Value, Value> function;
 
-    ArithmeticOperator(String image, BiFunction<Value, Value, Value> function) {
+    Operator(String image, BiFunction<Value, Value, Value> function) {
         this(image, false, function);
     }
 
-    ArithmeticOperator(String image, boolean bindsRight, BiFunction<Value, Value, Value> function) {
+    Operator(String image, boolean bindsRight, BiFunction<Value, Value, Value> function) {
         this.image = image;
         this.bindsRight = bindsRight;
         this.function = function;
     }
 
     /** Returns true if this operator has precedence over the given operator */
-    public boolean hasPrecedenceOver(ArithmeticOperator op) {
+    public boolean hasPrecedenceOver(Operator op) {
         return operatorsByPrecedence.indexOf(this) > operatorsByPrecedence.indexOf(op);
     }
 
