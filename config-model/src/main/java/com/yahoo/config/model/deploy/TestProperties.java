@@ -77,7 +77,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
-    private boolean enableBitVectors = false;
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
     private boolean useTwoPhaseDocumentGc = false;
@@ -141,7 +140,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
-    @Override public boolean enableBitVectors() { return this.enableBitVectors; }
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
@@ -382,11 +380,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnvironmentVariables(List<String> value) {
         this.environmentVariables = value;
-        return this;
-    }
-
-    public TestProperties setEnableBitVectors(boolean value) {
-        this.enableBitVectors = value;
         return this;
     }
 

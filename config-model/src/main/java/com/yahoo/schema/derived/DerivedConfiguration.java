@@ -40,7 +40,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     private ImportedFields importedFields;
     private final QueryProfileRegistry queryProfiles;
     private final long maxUncommittedMemory;
-    private final boolean enableBitVectors;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -71,7 +70,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         this.schema = schema;
         this.queryProfiles = deployState.getQueryProfiles().getRegistry();
         this.maxUncommittedMemory = deployState.getProperties().featureFlags().maxUnCommittedMemory();
-        this.enableBitVectors = deployState.getProperties().featureFlags().enableBitVectors();
         if ( ! schema.isDocumentsOnly()) {
             streamingFields = new VsmFields(schema);
             streamingSummary = new VsmSummary(schema);
@@ -157,7 +155,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     }
 
     public void getConfig(AttributesConfig.Builder builder, AttributeFields.FieldSet fs) {
-        attributeFields.getConfig(builder, fs, maxUncommittedMemory, enableBitVectors);
+        attributeFields.getConfig(builder, fs, maxUncommittedMemory);
     }
 
     public IndexingScript getIndexingScript() {

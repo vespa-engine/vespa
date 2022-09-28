@@ -24,7 +24,7 @@ public class DictionaryTestCase {
     private static AttributesConfig getConfig(Schema schema) {
         AttributeFields attributes = new AttributeFields(schema);
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 130000, true);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 130000);
         return builder.build();
     }
     private Schema createSearch(String def) throws ParseException {
@@ -210,7 +210,7 @@ public class DictionaryTestCase {
                 "    }",
                 "}");
         try {
-            ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
+            ApplicationBuilder.createFromString(def);
             fail("Controlling dictionary for non-numeric fields are not yet supported.");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
@@ -229,7 +229,7 @@ public class DictionaryTestCase {
                 "    }",
                 "}");
         try {
-            ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
+            ApplicationBuilder.createFromString(def);
             fail("Controlling dictionary for non-fast-search fields are not allowed.");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
