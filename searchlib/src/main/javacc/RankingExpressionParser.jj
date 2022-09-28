@@ -72,13 +72,13 @@ TOKEN :
     <COMMA: ","> |
     <COLON: ":"> |
 
-    <LE: "<="> |
-    <LT: "<"> |
-    <EQ: "=="> |
-    <NQ: "!="> |
-    <AQ: "~="> |
-    <GE: ">="> |
-    <GT: ">"> |
+    <GREATEREQUAL: ">="> |
+    <GREATER: ">"> |
+    <LESSEQUAL: "<="> |
+    <LESS: "<"> |
+    <APPROX: "~="> |
+    <NOTEQUAL: "!="> |
+    <EQUAL: "=="> |
 
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
@@ -188,53 +188,48 @@ ExpressionNode expression() :
 {
     ExpressionNode left, right;
     List<ExpressionNode> rightList;
-    TruthOperator      comparatorOp;
 }
 {
-    ( left = arithmeticExpression()
+    ( left = operationExpression()
       (
-          ( comparatorOp = comparator() right = arithmeticExpression() { left = new ComparisonNode(left, comparatorOp, right); } ) |
           ( <IN>           rightList = expressionList() { left =  new SetMembershipNode(left, rightList); }           )
-      ) *
+      ) ?
     )
     { return left; }
 }
 
-ExpressionNode arithmeticExpression() :
+ExpressionNode operationExpression() :
 {
     ExpressionNode left, right = null;
-    ArithmeticOperator arithmeticOp;
+    Operator operator;
 }
 {
     ( left = value()
-      ( arithmeticOp = arithmetic() right = value() { left = ArithmeticNode.resolve(left, arithmeticOp, right); } ) *
+      ( operator = binaryOperator() right = value() { left = OperationNode.resolve(left, operator, right); } ) *
     )
     { return left; }
 }
 
-ArithmeticOperator arithmetic() : { }
+Operator binaryOperator() : { }
 {
-    ( <ADD>   { return ArithmeticOperator.PLUS;     } |
-      <SUB>   { return ArithmeticOperator.MINUS;    } |
-      <DIV>   { return ArithmeticOperator.DIVIDE;   } |
-      <MUL>   { return ArithmeticOperator.MULTIPLY; } |
-      <MOD>   { return ArithmeticOperator.MODULO; }   |
-      <AND>   { return ArithmeticOperator.AND; }      |
-      <OR>    { return ArithmeticOperator.OR; }       |
-      <POWOP> { return ArithmeticOperator.POWER; } )
+    (
+      <OR>            { return Operator.or; }             |
+      <AND>           { return Operator.and; }            |
+      <GREATEREQUAL>  { return Operator.largerOrEqual; }  |
+      <GREATER>       { return Operator.larger; }         |
+      <LESSEQUAL>     { return Operator.smallerOrEqual; } |
+      <LESS>          { return Operator.smaller; }        |
+      <APPROX>        { return Operator.approxEqual; }    |
+      <NOTEQUAL>      { return Operator.notEqual; }       |
+      <EQUAL>         { return Operator.equal; }          |
+      <ADD>           { return Operator.plus; }           |
+      <SUB>           { return Operator.minus; }          |
+      <DIV>           { return Operator.divide; }         |
+      <MUL>           { return Operator.multiply; }       |
+      <MOD>           { return Operator.modulo; }         |
+      <POWOP>         { return Operator.power; }
+    )
     { return null; }
-}
-
-TruthOperator comparator() : { }
-{
-     ( <LE> { return TruthOperator.SMALLEREQUAL; } |
-       <LT> { return TruthOperator.SMALLER;      } |
-       <EQ> { return TruthOperator.EQUAL;        } |
-       <NQ> { return TruthOperator.NOTEQUAL;     } |
-       <AQ> { return TruthOperator.APPROX_EQUAL; } |
-       <GE> { return TruthOperator.LARGEREQUAL;  } |
-       <GT> { return TruthOperator.LARGER;       } )
-     { return null; }
 }
 
 ExpressionNode value() :
@@ -665,7 +660,7 @@ TensorType.Value optionalTensorValueTypeParameter() :
     String valueType = "double";
 }
 {
-    ( <LT> valueType = identifier() <GT> )?
+    ( <LESS> valueType = identifier() <GREATER> )?
     { return TensorType.Value.fromId(valueType); }
 }
 

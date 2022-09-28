@@ -106,10 +106,10 @@ public class LambdaFunctionNode extends CompositeNode {
     }
 
     private Optional<DoubleBinaryOperator> getDirectEvaluator() {
-        if ( ! (functionExpression instanceof ArithmeticNode)) {
+        if ( ! (functionExpression instanceof OperationNode)) {
             return Optional.empty();
         }
-        ArithmeticNode node = (ArithmeticNode) functionExpression;
+        OperationNode node = (OperationNode) functionExpression;
         if ( ! (node.children().get(0) instanceof ReferenceNode) || ! (node.children().get(1) instanceof ReferenceNode)) {
             return Optional.empty();
         }
@@ -121,16 +121,16 @@ public class LambdaFunctionNode extends CompositeNode {
         if (node.operators().size() != 1) {
             return Optional.empty();
         }
-        ArithmeticOperator operator = node.operators().get(0);
+        Operator operator = node.operators().get(0);
         switch (operator) {
-            case OR: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
-            case AND: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
-            case PLUS: return asFunctionExpression((left, right) -> left + right);
-            case MINUS: return asFunctionExpression((left, right) -> left - right);
-            case MULTIPLY: return asFunctionExpression((left, right) -> left * right);
-            case DIVIDE: return asFunctionExpression((left, right) -> left / right);
-            case MODULO: return asFunctionExpression((left, right) -> left % right);
-            case POWER: return asFunctionExpression(Math::pow);
+            case or: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
+            case and: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
+            case plus: return asFunctionExpression((left, right) -> left + right);
+            case minus: return asFunctionExpression((left, right) -> left - right);
+            case multiply: return asFunctionExpression((left, right) -> left * right);
+            case divide: return asFunctionExpression((left, right) -> left / right);
+            case modulo: return asFunctionExpression((left, right) -> left % right);
+            case power: return asFunctionExpression(Math::pow);
         }
         return Optional.empty();
     }

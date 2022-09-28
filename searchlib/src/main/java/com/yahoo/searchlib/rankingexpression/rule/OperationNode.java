@@ -16,26 +16,26 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A binary mathematical operation
+ * A sequence of binary operations.
  *
  * @author bratseth
  */
-public final class ArithmeticNode extends CompositeNode {
+public final class OperationNode extends CompositeNode {
 
     private final List<ExpressionNode> children;
-    private final List<ArithmeticOperator> operators;
+    private final List<Operator> operators;
 
-    public ArithmeticNode(List<ExpressionNode> children, List<ArithmeticOperator> operators) {
+    public OperationNode(List<ExpressionNode> children, List<Operator> operators) {
         this.children = List.copyOf(children);
         this.operators = List.copyOf(operators);
     }
 
-    public ArithmeticNode(ExpressionNode leftExpression, ArithmeticOperator operator, ExpressionNode rightExpression) {
+    public OperationNode(ExpressionNode leftExpression, Operator operator, ExpressionNode rightExpression) {
         this.children = List.of(leftExpression, rightExpression);
         this.operators = List.of(operator);
     }
 
-    public List<ArithmeticOperator> operators() { return operators; }
+    public List<Operator> operators() { return operators; }
 
     @Override
     public List<ExpressionNode> children() { return children; }
@@ -50,7 +50,7 @@ public final class ArithmeticNode extends CompositeNode {
         child.next().toString(string, context, path, this);
         if (child.hasNext())
             string.append(" ");
-        for (Iterator<ArithmeticOperator> op = operators.iterator(); op.hasNext() && child.hasNext();) {
+        for (Iterator<Operator> op = operators.iterator(); op.hasNext() && child.hasNext();) {
             string.append(op.next().toString()).append(" ");
             child.next().toString(string, context, path, this);
             if (op.hasNext())
@@ -68,14 +68,14 @@ public final class ArithmeticNode extends CompositeNode {
      */
     private boolean nonDefaultPrecedence(CompositeNode parent) {
         if ( parent == null) return false;
-        if ( ! (parent instanceof ArithmeticNode arithmeticParent)) return false;
+        if ( ! (parent instanceof OperationNode operationParent)) return false;
 
         // The line below can only be correct in both only have one operator.
         // Getting this correct is impossible without more work.
         // So for now we only handle the simple case correctly, and use a safe approach by adding
         // extra parenthesis just in case....
-        return arithmeticParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
-                || ((arithmeticParent.operators.size() > 1) || (operators.size() > 1));
+        return operationParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
+                || ((operationParent.operators.size() > 1) || (operators.size() > 1));
     }
 
     @Override
@@ -96,8 +96,8 @@ public final class ArithmeticNode extends CompositeNode {
         // Apply in precedence order:
         Deque<ValueItem> stack = new ArrayDeque<>();
         stack.push(new ValueItem(null, child.next().evaluate(context)));
-        for (Iterator<ArithmeticOperator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
-            ArithmeticOperator op = it.next();
+        for (Iterator<Operator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
+            Operator op = it.next();
             if ( ! stack.isEmpty()) {
                 while (stack.size() > 1 && ! op.hasPrecedenceOver(stack.peek().op)) {
                     popStack(stack);
@@ -121,30 +121,30 @@ public final class ArithmeticNode extends CompositeNode {
     public CompositeNode setChildren(List<ExpressionNode> newChildren) {
         if (children.size() != newChildren.size())
             throw new IllegalArgumentException("Expected " + children.size() + " children but got " + newChildren.size());
-        return new ArithmeticNode(newChildren, operators);
+        return new OperationNode(newChildren, operators);
     }
 
     @Override
     public int hashCode() { return Objects.hash(children, operators); }
 
-    public static ArithmeticNode resolve(ExpressionNode left, ArithmeticOperator op, ExpressionNode right) {
-        if ( ! (left instanceof ArithmeticNode leftArithmetic)) return new ArithmeticNode(left, op, right);
+    public static OperationNode resolve(ExpressionNode left, Operator op, ExpressionNode right) {
+        if ( ! (left instanceof OperationNode leftArithmetic)) return new OperationNode(left, op, right);
 
         List<ExpressionNode> newChildren = new ArrayList<>(leftArithmetic.children());
         newChildren.add(right);
 
-        List<ArithmeticOperator> newOperators = new ArrayList<>(leftArithmetic.operators());
+        List<Operator> newOperators = new ArrayList<>(leftArithmetic.operators());
         newOperators.add(op);
 
-        return new ArithmeticNode(newChildren, newOperators);
+        return new OperationNode(newChildren, newOperators);
     }
 
     private static class ValueItem {
 
-        final ArithmeticOperator op;
+        final Operator op;
         Value value;
 
-        public ValueItem(ArithmeticOperator op, Value value) {
+        public ValueItem(Operator op, Value value) {
             this.op = op;
             this.value = value;
         }

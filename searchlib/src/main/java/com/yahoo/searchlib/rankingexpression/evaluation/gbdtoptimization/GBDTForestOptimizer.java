@@ -5,8 +5,8 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport;
 import com.yahoo.searchlib.rankingexpression.evaluation.Optimizer;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 
@@ -84,12 +84,12 @@ public class GBDTForestOptimizer extends Optimizer {
             currentTreesOptimized++;
             return true;
         }
-        if (!(node instanceof ArithmeticNode)) {
+        if (!(node instanceof OperationNode)) {
             return false;
         }
-        ArithmeticNode aNode = (ArithmeticNode)node;
-        for (ArithmeticOperator op : aNode.operators()) {
-            if (op != ArithmeticOperator.PLUS) {
+        OperationNode aNode = (OperationNode)node;
+        for (Operator op : aNode.operators()) {
+            if (op != Operator.plus) {
                 return false;
             }
         }

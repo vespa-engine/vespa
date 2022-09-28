@@ -68,11 +68,38 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
+        assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + (if (7.0 < attribute(a), 1, 2) == 0)))",
                 parent.getFirstPhaseRanking().getRoot().toString());
         RankProfile child = rankProfileRegistry.get(s, "child").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (9 + attribute(a))",
                 child.getFirstPhaseRanking().getRoot().toString());
+    }
+
+    @Test
+    void testInlinedComparison() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema("search test {\n" +
+                          "    document test { \n" +
+                          "    }\n" +
+                          "    \n" +
+                          "    rank-profile parent {\n" +
+                          "function foo() {\n" +
+                          "   expression: 3 * bar\n" +
+                          "}\n" +
+                          "\n" +
+                          "function inline bar() {\n" +
+                          "   expression: query(test) > 2.0\n" +
+                          "}\n" +
+                          "}\n" +
+                          "}\n");
+        builder.build(true);
+        Schema s = builder.getSchema();
+
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
+        assertEquals("3 * (query(test) > 2.0)",
+                     parent.getFunctions().get("foo").function().getBody().getRoot().toString());
+
     }
 
     @Test

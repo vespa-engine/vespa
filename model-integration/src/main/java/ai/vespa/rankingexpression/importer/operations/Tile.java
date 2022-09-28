@@ -4,8 +4,8 @@ package ai.vespa.rankingexpression.importer.operations;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -77,7 +77,7 @@ public class Tile extends IntermediateOperation {
 
             ExpressionNode size = new ConstantNode(new DoubleValue(inputDimensionSize));
             ExpressionNode reference = new ReferenceNode(inputDimensionName);
-            ExpressionNode mod = new ArithmeticNode(reference, ArithmeticOperator.MODULO, size);
+            ExpressionNode mod = new OperationNode(reference, Operator.modulo, size);
             dimensionValues.add(new com.yahoo.tensor.functions.Slice.DimensionValue<>(Optional.of(inputDimensionName), wrapScalar(new EmbracedNode(mod))));
         }
 

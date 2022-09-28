@@ -5,8 +5,8 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
+import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
@@ -88,6 +88,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(10.0, "3 ^ 2 + 1");
         tester.assertEvaluates(18.0, "2 * 3 ^ 2");
         tester.assertEvaluates(-4, "1 - 2 - 3"); // Means 1 + -2 + -3
+        tester.assertEvaluates(Math.pow(4, 9), "4^3^2"); // Right precedence, by 51% majority
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
@@ -185,6 +186,11 @@ public class EvaluationTestCase {
                               "map(tensor0, f(x) (log10(x)))", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
         tester.assertEvaluates("{ {d1:0}:4, {d1:1}:9, {d1:2 }:16 }",
                               "map(tensor0, f(x) (x * x))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        // -- tensor map shorthands
+        tester.assertEvaluates("{ {d1:0}:0, {d1:1}:1, {d1:2 }:0 }",
+                               "tensor0 == 3", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        tester.assertEvaluates("{ {d1:0}:0, {d1:1}:1, {d1:2 }:0 }",
+                               "3 == tensor0", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         // -- tensor map composites
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }",
                                "log10(tensor0)", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
@@ -198,9 +204,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
                                "tensor0 % 2 == map(tensor0, f(x) (x % 2))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
-                               "tensor0 || 1 == map(tensor0, f(x) (x || 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+                               "(tensor0 || 1) == map(tensor0, f(x) (x || 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
-                               "tensor0 && 1 == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+                               "(tensor0 && 1) == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
                                "!tensor0 == map(tensor0, f(x) (!x))", "{ {d1:0}:0, {d1:1}:1, {d1:2}:0 }");
 
@@ -779,8 +785,8 @@ public class EvaluationTestCase {
 
     @Test
     public void testProgrammaticBuildingAndPrecedence() {
-        RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
-        RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));
+        RankingExpression standardPrecedence = new RankingExpression(new OperationNode(constant(2), Operator.plus, new OperationNode(constant(3), Operator.multiply, constant(4))));
+        RankingExpression oppositePrecedence = new RankingExpression(new OperationNode(new OperationNode(constant(2), Operator.plus, constant(3)), Operator.multiply, constant(4)));
         assertEquals(14.0, standardPrecedence.evaluate(null).asDouble(), tolerance);
         assertEquals(20.0, oppositePrecedence.evaluate(null).asDouble(), tolerance);
         assertEquals("2.0 + 3.0 * 4.0", standardPrecedence.toString());
