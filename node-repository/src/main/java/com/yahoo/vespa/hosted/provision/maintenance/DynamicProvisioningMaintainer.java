@@ -36,7 +36,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
 
-import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -109,7 +109,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 nodeRepository().nodes().failOrMarkRecursively(
                         host.hostname(), Agent.DynamicProvisioningMaintainer, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
-                if (e.getCause() instanceof NameNotFoundException)
+                if (e.getCause() instanceof NamingException)
                     log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));
                 else
                     log.log(Level.WARNING, "Failed to provision " + host.hostname() + ", will retry in " + interval(), e);
