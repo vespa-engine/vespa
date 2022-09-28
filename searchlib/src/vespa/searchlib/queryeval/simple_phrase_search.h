@@ -3,7 +3,7 @@
 #pragma once
 
 #include "andsearch.h"
-#include <vespa/searchlib/queryeval/irequestcontext.h>
+#include "irequestcontext.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>

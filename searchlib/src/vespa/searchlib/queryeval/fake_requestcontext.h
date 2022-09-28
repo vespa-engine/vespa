@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "irequestcontext.h"
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -9,7 +10,6 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
-#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/vespalib/util/doom.h>
 #include <limits>
 

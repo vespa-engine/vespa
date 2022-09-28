@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/filealign.h>
+#include "filealign.h"
 #include <vespa/vespalib/util/alloc.h>
 
 namespace search {

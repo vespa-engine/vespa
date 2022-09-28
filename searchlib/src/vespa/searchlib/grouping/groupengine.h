@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "collect.h"
 #include <vespa/searchlib/aggregation/groupinglevel.h>
-#include <vespa/searchlib/grouping/collect.h>
 #include <vespa/vespalib/util/sort.h>
 
 namespace search::grouping {

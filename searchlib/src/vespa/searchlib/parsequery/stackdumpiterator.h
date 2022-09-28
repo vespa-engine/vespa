@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/parsequery/parse.h>
+#include "parse.h"
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/vespalib/stllike/string.h>
 

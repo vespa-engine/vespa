@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postinglistcountfile.h"
-#include <vespa/searchlib/index/postinglistparams.h>
+#include "postinglistparams.h"
 
 namespace search::index {
 

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_utils.h"
-#include <vespa/searchcommon/attribute/config.h>
+#include "config.h"
 
 namespace search::attribute {
 

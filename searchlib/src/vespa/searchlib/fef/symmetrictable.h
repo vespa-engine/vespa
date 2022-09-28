@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "table.h"
 #include <vector>
-#include <vespa/searchlib/fef/table.h>
 
 namespace search {
 namespace fef {

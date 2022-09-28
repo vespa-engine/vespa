@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/docstore/idatastore.h>
+#include "idatastore.h"
 
 namespace search {
 
