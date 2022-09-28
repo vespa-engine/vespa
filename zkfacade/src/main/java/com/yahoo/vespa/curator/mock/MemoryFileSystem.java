@@ -117,6 +117,9 @@ class MemoryFileSystem extends FileSystem {
         /** The content of this node, never null. This buffer is effectively immutable. */
         private byte[] content;
 
+        /** Optional TTL. Currently not in use. */
+        private Long ttl;
+
         private final AtomicInteger version = new AtomicInteger(0);
 
         private Map<String, Node> children = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -139,6 +142,9 @@ class MemoryFileSystem extends FileSystem {
             this.content = Arrays.copyOf(content, content.length);
             this.version.incrementAndGet();
         }
+
+        /** Set optional TTL */
+        public void setTtl(long ttl) { this.ttl = ttl; }
 
         public int version() { return version.get(); }
 

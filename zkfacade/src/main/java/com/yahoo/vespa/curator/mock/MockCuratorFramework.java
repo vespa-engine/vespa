@@ -351,7 +351,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     // ----- Start of adaptor methods from Curator to the mock file system -----
 
     /** Creates a node below the given directory root */
-    private String createNode(String pathString, byte[] content, boolean createParents, CreateMode createMode, MemoryFileSystem.Node root, Listeners listeners)
+    private String createNode(String pathString, byte[] content, boolean createParents, CreateMode createMode, MemoryFileSystem.Node root, Listeners listeners, Long ttl)
             throws KeeperException.NodeExistsException, KeeperException.NoNodeException {
         validatePath(pathString);
         Path path = Path.fromString(pathString);
@@ -364,7 +364,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         if (parent.children().containsKey(path.getName()))
             throw new KeeperException.NodeExistsException(path.toString());
 
-        parent.add(name).setContent(content);
+        MemoryFileSystem.Node node = parent.add(name);
+        node.setContent(content);
+        if (List.of(CreateMode.PERSISTENT_WITH_TTL, CreateMode.PERSISTENT_SEQUENTIAL_WITH_TTL).contains(createMode)
+                && ttl != null)
+            node.setTtl(ttl);
         String nodePath = "/" + path.getParentPath().toString() + "/" + name;
         listeners.notify(Path.fromString(nodePath), content, PathChildrenCacheEvent.Type.CHILD_ADDED);
         return nodePath;
@@ -422,7 +426,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
     private String nodeName(String baseName, CreateMode createMode) {
         switch (createMode) {
-            case PERSISTENT: case EPHEMERAL: return baseName;
+            case PERSISTENT: case EPHEMERAL: case PERSISTENT_WITH_TTL: return baseName;
             case PERSISTENT_SEQUENTIAL: case EPHEMERAL_SEQUENTIAL: return baseName + monotonicallyIncreasingNumber++;
             default: throw new UnsupportedOperationException(createMode + " support not implemented in MockCurator");
         }
@@ -837,6 +841,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         private boolean createParents = false;
         private CreateMode createMode = CreateMode.PERSISTENT;
+        private Long ttl;
 
         @Override
         public ProtectACLCreateModeStatPathAndBytesable<String> creatingParentsIfNeeded() {
@@ -845,12 +850,12 @@ public class MockCuratorFramework implements CuratorFramework  {
 
                 @Override
                 public String forPath(String s, byte[] bytes) throws Exception {
-                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
+                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners, ttl);
                 }
 
                 @Override
                 public String forPath(String s) throws Exception {
-                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners);
+                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners, ttl);
                 }
 
             };
@@ -862,12 +867,12 @@ public class MockCuratorFramework implements CuratorFramework  {
 
                 @Override
                 public String forPath(String s, byte[] bytes) throws Exception {
-                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
+                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners, ttl);
                 }
 
                 @Override
                 public String forPath(String s) throws Exception {
-                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners);
+                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners, ttl);
                 }
 
             };
@@ -885,11 +890,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         public String forPath(String s) throws Exception {
-            return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners);
+            return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners, ttl);
         }
 
         public String forPath(String s, byte[] bytes) throws Exception {
-            return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
+            return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners, ttl);
         }
 
         @Override
@@ -923,7 +928,7 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         @Override
-        public CreateBuilderMain withTtl(long l) { return this; }
+        public CreateBuilderMain withTtl(long l) { this.ttl = l; return this; }
 
         @Override
         public CreateBuilder2 orSetData() {
@@ -1283,13 +1288,13 @@ public class MockCuratorFramework implements CuratorFramework  {
 
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
-                createNode(s, bytes, false, createMode, newRoot, delayedListener);
+                createNode(s, bytes, false, createMode, newRoot, delayedListener, null);
                 return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
-                createNode(s, new byte[0], false, createMode, newRoot, delayedListener);
+                createNode(s, new byte[0], false, createMode, newRoot, delayedListener, null);
                 return new MockCuratorTransactionBridge();
             }
 
