@@ -133,7 +133,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.58") default int clusterControllerStateGatherCount() { return 1; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim", "vekterli"}) default boolean computeCoverageFromTargetActiveDocs() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim", "vekterli"}, removeAfter="8.61") default boolean computeCoverageFromTargetActiveDocs() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

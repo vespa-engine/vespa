@@ -14,9 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -98,7 +96,7 @@ public class ClusterTest {
         DispatchConfig config = new DispatchConfig(builder);
         assertEquals(2, config.searchableCopies());
         assertEquals(3, config.redundancy());
-        assertFalse(config.computeCoverageFromTargetActiveDocs());
+        assertTrue(config.computeCoverageFromTargetActiveDocs());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
         assertEquals(0, config.minWaitAfterCoverageFactor(), DELTA);

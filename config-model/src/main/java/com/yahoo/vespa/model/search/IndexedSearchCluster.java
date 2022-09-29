@@ -60,8 +60,6 @@ public class IndexedSearchCluster extends SearchCluster
     private DispatchSpec dispatchSpec;
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
-    private final boolean computeCoverageFromTargetActiveDocs;
-
     /**
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
      * This string uses the document selector language as defined in the "document" module.
@@ -77,7 +75,6 @@ public class IndexedSearchCluster extends SearchCluster
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
-        computeCoverageFromTargetActiveDocs = featureFlags.computeCoverageFromTargetActiveDocs();
     }
 
     @Override
@@ -322,7 +319,7 @@ public class IndexedSearchCluster extends SearchCluster
 
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         builder.redundancy(rootDispatch.getRedundancy());
-        builder.computeCoverageFromTargetActiveDocs(computeCoverageFromTargetActiveDocs);
+        builder.computeCoverageFromTargetActiveDocs(true);
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);
