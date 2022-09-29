@@ -343,4 +343,9 @@ public class Mirror implements IMirror {
                 ", current server: "+ currSlobrok +
                 ", list of servers: " + slobroks);
     }
+
+    public long getIterations() {
+        return iterations;
+    }
+
 }
