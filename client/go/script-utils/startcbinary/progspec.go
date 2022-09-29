@@ -39,8 +39,15 @@ func (p *ProgSpec) setenv(k, v string) {
 	p.Env[k] = v
 }
 
+func (p *ProgSpec) getenv(k string) string {
+	if v, ok := p.Env[k]; ok {
+		return v
+	}
+	return os.Getenv(k)
+}
+
 func (p *ProgSpec) matchesListEnv(envVarName string) bool {
-	return p.matchesListString(os.Getenv(envVarName))
+	return p.matchesListString(p.getenv(envVarName))
 }
 
 func (p *ProgSpec) matchesListString(env string) bool {
@@ -60,11 +67,10 @@ func (p *ProgSpec) matchesListString(env string) bool {
 }
 
 func (p *ProgSpec) valueFromListEnv(envVarName string) string {
-	return p.valueFromListString(os.Getenv(envVarName))
+	return p.valueFromListString(p.getenv(envVarName))
 }
 
 func (p *ProgSpec) valueFromListString(env string) string {
-
 	parts := strings.Fields(env)
 	for _, part := range parts {
 		idx := strings.Index(part, "=")

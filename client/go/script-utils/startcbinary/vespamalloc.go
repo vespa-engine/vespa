@@ -5,7 +5,6 @@ package startcbinary
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -39,20 +38,18 @@ func (p *ProgSpec) configureVespaMalloc() {
 		useFile = vespaMallocLib("libvespamallocdst16.so")
 	} else if p.matchesListEnv(ENV_VESPA_USE_VESPAMALLOC_D) {
 		useFile = vespaMallocLib("libvespamallocd.so")
-	} else {
+	} else if p.matchesListEnv(ENV_VESPA_USE_VESPAMALLOC) {
 		useFile = vespaMallocLib("libvespamalloc.so")
 	}
 	trace.Trace("use file:", useFile)
 	if useFile == "" {
 		return
 	}
-	if loadAsHuge := os.Getenv(ENV_VESPA_LOAD_CODE_AS_HUGEPAGES); loadAsHuge != "" {
+	if loadAsHuge := p.getenv(ENV_VESPA_LOAD_CODE_AS_HUGEPAGES); loadAsHuge != "" {
 		otherFile := vespaMallocLib("libvespa_load_as_huge.so")
 		useFile = fmt.Sprintf("%s:%s", useFile, otherFile)
 	}
-	if useHugePages := os.Getenv(ENV_VESPA_USE_HUGEPAGES); useHugePages != "" {
-		p.setenv(ENV_VESPA_MALLOC_HUGEPAGES, useHugePages)
-	}
+	p.considerEnvFallback(ENV_VESPA_MALLOC_HUGEPAGES, ENV_VESPA_USE_HUGEPAGES)
 	p.vespaMallocPreload = useFile
 	p.shouldUseVespaMalloc = true
 }

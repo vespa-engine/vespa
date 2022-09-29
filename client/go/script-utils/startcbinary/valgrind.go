@@ -16,7 +16,7 @@ import (
 func (p *ProgSpec) configureValgrind() {
 	p.shouldUseValgrind = false
 	p.shouldUseCallgrind = false
-	env := os.Getenv(ENV_VESPA_USE_VALGRIND)
+	env := p.getenv(ENV_VESPA_USE_VALGRIND)
 	parts := strings.Split(env, " ")
 	for _, part := range parts {
 		if p.BaseName == part {
@@ -27,7 +27,7 @@ func (p *ProgSpec) configureValgrind() {
 				trace.Trace("no valgrind, 'which' fails:", err, "=>", out)
 				return
 			}
-			if opts := os.Getenv(ENV_VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
+			if opts := p.getenv(ENV_VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
 				p.shouldUseCallgrind = true
 			}
 			p.shouldUseValgrind = true
@@ -42,7 +42,7 @@ func (p *ProgSpec) valgrindBinary() string {
 }
 
 func (p *ProgSpec) valgrindOptions() []string {
-	env := os.Getenv(ENV_VESPA_VALGRIND_OPT)
+	env := p.getenv(ENV_VESPA_VALGRIND_OPT)
 	if env != "" {
 		return strings.Fields(env)
 	}

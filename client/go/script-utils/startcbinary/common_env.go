@@ -5,8 +5,10 @@ package startcbinary
 
 import (
 	"os"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 const (
@@ -24,15 +26,58 @@ const (
 	ENV_VESPA_USE_MADVISE_LIST       = "VESPA_USE_MADVISE_LIST"
 	ENV_VESPA_USE_NO_VESPAMALLOC     = "VESPA_USE_NO_VESPAMALLOC"
 	ENV_VESPA_USE_VALGRIND           = "VESPA_USE_VALGRIND"
+	ENV_VESPA_USE_VESPAMALLOC        = "VESPA_USE_VESPAMALLOC"
 	ENV_VESPA_USE_VESPAMALLOC_D      = "VESPA_USE_VESPAMALLOC_D"
 	ENV_VESPA_USE_VESPAMALLOC_DST    = "VESPA_USE_VESPAMALLOC_DST"
 	ENV_VESPA_VALGRIND_OPT           = "VESPA_VALGRIND_OPT"
+	ENV_VESPA_USER                   = "VESPA_USER"
+
+	// backwards compatibility variables:
+	ENV_ROOT                = "ROOT"
+	ENV_HUGEPAGES_LIST      = "HUGEPAGES_LIST"
+	ENV_MADVISE_LIST        = "MADVISE_LIST"
+	ENV_NO_VESPAMALLOC_LIST = "NO_VESPAMALLOC_LIST"
+	ENV_VESPAMALLOC_LIST    = "VESPAMALLOCD_LIST"
+	ENV_VESPAMALLOCD_LIST   = "VESPAMALLOCD_LIST"
+	ENV_VESPAMALLOCDST_LIST = "VESPAMALLOCDST_LIST"
 )
+
+func (spec *ProgSpec) considerFallback(varName, varValue string) {
+	if spec.getenv(varName) == "" && varValue != "" {
+		spec.setenv(varName, varValue)
+	}
+}
+
+func (spec *ProgSpec) considerEnvFallback(targetVar, fallbackVar string) {
+	spec.considerFallback(targetVar, spec.getenv(fallbackVar))
+}
 
 func (spec *ProgSpec) configureCommonEnv() {
 	os.Unsetenv(ENV_LD_PRELOAD)
 	spec.setenv(ENV_STD_THREAD_PREVENT_TRY_CATCH, "true")
 	spec.setenv(ENV_GLIBCXX_FORCE_NEW, "1")
+	// fallback from old env.vars:
+	spec.considerEnvFallback(ENV_VESPA_USE_HUGEPAGES_LIST, ENV_HUGEPAGES_LIST)
+	spec.considerEnvFallback(ENV_VESPA_USE_MADVISE_LIST, ENV_MADVISE_LIST)
+	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC, ENV_VESPAMALLOC_LIST)
+	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC_D, ENV_VESPAMALLOCD_LIST)
+	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC_DST, ENV_VESPAMALLOCDST_LIST)
+	spec.considerEnvFallback(ENV_VESPA_USE_NO_VESPAMALLOC, ENV_NO_VESPAMALLOC_LIST)
+	// other fallbacks:
+	spec.considerFallback(ENV_ROOT, vespa.FindHome())
+	spec.considerFallback(ENV_VESPA_USER, vespa.FindVespaUser())
+	spec.considerFallback(ENV_VESPA_USE_HUGEPAGES_LIST, "all")
+	spec.considerFallback(ENV_VESPA_USE_VESPAMALLOC, "all")
+	spec.considerFallback(ENV_VESPA_USE_NO_VESPAMALLOC, strings.Join([]string{
+		"vespa-rpc-invoke",
+		"vespa-get-config",
+		"vespa-sentinel-cmd",
+		"vespa-route",
+		"vespa-proton-cmd",
+		"vespa-configproxy-cmd",
+		"vespa-config-status",
+	}, " "))
+
 }
 
 func (spec *ProgSpec) configureHugePages() {
