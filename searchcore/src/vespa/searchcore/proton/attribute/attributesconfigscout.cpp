@@ -25,7 +25,6 @@ void
 AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
                               const AttributesConfig::Attribute &liveAttr)
 {
-    attr.enablebitvectors = liveAttr.enablebitvectors;
     attr.enableonlybitvector = liveAttr.enableonlybitvector;
     attr.fastsearch = liveAttr.fastsearch;
     attr.paged = liveAttr.paged;
@@ -43,8 +42,7 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr)
     const auto it = _map.find(attr.name);
     if (it != _map.end()) {
         const auto &liveAttr = _live.attribute[it->second];
-        search::attribute::Config liveCfg =
-            ConfigConverter::convert(liveAttr);
+        search::attribute::Config liveCfg = ConfigConverter::convert(liveAttr);
         AttributeTypeMatcher matching_types;
         if (matching_types(cfg, liveCfg)) {
             adjust(attr, liveAttr);

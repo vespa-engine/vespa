@@ -4,8 +4,7 @@
 
 #include <vespa/config-attributes.h>
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Class to create adjusted attributes config that minimizes the number of
@@ -32,7 +31,7 @@ private:
     adjust(AttributesConfig::Attribute &attr);
 
 public:
-    AttributesConfigScout(const AttributesConfig &live);
+    explicit AttributesConfigScout(const AttributesConfig &live);
 
     std::shared_ptr<AttributesConfig>
     adjust(const AttributesConfig &config);
