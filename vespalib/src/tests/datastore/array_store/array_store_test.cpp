@@ -167,10 +167,10 @@ TEST_F("control static sizes", NumberFixture(3)) {
     EXPECT_EQUAL(440u, sizeof(f.store));
     EXPECT_EQUAL(296u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQUAL(472u, sizeof(f.store));
+    EXPECT_EQUAL(488u, sizeof(f.store));
     EXPECT_EQUAL(328u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
 #endif
-    EXPECT_EQUAL(96u, sizeof(NumberFixture::ArrayStoreType::SmallArrayType));
+    EXPECT_EQUAL(112u, sizeof(NumberFixture::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = f.store.getMemoryUsage();
     EXPECT_EQUAL(960u, usage.allocatedBytes());
     EXPECT_EQUAL(32u, usage.usedBytes());

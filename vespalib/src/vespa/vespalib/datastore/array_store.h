@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "array_store_type_mapper.h"
 #include "array_store_config.h"
 #include "buffer_type.h"
 #include "bufferstate.h"
@@ -19,33 +20,36 @@ namespace vespalib::datastore {
  * Datastore for storing arrays of type EntryT that is accessed via a 32-bit EntryRef.
  *
  * The default EntryRef type uses 19 bits for offset (524288 values) and 13 bits for buffer id (8192 buffers).
- * Arrays of size [1,maxSmallArraySize] are stored in buffers with arrays of equal size.
- * Arrays of size >maxSmallArraySize are stored in buffers with vespalib::Array instances that are heap allocated.
  *
- * The max value of maxSmallArraySize is (2^bufferBits - 1).
+ * Buffer type ids [1,maxSmallArrayTypeId] are used to allocate small arrays in datastore buffers.
+ * The default type mapper uses a 1-to-1 mapping between type id and array size.
+ * Buffer type id 0 is used to heap allocate large arrays as vespalib::Array instances.
+ *
+ * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
  */
-template <typename EntryT, typename RefT = EntryRefT<19> >
+template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreTypeMapper<EntryT> >
 class ArrayStore
 {
 public:
+    using AllocSpec = ArrayStoreConfig::AllocSpec;
     using ArrayRef = vespalib::ArrayRef<EntryT>;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     using DataStoreType  = DataStoreT<RefT>;
-    using SmallArrayType = BufferType<EntryT>;
     using LargeArray = vespalib::Array<EntryT>;
-    using AllocSpec = ArrayStoreConfig::AllocSpec;
+    using LargeBufferType = typename TypeMapperT::LargeBufferType;
+    using SmallBufferType = typename TypeMapperT::SmallBufferType;
+    using TypeMapper = TypeMapperT;
 private:
     uint32_t _largeArrayTypeId;
-    uint32_t _maxSmallArraySize;
+    uint32_t _maxSmallArrayTypeId;
+    size_t _maxSmallArraySize;
     DataStoreType _store;
-    std::vector<SmallArrayBufferType<EntryT>> _smallArrayTypes;
-    LargeArrayBufferType<EntryT> _largeArrayType;
+    TypeMapper _mapper;
+    std::vector<SmallBufferType> _smallArrayTypes;
+    LargeBufferType _largeArrayType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
-    // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
-    uint32_t getTypeId(size_t arraySize) const { return arraySize; }
-    size_t getArraySize(uint32_t typeId) const { return typeId; }
     EntryRef addSmallArray(const ConstArrayRef &array);
     EntryRef addLargeArray(const ConstArrayRef &array);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
@@ -59,6 +63,7 @@ private:
 
 public:
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
+    ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&& mapper);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {
@@ -68,7 +73,7 @@ public:
         RefT internalRef(ref);
         uint32_t typeId = _store.getTypeId(internalRef.bufferId());
         if (typeId != _largeArrayTypeId) {
-            size_t arraySize = getArraySize(typeId);
+            size_t arraySize = _mapper.get_array_size(typeId);
             return getSmallArray(internalRef, arraySize);
         } else {
             return getLargeArray(internalRef);
@@ -113,7 +118,14 @@ public:
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 
-    static ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+                                                       size_t hugePageSize,
+                                                       size_t smallPageSize,
+                                                       size_t minNumArraysForNewBuffer,
+                                                       float allocGrowFactor);
+
+    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+                                                       const TypeMapper& mapper,
                                                        size_t hugePageSize,
                                                        size_t smallPageSize,
                                                        size_t minNumArraysForNewBuffer,
