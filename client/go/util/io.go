@@ -20,13 +20,13 @@ func PathExists(path string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
-// Returns true is the given path points to an existing directory
+// Returns true if the given path points to an existing directory
 func IsDirectory(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) && info.IsDir()
 }
 
-// Returns true is the given path points to an existing file
+// Returns true if the given path points to an existing file
 func IsRegularFile(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) && info.Mode().IsRegular()
