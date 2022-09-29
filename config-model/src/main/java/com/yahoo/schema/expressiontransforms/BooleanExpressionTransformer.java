@@ -36,12 +36,12 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
             node = transformChildren(composite, context);
 
         if (node instanceof OperationNode arithmetic)
-            node = transformBooleanArithmetics(arithmetic);
+            node = transformBooleanArithmetics(arithmetic, context);
 
         return node;
     }
 
-    private ExpressionNode transformBooleanArithmetics(OperationNode node) {
+    private ExpressionNode transformBooleanArithmetics(OperationNode node, TransformContext context) {
         Iterator<ExpressionNode> child = node.children().iterator();
 
         // Transform in precedence order:
@@ -51,30 +51,35 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
             Operator op = it.next();
             if ( ! stack.isEmpty()) {
                 while (stack.size() > 1 && ! op.hasPrecedenceOver(stack.peek().op)) {
-                    popStack(stack);
+                    popStack(stack, context);
                 }
             }
             stack.push(new ChildNode(op, child.next()));
         }
         while (stack.size() > 1)
-            popStack(stack);
+            popStack(stack, context);
         return stack.getFirst().child;
     }
 
-    private void popStack(Deque<ChildNode> stack) {
+    private void popStack(Deque<ChildNode> stack, TransformContext context) {
         ChildNode rhs = stack.pop();
         ChildNode lhs = stack.peek();
 
+        boolean primitives = isPrimitive(lhs.child, context) && isPrimitive(rhs.child, context);
         ExpressionNode combination;
-        if (rhs.op == Operator.and)
+        if (primitives && rhs.op == Operator.and)
             combination = andByIfNode(lhs.child, rhs.child);
-        else if (rhs.op == Operator.or)
+        else if (primitives && rhs.op == Operator.or)
             combination = orByIfNode(lhs.child, rhs.child);
         else {
             combination = resolve(lhs, rhs);
             lhs.artificial = true;
         }
         lhs.child = combination;
+    }
+
+    private boolean isPrimitive(ExpressionNode node, TransformContext context) {
+        return node.type(context.types()).rank() == 0;
     }
 
     private static OperationNode resolve(ChildNode left, ChildNode right) {
