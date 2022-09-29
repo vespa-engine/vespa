@@ -63,7 +63,7 @@ func TestValgrindDetection(t *testing.T) {
 	assert.Equal(t, true, spec.shouldUseValgrind)
 	assert.Equal(t, false, spec.shouldUseCallgrind)
 
-	argv = spec.prependValgrind("/bin/myprog", []string{"-c", "cfgid"})
+	argv = spec.prependValgrind([]string{"/bin/myprog", "-c", "cfgid"})
 	trace.Trace("argv:", argv)
 	assert.Equal(t, 11, len(argv))
 	assert.Equal(t, "valgrind", argv[0])
@@ -79,7 +79,7 @@ func TestValgrindDetection(t *testing.T) {
 	assert.Equal(t, true, spec.shouldUseValgrind)
 	assert.Equal(t, true, spec.shouldUseCallgrind)
 
-	argv = spec.prependValgrind("/bin/myprog", []string{"-c", "cfgid"})
+	argv = spec.prependValgrind([]string{"/bin/myprog", "-c", "cfgid"})
 	trace.Trace("argv:", argv)
 	assert.Equal(t, 6, len(argv))
 	assert.Equal(t, "valgrind", argv[0])

@@ -30,9 +30,7 @@ func main() {
 	_ = vespa.FindHome()
 	switch action {
 	case "start-c-binary":
-		if !startcbinary.Run(os.Args[1:]) {
-			os.Exit(1)
-		}
+		os.Exit(startcbinary.Run(os.Args[1:]))
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
 	case "security-env":
@@ -59,6 +57,9 @@ func main() {
 		cobra := clusterstate.NewSetNodeStateCmd()
 		cobra.Execute()
 	default:
+		if startcbinary.IsCandidate(os.Args[0]) {
+			os.Exit(startcbinary.Run(os.Args))
+		}
 		fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
 		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env")
 		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")

@@ -39,8 +39,31 @@ func (p *ProgSpec) setenv(k, v string) {
 	p.Env[k] = v
 }
 
+func (p *ProgSpec) getenv(k string) string {
+	if v, ok := p.Env[k]; ok {
+		return v
+	}
+	return os.Getenv(k)
+}
+
+func (p *ProgSpec) prependPath(dirName string) {
+	pathList := []string{dirName}
+	oldPath := p.getenv(ENV_PATH)
+	if oldPath == "" {
+		oldPath = "/usr/bin"
+	}
+	for _, part := range strings.Split(oldPath, ":") {
+		if part != dirName {
+			pathList = append(pathList, part)
+		}
+	}
+	newPath := strings.Join(pathList, ":")
+	p.setenv(ENV_PATH, newPath)
+	os.Setenv(ENV_PATH, newPath)
+}
+
 func (p *ProgSpec) matchesListEnv(envVarName string) bool {
-	return p.matchesListString(os.Getenv(envVarName))
+	return p.matchesListString(p.getenv(envVarName))
 }
 
 func (p *ProgSpec) matchesListString(env string) bool {
@@ -60,11 +83,10 @@ func (p *ProgSpec) matchesListString(env string) bool {
 }
 
 func (p *ProgSpec) valueFromListEnv(envVarName string) string {
-	return p.valueFromListString(os.Getenv(envVarName))
+	return p.valueFromListString(p.getenv(envVarName))
 }
 
 func (p *ProgSpec) valueFromListString(env string) string {
-
 	parts := strings.Fields(env)
 	for _, part := range parts {
 		idx := strings.Index(part, "=")
@@ -82,4 +104,32 @@ func (p *ProgSpec) valueFromListString(env string) string {
 		trace.Debug("checking matching:", p.BaseName, "!=", part)
 	}
 	return ""
+}
+
+func (spec *ProgSpec) effectiveEnv() []string {
+	env := make(map[string]string)
+	for _, entry := range os.Environ() {
+		addInMap := func(kv string) bool {
+			for idx, elem := range kv {
+				if elem == '=' {
+					k := kv[:idx]
+					env[k] = kv
+					return true
+				}
+			}
+			return false
+		}
+		if !addInMap(entry) {
+			env[entry] = ""
+		}
+	}
+	for k, v := range spec.Env {
+		trace.Trace("add to environment:", k, "=", v)
+		env[k] = k + "=" + v
+	}
+	envv := make([]string, 0, len(env))
+	for _, v := range env {
+		envv = append(envv, v)
+	}
+	return envv
 }

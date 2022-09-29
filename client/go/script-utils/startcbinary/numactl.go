@@ -5,7 +5,6 @@ package startcbinary
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,7 @@ import (
 func (p *ProgSpec) configureNumaCtl() {
 	p.shouldUseNumaCtl = false
 	p.numaSocket = -1
-	if os.Getenv(ENV_VESPA_NO_NUMACTL) != "" {
+	if p.getenv(ENV_VESPA_NO_NUMACTL) != "" {
 		return
 	}
 	backticks := util.BackTicksIgnoreStderr
@@ -36,7 +35,7 @@ func (p *ProgSpec) configureNumaCtl() {
 		return
 	}
 	p.shouldUseNumaCtl = true
-	if affinity := os.Getenv(ENV_VESPA_AFFINITY_CPU_SOCKET); affinity != "" {
+	if affinity := p.getenv(ENV_VESPA_AFFINITY_CPU_SOCKET); affinity != "" {
 		wantSocket, _ := strconv.Atoi(affinity)
 		trace.Debug("want socket:", wantSocket)
 		parts := strings.Fields(out)
@@ -57,7 +56,7 @@ func (p *ProgSpec) numaCtlBinary() string {
 	return "numactl"
 }
 
-func (p *ProgSpec) prependNumaCtl(program string, args []string) []string {
+func (p *ProgSpec) prependNumaCtl(args []string) []string {
 	result := make([]string, 0, 5+len(args))
 	result = append(result, "numactl")
 	if p.numaSocket >= 0 {
@@ -67,7 +66,6 @@ func (p *ProgSpec) prependNumaCtl(program string, args []string) []string {
 		result = append(result, "--interleave")
 		result = append(result, "all")
 	}
-	result = append(result, program)
 	for _, arg := range args {
 		result = append(result, arg)
 	}

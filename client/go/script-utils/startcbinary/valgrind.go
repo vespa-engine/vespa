@@ -16,7 +16,7 @@ import (
 func (p *ProgSpec) configureValgrind() {
 	p.shouldUseValgrind = false
 	p.shouldUseCallgrind = false
-	env := os.Getenv(ENV_VESPA_USE_VALGRIND)
+	env := p.getenv(ENV_VESPA_USE_VALGRIND)
 	parts := strings.Split(env, " ")
 	for _, part := range parts {
 		if p.BaseName == part {
@@ -27,7 +27,7 @@ func (p *ProgSpec) configureValgrind() {
 				trace.Trace("no valgrind, 'which' fails:", err, "=>", out)
 				return
 			}
-			if opts := os.Getenv(ENV_VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
+			if opts := p.getenv(ENV_VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
 				p.shouldUseCallgrind = true
 			}
 			p.shouldUseValgrind = true
@@ -42,7 +42,7 @@ func (p *ProgSpec) valgrindBinary() string {
 }
 
 func (p *ProgSpec) valgrindOptions() []string {
-	env := os.Getenv(ENV_VESPA_VALGRIND_OPT)
+	env := p.getenv(ENV_VESPA_VALGRIND_OPT)
 	if env != "" {
 		return strings.Fields(env)
 	}
@@ -71,14 +71,13 @@ func (p *ProgSpec) valgrindLogOption() string {
 	return fmt.Sprintf("--log-file=%s/tmp/valgrind.%s.log.%d", vespa.FindHome(), p.BaseName, os.Getpid())
 }
 
-func (p *ProgSpec) prependValgrind(program string, args []string) []string {
+func (p *ProgSpec) prependValgrind(args []string) []string {
 	result := make([]string, 0, 15+len(args))
 	result = append(result, p.valgrindBinary())
 	for _, arg := range p.valgrindOptions() {
 		result = append(result, arg)
 	}
 	result = append(result, p.valgrindLogOption())
-	result = append(result, program)
 	for _, arg := range args {
 		result = append(result, arg)
 	}
