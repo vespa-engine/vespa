@@ -5,11 +5,11 @@
 
 namespace vespalib::datastore {
 
-ArrayStoreConfig::ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &defaultSpec)
+ArrayStoreConfig::ArrayStoreConfig(uint32_t maxSmallArrayTypeId, const AllocSpec &defaultSpec)
     : _allocSpecs(),
       _enable_free_lists(false)
 {
-    for (size_t i = 0; i < (maxSmallArraySize + 1); ++i) {
+    for (uint32_t type_id = 0; type_id < (maxSmallArrayTypeId + 1); ++type_id) {
         _allocSpecs.push_back(defaultSpec);
     }
 }
@@ -21,10 +21,10 @@ ArrayStoreConfig::ArrayStoreConfig(const AllocSpecVector &allocSpecs)
 }
 
 const ArrayStoreConfig::AllocSpec &
-ArrayStoreConfig::specForSize(size_t arraySize) const
+ArrayStoreConfig::spec_for_type_id(uint32_t type_id) const
 {
-    assert(arraySize < _allocSpecs.size());
-    return _allocSpecs[arraySize];
+    assert(type_id < _allocSpecs.size());
+    return _allocSpecs[type_id];
 }
 
 namespace {
@@ -45,7 +45,8 @@ alignToSmallPageSize(size_t value, size_t minLimit, size_t smallPageSize)
 }
 
 ArrayStoreConfig
-ArrayStoreConfig::optimizeForHugePage(size_t maxSmallArraySize,
+ArrayStoreConfig::optimizeForHugePage(uint32_t maxSmallArrayTypeId,
+                                      std::function<size_t(uint32_t)> type_id_to_array_size,
                                       size_t hugePageSize,
                                       size_t smallPageSize,
                                       size_t entrySize,
@@ -55,7 +56,8 @@ ArrayStoreConfig::optimizeForHugePage(size_t maxSmallArraySize,
 {
     AllocSpecVector allocSpecs;
     allocSpecs.emplace_back(0, maxEntryRefOffset, minNumArraysForNewBuffer, allocGrowFactor); // large array spec;
-    for (size_t arraySize = 1; arraySize <= maxSmallArraySize; ++arraySize) {
+    for (uint32_t type_id = 1; type_id <= maxSmallArrayTypeId; ++type_id) {
+        size_t arraySize = type_id_to_array_size(type_id);
         size_t numArraysForNewBuffer = hugePageSize / (entrySize * arraySize);
         numArraysForNewBuffer = capToLimits(numArraysForNewBuffer, minNumArraysForNewBuffer, maxEntryRefOffset);
         numArraysForNewBuffer = alignToSmallPageSize(numArraysForNewBuffer, minNumArraysForNewBuffer, smallPageSize);

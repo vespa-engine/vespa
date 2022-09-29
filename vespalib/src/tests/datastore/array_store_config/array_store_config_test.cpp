@@ -15,24 +15,26 @@ struct Fixture
     using EntryRefType = EntryRefT<18>;
     ArrayStoreConfig cfg;
 
-    Fixture(uint32_t maxSmallArraySize,
+    Fixture(uint32_t maxSmallArrayTypeId,
             const AllocSpec &defaultSpec)
-        : cfg(maxSmallArraySize, defaultSpec) {}
+        : cfg(maxSmallArrayTypeId, defaultSpec) {}
 
-    Fixture(uint32_t maxSmallArraySize,
+    Fixture(uint32_t maxSmallArrayTypeId,
             size_t hugePageSize,
             size_t smallPageSize,
             size_t minNumArraysForNewBuffer)
-        : cfg(ArrayStoreConfig::optimizeForHugePage(maxSmallArraySize, hugePageSize, smallPageSize,
+        : cfg(ArrayStoreConfig::optimizeForHugePage(maxSmallArrayTypeId,
+                                                    [](size_t type_id) noexcept { return type_id; },
+                                                    hugePageSize, smallPageSize,
                                                     sizeof(int), EntryRefType::offsetSize(),
                                                     minNumArraysForNewBuffer,
                                                     ALLOC_GROW_FACTOR)) { }
-    void assertSpec(size_t arraySize, uint32_t numArraysForNewBuffer) {
-        assertSpec(arraySize, AllocSpec(0, EntryRefType::offsetSize(),
-                                        numArraysForNewBuffer, ALLOC_GROW_FACTOR));
+    void assertSpec(uint32_t type_id, uint32_t numArraysForNewBuffer) {
+        assertSpec(type_id, AllocSpec(0, EntryRefType::offsetSize(),
+                                      numArraysForNewBuffer, ALLOC_GROW_FACTOR));
     }
-    void assertSpec(size_t arraySize, const AllocSpec &expSpec) {
-        const ArrayStoreConfig::AllocSpec &actSpec = cfg.specForSize(arraySize);
+    void assertSpec(uint32_t type_id, const AllocSpec &expSpec) {
+        const auto& actSpec = cfg.spec_for_type_id(type_id);
         EXPECT_EQUAL(expSpec.minArraysInBuffer, actSpec.minArraysInBuffer);
         EXPECT_EQUAL(expSpec.maxArraysInBuffer, actSpec.maxArraysInBuffer);
         EXPECT_EQUAL(expSpec.numArraysForNewBuffer, actSpec.numArraysForNewBuffer);
@@ -53,7 +55,7 @@ constexpr size_t MB = KB * KB;
 
 TEST_F("require that default allocation spec is given for all array sizes", Fixture(3, makeSpec(4, 32, 8)))
 {
-    EXPECT_EQUAL(3u, f.cfg.maxSmallArraySize());
+    EXPECT_EQUAL(3u, f.cfg.maxSmallArrayTypeId());
     TEST_DO(f.assertSpec(0, makeSpec(4, 32, 8)));
     TEST_DO(f.assertSpec(1, makeSpec(4, 32, 8)));
     TEST_DO(f.assertSpec(2, makeSpec(4, 32, 8)));
@@ -65,7 +67,7 @@ TEST_F("require that we can generate config optimized for a given huge page", Fi
                                                                                       4 * KB,
                                                                                       8 * KB))
 {
-    EXPECT_EQUAL(1_Ki, f.cfg.maxSmallArraySize());
+    EXPECT_EQUAL(1_Ki, f.cfg.maxSmallArrayTypeId());
     TEST_DO(f.assertSpec(0, 8 * KB)); // large arrays
     TEST_DO(f.assertSpec(1, 256 * KB));
     TEST_DO(f.assertSpec(2, 256 * KB));

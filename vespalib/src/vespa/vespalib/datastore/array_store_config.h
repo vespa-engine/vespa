@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace vespalib::datastore {
@@ -42,21 +44,21 @@ private:
     bool _enable_free_lists;
 
     /**
-     * Setup an array store with arrays of size [1-(allocSpecs.size()-1)] allocated in buffers and
-     * larger arrays are heap allocated. The allocation spec for a given array size is found in the given vector.
+     * Setup an array store where buffer type ids [1-(allocSpecs.size()-1)] are used to allocate small arrays in datastore buffers and
+     * larger arrays are heap allocated. The allocation spec for a given buffer type is found in the given vector.
      * Allocation spec for large arrays is located at position 0.
      */
     ArrayStoreConfig(const AllocSpecVector &allocSpecs);
 
 public:
     /**
-     * Setup an array store with arrays of size [1-maxSmallArraySize] allocated in buffers
+     * Setup an array store where buffer type ids [1-maxSmallArrayTypeId] are used to allocate small arrays in datastore buffers
      * with the given default allocation spec. Larger arrays are heap allocated.
      */
-    ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &defaultSpec);
+    ArrayStoreConfig(uint32_t maxSmallArrayTypeId, const AllocSpec &defaultSpec);
 
-    size_t maxSmallArraySize() const { return _allocSpecs.size() - 1; }
-    const AllocSpec &specForSize(size_t arraySize) const;
+    uint32_t maxSmallArrayTypeId() const { return _allocSpecs.size() - 1; }
+    const AllocSpec &spec_for_type_id(uint32_t type_id) const;
     ArrayStoreConfig& enable_free_lists(bool enable) & noexcept {
         _enable_free_lists = enable;
         return *this;
@@ -70,7 +72,8 @@ public:
     /**
      * Generate a config that is optimized for the given memory huge page size.
      */
-    static ArrayStoreConfig optimizeForHugePage(size_t maxSmallArraySize,
+    static ArrayStoreConfig optimizeForHugePage(uint32_t maxSmallArrayTypeId,
+                                                std::function<size_t(uint32_t)> type_id_to_array_size,
                                                 size_t hugePageSize,
                                                 size_t smallPageSize,
                                                 size_t entrySize,
