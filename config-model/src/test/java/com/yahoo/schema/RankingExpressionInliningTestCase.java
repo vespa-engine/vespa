@@ -276,7 +276,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     private String getRankingExpression(String name, RankProfile rankProfile, Schema schema) {
         Optional<String> rankExpression =
-                new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties())
+                new RawRankProfile(rankProfile, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties())
                         .configProperties()
                         .stream()
                         .filter(r -> r.getFirst().equals("rankingExpression(" + name + ").rankingScript"))
