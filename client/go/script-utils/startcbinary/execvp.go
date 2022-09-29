@@ -29,14 +29,10 @@ func findInPath(prog string) string {
 	return prog
 }
 
-func myexecvp(prog string, args []string, envv []string) error {
-	argv := make([]string, 0, 1+len(args))
-	argv = append(argv, prog)
-	for _, arg := range args {
-		argv = append(argv, arg)
-	}
+func myexecvp(prog string, argv []string, envv []string) error {
 	trace.Trace("run cmd", strings.Join(argv, " "))
 	prog = findInPath(prog)
+	argv[0] = prog
 	err := unix.Exec(prog, argv, envv)
 	return fmt.Errorf("cannot execute '%s': %v", prog, err)
 }

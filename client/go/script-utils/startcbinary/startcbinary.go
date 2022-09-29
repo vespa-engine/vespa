@@ -30,10 +30,10 @@ func (spec *ProgSpec) run() error {
 	prog := spec.Program + "-bin"
 	args := spec.Args
 	if spec.shouldUseValgrind {
-		args = spec.prependValgrind(prog, args)
+		args = spec.prependValgrind(args)
 		prog = spec.valgrindBinary()
 	} else if spec.shouldUseNumaCtl {
-		args = spec.prependNumaCtl(prog, args)
+		args = spec.prependNumaCtl(args)
 		prog = spec.numaCtlBinary()
 	}
 	if spec.shouldUseVespaMalloc {

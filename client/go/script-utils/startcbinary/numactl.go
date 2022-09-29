@@ -56,7 +56,7 @@ func (p *ProgSpec) numaCtlBinary() string {
 	return "numactl"
 }
 
-func (p *ProgSpec) prependNumaCtl(program string, args []string) []string {
+func (p *ProgSpec) prependNumaCtl(args []string) []string {
 	result := make([]string, 0, 5+len(args))
 	result = append(result, "numactl")
 	if p.numaSocket >= 0 {
@@ -66,7 +66,6 @@ func (p *ProgSpec) prependNumaCtl(program string, args []string) []string {
 		result = append(result, "--interleave")
 		result = append(result, "all")
 	}
-	result = append(result, program)
 	for _, arg := range args {
 		result = append(result, arg)
 	}

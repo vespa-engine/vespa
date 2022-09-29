@@ -20,7 +20,7 @@ func Run(args []string) int {
 	}
 	spec := ProgSpec{
 		Program: args[0],
-		Args:    args[1:],
+		Args:    args,
 	}
 	spec.setup()
 	vespa.LoadDefaultEnv()

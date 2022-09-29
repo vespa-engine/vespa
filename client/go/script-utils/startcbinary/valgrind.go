@@ -71,14 +71,13 @@ func (p *ProgSpec) valgrindLogOption() string {
 	return fmt.Sprintf("--log-file=%s/tmp/valgrind.%s.log.%d", vespa.FindHome(), p.BaseName, os.Getpid())
 }
 
-func (p *ProgSpec) prependValgrind(program string, args []string) []string {
+func (p *ProgSpec) prependValgrind(args []string) []string {
 	result := make([]string, 0, 15+len(args))
 	result = append(result, p.valgrindBinary())
 	for _, arg := range p.valgrindOptions() {
 		result = append(result, arg)
 	}
 	result = append(result, p.valgrindLogOption())
-	result = append(result, program)
 	for _, arg := range args {
 		result = append(result, arg)
 	}
