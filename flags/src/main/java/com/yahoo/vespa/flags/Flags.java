@@ -55,12 +55,6 @@ public class Flags {
             "On first tick of the main chain after (re)start of host admin.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag PEM_TRUST_STORE = defineFeatureFlag(
-            "pem-trust-store", true,
-            List.of("hakonhall"), "2022-09-15", "2022-10-14",
-            "Whether to use the host admin server's trust store in the request when refreshing node identity.",
-            "On start of host admin.");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2023-01-01",
