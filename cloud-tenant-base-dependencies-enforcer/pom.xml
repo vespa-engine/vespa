@@ -169,8 +169,6 @@
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:[${jackson2.version}]:jar:test</include>
-                                        <include>com.fasterxml.woodstox:woodstox-core:5.0.3:jar:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.7.0:jar:test</include>
                                         <include>com.ibm.icu:icu4j:57.1:jar:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:[${onnxruntime.version}]:jar:test</include>
@@ -199,7 +197,6 @@
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
                                         <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:test</include>
                                         <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:test</include>
-                                        <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
                                         <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
