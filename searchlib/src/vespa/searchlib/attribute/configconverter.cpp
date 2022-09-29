@@ -46,8 +46,8 @@ getCollectionTypeMap()
     return map;
 }
 
-static DataTypeMap _dataTypeMap = getDataTypeMap();
-static CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
+DataTypeMap _dataTypeMap = getDataTypeMap();
+CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
 DictionaryConfig::Type
 convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
@@ -77,7 +77,7 @@ convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
 
 DictionaryConfig
 convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
-    return DictionaryConfig(convert(dictionary.type), convert(dictionary.match));
+    return {convert(dictionary.type), convert(dictionary.match)};
 }
 
 Config::Match
@@ -103,7 +103,6 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     Config retval(bType, cType);
     PredicateParams predicateParams;
     retval.setFastSearch(cfg.fastsearch);
-    retval.setEnableBitVectors(cfg.enablebitvectors);
     retval.setEnableOnlyBitVector(cfg.enableonlybitvector);
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);

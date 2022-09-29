@@ -100,7 +100,7 @@ SourceSelector::LoadInfo::load()
 
 SourceSelector::SourceSelector(Source defaultSource, AttributeVector::SP realSource) :
     ISourceSelector(defaultSource),
-    _realSource(realSource)
+    _realSource(std::move(realSource))
 { }
 
 SourceSelector::SaveInfo::UP

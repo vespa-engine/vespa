@@ -29,14 +29,14 @@ public:
     int                       id() const { return _id; }
     bool inSync()    const { return _inSync; }
     bool finished()  const;
-    static Task::UP createTask(const Session::SP & session);
+    static Task::UP createTask(Session::SP session);
     void setStartTime(steady_time startTime) { _startTime = startTime; }
     steady_time getStartTime() const { return _startTime; }
     bool isVisitRunning() const { return _visitRunning; }
 private:
     class VisitTask : public Task {
     public:
-        VisitTask(const Session::SP & session);
+        VisitTask(Session::SP session);
         ~VisitTask();
     private:
         void run() override;

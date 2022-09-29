@@ -23,28 +23,25 @@ using MyPostingStore = PostingStore<int32_t>;
 
 namespace {
 
-static constexpr uint32_t lid_limit = 20000;
-static constexpr uint32_t huge_sequence_length = 800;
+constexpr uint32_t lid_limit = 20000;
+constexpr uint32_t huge_sequence_length = 800;
 
 struct PostingStoreSetup {
-    bool enable_bitvectors;
     bool enable_only_bitvector;
-    PostingStoreSetup(bool enable_bitvectors_in, bool enable_only_bitvector_in)
-        : enable_bitvectors(enable_bitvectors_in),
-          enable_only_bitvector(enable_only_bitvector_in)
+    explicit PostingStoreSetup(bool enable_only_bitvector_in)
+        : enable_only_bitvector(enable_only_bitvector_in)
     {
     }
 };
 
 std::ostream& operator<<(std::ostream& os, const PostingStoreSetup setup)
 {
-    os << (setup.enable_bitvectors ? "bv" : "nobv") << "_" << (setup.enable_only_bitvector ? "onlybv" : "mixed");
+    os << (setup.enable_only_bitvector ? "onlybv" : "mixed");
     return os;
 }
 
 Config make_config(PostingStoreSetup param) {
     Config cfg;
-    cfg.setEnableBitVectors(param.enable_bitvectors);
     cfg.setEnableOnlyBitVector(param.enable_only_bitvector);
     return cfg;
 }
@@ -216,7 +213,6 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
     if (sequence_length < huge_sequence_length ||
-        !_config.getEnableBitVectors() ||
         !_config.getEnableOnlyBitVector()) {
         EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
     } else {
@@ -226,7 +222,7 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
 
 VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest,
                                      PostingStoreTest,
-                                     testing::Values(PostingStoreSetup(false, false), PostingStoreSetup(true, false), PostingStoreSetup(true, true)), testing::PrintToStringParamName());
+                                     testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)), testing::PrintToStringParamName());
 
 TEST_P(PostingStoreTest, require_that_nodes_for_multiple_small_btrees_are_compacted)
 {

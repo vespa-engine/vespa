@@ -37,7 +37,6 @@ public:
 class PostingStoreBase2
 {
 public:
-    bool _enableBitVectors;
     bool _enableOnlyBitVector;
     bool _isFilter;
 protected:

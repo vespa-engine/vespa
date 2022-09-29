@@ -57,7 +57,6 @@ struct BitVectorTest
     make(Config cfg,
          const vespalib::string &pref,
          bool fastSearch,
-         bool enableBitVectors,
          bool enableOnlyBitVector,
          bool filter);
 
@@ -65,16 +64,10 @@ struct BitVectorTest
     addDocs(const AttributePtr &v, size_t sz);
 
     template <typename VectorType>
-    void populate(VectorType &v,
-                  uint32_t low,
-                  uint32_t high,
-                  bool set);
+    void populate(VectorType &v, uint32_t low, uint32_t high, bool set);
 
     template <typename VectorType>
-    void populateAll(VectorType &v,
-                     uint32_t low,
-                     uint32_t high,
-                     bool set);
+    void populateAll(VectorType &v, uint32_t low, uint32_t high, bool set);
 
     void
     buildTermQuery(std::vector<char> & buffer,
@@ -116,7 +109,6 @@ struct BitVectorTest
     void
     test(BasicType bt, CollectionType ct, const vespalib::string &pref,
          bool fastSearch,
-         bool enableBitVectors,
          bool enableOnlyBitVector,
          bool filter);
 
@@ -130,8 +122,8 @@ template <typename VectorType>
 VectorType &
 BitVectorTest::as(AttributePtr &v)
 {
-    VectorType *res = dynamic_cast<VectorType *>(v.get());
-    assert(res != NULL);
+    auto *res = dynamic_cast<VectorType *>(v.get());
+    assert(res != nullptr);
     return *res;
 }
 
@@ -249,12 +241,10 @@ BitVectorTest::AttributePtr
 BitVectorTest::make(Config cfg,
                     const vespalib::string &pref,
                     bool fastSearch,
-                    bool enableBitVectors,
                     bool enableOnlyBitVector,
                     bool filter)
 {
     cfg.setFastSearch(fastSearch);
-    cfg.setEnableBitVectors(enableBitVectors);
     cfg.setEnableOnlyBitVector(enableOnlyBitVector);
     cfg.setIsFilter(filter);
     AttributePtr v = AttributeFactory::createAttribute(pref, cfg);
@@ -458,7 +448,7 @@ BitVectorTest::checkSearch(AttributePtr v,
     TermFieldMatchData md;
     sc->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    checkSearch(v, std::move(sb), md,
+    checkSearch(std::move(v), std::move(sb), md,
                 expFirstDocId, expLastDocId, expDocFreq, weights,
                 checkStride);
 }
@@ -470,18 +460,17 @@ BitVectorTest::test(BasicType bt,
                     CollectionType ct,
                     const vespalib::string &pref,
                     bool fastSearch,
-                    bool enableBitVectors,
                     bool enableOnlyBitVector,
                     bool filter)
 {
     Config cfg(bt, ct);
-    AttributePtr v = make(cfg, pref, fastSearch, enableBitVectors, enableOnlyBitVector, filter);
+    AttributePtr v = make(cfg, pref, fastSearch, enableOnlyBitVector, filter);
     addDocs(v, 1024);
-    VectorType &tv = as<VectorType>(v);  
+    auto &tv = as<VectorType>(v);
     populate(tv, 2, 1023, true);
 
     SearchContextPtr sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter, true);
+    checkSearch(v, std::move(sc), 2, 1022, 205, !fastSearch && !filter, true);
     sc = getSearch<VectorType>(tv, false);
     checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector && !filter, true);
     const search::IDocumentWeightAttribute *dwa = v->asDocumentWeightAttribute();
@@ -504,13 +493,13 @@ BitVectorTest::test(BasicType bt,
     checkSearch(v, std::move(sc), 977, 1022, 10, !enableOnlyBitVector &&!filter, true);
     populate(tv, 2, 973, true);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter, true);
+    checkSearch(v, std::move(sc), 2, 1022, 205, !fastSearch && !filter, true);
     addDocs(v, 15000);
     sc = getSearch<VectorType>(tv, true);
     checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector && !filter, true);
     populateAll(tv, 10, 15000, true);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 14999, 14992, !enableBitVectors && !filter, false);
+    checkSearch(v, std::move(sc), 2, 14999, 14992, !fastSearch && !filter, false);
 }
 
 
@@ -519,14 +508,12 @@ void
 BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref)
 {
     LOG(info, "test run, pref is %s", pref.c_str());
-    test<VectorType, BufferType>(bt, ct, pref, false, false, false, false);
-    test<VectorType, BufferType>(bt, ct, pref, false, false, false, true);
-    test<VectorType, BufferType>(bt, ct, pref, true, false, false, false);
-    test<VectorType, BufferType>(bt, ct, pref, true, false, false, true);
-    test<VectorType, BufferType>(bt, ct, pref, true, true, false, false);
-    test<VectorType, BufferType>(bt, ct, pref, true, true, false, true);
-    test<VectorType, BufferType>(bt, ct, pref, true, true, true, false);
-    test<VectorType, BufferType>(bt, ct, pref, true, true, true, true);
+    test<VectorType, BufferType>(bt, ct, pref, false, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, false, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, true);
 }
 
 
@@ -605,8 +592,8 @@ TEST_F("Test bitvectors with weighted set value string", BitVectorTest)
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(bool inverted);
-    ~Verifier();
+    explicit Verifier(bool inverted);
+    ~Verifier() override;
 
     SearchIterator::UP create(bool strict) const override {
         return BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict, _inverted);

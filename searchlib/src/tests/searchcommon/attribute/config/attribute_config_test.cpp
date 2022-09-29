@@ -31,7 +31,6 @@ TEST_F("test default attribute config", Fixture)
     EXPECT_EQUAL(CollectionType::Type::SINGLE,
                  f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
-    EXPECT_TRUE(!f._config.getEnableBitVectors());
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());
@@ -39,14 +38,11 @@ TEST_F("test default attribute config", Fixture)
 }
 
 TEST_F("test integer weightedset attribute config",
-       Fixture(BasicType::Type::INT32,
-               CollectionType::Type::WSET))
+       Fixture(BasicType::Type::INT32, CollectionType::Type::WSET))
 {
     EXPECT_EQUAL(BasicType::Type::INT32, f._config.basicType().type());
-    EXPECT_EQUAL(CollectionType::Type::WSET,
-                 f._config.collectionType().type());
+    EXPECT_EQUAL(CollectionType::Type::WSET, f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
-    EXPECT_TRUE(!f._config.getEnableBitVectors());
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());

@@ -155,8 +155,8 @@ protected:
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr& ptr1, uint32_t numDocs, const std::vector<BufferType>& values);
     void testPostingList();
-    void testPostingList(bool enableBitVector, bool enable_only_bitvector);
-    void testPostingList(bool enableBitVector, bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues);
+    void testPostingList(bool enable_only_bitvector);
+    void testPostingList(bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues);
 
     template <typename AttributeType, typename ValueType>
     void checkPostingList(AttributeType & vec, ValueType value, DocSet expected);
@@ -554,7 +554,7 @@ PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t num
 {
     LOG(info, "testPostingList: vector '%s'", ptr1->getName().c_str());
 
-    auto& vec1 = static_cast<VectorType &>(*ptr1.get());
+    auto& vec1 = dynamic_cast<VectorType &>(*ptr1);
     addDocs(ptr1, numDocs);
 
     uint32_t part = numDocs / values.size();
@@ -595,20 +595,19 @@ PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t num
 void
 PostingListAttributeTest::testPostingList()
 {
-    testPostingList(false, false);
-    testPostingList(true, false);
-    testPostingList(true, true);
+    testPostingList(false);
+    testPostingList(true);
 }
 
 void
-PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only_bitvector)
+PostingListAttributeTest::testPostingList(bool enable_only_bitvector)
 {
-    testPostingList(enableBitVector, enable_only_bitvector, 1000, 50);
-    testPostingList(enableBitVector, enable_only_bitvector, 2000, 10); // This should force bitvector
+    testPostingList(enable_only_bitvector, 1000, 50);
+    testPostingList(enable_only_bitvector, 2000, 10); // This should force bitvector
 }
 
 void
-PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues)
+PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues)
 {
 
     { // IntegerAttribute
@@ -619,7 +618,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sint32", cfg);
             testPostingList<Int32PostingListAttribute>(ptr1, numDocs, values);
@@ -627,7 +625,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("aint32", cfg);
             testPostingList<Int32ArrayPostingListAttribute>(ptr1, numDocs, values);
@@ -635,7 +632,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::INT32, CollectionType::WSET));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsint32", cfg);
             testPostingList<Int32WsetPostingListAttribute>(ptr1, numDocs, values);
@@ -650,7 +646,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sfloat", cfg);
             testPostingList<FloatPostingListAttribute>(ptr1, numDocs, values);
@@ -658,7 +653,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::ARRAY));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("afloat", cfg);
             testPostingList<FloatArrayPostingListAttribute>(ptr1, numDocs, values);
@@ -666,7 +660,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::WSET));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsfloat", cfg);
             testPostingList<FloatWsetPostingListAttribute>(ptr1, numDocs, values);
@@ -687,7 +680,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sstr", cfg);
             testPostingList<StringPostingListAttribute>(ptr1, numDocs, charValues);
@@ -695,7 +687,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("astr", cfg);
             testPostingList<StringArrayPostingListAttribute>(ptr1, numDocs, charValues);
@@ -703,7 +694,6 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only
         {
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
-            cfg.setEnableBitVectors(enableBitVector);
             cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsstr", cfg);
             testPostingList<StringWsetPostingListAttribute>(ptr1, numDocs, charValues);
