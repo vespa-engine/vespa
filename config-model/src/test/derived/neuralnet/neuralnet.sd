@@ -3,6 +3,10 @@ schema neuralnet {
 
     document neuralnet {
 
+        field uniqueRCount type double {
+            indexing: attribute
+        }
+
         field pinned type int {
             indexing: attribute
         }

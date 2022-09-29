@@ -31,6 +31,8 @@ public class RankingExpressionWithOnnxTestCase {
 
     private final static String name = "mnist_softmax";
     private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_layer_Variable), f(a,b)(a * b)), sum, d2) * 1.0, constant(mnist_softmax_layer_Variable_1) * 1.0, f(a,b)(a + b))";
+    private final static String vespaExpressionConstants = "constant mnist_softmax_layer_Variable { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }\n" +
+                                                           "constant mnist_softmax_layer_Variable_1 { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }\n";
 
     @AfterEach
     public void removeGeneratedModelFiles() {
@@ -41,7 +43,7 @@ public class RankingExpressionWithOnnxTestCase {
     void testOnnxReferenceWithConstantFeature() {
         RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
                 "onnx_vespa('mnist_softmax.onnx')",
-                "constant mytensor { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }",
+                vespaExpressionConstants + "constant mytensor { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }",
                 null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
@@ -58,7 +60,7 @@ public class RankingExpressionWithOnnxTestCase {
                 queryProfileType);
         RankProfileSearchFixture search = fixtureWith("query(mytensor)",
                 "onnx_vespa('mnist_softmax.onnx')",
-                null,
+                vespaExpressionConstants,
                 null,
                 "Placeholder",
                 application);
@@ -70,7 +72,7 @@ public class RankingExpressionWithOnnxTestCase {
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                 "onnx_vespa('mnist_softmax.onnx')",
-                null,
+                vespaExpressionConstants,
                 "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
@@ -88,7 +90,7 @@ public class RankingExpressionWithOnnxTestCase {
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir, queryProfile, queryProfileType);
         RankProfileSearchFixture search = fixtureWith("sum(query(mytensor) * attribute(mytensor) * constant(mytensor),d2)",
                 "onnx_vespa('mnist_softmax.onnx')",
-                "constant mytensor { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }",
+                vespaExpressionConstants + "constant mytensor { file: ignored\ntype: tensor<float>(d0[1],d1[784]) }",
                 "field mytensor type tensor<float>(d0[1],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
@@ -99,21 +101,24 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     void testNestedOnnxReference() {
         RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[1],d1[784])(0.0)",
-                "5 + sum(onnx_vespa('mnist_softmax.onnx'))");
+                                                      "5 + sum(onnx_vespa('mnist_softmax.onnx'))",
+                                                      vespaExpressionConstants);
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
     }
 
     @Test
     void testOnnxReferenceWithSpecifiedOutput() {
         RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[1],d1[784])(0.0)",
-                "onnx_vespa('mnist_softmax.onnx', 'layer_add')");
+                                                      "onnx_vespa('mnist_softmax.onnx', 'layer_add')",
+                                                      vespaExpressionConstants);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
     @Test
     void testOnnxReferenceWithSpecifiedOutputAndSignature() {
         RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[1],d1[784])(0.0)",
-                "onnx_vespa('mnist_softmax.onnx', 'default.layer_add')");
+                                                      "onnx_vespa('mnist_softmax.onnx', 'default.layer_add')",
+                                                      vespaExpressionConstants);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
@@ -177,7 +182,8 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     void testImportingFromStoredExpressions() throws IOException {
         RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[1],d1[784])(0.0)",
-                "onnx_vespa(\"mnist_softmax.onnx\")");
+                                                      "onnx_vespa(\"mnist_softmax.onnx\")",
+                                                      vespaExpressionConstants);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -187,12 +193,14 @@ public class RankingExpressionWithOnnxTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
+            String constants = "constant mnist_softmax_layer_Variable { file: ignored\ntype: tensor<float>(d0[2],d1[784]) }\n" +
+                               "constant mnist_softmax_layer_Variable_1 { file: ignored\ntype: tensor<float>(d0[2],d1[784]) }\n";
             RankProfileSearchFixture searchFromStored = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
-                    "onnx_vespa('mnist_softmax.onnx')",
-                    null,
-                    null,
-                    "Placeholder",
-                    storedApplication);
+                                                                    "onnx_vespa('mnist_softmax.onnx')",
+                                                                    constants,
+                                                                    null,
+                                                                    "Placeholder",
+                                                                    storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
             // simulating file distribution in this test
@@ -221,7 +229,8 @@ public class RankingExpressionWithOnnxTestCase {
 
         String vespaExpressionWithoutConstant =
                 "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), " + name + "_layer_Variable, f(a,b)(a * b)), sum, d2) * 1.0, constant(" + name + "_layer_Variable_1) * 1.0, f(a,b)(a + b))";
-        RankProfileSearchFixture search = uncompiledFixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
+        String constant = "constant mnist_softmax_layer_Variable_1 { file: ignored\ntype: tensor<float>(d0[1],d1[10]) }\n";
+        RankProfileSearchFixture search = uncompiledFixtureWith(rankProfile, new StoringApplicationPackage(applicationDir), constant);
         search.compileRankProfile("my_profile", applicationDir.append("models"));
         search.compileRankProfile("my_profile_child", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
@@ -237,7 +246,7 @@ public class RankingExpressionWithOnnxTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication);
+            RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication, constant);
             searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
             searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
@@ -326,7 +335,11 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression) {
-        return fixtureWith(placeholderExpression, firstPhaseExpression, null, null, "Placeholder",
+        return fixtureWith(placeholderExpression, firstPhaseExpression, null);
+    }
+
+    private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression, String constant) {
+        return fixtureWith(placeholderExpression, firstPhaseExpression, constant, null, "Placeholder",
                            new StoringApplicationPackage(applicationDir));
     }
 
@@ -337,9 +350,13 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     private RankProfileSearchFixture uncompiledFixtureWith(String rankProfile, StoringApplicationPackage application) {
+        return uncompiledFixtureWith(rankProfile, application, null);
+    }
+
+    private RankProfileSearchFixture uncompiledFixtureWith(String rankProfile, StoringApplicationPackage application, String constant) {
         try {
             return new RankProfileSearchFixture(application, application.getQueryProfiles(),
-                                                rankProfile, null, null);
+                                                rankProfile, constant, null);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
