@@ -5,6 +5,7 @@
 package vespa
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -57,4 +58,16 @@ func FindHome() string {
 	// fallback
 	os.Setenv("VESPA_HOME", defaultInstallDir)
 	return defaultInstallDir
+}
+
+func HasFileUnderVespaHome(fn string) (bool, string) {
+	fileName := fmt.Sprintf("%s/%s", FindHome(), fn)
+	file, err := os.Open(fileName)
+	if file != nil {
+		file.Close()
+		if err == nil {
+			return true, fileName
+		}
+	}
+	return false, ""
 }

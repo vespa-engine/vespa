@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# emulate "which" that does not find valgrind
+
+echo "which: no valgrind in ($PATH)" >&2
+exit 1

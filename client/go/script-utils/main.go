@@ -11,6 +11,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/cmd/clusterstate"
 	"github.com/vespa-engine/vespa/client/go/cmd/deploy"
 	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
+	"github.com/vespa-engine/vespa/client/go/script-utils/startcbinary"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -28,6 +29,10 @@ func main() {
 	}
 	_ = vespa.FindHome()
 	switch action {
+	case "start-c-binary":
+		if !startcbinary.Run(os.Args[1:]) {
+			os.Exit(1)
+		}
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
 	case "security-env":
