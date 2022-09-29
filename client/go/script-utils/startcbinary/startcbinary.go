@@ -6,9 +6,6 @@ package startcbinary
 import (
 	"fmt"
 	"os"
-	"os/exec"
-
-	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func startCbinary(spec ProgSpec) int {
@@ -32,28 +29,16 @@ func startCbinary(spec ProgSpec) int {
 func (spec *ProgSpec) run() error {
 	prog := spec.Program + "-bin"
 	args := spec.Args
-	cmd := exec.Command(prog, args...)
 	if spec.shouldUseValgrind {
-		cmd.Path = spec.valgrindBinary()
-		cmd.Args = spec.prependValgrind(prog, args)
+		args = spec.prependValgrind(prog, args)
+		prog = spec.valgrindBinary()
 	} else if spec.shouldUseNumaCtl {
-		cmd.Path = spec.numaCtlBinary()
-		cmd.Args = spec.prependNumaCtl(prog, args)
+		args = spec.prependNumaCtl(prog, args)
+		prog = spec.numaCtlBinary()
 	}
 	if spec.shouldUseVespaMalloc {
-		spec.setenv("LD_PRELOAD", spec.vespaMallocPreload)
+		spec.setenv(ENV_LD_PRELOAD, spec.vespaMallocPreload)
 	}
-	if len(spec.Env) > 0 {
-		env := os.Environ()
-		for k, v := range spec.Env {
-			trace.Trace("add to environment:", k, "=", v)
-			env = append(env, k+"="+v)
-		}
-		cmd.Env = env
-	}
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	trace.Trace("run cmd", cmd)
-	return cmd.Run()
+	envv := spec.effectiveEnv()
+	return myexecvp(prog, args, envv)
 }

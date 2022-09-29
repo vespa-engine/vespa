@@ -105,3 +105,31 @@ func (p *ProgSpec) valueFromListString(env string) string {
 	}
 	return ""
 }
+
+func (spec *ProgSpec) effectiveEnv() []string {
+	env := make(map[string]string)
+	for _, entry := range os.Environ() {
+		addInMap := func(kv string) bool {
+			for idx, elem := range kv {
+				if elem == '=' {
+					k := kv[:idx]
+					env[k] = kv
+					return true
+				}
+			}
+			return false
+		}
+		if !addInMap(entry) {
+			env[entry] = ""
+		}
+	}
+	for k, v := range spec.Env {
+		trace.Trace("add to environment:", k, "=", v)
+		env[k] = k + "=" + v
+	}
+	envv := make([]string, 0, len(env))
+	for _, v := range env {
+		envv = append(envv, v)
+	}
+	return envv
+}
