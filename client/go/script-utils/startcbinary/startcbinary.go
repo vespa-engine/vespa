@@ -13,6 +13,8 @@ import (
 
 func startCbinary(spec ProgSpec) bool {
 	spec.configureCommonEnv()
+	spec.configurePath()
+	spec.configureTuning()
 	spec.configureValgrind()
 	spec.configureNumaCtl()
 	spec.configureHugePages()

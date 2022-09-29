@@ -46,6 +46,22 @@ func (p *ProgSpec) getenv(k string) string {
 	return os.Getenv(k)
 }
 
+func (p *ProgSpec) prependPath(dirName string) {
+	pathList := []string{dirName}
+	oldPath := p.getenv(ENV_PATH)
+	if oldPath == "" {
+		oldPath = "/usr/bin"
+	}
+	for _, part := range strings.Split(oldPath, ":") {
+		if part != dirName {
+			pathList = append(pathList, part)
+		}
+	}
+	newPath := strings.Join(pathList, ":")
+	p.setenv(ENV_PATH, newPath)
+	os.Setenv(ENV_PATH, newPath)
+}
+
 func (p *ProgSpec) matchesListEnv(envVarName string) bool {
 	return p.matchesListString(p.getenv(envVarName))
 }

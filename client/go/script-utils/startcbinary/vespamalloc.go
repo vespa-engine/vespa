@@ -28,6 +28,7 @@ func (p *ProgSpec) configureVespaMalloc() {
 	p.shouldUseVespaMalloc = false
 	if p.matchesListEnv(ENV_VESPA_USE_NO_VESPAMALLOC) {
 		trace.Trace("use no vespamalloc:", p.BaseName)
+		return
 	}
 	if p.shouldUseValgrind && !p.shouldUseCallgrind {
 		trace.Trace("use valgrind, so no vespamalloc:", p.BaseName)

@@ -15,12 +15,15 @@ const (
 	ENV_LD_PRELOAD                   = "LD_PRELOAD"
 	ENV_STD_THREAD_PREVENT_TRY_CATCH = "STD_THREAD_PREVENT_TRY_CATCH"
 	ENV_GLIBCXX_FORCE_NEW            = "GLIBCXX_FORCE_NEW"
+	ENV_JAVA_HOME                    = "JAVA_HOME"
 
 	ENV_VESPA_AFFINITY_CPU_SOCKET    = "VESPA_AFFINITY_CPU_SOCKET"
 	ENV_VESPA_LOAD_CODE_AS_HUGEPAGES = "VESPA_LOAD_CODE_AS_HUGEPAGES"
 	ENV_VESPA_MALLOC_HUGEPAGES       = "VESPA_MALLOC_HUGEPAGES"
 	ENV_VESPA_MALLOC_MADVISE_LIMIT   = "VESPA_MALLOC_MADVISE_LIMIT"
 	ENV_VESPA_NO_NUMACTL             = "VESPA_NO_NUMACTL"
+	ENV_VESPA_TIMER_HZ               = "VESPA_TIMER_HZ"
+	ENV_VESPA_USER                   = "VESPA_USER"
 	ENV_VESPA_USE_HUGEPAGES          = "VESPA_USE_HUGEPAGES"
 	ENV_VESPA_USE_HUGEPAGES_LIST     = "VESPA_USE_HUGEPAGES_LIST"
 	ENV_VESPA_USE_MADVISE_LIST       = "VESPA_USE_MADVISE_LIST"
@@ -30,16 +33,16 @@ const (
 	ENV_VESPA_USE_VESPAMALLOC_D      = "VESPA_USE_VESPAMALLOC_D"
 	ENV_VESPA_USE_VESPAMALLOC_DST    = "VESPA_USE_VESPAMALLOC_DST"
 	ENV_VESPA_VALGRIND_OPT           = "VESPA_VALGRIND_OPT"
-	ENV_VESPA_USER                   = "VESPA_USER"
 
 	// backwards compatibility variables:
-	ENV_ROOT                = "ROOT"
 	ENV_HUGEPAGES_LIST      = "HUGEPAGES_LIST"
 	ENV_MADVISE_LIST        = "MADVISE_LIST"
 	ENV_NO_VESPAMALLOC_LIST = "NO_VESPAMALLOC_LIST"
-	ENV_VESPAMALLOC_LIST    = "VESPAMALLOCD_LIST"
-	ENV_VESPAMALLOCD_LIST   = "VESPAMALLOCD_LIST"
+	ENV_PATH                = "PATH"
+	ENV_ROOT                = "ROOT"
 	ENV_VESPAMALLOCDST_LIST = "VESPAMALLOCDST_LIST"
+	ENV_VESPAMALLOCD_LIST   = "VESPAMALLOCD_LIST"
+	ENV_VESPAMALLOC_LIST    = "VESPAMALLOCD_LIST"
 )
 
 func (spec *ProgSpec) considerFallback(varName, varValue string) {
@@ -92,5 +95,19 @@ func (spec *ProgSpec) configureUseMadvise() {
 		trace.Trace("shall use madvise with limit", limit, "as set in", ENV_VESPA_USE_MADVISE_LIST)
 		spec.setenv(ENV_VESPA_MALLOC_MADVISE_LIMIT, limit)
 		return
+	}
+}
+
+func (spec *ProgSpec) configurePath() {
+	// Prefer newer gdb and pstack:
+	spec.prependPath("/opt/rh/gcc-toolset-11/root/usr/bin")
+	// Maven is needed for tester applications:
+	spec.prependPath(vespa.FindHome() + "/local/maven/bin")
+	spec.prependPath(vespa.FindHome() + "/bin64")
+	spec.prependPath(vespa.FindHome() + "/bin")
+	// how to find the "java" program?
+	// should be available in $VESPA_HOME/bin or JAVA_HOME
+	if javaHome := spec.getenv(ENV_JAVA_HOME); javaHome != "" {
+		spec.prependPath(javaHome + "/bin")
 	}
 }
