@@ -54,11 +54,10 @@ public class CoverageAggregator {
         this.failedNodes = failedNodes;
     }
 
-    public Coverage createCoverage(TimeoutHandler timeoutHandler, boolean useTargetActiveForCoverageComputation) {
+    public Coverage createCoverage(TimeoutHandler timeoutHandler) {
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
         coverage.setTargetActive(answeredTargetActiveDocs);
-        coverage.useTargetActiveForCoverageComputation(useTargetActiveForCoverageComputation);
         int degradedReason = 0;
         if (timedOut) {
             degradedReason |= timeoutHandler.reason();

@@ -319,7 +319,6 @@ public class IndexedSearchCluster extends SearchCluster
 
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         builder.redundancy(rootDispatch.getRedundancy());
-        builder.computeCoverageFromTargetActiveDocs(true);
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);

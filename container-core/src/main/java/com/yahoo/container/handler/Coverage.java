@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
-import com.yahoo.api.annotations.Beta;
-
 /**
  * The coverage report for a result set.
  *
@@ -11,7 +9,6 @@ import com.yahoo.api.annotations.Beta;
  */
 public class Coverage {
 
-    private boolean useTargetActiveForCoverageComputation = false;
     protected long docs;
     protected long active;
     protected long targetActive;
@@ -162,28 +159,18 @@ public class Coverage {
         if (getResultSets() == 0) {
             return 0;
         }
-        long total = useTargetActiveForCoverageComputation ? targetActive : active;
+        long total = targetActive;
         if (docs < total) {
             return (int) Math.round(docs * 100.0d / total);
         }
         return getFullResultSets() * 100 / getResultSets();
     }
 
-    /**
-     * Decides whether active or target active shall be used for coverage computation.
-     * DO NOT USE - This is only for temporary internal use.
-     */
-    @Beta
-    public Coverage useTargetActiveForCoverageComputation(boolean value) {
-        useTargetActiveForCoverageComputation = value;
-        return this;
-    }
-
     public com.yahoo.container.logging.Coverage toLoggingCoverage() {
         int degradation = com.yahoo.container.logging.Coverage.toDegradation(isDegradedByMatchPhase(),
                 isDegradedByTimeout(),
                 isDegradedByAdapativeTimeout());
-        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation, useTargetActiveForCoverageComputation);
+        return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation);
     }
 
 }

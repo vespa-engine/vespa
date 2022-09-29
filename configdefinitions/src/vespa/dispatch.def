@@ -73,7 +73,3 @@ node[].port int
 # TODO(bjorncs) Remove after May 2022
 # Temporary feature flag
 mergeGroupingResultInSearchInvokerEnabled bool default=false
-
-# Whether degraded coverage computation will take target active docs into
-# account, not just currently active docs.
-computeCoverageFromTargetActiveDocs bool default=false

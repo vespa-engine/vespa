@@ -1036,22 +1036,6 @@ public class ContentClusterTest extends ContentBaseTest {
         }
     }
 
-    private boolean coverageIsComputedFromTargetActive() {
-        TestProperties properties = new TestProperties();
-        VespaModel model = createEnd2EndOneNode(properties);
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cc.getSearch().getConfig(builder);
-
-        return (new DispatchConfig(builder)).computeCoverageFromTargetActiveDocs();
-    }
-
-    @Test
-    public void coverage_from_target_active_dispatch_config_is_controlled_by_properties() {
-        assertTrue(coverageIsComputedFromTargetActive());
-    }
-
     private boolean resolveThreePhaseUpdateConfigWithFeatureFlag(boolean flagEnableThreePhase) {
         VespaModel model = createEnd2EndOneNode(new TestProperties().setUseThreePhaseUpdates(flagEnableThreePhase));
 

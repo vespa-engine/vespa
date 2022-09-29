@@ -9,19 +9,14 @@ public class Coverage {
     private final long active;
     private final long targetActive;
     private final int degradedReason;
-    private final boolean useTargetActiveForCoverageComputation;
     private final static int DEGRADED_BY_MATCH_PHASE = 1;
     private final static int DEGRADED_BY_TIMEOUT = 2;
     private final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
-    public Coverage(long docs, long active, long targetActive, int degradedReason, boolean useTargetActiveForCoverageComputation) {
+    public Coverage(long docs, long active, long targetActive, int degradedReason) {
         this.docs = docs;
         this.active = active;
         this.targetActive = targetActive;
         this.degradedReason = degradedReason;
-        this.useTargetActiveForCoverageComputation = useTargetActiveForCoverageComputation;
-    }
-    Coverage(long docs, long active, long targetActive, int degradedReason) {
-        this(docs, active, targetActive, degradedReason, true);
     }
 
     public long getDocs() {
@@ -60,7 +55,7 @@ public class Coverage {
      * about had.
      */
     public int getResultPercentage() {
-        long total = useTargetActiveForCoverageComputation ? targetActive : active;
+        long total = targetActive;
         if (docs < total) {
             return (int) Math.round(docs * 100.0d / total);
         }
