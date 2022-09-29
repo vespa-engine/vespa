@@ -196,7 +196,7 @@ Domain::getSynced() const
     if (_parts.empty()) {
         return s;
     }
-    DomainPartList::const_iterator it(_parts.end());
+    auto it(_parts.end());
     --it;
     s = it->second->getSynced();
     if (s == 0 && it != _parts.begin()) {
@@ -224,9 +224,9 @@ DomainPart::SP
 Domain::findPart(SerialNum s)
 {
     std::lock_guard guard(_partsMutex);
-    DomainPartList::iterator it(_parts.upper_bound(s));
+    auto it(_parts.upper_bound(s));
     if (!_parts.empty() && it != _parts.begin()) {
-        DomainPartList::iterator prev(it);
+        auto prev(it);
         --prev;
         if (prev->second->range().to() > s) {
             return prev->second;
@@ -235,7 +235,7 @@ Domain::findPart(SerialNum s)
     if (it != _parts.end()) {
         return it->second;
     }
-    return DomainPart::SP();
+    return {};
 }
 
 DomainPart::SP
@@ -282,7 +282,7 @@ Domain::cleanSessions()
         return;
     }
     std::lock_guard guard(_sessionMutex);
-    for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
+    for (auto it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
         Session * session(it->second.get());
         if (session->inSync()) {
             _sessions.erase(it++);
@@ -334,7 +334,7 @@ Domain::startCommit(DoneCallback onDone) {
         commitChunk(std::move(completed), guard);
         return result;
     }
-    return CommitResult();
+    return {};
 }
 
 void
@@ -397,7 +397,7 @@ Domain::erase(SerialNum to)
     bool retval(true);
     /// Do not erase the last element
     UniqueLock guard(_partsMutex);
-    for (DomainPartList::iterator it(_parts.begin()); (_parts.size() > 1) && (it->second.get()->range().to() < to); it = _parts.begin()) {
+    for (auto it(_parts.begin()); (_parts.size() > 1) && (it->second->range().to() < to); it = _parts.begin()) {
         DomainPart::SP dp(it->second);
         _parts.erase(it);
         guard.unlock();
@@ -429,7 +429,7 @@ Domain::startSession(int sessionId)
 {
     int retval(-1);
     std::lock_guard guard(_sessionMutex);
-    SessionList::iterator found = _sessions.find(sessionId);
+    auto found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
         found->second->setStartTime(vespalib::steady_clock::now());
         if ( _executor.execute(Session::createTask(found->second)).get() == nullptr ) {
@@ -448,7 +448,7 @@ Domain::closeSession(int sessionId)
     DurationSeconds sessionRunTime(0);
     {
         std::lock_guard guard(_sessionMutex);
-        SessionList::iterator found = _sessions.find(sessionId);
+        auto found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             sessionRunTime = (vespalib::steady_clock::now() - found->second->getStartTime());
             retval = 1;
@@ -457,7 +457,7 @@ Domain::closeSession(int sessionId)
     while (retval == 1) {
         std::this_thread::sleep_for(10ms);
         std::lock_guard guard(_sessionMutex);
-        SessionList::iterator found = _sessions.find(sessionId);
+        auto found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             if ( ! found->second->isVisitRunning()) {
                 _sessions.erase(sessionId);

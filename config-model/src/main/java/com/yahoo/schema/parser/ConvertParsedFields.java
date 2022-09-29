@@ -86,7 +86,6 @@ public class ConvertParsedFields {
         }
         attribute.setFastAccess(parsed.getFastAccess());
         attribute.setMutable(parsed.getMutable());
-        attribute.setEnableBitVectors(parsed.getEnableBitVectors());
         attribute.setEnableOnlyBitVector(parsed.getEnableOnlyBitVector());
 
         // attribute.setTensorType(?)

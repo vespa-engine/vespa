@@ -244,16 +244,16 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertEquals(13333, cfg.attribute().get(2).maxuncommittedmemory());
     }
 
-    private void verifyEnableBitVectorDefault(Schema schema) {
+    private void verifyEnableOnlyBitVectorDefault(Schema schema) {
         AttributeFields attributes = new AttributeFields(schema);
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
-        assertTrue(cfg.attribute().get(0).enablebitvectors());
+        assertFalse(cfg.attribute().get(0).enableonlybitvector());
 
         assertEquals("b", cfg.attribute().get(1).name());
-        assertFalse(cfg.attribute().get(1).enablebitvectors());
+        assertTrue(cfg.attribute().get(1).enableonlybitvector());
     }
 
     @Test
@@ -267,10 +267,14 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "    field b type int { \n" +
                         "      indexing: attribute \n" +
+                        "      attribute {\n" +
+                        "        fast-search\n" +
+                        "        enable-only-bit-vector\n" +
+                        "      }\n" +
                         "    }\n" +
                         "  }\n" +
                         "}\n");
-        verifyEnableBitVectorDefault(schema);
+        verifyEnableOnlyBitVectorDefault(schema);
     }
 
     @Test
@@ -296,7 +300,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         single.setRemoveIfZero(true);
         single.setCreateIfNonExistent(true);
         single.setPrefetch(Boolean.TRUE);
-        single.setEnableBitVectors(true);
         single.setEnableOnlyBitVector(true);
         single.setFastSearch(true);
         single.setPaged(true);
@@ -318,7 +321,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertTrue(array.isRemoveIfZero());
         assertTrue(array.isCreateIfNonExistent());
         assertTrue(array.isPrefetch());
-        assertTrue(array.isEnabledBitVectors());
         assertTrue(array.isEnabledOnlyBitVector());
         assertTrue(array.isFastSearch());
         assertTrue(array.isPaged());

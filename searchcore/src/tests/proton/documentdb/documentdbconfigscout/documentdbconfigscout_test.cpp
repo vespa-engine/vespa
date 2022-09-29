@@ -22,7 +22,7 @@ namespace
 
 DDBCSP
 getConfig(int64_t generation, const Schema::SP &schema,
-          shared_ptr<const DocumentTypeRepo> repo,
+          const shared_ptr<const DocumentTypeRepo> & repo,
           const AttributesConfig &attributes)
 {
     return test::DocumentDBConfigBuilder(generation, schema, "client", "test").
@@ -41,9 +41,6 @@ assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
         return false;
     }
     if (!EXPECT_FALSE(attribute.paged)) {
-        return false;
-    }
-    if (!EXPECT_FALSE(attribute.enablebitvectors)) {
         return false;
     }
     if (!EXPECT_FALSE(attribute.enableonlybitvector)) {
@@ -66,9 +63,6 @@ assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
     if (!EXPECT_FALSE(attribute.paged)) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.enablebitvectors)) {
-        return false;
-    }
     if (!EXPECT_FALSE(attribute.enableonlybitvector)) {
         return false;
     }
@@ -87,9 +81,6 @@ assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
         return false;
     }
     if (!EXPECT_TRUE(attribute.paged)) {
-        return false;
-    }
-    if (!EXPECT_TRUE(attribute.enablebitvectors)) {
         return false;
     }
     if (!EXPECT_TRUE(attribute.enableonlybitvector)) {
@@ -208,7 +199,7 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
 
 
 AttributesConfig::Attribute
-setupDefaultAttribute(const vespalib::string name)
+setupDefaultAttribute(const vespalib::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
@@ -217,7 +208,7 @@ setupDefaultAttribute(const vespalib::string name)
 
 
 AttributesConfig::Attribute
-setupFastSearchAttribute(const vespalib::string name)
+setupFastSearchAttribute(const vespalib::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
@@ -227,13 +218,12 @@ setupFastSearchAttribute(const vespalib::string name)
 
 
 AttributesConfig::Attribute
-setupFastSearchAndMoreAttribute(const vespalib::string name)
+setupFastSearchAndMoreAttribute(const vespalib::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
     attribute.fastsearch = true;
     attribute.paged = true;
-    attribute.enablebitvectors = true;
     attribute.enableonlybitvector = true;
     return attribute;
 }

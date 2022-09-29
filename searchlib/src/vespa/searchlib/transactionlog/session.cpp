@@ -12,13 +12,13 @@ LOG_SETUP(".transactionlog.session");
 namespace search::transactionlog {
 
 vespalib::Executor::Task::UP
-Session::createTask(const Session::SP & session)
+Session::createTask(Session::SP session)
 {
-    return std::make_unique<VisitTask>(session);
+    return std::make_unique<VisitTask>(std::move(session));
 }
 
-Session::VisitTask::VisitTask(const Session::SP & session)
-    : _session(session)
+Session::VisitTask::VisitTask(Session::SP session)
+    : _session(std::move(session))
 {
     _session->startVisit();
 }

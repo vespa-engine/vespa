@@ -17,17 +17,8 @@ namespace search::attribute {
 using vespalib::btree::BTreeNoLeafData;
 using vespalib::datastore::EntryRefFilter;
 
-// #define FORCE_BITVECTORS
-
-
 PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &status, const Config &config)
-    :
-#ifdef FORCE_BITVECTORS
-      _enableBitVectors(true),
-#else
-      _enableBitVectors(config.getEnableBitVectors()),
-#endif
-      _enableOnlyBitVector(config.getEnableOnlyBitVector()),
+    : _enableOnlyBitVector(config.getEnableOnlyBitVector()),
       _isFilter(config.getIsFilter()),
       _bvSize(64u),
       _bvCapacity(128u),
@@ -101,7 +92,7 @@ PostingStore<DataT>::removeSparseBitVectors()
         (void) typeId;
         assert(isBitVector(typeId));
         BitVectorEntry *bve = getWBitVectorEntry(iRef);
-        GrowableBitVector &bv = *bve->_bv.get();
+        GrowableBitVector &bv = *bve->_bv;
         uint32_t docFreq = bv.writer().countTrueBits();
         if (bve->_tree.valid()) {
             RefType iRef2(bve->_tree);
@@ -175,9 +166,7 @@ PostingStore<DataT>::consider_remove_sparse_bitvector(std::vector<EntryRef>& ref
 
 template <typename DataT>
 void
-PostingStore<DataT>::applyNew(EntryRef &ref,
-                              AddIter a,
-                              AddIter ae)
+PostingStore<DataT>::applyNew(EntryRef &ref, AddIter a, AddIter ae)
 {
     // No old data
     assert(!ref.valid());
@@ -185,7 +174,7 @@ PostingStore<DataT>::applyNew(EntryRef &ref,
     uint32_t clusterSize = additionSize;
     if (clusterSize <= clusterLimit) {
         applyNewArray(ref, a, ae);
-    } else if (_enableBitVectors && clusterSize >= _maxBvDocFreq) {
+    } else if (clusterSize >= _maxBvDocFreq) {
         applyNewBitVector(ref, a, ae);
     } else {
         applyNewTree(ref, a, ae, CompareT());
@@ -292,12 +281,9 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
 
 template <typename DataT>
 void
-PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
-                                       AddIter aOrg,
-                                       AddIter ae)
+PostingStore<DataT>::applyNewBitVector(EntryRef &ref, AddIter aOrg, AddIter ae)
 {
     assert(!ref.valid());
-    RefType iRef(ref);
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
     auto bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
     BitVector &bv = bvsp->writer();
@@ -410,12 +396,10 @@ PostingStore<DataT>::apply(EntryRef &ref,
     } else {
         BTreeType *tree = getWTreeEntry(iRef);
         applyTree(tree, a, ae, r, re, CompareT());
-        if (_enableBitVectors) {
-            uint32_t docFreq = tree->size(_allocator);
-            if (docFreq >= _maxBvDocFreq) {
-                makeBitVector(ref);
-                return;
-            }
+        uint32_t docFreq = tree->size(_allocator);
+        if (docFreq >= _maxBvDocFreq) {
+            makeBitVector(ref);
+            return;
         }
         normalizeTree(ref, tree, wasArray);
     }

@@ -44,12 +44,6 @@ public:
     const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
     /**
-     * Check if attribute posting list can consist of a bitvector in
-     * addition to (or instead of) a btree. 
-     */
-    bool getEnableBitVectors() const { return _enableBitVectors; }
-
-    /**
      * Check if attribute posting list can consist of only a bitvector with
      * no corresponding btree.
      */
@@ -89,15 +83,6 @@ public:
     }
 
     /**
-     * Enable attribute posting list to consist of a bitvector in
-     * addition to (or instead of) a btree. 
-     */
-    Config & setEnableBitVectors(bool enableBitVectors) {
-        _enableBitVectors = enableBitVectors;
-        return *this;
-    }
-
-    /**
      * Enable attribute posting list to consist of only a bitvector with
      * no corresponding btree. Some information degradation might occur when
      * document frequency goes down, since recreated btree representation
@@ -132,7 +117,6 @@ private:
     BasicType      _basicType;
     CollectionType _type;
     bool           _fastSearch;
-    bool           _enableBitVectors;
     bool           _enableOnlyBitVector;
     bool           _isFilter;
     bool           _fastAccess;

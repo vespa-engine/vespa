@@ -128,9 +128,6 @@ PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc,
                                                size_t wantSize,
                                                size_t wantCapacity)
 {
-    if (!_postingList._enableBitVectors) {
-        return false;
-    }
     if (doc >= wantSize) {
         wantSize = doc + 1;
     }

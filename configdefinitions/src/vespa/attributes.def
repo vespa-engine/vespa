@@ -17,8 +17,6 @@ attribute[].sortascending       bool default=true
 attribute[].sortfunction        enum { RAW, LOWERCASE, UCA } default=UCA
 attribute[].sortstrength        enum { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL } default=PRIMARY
 attribute[].sortlocale          string default=""
-# Allow bitvector postings in addition to btree postings ?
-attribute[].enablebitvectors    bool default=false
 # Allow only bitvector postings, i.e. drop btree postings to save memory.?
 attribute[].enableonlybitvector bool default=false
 # Allow fast access to this attribute at all times.
