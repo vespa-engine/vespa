@@ -96,7 +96,6 @@ public class ClusterTest {
         DispatchConfig config = new DispatchConfig(builder);
         assertEquals(2, config.searchableCopies());
         assertEquals(3, config.redundancy());
-        assertTrue(config.computeCoverageFromTargetActiveDocs());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
         assertEquals(0, config.minWaitAfterCoverageFactor(), DELTA);

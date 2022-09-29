@@ -424,20 +424,12 @@ public class InterleavedSearchInvokerTest {
             assertTrue(cov.isDegradedByTimeout());
         }
     }
-    @Test
-    void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingActiveDocs() throws IOException {
-        verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
-                .searchableCopies(1)
-                .redundancy(2)
-                .build(),
-                50);
-    }
+
     @Test
     void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingTargetActiveDocs() throws IOException {
         verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
                 .searchableCopies(1)
                 .redundancy(1)
-                .computeCoverageFromTargetActiveDocs(true)
                 .build(),
                 42);
     }

@@ -33,13 +33,8 @@ public class CoverageTestCase {
     }
 
     @Test
-    void testCoverageBasedOnActive() {
-        var c = new Coverage(8, 10).setTargetActive(16);
-        assertEquals(80, c.getResultPercentage());
-    }
-    @Test
     void testCoverageBasedOnTargetActive() {
-        var c = new Coverage(8, 10).setTargetActive(16).useTargetActiveForCoverageComputation(true);
+        var c = new Coverage(8, 10).setTargetActive(16);
         assertEquals(50, c.getResultPercentage());
     }
 
@@ -92,8 +87,7 @@ public class CoverageTestCase {
 
     @Test
     void testCoverageConversion() {
-        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12).useTargetActiveForCoverageComputation(false));
-        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12).useTargetActiveForCoverageComputation(true));
+        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12));
     }
 
 }
