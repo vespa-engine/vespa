@@ -24,12 +24,12 @@ import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Optional;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -118,10 +118,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
 
         private boolean getFlushOnShutdown(Boolean flushOnShutdownElem) {
-            if (flushOnShutdownElem != null) {
-                return flushOnShutdownElem;
-            }
-            return true;
+            return Objects.requireNonNullElse(flushOnShutdownElem, true);
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {
@@ -151,7 +148,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                                         0,
                                                                         docTypeName,
                                                                         clusterName);
-            search.addSearchCluster(deployState, cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
+            search.addSearchCluster(deployState, cluster, getQueryTimeout(clusterElem), List.of(docType));
         }
 
         private void buildIndexedSearchCluster(DeployState deployState, ModelElement clusterElem,

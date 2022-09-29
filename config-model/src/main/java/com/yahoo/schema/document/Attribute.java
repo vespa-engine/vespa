@@ -50,7 +50,6 @@ public final class Attribute implements Cloneable, Serializable {
 
     private boolean removeIfZero = false;
     private boolean createIfNonExistent = false;
-    private boolean enableBitVectors = false;
     private boolean enableOnlyBitVector = false;
 
     private boolean fastRank = false;
@@ -145,8 +144,8 @@ public final class Attribute implements Cloneable, Serializable {
     /** Creates an attribute with default settings */
     public Attribute(String name, DataType fieldType) {
         this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType), convertTargetType(fieldType));
-        setRemoveIfZero(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).removeIfZero() : false);
-        setCreateIfNonExistent(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).createIfNonExistent() : false);
+        setRemoveIfZero(fieldType instanceof WeightedSetDataType wsdt && wsdt.removeIfZero());
+        setCreateIfNonExistent(fieldType instanceof WeightedSetDataType wsdt && wsdt.createIfNonExistent());
     }
 
     public Attribute(String name, Type type, CollectionType collectionType) {
@@ -179,7 +178,7 @@ public final class Attribute implements Cloneable, Serializable {
      * Multi value attributes are not.</p>
      */
     public boolean isPrefetch() {
-        if (prefetch!=null) return prefetch.booleanValue();
+        if (prefetch!=null) return prefetch;
 
         if (tensorType.isPresent()) {
             return false;
@@ -196,7 +195,6 @@ public final class Attribute implements Cloneable, Serializable {
 
     public boolean isRemoveIfZero()         { return removeIfZero; }
     public boolean isCreateIfNonExistent()  { return createIfNonExistent; }
-    public boolean isEnabledBitVectors()    { return enableBitVectors; }
     public boolean isEnabledOnlyBitVector() { return enableOnlyBitVector; }
     public boolean isFastSearch()           { return fastSearch; }
     public boolean isFastRank()            {  return fastRank; }
@@ -230,7 +228,6 @@ public final class Attribute implements Cloneable, Serializable {
      * True or false to override default, null to use default
      */
     public void setPrefetch(Boolean prefetch)                    { this.prefetch = prefetch; }
-    public void setEnableBitVectors(boolean enableBitVectors)    { this.enableBitVectors = enableBitVectors; }
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastRank(boolean value) {
         Supplier<IllegalArgumentException> badGen = () ->
@@ -335,23 +332,22 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** Converts to the right field type from an attribute type */
     private DataType toDataType(Type attributeType) {
-        switch (attributeType) {
-            case STRING : return DataType.STRING;
-            case INTEGER: return DataType.INT;
-            case LONG: return DataType.LONG;
-            case FLOAT16: return DataType.FLOAT16;
-            case FLOAT: return DataType.FLOAT;
-            case DOUBLE: return DataType.DOUBLE;
-            case BOOL: return DataType.BOOL;
-            case BYTE: return DataType.BYTE;
-            case PREDICATE: return DataType.PREDICATE;
-            case TENSOR: return DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
-            case REFERENCE: return createReferenceDataType();
-            default: throw new IllegalArgumentException("Unknown attribute type " + attributeType);
-        }
+        return switch (attributeType) {
+            case STRING -> DataType.STRING;
+            case INTEGER -> DataType.INT;
+            case LONG -> DataType.LONG;
+            case FLOAT16 -> DataType.FLOAT16;
+            case FLOAT -> DataType.FLOAT;
+            case DOUBLE -> DataType.DOUBLE;
+            case BOOL -> DataType.BOOL;
+            case BYTE -> DataType.BYTE;
+            case PREDICATE -> DataType.PREDICATE;
+            case TENSOR -> DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
+            case REFERENCE-> createReferenceDataType();
+            default -> throw new IllegalArgumentException("Unknown attribute type " + attributeType);
+        };
     }
 
-    @SuppressWarnings("deprecation")
     private DataType createReferenceDataType() {
         if (referenceDocumentType.isEmpty()) {
             throw new IllegalStateException("Referenced document type is not set");
@@ -379,15 +375,14 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
-                createIfNonExistent, isPosition, mutable, paged, enableBitVectors, enableOnlyBitVector,
+                createIfNonExistent, isPosition, mutable, paged, enableOnlyBitVector,
                 tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
     @Override
     public boolean equals(Object object) {
-        if (! (object instanceof Attribute)) return false;
+        if (! (object instanceof Attribute other)) return false;
 
-        Attribute other = (Attribute)object;
         if (!this.name.equals(other.name)) return false;
         return isCompatible(other);
     }
@@ -399,7 +394,6 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.isPrefetch() != other.isPrefetch()) return false;
         if (this.removeIfZero != other.removeIfZero) return false;
         if (this.createIfNonExistent != other.createIfNonExistent) return false;
-        if (this.enableBitVectors != other.enableBitVectors) return false;
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
         if (this.fastSearch != other.fastSearch) return false;
         if (this.mutable != other.mutable) return false;

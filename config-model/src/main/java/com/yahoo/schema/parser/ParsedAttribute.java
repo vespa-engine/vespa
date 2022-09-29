@@ -14,7 +14,6 @@ import java.util.Optional;
  **/
 class ParsedAttribute extends ParsedBlock {
 
-    private boolean enableBitVectors = false;
     private boolean enableOnlyBitVector = false;
     private boolean enableFastAccess = false;
     private boolean enableFastRank = false;
@@ -32,7 +31,6 @@ class ParsedAttribute extends ParsedBlock {
     List<String> getAliases() { return List.copyOf(aliases.keySet()); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     Optional<String> getDistanceMetric() { return Optional.ofNullable(distanceMetric); }
-    boolean getEnableBitVectors() { return this.enableBitVectors; }
     boolean getEnableOnlyBitVector() { return this.enableOnlyBitVector; }
     boolean getFastAccess() { return this.enableFastAccess; }
     boolean getFastRank() { return this.enableFastRank; }
@@ -56,7 +54,6 @@ class ParsedAttribute extends ParsedBlock {
         return this.sortSettings;
     }
 
-    void setEnableBitVectors(boolean value) { this.enableBitVectors = value; }
     void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
     void setFastAccess(boolean value) { this.enableFastAccess = true; }
     void setFastRank(boolean value) { this.enableFastRank = true; }
