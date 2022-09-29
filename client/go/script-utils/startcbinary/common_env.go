@@ -16,6 +16,8 @@ const (
 	ENV_STD_THREAD_PREVENT_TRY_CATCH = "STD_THREAD_PREVENT_TRY_CATCH"
 	ENV_GLIBCXX_FORCE_NEW            = "GLIBCXX_FORCE_NEW"
 	ENV_JAVA_HOME                    = "JAVA_HOME"
+	ENV_LD_LIBRARY_PATH              = "LD_LIBRARY_PATH"
+	ENV_MALLOC_ARENA_MAX             = "MALLOC_ARENA_MAX"
 
 	ENV_VESPA_AFFINITY_CPU_SOCKET    = "VESPA_AFFINITY_CPU_SOCKET"
 	ENV_VESPA_LOAD_CODE_AS_HUGEPAGES = "VESPA_LOAD_CODE_AS_HUGEPAGES"
@@ -59,6 +61,9 @@ func (spec *ProgSpec) configureCommonEnv() {
 	os.Unsetenv(ENV_LD_PRELOAD)
 	spec.setenv(ENV_STD_THREAD_PREVENT_TRY_CATCH, "true")
 	spec.setenv(ENV_GLIBCXX_FORCE_NEW, "1")
+	spec.setenv(ENV_LD_LIBRARY_PATH, vespa.FindHome()+"/lib64")
+	spec.setenv(ENV_MALLOC_ARENA_MAX, "1")
+
 	// fallback from old env.vars:
 	spec.considerEnvFallback(ENV_VESPA_USE_HUGEPAGES_LIST, ENV_HUGEPAGES_LIST)
 	spec.considerEnvFallback(ENV_VESPA_USE_MADVISE_LIST, ENV_MADVISE_LIST)
