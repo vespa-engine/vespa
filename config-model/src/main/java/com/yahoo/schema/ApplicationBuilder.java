@@ -34,7 +34,7 @@ import java.util.Set;
 /**
  * Application builder. Usage:
  * 1) Add all schemas, using the addXXX() methods,
- * 2) provide the available rank types and rank expressions, using the setRankXXX() methods,
+ * 2) provide the available rank types and ranking expressions, using the setRankXXX() methods,
  * 3) invoke the {@link #build} method
  *
  * @author bratseth

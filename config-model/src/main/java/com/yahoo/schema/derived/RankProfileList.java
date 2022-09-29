@@ -5,7 +5,7 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.schema.LargeRankExpressions;
+import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -36,14 +36,14 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     private final Map<String, RawRankProfile> rankProfiles;
     private final FileDistributedConstants constants;
-    private final LargeRankExpressions largeRankExpressions;
+    private final LargeRankingExpressions largeRankingExpressions;
     private final FileDistributedOnnxModels onnxModels;
 
     public static final RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
         constants = new FileDistributedConstants(null, List.of());
-        largeRankExpressions = new LargeRankExpressions(null);
+        largeRankingExpressions = new LargeRankingExpressions(null);
         onnxModels = new FileDistributedOnnxModels(null, List.of());
         rankProfiles = Map.of();
     }
@@ -55,11 +55,11 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
      * @param attributeFields the attribute fields to create a ranking for
      */
     public RankProfileList(Schema schema,
-                           LargeRankExpressions largeRankExpressions,
+                           LargeRankingExpressions largeRankingExpressions,
                            AttributeFields attributeFields,
                            DeployState deployState) {
         setName(schema == null ? "default" : schema.getName());
-        this.largeRankExpressions = largeRankExpressions;
+        this.largeRankingExpressions = largeRankingExpressions;
         this.rankProfiles = deriveRankProfiles(schema, attributeFields, deployState);
         this.constants = deriveFileDistributedConstants(schema, rankProfiles.values(), deployState);
         this.onnxModels = deriveFileDistributedOnnxModels(schema, rankProfiles.values(), deployState);
@@ -77,7 +77,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         Map<String,  RawRankProfile> rawRankProfiles = new LinkedHashMap<>();
         if (schema != null) { // profiles belonging to a schema have a default profile
             RawRankProfile rawRank = new RawRankProfile(deployState.rankProfileRegistry().get(schema, "default"),
-                                                        largeRankExpressions,
+                                                        largeRankingExpressions,
                                                         deployState.getQueryProfiles().getRegistry(),
                                                         deployState.getImportedModels(),
                                                         attributeFields,
@@ -113,8 +113,8 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                                                             ExecutorService executor) {
         Map<String, Future<RawRankProfile>> futureRawRankProfiles = new LinkedHashMap<>();
         for (RankProfile profile : profiles) {
-            futureRawRankProfiles.put(profile.name(), executor.submit(() -> new RawRankProfile(profile, largeRankExpressions, queryProfiles, importedModels,
-                                                                                            attributeFields, deployProperties)));
+            futureRawRankProfiles.put(profile.name(), executor.submit(() -> new RawRankProfile(profile, largeRankingExpressions, queryProfiles, importedModels,
+                                                                                               attributeFields, deployProperties)));
         }
         try {
             Map<String,  RawRankProfile> rawRankProfiles = new LinkedHashMap<>();
@@ -196,7 +196,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     public void getConfig(RankingExpressionsConfig.Builder builder) {
-        largeRankExpressions.expressions().forEach((expr) -> builder.expression.add(new RankingExpressionsConfig.Expression.Builder().name(expr.getName()).fileref(expr.getFileReference())));
+        largeRankingExpressions.expressions().forEach((expr) -> builder.expression.add(new RankingExpressionsConfig.Expression.Builder().name(expr.getName()).fileref(expr.getFileReference())));
     }
 
     public void getConfig(RankingConstantsConfig.Builder builder) {

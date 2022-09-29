@@ -279,35 +279,35 @@ public final class Application implements AutoCloseable {
 
         /**
          * @param name             name of document type (search definition)
-         * @param searchDefinition add this search definition to the application
+         * @param schema add this search definition to the application
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder documentType(String name, String searchDefinition) throws IOException {
+        public Builder documentType(String name, String schema) throws IOException {
             Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
-            createFile(path, searchDefinition);
+            createFile(path, schema);
             return this;
         }
 
-        public Builder expressionInclude(String name, String searchDefinition) throws IOException {
+        public Builder expressionInclude(String name, String schema) throws IOException {
             Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
-            createFile(path, searchDefinition);
+            createFile(path, schema);
             return this;
         }
 
         /**
-         * @param name                  name of rank expression
-         * @param rankExpressionContent add this rank expression to the application
+         * @param name                  name of ranking expression
+         * @param rankingExpressionContent add this ranking expression to the application
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder rankExpression(String name, String rankExpressionContent) throws IOException {
+        public Builder rankExpression(String name, String rankingExpressionContent) throws IOException {
             Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
-            createFile(path, rankExpressionContent);
+            createFile(path, rankingExpressionContent);
             return this;
         }
 
         /**
          * @param name         name of query profile
-         * @param queryProfile add this queyr profile to the application
+         * @param queryProfile add this query profile to the application
          * @return builder
          * @throws java.io.IOException e.g.if file not found
          */

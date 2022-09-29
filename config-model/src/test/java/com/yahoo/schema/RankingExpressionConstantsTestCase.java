@@ -80,7 +80,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
         assertEquals("foo: 14.0", child2.getFunctions().get("foo").function().getBody().toString());
         List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
-                new LargeRankExpressions(new MockFileRegistry()),
+                new LargeRankingExpressions(new MockFileRegistry()),
                 queryProfileRegistry,
                 new ImportedMlModels(),
                 new AttributeFields(s),

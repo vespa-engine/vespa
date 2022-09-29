@@ -36,7 +36,7 @@ public interface ImmutableSchema {
     DeployLogger getDeployLogger();
     ModelContext.Properties getDeployProperties();
     Map<Reference, RankProfile.Constant> constants();
-    LargeRankExpressions rankExpressionFiles();
+    LargeRankingExpressions rankExpressionFiles();
     Map<String, OnnxModel> onnxModels();
     Stream<ImmutableSDField> allImportedFields();
     SDDocumentType getDocument();

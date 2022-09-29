@@ -26,7 +26,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
-import com.yahoo.schema.LargeRankExpressions;
+import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
@@ -164,7 +164,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
 
         createGlobalRankProfiles(deployState);
         rankProfileList = new RankProfileList(null, // null search -> global
-                                              new LargeRankExpressions(deployState.getFileRegistry()),
+                                              new LargeRankingExpressions(deployState.getFileRegistry()),
                                               AttributeFields.empty,
                                               deployState);
 

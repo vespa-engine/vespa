@@ -7,11 +7,11 @@ import java.nio.ByteBuffer;
 
 import static java.util.Objects.requireNonNull;
 
-public class RankExpressionBody extends DistributableResource {
+public class RankingExpressionBody extends DistributableResource {
 
     private final ByteBuffer blob;
 
-    public RankExpressionBody(String name, ByteBuffer blob) {
+    public RankingExpressionBody(String name, ByteBuffer blob) {
         super(name, name + ".lz4", PathType.BLOB);
         this.blob = requireNonNull(blob, "Blob cannot be null");
     }
