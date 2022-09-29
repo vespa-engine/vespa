@@ -11,7 +11,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
-func startCbinary(spec ProgSpec) bool {
+func startCbinary(spec ProgSpec) int {
 	spec.configureCommonEnv()
 	spec.configurePath()
 	spec.configureTuning()
@@ -23,8 +23,10 @@ func startCbinary(spec ProgSpec) bool {
 	err := spec.run()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		return 1
+	} else {
+		return 0
 	}
-	return err == nil
 }
 
 func (spec *ProgSpec) run() error {
