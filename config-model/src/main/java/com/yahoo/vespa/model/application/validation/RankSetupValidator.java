@@ -64,7 +64,7 @@ public class RankSetupValidator extends Validator {
                                                ".")
                     .toFile();
             for (SearchCluster cluster : model.getSearchClusters()) {
-                // Skipping rank expression checking for streaming clusters, not implemented yet
+                // Skipping rannking expression checking for streaming clusters, not implemented yet
                 if (cluster.isStreaming()) continue;
 
                 IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
@@ -188,7 +188,7 @@ public class RankSetupValidator extends Validator {
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
         String msg = "Unable to execute '" + binaryName +
-                     "', validation of rank expressions will only take place when you start Vespa: " +
+                     "', validation of ranking expressions will only take place when you start Vespa: " +
                      Exceptions.toMessageString(e);
         deployLogger.logApplicationPackage(Level.WARNING, msg);
     }

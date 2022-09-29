@@ -332,18 +332,18 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         for (const auto &type_error: node_types.errors()) {
             LOG(warning, "type error: %s", type_error.c_str());
         }
-        return fail("rank expression contains type errors: %s", script.c_str());
+        return fail("ranking expression contains type errors: %s", script.c_str());
     }
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
     if (do_compile && compile_issues && !interpret_issues) {
-        LOG(warning, "rank expression compilation disabled: %s\n%s",
+        LOG(warning, "ranking expression compilation disabled: %s\n%s",
             script.c_str(), list_issues(compile_issues.list).c_str());
         do_compile = false;
     }
     const auto &issues = do_compile ? compile_issues : interpret_issues;
     if (issues) {
-        return fail("rank expression cannot be evaluated: %s\n%s",
+        return fail("ranking expression cannot be evaluated: %s\n%s",
                     script.c_str(), list_issues(issues.list).c_str());
     }
     // avoid costly compilation when only verifying setup

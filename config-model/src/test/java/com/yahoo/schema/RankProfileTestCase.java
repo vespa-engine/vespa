@@ -258,7 +258,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
         assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
-        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
+        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
                                                            new ImportedMlModels(), attributeFields, deployProperties);
         if (expectedTermwiseLimit != null) {
             assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
@@ -317,7 +317,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     private static RawRankProfile createRawRankProfile(RankProfile profile, Schema schema) {
-        return new RawRankProfile(profile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties());
+        return new RawRankProfile(profile, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties());
     }
 
     private static void assertAttributeTypeSettings(RankProfile profile, Schema schema) {
@@ -398,8 +398,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
 
         var schema = builder.getSchema();
         var rankProfile = rankProfileRegistry.get(schema, "my_profile");
-        var rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), queryProfileRegistry,
-                new ImportedMlModels(), new AttributeFields(schema), props);
+        var rawRankProfile = new RawRankProfile(rankProfile, new LargeRankingExpressions(new MockFileRegistry()), queryProfileRegistry,
+                                                new ImportedMlModels(), new AttributeFields(schema), props);
 
         if (postFilterThreshold != null) {
             assertEquals((double)postFilterThreshold, rankProfile.getPostFilterThreshold().getAsDouble(), 0.000001);

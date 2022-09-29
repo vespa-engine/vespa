@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.schema.LargeRankExpressions;
+import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
@@ -50,8 +50,8 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
                 functions.get("artistmatch").function().getBody().getRoot().toString());
         assertEquals(0, functions.get("artistmatch").function().arguments().size());
 
-        RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
-                new ImportedMlModels(), new AttributeFields(schema), deployProperties);
+        RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
+                                                           new ImportedMlModels(), new AttributeFields(schema), deployProperties);
         List<Pair<String, String>> rankProperties = rawRankProfile.configProperties();
         assertEquals(6, rankProperties.size());
 
@@ -81,7 +81,7 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
     }
 
     private void verifyProfile(RankProfile profile, List<String> expectedFunctions, List<Pair<String, String>> rankProperties,
-                               LargeRankExpressions largeExpressions, QueryProfileRegistry queryProfiles, ImportedMlModels models,
+                               LargeRankingExpressions largeExpressions, QueryProfileRegistry queryProfiles, ImportedMlModels models,
                                AttributeFields attributes, ModelContext.Properties properties) {
         var functions = profile.getFunctions();
         assertEquals(expectedFunctions.size(), functions.size());
@@ -97,7 +97,7 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
         }
     }
 
-    private void verifySearch(Schema schema, RankProfileRegistry rankProfileRegistry, LargeRankExpressions largeExpressions,
+    private void verifySearch(Schema schema, RankProfileRegistry rankProfileRegistry, LargeRankingExpressions largeExpressions,
                               QueryProfileRegistry queryProfiles, ImportedMlModels models, ModelContext.Properties properties)
     {
         AttributeFields attributes = new AttributeFields(schema);
@@ -118,7 +118,7 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
     void testLargeInheritedFunctions() throws IOException, ParseException {
         ModelContext.Properties properties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry(), 50);
+        LargeRankingExpressions largeExpressions = new LargeRankingExpressions(new MockFileRegistry(), 50);
         QueryProfileRegistry queryProfiles = new QueryProfileRegistry();
         ImportedMlModels models = new ImportedMlModels();
         Schema schema = createSearch("src/test/examples/largerankingexpressions", properties, rankProfileRegistry);

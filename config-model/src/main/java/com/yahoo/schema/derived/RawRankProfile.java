@@ -9,8 +9,8 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.OnnxModel;
-import com.yahoo.schema.LargeRankExpressions;
-import com.yahoo.schema.RankExpressionBody;
+import com.yahoo.schema.LargeRankingExpressions;
+import com.yahoo.schema.RankingExpressionBody;
 import com.yahoo.schema.document.RankType;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.expressiontransforms.OnnxModelTransformer;
@@ -60,7 +60,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     private final Collection<OnnxModel> onnxModels;
 
     /** Creates a raw rank profile from the given rank profile. */
-    public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
+    public RawRankProfile(RankProfile rankProfile, LargeRankingExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.name();
@@ -344,7 +344,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         /** Derives the properties this produces */
-        public List<Pair<String, String>> derive(LargeRankExpressions largeRankExpressions) {
+        public List<Pair<String, String>> derive(LargeRankingExpressions largeRankingExpressions) {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {
@@ -453,20 +453,20 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 }
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
-            distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
+            distributeLargeExpressionsAsFiles(properties, largeRankingExpressions);
             return properties;
         }
 
-        private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankExpressions largeRankExpressions) {
+        private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankingExpressions largeRankingExpressions) {
             for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
                 Pair<String, String> property = iter.next();
                 String expression = property.getSecond();
-                if (expression.length() > largeRankExpressions.limit()) {
+                if (expression.length() > largeRankingExpressions.limit()) {
                     String propertyName = property.getFirst();
                     String functionName = RankingExpression.extractScriptName(propertyName);
                     if (functionName != null) {
                         String mangledName = rankprofileName + "." + functionName;
-                        largeRankExpressions.add(new RankExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
+                        largeRankingExpressions.add(new RankingExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
                         iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
                     }
                 }

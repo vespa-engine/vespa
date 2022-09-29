@@ -83,8 +83,8 @@ public class Schema implements ImmutableSchema {
     /** The explicitly defined summaries of this schema. _Must_ preserve order. */
     private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
-    /** External rank expression files of this */
-    private final LargeRankExpressions largeRankExpressions;
+    /** External ranking expression files of this */
+    private final LargeRankingExpressions largeRankingExpressions;
 
     /** Constants that will be available in all rank profiles. */
     // TODO: Remove on Vespa 9: Should always be in a rank profile
@@ -150,7 +150,7 @@ public class Schema implements ImmutableSchema {
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
-        largeRankExpressions = new LargeRankExpressions(fileRegistry);
+        largeRankingExpressions = new LargeRankingExpressions(fileRegistry);
     }
 
     /**
@@ -223,7 +223,7 @@ public class Schema implements ImmutableSchema {
     }
 
     @Override
-    public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
+    public LargeRankingExpressions rankExpressionFiles() { return largeRankingExpressions; }
 
     public void add(RankProfile.Constant constant) {
         constants.put(constant.name(), constant);

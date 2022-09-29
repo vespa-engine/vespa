@@ -215,7 +215,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
 
     private static RawRankProfile createRawRankProfile(RankProfile profile, QueryProfileRegistry queryProfiles, Schema schema) {
         return new RawRankProfile(profile,
-                new LargeRankExpressions(new MockFileRegistry()),
+                new LargeRankingExpressions(new MockFileRegistry()),
                 queryProfiles,
                 new ImportedMlModels(),
                 new AttributeFields(schema),

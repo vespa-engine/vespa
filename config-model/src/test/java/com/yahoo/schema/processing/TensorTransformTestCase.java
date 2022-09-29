@@ -10,7 +10,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import com.yahoo.schema.LargeRankExpressions;
+import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
@@ -197,7 +197,7 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new LargeRankExpressions(new MockFileRegistry()),
+                                                                           new LargeRankingExpressions(new MockFileRegistry()),
                                                                            queryProfiles,
                                                                            new ImportedMlModels(),
                                                                            new AttributeFields(s), new TestProperties()).configProperties();

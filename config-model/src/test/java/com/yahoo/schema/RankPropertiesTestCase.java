@@ -58,7 +58,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawParent = new RawRankProfile(parent, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
+            RawRankProfile rawParent = new RawRankProfile(parent, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
             assertEquals("(query(a), 1500)", rawParent.configProperties().get(0).toString());
         }
 
@@ -69,7 +69,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
 
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(schema, "child"),
-                    new LargeRankExpressions(new MockFileRegistry()),
+                    new LargeRankingExpressions(new MockFileRegistry()),
                     new QueryProfileRegistry(),
                     new ImportedMlModels(),
                     attributeFields,
@@ -185,7 +185,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
         assertEquals("-=1", operations.get(3).operation);
 
         AttributeFields attributeFields = new AttributeFields(schema);
-        RawRankProfile raw = new RawRankProfile(a, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
+        RawRankProfile raw = new RawRankProfile(a, new LargeRankingExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
         assertEquals(9, raw.configProperties().size());
         assertEquals("(vespa.mutate.on_match.attribute, synthetic_attribute_a)", raw.configProperties().get(0).toString());
         assertEquals("(vespa.mutate.on_match.operation, +=7)", raw.configProperties().get(1).toString());
