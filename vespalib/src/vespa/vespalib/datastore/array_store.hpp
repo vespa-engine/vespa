@@ -23,7 +23,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cf
     for (uint32_t type_id = 1; type_id <= _maxSmallArrayTypeId; ++type_id) {
         const AllocSpec &spec = cfg.spec_for_type_id(type_id);
         size_t arraySize = _mapper.get_array_size(type_id);
-        _smallArrayTypes.emplace_back(arraySize, spec, memory_allocator);
+        _smallArrayTypes.emplace_back(arraySize, spec, memory_allocator, _mapper);
         uint32_t act_type_id = _store.addType(&_smallArrayTypes.back());
         assert(type_id == act_type_id);
     }
@@ -44,7 +44,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
       _store(),
       _mapper(std::move(mapper)),
       _smallArrayTypes(),
-      _largeArrayType(cfg.spec_for_type_id(0), memory_allocator)
+      _largeArrayType(cfg.spec_for_type_id(0), memory_allocator, _mapper)
 {
     initArrayTypes(cfg, std::move(memory_allocator));
     _store.init_primary_buffers();
