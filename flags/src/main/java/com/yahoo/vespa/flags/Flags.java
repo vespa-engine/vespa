@@ -126,13 +126,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
-            "use-three-phase-updates", true,
-            List.of("vekterli"), "2020-12-02", "2022-10-01",
-            "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2023-01-01",

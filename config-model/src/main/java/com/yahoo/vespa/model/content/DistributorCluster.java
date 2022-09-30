@@ -25,22 +25,12 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
 
     public static final Logger log = Logger.getLogger(DistributorCluster.class.getPackage().toString());
 
-    private static class GcOptions {
-
-        public final int interval;
-        public final String selection;
-
-        public GcOptions(int interval, String selection) {
-            this.interval = interval;
-            this.selection = selection;
-        }
-    }
+    private record GcOptions(int interval, String selection) { }
 
     private final ContentCluster parent;
     private final BucketSplitting bucketSplitting;
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
-    private final boolean useThreePhaseUpdates;
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final boolean unorderedMergeChaining;
     private final boolean useTwoPhaseDocumentGc;
@@ -99,26 +89,24 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         }
 
         @Override
-        protected DistributorCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected DistributorCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             final ModelElement clusterElement = new ModelElement(producerSpec);
             final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
-            boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
             boolean unorderedMergeChaining = deployState.getProperties().featureFlags().unorderedMergeChaining();
             boolean useTwoPhaseDocumentGc = deployState.getProperties().featureFlags().useTwoPhaseDocumentGc();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
-                    hasIndexedDocumentType, useThreePhaseUpdates,
+                    hasIndexedDocumentType,
                     maxInhibitedGroups, unorderedMergeChaining, useTwoPhaseDocumentGc);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
-                               boolean useThreePhaseUpdates,
                                int maxActivationInhibitedOutOfSyncGroups,
                                boolean unorderedMergeChaining,
                                boolean useTwoPhaseDocumentGc)
@@ -128,7 +116,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.bucketSplitting = bucketSplitting;
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
-        this.useThreePhaseUpdates = useThreePhaseUpdates;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.unorderedMergeChaining = unorderedMergeChaining;
         this.useTwoPhaseDocumentGc = useTwoPhaseDocumentGc;
@@ -142,8 +129,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
                     .interval(gc.interval));
         }
         builder.enable_revert(parent.getPersistence().supportRevert());
-        builder.disable_bucket_activation(hasIndexedDocumentType == false);
-        builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
+        builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
         builder.use_unordered_merge_chaining(unorderedMergeChaining);
         builder.enable_two_phase_garbage_collection(useTwoPhaseDocumentGc);

@@ -1036,22 +1036,6 @@ public class ContentClusterTest extends ContentBaseTest {
         }
     }
 
-    private boolean resolveThreePhaseUpdateConfigWithFeatureFlag(boolean flagEnableThreePhase) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseThreePhaseUpdates(flagEnableThreePhase));
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new StorDistributormanagerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
-
-        return (new StorDistributormanagerConfig(builder)).enable_metadata_only_fetch_phase_for_inconsistent_updates();
-    }
-
-    @Test
-    void default_distributor_three_phase_update_config_controlled_by_properties() {
-        assertFalse(resolveThreePhaseUpdateConfigWithFeatureFlag(false));
-        assertTrue(resolveThreePhaseUpdateConfigWithFeatureFlag(true));
-    }
-
     private int resolveMaxCompactBuffers(OptionalInt maxCompactBuffers) {
         TestProperties testProperties = new TestProperties();
         if (maxCompactBuffers.isPresent()) {

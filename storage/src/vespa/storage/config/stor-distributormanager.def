@@ -242,7 +242,7 @@ use_weak_internal_read_consistency_for_client_gets bool default=false
 ## Setting this option to true always implicitly enables the fast update restart
 ## feature, so it's not required to set that config to true, nor will setting it
 ## to false actually disable the feature.
-enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=false
+enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=true
 
 ## If a distributor main thread tick is constantly processing requests or responses
 ## originating from other nodes, setting this value above zero will prevent implicit

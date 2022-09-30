@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/common/distributorcomponent.h>
+#include "distributorcomponent.h"
 
 namespace storage {
 
@@ -8,6 +8,8 @@ DistributorComponent::DistributorComponent(DistributorComponentRegister& compReg
                                            vespalib::stringref name)
     : StorageComponent(compReg, name),
       _timeCalculator(0),
+      _distributorConfig(),
+      _visitorConfig(),
       _internal_config_generation(0),
       _config_snapshot(std::make_shared<DistributorConfiguration>(*this))
 {
