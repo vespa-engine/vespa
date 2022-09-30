@@ -224,6 +224,7 @@ vespa_define_module(
     src/tests/tensor/hnsw_index
     src/tests/tensor/hnsw_saver
     src/tests/tensor/tensor_buffer_operations
+    src/tests/tensor/tensor_buffer_store
     src/tests/transactionlog
     src/tests/transactionlogstress
     src/tests/true

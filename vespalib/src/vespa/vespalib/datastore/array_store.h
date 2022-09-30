@@ -110,7 +110,8 @@ public:
     static vespalib::GenerationHolder &getGenerationHolderLocation(ArrayStore &self) {
         return DataStoreBase::getGenerationHolderLocation(self._store);
     }
-
+    // need object location before construction
+    static DataStoreBase& get_data_store_base(ArrayStore &self) { return self._store; }
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
