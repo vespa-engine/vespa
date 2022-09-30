@@ -165,6 +165,12 @@ Query::~Query() = default;
 
 bool
 Query::buildTree(vespalib::stringref stack, const string &location,
+                 const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
+{
+    return buildTree(stack, location, resolver, indexEnv, true);
+}
+bool
+Query::buildTree(vespalib::stringref stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv,
                  bool split_unpacking_iterators)
 {

@@ -112,7 +112,7 @@ PartialResult::PartialResult(size_t maxSize_in, bool hasSortData_in)
     }
 }
 
-PartialResult::~PartialResult() {}
+PartialResult::~PartialResult() = default;
 
 void
 PartialResult::merge(Source &rhs)

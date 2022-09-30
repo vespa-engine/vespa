@@ -55,7 +55,11 @@ public:
                    const vespalib::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv,
-                   bool split_unpacking_iterators = false);
+                   bool split_unpacking_iterators);
+    bool buildTree(vespalib::stringref stack,
+                   const vespalib::string &location,
+                   const ViewResolver &resolver,
+                   const search::fef::IIndexEnvironment &idxEnv);
 
     /**
      * Extract query terms from the query tree; to be used to build

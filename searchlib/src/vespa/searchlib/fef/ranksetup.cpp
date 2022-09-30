@@ -36,7 +36,6 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _firstPhaseRankFeature(),
       _secondPhaseRankFeature(),
       _degradationAttribute(),
-      _split_unpacking_iterators(false),
       _termwise_limit(1.0),
       _numThreads(0),
       _minHitsPerThread(0),
@@ -97,7 +96,6 @@ RankSetup::configure()
     for (const auto & rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
         _feature_rename_map[rename.first] = rename.second;
     }
-    split_unpacking_iterators(matching::SplitUnpackingIterators::check(_indexEnv.getProperties()));
     set_termwise_limit(matching::TermwiseLimit::lookup(_indexEnv.getProperties()));
     setNumThreadsPerSearch(matching::NumThreadsPerSearch::lookup(_indexEnv.getProperties()));
     setMinHitsPerThread(matching::MinHitsPerThread::lookup(_indexEnv.getProperties()));

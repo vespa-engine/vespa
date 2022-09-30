@@ -321,12 +321,6 @@ IgnoreDefaultFeatures::check(const Properties &props)
 
 namespace matching {
 
-const vespalib::string SplitUnpackingIterators::NAME("vespa.matching.split_unpacking_iterators");
-const bool SplitUnpackingIterators::DEFAULT_VALUE(true);
-bool SplitUnpackingIterators::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
 const vespalib::string TermwiseLimit::NAME("vespa.matching.termwise_limit");
 const double TermwiseLimit::DEFAULT_VALUE(1.0);
 
