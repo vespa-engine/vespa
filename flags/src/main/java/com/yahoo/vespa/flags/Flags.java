@@ -391,7 +391,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
             "dispatch-notifications", false,
-            List.of("enygaard"), "2022-05-02", "2022-09-30",
+            List.of("enygaard"), "2022-05-02", "2022-12-30",
             "Whether we should send notification for a given tenant",
             "Takes effect immediately",
             TENANT_ID);
