@@ -82,10 +82,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipCommunicationManagerThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipMbusRequestThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipMbusReplyThread() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.15") default boolean mbusDispatchOnDecode() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.15") default boolean mbusDispatchOnEncode() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusNetworkThreads() { return 1; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.15") default int mbusThreads() { return 4; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusJavaRpcNumTargets() { return 1; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusJavaEventsBeforeWakeup() { return 1; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusCppRpcNumTargets() { return 1; }
@@ -95,8 +92,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.60") default int defaultPoolNumThreads() { return 1; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.60") default int availableProcessors() { return 1; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default int defaultPoolNumThreads() { return 1; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default int availableProcessors() { return 1; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { return 16; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { return 100; }
@@ -123,10 +120,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThrottlingWindowSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsResizeRate() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean persistenceThrottlingOfMergeFeedOps() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return true; } // TODO: Remove after June 2022
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.60") default boolean enableBitVectors() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean useQrserverServiceName() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean avoidRenamingSummaryFeatures() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean experimentalSdParsing() { return true; } // TODO: Remove after June 2022
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean enableBitVectors() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
