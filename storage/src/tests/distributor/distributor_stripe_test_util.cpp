@@ -32,12 +32,12 @@ DistributorStripeTestUtil::DistributorStripeTestUtil()
     _config = getStandardConfig(false);
 }
 
-DistributorStripeTestUtil::~DistributorStripeTestUtil() { }
+DistributorStripeTestUtil::~DistributorStripeTestUtil() = default;
 
 void
 DistributorStripeTestUtil::createLinks()
 {
-    _node.reset(new TestDistributorApp(_config.getConfigId()));
+    _node = std::make_unique<TestDistributorApp>(_config.getConfigId());
     _metrics = std::make_shared<DistributorMetricSet>();
     _ideal_state_metrics = std::make_shared<IdealStateMetricSet>();
     _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(),

@@ -47,6 +47,10 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
         createLinks();
         setTypeRepo(_repo);
         getClock().setAbsoluteTimeInSeconds(200);
+        // TODO, rewrite test to handle enable_metadata_only_fetch_phase_for_inconsistent_updates=true as default
+        auto cfg = make_config();
+        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(false);
+        configure_stripe(cfg);
     }
 
     void TearDown() override {
