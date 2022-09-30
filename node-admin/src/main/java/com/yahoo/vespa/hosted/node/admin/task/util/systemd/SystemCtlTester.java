@@ -45,6 +45,10 @@ public class SystemCtlTester extends SystemCtl {
         return this;
     }
 
+    public SystemCtlTester expectGetServiceProperty(String unit, String property, String output) {
+        expectCommand("systemctl show --property " + property + " --value " + unit + ".service 2>&1", 0, output);
+        return this;
+    }
 
     private void expectCommand(String command, int exitCode, String output) {
         terminal.expectCommand((useSudo() ? "sudo " : "") + command, exitCode, output);
