@@ -168,7 +168,6 @@ public class ModelContextImpl implements ModelContext {
 
         private final String queryDispatchPolicy;
         private final double defaultTermwiseLimit;
-        private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -220,7 +219,6 @@ public class ModelContextImpl implements ModelContext {
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
-            this.useThreePhaseUpdates = flagValue(source, appId, version, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, version, Flags.FEED_SEQUENCER_TYPE);
             this.responseSequencer = flagValue(source, appId, version, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, version, Flags.RESPONSE_NUM_THREADS);
@@ -274,7 +272,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-        @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
