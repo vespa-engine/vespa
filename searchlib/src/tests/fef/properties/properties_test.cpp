@@ -278,14 +278,6 @@ TEST("test stuff") {
             p.add("vespa.dump.ignoredefaultfeatures", "true");
             EXPECT_TRUE(dump::IgnoreDefaultFeatures::check(p));
         }
-        { // vespa.matching.split_unpacking_iterators
-            EXPECT_EQUAL(matching::SplitUnpackingIterators::NAME, vespalib::string("vespa.matching.split_unpacking_iterators"));
-            EXPECT_TRUE(matching::SplitUnpackingIterators::DEFAULT_VALUE);
-            Properties p;
-            EXPECT_TRUE(matching::SplitUnpackingIterators::check(p));
-            p.add("vespa.matching.split_unpacking_iterators", "false");
-            EXPECT_FALSE(matching::SplitUnpackingIterators::check(p));
-        }
         { // vespa.matching.termwise_limit
             EXPECT_EQUAL(matching::TermwiseLimit::NAME, vespalib::string("vespa.matching.termwise_limit"));
             EXPECT_EQUAL(matching::TermwiseLimit::DEFAULT_VALUE, 1.0);

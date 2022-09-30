@@ -238,18 +238,6 @@ namespace mutate::on_summary {
 namespace matching {
 
     /**
-     * When enabled, iterators that unpack posting information as part
-     * of matching may be split into multiple parts (some cheap, some
-     * expensive).
-     **/
-    struct SplitUnpackingIterators {
-        static const vespalib::string NAME;
-        static const bool DEFAULT_VALUE;
-        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
-        static bool check(const Properties &props, bool fallback);
-    };
-
-    /**
      * A number in the range [0,1] indicating how much of the corpus
      * the query must match for termwise evaluation to be enabled. 1
      * means never allowed. 0 means always allowed. The default value

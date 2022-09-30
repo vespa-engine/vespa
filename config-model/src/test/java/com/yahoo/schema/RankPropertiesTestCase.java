@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -106,13 +107,11 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
         builder.build(true);
         Schema schema = builder.getSchema();
         List<RankProfile.RankProperty> props = rankProfileRegistry.get(schema, "a").getRankProperties();
-        assertEquals(1, props.size());
-        assertEquals(new RankProfile.RankProperty("vespa.matching.split_unpacking_iterators","true"), props.get(0));
+        assertTrue(props.isEmpty());
 
         props = rankProfileRegistry.get(schema, "b").getRankProperties();
-        assertEquals(2, props.size());
-        assertEquals(new RankProfile.RankProperty("vespa.matching.split_unpacking_iterators","true"), props.get(0));
-        assertEquals(new RankProfile.RankProperty("query(a)","2000"), props.get(1));
+        assertEquals(1, props.size());
+        assertEquals(new RankProfile.RankProperty("query(a)","2000"), props.get(0));
     }
 
     @Test
