@@ -23,6 +23,17 @@ namespace search::tensor {
 /*
  * Class used to store a tensor in a buffer and make tensor views based on
  * buffer content.
+ *
+ * Layout of buffer is:
+ *
+ * num_subspaces                                     - number of subspaces
+ * labels[num_subspaces * _num_mapped_dimensions]    - array of labels for sparse dimensions
+ * padding                                           - to align start of cells
+ * cells[num_subspaces * _dense_subspaces_size]      - array of tensor cell values
+ * padding                                           - to align start of next buffer
+ *
+ * Alignment is dynamic, based on cell type, memory used by tensor cell values and
+ * alignment required for reading num_subspaces and labels array.
  */
 class TensorBufferOperations
 {

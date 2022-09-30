@@ -35,23 +35,23 @@ adjust_min_alignment(size_t min_alignment)
     return std::max(std::max(sizeof(uint32_t), sizeof(string_id)), min_alignment);
 }
 
-struct MyFastValueView final : Value {
+struct FastValueView final : Value {
     const ValueType& _type;
     StringIdVector   _labels;
     FastValueIndex   _index;
     TypedCells       _cells;
-    MyFastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces);
+    FastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces);
     const ValueType& type() const override { return _type; }
     const Value::Index& index() const override { return _index; }
     TypedCells cells() const override { return _cells; }
     MemoryUsage get_memory_usage() const override {
-        MemoryUsage usage = self_memory_usage<MyFastValueView>();
+        MemoryUsage usage = self_memory_usage<FastValueView>();
         usage.merge(_index.map.estimate_extra_memory_usage());
         return usage;
     }
 };
 
-MyFastValueView::MyFastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces)
+FastValueView::FastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces)
     : Value(),
       _type(type),
       _labels(labels.begin(), labels.end()),
@@ -144,7 +144,7 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
     auto cells_start_offset = get_cells_offset(num_subspaces, alignment);
     TypedCells cells(buf.data() + cells_start_offset, _cell_type, cells_size);
     assert(cells_start_offset + cells_mem_size <= buf.size());
-    return std::make_unique<MyFastValueView>(tensor_type, labels, cells, _num_mapped_dimensions, num_subspaces);
+    return std::make_unique<FastValueView>(tensor_type, labels, cells, _num_mapped_dimensions, num_subspaces);
 }
 
 void
