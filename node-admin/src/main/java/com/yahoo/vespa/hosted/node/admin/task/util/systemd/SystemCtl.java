@@ -88,6 +88,14 @@ public class SystemCtl {
                 .map(CommandResult::getExitCode) == 0;
     }
 
+    public String getServiceProperty(TaskContext context, String unit, String property) {
+        return newCommandLine(context)
+                .add("systemctl", "show", "--property", property, "--value", unit + ".service")
+                .ignoreExitCode()
+                .execute()
+                .getOutput();
+    }
+
     private CommandLine newCommandLine(TaskContext context) {
         var commandLine = terminal.newCommandLine(context);
         if (useSudo) {
