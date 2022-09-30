@@ -23,7 +23,14 @@ func Run(args []string) int {
 		Args:    args,
 	}
 	spec.setup()
-	vespa.LoadDefaultEnv()
+	err := vespa.LoadDefaultEnv()
+	if err != nil {
+		panic(err)
+	}
+	hostname, err := vespa.FindOurHostname()
+	if err != nil {
+		trace.Warning("could not detect hostname:", err, "; using fallback:", hostname)
+	}
 	return startCbinary(spec)
 }
 
