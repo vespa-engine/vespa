@@ -34,6 +34,7 @@ public class Cloud {
     }
 
     /** Returns whether upgrading OS on hosts in this requires the host to be reprovisioned */
+    // TODO(mpolden): Unused, remove this
     public boolean reprovisionToUpgradeOs() {
         return reprovisionToUpgradeOs;
     }

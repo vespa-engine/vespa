@@ -7,16 +7,18 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostEvent;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Address;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -37,6 +39,7 @@ public class MockHostProvisioner implements HostProvisioner {
     private final List<Flavor> flavors;
     private final MockNameResolver nameResolver;
     private final int memoryTaxGb;
+    private final Set<String> rebuildsCompleted = new HashSet<>();
 
     private int deprovisionedHosts = 0;
     private EnumSet<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
@@ -103,6 +106,16 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
+    public Node replaceRootDisk(Node host) {
+        if (!host.type().isHost()) throw new IllegalArgumentException(host + " is not a host");
+        if (rebuildsCompleted.remove(host.hostname())) {
+            return host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
+                                         false, Agent.system, Instant.ofEpochMilli(123));
+        }
+        return host;
+    }
+
+    @Override
     public List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts) {
         return Collections.unmodifiableList(hostEvents);
     }
@@ -126,6 +139,11 @@ public class MockHostProvisioner implements HostProvisioner {
         Set<Behaviour> behaviours = new HashSet<>(this.behaviours);
         behaviours.removeAll(EnumSet.of(first, rest));
         this.behaviours = behaviours.isEmpty() ? EnumSet.noneOf(Behaviour.class) : EnumSet.copyOf(behaviours);
+        return this;
+    }
+
+    public MockHostProvisioner completeRebuildOf(Node host) {
+        rebuildsCompleted.add(host.hostname());
         return this;
     }
 

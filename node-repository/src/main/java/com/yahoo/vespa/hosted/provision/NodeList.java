@@ -50,8 +50,13 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     /** Returns the subset of nodes that are being rebuilt */
-    public NodeList rebuilding() {
-        return matching(node -> node.status().wantToRetire() && node.status().wantToRebuild());
+    public NodeList rebuilding(boolean soft) {
+        return matching(node -> {
+            if (soft) {
+                return !node.status().wantToRetire() && node.status().wantToRebuild();
+            }
+            return node.status().wantToRetire() && node.status().wantToRebuild();
+        });
     }
 
     /** Returns the subset of nodes which are removable */
@@ -66,6 +71,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes having exactly the given resources */
     public NodeList resources(NodeResources resources) { return matching(node -> node.resources().equals(resources)); }
+
+    /** Returns the subset of nodes having storage of given type */
+    public NodeList storageType(NodeResources.StorageType storageType) {
+        return matching(node -> node.resources().storageType() == storageType);
+    }
 
     /** Returns the subset of nodes which satisfy the given resources */
     public NodeList satisfies(NodeResources resources) { return matching(node -> node.resources().satisfies(resources)); }
