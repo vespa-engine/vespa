@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/allocator.h>
+#include <cstdint>
 #include <vector>
 
 namespace vespalib {

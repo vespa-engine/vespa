@@ -30,6 +30,7 @@ vespa_add_library(searchlib_tensor OBJECT
     streamed_value_saver.cpp
     streamed_value_store.cpp
     tensor_attribute.cpp
+    tensor_buffer_operations.cpp
     tensor_deserialize.cpp
     tensor_store.cpp
     reusable_set_visited_tracker.cpp

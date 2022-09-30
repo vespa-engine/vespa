@@ -329,6 +329,10 @@ public:
         }
         const StringIdVector &view() const { return _handles; }
     };
+
+    // Used by search::tensor::TensorBufferOperations
+    static string_id unsafe_copy(string_id id) { return _repo.copy(id); }
+    static void unsafe_reclaim(string_id id) { return _repo.reclaim(id); }
 };
 
 }
