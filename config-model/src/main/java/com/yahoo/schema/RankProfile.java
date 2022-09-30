@@ -144,7 +144,7 @@ public class RankProfile implements Cloneable {
     public RankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry) {
         this(name, Objects.requireNonNull(schema, "schema cannot be null"),
                 schema.applicationPackage(), schema.getDeployLogger(),
-                schema.getDeployProperties(), rankProfileRegistry);
+                rankProfileRegistry);
     }
 
     /**
@@ -153,17 +153,12 @@ public class RankProfile implements Cloneable {
      * @param name  the name of the new profile
      */
     public RankProfile(String name, Schema schema, ApplicationPackage applicationPackage, DeployLogger deployLogger,
-                       ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) {
+                       RankProfileRegistry rankProfileRegistry) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.schema = schema;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
-        if (deployProperties.featureFlags().phraseOptimization().contains("split")) {
-            addRankProperty(new RankProperty("vespa.matching.split_unpacking_iterators", "true"));
-        } else if (deployProperties.featureFlags().phraseOptimization().contains("off")) {
-            addRankProperty(new RankProperty("vespa.matching.split_unpacking_iterators", "false"));
-        }
     }
 
     public String name() { return name; }

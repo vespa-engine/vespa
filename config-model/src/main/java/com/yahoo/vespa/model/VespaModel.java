@@ -53,6 +53,7 @@ import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
+import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.xml.sax.SAXException;
@@ -190,21 +191,21 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     @Override
     public Map<String, Set<String>> documentTypesByCluster() {
         return getContentClusters().entrySet().stream()
-                                   .collect(toMap(cluster -> cluster.getKey(),
+                                   .collect(toMap(Map.Entry::getKey,
                                              cluster -> cluster.getValue().getDocumentDefinitions().keySet()));
     }
 
     @Override
     public Map<String, Set<String>> indexedDocumentTypesByCluster() {
         return getContentClusters().entrySet().stream()
-                                   .collect(toUnmodifiableMap(cluster -> cluster.getKey(),
+                                   .collect(toUnmodifiableMap(Map.Entry::getKey,
                                                          cluster -> documentTypesWithIndex(cluster.getValue())));
     }
 
     private static Set<String> documentTypesWithIndex(ContentCluster content) {
         Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
                                                 .map(type -> type.getFullName().getName())
-                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                                                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
                                              ? Set.of()
@@ -213,11 +214,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                                                                                   .getSchema()
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
-                                                      .map(database -> database.getSchemaName())
-                                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                                                      .map(DocumentDatabase::getSchemaName)
+                                                      .collect(Collectors.toCollection(LinkedHashSet::new));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
-                                          .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                                          .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private void propagateRestartOnDeploy() {
@@ -258,13 +259,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
         DeployLogger deployLogger = deployState.getDeployLogger();
         RankProfileRegistry rankProfileRegistry = deployState.rankProfileRegistry();
         QueryProfiles queryProfiles = deployState.getQueryProfiles();
-        ModelContext.Properties deployProperties = deployState.getProperties();
         List <Future<ConvertedModel>> futureModels = new ArrayList<>();
         if ( ! importedModels.isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 RankProfile profile = new RankProfile(model.name(), null, applicationPackage,
-                                                      deployLogger, deployProperties, rankProfileRegistry);
+                                                      deployLogger, rankProfileRegistry);
                 addOnnxModelInfoFromSource(model, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
@@ -282,7 +282,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 RankProfile profile = new RankProfile(modelName, null, applicationPackage,
-                                                      deployLogger, deployProperties, rankProfileRegistry);
+                                                      deployLogger, rankProfileRegistry);
                 addOnnxModelInfoFromStore(modelName, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
@@ -430,7 +430,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      *
      * @param configId a config id
      */
-    protected void checkId(String configId) {
+    private void checkId(String configId) {
         if ( ! id2producer.containsKey(configId)) {
             log.log(Level.FINE, () -> "Invalid config id: " + configId);
         }
@@ -657,7 +657,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                                       .map(HostResource::spec)
                                       .filter(spec -> spec.membership().isPresent())
                                       .map(spec -> spec.membership().get().cluster().id())
-                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                                      .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
