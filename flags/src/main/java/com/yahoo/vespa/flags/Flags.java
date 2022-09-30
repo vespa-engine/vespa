@@ -154,19 +154,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag MBUS_DISPATCH_ON_ENCODE = defineFeatureFlag(
-            "mbus-dispatch-on-encode", true,
-            List.of("baldersheim"), "2022-07-01", "2023-01-01",
-            "Should we use mbus threadpool on encode",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag MBUS_DISPATCH_ON_DECODE = defineFeatureFlag(
-            "mbus-dispatch-on-decode", true,
-            List.of("baldersheim"), "2022-07-01", "2023-01-01",
-            "Should we use mbus threadpool on decode",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 1,
@@ -202,13 +189,6 @@ public class Flags {
             "rpc-events-before-wakeup", 1,
             List.of("baldersheim"), "2022-07-05", "2023-01-01",
             "Number write events before waking up transport thread",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundIntFlag MBUS_NUM_THREADS = defineIntFlag(
-            "mbus-num-threads", 4,
-            List.of("baldersheim"), "2022-07-01", "2023-01-01",
-            "Number of threads used for mbus threadpool",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
