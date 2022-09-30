@@ -1,28 +1,27 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/test/datastore/buffer_stats.h>
-#include <vespa/vespalib/test/datastore/memstats.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/test/datastore/buffer_stats.h>
+#include <vespa/vespalib/test/datastore/memstats.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/traits.h>
 #include <vector>
 
 using namespace vespalib::datastore;
-using vespalib::MemoryUsage;
-using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using MemStats = vespalib::datastore::test::MemStats;
-using BufferStats = vespalib::datastore::test::BufferStats;
+using vespalib::ArrayRef;
+using vespalib::MemoryUsage;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
+
 using AllocStats = MemoryAllocatorObserver::Stats;
+using BufferStats = vespalib::datastore::test::BufferStats;
+using MemStats = vespalib::datastore::test::MemStats;
 
 namespace {
 
@@ -31,7 +30,7 @@ constexpr float ALLOC_GROW_FACTOR = 0.2;
 }
 
 template <typename EntryT, typename RefT = EntryRefT<19> >
-struct Fixture
+struct ArrayStoreTest : public testing::Test
 {
     using EntryRefType = RefT;
     using ArrayStoreType = ArrayStore<EntryT, RefT>;
@@ -45,7 +44,7 @@ struct Fixture
     ArrayStoreType store;
     ReferenceStore refStore;
     generation_t generation;
-    Fixture(uint32_t maxSmallArraySize, bool enable_free_lists = true)
+    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true)
         : store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
                                                              ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
@@ -53,7 +52,7 @@ struct Fixture
           refStore(),
           generation(1)
     {}
-    Fixture(const ArrayStoreConfig &storeCfg)
+    ArrayStoreTest(const ArrayStoreConfig &storeCfg)
         : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1)
@@ -64,16 +63,16 @@ struct Fixture
     }
     EntryRef add(const EntryVector &input) {
         EntryRef result = store.add(ConstArrayRef(input));
-        ASSERT_EQUAL(0u, refStore.count(result));
+        assert(refStore.count(result) == 0);
         refStore.insert(std::make_pair(result, input));
         return result;
     }
     void assertGet(EntryRef ref, const EntryVector &exp) const {
         ConstArrayRef act = store.get(ref);
-        EXPECT_EQUAL(exp, EntryVector(act.begin(), act.end()));
+        EXPECT_EQ(exp, EntryVector(act.begin(), act.end()));
     }
     void remove(EntryRef ref) {
-        ASSERT_EQUAL(1u, refStore.count(ref));
+        ASSERT_EQ(1u, refStore.count(ref));
         store.remove(ref);
         refStore.erase(ref);
     }
@@ -84,27 +83,27 @@ struct Fixture
         return EntryRefType(ref).bufferId();
     }
     void assertBufferState(EntryRef ref, const MemStats& expStats) const {
-        EXPECT_EQUAL(expStats._used, store.bufferState(ref).size());
-        EXPECT_EQUAL(expStats._hold, store.bufferState(ref).getHoldElems());
-        EXPECT_EQUAL(expStats._dead, store.bufferState(ref).getDeadElems());
+        EXPECT_EQ(expStats._used, store.bufferState(ref).size());
+        EXPECT_EQ(expStats._hold, store.bufferState(ref).getHoldElems());
+        EXPECT_EQ(expStats._dead, store.bufferState(ref).getDeadElems());
     }
     void assert_buffer_stats(EntryRef ref, const BufferStats& exp_stats) const {
         auto& state = store.bufferState(ref);
-        EXPECT_EQUAL(exp_stats._used, state.size());
-        EXPECT_EQUAL(exp_stats._hold, state.getHoldElems());
-        EXPECT_EQUAL(exp_stats._dead, state.getDeadElems());
-        EXPECT_EQUAL(exp_stats._extra_used, state.getExtraUsedBytes());
-        EXPECT_EQUAL(exp_stats._extra_hold, state.getExtraHoldBytes());
+        EXPECT_EQ(exp_stats._used, state.size());
+        EXPECT_EQ(exp_stats._hold, state.getHoldElems());
+        EXPECT_EQ(exp_stats._dead, state.getDeadElems());
+        EXPECT_EQ(exp_stats._extra_used, state.getExtraUsedBytes());
+        EXPECT_EQ(exp_stats._extra_hold, state.getExtraHoldBytes());
     }
     void assertMemoryUsage(const MemStats expStats) const {
         MemoryUsage act = store.getMemoryUsage();
-        EXPECT_EQUAL(expStats._used, act.usedBytes());
-        EXPECT_EQUAL(expStats._hold, act.allocatedBytesOnHold());
-        EXPECT_EQUAL(expStats._dead, act.deadBytes());
+        EXPECT_EQ(expStats._used, act.usedBytes());
+        EXPECT_EQ(expStats._hold, act.allocatedBytesOnHold());
+        EXPECT_EQ(expStats._dead, act.deadBytes());
     }
     void assertStoreContent() const {
         for (const auto &elem : refStore) {
-            TEST_DO(assertGet(elem.first, elem.second));
+            assertGet(elem.first, elem.second);
         }
     }
     void assert_ref_reused(const EntryVector& first, const EntryVector& second, bool should_reuse) {
@@ -112,7 +111,7 @@ struct Fixture
         remove(ref1);
         trimHoldLists();
         EntryRef ref2 = add(second);
-        EXPECT_EQUAL(should_reuse, (ref2 == ref1));
+        EXPECT_EQ(should_reuse, (ref2 == ref1));
         assertGet(ref2, second);
     }
     EntryRef getEntryRef(const EntryVector &input) {
@@ -139,8 +138,8 @@ struct Fixture
         ctx->compact(ArrayRef<AtomicEntryRef>(compactedRefs));
         ReferenceStore compactedRefStore;
         for (size_t i = 0; i < refs.size(); ++i) {
-            ASSERT_EQUAL(0u, compactedRefStore.count(compactedRefs[i].load_relaxed()));
-            ASSERT_EQUAL(1u, refStore.count(refs[i].load_relaxed()));
+            ASSERT_EQ(0u, compactedRefStore.count(compactedRefs[i].load_relaxed()));
+            ASSERT_EQ(1u, refStore.count(refs[i].load_relaxed()));
             compactedRefStore.insert(std::make_pair(compactedRefs[i].load_relaxed(), refStore[refs[i].load_relaxed()]));
         }
         refStore = compactedRefStore;
@@ -149,149 +148,150 @@ struct Fixture
     size_t largeArraySize() const { return sizeof(LargeArray); }
 };
 
-using NumberFixture = Fixture<uint32_t>;
-using StringFixture = Fixture<std::string>;
-using SmallOffsetNumberFixture = Fixture<uint32_t, EntryRefT<10>>;
-using ByteFixture = Fixture<uint8_t>;
+using NumberStoreTest = ArrayStoreTest<uint32_t>;
+using StringStoreTest = ArrayStoreTest<std::string>;
+using SmallOffsetNumberStoreTest = ArrayStoreTest<uint32_t, EntryRefT<10>>;
 
+struct NumberStoreFreeListsDisabledTest : public NumberStoreTest {
+    NumberStoreFreeListsDisabledTest() : NumberStoreTest(3, false) {}
+};
 
-
-TEST("require that we test with trivial and non-trivial types")
+TEST(BasicStoreTest, test_with_trivial_and_non_trivial_types)
 {
-    EXPECT_TRUE(vespalib::can_skip_destruction<NumberFixture::value_type>);
-    EXPECT_FALSE(vespalib::can_skip_destruction<StringFixture::value_type>);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberStoreTest::value_type>);
+    EXPECT_FALSE(vespalib::can_skip_destruction<StringStoreTest::value_type>);
 }
 
-TEST_F("control static sizes", NumberFixture(3)) {
+TEST_F(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION
-    EXPECT_EQUAL(440u, sizeof(f.store));
-    EXPECT_EQUAL(296u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(440u, sizeof(f.store));
+    EXPECT_EQ(296u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQUAL(488u, sizeof(f.store));
-    EXPECT_EQUAL(328u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(488u, sizeof(store));
+    EXPECT_EQ(328u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #endif
-    EXPECT_EQUAL(112u, sizeof(NumberFixture::ArrayStoreType::SmallBufferType));
-    MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(960u, usage.allocatedBytes());
-    EXPECT_EQUAL(32u, usage.usedBytes());
+    EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
+    MemoryUsage usage = store.getMemoryUsage();
+    EXPECT_EQ(960u, usage.allocatedBytes());
+    EXPECT_EQ(32u, usage.usedBytes());
 }
 
-TEST_F("require that we can add and get small arrays of trivial type", NumberFixture(3))
+TEST_F(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
 {
-    TEST_DO(f.assertAdd({}));
-    TEST_DO(f.assertAdd({1}));
-    TEST_DO(f.assertAdd({2,3}));
-    TEST_DO(f.assertAdd({3,4,5}));
+    assertAdd({});
+    assertAdd({1});
+    assertAdd({2,3});
+    assertAdd({3,4,5});
 }
 
-TEST_F("require that we can add and get small arrays of non-trivial type", StringFixture(3))
+TEST_F(StringStoreTest, add_and_get_small_arrays_of_non_trivial_type)
 {
-    TEST_DO(f.assertAdd({}));
-    TEST_DO(f.assertAdd({"aa"}));
-    TEST_DO(f.assertAdd({"bbb", "ccc"}));
-    TEST_DO(f.assertAdd({"ddd", "eeee", "fffff"}));
+    assertAdd({});
+    assertAdd({"aa"});
+    assertAdd({"bbb", "ccc"});
+    assertAdd({"ddd", "eeee", "fffff"});
 }
 
-TEST_F("require that we can add and get large arrays of simple type", NumberFixture(3))
+TEST_F(NumberStoreTest, add_and_get_large_arrays_of_simple_type)
 {
-    TEST_DO(f.assertAdd({1,2,3,4}));
-    TEST_DO(f.assertAdd({2,3,4,5,6}));
+    assertAdd({1,2,3,4});
+    assertAdd({2,3,4,5,6});
 }
 
-TEST_F("require that we can add and get large arrays of non-trivial type", StringFixture(3))
+TEST_F(StringStoreTest, add_and_get_large_arrays_of_non_trivial_type)
 {
-    TEST_DO(f.assertAdd({"aa", "bb", "cc", "dd"}));
-    TEST_DO(f.assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"}));
+    assertAdd({"aa", "bb", "cc", "dd"});
+    assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"});
 }
 
-TEST_F("require that elements are put on hold when a small array is removed", NumberFixture(3))
+TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_small_array_is_removed)
 {
-    EntryRef ref = f.add({1,2,3});
-    TEST_DO(f.assertBufferState(ref, MemStats().used(3).hold(0)));
-    f.store.remove(ref);
-    TEST_DO(f.assertBufferState(ref, MemStats().used(3).hold(3)));
+    EntryRef ref = add({1,2,3});
+    assertBufferState(ref, MemStats().used(3).hold(0));
+    store.remove(ref);
+    assertBufferState(ref, MemStats().used(3).hold(3));
 }
 
-TEST_F("require that elements are put on hold when a large array is removed", NumberFixture(3))
+TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_large_array_is_removed)
 {
-    EntryRef ref = f.add({1,2,3,4});
+    EntryRef ref = add({1,2,3,4});
     // Note: The first buffer has the first element reserved -> we expect 2 elements used here.
-    TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(0).dead(1)));
-    f.store.remove(ref);
-    TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(1).dead(1)));
+    assertBufferState(ref, MemStats().used(2).hold(0).dead(1));
+    store.remove(ref);
+    assertBufferState(ref, MemStats().used(2).hold(1).dead(1));
 }
 
-TEST_F("small arrays are allocated from free-lists when enabled", NumberFixture(3, true)) {
-    f.assert_ref_reused({1,2,3}, {4,5,6}, true);
+TEST_F(NumberStoreTest, small_arrays_are_allocated_from_free_lists_when_enabled) {
+    assert_ref_reused({1,2,3}, {4,5,6}, true);
 }
 
-TEST_F("small arrays are NOT allocated from free-lists when disabled", NumberFixture(3, false)) {
-    f.assert_ref_reused({1,2,3}, {4,5,6}, false);
+TEST_F(NumberStoreTest, large_arrays_are_allocated_from_free_lists_when_enabled) {
+    assert_ref_reused({1,2,3,4}, {5,6,7,8}, true);
 }
 
-TEST_F("large arrays are allocated from free-lists when enabled", NumberFixture(3, true)) {
-    f.assert_ref_reused({1,2,3,4}, {5,6,7,8}, true);
+TEST_F(NumberStoreFreeListsDisabledTest, small_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+    assert_ref_reused({1,2,3}, {4,5,6}, false);
 }
 
-TEST_F("large arrays are NOT allocated from free-lists when disabled", NumberFixture(3, false)) {
-    f.assert_ref_reused({1,2,3,4}, {5,6,7,8}, false);
+TEST_F(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+    assert_ref_reused({1,2,3,4}, {5,6,7,8}, false);
 }
 
-TEST_F("track size of large array allocations with free-lists enabled", NumberFixture(3, true)) {
-    EntryRef ref = f.add({1,2,3,4});
-    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(16)));
-    f.remove({1,2,3,4});
-    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16)));
-    f.trimHoldLists();
-    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(2).extra_used(0)));
-    f.add({5,6,7,8,9});
-    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(20)));
+TEST_F(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
+    EntryRef ref = add({1,2,3,4});
+    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(16));
+    remove({1,2,3,4});
+    assert_buffer_stats(ref, BufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16));
+    trimHoldLists();
+    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(2).extra_used(0));
+    add({5,6,7,8,9});
+    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(20));
 }
 
-TEST_F("require that new underlying buffer is allocated when current is full", SmallOffsetNumberFixture(3))
+TEST_F(SmallOffsetNumberStoreTest, new_underlying_buffer_is_allocated_when_current_is_full)
 {
-    uint32_t firstBufferId = f.getBufferId(f.add({1,1}));
-    for (uint32_t i = 0; i < (F1::EntryRefType::offsetSize() - 1); ++i) {
-        uint32_t bufferId = f.getBufferId(f.add({i, i+1}));
-        EXPECT_EQUAL(firstBufferId, bufferId);
+    uint32_t firstBufferId = getBufferId(add({1,1}));
+    for (uint32_t i = 0; i < (SmallOffsetNumberStoreTest::EntryRefType::offsetSize() - 1); ++i) {
+        uint32_t bufferId = getBufferId(add({i, i+1}));
+        EXPECT_EQ(firstBufferId, bufferId);
     }
-    TEST_DO(f.assertStoreContent());
+    assertStoreContent();
 
-    uint32_t secondBufferId = f.getBufferId(f.add({2,2}));
-    EXPECT_NOT_EQUAL(firstBufferId, secondBufferId);
+    uint32_t secondBufferId = getBufferId(add({2,2}));
+    EXPECT_NE(firstBufferId, secondBufferId);
     for (uint32_t i = 0; i < 10u; ++i) {
-        uint32_t bufferId = f.getBufferId(f.add({i+2,i}));
-        EXPECT_EQUAL(secondBufferId, bufferId);
+        uint32_t bufferId = getBufferId(add({i+2,i}));
+        EXPECT_EQ(secondBufferId, bufferId);
     }
-    TEST_DO(f.assertStoreContent());
+    assertStoreContent();
 }
 
 namespace {
 
 void
-test_compaction(NumberFixture &f)
+test_compaction(NumberStoreTest &f)
 {
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
     EntryRef size3Ref = f.add({3,3,3});
     f.remove(f.add({5,5}));
     f.trimHoldLists();
-    TEST_DO(f.assertBufferState(size1Ref, MemStats().used(1).dead(0)));
-    TEST_DO(f.assertBufferState(size2Ref, MemStats().used(4).dead(2)));
-    TEST_DO(f.assertBufferState(size3Ref, MemStats().used(2).dead(1))); // Note: First element is reserved
+    f.assertBufferState(size1Ref, MemStats().used(1).dead(0));
+    f.assertBufferState(size2Ref, MemStats().used(4).dead(2));
+    f.assertBufferState(size3Ref, MemStats().used(2).dead(1)); // Note: First element is reserved
     uint32_t size1BufferId = f.getBufferId(size1Ref);
     uint32_t size2BufferId = f.getBufferId(size2Ref);
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
-    EXPECT_EQUAL(3u, f.refStore.size());
+    EXPECT_EQ(3u, f.refStore.size());
     f.compactWorst(true, false);
-    EXPECT_EQUAL(3u, f.refStore.size());
+    EXPECT_EQ(3u, f.refStore.size());
     f.assertStoreContent();
 
-    EXPECT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
-    EXPECT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+    EXPECT_EQ(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+    EXPECT_EQ(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
     // Buffer for size 2 arrays has been compacted
-    EXPECT_NOT_EQUAL(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
+    EXPECT_NE(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
     f.assertGet(size2Ref, {2,2}); // Old ref should still point to data.
     EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
     f.trimHoldLists();
@@ -300,14 +300,18 @@ test_compaction(NumberFixture &f)
 
 }
 
-TEST_F("require that the buffer with most dead space is compacted", NumberFixture(2))
+struct NumberStoreTwoSmallBufferTypesTest : public NumberStoreTest {
+    NumberStoreTwoSmallBufferTypesTest() : NumberStoreTest(2) {}
+};
+
+TEST_F(NumberStoreTwoSmallBufferTypesTest, buffer_with_most_dead_space_is_compacted)
 {
-    test_compaction(f);
+    test_compaction(*this);
 }
 
 namespace {
 
-void testCompaction(NumberFixture &f, bool compactMemory, bool compactAddressSpace)
+void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressSpace)
 {
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
@@ -316,29 +320,29 @@ void testCompaction(NumberFixture &f, bool compactMemory, bool compactAddressSpa
     f.remove(f.add({6}));
     f.remove(f.add({7}));
     f.trimHoldLists();
-    TEST_DO(f.assertBufferState(size1Ref, MemStats().used(3).dead(2)));
-    TEST_DO(f.assertBufferState(size2Ref, MemStats().used(2).dead(0)));
-    TEST_DO(f.assertBufferState(size3Ref, MemStats().used(6).dead(3)));
+    f.assertBufferState(size1Ref, MemStats().used(3).dead(2));
+    f.assertBufferState(size2Ref, MemStats().used(2).dead(0));
+    f.assertBufferState(size3Ref, MemStats().used(6).dead(3));
     uint32_t size1BufferId = f.getBufferId(size1Ref);
     uint32_t size2BufferId = f.getBufferId(size2Ref);
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
-    EXPECT_EQUAL(3u, f.refStore.size());
+    EXPECT_EQ(3u, f.refStore.size());
     f.compactWorst(compactMemory, compactAddressSpace);
-    EXPECT_EQUAL(3u, f.refStore.size());
+    EXPECT_EQ(3u, f.refStore.size());
     f.assertStoreContent();
 
     if (compactMemory) {
-        EXPECT_NOT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+        EXPECT_NE(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
     } else {
-        EXPECT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+        EXPECT_EQ(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
     }
     if (compactAddressSpace) {
-        EXPECT_NOT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+        EXPECT_NE(size1BufferId, f.getBufferId(f.getEntryRef({1})));
     } else {
-        EXPECT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+        EXPECT_EQ(size1BufferId, f.getBufferId(f.getEntryRef({1})));
     }
-    EXPECT_EQUAL(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
+    EXPECT_EQ(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
     f.assertGet(size1Ref, {1}); // Old ref should still point to data.
     f.assertGet(size3Ref, {3,3,3}); // Old ref should still point to data.
     if (compactMemory) {
@@ -368,52 +372,52 @@ void testCompaction(NumberFixture &f, bool compactMemory, bool compactAddressSpa
 
 }
 
-TEST_F("require that compactWorst selects on only memory", NumberFixture(3)) {
-    testCompaction(f, true, false);
+TEST_F(NumberStoreTest, compactWorst_selects_on_only_memory) {
+    testCompaction(*this, true, false);
 }
 
-TEST_F("require that compactWorst selects on only address space", NumberFixture(3)) {
-    testCompaction(f, false, true);
+TEST_F(NumberStoreTest, compactWorst_selects_on_only_address_space) {
+    testCompaction(*this, false, true);
 }
 
-TEST_F("require that compactWorst selects on both memory and address space", NumberFixture(3)) {
-    testCompaction(f, true, true);
+TEST_F(NumberStoreTest, compactWorst_selects_on_both_memory_and_address_space) {
+    testCompaction(*this, true, true);
 }
 
-TEST_F("require that compactWorst selects on neither memory nor address space", NumberFixture(3)) {
-    testCompaction(f, false, false);
+TEST_F(NumberStoreTest, compactWorst_selects_on_neither_memory_nor_address_space) {
+    testCompaction(*this, false, false);
 }
 
-TEST_F("require that used, onHold and dead memory usage is tracked for small arrays", NumberFixture(2))
+TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_arrays)
 {
-    MemStats exp(f.store.getMemoryUsage());
-    f.add({2,2});
-    TEST_DO(f.assertMemoryUsage(exp.used(f.entrySize() * 2)));
-    f.remove({2,2});
-    TEST_DO(f.assertMemoryUsage(exp.hold(f.entrySize() * 2)));
-    f.trimHoldLists();
-    TEST_DO(f.assertMemoryUsage(exp.holdToDead(f.entrySize() * 2)));
+    MemStats exp(store.getMemoryUsage());
+    add({1,2,3});
+    assertMemoryUsage(exp.used(entrySize() * 3));
+    remove({1,2,3});
+    assertMemoryUsage(exp.hold(entrySize() * 3));
+    trimHoldLists();
+    assertMemoryUsage(exp.holdToDead(entrySize() * 3));
 }
 
-TEST_F("require that used, onHold and dead memory usage is tracked for large arrays", NumberFixture(2))
+TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
 {
-    MemStats exp(f.store.getMemoryUsage());
-    f.add({3,3,3});
-    TEST_DO(f.assertMemoryUsage(exp.used(f.largeArraySize() + f.entrySize() * 3)));
-    f.remove({3,3,3});
-    TEST_DO(f.assertMemoryUsage(exp.hold(f.largeArraySize() + f.entrySize() * 3)));
-    f.trimHoldLists();
-    TEST_DO(f.assertMemoryUsage(exp.decUsed(f.entrySize() * 3).decHold(f.largeArraySize() + f.entrySize() * 3).
-                                    dead(f.largeArraySize())));
+    MemStats exp(store.getMemoryUsage());
+    add({1,2,3,4});
+    assertMemoryUsage(exp.used(largeArraySize() + entrySize() * 4));
+    remove({1,2,3,4});
+    assertMemoryUsage(exp.hold(largeArraySize() + entrySize() * 4));
+    trimHoldLists();
+    assertMemoryUsage(exp.decUsed(entrySize() * 4).decHold(largeArraySize() + entrySize() * 4).
+            dead(largeArraySize()));
 }
 
-TEST_F("require that address space usage is ratio between used arrays and number of possible arrays", NumberFixture(3))
+TEST_F(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_number_of_possible_arrays)
 {
-    f.add({2,2});
-    f.add({3,3,3});
+    add({2,2});
+    add({3,3,3});
     // 1 array is reserved (buffer 0, offset 0).
-    EXPECT_EQUAL(3u, f.store.addressSpaceUsage().used());
-    EXPECT_EQUAL(1u, f.store.addressSpaceUsage().dead());
+    EXPECT_EQ(3u, store.addressSpaceUsage().used());
+    EXPECT_EQ(1u, store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
     /*
      * Expected limit is sum of allocated arrays for active buffers and
@@ -426,26 +430,31 @@ TEST_F("require that address space usage is ratio between used arrays and number
      *   allocated elements = 256 / sizeof(int) = 64.
      *   limit = 64 / 3 = 21.
      */
-    size_t expLimit = fourgig - 4 * F1::EntryRefType::offsetSize() + 3 * 16 + 21;
-    EXPECT_EQUAL(static_cast<double>(2)/ expLimit, f.store.addressSpaceUsage().usage());
-    EXPECT_EQUAL(expLimit, f.store.addressSpaceUsage().limit());
+    size_t expLimit = fourgig - 4 * NumberStoreTest::EntryRefType::offsetSize() + 3 * 16 + 21;
+    EXPECT_EQ(static_cast<double>(2)/ expLimit, store.addressSpaceUsage().usage());
+    EXPECT_EQ(expLimit, store.addressSpaceUsage().limit());
 }
 
-TEST_F("require that offset in EntryRefT is within bounds when allocating memory buffers where wanted number of bytes is not a power of 2 and less than huge page size",
-       ByteFixture(ByteFixture::ArrayStoreType::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                                           4_Ki, 8_Ki, ALLOC_GROW_FACTOR)))
+struct ByteStoreTest : public ArrayStoreTest<uint8_t> {
+    ByteStoreTest() : ArrayStoreTest<uint8_t>(ByteStoreTest::ArrayStoreType::
+                                              optimizedConfigForHugePage(1023,
+                                                                         vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                                         4_Ki, 8_Ki, ALLOC_GROW_FACTOR)) {}
+};
+
+TEST_F(ByteStoreTest, offset_in_EntryRefT_is_within_bounds_when_allocating_memory_buffers_where_wanted_number_of_bytes_is_not_a_power_of_2_and_less_than_huge_page_size)
 {
     // The array store config used in this test is equivalent to the one multi-value attribute uses when initializing multi-value mapping.
     // See similar test in datastore_test.cpp for more details on what happens during memory allocation.
     for (size_t i = 0; i < 1000000; ++i) {
-        f.add({1, 2, 3});
+        add({1, 2, 3});
     }
-    f.assertStoreContent();
+    assertStoreContent();
 }
 
-TEST_F("require that provided memory allocator is used", NumberFixture(3))
+TEST_F(NumberStoreTest, provided_memory_allocator_is_used)
 {
-    EXPECT_EQUAL(AllocStats(4, 0), f.stats);
+    EXPECT_EQ(AllocStats(4, 0), stats);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
