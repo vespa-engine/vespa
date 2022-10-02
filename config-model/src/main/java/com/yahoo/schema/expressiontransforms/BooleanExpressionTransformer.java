@@ -65,7 +65,7 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         ChildNode rhs = stack.pop();
         ChildNode lhs = stack.peek();
 
-        boolean primitives = isDefinitelyPrimitive(lhs.child, context) && isDefinitelyPrimitive(rhs.child, context);
+        boolean primitives = isPrimitive(lhs.child, context) && isPrimitive(rhs.child, context);
         ExpressionNode combination;
         if (primitives && rhs.op == Operator.and)
             combination = andByIfNode(lhs.child, rhs.child);
@@ -78,20 +78,8 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         lhs.child = combination;
     }
 
-    private boolean isDefinitelyPrimitive(ExpressionNode node, TransformContext context) {
-        try {
-            return node.type(context.types()).rank() == 0;
-        }
-        catch (IllegalArgumentException e) {
-            // Types can only be reliably resolved top down, which has not done here.
-            // E.g
-            // function(nameArg) {
-            //    attribute(nameArg)
-            // }
-            // is supported.
-            // So, we return false when something cannot be resolved.
-            return false;
-        }
+    private boolean isPrimitive(ExpressionNode node, TransformContext context) {
+        return node.type(context.types()).rank() == 0;
     }
 
     private static OperationNode resolve(ChildNode left, ChildNode right) {
@@ -119,6 +107,7 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         else
             joinedChildren.add(node.child);
     }
+
 
     private IfNode andByIfNode(ExpressionNode a, ExpressionNode b) {
         return new IfNode(a, b, new ConstantNode(new BooleanValue(false)));
