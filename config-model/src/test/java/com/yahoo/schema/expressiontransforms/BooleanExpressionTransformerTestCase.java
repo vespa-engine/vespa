@@ -2,13 +2,10 @@
 package com.yahoo.schema.expressiontransforms;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext;
 import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
-import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -23,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class BooleanExpressionTransformerTestCase {
 
     @Test
-    public void booleanTransformation() throws Exception {
+    public void testTransformer() throws Exception {
         assertTransformed("if (a, b, false)", "a && b");
         assertTransformed("if (a, true, b)", "a || b");
         assertTransformed("if (a, true, b + c)", "a || b + c");
@@ -36,17 +33,16 @@ public class BooleanExpressionTransformerTestCase {
     }
 
     @Test
-    public void noTransformationOnTensorTypes() throws Exception {
-        var typeContext = new MapTypeContext();
-        typeContext.setType(Reference.fromIdentifier("tensorA"), TensorType.fromSpec("tensor(x{})"));
-        typeContext.setType(Reference.fromIdentifier("tensorB"), TensorType.fromSpec("tensor(x{})"));
-        assertUntransformed("tensorA && tensorB", typeContext);
-        assertTransformed("a && (tensorA * tensorB)","a && ( tensorA * tensorB)", typeContext);
+    public void testIt() throws Exception {
+        assertTransformed("if(1 - 1, true, 1 - 1)", "1 - 1 || 1 - 1");
     }
 
     @Test
     public void testNotSkewingNonBoolean() throws Exception {
-        var expr = assertTransformed("a + b + c * d + e + f", "a + b + c * d + e + f");
+        assertTransformed("a + b + c * d + e + f", "a + b + c * d + e + f");
+        var expr = new BooleanExpressionTransformer()
+                .transform(new RankingExpression("a + b + c * d + e + f"),
+                        new TransformContext(Map.of(), new MapTypeContext()));
         assertTrue(expr.getRoot() instanceof OperationNode);
         OperationNode root = (OperationNode) expr.getRoot();
         assertEquals(5, root.operators().size());
@@ -55,53 +51,41 @@ public class BooleanExpressionTransformerTestCase {
 
     @Test
     public void testTransformPreservesPrecedence() throws Exception {
-        assertUntransformed("a");
-        assertUntransformed("a + b");
-        assertUntransformed("a + b + c");
-        assertUntransformed("a * b");
-        assertUntransformed("a + b * c + d");
-        assertUntransformed("a + b + c * d + e + f");
-        assertUntransformed("a * b + c + d + e * f");
-        assertUntransformed("(a * b) + c + d + e * f");
-        assertUntransformed("(a * b + c) + d + e * f");
-        assertUntransformed("a * (b + c) + d + e * f");
-        assertUntransformed("(a * b) + (c + (d + e)) * f");
+        assertUnTransformed("a");
+        assertUnTransformed("a + b");
+        assertUnTransformed("a + b + c");
+        assertUnTransformed("a * b");
+        assertUnTransformed("a + b * c + d");
+        assertUnTransformed("a + b + c * d + e + f");
+        assertUnTransformed("a * b + c + d + e * f");
+        assertUnTransformed("(a * b) + c + d + e * f");
+        assertUnTransformed("(a * b + c) + d + e * f");
+        assertUnTransformed("a * (b + c) + d + e * f");
+        assertUnTransformed("(a * b) + (c + (d + e)) * f");
     }
 
-    private void assertUntransformed(String input) throws Exception {
-        assertUntransformed(input, new MapTypeContext());
+    private void assertUnTransformed(String input) throws Exception {
+        assertTransformed(input, input);
     }
 
-    private void assertUntransformed(String input, MapTypeContext typeContext) throws Exception {
-        assertTransformed(input, input, typeContext);
-    }
-
-    private RankingExpression assertTransformed(String expected, String input) throws Exception {
-        return assertTransformed(expected, input, new MapTypeContext());
-    }
-
-    private RankingExpression assertTransformed(String expected, String input, MapTypeContext typeContext) throws Exception {
-        MapContext context = contextWithSingleLetterVariables(typeContext);
+    private void assertTransformed(String expected, String input) throws Exception {
         var transformedExpression = new BooleanExpressionTransformer()
                                             .transform(new RankingExpression(input),
-                                                       new TransformContext(Map.of(), typeContext));
+                                                       new TransformContext(Map.of(), new MapTypeContext()));
 
         assertEquals(new RankingExpression(expected), transformedExpression, "Transformed as expected");
 
+        MapContext context = contextWithSingleLetterVariables();
         var inputExpression = new RankingExpression(input);
         assertEquals(inputExpression.evaluate(context).asBoolean(),
                      transformedExpression.evaluate(context).asBoolean(),
                      "Transform and original input are equivalent");
-        return transformedExpression;
     }
 
-    private MapContext contextWithSingleLetterVariables(MapTypeContext typeContext) {
+    private MapContext contextWithSingleLetterVariables() {
         var context = new MapContext();
-        for (int i = 0; i < 26; i++) {
-            String name = Character.toString(i + 97);
-            typeContext.setType(Reference.fromIdentifier(name), TensorType.empty);
-            context.put(name, Math.floorMod(i, 2));
-        }
+        for (int i = 0; i < 26; i++)
+            context.put(Character.toString(i + 97), Math.floorMod(i, 2));
         return context;
     }
 
