@@ -40,34 +40,6 @@ public:
     uint32_t bufferId() const noexcept { return _ref >> OffsetBits; }
     static size_t offsetSize() noexcept { return 1ul << OffsetBits; }
     static uint32_t numBuffers() noexcept { return 1 << BufferBits; }
-    static size_t align(size_t val) noexcept { return val; }
-    static size_t pad(size_t val) noexcept { (void) val; return 0ul; }
-    static constexpr bool isAlignedType = false;
-    // TODO: Remove following temporary methods when removing
-    // AlignedEntryRefT
-    size_t unscaled_offset() const noexcept { return offset(); }
-    static size_t unscaled_offset_size() noexcept { return offsetSize(); }
-};
-
-/**
- * Class for entry reference that is similar to EntryRefT,
- * except that we use (2^OffsetAlign) byte alignment on the offset.
- **/
-template <uint32_t OffsetBits, uint32_t OffsetAlign>
-class AlignedEntryRefT : public EntryRefT<OffsetBits> {
-private:
-    typedef EntryRefT<OffsetBits> ParentType;
-    static const uint32_t PadConstant = ((1 << OffsetAlign) - 1);
-public:
-    AlignedEntryRefT() noexcept : ParentType() {}
-    AlignedEntryRefT(size_t offset_, uint32_t bufferId_) noexcept :
-        ParentType(align(offset_) >> OffsetAlign, bufferId_) {}
-    AlignedEntryRefT(const EntryRef & ref_) noexcept : ParentType(ref_) {}
-    size_t offset() const { return ParentType::offset() << OffsetAlign; }
-    static size_t offsetSize() { return ParentType::offsetSize() << OffsetAlign; }
-    static size_t align(size_t val) { return val + pad(val); }
-    static size_t pad(size_t val) { return (-val & PadConstant); }
-    static constexpr bool isAlignedType = true;
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const EntryRef& ref);

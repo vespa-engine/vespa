@@ -32,8 +32,8 @@ public:
     EntryRef remap(EntryRef ref) const {
         RefType internal_ref(ref);
         auto &inner_mapping = _mapping[internal_ref.bufferId()];
-        assert(internal_ref.unscaled_offset() < inner_mapping.size());
-        EntryRef mapped_ref = inner_mapping[internal_ref.unscaled_offset()];
+        assert(internal_ref.offset() < inner_mapping.size());
+        EntryRef mapped_ref = inner_mapping[internal_ref.offset()];
         assert(mapped_ref.valid());
         return mapped_ref;
     }

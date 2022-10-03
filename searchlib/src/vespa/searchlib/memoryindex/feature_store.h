@@ -14,11 +14,14 @@ namespace search::memoryindex {
  */
 class FeatureStore {
 public:
-    using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::AlignedEntryRefT<22, 2>>;
+    using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<22>>;
     using RefType = DataStoreType::RefType;
     using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
     using generation_t = vespalib::GenerationHandler::generation_t;
+    static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
+    static constexpr uint32_t pad_constant = buffer_array_size - 1u;
+    static uint32_t calc_pad(uint32_t val) { return (-val & pad_constant); }
 
 private:
     using Schema = index::Schema;
@@ -154,7 +157,7 @@ public:
         uint32_t bufferId = RefType(ref).bufferId();
         const vespalib::datastore::BufferState &state = _store.getBufferState(bufferId);
         decoder.setEnd(
-                ((_store.getEntry<uint8_t>(RefType(0, bufferId)) + state.size() -
+                ((_store.getEntryArray<uint8_t>(RefType(0, bufferId), buffer_array_size) + state.size() -
                   bits) + 7) / 8,
                 false);
     }
@@ -188,7 +191,7 @@ public:
      */
     const uint8_t *getBits(vespalib::datastore::EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getEntry<uint8_t>(iRef);
+        return _store.getEntryArray<uint8_t>(iRef, buffer_array_size);
     }
 
     /**
