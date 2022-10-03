@@ -256,7 +256,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2022-10-01",
+            List.of("olaa"), "2021-09-13", "2023-01-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -414,7 +414,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CLEANUP_TENANT_ROLES = defineFeatureFlag(
             "cleanup-tenant-roles", false,
-            List.of("olaa"), "2022-08-10", "2022-10-01",
+            List.of("olaa"), "2022-08-10", "2023-01-01",
             "Determines whether old tenant roles should be deleted",
             "Takes effect next maintenance run"
     );
