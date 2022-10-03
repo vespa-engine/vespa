@@ -29,8 +29,7 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
       _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
                                                               TensorBufferTypeMapper(max_small_subspaces_type_id, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE, 4_Ki, 8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, &_ops)),
-      _add_buffer()
+                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, &_ops))
 {
 }
 
@@ -60,9 +59,10 @@ TensorBufferStore::store_tensor(const Value &tensor)
 {
     uint32_t num_subspaces = tensor.index().size();
     auto array_size = _ops.get_array_size(num_subspaces);
-    _add_buffer.resize(array_size);
-    _ops.store_tensor(_add_buffer, tensor);
-    return _array_store.add(_add_buffer);
+    auto ref = _array_store.allocate(array_size);
+    auto buf = _array_store.get_writable(ref);
+    _ops.store_tensor(buf, tensor);
+    return ref;
 }
 
 EntryRef

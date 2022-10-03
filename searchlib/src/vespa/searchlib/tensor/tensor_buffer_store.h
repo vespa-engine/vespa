@@ -23,7 +23,6 @@ class TensorBufferStore : public TensorStore
     vespalib::eval::ValueType _tensor_type;
     TensorBufferOperations    _ops;
     ArrayStoreType            _array_store;
-    std::vector<char>         _add_buffer;
 public:
     TensorBufferStore(const vespalib::eval::ValueType& tensor_type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_small_subspaces_type_id);
     ~TensorBufferStore();
