@@ -664,7 +664,7 @@ function(install_jar_dependencies NAME)
 endfunction()
 
 function(install_absolute_symlink TARGET LINK)
-    install(CODE "execute_process(COMMAND ln -snf ${TARGET} \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${LINK})")
+    install(CODE "execute_process(COMMAND ln -snf ${TARGET} \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${LINK} COMMAND_ERROR_IS_FATAL ANY)")
 endfunction(install_absolute_symlink)
 
 function(install_symlink TARGET LINK)
