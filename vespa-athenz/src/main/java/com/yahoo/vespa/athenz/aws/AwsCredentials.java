@@ -69,7 +69,7 @@ public class AwsCredentials implements AutoCloseable {
     }
 
     /*
-     * Checks credential expiration, returns true if it will expipre in the next MIN_EXPIRY minutes
+     * Checks credential expiration, returns true if it will expire in the next MIN_EXPIRY minutes
      */
     static boolean shouldRefresh(AwsTemporaryCredentials credentials) {
         Instant expiration = Optional.ofNullable(credentials).map(AwsTemporaryCredentials::expiration).orElse(Instant.EPOCH);
