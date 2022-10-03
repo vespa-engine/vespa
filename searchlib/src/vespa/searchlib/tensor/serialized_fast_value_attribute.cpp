@@ -48,13 +48,7 @@ SerializedFastValueAttribute::getTensor(DocId docId) const
     if (docId < getCommittedDocIdLimit()) {
         ref = acquire_entry_ref(docId);
     }
-    if (!ref.valid()) {
-        return {};
-    }
-    if (const auto * ptr = _streamedValueStore.get_tensor_entry(ref)) {
-        return ptr->create_fast_value_view(_tensor_type);
-    }
-    return {};
+    return _streamedValueStore.get_tensor(ref);
 }
 
 bool

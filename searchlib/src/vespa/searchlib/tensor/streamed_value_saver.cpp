@@ -31,7 +31,7 @@ StreamedValueSaver::onSave(IAttributeSaveTarget &saveTarget)
     const uint32_t docIdLimit(_refs.size());
     vespalib::nbostream stream;
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
-        if (_tensorStore.encode_tensor(_refs[lid], stream)) {
+        if (_tensorStore.encode_stored_tensor(_refs[lid], stream)) {
             uint32_t sz = stream.size();
             datWriter->write(&sz, sizeof(sz));
             datWriter->write(stream.peek(), stream.size());

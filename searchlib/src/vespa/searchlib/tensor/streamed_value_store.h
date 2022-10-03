@@ -60,6 +60,7 @@ private:
     TensorStoreType _concrete_store;
     const vespalib::eval::ValueType _tensor_type;
     EntryRef add_entry(TensorEntry::SP tensor);
+    const TensorEntry* get_tensor_entry(EntryRef ref) const;
 public:
     StreamedValueStore(const vespalib::eval::ValueType &tensor_type);
     ~StreamedValueStore() override;
@@ -69,8 +70,8 @@ public:
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
 
-    const TensorEntry * get_tensor_entry(EntryRef ref) const;
-    bool encode_tensor(EntryRef ref, vespalib::nbostream &target) const;
+    std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const;
+    bool encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const;
 
     EntryRef store_tensor(const vespalib::eval::Value &tensor);
     EntryRef store_encoded_tensor(vespalib::nbostream &encoded);

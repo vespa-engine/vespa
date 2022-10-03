@@ -204,6 +204,15 @@ StreamedValueStore::get_tensor_entry(EntryRef ref) const
     return entry.get();
 }
 
+std::unique_ptr<vespalib::eval::Value>
+StreamedValueStore::get_tensor(EntryRef ref) const
+{
+    if (const auto * ptr = get_tensor_entry(ref)) {
+        return ptr->create_fast_value_view(_tensor_type);
+    }
+    return {};
+}
+
 void
 StreamedValueStore::holdTensor(EntryRef ref)
 {
@@ -229,7 +238,7 @@ StreamedValueStore::move(EntryRef ref)
 }
 
 bool
-StreamedValueStore::encode_tensor(EntryRef ref, vespalib::nbostream &target) const
+StreamedValueStore::encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const
 {
     if (const auto * entry = get_tensor_entry(ref)) {
         entry->encode_value(_tensor_type, target);
