@@ -12,6 +12,10 @@ add_custom_command(OUTPUT ${GODIR}/bin/vespa ${GODIR}/bin/script-utils
 add_custom_target(client_go_binaries ALL DEPENDS ${GODIR}/bin/vespa ${GODIR}/bin/script-utils)
 
 install(PROGRAMS ${GODIR}/bin/script-utils DESTINATION libexec/vespa)
+
+install(DIRECTORY DESTINATION bin)
+install(DIRECTORY DESTINATION sbin)
+
 install_symlink(libexec/vespa/script-utils bin/vespa-logfmt)
 install_symlink(libexec/vespa/script-utils bin/vespa-deploy)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-cluster-state)
