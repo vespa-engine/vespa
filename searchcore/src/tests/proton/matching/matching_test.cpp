@@ -934,8 +934,8 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
 }
 
 TEST("require that match params are set up straight with ranking on") {
-    MatchParams p(1, 2, 4, 0.7, 0, 1, true, true);
-    ASSERT_EQUAL(1u, p.numDocs);
+    MatchParams p(10, 2, 4, 0.7, 0, 1, true, true);
+    ASSERT_EQUAL(10u, p.numDocs);
     ASSERT_EQUAL(2u, p.heapSize);
     ASSERT_EQUAL(4u, p.arraySize);
     ASSERT_EQUAL(0.7, p.rankDropLimit);
@@ -945,8 +945,8 @@ TEST("require that match params are set up straight with ranking on") {
 }
 
 TEST("require that match params can turn off rank-drop-limit") {
-    MatchParams p(1, 2, 4, -std::numeric_limits<feature_t>::quiet_NaN(), 0, 1, true, true);
-    ASSERT_EQUAL(1u, p.numDocs);
+    MatchParams p(10, 2, 4, -std::numeric_limits<feature_t>::quiet_NaN(), 0, 1, true, true);
+    ASSERT_EQUAL(10u, p.numDocs);
     ASSERT_EQUAL(2u, p.heapSize);
     ASSERT_EQUAL(4u, p.arraySize);
     ASSERT_TRUE(std::isnan(p.rankDropLimit));
@@ -957,8 +957,8 @@ TEST("require that match params can turn off rank-drop-limit") {
 
 
 TEST("require that match params are set up straight with ranking on arraySize is atleast the size of heapSize") {
-    MatchParams p(1, 6, 4, 0.7, 1, 1, true, true);
-    ASSERT_EQUAL(1u, p.numDocs);
+    MatchParams p(10, 6, 4, 0.7, 1, 1, true, true);
+    ASSERT_EQUAL(10u, p.numDocs);
     ASSERT_EQUAL(6u, p.heapSize);
     ASSERT_EQUAL(6u, p.arraySize);
     ASSERT_EQUAL(0.7, p.rankDropLimit);
@@ -967,8 +967,8 @@ TEST("require that match params are set up straight with ranking on arraySize is
 }
 
 TEST("require that match params are set up straight with ranking on arraySize is atleast the size of hits+offset") {
-    MatchParams p(1, 6, 4, 0.7, 4, 4, true, true);
-    ASSERT_EQUAL(1u, p.numDocs);
+    MatchParams p(10, 6, 4, 0.7, 4, 4, true, true);
+    ASSERT_EQUAL(10u, p.numDocs);
     ASSERT_EQUAL(6u, p.heapSize);
     ASSERT_EQUAL(8u, p.arraySize);
     ASSERT_EQUAL(0.7, p.rankDropLimit);
@@ -976,9 +976,29 @@ TEST("require that match params are set up straight with ranking on arraySize is
     ASSERT_EQUAL(4u, p.hits);
 }
 
-TEST("require that match params are set up straight with ranking off array and heap size is 0") {
-    MatchParams p(1, 6, 4, 0.7, 4, 4, true, false);
+TEST("require that match params are capped by numDocs") {
+    MatchParams p(1, 6, 4, 0.7, 4, 4, true, true);
     ASSERT_EQUAL(1u, p.numDocs);
+    ASSERT_EQUAL(1u, p.heapSize);
+    ASSERT_EQUAL(1u, p.arraySize);
+    ASSERT_EQUAL(0.7, p.rankDropLimit);
+    ASSERT_EQUAL(1u, p.offset);
+    ASSERT_EQUAL(0u, p.hits);
+}
+
+TEST("require that match params are capped by numDocs and hits adjusted down") {
+    MatchParams p(5, 6, 4, 0.7, 4, 4, true, true);
+    ASSERT_EQUAL(5u, p.numDocs);
+    ASSERT_EQUAL(5u, p.heapSize);
+    ASSERT_EQUAL(5u, p.arraySize);
+    ASSERT_EQUAL(0.7, p.rankDropLimit);
+    ASSERT_EQUAL(4u, p.offset);
+    ASSERT_EQUAL(1u, p.hits);
+}
+
+TEST("require that match params are set up straight with ranking off array and heap size is 0") {
+    MatchParams p(10, 6, 4, 0.7, 4, 4, true, false);
+    ASSERT_EQUAL(10u, p.numDocs);
     ASSERT_EQUAL(0u, p.heapSize);
     ASSERT_EQUAL(0u, p.arraySize);
     ASSERT_EQUAL(0.7, p.rankDropLimit);
