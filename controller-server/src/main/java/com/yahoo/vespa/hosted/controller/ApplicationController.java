@@ -391,15 +391,23 @@ public class ApplicationController {
                                                    .map(VespaVersion::versionNumber)
                                                    .filter(systemCompatible)
                                                    .max(naturalOrder());
-        if (nonBroken.isPresent()) return nonBroken.get();
 
-        // Fall back to the newest, system-compatible version with unknown confidence.
+        // Fall back to the newest, system-compatible version with unknown confidence. For public systems, this implies high confidence.
         Set<Version> knownVersions = versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toSet());
         Optional<Version> unknown = controller.mavenRepository().metadata().versions().stream()
                                               .filter(version -> ! knownVersions.contains(version))
                                               .filter(systemCompatible)
                                               .max(naturalOrder());
-        if (unknown.isPresent()) return unknown.get();
+
+        if (nonBroken.isPresent()) {
+            if (controller.system().isPublic() && unknown.isPresent() && unknown.get().isAfter(nonBroken.get()))
+                return unknown.get();
+
+            return nonBroken.get();
+        }
+
+        if (unknown.isPresent())
+            return unknown.get();
 
         throw new IllegalArgumentException("no suitable, released compile version exists" +
                                            (wantedMajor.isPresent() ? " for specified major: " + wantedMajor.getAsInt() : ""));
