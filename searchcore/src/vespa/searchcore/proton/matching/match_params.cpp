@@ -30,7 +30,7 @@ MatchParams::MatchParams(uint32_t          numDocs_in,
                 ? std::min(numDocs_in, computeArraySize(hits_in + offset_in, heapSize, arraySize_in))
                 : 0),
       offset(std::min(numDocs_in, offset_in)),
-      hits(numDocs_in > offset_in ? std::min(numDocs_in - offset_in, hits_in) : 0),
+      hits(std::min(numDocs_in - offset, hits_in)),
       rankDropLimit(rankDropLimit_in)
 { }
 
