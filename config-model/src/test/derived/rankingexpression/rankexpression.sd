@@ -3,6 +3,14 @@ schema rankexpression {
   
   document rankexpression {
 
+    field nrtgmp type double {
+      indexing: attribute
+    }
+
+    field glmpfw type double {
+      indexing: attribute
+    }
+
     field artist type string {
       indexing: summary | index
     }

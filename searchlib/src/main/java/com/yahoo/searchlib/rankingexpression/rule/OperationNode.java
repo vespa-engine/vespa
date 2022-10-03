@@ -80,7 +80,7 @@ public final class OperationNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        // Compute type using tensor types as arithmetic operators are supported on tensors
+        // Compute type using tensor types as operation operators are supported on tensors
         // and is correct also in the special case of doubles.
         // As all our functions are type-commutative, we don't need to take operator precedence into account
         TensorType type = children.get(0).type(context);
