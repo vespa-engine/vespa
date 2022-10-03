@@ -215,34 +215,6 @@ TEST(DataStoreTest, require_that_entry_ref_is_working)
     }
 }
 
-TEST(DataStoreTest, require_that_aligned_entry_ref_is_working)
-{
-    using MyRefType = AlignedEntryRefT<22, 2>; // 4 byte alignement
-    EXPECT_EQ(16_Mi, MyRefType::offsetSize());
-    EXPECT_EQ(1_Ki, MyRefType::numBuffers());
-    EXPECT_EQ(0u, MyRefType::align(0));
-    EXPECT_EQ(4u, MyRefType::align(1));
-    EXPECT_EQ(4u, MyRefType::align(2));
-    EXPECT_EQ(4u, MyRefType::align(3));
-    EXPECT_EQ(4u, MyRefType::align(4));
-    EXPECT_EQ(8u, MyRefType::align(5));
-    {
-        MyRefType r(0, 0);
-        EXPECT_EQ(0u, r.offset());
-        EXPECT_EQ(0u, r.bufferId());
-    }
-    {
-        MyRefType r(237, 13);
-        EXPECT_EQ(MyRefType::align(237), r.offset());
-        EXPECT_EQ(13u, r.bufferId());
-    }
-    {
-        MyRefType r(MyRefType::offsetSize() - 4, 1023);
-        EXPECT_EQ(MyRefType::align(MyRefType::offsetSize() - 4), r.offset());
-        EXPECT_EQ(1023u, r.bufferId());
-    }
-}
-
 TEST(DataStoreTest, require_that_entries_can_be_added_and_retrieved)
 {
     using IntStore = DataStore<int>;

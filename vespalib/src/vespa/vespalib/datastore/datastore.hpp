@@ -13,8 +13,7 @@ namespace vespalib::datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()
-    : DataStoreBase(RefType::numBuffers(),
-                    RefType::unscaled_offset_size())
+    : DataStoreBase(RefType::numBuffers(), RefType::offsetSize())
 {
 }
 
@@ -42,7 +41,7 @@ DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems, bool was_hel
         state.decHoldElems(numElems);
     }
     state.cleanHold(getBuffer(intRef.bufferId()),
-                    intRef.unscaled_offset() * state.getArraySize(), numElems);
+                    intRef.offset() * state.getArraySize(), numElems);
 }
 
 template <typename RefT>
@@ -50,15 +49,14 @@ void
 DataStoreT<RefT>::holdElem(EntryRef ref, size_t numElems, size_t extraBytes)
 {
     RefType intRef(ref);
-    size_t alignedLen = RefType::align(numElems);
     BufferState &state = getBufferState(intRef.bufferId());
     assert(state.isActive());
     if (state.hasDisabledElemHoldList()) {
-        state.incDeadElems(alignedLen);
+        state.incDeadElems(numElems);
         return;
     }
-    _elemHold1List.push_back(ElemHold1ListElem(ref, alignedLen));
-    state.incHoldElems(alignedLen);
+    _elemHold1List.push_back(ElemHold1ListElem(ref, numElems));
+    state.incHoldElems(numElems);
     state.incExtraHoldBytes(extraBytes);
 }
 

@@ -113,8 +113,8 @@ private:
         RefT iRef(oldRef);
         uint32_t buffer_id = iRef.bufferId();
         auto &inner_mapping = _mapping[buffer_id];
-        assert(iRef.unscaled_offset() < inner_mapping.size());
-        EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
+        assert(iRef.offset() < inner_mapping.size());
+        EntryRef &mappedRef = inner_mapping[iRef.offset()];
         assert(!mappedRef.valid());
         EntryRef newRef = _store.move(oldRef);
         mappedRef = newRef;

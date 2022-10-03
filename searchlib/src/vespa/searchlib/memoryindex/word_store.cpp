@@ -10,15 +10,12 @@ constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 WordStore::WordStore()
     : _store(),
       _numWords(0),
-      _type(RefType::align(1),
-            MIN_BUFFER_ARRAYS,
-            RefType::offsetSize() / RefType::align(1)),
+      _type(buffer_array_size, MIN_BUFFER_ARRAYS, RefType::offsetSize()),
       _typeId(0)
 {
     _store.addType(&_type);
     _store.init_primary_buffers();
 }
-
 
 WordStore::~WordStore()
 {
@@ -29,7 +26,7 @@ vespalib::datastore::EntryRef
 WordStore::addWord(const vespalib::stringref word)
 {
     size_t wordSize = word.size() + 1;
-    size_t bufferSize = RefType::align(wordSize);
+    size_t bufferSize = wordSize + calc_pad(wordSize);
     auto result = _store.rawAllocator<char>(_typeId).alloc(bufferSize);
     char *be = result.data;
     for (size_t i = 0; i < word.size(); ++i) {
