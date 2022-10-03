@@ -13,9 +13,6 @@ add_custom_target(client_go_binaries ALL DEPENDS ${GODIR}/bin/vespa ${GODIR}/bin
 
 install(PROGRAMS ${GODIR}/bin/script-utils DESTINATION libexec/vespa)
 
-install(DIRECTORY DESTINATION bin)
-install(DIRECTORY DESTINATION sbin)
-
 install_symlink(libexec/vespa/script-utils bin/vespa-logfmt)
 install_symlink(libexec/vespa/script-utils bin/vespa-deploy)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-cluster-state)
@@ -33,6 +30,7 @@ install_symlink(libexec/vespa/script-utils bin/vespa-rpc-invoke)
 install_symlink(libexec/vespa/script-utils bin/vespa-sentinel-cmd)
 install_symlink(libexec/vespa/script-utils bin/vespa-route)
 install_symlink(libexec/vespa/script-utils bin/vespa-transactionlog-inspect)
+
 install_symlink(libexec/vespa/script-utils sbin/vespa-distributord)
 install_symlink(libexec/vespa/script-utils sbin/vespa-proton)
 install_symlink(libexec/vespa/script-utils sbin/vespa-storaged)
