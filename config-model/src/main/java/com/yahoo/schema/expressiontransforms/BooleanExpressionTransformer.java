@@ -65,11 +65,11 @@ public class BooleanExpressionTransformer extends ExpressionTransformer<Transfor
         ChildNode rhs = stack.pop();
         ChildNode lhs = stack.peek();
 
-        boolean primitives = isDefinitelyPrimitive(lhs.child, context) && isDefinitelyPrimitive(rhs.child, context);
+        // isDefinitelyPrimitive is expensive so only invoke it when necessary
         ExpressionNode combination;
-        if (primitives && rhs.op == Operator.and)
+        if (rhs.op == Operator.and && isDefinitelyPrimitive(lhs.child, context) && isDefinitelyPrimitive(rhs.child, context))
             combination = andByIfNode(lhs.child, rhs.child);
-        else if (primitives && rhs.op == Operator.or)
+        else if (rhs.op == Operator.or && isDefinitelyPrimitive(lhs.child, context) && isDefinitelyPrimitive(rhs.child, context))
             combination = orByIfNode(lhs.child, rhs.child);
         else {
             combination = resolve(lhs, rhs);

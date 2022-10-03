@@ -22,7 +22,7 @@ import java.util.logging.Level;
 
 /**
  * Resolves and assigns types to all functions in a ranking expression, and
- * validates the types of all ranking expressions under a search instance:
+ * validates the types of all ranking expressions under a schema instance:
  * Some operators constrain the types of inputs, and first-and second-phase expressions
  * must return scalar values.
  *
