@@ -23,7 +23,7 @@ public:
 
     SearchRequest();
     explicit SearchRequest(RelativeTime relativeTime);
-    ~SearchRequest();
+    ~SearchRequest() override;
 };
 
 }
