@@ -29,8 +29,8 @@ constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 }
 
-template <typename EntryT, typename RefT = EntryRefT<19> >
-struct ArrayStoreTest : public testing::Test
+template <typename TestT, typename EntryT, typename RefT = EntryRefT<19> >
+struct ArrayStoreTest : public TestT
 {
     using EntryRefType = RefT;
     using ArrayStoreType = ArrayStore<EntryT, RefT>;
@@ -44,25 +44,39 @@ struct ArrayStoreTest : public testing::Test
     ArrayStoreType store;
     ReferenceStore refStore;
     generation_t generation;
-    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true)
+    bool add_using_allocate;
+    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true, bool add_using_allocate_in = false)
         : store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
                                                              ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
                 std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
-          generation(1)
+          generation(1),
+          add_using_allocate(add_using_allocate_in)
     {}
     ArrayStoreTest(const ArrayStoreConfig &storeCfg)
         : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
-          generation(1)
+          generation(1),
+          add_using_allocate(false)
     {}
     void assertAdd(const EntryVector &input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
     }
     EntryRef add(const EntryVector &input) {
-        EntryRef result = store.add(ConstArrayRef(input));
+        EntryRef result;
+        if (add_using_allocate) {
+            result = store.allocate(input.size());
+            auto dest = store.get_writable(result);
+            assert(dest.size() == input.size());
+            for (size_t i = 0; i < input.size(); ++i) {
+                dest[i] = input[i];
+            }
+        } else {
+            // This is default and preferred way of adding an array.
+            result = store.add(ConstArrayRef(input));
+        }
         assert(refStore.count(result) == 0);
         refStore.insert(std::make_pair(result, input));
         return result;
@@ -148,21 +162,48 @@ struct ArrayStoreTest : public testing::Test
     size_t largeArraySize() const { return sizeof(LargeArray); }
 };
 
-using NumberStoreTest = ArrayStoreTest<uint32_t>;
-using StringStoreTest = ArrayStoreTest<std::string>;
-using SmallOffsetNumberStoreTest = ArrayStoreTest<uint32_t, EntryRefT<10>>;
-
-struct NumberStoreFreeListsDisabledTest : public NumberStoreTest {
-    NumberStoreFreeListsDisabledTest() : NumberStoreTest(3, false) {}
+struct TestParam {
+    bool add_using_allocate;
+    TestParam(bool add_using_allocate_in) : add_using_allocate(add_using_allocate_in) {}
 };
+
+std::ostream& operator<<(std::ostream& os, const TestParam& param)
+{
+    os << (param.add_using_allocate ? "add_using_allocate" : "basic_add");
+    return os;
+}
+
+using NumberStoreTestWithParam = ArrayStoreTest<testing::TestWithParam<TestParam>, uint32_t>;
+
+struct NumberStoreTest : public NumberStoreTestWithParam {
+   NumberStoreTest() : NumberStoreTestWithParam(3, true, GetParam().add_using_allocate) {}
+};
+
+struct NumberStoreFreeListsDisabledTest : public NumberStoreTestWithParam {
+    NumberStoreFreeListsDisabledTest() : NumberStoreTestWithParam(3, false, GetParam().add_using_allocate) {}
+};
+
+using NumberStoreBasicTest = ArrayStoreTest<testing::Test, uint32_t>;
+using StringStoreTest = ArrayStoreTest<testing::Test, std::string>;
+using SmallOffsetNumberStoreTest = ArrayStoreTest<testing::Test, uint32_t, EntryRefT<10>>;
 
 TEST(BasicStoreTest, test_with_trivial_and_non_trivial_types)
 {
-    EXPECT_TRUE(vespalib::can_skip_destruction<NumberStoreTest::value_type>);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberStoreBasicTest::value_type>);
     EXPECT_FALSE(vespalib::can_skip_destruction<StringStoreTest::value_type>);
 }
 
-TEST_F(NumberStoreTest, control_static_sizes) {
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(NumberStoreMultiTest,
+                                     NumberStoreTest,
+                                     testing::Values(TestParam(false), TestParam(true)),
+                                     testing::PrintToStringParamName());
+
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
+                                     NumberStoreFreeListsDisabledTest,
+                                     testing::Values(TestParam(false), TestParam(true)),
+                                     testing::PrintToStringParamName());
+
+TEST_P(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION
     EXPECT_EQ(440u, sizeof(f.store));
     EXPECT_EQ(296u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
@@ -176,7 +217,7 @@ TEST_F(NumberStoreTest, control_static_sizes) {
     EXPECT_EQ(32u, usage.usedBytes());
 }
 
-TEST_F(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
+TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
 {
     assertAdd({});
     assertAdd({1});
@@ -192,7 +233,7 @@ TEST_F(StringStoreTest, add_and_get_small_arrays_of_non_trivial_type)
     assertAdd({"ddd", "eeee", "fffff"});
 }
 
-TEST_F(NumberStoreTest, add_and_get_large_arrays_of_simple_type)
+TEST_P(NumberStoreTest, add_and_get_large_arrays_of_simple_type)
 {
     assertAdd({1,2,3,4});
     assertAdd({2,3,4,5,6});
@@ -204,7 +245,7 @@ TEST_F(StringStoreTest, add_and_get_large_arrays_of_non_trivial_type)
     assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"});
 }
 
-TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_small_array_is_removed)
+TEST_P(NumberStoreTest, elements_are_put_on_hold_when_a_small_array_is_removed)
 {
     EntryRef ref = add({1,2,3});
     assertBufferState(ref, MemStats().used(3).hold(0));
@@ -212,7 +253,7 @@ TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_small_array_is_removed)
     assertBufferState(ref, MemStats().used(3).hold(3));
 }
 
-TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_large_array_is_removed)
+TEST_P(NumberStoreTest, elements_are_put_on_hold_when_a_large_array_is_removed)
 {
     EntryRef ref = add({1,2,3,4});
     // Note: The first buffer has the first element reserved -> we expect 2 elements used here.
@@ -221,23 +262,23 @@ TEST_F(NumberStoreTest, elements_are_put_on_hold_when_a_large_array_is_removed)
     assertBufferState(ref, MemStats().used(2).hold(1).dead(1));
 }
 
-TEST_F(NumberStoreTest, small_arrays_are_allocated_from_free_lists_when_enabled) {
+TEST_P(NumberStoreTest, small_arrays_are_allocated_from_free_lists_when_enabled) {
     assert_ref_reused({1,2,3}, {4,5,6}, true);
 }
 
-TEST_F(NumberStoreTest, large_arrays_are_allocated_from_free_lists_when_enabled) {
+TEST_P(NumberStoreTest, large_arrays_are_allocated_from_free_lists_when_enabled) {
     assert_ref_reused({1,2,3,4}, {5,6,7,8}, true);
 }
 
-TEST_F(NumberStoreFreeListsDisabledTest, small_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+TEST_P(NumberStoreFreeListsDisabledTest, small_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
     assert_ref_reused({1,2,3}, {4,5,6}, false);
 }
 
-TEST_F(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+TEST_P(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
     assert_ref_reused({1,2,3,4}, {5,6,7,8}, false);
 }
 
-TEST_F(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
+TEST_P(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
     EntryRef ref = add({1,2,3,4});
     assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(16));
     remove({1,2,3,4});
@@ -269,7 +310,7 @@ TEST_F(SmallOffsetNumberStoreTest, new_underlying_buffer_is_allocated_when_curre
 namespace {
 
 void
-test_compaction(NumberStoreTest &f)
+test_compaction(NumberStoreBasicTest &f)
 {
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
@@ -300,8 +341,8 @@ test_compaction(NumberStoreTest &f)
 
 }
 
-struct NumberStoreTwoSmallBufferTypesTest : public NumberStoreTest {
-    NumberStoreTwoSmallBufferTypesTest() : NumberStoreTest(2) {}
+struct NumberStoreTwoSmallBufferTypesTest : public NumberStoreBasicTest {
+    NumberStoreTwoSmallBufferTypesTest() : NumberStoreBasicTest(2) {}
 };
 
 TEST_F(NumberStoreTwoSmallBufferTypesTest, buffer_with_most_dead_space_is_compacted)
@@ -372,23 +413,23 @@ void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressS
 
 }
 
-TEST_F(NumberStoreTest, compactWorst_selects_on_only_memory) {
+TEST_P(NumberStoreTest, compactWorst_selects_on_only_memory) {
     testCompaction(*this, true, false);
 }
 
-TEST_F(NumberStoreTest, compactWorst_selects_on_only_address_space) {
+TEST_P(NumberStoreTest, compactWorst_selects_on_only_address_space) {
     testCompaction(*this, false, true);
 }
 
-TEST_F(NumberStoreTest, compactWorst_selects_on_both_memory_and_address_space) {
+TEST_P(NumberStoreTest, compactWorst_selects_on_both_memory_and_address_space) {
     testCompaction(*this, true, true);
 }
 
-TEST_F(NumberStoreTest, compactWorst_selects_on_neither_memory_nor_address_space) {
+TEST_P(NumberStoreTest, compactWorst_selects_on_neither_memory_nor_address_space) {
     testCompaction(*this, false, false);
 }
 
-TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_arrays)
+TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_arrays)
 {
     MemStats exp(store.getMemoryUsage());
     add({1,2,3});
@@ -399,7 +440,7 @@ TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_a
     assertMemoryUsage(exp.holdToDead(entrySize() * 3));
 }
 
-TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
+TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
 {
     MemStats exp(store.getMemoryUsage());
     add({1,2,3,4});
@@ -411,7 +452,7 @@ TEST_F(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_a
             dead(largeArraySize()));
 }
 
-TEST_F(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_number_of_possible_arrays)
+TEST_P(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_number_of_possible_arrays)
 {
     add({2,2});
     add({3,3,3});
@@ -435,8 +476,8 @@ TEST_F(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_num
     EXPECT_EQ(expLimit, store.addressSpaceUsage().limit());
 }
 
-struct ByteStoreTest : public ArrayStoreTest<uint8_t> {
-    ByteStoreTest() : ArrayStoreTest<uint8_t>(ByteStoreTest::ArrayStoreType::
+struct ByteStoreTest : public ArrayStoreTest<testing::Test, uint8_t> {
+    ByteStoreTest() : ArrayStoreTest<testing::Test, uint8_t>(ByteStoreTest::ArrayStoreType::
                                               optimizedConfigForHugePage(1023,
                                                                          vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                                          4_Ki, 8_Ki, ALLOC_GROW_FACTOR)) {}
@@ -452,7 +493,7 @@ TEST_F(ByteStoreTest, offset_in_EntryRefT_is_within_bounds_when_allocating_memor
     assertStoreContent();
 }
 
-TEST_F(NumberStoreTest, provided_memory_allocator_is_used)
+TEST_P(NumberStoreTest, provided_memory_allocator_is_used)
 {
     EXPECT_EQ(AllocStats(4, 0), stats);
 }
