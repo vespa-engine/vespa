@@ -13,7 +13,7 @@ import (
 )
 
 func Run(args []string) int {
-	trace.AdjustVerbosity(0)
+	trace.AdjustVerbosity(2)
 	if len(args) < 1 {
 		trace.Warning("missing program argument")
 		return 1
