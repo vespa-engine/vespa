@@ -423,8 +423,9 @@ public class RankingExpressionTypeResolverTestCase {
             builder.build(true);
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In schema 'test', rank profile 'my_rank_profile': rank profile 'my_rank_profile' is strict but is missing a query profile type declaration of features [query(bar), query(baz), query(foo)]",
-                    Exceptions.toMessageString(e));
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': rank profile 'my_rank_profile' " +
+                         "is strict but is missing a declaration of inputs [query(bar), query(baz), query(foo)]",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -450,11 +451,11 @@ public class RankingExpressionTypeResolverTestCase {
                 "}"
         ));
         builder.build(true);
-        String message = logger.findMessage("The following query features");
+        String message = logger.findMessage("The following inputs");
         assertNotNull(message);
-        assertEquals("WARNING: The following query features used in rank profile 'my_rank_profile' are not declared and " +
-                "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
-                message);
+        assertEquals("WARNING: The following inputs used in rank profile 'my_rank_profile' are not declared and " +
+                     "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
+                     message);
     }
 
     @Test
