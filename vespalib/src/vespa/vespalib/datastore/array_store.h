@@ -51,7 +51,9 @@ private:
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     EntryRef addSmallArray(const ConstArrayRef &array);
+    EntryRef allocate_small_array(size_t array_size);
     EntryRef addLargeArray(const ConstArrayRef &array);
+    EntryRef allocate_large_array(size_t array_size);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
         const EntryT *buf = _store.template getEntryArray<EntryT>(ref, arraySize);
         return ConstArrayRef(buf, arraySize);
@@ -79,6 +81,17 @@ public:
             return getLargeArray(internalRef);
         }
     }
+
+    /**
+     * Allocate an array of the given size without any instantiation of EntryT elements.
+     *
+     * Use get_writable() to get a reference to the array for writing.
+     *
+     * NOTE: In most cases add() should be used instead.
+     *       This function is however relevant when serializing objects into char buffers
+     *       when e.g. using an ArrayStore<char> for memory management.
+     */
+    EntryRef allocate(size_t array_size);
 
     /**
      * Returns a writeable reference to the given array.

@@ -76,11 +76,33 @@ ArrayStore<EntryT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
 EntryRef
+ArrayStore<EntryT, RefT, TypeMapperT>::allocate(size_t array_size)
+{
+    if (array_size == 0) {
+        return EntryRef();
+    }
+    if (array_size <= _maxSmallArraySize) {
+        return allocate_small_array(array_size);
+    } else {
+        return allocate_large_array(array_size);
+    }
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
+EntryRef
 ArrayStore<EntryT, RefT, TypeMapperT>::addSmallArray(const ConstArrayRef &array)
 {
     uint32_t typeId = _mapper.get_type_id(array.size());
     using NoOpReclaimer = DefaultReclaimer<EntryT>;
     return _store.template freeListAllocator<EntryT, NoOpReclaimer>(typeId).allocArray(array).ref;
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
+EntryRef
+ArrayStore<EntryT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
+{
+    uint32_t type_id = _mapper.get_type_id(array_size);
+    return _store.template freeListRawAllocator<EntryT>(type_id).alloc(array_size).ref;
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
@@ -92,6 +114,17 @@ ArrayStore<EntryT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
             .alloc(array.cbegin(), array.cend());
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
     state.incExtraUsedBytes(sizeof(EntryT) * array.size());
+    return handle.ref;
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
+EntryRef
+ArrayStore<EntryT, RefT, TypeMapperT>::allocate_large_array(size_t array_size)
+{
+    using NoOpReclaimer = DefaultReclaimer<LargeArray>;
+    auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId).alloc(array_size);
+    auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
+    state.incExtraUsedBytes(sizeof(EntryT) * array_size);
     return handle.ref;
 }
 
