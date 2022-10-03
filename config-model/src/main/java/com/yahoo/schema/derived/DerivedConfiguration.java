@@ -66,26 +66,31 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
      *               schema is later modified.
      */
     public DerivedConfiguration(Schema schema, DeployState deployState) {
-        Validator.ensureNotNull("Schema", schema);
-        this.schema = schema;
-        this.queryProfiles = deployState.getQueryProfiles().getRegistry();
-        this.maxUncommittedMemory = deployState.getProperties().featureFlags().maxUnCommittedMemory();
-        if ( ! schema.isDocumentsOnly()) {
-            streamingFields = new VsmFields(schema);
-            streamingSummary = new VsmSummary(schema);
+        try {
+            Validator.ensureNotNull("Schema", schema);
+            this.schema = schema;
+            this.queryProfiles = deployState.getQueryProfiles().getRegistry();
+            this.maxUncommittedMemory = deployState.getProperties().featureFlags().maxUnCommittedMemory();
+            if (!schema.isDocumentsOnly()) {
+                streamingFields = new VsmFields(schema);
+                streamingSummary = new VsmSummary(schema);
+            }
+            if (!schema.isDocumentsOnly()) {
+                attributeFields = new AttributeFields(schema);
+                summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
+                juniperrc = new Juniperrc(schema);
+                rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
+                indexingScript = new IndexingScript(schema);
+                indexInfo = new IndexInfo(schema);
+                schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
+                indexSchema = new IndexSchema(schema);
+                importedFields = new ImportedFields(schema);
+            }
+            Validation.validate(this, schema);
         }
-        if ( ! schema.isDocumentsOnly()) {
-            attributeFields = new AttributeFields(schema);
-            summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
-            juniperrc = new Juniperrc(schema);
-            rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
-            indexingScript = new IndexingScript(schema);
-            indexInfo = new IndexInfo(schema);
-            schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
-            indexSchema = new IndexSchema(schema);
-            importedFields = new ImportedFields(schema);
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid " + schema, e);
         }
-        Validation.validate(this, schema);
     }
 
     /**
