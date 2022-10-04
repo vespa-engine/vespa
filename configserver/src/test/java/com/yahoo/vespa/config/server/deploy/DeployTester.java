@@ -172,6 +172,10 @@ public class DeployTester {
         return applicationRepository;
     }
 
+    public Curator curator() {
+        return tenantRepository.getCurator();
+    }
+
     private static HostProvisioner createProvisioner() {
         return new InMemoryProvisioner(9, false);
     }
