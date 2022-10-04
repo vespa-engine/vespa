@@ -27,7 +27,7 @@ public:
     SmallSubspacesBufferType(const SmallSubspacesBufferType&) = delete;
     SmallSubspacesBufferType& operator=(const SmallSubspacesBufferType&) = delete;
     SmallSubspacesBufferType(SmallSubspacesBufferType&&) noexcept = default;
-    SmallSubspacesBufferType& operator=(SmallSubspacesBufferType&&) noexcept = default;
+    SmallSubspacesBufferType& operator=(SmallSubspacesBufferType&&) noexcept = delete;
     SmallSubspacesBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator, TensorBufferTypeMapper& type_mapper) noexcept;
     ~SmallSubspacesBufferType() override;
     void cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
