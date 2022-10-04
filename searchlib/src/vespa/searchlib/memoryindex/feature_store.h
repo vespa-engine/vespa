@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
@@ -20,8 +21,7 @@ public:
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
-    static constexpr uint32_t pad_constant = buffer_array_size - 1u;
-    static uint32_t calc_pad(uint32_t val) { return (-val & pad_constant); }
+    using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 
 private:
     using Schema = index::Schema;

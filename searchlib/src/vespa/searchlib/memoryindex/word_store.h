@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -12,8 +13,7 @@ public:
     using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<22>>;
     using RefType = DataStoreType::RefType;
     static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
-    static constexpr uint32_t pad_constant = buffer_array_size - 1u;
-    static uint32_t calc_pad(uint32_t val) { return (-val & pad_constant); }
+    using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 
 private:
     DataStoreType           _store;

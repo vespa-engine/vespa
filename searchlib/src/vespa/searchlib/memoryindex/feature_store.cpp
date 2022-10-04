@@ -30,7 +30,7 @@ FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &featur
 EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
-    uint32_t pad = calc_pad(byteLen);
+    uint32_t pad = Aligner::pad(byteLen);
     auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(byteLen + pad, DECODE_SAFETY);
     uint8_t *dst = result.data;
     memcpy(dst, src, byteLen);
@@ -64,7 +64,7 @@ FeatureStore::moveFeatures(EntryRef ref, uint64_t bitLen)
     uint64_t byteLen = (bitLen + 7) / 8;
     EntryRef newRef = addFeatures(src, byteLen);
     // Mark old features as dead
-    _store.incDead(ref, byteLen + calc_pad(byteLen));
+    _store.incDead(ref, byteLen + Aligner::pad(byteLen));
     return newRef;
 }
 
@@ -109,7 +109,7 @@ void
 FeatureStore::add_features_guard_bytes()
 {
     uint32_t len = DECODE_SAFETY;
-    uint32_t pad = calc_pad(len);
+    uint32_t pad = Aligner::pad(len);
     auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(len + pad);
     memset(result.data, 0, len + pad);
     _store.incDead(result.ref, len + pad);

@@ -199,14 +199,12 @@ FakeMemTreeOccMgr::sync()
 void
 FakeMemTreeOccMgr::add(uint32_t wordIdx, index::DocIdAndFeatures &features)
 {
+    using Aligner = FeatureStore::Aligner;
     const FakeWord *fw = _fakeWords[wordIdx];
 
     std::pair<EntryRef, uint64_t> r =
         _featureStore.addFeatures(fw->getPackedIndex(), features);
-    size_t feature_size = (r.second + 7) / 8;
-    feature_size += FeatureStore::calc_pad(feature_size);
-
-    _featureSizes[wordIdx] += feature_size * 8;
+    _featureSizes[wordIdx] += Aligner::align((r.second + 7) / 8) * 8;
 
     _unflushed.push_back(PendingOp(wordIdx, features.doc_id(), r.first));
 
@@ -240,6 +238,7 @@ FakeMemTreeOccMgr::sortUnflushed()
 void
 FakeMemTreeOccMgr::flush()
 {
+    using Aligner = FeatureStore::Aligner;
     typedef std::vector<PendingOp>::iterator I;
 
     if (_unflushed.empty())
@@ -263,9 +262,7 @@ FakeMemTreeOccMgr::flush()
         if (i->getRemove()) {
             if (itr.valid() && itr.getKey() == docId) {
                 uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData().get_features_relaxed()));
-                size_t feature_size = (bits + 7) / 8;
-                feature_size += FeatureStore::calc_pad(feature_size);
-                _featureSizes[wordIdx] -= feature_size * 8;
+                _featureSizes[wordIdx] -= Aligner::align((bits + 7) / 8) * 8;
                 tree.remove(itr);
             }
         } else {
