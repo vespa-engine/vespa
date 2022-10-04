@@ -426,33 +426,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag CLUSTER_CONTROLLER_STATE_GATHER_COUNT = defineIntFlag(
-            "cluster-controller-state-gather-count", 1,
-            List.of("hmusum"), "2022-09-05", "2022-11-01",
-            "Count of how many cluster controllers should gather node state (range: [1, # of cluster controllers])",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
             "restrict-data-plane-bindings", false,
             List.of("mortent"), "2022-09-08", "2022-11-01",
             "Use restricted data plane bindings",
             "Takes effect at redeployment",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ZOOKEEPER_LEADER_CLOSE_SOCKET_ASYNC = defineFeatureFlag(
-            "zookeeper-leader-close-socket-async", false,
-            List.of("hmusum"), "2022-09-19", "2022-11-01",
-            "Sets ZooKeeper config leader.closeSocketAsync",
-            "Takes effect when restarting zookeeper server",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ZOOKEEPER_LEARNER_ASYNC_SENDING = defineFeatureFlag(
-            "zookeeper-learner-async-sending", false,
-            List.of("hmusum"), "2022-09-19", "2022-11-01",
-            "Sets ZooKeeper config leader.closeSocketAsync",
-            "Takes effect when restarting zookeeper server",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag CSRF_MODE = defineStringFlag(
             "csrf-mode", "disabled",
