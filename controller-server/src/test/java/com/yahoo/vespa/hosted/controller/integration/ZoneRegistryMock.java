@@ -46,7 +46,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, RoutingMethod> zoneRoutingMethods = new HashMap<>();
     private final Map<CloudAccount, Set<ZoneId>> cloudAccountZones = new HashMap<>();
-    private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
+    private final Set<ZoneApi> dynamicallyProvisioned = new HashSet<>();
     private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
 
     private List<? extends ZoneApi> zones;
@@ -136,12 +136,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock reprovisionToUpgradeOsIn(ZoneApi... zones) {
-        return reprovisionToUpgradeOsIn(List.of(zones));
+    public ZoneRegistryMock dynamicProvisioningIn(ZoneApi... zones) {
+        return dynamicProvisioningIn(List.of(zones));
     }
 
-    public ZoneRegistryMock reprovisionToUpgradeOsIn(List<ZoneApi> zones) {
-        this.reprovisionToUpgradeOs.addAll(zones);
+    public ZoneRegistryMock dynamicProvisioningIn(List<ZoneApi> zones) {
+        this.dynamicallyProvisioned.addAll(zones);
         return this;
     }
 
@@ -162,7 +162,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(zones, zoneRoutingMethods, reprovisionToUpgradeOs);
+        return ZoneFilterMock.from(zones, zoneRoutingMethods, dynamicallyProvisioned);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         var fullZones = new ArrayList<ZoneApi>(1 + zones.size());
         fullZones.add(systemAsZone());
         fullZones.addAll(zones);
-        return ZoneFilterMock.from(fullZones, zoneRoutingMethods, reprovisionToUpgradeOs);
+        return ZoneFilterMock.from(fullZones, zoneRoutingMethods, dynamicallyProvisioned);
     }
 
     private ZoneApiMock systemAsZone() {

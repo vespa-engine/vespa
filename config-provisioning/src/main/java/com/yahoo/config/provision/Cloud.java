@@ -13,13 +13,11 @@ public class Cloud {
     private final CloudName name;
 
     private final boolean dynamicProvisioning;
-    private final boolean reprovisionToUpgradeOs;
     private final boolean requireAccessControl;
 
-    private Cloud(CloudName name, boolean dynamicProvisioning, boolean reprovisionToUpgradeOs, boolean requireAccessControl) {
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean requireAccessControl) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
-        this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.requireAccessControl = requireAccessControl;
     }
 
@@ -31,12 +29,6 @@ public class Cloud {
     /** Returns whether this can provision hosts dynamically */
     public boolean dynamicProvisioning() {
         return dynamicProvisioning;
-    }
-
-    /** Returns whether upgrading OS on hosts in this requires the host to be reprovisioned */
-    // TODO(mpolden): Unused, remove this
-    public boolean reprovisionToUpgradeOs() {
-        return reprovisionToUpgradeOs;
     }
 
     /** Returns whether to require access control for all clusters in this */
@@ -57,7 +49,6 @@ public class Cloud {
 
         private CloudName name = CloudName.DEFAULT;
         private boolean dynamicProvisioning = false;
-        private boolean reprovisionToUpgradeOs = false;
         private boolean requireAccessControl = false;
 
         public Builder() {}
@@ -72,18 +63,13 @@ public class Cloud {
             return this;
         }
 
-        public Builder reprovisionToUpgradeOs(boolean reprovisionToUpgradeOs) {
-            this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
-            return this;
-        }
-
         public Builder requireAccessControl(boolean requireAccessControl) {
             this.requireAccessControl = requireAccessControl;
             return this;
         }
 
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, reprovisionToUpgradeOs, requireAccessControl);
+            return new Cloud(name, dynamicProvisioning, requireAccessControl);
         }
 
     }

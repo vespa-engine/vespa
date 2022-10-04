@@ -39,7 +39,7 @@ public class OsUpgradeSchedulerTest {
 
         CloudName cloud = CloudName.from("cloud");
         ZoneApi zone = zone("prod.us-west-1", cloud);
-        tester.zoneRegistry().setZones(zone).reprovisionToUpgradeOsIn(zone);
+        tester.zoneRegistry().setZones(zone).dynamicProvisioningIn(zone);
 
         // Initial run does nothing as the cloud does not have a target
         scheduler.maintain();
@@ -102,7 +102,7 @@ public class OsUpgradeSchedulerTest {
         tester.clock().setInstant(t0);
         CloudName cloud = CloudName.from("cloud");
         ZoneApi zone = zone("prod.us-west-1", cloud);
-        tester.zoneRegistry().setZones(zone).reprovisionToUpgradeOsIn(zone);
+        tester.zoneRegistry().setZones(zone).dynamicProvisioningIn(zone);
 
         // Set initial target
         Version version0 = Version.fromString("7.0.0.20220101");

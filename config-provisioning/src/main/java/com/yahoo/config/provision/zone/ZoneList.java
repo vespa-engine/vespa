@@ -35,8 +35,8 @@ public interface ZoneList extends ZoneFilter {
     /** Only the given zones — combine with not() for best effect! */
     ZoneList among(ZoneId... zones);
 
-    /** Zones where hosts must be reprovisioned to upgrade their OS */
-    ZoneList reprovisionToUpgradeOs();
+    /** Zones where hosts are dynamically provisioned */
+    ZoneList dynamicallyProvisioned();
 
     /** Zones where traffic is routed using given method */
     ZoneList routingMethod(RoutingMethod method);

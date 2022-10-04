@@ -342,13 +342,13 @@ public class OsUpgraderTest {
         return tester.configServer().nodeRepository();
     }
 
-    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean reprovisionToUpgradeOs) {
+    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean dynamicProvisioning) {
         var zones = upgradePolicy.steps().stream().map(Step::zones).flatMap(Collection::stream).collect(Collectors.toList());
         tester.zoneRegistry()
               .setZones(zones)
               .setOsUpgradePolicy(cloud, upgradePolicy);
-        if (reprovisionToUpgradeOs) {
-            tester.zoneRegistry().reprovisionToUpgradeOsIn(zones);
+        if (dynamicProvisioning) {
+            tester.zoneRegistry().dynamicProvisioningIn(zones);
         }
         return new OsUpgrader(tester.controller(), Duration.ofDays(1), cloud);
     }

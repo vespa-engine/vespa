@@ -26,7 +26,6 @@ public class Zone {
         this(Cloud.builder()
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
-                  .reprovisionToUpgradeOs(cloudConfig.reprovisionToUpgradeOs())
                   .requireAccessControl(cloudConfig.requireAccessControl())
                   .build(),
              SystemName.from(configserverConfig.system()),

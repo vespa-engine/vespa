@@ -59,7 +59,7 @@ public class OsApiTest extends ControllerContainerTest {
         tester.serviceRegistry().clock().setInstant(Instant.ofEpochMilli(1234));
         addUserToHostedOperatorRole(operator);
         tester.serviceRegistry().zoneRegistry().setZones(zone1, zone2, zone3)
-              .reprovisionToUpgradeOsIn(zone3)
+              .dynamicProvisioningIn(zone3)
               .setOsUpgradePolicy(cloud1, UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build())
               .setOsUpgradePolicy(cloud2, UpgradePolicy.builder().upgrade(zone3).build());
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(Version.fromString("7.0"),
