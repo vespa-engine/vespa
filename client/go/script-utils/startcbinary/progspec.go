@@ -23,10 +23,18 @@ type ProgSpec struct {
 	vespaMallocPreload   string
 }
 
-func (p *ProgSpec) setup() {
-	p.BaseName = baseNameOf(p.Program)
-	p.Env = make(map[string]string)
-	p.numaSocket = -1
+func NewProgSpec(argv []string) *ProgSpec {
+	progName := argv[0]
+	binProg := progName + "-bin"
+	p := ProgSpec{
+		Program:    binProg,
+		Args:       argv,
+		BaseName:   baseNameOf(progName),
+		Env:        make(map[string]string),
+		numaSocket: -1,
+	}
+	p.Args[0] = binProg
+	return &p
 }
 
 func baseNameOf(s string) string {

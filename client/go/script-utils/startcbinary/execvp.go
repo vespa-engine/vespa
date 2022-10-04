@@ -30,9 +30,9 @@ func findInPath(prog string) string {
 }
 
 func myexecvp(prog string, argv []string, envv []string) error {
-	trace.Trace("run cmd", strings.Join(argv, " "))
 	prog = findInPath(prog)
 	argv[0] = prog
+	trace.Trace("run cmd:", strings.Join(argv, " "))
 	err := unix.Exec(prog, argv, envv)
 	return fmt.Errorf("cannot execute '%s': %v", prog, err)
 }

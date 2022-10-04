@@ -18,11 +18,7 @@ func Run(args []string) int {
 		trace.Warning("missing program argument")
 		return 1
 	}
-	spec := ProgSpec{
-		Program: args[0],
-		Args:    args,
-	}
-	spec.setup()
+	spec := NewProgSpec(args)
 	err := vespa.LoadDefaultEnv()
 	if err != nil {
 		panic(err)

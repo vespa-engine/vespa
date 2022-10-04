@@ -8,9 +8,7 @@ import (
 )
 
 func TestProgSpec(t *testing.T) {
-	var spec ProgSpec
-	spec.Program = "/opt/vespa/bin/foobar"
-	spec.setup()
+	spec := NewProgSpec([]string{"/opt/vespa/bin/foobar"})
 	var b bool
 
 	b = spec.matchesListString("")

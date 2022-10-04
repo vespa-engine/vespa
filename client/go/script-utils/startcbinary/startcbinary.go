@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func startCbinary(spec ProgSpec) int {
+func startCbinary(spec *ProgSpec) int {
 	spec.configureCommonEnv()
 	spec.configurePath()
 	spec.configureTuning()
@@ -27,7 +27,7 @@ func startCbinary(spec ProgSpec) int {
 }
 
 func (spec *ProgSpec) run() error {
-	prog := spec.Program + "-bin"
+	prog := spec.Program
 	args := spec.Args
 	if spec.shouldUseValgrind {
 		args = spec.prependValgrind(args)
