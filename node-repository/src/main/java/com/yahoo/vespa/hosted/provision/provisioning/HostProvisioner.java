@@ -79,6 +79,12 @@ public interface HostProvisioner {
      */
     void deprovision(Node host);
 
+    /** Replace the root (OS) disk of host. Implementations of this are expected to be idempotent.
+     *
+     * @return the updated node object
+     */
+    Node replaceRootDisk(Node host);
+
     /**
      * Returns the maintenance events scheduled for hosts in this zone, in given cloud accounts. Host events in the
      * zone's default cloud account are always included.

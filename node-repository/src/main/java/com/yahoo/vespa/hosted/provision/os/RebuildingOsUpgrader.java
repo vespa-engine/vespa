@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -22,10 +23,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that retires and rebuilds hosts on stale OS versions.
+ * An upgrader that rebuilds hosts on stale OS versions.
  *
- * - We limit the number of concurrent rebuilds to reduce impact of retiring too many hosts.
- * - We limit rebuilds by cluster so that at most one node per stateful cluster per application is retired at a time.
+ * - We limit the number of concurrent rebuilds to reduce impact of suspending or retiring too many hosts.
+ * - We limit rebuilds by cluster so that at most one node per stateful cluster per application is rebuilt at a time.
  *
  * Used in cases where performing an OS upgrade requires rebuilding the host, e.g. when upgrading across major versions.
  *
@@ -37,10 +38,12 @@ public class RebuildingOsUpgrader implements OsUpgrader {
 
     private final NodeRepository nodeRepository;
     private final IntFlag maxRebuilds;
+    private final boolean softRebuild;
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository) {
+    public RebuildingOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
         this.nodeRepository = nodeRepository;
         this.maxRebuilds = PermanentFlags.MAX_REBUILDS.bindTo(nodeRepository.flagSource());
+        this.softRebuild = softRebuild;
     }
 
     @Override
@@ -59,22 +62,27 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     private int rebuildLimit(NodeType hostType, NodeList hostsOfType) {
         if (hostsOfType.stream().anyMatch(host -> host.type() != hostType)) illegal("All hosts must be a " + hostType);
         int limit = hostType == NodeType.host ? maxRebuilds.value() : 1;
-        return Math.max(0, limit - hostsOfType.rebuilding().size());
+        return Math.max(0, limit - hostsOfType.rebuilding(softRebuild).size());
     }
 
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
+        if (softRebuild) {
+            // Soft rebuild is enabled so this should only act on hosts with remote storage
+            hostsOfTargetType = hostsOfTargetType.storageType(NodeResources.StorageType.remote);
+        }
         int rebuildLimit = rebuildLimit(target.nodeType(), hostsOfTargetType);
 
         // Find stateful clusters with retiring nodes
         NodeList activeNodes = allNodes.state(Node.State.active);
         Set<ClusterId> retiringClusters = new HashSet<>(activeNodes.nodeType(target.nodeType().childNodeType())
-                                                                   .retiring().statefulClusters());
+                                                                   .retiring()
+                                                                   .statefulClusters());
 
         // Rebuild hosts not containing stateful clusters with retiring nodes, up to rebuild limit
         List<Node> hostsToRebuild = new ArrayList<>(rebuildLimit);
         NodeList candidates = hostsOfTargetType.state(Node.State.active)
-                                               .not().rebuilding()
+                                               .not().rebuilding(softRebuild)
                                                .osVersionIsBefore(target.version())
                                                .matching(node -> canUpgradeAt(now, node))
                                                .byIncreasingOsVersion();
@@ -91,10 +99,10 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     }
 
     private void rebuild(Node host, Version target, Instant now) {
-        LOG.info("Retiring and rebuilding " + host + ": On stale OS version " +
+        LOG.info((softRebuild ? "Soft-rebuilding " : "Retiring and rebuilding ") + host + ": On stale OS version " +
                  host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                  ", want " + target);
-        nodeRepository.nodes().rebuild(host.hostname(), Agent.RebuildingOsUpgrader, now);
+        nodeRepository.nodes().rebuild(host.hostname(), softRebuild, Agent.RebuildingOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
     }
 

@@ -45,8 +45,8 @@ public class Status {
         if (wantToDeprovision && wantToRebuild) {
             throw new IllegalArgumentException("Node cannot be marked both wantToDeprovision and wantToRebuild");
         }
-        if ((wantToDeprovision || wantToRebuild) && !wantToRetire) {
-            throw new IllegalArgumentException("Node cannot be marked wantToDeprovision or wantToRebuild unless it's also marked wantToRetire");
+        if (wantToDeprovision && !wantToRetire) {
+            throw new IllegalArgumentException("Node cannot be marked wantToDeprovision unless it's also marked wantToRetire");
         }
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -28,8 +29,11 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     protected final NodeRepository nodeRepository;
 
-    public RetiringOsUpgrader(NodeRepository nodeRepository) {
+    private final boolean softRebuild;
+
+    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
         this.nodeRepository = nodeRepository;
+        this.softRebuild = softRebuild;
     }
 
     @Override
@@ -57,6 +61,10 @@ public class RetiringOsUpgrader implements OsUpgrader {
     /** Returns nodes that are candidates for upgrade */
     private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
+        if (softRebuild) {
+            // Soft rebuild is enabled, so this should only act on hosts with local storage
+            activeNodes = activeNodes.storageType(NodeResources.StorageType.local);
+        }
         if (activeNodes.isEmpty()) return NodeList.of();
 
         Duration nodeBudget = target.upgradeBudget().dividedBy(activeNodes.size());

@@ -79,6 +79,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         NodeList nodes = nodeRepository().nodes().list();
         resumeProvisioning(nodes);
         convergeToCapacity(nodes);
+        replaceRootDisk(nodes);
         return 1.0;
     }
 
@@ -149,6 +150,20 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
             }
         });
+    }
+
+    /** Replace the root disk of hosts that have requested soft-rebuild */
+    private void replaceRootDisk(NodeList nodes) {
+        NodeList softRebuildingHosts = nodes.rebuilding(true);
+        for (var host : softRebuildingHosts) {
+            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Optional.of(Duration.ofSeconds(10)));
+            try (NodeMutex mutex = optionalMutex.get()) {
+                Node updatedNode = hostProvisioner.replaceRootDisk(host);
+                if (!updatedNode.status().wantToRebuild()) {
+                    nodeRepository().nodes().write(updatedNode, mutex);
+                }
+            }
+        }
     }
 
     /**
