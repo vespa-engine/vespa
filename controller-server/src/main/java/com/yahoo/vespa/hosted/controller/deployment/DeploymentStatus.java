@@ -1027,7 +1027,9 @@ public class DeploymentStatus {
             Versions lastVersions = job.lastCompleted().get().versions();
             Versions toRun = Versions.from(change, status.application, dependent.flatMap(status::deploymentFor), status.fallbackPlatform(change, job.id()));
             if ( ! toRun.targetsMatch(lastVersions)) return Optional.empty();
-            if (job.id().type().environment().isTest() && job.isNodeAllocationFailure()) return Optional.empty();
+            if (   job.id().type().environment().isTest()
+                && dependent.map(JobId::type).map(status::findCloud).map(CloudName.DEFAULT::equals).orElse(false)
+                && job.isNodeAllocationFailure()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
