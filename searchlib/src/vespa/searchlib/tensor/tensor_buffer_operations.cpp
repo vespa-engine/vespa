@@ -98,10 +98,10 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
     auto labels_end_offset = get_labels_offset() + get_labels_mem_size(num_subspaces);
     auto cells_size = num_subspaces * _dense_subspace_size;
     auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
-    auto alignment = select_alignment(cells_mem_size);
-    auto cells_start_offset = calc_aligned(labels_end_offset, alignment);
+    auto aligner = select_aligner(cells_mem_size);
+    auto cells_start_offset = aligner.align(labels_end_offset);
     auto cells_end_offset = cells_start_offset + cells_mem_size;
-    auto store_end = calc_aligned(cells_end_offset, alignment);
+    auto store_end = aligner.align(cells_end_offset);
     assert(store_end == get_array_size(num_subspaces));
     assert(buf.size() >= store_end);
     *reinterpret_cast<uint32_t*>(buf.data()) = num_subspaces;
@@ -140,8 +140,8 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _dense_subspace_size;
     auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
-    auto alignment = select_alignment(cells_mem_size);
-    auto cells_start_offset = get_cells_offset(num_subspaces, alignment);
+    auto aligner = select_aligner(cells_mem_size);
+    auto cells_start_offset = get_cells_offset(num_subspaces, aligner);
     TypedCells cells(buf.data() + cells_start_offset, _cell_type, cells_size);
     assert(cells_start_offset + cells_mem_size <= buf.size());
     return std::make_unique<FastValueView>(tensor_type, labels, cells, _num_mapped_dimensions, num_subspaces);
@@ -176,8 +176,8 @@ TensorBufferOperations::encode_stored_tensor(ConstArrayRef<char> buf, const vesp
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _dense_subspace_size;
     auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
-    auto alignment = select_alignment(cells_mem_size);
-    auto cells_start_offset = get_cells_offset(num_subspaces, alignment);
+    auto aligner = select_aligner(cells_mem_size);
+    auto cells_start_offset = get_cells_offset(num_subspaces, aligner);
     TypedCells cells(buf.data() + cells_start_offset, _cell_type, cells_size);
     assert(cells_start_offset + cells_mem_size <= buf.size());
     StringIdVector labels_copy(labels.begin(), labels.end());

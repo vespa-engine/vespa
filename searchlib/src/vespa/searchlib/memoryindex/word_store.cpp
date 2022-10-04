@@ -26,7 +26,7 @@ vespalib::datastore::EntryRef
 WordStore::addWord(const vespalib::stringref word)
 {
     size_t wordSize = word.size() + 1;
-    size_t bufferSize = wordSize + calc_pad(wordSize);
+    size_t bufferSize = wordSize + Aligner::pad(wordSize);
     auto result = _store.rawAllocator<char>(_typeId).alloc(bufferSize);
     char *be = result.data;
     for (size_t i = 0; i < word.size(); ++i) {
