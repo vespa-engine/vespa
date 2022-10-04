@@ -158,10 +158,17 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         for (var host : softRebuildingHosts) {
             Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Optional.of(Duration.ofSeconds(10)));
             try (NodeMutex mutex = optionalMutex.get()) {
+                // Re-check flag while holding lock
+                host = mutex.node();
+                if (!host.status().wantToRebuild()) {
+                    continue;
+                }
                 Node updatedNode = hostProvisioner.replaceRootDisk(host);
                 if (!updatedNode.status().wantToRebuild()) {
                     nodeRepository().nodes().write(updatedNode, mutex);
                 }
+            } catch (RuntimeException e) {
+                log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ": " + Exceptions.toMessageString(e) + ", will retry in " + interval());
             }
         }
     }

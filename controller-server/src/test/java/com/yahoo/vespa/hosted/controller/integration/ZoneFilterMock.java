@@ -26,23 +26,23 @@ public class ZoneFilterMock implements ZoneList {
 
     private final List<ZoneApi> zones;
     private final Map<ZoneApi, RoutingMethod> zoneRoutingMethods;
-    private final Set<ZoneApi> reprovisionToUpgradeOs;
+    private final Set<ZoneApi> dynamicallyProvisioned;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, RoutingMethod> zoneRoutingMethods, Set<ZoneApi> reprovisionToUpgradeOs, boolean negate) {
+    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, RoutingMethod> zoneRoutingMethods, Set<ZoneApi> dynamicallyProvisioned, boolean negate) {
         this.zones = zones;
         this.zoneRoutingMethods = zoneRoutingMethods;
-        this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
+        this.dynamicallyProvisioned = dynamicallyProvisioned;
         this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, RoutingMethod> routingMethods, Set<ZoneApi> reprovisionToUpgradeOs) {
-        return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), reprovisionToUpgradeOs, false);
+    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, RoutingMethod> routingMethods, Set<ZoneApi> dynamicallyProvisioned) {
+        return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), dynamicallyProvisioned, false);
     }
 
     @Override
     public ZoneList not() {
-        return new ZoneFilterMock(zones, zoneRoutingMethods, reprovisionToUpgradeOs, ! negate);
+        return new ZoneFilterMock(zones, zoneRoutingMethods, dynamicallyProvisioned, ! negate);
     }
 
     @Override
@@ -71,8 +71,8 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public ZoneList reprovisionToUpgradeOs() {
-        return filter(reprovisionToUpgradeOs::contains);
+    public ZoneList dynamicallyProvisioned() {
+        return filter(dynamicallyProvisioned::contains);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class ZoneFilterMock implements ZoneList {
                                 condition.negate().test(zone) :
                                 condition.test(zone))
                         .collect(Collectors.toList()),
-                zoneRoutingMethods, reprovisionToUpgradeOs, false);
+                zoneRoutingMethods, dynamicallyProvisioned, false);
     }
 
 }
