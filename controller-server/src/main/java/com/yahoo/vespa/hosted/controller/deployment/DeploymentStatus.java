@@ -893,7 +893,7 @@ public class DeploymentStatus {
             return dependenciesCompletedAt(change, dependent)
                     .map(ready -> Stream.of(blockedUntil(change),
                                             pausedUntil(),
-                                            coolingDownUntil(change))
+                                            coolingDownUntil(change, dependent))
                                         .flatMap(Optional::stream)
                                         .reduce(ready, maxBy(naturalOrder())));
         }
@@ -916,7 +916,7 @@ public class DeploymentStatus {
         public Optional<Instant> pausedUntil() { return Optional.empty(); }
 
         /** The time until which this step is cooling down, due to consecutive failures. */
-        public Optional<Instant> coolingDownUntil(Change change) { return Optional.empty(); }
+        public Optional<Instant> coolingDownUntil(Change change, Optional<JobId> dependent) { return Optional.empty(); }
 
         /** Whether this step is declared in the deployment spec, or is an implicit step. */
         public boolean isDeclared() { return true; }
@@ -1020,14 +1020,16 @@ public class DeploymentStatus {
         }
 
         @Override
-        public Optional<Instant> coolingDownUntil(Change change) {
+        public Optional<Instant> coolingDownUntil(Change change, Optional<JobId> dependent) {
             if (job.lastTriggered().isEmpty()) return Optional.empty();
             if (job.lastCompleted().isEmpty()) return Optional.empty();
             if (job.firstFailing().isEmpty() || ! job.firstFailing().get().hasEnded()) return Optional.empty();
             Versions lastVersions = job.lastCompleted().get().versions();
-            if (change.platform().isPresent() && ! change.platform().get().equals(lastVersions.targetPlatform())) return Optional.empty();
-            if (change.revision().isPresent() && ! change.revision().get().equals(lastVersions.targetRevision())) return Optional.empty();
-            if (job.id().type().environment().isTest() && job.isNodeAllocationFailure()) return Optional.empty();
+            Versions toRun = Versions.from(change, status.application, dependent.flatMap(status::deploymentFor), status.fallbackPlatform(change, job.id()));
+            if ( ! toRun.targetsMatch(lastVersions)) return Optional.empty();
+            if (   job.id().type().environment().isTest()
+                && ! dependent.map(JobId::type).map(status::findCloud).map(List.of(CloudName.AWS, CloudName.GCP)::contains).orElse(true)
+                && job.isNodeAllocationFailure()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();

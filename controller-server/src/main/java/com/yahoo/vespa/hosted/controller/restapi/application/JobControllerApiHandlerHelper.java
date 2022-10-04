@@ -277,7 +277,7 @@ class JobControllerApiHandlerHelper {
             readyAt.filter(controller.clock().instant()::isBefore)
                    .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
             stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
-            stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
+            stepStatus.coolingDownUntil(change, Optional.empty()).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
             stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
                       .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
             stepStatus.blockedUntil(Change.of(RevisionId.forProduction(1))) // Dummy version — just anything with an application.
