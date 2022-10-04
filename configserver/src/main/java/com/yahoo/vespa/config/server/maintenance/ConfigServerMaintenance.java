@@ -31,16 +31,12 @@ public class ConfigServerMaintenance {
     private final FlagSource flagSource;
     private final ConfigConvergenceChecker convergenceChecker;
 
-    public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
-                                   ApplicationRepository applicationRepository,
-                                   Curator curator,
-                                   FlagSource flagSource,
-                                   ConfigConvergenceChecker convergenceChecker) {
-        this.configserverConfig = configserverConfig;
+    public ConfigServerMaintenance(ApplicationRepository applicationRepository) {
+        this.configserverConfig = applicationRepository.configserverConfig();
         this.applicationRepository = applicationRepository;
-        this.curator = curator;
-        this.flagSource = flagSource;
-        this.convergenceChecker = convergenceChecker;
+        this.curator = applicationRepository.tenantRepository().getCurator();
+        this.flagSource = applicationRepository.flagSource();
+        this.convergenceChecker = applicationRepository.configConvergenceChecker();
     }
 
     public void startBeforeBootstrap() {

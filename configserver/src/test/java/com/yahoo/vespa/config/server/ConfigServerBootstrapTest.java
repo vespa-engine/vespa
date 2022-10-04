@@ -18,22 +18,18 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
-import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -57,9 +53,6 @@ import static org.junit.Assert.assertTrue;
  * @author Harald Musum
  */
 public class ConfigServerBootstrapTest {
-
-    private final MockCurator curator = new MockCurator();
-    private final ManualClock clock = new ManualClock();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -183,12 +176,12 @@ public class ConfigServerBootstrapTest {
     }
 
     private Bootstrapper createBootstrapper(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode) throws IOException {
-        VersionState versionState = createVersionState();
+        VersionState versionState = createVersionState(tester.curator());
         assertTrue(versionState.isUpgraded());
 
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        return new Bootstrapper(tester.applicationRepository(), rpcServer, versionState, stateMonitor, vipStatus, vipStatusMode, clock);
+        return new Bootstrapper(tester.applicationRepository(), rpcServer, versionState, stateMonitor, vipStatus, vipStatusMode);
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -241,7 +234,7 @@ public class ConfigServerBootstrapTest {
                              new NullMetric());
     }
 
-    private VersionState createVersionState() throws IOException {
+    private VersionState createVersionState(Curator curator) throws IOException {
         return new VersionState(temporaryFolder.newFile(), curator);
     }
 
@@ -276,10 +269,8 @@ public class ConfigServerBootstrapTest {
                             VersionState versionState,
                             StateMonitor stateMonitor,
                             VipStatus vipStatus,
-                            VipStatusMode vipStatusMode,
-                            Clock clock) {
-            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE, vipStatusMode,
-                  new InMemoryFlagSource(), new ConfigConvergenceChecker(), clock);
+                            VipStatusMode vipStatusMode) {
+            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE, vipStatusMode);
         }
 
         @Override
