@@ -114,6 +114,7 @@ public class NodeRepository extends AbstractComponent {
                     "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
                     zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
+        this.flagSource = flagSource;
         this.db = new CuratorDatabaseClient(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
@@ -129,7 +130,6 @@ public class NodeRepository extends AbstractComponent {
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.loadBalancers = new LoadBalancers(db);
-        this.flagSource = flagSource;
         this.metricsDb = metricsDb;
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
