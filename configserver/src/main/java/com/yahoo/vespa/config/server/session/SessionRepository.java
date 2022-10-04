@@ -369,7 +369,7 @@ public class SessionRepository {
     public int deleteExpiredRemoteSessions(Clock clock) {
         Duration expiryTime = configserverConfig.hostedVespa()
                 ? sessionLifetime.multipliedBy(2)
-                : sessionLifetime.multipliedBy(24); // TODO: Remove when tested more (Sep. 2022 at the latest)
+                : sessionLifetime.multipliedBy(12); // TODO: Remove when tested more (Oct. 2022 at the latest)
 
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
