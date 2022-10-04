@@ -32,8 +32,11 @@ struct TestParam
           _tensor_spec(std::move(tensor_spec))
     {
     }
+    TestParam(const TestParam&);
     ~TestParam();
 };
+
+TestParam::TestParam(const TestParam&) = default;
 
 TestParam::~TestParam() = default;
 
