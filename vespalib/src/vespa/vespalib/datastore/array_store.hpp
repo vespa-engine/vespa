@@ -3,6 +3,7 @@
 #pragma once
 
 #include "array_store.h"
+#include "compacting_buffers.h"
 #include "compaction_spec.h"
 #include "entry_ref_filter.h"
 #include "datastore.hpp"
@@ -150,24 +151,20 @@ template <typename EntryT, typename RefT, typename TypeMapperT>
 class CompactionContext : public ICompactionContext {
 private:
     using ArrayStoreType = ArrayStore<EntryT, RefT, TypeMapperT>;
-    DataStoreBase &_dataStore;
     ArrayStoreType &_store;
-    std::vector<uint32_t> _bufferIdsToCompact;
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> _compacting_buffers;
     EntryRefFilter _filter;
 
 public:
-    CompactionContext(DataStoreBase &dataStore,
-                      ArrayStoreType &store,
-                      std::vector<uint32_t> bufferIdsToCompact)
-        : _dataStore(dataStore),
-          _store(store),
-          _bufferIdsToCompact(std::move(bufferIdsToCompact)),
-          _filter(RefT::numBuffers(), RefT::offset_bits)
+    CompactionContext(ArrayStoreType &store,
+                      std::unique_ptr<vespalib::datastore::CompactingBuffers> compacting_buffers)
+        : _store(store),
+          _compacting_buffers(std::move(compacting_buffers)),
+          _filter(_compacting_buffers->make_entry_ref_filter())
     {
-        _filter.add_buffers(_bufferIdsToCompact);
     }
     ~CompactionContext() override {
-        _dataStore.finishCompact(_bufferIdsToCompact);
+        _compacting_buffers->finish();
     }
     void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override {
         for (auto &atomic_entry_ref : refs) {
@@ -186,9 +183,9 @@ template <typename EntryT, typename RefT, typename TypeMapperT>
 ICompactionContext::UP
 ArrayStore<EntryT, RefT, TypeMapperT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
+    auto compacting_buffers = _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
     return std::make_unique<arraystore::CompactionContext<EntryT, RefT, TypeMapperT>>
-        (_store, *this, std::move(bufferIdsToCompact));
+        (*this, std::move(compacting_buffers));
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>

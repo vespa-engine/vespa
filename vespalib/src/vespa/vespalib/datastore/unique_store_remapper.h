@@ -19,11 +19,11 @@ public:
     using RefType = RefT;
 
 protected:
-    EntryRefFilter _compacting_buffer;
+    EntryRefFilter _filter;
     std::vector<std::vector<EntryRef, allocator_large<EntryRef>>> _mapping;
 public:
-    UniqueStoreRemapper()
-        : _compacting_buffer(RefT::numBuffers(), RefT::offset_bits),
+    UniqueStoreRemapper(EntryRefFilter&& filter)
+        : _filter(std::move(filter)),
           _mapping()
     {
     }
@@ -41,13 +41,13 @@ public:
     void remap(vespalib::ArrayRef<AtomicEntryRef> refs) const {
         for (auto &atomic_ref : refs) {
             auto ref = atomic_ref.load_relaxed();
-            if (ref.valid() && _compacting_buffer.has(ref)) {
+            if (ref.valid() && _filter.has(ref)) {
                 atomic_ref.store_release(remap(ref));
             }
         }
     }
 
-    const EntryRefFilter& get_entry_ref_filter() const noexcept { return _compacting_buffer; }
+    const EntryRefFilter& get_entry_ref_filter() const noexcept { return _filter; }
 
     virtual void done() = 0;
 };

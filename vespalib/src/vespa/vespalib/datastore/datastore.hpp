@@ -13,7 +13,7 @@ namespace vespalib::datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()
-    : DataStoreBase(RefType::numBuffers(), RefType::offsetSize())
+    : DataStoreBase(RefType::numBuffers(), RefType::offset_bits, RefType::offsetSize())
 {
 }
 

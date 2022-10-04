@@ -94,17 +94,17 @@ private:
                                     btree::NoAggregated,
                                     EntryComparatorWrapper,
                                     DictionaryTraits>;
-    using UniqueStoreRemapper<RefT>::_compacting_buffer;
+    using UniqueStoreRemapper<RefT>::_filter;
     using UniqueStoreRemapper<RefT>::_mapping;
-    DataStoreBase &_dataStore;
     IUniqueStoreDictionary &_dict;
     ICompactable &_store;
-    std::vector<uint32_t> _bufferIdsToCompact;
+    std::unique_ptr<CompactingBuffers> _compacting_buffers;
 
     void allocMapping() {
         _mapping.resize(RefT::numBuffers());
-        for (const auto bufferId : _bufferIdsToCompact) {
-            BufferState &state = _dataStore.getBufferState(bufferId);
+        auto& data_store = _compacting_buffers->get_store();
+        for (const auto bufferId : _compacting_buffers->get_buffer_ids()) {
+            BufferState &state = data_store.getBufferState(bufferId);
             _mapping[bufferId].resize(state.get_used_arrays());
         }
     }
@@ -122,34 +122,30 @@ private:
     }
     
     void fillMapping() {
-        _dict.move_keys(*this, _compacting_buffer);
+        _dict.move_keys(*this, _filter);
     }
 
 public:
-    CompactionContext(DataStoreBase &dataStore,
-                      IUniqueStoreDictionary &dict,
+    CompactionContext(IUniqueStoreDictionary &dict,
                       ICompactable &store,
-                      std::vector<uint32_t> bufferIdsToCompact)
-        : UniqueStoreRemapper<RefT>(),
+                      std::unique_ptr<CompactingBuffers> compacting_buffers)
+        : UniqueStoreRemapper<RefT>(compacting_buffers->make_entry_ref_filter()),
           ICompactable(),
-          _dataStore(dataStore),
           _dict(dict),
           _store(store),
-          _bufferIdsToCompact(std::move(bufferIdsToCompact))
+          _compacting_buffers(std::move(compacting_buffers))
     {
-        if (!_bufferIdsToCompact.empty()) {
-            _compacting_buffer.add_buffers(_bufferIdsToCompact);
+        if (!_compacting_buffers->empty()) {
             allocMapping();
             fillMapping();
         }
     }
 
     void done() override {
-        _dataStore.finishCompact(_bufferIdsToCompact);
-        _bufferIdsToCompact.clear();
+        _compacting_buffers->finish();
     }
     ~CompactionContext() override {
-        assert(_bufferIdsToCompact.empty());
+        assert(_compacting_buffers->empty());
     }
 };
 
@@ -159,11 +155,11 @@ template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 std::unique_ptr<typename UniqueStore<EntryT, RefT, Compare, Allocator>::Remapper>
 UniqueStore<EntryT, RefT, Compare, Allocator>::compact_worst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
-    if (bufferIdsToCompact.empty()) {
+    auto compacting_buffers = _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    if (compacting_buffers->empty()) {
         return std::unique_ptr<Remapper>();
     } else {
-        return std::make_unique<uniquestore::CompactionContext<RefT>>(_store, *_dict, _allocator, std::move(bufferIdsToCompact));
+        return std::make_unique<uniquestore::CompactionContext<RefT>>(*_dict, _allocator, std::move(compacting_buffers));
     }
 }
 

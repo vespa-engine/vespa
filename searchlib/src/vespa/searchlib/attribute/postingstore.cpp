@@ -8,6 +8,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreerootbase.cpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
@@ -712,14 +713,14 @@ template <typename DataT>
 void
 PostingStore<DataT>::compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
 {
-    auto to_hold = this->start_compact_worst_btree_nodes(compaction_strategy);
+    auto compacting_buffers = this->start_compact_worst_btree_nodes(compaction_strategy);
     EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
     // Only look at buffers containing bitvectors and btree roots
     filter.add_buffers(this->_treeType.get_active_buffers());
     filter.add_buffers(_bvType.get_active_buffers());
     _dictionary.foreach_posting_list([this](const std::vector<EntryRef>& refs)
                                      { move_btree_nodes(refs); }, filter);
-    this->finish_compact_worst_btree_nodes(to_hold);
+    compacting_buffers->finish();
 }
 
 template <typename DataT>
@@ -727,12 +728,11 @@ void
 PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
 
-    auto to_hold = this->start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    auto compacting_buffers = this->start_compact_worst_buffers(compaction_spec, compaction_strategy);
     bool compact_btree_roots = false;
-    EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
-    filter.add_buffers(to_hold);
+    auto filter = compacting_buffers->make_entry_ref_filter();
     // Start with looking at buffers being compacted
-    for (uint32_t buffer_id : to_hold) {
+    for (uint32_t buffer_id : compacting_buffers->get_buffer_ids()) {
         if (isBTree(_store.getBufferState(buffer_id).getTypeId())) {
             compact_btree_roots = true;
         }
@@ -745,7 +745,7 @@ PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const
     _dictionary.normalize_posting_lists([this](std::vector<EntryRef>& refs)
                                         { return move(refs); },
                                         filter);
-    this->finishCompact(to_hold);
+    compacting_buffers->finish();
 }
 
 template <typename DataT>
