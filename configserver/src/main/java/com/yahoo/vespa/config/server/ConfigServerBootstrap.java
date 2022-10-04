@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
@@ -16,12 +16,10 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -37,9 +35,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.FOR_TESTING_NO_BOOTSTRAP_OF_APPS;
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.EXIT_JVM;
 
 /**
@@ -59,7 +54,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
 
-    enum Mode { BOOTSTRAP_IN_CONSTRUCTOR, FOR_TESTING_NO_BOOTSTRAP_OF_APPS}
     enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
     enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
 
@@ -81,26 +75,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                  FlagSource flagSource, ConfigConvergenceChecker convergence) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR, EXIT_JVM,
-             applicationRepository.configserverConfig().hostedVespa()
-                     ? VipStatusMode.VIP_STATUS_FILE
-                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY,
-             flagSource, convergence, Clock.systemUTC());
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, EXIT_JVM,
+             vipStatusMode(applicationRepository), flagSource, convergence, Clock.systemUTC());
     }
 
-    // For testing only
-    ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, VipStatusMode vipStatusMode,
-                          FlagSource flagSource, ConfigConvergenceChecker convergence, Clock clock) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             FOR_TESTING_NO_BOOTSTRAP_OF_APPS, CONTINUE, vipStatusMode, flagSource, convergence, clock);
-    }
-
-    private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                  VipStatusMode vipStatusMode, FlagSource flagSource, ConfigConvergenceChecker convergence,
-                                  Clock clock) {
+    protected ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
+                                    VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
+                                    RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
+                                    VipStatusMode vipStatusMode, FlagSource flagSource, ConfigConvergenceChecker convergence,
+                                    Clock clock) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -112,25 +95,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         this.clock = clock;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-
         configServerMaintenance = new ConfigServerMaintenance(configserverConfig,
                                                               applicationRepository,
                                                               applicationRepository.tenantRepository().getCurator(),
                                                               flagSource,
                                                               convergence);
         configServerMaintenance.startBeforeBootstrap();
-        log.log(Level.FINE, () -> "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
+        log.log(Level.FINE, () -> "VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
-
-        switch (mode) {
-            case BOOTSTRAP_IN_CONSTRUCTOR:
-                start();
-                break;
-            case FOR_TESTING_NO_BOOTSTRAP_OF_APPS:
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown bootstrap mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
-        }
+        start();
     }
 
     @Override
@@ -323,6 +296,12 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         } catch (TimeoutException e) {
             return DeploymentStatus.inProgress;
         }
+    }
+
+    private static VipStatusMode vipStatusMode(ApplicationRepository applicationRepository) {
+        return applicationRepository.configserverConfig().hostedVespa()
+                ? VipStatusMode.VIP_STATUS_FILE
+                : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
     }
 
     private static class LogState {
