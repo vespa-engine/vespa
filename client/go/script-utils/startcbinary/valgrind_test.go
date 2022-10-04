@@ -41,9 +41,7 @@ func TestValgrindDetection(t *testing.T) {
 	}
 	_, tfn, _, _ := runtime.Caller(0)
 	setupValgrind(t, tfn)
-	var spec ProgSpec
-	spec.Program = "/opt/vespa/bin/foobar"
-	spec.setup()
+	spec := NewProgSpec([]string{"/opt/vespa/bin/foobar"})
 	var argv []string
 
 	useMock("has-valgrind", "which")

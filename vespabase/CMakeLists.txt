@@ -1,18 +1,4 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_install_script(src/start-cbinaries.sh vespa-get-config bin)
-vespa_install_script(src/start-cbinaries.sh vespa-verify-ranksetup bin)
-vespa_install_script(src/start-cbinaries.sh vespa-config-status bin)
-vespa_install_script(src/start-cbinaries.sh vespa-configproxy-cmd bin)
-vespa_install_script(src/start-cbinaries.sh vespa-doclocator bin)
-vespa_install_script(src/start-cbinaries.sh vespa-model-inspect bin)
-vespa_install_script(src/start-cbinaries.sh vespa-proton-cmd bin)
-vespa_install_script(src/start-cbinaries.sh vespa-rpc-invoke bin)
-vespa_install_script(src/start-cbinaries.sh vespa-sentinel-cmd bin)
-vespa_install_script(src/start-cbinaries.sh vespa-route bin)
-vespa_install_script(src/start-cbinaries.sh vespa-transactionlog-inspect bin)
-vespa_install_script(src/start-cbinaries.sh vespa-distributord sbin)
-vespa_install_script(src/start-cbinaries.sh vespa-proton sbin)
-vespa_install_script(src/start-cbinaries.sh vespa-storaged sbin)
 
 vespa_install_script(src/start-tool.sh vespa-start-tool.sh bin)
 
