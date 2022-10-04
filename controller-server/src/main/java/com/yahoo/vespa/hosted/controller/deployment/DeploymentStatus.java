@@ -1028,7 +1028,7 @@ public class DeploymentStatus {
             Versions toRun = Versions.from(change, status.application, dependent.flatMap(status::deploymentFor), status.fallbackPlatform(change, job.id()));
             if ( ! toRun.targetsMatch(lastVersions)) return Optional.empty();
             if (   job.id().type().environment().isTest()
-                && dependent.map(JobId::type).map(status::findCloud).map(CloudName.DEFAULT::equals).orElse(false)
+                && ! dependent.map(JobId::type).map(status::findCloud).map(List.of(CloudName.AWS, CloudName.GCP)::contains).orElse(true)
                 && job.isNodeAllocationFailure()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
