@@ -184,13 +184,13 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                           Cursor jobObject = jobsArray.addObject();
                           jobObject.setString("name", job.type().jobName());
                           jobStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
-                          jobStatus.coolingDownUntil(status.application().require(instance.instance()).change())
+                          jobStatus.coolingDownUntil(status.application().require(instance.instance()).change(), Optional.empty())
                                    .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
                           if (jobsToRun.containsKey(job)) {
                               List<Versions> versionsOnThisPlatform = jobsToRun.get(job).stream()
-                                      .map(DeploymentStatus.Job::versions)
-                                      .filter(versions -> versions.targetPlatform().equals(statistics.version()))
-                                      .collect(Collectors.toList());
+                                                                               .map(DeploymentStatus.Job::versions)
+                                                                               .filter(versions -> versions.targetPlatform().equals(statistics.version()))
+                                                                               .toList();
                               if ( ! versionsOnThisPlatform.isEmpty())
                                   jobObject.setString("pending", versionsOnThisPlatform.stream()
                                                                                        .allMatch(versions -> versions.sourcePlatform()
