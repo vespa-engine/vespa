@@ -16,7 +16,7 @@ class SimpleJoinCount : public tensor_function::Op2
 private:
     uint64_t _dense_factor;
 public:
-    SimpleJoinCount(const TensorFunction &lhs_in, const TensorFunction &rhs_in, size_t dense_factor_in);
+    SimpleJoinCount(const TensorFunction &lhs_in, const TensorFunction &rhs_in, uint64_t dense_factor_in);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     uint64_t dense_factor() const { return _dense_factor; }
