@@ -4581,6 +4581,121 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.logging.LocalDiskLogger": {
+    "superClass": "com.yahoo.search.logging.AbstractThreadedLogger",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.search.logging.LocalDiskLoggerConfig)",
+      "public bridge synthetic boolean send(com.yahoo.search.logging.LoggerEntry)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.logging.LocalDiskLoggerConfig$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.search.logging.LocalDiskLoggerConfig)",
+      "public com.yahoo.search.logging.LocalDiskLoggerConfig$Builder path(java.lang.String)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public com.yahoo.search.logging.LocalDiskLoggerConfig build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.logging.LocalDiskLoggerConfig$Producer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void getConfig(com.yahoo.search.logging.LocalDiskLoggerConfig$Builder)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.logging.LocalDiskLoggerConfig": {
+    "superClass": "com.yahoo.config.ConfigInstance",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(com.yahoo.search.logging.LocalDiskLoggerConfig$Builder)",
+      "public java.lang.String path()"
+    ],
+    "fields": [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "com.yahoo.search.logging.Logger": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.search.logging.LoggerEntry$Builder newEntry()",
+      "public abstract boolean send(com.yahoo.search.logging.LoggerEntry)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.logging.LoggerEntry$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.search.logging.Logger)",
+      "public com.yahoo.search.logging.LoggerEntry$Builder timestamp(long)",
+      "public com.yahoo.search.logging.LoggerEntry$Builder query(com.yahoo.search.Query)",
+      "public com.yahoo.search.logging.LoggerEntry$Builder blob(byte[])",
+      "public boolean send()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.logging.LoggerEntry": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.Long timestamp()",
+      "public com.yahoo.search.Query query()",
+      "public java.lang.String queryString()",
+      "public java.nio.ByteBuffer blob()",
+      "public java.lang.String toString()",
+      "public java.lang.String toJson()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.pagetemplates.PageTemplate": {
     "superClass": "com.yahoo.component.provider.FreezableComponent",
     "interfaces": [
