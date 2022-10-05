@@ -268,9 +268,9 @@ public class RoutingController {
             // Register names in DNS
             Rotation rotation = rotationRepository.requireRotation(assignedRotation.rotationId());
             for (var endpoint : rotationEndpoints) {
-                controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
-                                                              RecordData.fqdn(rotation.name()),
-                                                              Priority.normal);
+                controller.nameServiceForwarder().createRecord(
+                        new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(rotation.name())),
+                        Priority.normal);
                 List<String> names = List.of(endpoint.dnsName(),
                                              // Include rotation ID as a valid name of this container endpoint
                                              // (required by global routing health checks)
@@ -305,9 +305,9 @@ public class RoutingController {
             ZoneId targetZone = targetZones.iterator().next();
             String vipHostname = controller.zoneRegistry().getVipHostname(targetZone)
                                            .orElseThrow(() -> new IllegalArgumentException("No VIP configured for zone " + targetZone));
-            controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
-                                                          RecordData.fqdn(vipHostname),
-                                                          Priority.normal);
+            controller.nameServiceForwarder().createRecord(
+                    new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
+                    Priority.normal);
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {

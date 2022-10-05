@@ -332,8 +332,8 @@ public class RoutingPolicies {
     private void updateZoneDnsOf(RoutingPolicy policy) {
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
             var name = RecordName.from(endpoint.dnsName());
-            var data = RecordData.fqdn(policy.canonicalName().value());
-            nameServiceForwarderIn(policy.id().zone()).createCname(name, data, Priority.normal);
+            var record = new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().value()));
+            nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal);
         }
     }
 

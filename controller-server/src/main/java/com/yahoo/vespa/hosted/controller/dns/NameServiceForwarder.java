@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -43,9 +42,9 @@ public class NameServiceForwarder {
         this.db = Objects.requireNonNull(db, "db must be non-null");
     }
 
-    /** Create or update a CNAME record with given name and data */
-    public void createCname(RecordName name, RecordData canonicalName, NameServiceQueue.Priority priority) {
-        forward(new CreateRecord(new Record(Record.Type.CNAME, name, canonicalName)), priority);
+    /** Create or update a given record */
+    public void createRecord(Record record, NameServiceQueue.Priority priority) {
+        forward(new CreateRecord(record), priority);
     }
 
     /** Create or update an ALIAS record with given name and targets */
