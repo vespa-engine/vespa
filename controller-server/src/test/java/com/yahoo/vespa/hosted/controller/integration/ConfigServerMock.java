@@ -402,6 +402,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    id.applicationId(),
                                                                    cluster,
                                                                    Optional.of(HostName.of("lb-0--" + id.applicationId().toFullString() + "--" + id.zoneId().toString())),
+                                                                   Optional.empty(),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"))));
         }

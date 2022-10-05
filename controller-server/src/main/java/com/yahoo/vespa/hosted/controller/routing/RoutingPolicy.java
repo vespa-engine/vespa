@@ -24,21 +24,27 @@ import java.util.Set;
  * @author mpolden
  */
 public record RoutingPolicy(RoutingPolicyId id,
-                            DomainName canonicalName,
+                            Optional<DomainName> canonicalName,
+                            Optional<String> ipAddress,
                             Optional<String> dnsZone,
                             Set<EndpointId> instanceEndpoints,
                             Set<EndpointId> applicationEndpoints,
                             Status status) {
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(RoutingPolicyId id, DomainName canonicalName, Optional<String> dnsZone,
+    public RoutingPolicy(RoutingPolicyId id, Optional<DomainName> canonicalName, Optional<String> ipAddress, Optional<String> dnsZone,
                          Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
+        this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.instanceEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(instanceEndpoints, "instanceEndpoints must be non-null"));
         this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.status = Objects.requireNonNull(status, "status must be non-null");
+
+        if (canonicalName.isEmpty() == ipAddress.isEmpty())
+            throw new IllegalArgumentException("Exactly 1 of canonicalName=%s and ipAddress=%s must be set".formatted(
+                    canonicalName.map(DomainName::value).orElse("<empty>"), ipAddress.orElse("<empty>")));
     }
 
     /** The ID of this */
@@ -47,8 +53,13 @@ public record RoutingPolicy(RoutingPolicyId id,
     }
 
     /** The canonical name for the load balancer this applies to (rhs of a CNAME or ALIAS record) */
-    public DomainName canonicalName() {
+    public Optional<DomainName> canonicalName() {
         return canonicalName;
+    }
+
+    /** The IP address for the load balancer this applies to (rhs of an A or DIRECT record) */
+    public Optional<String> ipAddress() {
+        return ipAddress;
     }
 
     /** DNS zone for the load balancer this applies to, if any. Used when creating ALIAS records. */
@@ -79,7 +90,7 @@ public record RoutingPolicy(RoutingPolicyId id,
 
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
-        return new RoutingPolicy(id, canonicalName, dnsZone, instanceEndpoints, applicationEndpoints, status);
+        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, status);
     }
 
     /** Returns the zone endpoints of this */

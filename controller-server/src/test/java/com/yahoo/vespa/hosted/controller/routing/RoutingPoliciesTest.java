@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
+import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -351,6 +352,32 @@ public class RoutingPoliciesTest {
     }
 
     @Test
+    void cross_cloud_policies() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        var zone1 = ZoneId.from("prod", "aws-us-east-1c");
+        var zone2 = ZoneId.from("prod", "gcp-us-south1-b");
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region().value())
+                .region(zone2.region().value())
+                .endpoint("r0", "c0")
+                .trustDefaultCertificate()
+                .build();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        List<String> expectedRecords = List.of("c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                                               "c0.app1.tenant1.gcp-us-south1-b.z.vespa-app.cloud",
+                                               "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                                               "r0.app1.tenant1.g.vespa-app.cloud");
+        assertEquals(Set.copyOf(expectedRecords), tester.recordNames());
+
+        assertEquals(List.of("lb-0--tenant1.app1.default--prod.aws-us-east-1c."), tester.recordDataOf(Record.Type.CNAME, expectedRecords.get(0)));
+        assertEquals(List.of("10.0.0.0"), tester.recordDataOf(Record.Type.A, expectedRecords.get(1)));
+    }
+
+    @Test
     void global_routing_policies_in_public() {
         var tester = new RoutingPoliciesTester(SystemName.Public);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
@@ -359,8 +386,8 @@ public class RoutingPoliciesTest {
         ZoneId zone2 = prodZones.get(1);
 
         var applicationPackage = applicationPackageBuilder()
-                .region(zone1.region().value())
-                .region(zone2.region().value())
+                .region(zone1.region())
+                .region(zone2.region())
                 .endpoint("default", "default")
                 .trustDefaultCertificate()
                 .build();
@@ -452,6 +479,7 @@ public class RoutingPoliciesTest {
                 context.instanceId(),
                 ClusterSpec.Id.from("c0"),
                 Optional.of(newHostname),
+                Optional.empty(),
                 LoadBalancer.State.active,
                 Optional.of("dns-zone-1"));
         tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
@@ -461,8 +489,8 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(1, tester.policiesOf(context.instanceId()).size());
         assertEquals(newHostname.value() + ".",
-                tester.cnameDataOf(expectedRecords.iterator().next()).get(0),
-                "CNAME points to current load blancer");
+                tester.recordDataOf(Record.Type.CNAME, expectedRecords.iterator().next()).get(0),
+                "CNAME points to current load balancer");
     }
 
     @Test
@@ -836,20 +864,24 @@ public class RoutingPoliciesTest {
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, boolean shared, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            HostName lbHostname;
-            if (shared) {
-                lbHostname = HostName.of("shared-lb--" + zone.value());
+            Optional<DomainName> lbHostname;
+            Optional<String> ipAddress;
+            if (zone.region().value().startsWith("gcp-")) {
+                lbHostname = Optional.empty();
+                ipAddress = Optional.of("10.0.0." + i);
             } else {
-                lbHostname = HostName.of("lb-" + i + "--" + application.toFullString() +
-                                         "--" + zone.value());
+                String hostname = shared ? "shared-lb--" + zone.value() : "lb-" + i + "--" + application.toFullString() + "--" + zone.value();
+                lbHostname = Optional.of(DomainName.of(hostname));
+                ipAddress = Optional.empty();
             }
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
                                      application,
                                      ClusterSpec.Id.from("c" + i),
-                                     Optional.of(lbHostname),
+                                     lbHostname,
+                                     ipAddress,
                                      LoadBalancer.State.active,
-                                     Optional.of("dns-zone-1")));
+                                     Optional.of("dns-zone-1").filter(__ -> lbHostname.isPresent())));
         }
         return loadBalancers;
     }
@@ -858,6 +890,7 @@ public class RoutingPoliciesTest {
         var sharedRegion = RegionName.from("aws-us-east-1c");
         return List.of(ZoneId.from(Environment.prod, sharedRegion),
                        ZoneId.from(Environment.prod, RegionName.from("aws-eu-west-1a")),
+                       ZoneId.from(Environment.prod, RegionName.from("gcp-us-south1-b")),
                        ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
                        ZoneId.from(Environment.test, RegionName.from("us-east-1")));
     }
@@ -936,8 +969,8 @@ public class RoutingPoliciesTest {
                          .collect(Collectors.toSet());
         }
 
-        private List<String> cnameDataOf(String name) {
-            return tester.controllerTester().nameService().findRecords(Record.Type.CNAME, RecordName.from(name)).stream()
+        private List<String> recordDataOf(Record.Type type, String name) {
+            return tester.controllerTester().nameService().findRecords(type, RecordName.from(name)).stream()
                          .map(Record::data)
                          .map(RecordData::asString)
                          .collect(Collectors.toList());

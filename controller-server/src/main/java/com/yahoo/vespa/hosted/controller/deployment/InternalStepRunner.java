@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import ai.vespa.http.DomainName;
+import com.google.common.net.InetAddresses;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
@@ -510,18 +511,25 @@ public class InternalStepRunner implements StepRunner {
             if (context.routingMethod() == RoutingMethod.exclusive)  {
                 RoutingPolicy policy = context.routingPolicy(ClusterSpec.Id.from(endpoint.name()))
                                               .orElseThrow(() -> new IllegalStateException(endpoint + " has no matching policy"));
+                if (policy.ipAddress().isPresent()) {
+                    if (ipAddress.equals(policy.ipAddress().map(InetAddresses::forString))) continue;
+                    logger.log(INFO, "IP address of '" + endpointName + "' (" +
+                            ipAddress.map(InetAddresses::toAddrString).get() + ") and load balancer "
+                            + "' (" + policy.ipAddress().orElseThrow() + ") are not equal");
+                    return false;
+                }
 
                 var cNameValue = controller.jobController().cloud().resolveCname(endpointName);
-                if ( ! cNameValue.map(policy.canonicalName()::equals).orElse(false)) {
+                if ( ! cNameValue.map(policy.canonicalName().get()::equals).orElse(false)) {
                     logger.log(INFO, "CNAME '" + endpointName + "' points at " +
                                      cNameValue.map(name -> "'" + name + "'").orElse("nothing") +
                                      " but should point at load balancer '" + policy.canonicalName() + "'");
                     return false;
                 }
-                var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
+                var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName().get());
                 if ( ! loadBalancerAddress.equals(ipAddress)) {
                     logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
-                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse(null) + ") are not equal");
+                                     policy.canonicalName().get() + "' (" + loadBalancerAddress.orElse(null) + ") are not equal");
                     return false;
                 }
             }

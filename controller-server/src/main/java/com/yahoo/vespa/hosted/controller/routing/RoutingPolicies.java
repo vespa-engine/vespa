@@ -205,20 +205,24 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
                 weight = 0; // A record with 0 weight will not receive traffic. If all records within a group have 0
                             // weight, traffic is routed to all records with equal probability.
             }
-            var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
-                                                         policy.id().zone(), weight);
-            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(DomainName.of(regionEndpoint.dnsName()),
-                                                                                                       policy.dnsZone().get(),
-                                                                                                       policy.id().zone())))
-                     .zoneTargets()
-                     .add(weightedTarget);
+
+            RegionEndpoint regionEndpoint = endpoints.computeIfAbsent(endpoint, (k) -> new RegionEndpoint(
+                    new LatencyAliasTarget(DomainName.of(endpoint.dnsName()), policy.dnsZone().get(), policy.id().zone())));
+
+            if (policy.canonicalName().isPresent()) {
+                var weightedTarget = new WeightedAliasTarget(
+                        policy.canonicalName().get(), policy.dnsZone().get(), policy.id().zone(), weight);
+                regionEndpoint.zoneTargets().add(weightedTarget);
+            } else {
+                // TODO (freva): Add direct weighted record
+            }
         }
         return endpoints.values();
     }
@@ -250,8 +254,9 @@ public class RoutingPolicies {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
                     if (policy.dnsZone().isEmpty()) continue; // Does not support ALIAS records
+                    if (policy.canonicalName().isEmpty()) continue; // TODO (freva): Handle DIRECT records
                     ZoneRoutingPolicy zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-                    WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
+                    WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName().get(), policy.dnsZone().get(),
                                                                                       target.deployment().zoneId(), target.weight());
                     Set<AliasTarget> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
                     Set<AliasTarget> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
@@ -309,10 +314,10 @@ public class RoutingPolicies {
     private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(instancePolicies.asMap());
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
-            if (loadBalancer.hostname().isEmpty()) continue;
+            if (loadBalancer.hostname().isEmpty() && loadBalancer.ipAddress().isEmpty()) continue;
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
-            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
+            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), loadBalancer.dnsZone(),
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
                                               new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
@@ -332,7 +337,9 @@ public class RoutingPolicies {
     private void updateZoneDnsOf(RoutingPolicy policy) {
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
             var name = RecordName.from(endpoint.dnsName());
-            var record = new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().value()));
+            var record = policy.canonicalName().isPresent() ?
+                    new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
+                    new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal);
         }
     }
@@ -393,10 +400,16 @@ public class RoutingPolicies {
             for (var policy : policies) {
                 if (!policy.appliesTo(allocation.deployment)) continue;
                 NameServiceForwarder forwarder = nameServiceForwarderIn(policy.id().zone());
-                endpoints.forEach(endpoint -> forwarder.removeRecords(Record.Type.ALIAS,
-                                                                      RecordName.from(endpoint.dnsName()),
-                                                                      RecordData.fqdn(policy.canonicalName().value()),
-                                                                      Priority.normal));
+                for (Endpoint endpoint : endpoints) {
+                    if (policy.canonicalName().isPresent()) {
+                        forwarder.removeRecords(Record.Type.ALIAS,
+                                RecordName.from(endpoint.dnsName()),
+                                RecordData.fqdn(policy.canonicalName().get().value()),
+                                Priority.normal);
+                    } else {
+                        // TODO (freva): Remove DIRECT records
+                    }
+                }
             }
         }
     }

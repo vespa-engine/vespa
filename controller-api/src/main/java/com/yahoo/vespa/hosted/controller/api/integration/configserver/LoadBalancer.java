@@ -19,15 +19,17 @@ public class LoadBalancer {
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
     private final Optional<DomainName> hostname;
+    private final Optional<String> ipAddress;
     private final State state;
     private final Optional<String> dnsZone;
 
-    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, Optional<DomainName> hostname, State state,
-                        Optional<String> dnsZone) {
+    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, Optional<DomainName> hostname,
+                        Optional<String> ipAddress, State state, Optional<String> dnsZone) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.application = Objects.requireNonNull(application, "application must be non-null");
         this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
+        this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
         this.state = Objects.requireNonNull(state, "state must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
     }
@@ -46,6 +48,10 @@ public class LoadBalancer {
 
     public Optional<DomainName> hostname() {
         return hostname;
+    }
+
+    public Optional<String> ipAddress() {
+        return ipAddress;
     }
 
     public Optional<String> dnsZone() {
