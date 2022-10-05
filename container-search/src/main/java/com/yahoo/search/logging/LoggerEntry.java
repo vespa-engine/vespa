@@ -6,7 +6,8 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.search.Query;
-
+import com.yahoo.slime.JsonDecoder;
+import com.yahoo.slime.Slime;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -73,6 +74,19 @@ public class LoggerEntry {
         }
     }
 
+    // TODO: Rename method here and above? (serialize/deserialize)
+    // TODO: Use Slime or Jackson for both
+    public static LoggerEntry fromJson(byte[] content) throws IOException {
+        var decoder = new JsonDecoder();
+        var slime = decoder.decode(new Slime(), content);
+
+        var timestamp = slime.get().field("timestamp").asLong();
+        var query = new Query(slime.get().field("query").asString());
+        var blob = slime.get().field("blob").asData();
+
+        return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob));
+    }
+
     public static class Builder {
 
         private final Logger logger;
@@ -80,6 +94,9 @@ public class LoggerEntry {
         private Long timestamp;
         private Query query;
         private ByteBuffer blob;
+
+        // For testing
+        public Builder() { this(entry -> false); }
 
         public Builder(Logger logger) {
             this.logger = logger;
@@ -106,6 +123,5 @@ public class LoggerEntry {
         }
 
     }
-
 
 }

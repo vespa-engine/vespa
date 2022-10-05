@@ -2,23 +2,22 @@
 
 package com.yahoo.search.logging;
 
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 abstract class AbstractThreadedLogger implements Logger {
 
-    private final static org.slf4j.Logger log = LoggerFactory.getLogger(AbstractThreadedLogger.class);
+    private final static java.util.logging.Logger log = java.util.logging.Logger.getLogger(AbstractThreadedLogger.class.getName());
 
     final static int DEFAULT_MAX_THREADS = 1;
     final static int DEFAULT_QUEUE_SIZE = 1000;
 
-    private final WorkerThreadExecutor executor;
+    protected final WorkerThreadExecutor executor;
 
     AbstractThreadedLogger() {
         this(DEFAULT_MAX_THREADS, DEFAULT_QUEUE_SIZE);
@@ -68,13 +67,13 @@ abstract class AbstractThreadedLogger implements Logger {
             try {
                 super.run();
             } catch (Exception e) {
-                log.error(String.format("Error while sending logger entry: %s", e), e);
+                log.log(Level.SEVERE, String.format("Error while sending logger entry: %s", e), e);
             }
         }
 
     }
 
-    private static class WorkerThreadExecutor implements Executor {
+    protected static class WorkerThreadExecutor implements Executor {
 
         protected final ThreadPoolExecutor executor;
 
