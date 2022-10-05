@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.WireguardMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
@@ -71,6 +72,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Duration warmUpDuration;
     private final DoubleFlag containerCpuCap;
     private final VespaServiceDumper serviceDumper;
+    private final Optional<WireguardMaintainer> wireguardMaintainer;
 
     private Thread loopThread;
     private ContainerState containerState = UNKNOWN;
@@ -106,10 +108,10 @@ public class NodeAgentImpl implements NodeAgent {
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
-                         VespaServiceDumper serviceDumper) {
+                         VespaServiceDumper serviceDumper, Optional<WireguardMaintainer> wireguardMaintainer) {
         this(contextSupplier, nodeRepository, orchestrator, containerOperations, registryCredentialsProvider,
              storageMaintainer, flagSource, credentialsMaintainers, aclMaintainer, healthChecker, clock,
-             DEFAULT_WARM_UP_DURATION, serviceDumper);
+             DEFAULT_WARM_UP_DURATION, serviceDumper, wireguardMaintainer);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -117,7 +119,8 @@ public class NodeAgentImpl implements NodeAgent {
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
-                         Duration warmUpDuration, VespaServiceDumper serviceDumper) {
+                         Duration warmUpDuration, VespaServiceDumper serviceDumper,
+                         Optional<WireguardMaintainer> wireguardMaintainer) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -131,6 +134,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.warmUpDuration = warmUpDuration;
         this.containerCpuCap = PermanentFlags.CONTAINER_CPU_CAP.bindTo(flagSource);
         this.serviceDumper = serviceDumper;
+        this.wireguardMaintainer = wireguardMaintainer;
     }
 
     @Override
@@ -494,6 +498,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                wireguardMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {

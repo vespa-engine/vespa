@@ -95,7 +95,7 @@ public class ContainerTester implements AutoCloseable {
                 new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
                                   storageMaintainer, flagSource,
                                   Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
-                                  VespaServiceDumper.DUMMY_INSTANCE) {
+                                  VespaServiceDumper.DUMMY_INSTANCE, Optional.empty()) {
                     @Override public void converge(NodeAgentContext context) {
                         super.converge(context);
                         phaser.arriveAndAwaitAdvance();
