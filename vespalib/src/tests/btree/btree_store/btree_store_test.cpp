@@ -5,7 +5,9 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::GenerationHandler;
@@ -114,7 +116,6 @@ void
 BTreeStoreTest::test_compact_sequence(uint32_t sequence_length)
 {
     auto &store = _store;
-    uint32_t entry_ref_offset_bits = TreeStore::RefType::offset_bits;
     EntryRef ref1 = add_sequence(4, 4 + sequence_length);
     EntryRef ref2 = add_sequence(5, 5 + sequence_length);
     std::vector<EntryRef> refs;
@@ -136,13 +137,10 @@ BTreeStoreTest::test_compact_sequence(uint32_t sequence_length)
     for (uint32_t pass = 0; pass < 15; ++pass) {
         CompactionSpec compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        auto to_hold = store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
-        std::vector<bool> filter(TreeStore::RefType::numBuffers());
-        for (auto buffer_id : to_hold) {
-            filter[buffer_id] = true;
-        }
+        auto compacting_buffers = store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+        auto filter = compacting_buffers->make_entry_ref_filter();
         for (auto& ref : refs) {
-            if (ref.valid() && filter[ref.buffer_id(entry_ref_offset_bits)]) {
+            if (ref.valid() && filter.has(ref)) {
                 move_refs.emplace_back(ref);
                 change_writer.emplace_back(ref);
             }
@@ -150,7 +148,7 @@ BTreeStoreTest::test_compact_sequence(uint32_t sequence_length)
         store.move(move_refs);
         change_writer.write(move_refs);
         move_refs.clear();
-        store.finishCompact(to_hold);
+        compacting_buffers->finish();
         inc_generation();
     }
     EXPECT_NE(ref1, refs[0]);
@@ -174,9 +172,9 @@ TEST_F(BTreeStoreTest, require_that_nodes_for_multiple_btrees_are_compacted)
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
         CompactionStrategy compaction_strategy;
-        auto to_hold = store.start_compact_worst_btree_nodes(compaction_strategy);
+        auto compacting_buffers = store.start_compact_worst_btree_nodes(compaction_strategy);
         store.move_btree_nodes(refs);
-        store.finish_compact_worst_btree_nodes(to_hold);
+        compacting_buffers->finish();
         inc_generation();
     }
     EXPECT_EQ(make_exp_sequence(4, 40), get_sequence(refs[0]));

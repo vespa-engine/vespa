@@ -2,6 +2,7 @@
 
 #include "datastorebase.h"
 #include "compact_buffer_candidates.h"
+#include "compacting_buffers.h"
 #include "compaction_spec.h"
 #include "compaction_strategy.h"
 #include <vespa/vespalib/util/array.hpp>
@@ -79,7 +80,7 @@ public:
     }
 };
 
-DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
+DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays)
     : _buffers(numBuffers),
       _primary_buffer_ids(),
       _states(numBuffers),
@@ -90,6 +91,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
       _elemHold1List(),
       _elemHold2List(),
       _numBuffers(numBuffers),
+      _offset_bits(offset_bits),
       _hold_buffer_count(0u),
       _maxArrays(maxArrays),
       _compaction_count(0u),
@@ -529,8 +531,8 @@ DataStoreBase::markCompacting(uint32_t bufferId)
     inc_compaction_count();
 }
 
-std::vector<uint32_t>
-DataStoreBase::startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
+std::unique_ptr<CompactingBuffers>
+DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     // compact memory usage
     CompactBufferCandidates elem_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_active_buffers_ratio(), compaction_strategy.getMaxDeadBytesRatio() / 2, CompactionStrategy::DEAD_BYTES_SLACK);
@@ -567,7 +569,7 @@ DataStoreBase::startCompactWorstBuffers(CompactionSpec compaction_spec, const Co
     for (auto buffer_id : result) {
         markCompacting(buffer_id);
     }
-    return result;
+    return std::make_unique<CompactingBuffers>(*this, _numBuffers, _offset_bits, std::move(result));
 }
 
 void

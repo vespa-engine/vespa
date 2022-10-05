@@ -12,6 +12,7 @@
 
 namespace vespalib::datastore {
 
+class CompactingBuffers;
 class CompactionSpec;
 class CompactionStrategy;
 
@@ -159,13 +160,14 @@ protected:
     ElemHold2List _elemHold2List;
 
     const uint32_t _numBuffers;
+    const uint32_t _offset_bits;
     uint32_t       _hold_buffer_count;
     const size_t   _maxArrays;
     mutable std::atomic<uint64_t> _compaction_count;
 
     vespalib::GenerationHolder _genHolder;
 
-    DataStoreBase(uint32_t numBuffers, size_t maxArrays);
+    DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays);
     DataStoreBase(const DataStoreBase &) = delete;
     DataStoreBase &operator=(const DataStoreBase &) = delete;
 
@@ -376,7 +378,7 @@ public:
     }
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
-    std::vector<uint32_t> startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
+    std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
     void inc_compaction_count() const { ++_compaction_count; }
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }

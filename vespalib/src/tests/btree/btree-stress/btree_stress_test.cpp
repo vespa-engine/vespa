@@ -64,8 +64,7 @@ public:
     uint32_t get(EntryRef ref) const { return _store.getEntry(ref); }
     uint32_t get_acquire(const AtomicEntryRef& ref) const { return get(ref.load_acquire()); }
     uint32_t get_relaxed(const AtomicEntryRef& ref) const { return get(ref.load_relaxed()); }
-    std::vector<uint32_t> start_compact();
-    void finish_compact(std::vector<uint32_t> to_hold);
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     static constexpr bool is_indirect = true;
     static uint32_t get_offset_bits() { return StoreRefType::offset_bits; }
     static uint32_t get_num_buffers() { return StoreRefType::numBuffers(); }
@@ -79,19 +78,13 @@ RealIntStore::RealIntStore()
 
 RealIntStore::~RealIntStore() = default;
 
-std::vector<uint32_t>
+std::unique_ptr<vespalib::datastore::CompactingBuffers>
 RealIntStore::start_compact()
 {
     // Use a compaction strategy that will compact all active buffers
     CompactionStrategy compaction_strategy(0.0, 0.0, get_num_buffers(), 1.0);
     CompactionSpec compaction_spec(true, false);
-    return _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
-}
-
-void
-RealIntStore::finish_compact(std::vector<uint32_t> to_hold)
-{
-    _store.finishCompact(to_hold);
+    return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
 }
 
 EntryRef
@@ -347,9 +340,8 @@ void
 Fixture<Params>::compact_keys()
 {
     if constexpr (KeyStore::is_indirect) {
-        auto to_hold = _keys.start_compact();
-        EntryRefFilter filter(_keys.get_num_buffers(), _keys.get_offset_bits());
-        filter.add_buffers(to_hold);
+        auto compacting_buffers = _keys.start_compact();
+        auto filter = compacting_buffers->make_entry_ref_filter();
         auto itr = _tree.begin();
         while (itr.valid()) {
             auto old_ref = itr.getKey().load_relaxed();
@@ -359,7 +351,7 @@ Fixture<Params>::compact_keys()
             }
             ++itr;
         }
-        _keys.finish_compact(std::move(to_hold));
+        compacting_buffers->finish();
     }
     _compact_keys.track_compacted();
 }
@@ -369,9 +361,8 @@ void
 Fixture<Params>::compact_values()
 {
     if constexpr (ValueStore::is_indirect) {
-        auto to_hold = _values.start_compact();
-        EntryRefFilter filter(_values.get_num_buffers(), _values.get_offset_bits());
-        filter.add_buffers(to_hold);
+        auto compacting_buffers = _values.start_compact();
+        auto filter = compacting_buffers->make_entry_ref_filter();
         auto itr = _tree.begin();
         while (itr.valid()) {
             auto old_ref = itr.getData().load_relaxed();
@@ -381,7 +372,7 @@ Fixture<Params>::compact_values()
             }
             ++itr;
         }
-        _values.finish_compact(std::move(to_hold));
+        compacting_buffers->finish();
     }
     _compact_values.track_compacted();
 }

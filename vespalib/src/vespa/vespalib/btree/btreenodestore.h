@@ -6,6 +6,8 @@
 #include "btreetraits.h"
 #include <vespa/vespalib/datastore/datastore.h>
 
+namespace vespalib::datastore { class CompactingBuffers; }
+
 namespace vespalib::btree {
 
 class BTreeNodeReclaimer
@@ -160,7 +162,7 @@ public:
 
     std::vector<uint32_t> startCompact();
 
-    std::vector<uint32_t> start_compact_worst(const CompactionStrategy& compaction_strategy);
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);
 
     void finishCompact(const std::vector<uint32_t> &toHold);
 

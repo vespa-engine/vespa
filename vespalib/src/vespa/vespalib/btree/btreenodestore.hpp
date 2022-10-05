@@ -3,6 +3,7 @@
 #pragma once
 
 #include "btreenodestore.h"
+#include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
@@ -70,11 +71,11 @@ startCompact()
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-std::vector<uint32_t>
+std::unique_ptr<vespalib::datastore::CompactingBuffers>
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 start_compact_worst(const CompactionStrategy &compaction_strategy)
 {
-    return _store.startCompactWorstBuffers(datastore::CompactionSpec(true, false), compaction_strategy);
+    return _store.start_compact_worst_buffers(datastore::CompactionSpec(true, false), compaction_strategy);
 }
 
 template <typename KeyT, typename DataT, typename AggrT,

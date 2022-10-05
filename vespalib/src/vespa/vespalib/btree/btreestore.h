@@ -149,13 +149,6 @@ public:
     KeyDataTypeRefPair
     allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize);
 
-    std::vector<uint32_t>
-    startCompact();
-
-    void
-    finishCompact(const std::vector<uint32_t> &toHold);
-
-
     const KeyDataType *
     lower_bound(const KeyDataType *b, const KeyDataType *e,
                 const KeyType &key, CompareT comp);
@@ -394,11 +387,10 @@ public:
     void
     foreach_frozen(EntryRef ref, FunctionType func) const;
 
-    std::vector<uint32_t> start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
-    void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
     void move_btree_nodes(const std::vector<EntryRef>& refs);
 
-    std::vector<uint32_t> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     void move(std::vector<EntryRef>& refs);
 
 private:

@@ -6,6 +6,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     atomic_entry_ref.cpp
     buffer_type.cpp
     bufferstate.cpp
+    compacting_buffers.cpp
     compaction_strategy.cpp
     compact_buffer_candidates.cpp
     datastore.cpp
