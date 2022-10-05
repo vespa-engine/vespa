@@ -13,31 +13,25 @@ import java.util.ArrayList;
 public enum State {
 
     // The order declares the ordinals, and defines what states are above/below others
-    UNKNOWN     ("-", false, true,  true,  false, false, false, false, false), // This state is used by the fleetcontroller to indicate
-                                                                               // that we have failed to contact the node. It should never be
-                                                                               // sent out of the fleetcontroller
-    MAINTENANCE ("m", false, false, false, true,  true,  false, true,  true),
-    DOWN        ("d", true,  true,  true,  true,  true,  true,  true,  true), // Down is not valid reported state sent from the node itself.
-    STOPPING    ("s", false, true,  true,  false, false, true,  true,  true),
-    INITIALIZING("i", false, true,  true,  false, false, true,  true,  true),
-    RETIRED     ("r", false, false, false, false, true,  false, true,  true),
-    UP          ("u", true,  true,  true,  true,  true,  true,  true,  true);
+    UNKNOWN     ("-", true, true, false, false, false, false, false), // This state is used by the fleetcontroller to indicate
+                                                                      // that we have failed to contact the node. It should never be
+                                                                      // sent out of the fleetcontroller
+    MAINTENANCE ("m", false, false, true, true, false, true, true),
+    DOWN        ("d", true, true, true, true, true, true, true), // Down is not valid reported state sent from the node itself.
+    STOPPING    ("s", true, true, false, false, true, true, true),
+    INITIALIZING("i", true, true, false, false, true, true, true),
+    RETIRED     ("r", false, false, false, true, false, true, true),
+    UP          ("u", true, true, true, true, true, true, true);
 
-    private final boolean validDiskState;
     private final boolean validClusterState;
     private final ArrayList<Boolean> validReportedNodeState = new ArrayList<>();
     private final ArrayList<Boolean> validWantedNodeState = new ArrayList<>();
     private final ArrayList<Boolean> validCurrentNodeState = new ArrayList<>();
     private final String serializedAs;
 
-    private State(String serialized, boolean validDisk, boolean validDistReported, boolean validStorReported,
-                  boolean validDistWanted, boolean validStorWanted, boolean validCluster, boolean validDistCurrent,
-                  boolean validStorCurrent)
-    {
-        validDiskState = validDisk;
+    State(String serialized, boolean validDistReported, boolean validStorReported, boolean validDistWanted,
+          boolean validStorWanted, boolean validCluster, boolean validDistCurrent, boolean validStorCurrent) {
         validClusterState = validCluster;
-        assert(NodeType.STORAGE.ordinal() == 0);
-        assert(NodeType.DISTRIBUTOR.ordinal() == 1);
         validReportedNodeState.add(validStorReported);
         validReportedNodeState.add(validDistReported);
         validWantedNodeState.add(validStorWanted);
@@ -56,7 +50,6 @@ public enum State {
 
     public String serialize() { return serializedAs; }
 
-    public boolean validDiskState() { return validDiskState; }
     public boolean validClusterState() { return validClusterState; }
     public boolean validReportedNodeState(NodeType type) { return validReportedNodeState.get(type.ordinal()); }
     public boolean validWantedNodeState(NodeType type) { return validWantedNodeState.get(type.ordinal()); }
