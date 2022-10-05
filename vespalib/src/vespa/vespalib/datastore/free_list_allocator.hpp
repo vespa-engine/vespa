@@ -52,13 +52,11 @@ template <typename ... Args>
 typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc(Args && ... args)
 {
-    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == nullptr) {
+    auto& free_list = _store.getFreeList(_typeId);
+    if (free_list.empty()) {
         return ParentType::alloc(std::forward<Args>(args)...);
     }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefT ref = state.popFreeList();
+    RefT ref = free_list.pop_entry();
     EntryT *entry = _store.template getEntry<EntryT>(ref);
     ReclaimerT::reclaim(entry);
     allocator::Assigner<EntryT, Args...>::assign(*entry, std::forward<Args>(args)...);
@@ -69,14 +67,12 @@ template <typename EntryT, typename RefT, typename ReclaimerT>
 typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
 {
-    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == nullptr) {
+    auto& free_list = _store.getFreeList(_typeId);
+    if (free_list.empty()) {
         return ParentType::allocArray(array);
     }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    assert(state.getArraySize() == array.size());
-    RefT ref(state.popFreeList());
+    assert(free_list.array_size() == array.size());
+    RefT ref = free_list.pop_entry();
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
@@ -88,14 +84,12 @@ template <typename EntryT, typename RefT, typename ReclaimerT>
 typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
 {
-    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == nullptr) {
+    auto& free_list = _store.getFreeList(_typeId);
+    if (free_list.empty()) {
         return ParentType::allocArray(size);
     }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    assert(state.getArraySize() == size);
-    RefT ref(state.popFreeList());
+    assert(free_list.array_size() == size);
+    RefT ref = free_list.pop_entry();
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
     return HandleType(ref, buf);
 }

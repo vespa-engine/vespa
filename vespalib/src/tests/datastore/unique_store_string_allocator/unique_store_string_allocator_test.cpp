@@ -129,7 +129,7 @@ TEST_F(StringTest, string_length_determines_buffer)
 
 TEST_F(StringTest, free_list_is_used_when_enabled)
 {
-    allocator.get_data_store().enableFreeLists();
+    // Free lists are default enabled for UniqueStoreStringAllocator
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
     remove(ref1);
@@ -161,7 +161,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
 
 TEST_F(StringTest, free_list_is_never_used_for_move)
 {
-    allocator.get_data_store().enableFreeLists();
+    // Free lists are default enabled for UniqueStoreStringAllocator
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
     EntryRef ref3 = add(small.c_str());

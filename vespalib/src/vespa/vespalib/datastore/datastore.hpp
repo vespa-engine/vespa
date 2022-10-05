@@ -27,11 +27,8 @@ DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems, bool was_hel
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
-        if (state.freeListList() != nullptr && numElems == state.getArraySize()) {
-            if (state.isFreeListEmpty()) {
-                state.addToFreeListList();
-            }
-            state.freeList().push_back(ref);
+        if (state.free_list().enabled() && (numElems == state.getArraySize())) {
+            state.free_list().push_entry(ref);
         }
     } else {
         assert(state.isOnHold() && was_held);

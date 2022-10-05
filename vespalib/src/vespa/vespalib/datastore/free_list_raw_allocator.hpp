@@ -16,16 +16,14 @@ template <typename EntryT, typename RefT>
 typename FreeListRawAllocator<EntryT, RefT>::HandleType
 FreeListRawAllocator<EntryT, RefT>::alloc(size_t numElems)
 {
-    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == nullptr) {
+    auto& free_list = _store.getFreeList(_typeId);
+    if (free_list.empty()) {
         return ParentType::alloc(numElems);
     }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    assert(state.getArraySize() == numElems);
-    RefT ref = state.popFreeList();
+    assert(free_list.array_size() == numElems);
+    RefT ref = free_list.pop_entry();
     // We must scale the offset according to array size as it was divided when the entry ref was created.
-    EntryT *entry = _store.template getEntryArray<EntryT>(ref, state.getArraySize());
+    EntryT *entry = _store.template getEntryArray<EntryT>(ref, numElems);
     return HandleType(ref, entry);
 }
 

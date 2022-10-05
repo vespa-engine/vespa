@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bufferstate.h"
+#include "free_list.h"
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -152,7 +153,7 @@ private:
 protected:
     std::vector<BufferTypeBase *> _typeHandlers; // TypeId -> handler
 
-    std::vector<BufferState::FreeListList> _freeListLists;
+    std::vector<FreeList> _free_lists;
     bool _freeListsEnabled;
     bool _initializing;
 
@@ -333,8 +334,8 @@ public:
     /**
      * Returns the free list for the given type id.
      */
-    BufferState::FreeListList &getFreeList(uint32_t typeId) {
-        return _freeListLists[typeId];
+    FreeList &getFreeList(uint32_t typeId) {
+        return _free_lists[typeId];
     }
 
     /**

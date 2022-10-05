@@ -21,7 +21,7 @@ struct FreeListTest : public testing::Test
     {
         for (size_t i = 0; i < 3; ++i) {
             bufs.emplace_back(dead_elems);
-            bufs.back().on_active(array_size);
+            bufs.back().set_array_size(array_size);
         }
     }
     void TearDown() override {
@@ -111,6 +111,18 @@ TEST_F(FreeListTest, buffer_free_lists_are_reused_in_lifo_order)
     EXPECT_EQ(MyEntryRef(32, 2), pop_entry());
     EXPECT_EQ(1, list.size());
     EXPECT_EQ(MyEntryRef(10, 0), pop_entry());
+    EXPECT_TRUE(list.empty());
+}
+
+TEST_F(FreeListTest, buffer_free_list_can_be_disabled_and_detached_when_not_currently_reused)
+{
+    enable_all();
+    push_entry({10, 0});
+    push_entry({20, 1});
+    EXPECT_EQ(2, list.size());
+    bufs[0].disable();
+    EXPECT_EQ(1, list.size());
+    EXPECT_EQ(MyEntryRef(20, 1), pop_entry());
     EXPECT_TRUE(list.empty());
 }
 
