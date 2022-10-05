@@ -68,6 +68,8 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
             return HttpErrorResponse.configNotConverged(getMessage(e, request));
         } catch (LoadBalancerServiceException e) {
             return HttpErrorResponse.loadBalancerNotReady(getMessage(e, request));
+        } catch (ReindexingStatusException e) {
+            return HttpErrorResponse.reindexingStatusUnavailable(getMessage(e, request));
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));

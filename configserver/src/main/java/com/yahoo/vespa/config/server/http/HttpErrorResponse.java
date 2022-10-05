@@ -50,7 +50,8 @@ public class HttpErrorResponse extends HttpResponse {
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
-        CONFIG_NOT_CONVERGED
+        CONFIG_NOT_CONVERGED,
+        REINDEXING_STATUS_UNAVAILABLE
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -107,6 +108,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse loadBalancerNotReady(String msg) {
         return new HttpErrorResponse(CONFLICT, ErrorCode.LOAD_BALANCER_NOT_READY.name(), msg);
+    }
+
+    public static HttpResponse reindexingStatusUnavailable(String msg) {
+        return new HttpErrorResponse(CONFLICT, ErrorCode.REINDEXING_STATUS_UNAVAILABLE.name(), msg);
     }
 
     @Override
