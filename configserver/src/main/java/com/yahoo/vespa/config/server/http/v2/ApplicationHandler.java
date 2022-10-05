@@ -24,12 +24,15 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.ReindexingStatusException;
 import com.yahoo.vespa.config.server.http.v2.request.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.http.v2.response.ApplicationSuspendedResponse;
 import com.yahoo.vespa.config.server.http.v2.response.DeleteApplicationResponse;
@@ -39,6 +42,7 @@ import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -296,9 +300,15 @@ public class ApplicationHandler extends HttpHandler {
         if (tenant == null)
             throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
 
-        return new ReindexingResponse(getActiveModelOrThrow(applicationId).documentTypesByCluster(),
-                                      applicationRepository.getReindexing(applicationId),
-                                      applicationRepository.getClusterReindexingStatus(applicationId));
+        try {
+            Map<String, Set<String>> documentTypes = getActiveModelOrThrow(applicationId).documentTypesByCluster();
+            ApplicationReindexing reindexing = applicationRepository.getReindexing(applicationId);
+            Map<String, ClusterReindexing> clusters = applicationRepository.getClusterReindexingStatus(applicationId);
+            return new ReindexingResponse(documentTypes, reindexing, clusters);
+        } catch (UncheckedIOException e) {
+            throw new ReindexingStatusException("Reindexing status for '" + applicationId +
+                                                "' is currently unavailable");
+        }
     }
 
     private HttpResponse restart(ApplicationId applicationId, HttpRequest request) {
