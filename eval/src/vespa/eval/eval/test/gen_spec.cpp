@@ -54,7 +54,7 @@ DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
 {
     std::vector<vespalib::string> dict;
     for (size_t i = 0; i < size; ++i) {
-        dict.push_back(fmt("%s%zu", prefix.c_str(), i * stride));
+        dict.push_back(fmt("%s%zu", prefix.c_str(), (i + 1) * stride));
     }
     return dict;
 }
