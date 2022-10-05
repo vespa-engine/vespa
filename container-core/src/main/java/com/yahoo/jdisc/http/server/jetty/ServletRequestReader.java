@@ -217,8 +217,12 @@ class ServletRequestReader {
 
         synchronized (monitor) {
             errorDuringRead = t;
-            if (state != State.READING) return;
-            state = State.ALL_DATA_READ;
+            if (state == State.REQUEST_CONTENT_CLOSED) {
+                return;
+            }
+            if (state == State.READING) {
+                state = State.ALL_DATA_READ;
+            }
             shouldCloseRequestContentChannel = numberOfOutstandingUserCalls == 0;
             if (shouldCloseRequestContentChannel) {
                 state = State.REQUEST_CONTENT_CLOSED;
