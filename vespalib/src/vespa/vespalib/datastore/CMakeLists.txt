@@ -4,16 +4,19 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     array_store.cpp
     array_store_config.cpp
     atomic_entry_ref.cpp
+    buffer_free_list.cpp
     buffer_type.cpp
     bufferstate.cpp
+    compact_buffer_candidates.cpp
     compacting_buffers.cpp
     compaction_strategy.cpp
-    compact_buffer_candidates.cpp
+    compaction_strategy.cpp
     datastore.cpp
     datastorebase.cpp
-    entryref.cpp
     entry_ref_filter.cpp
+    entryref.cpp
     fixed_size_hash_map.cpp
+    free_list.cpp
     large_array_buffer_type.cpp
     sharded_hash_map.cpp
     small_array_buffer_type.cpp
