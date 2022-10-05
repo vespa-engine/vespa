@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_store.h"
+#include <vespa/vespalib/datastore/datastore.h>
 
 namespace vespalib::eval { struct Value; }
 
@@ -49,6 +50,8 @@ public:
 
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
 };
 
 }

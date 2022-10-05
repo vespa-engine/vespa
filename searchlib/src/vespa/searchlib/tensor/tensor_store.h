@@ -2,10 +2,13 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/compaction_spec.h>
+#include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
+namespace vespalib::datastore { struct ICompactionContext; }
 namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
@@ -17,15 +20,15 @@ namespace search::tensor {
  * might also require corresponding changes to implemented optimized tensor
  * operations that use the serialized tensor as argument.
  */
-class TensorStore
+class TensorStore : public vespalib::datastore::ICompactable
 {
 public:
     using EntryRef = vespalib::datastore::EntryRef;
     typedef vespalib::GenerationHandler::generation_t generation_t;
 
 protected:
-    vespalib::datastore::DataStoreBase &_store;
-    const uint32_t        _typeId;
+    vespalib::datastore::DataStoreBase& _store;
+    vespalib::datastore::CompactionSpec _compaction_spec;
 
 public:
     TensorStore(vespalib::datastore::DataStoreBase &store);
@@ -33,7 +36,10 @@ public:
     virtual ~TensorStore();
 
     virtual void holdTensor(EntryRef ref) = 0;
-    virtual EntryRef move(EntryRef ref) = 0;
+
+    virtual vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
+
+    virtual std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
 
     // Inherit doc from DataStoreBase
     void trimHoldLists(generation_t usedGen) {
@@ -57,12 +63,8 @@ public:
         return _store.getAddressSpaceUsage();
     }
 
-    uint32_t startCompactWorstBuffer() {
-        return _store.startCompactWorstBuffer(_typeId);
-    }
-
-    void finishCompactWorstBuffer(uint32_t bufferId) {
-        _store.holdBuffer(bufferId);
+    bool consider_compact() const noexcept {
+        return _compaction_spec.compact() && !_store.has_held_buffers();
     }
 };
 

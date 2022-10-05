@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/streamed/streamed_value.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
@@ -69,6 +70,8 @@ public:
 
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
 
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const;

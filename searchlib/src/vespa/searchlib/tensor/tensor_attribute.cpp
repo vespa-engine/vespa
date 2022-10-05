@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/datastore/i_compaction_context.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -53,8 +54,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
       _tensorStore(tensorStore),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
-      _compactGeneration(0),
-      _cached_tensor_store_memory_usage()
+      _compactGeneration(0)
 {
 }
 
@@ -84,11 +84,14 @@ TensorAttribute::onCommit()
 {
     // Note: Cost can be reduced if unneeded generation increments are dropped
     incGeneration();
-    if (getFirstUsedGeneration() > _compactGeneration) {
-        // No data held from previous compact operation
-        if (getConfig().getCompactionStrategy().should_compact_memory(_cached_tensor_store_memory_usage)) {
-            compactWorst();
+    if (_tensorStore.consider_compact()) {
+        auto context = _tensorStore.start_compact(getConfig().getCompactionStrategy());
+        if (context) {
+            context->compact(vespalib::ArrayRef<AtomicEntryRef>(&_refVector[0], _refVector.size()));
         }
+        _compactGeneration = getCurrentGeneration();
+        incGeneration();
+        updateStat(true);
     }
 }
 
@@ -163,8 +166,7 @@ vespalib::MemoryUsage
 TensorAttribute::update_stat()
 {
     vespalib::MemoryUsage result = _refVector.getMemoryUsage();
-    _cached_tensor_store_memory_usage = _tensorStore.getMemoryUsage();
-    result.merge(_cached_tensor_store_memory_usage);
+    result.merge(_tensorStore.update_stat(getConfig().getCompactionStrategy()));
     result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     return result;
 }

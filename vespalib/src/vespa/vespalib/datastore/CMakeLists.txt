@@ -9,6 +9,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     bufferstate.cpp
     compact_buffer_candidates.cpp
     compacting_buffers.cpp
+    compaction_context.cpp
     compaction_strategy.cpp
     compaction_strategy.cpp
     datastore.cpp
