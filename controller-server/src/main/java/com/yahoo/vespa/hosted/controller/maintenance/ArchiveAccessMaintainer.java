@@ -73,7 +73,7 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                 .filter(t -> t instanceof CloudTenant)
                 .map(t -> (CloudTenant) t)
                 .collect(Collectors.toUnmodifiableMap(
-                        Tenant::name, cloudTenant -> cloudTenant.archiveAccess()));
+                        Tenant::name, CloudTenant::archiveAccess));
     }
 
 }

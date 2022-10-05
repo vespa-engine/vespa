@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.archive;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -14,7 +12,6 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -34,12 +31,10 @@ public class CuratorArchiveBucketDb {
 
     private final ArchiveService archiveService;
     private final CuratorDb curatorDb;
-    private final SystemName system;
 
     public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        this.system = controller.zoneRegistry().system();
     }
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant, boolean createIfMissing) {
