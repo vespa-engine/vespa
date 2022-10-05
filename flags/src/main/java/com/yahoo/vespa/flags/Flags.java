@@ -46,13 +46,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag MAIN_CHAIN_GRAPH = defineFeatureFlag(
-            "main-chain-graph", true,
-            List.of("hakonhall"), "2022-07-06", "2022-10-05",
-            "Whether to run all tasks in the main task chain up to the one failing to converge (false), or " +
-            "run all tasks in the main task chain whose dependencies have converged (true).  And when suspending, " +
+    public static final UnboundBooleanFlag ROOT_CHAIN_GRAPH = defineFeatureFlag(
+            "root-chain-graph", true,
+            List.of("hakonhall"), "2022-10-05", "2022-11-04",
+            "Whether to run all tasks in the root task chain up to the one failing to converge (false), or " +
+            "run all tasks in the root task chain whose dependencies have converged (true).  And when suspending, " +
             "whether to run the tasks in sequence (false) or in reverse sequence (true).",
-            "On first tick of the main chain after (re)start of host admin.",
+            "On first tick of the root chain after (re)start of host admin.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
