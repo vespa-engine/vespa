@@ -98,7 +98,6 @@ protected:
     typedef DataStoreT<RefT> ParentType;
     using ParentType::ensureBufferCapacity;
     using ParentType::_primary_buffer_ids;
-    using ParentType::_freeListLists;
     using ParentType::getEntry;
     using ParentType::dropBuffers;
     using ParentType::init_primary_buffers;

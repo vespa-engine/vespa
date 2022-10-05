@@ -670,7 +670,8 @@ TEST(DataStoreTest, can_reuse_active_buffer_as_primary_buffer)
 
 TEST(DataStoreTest, control_static_sizes) {
     EXPECT_EQ(96, sizeof(BufferTypeBase));
-    EXPECT_EQ(32, sizeof(BufferState::FreeList));
+    EXPECT_EQ(24, sizeof(FreeList));
+    EXPECT_EQ(56, sizeof(BufferFreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
     EXPECT_EQ(144, sizeof(BufferState));
     BufferState bs;

@@ -30,12 +30,17 @@ private:
 public:
     BufferFreeList(std::atomic<ElemCount>& dead_elems);
     ~BufferFreeList();
+    BufferFreeList(BufferFreeList&&) = default; // Needed for emplace_back() during setup.
+    BufferFreeList(const BufferFreeList&) = delete;
+    BufferFreeList& operator=(const BufferFreeList&) = delete;
+    BufferFreeList& operator=(BufferFreeList&&) = delete;
     void enable(FreeList& free_list);
     void disable();
 
-    void on_active(uint32_t array_size) { _array_size = array_size; }
+    void set_array_size(uint32_t value) { _array_size = value; }
     bool enabled() const { return _free_list != nullptr; }
     bool empty() const { return _free_refs.empty(); }
+    uint32_t array_size() const { return _array_size; }
     void push_entry(EntryRef ref) {
         if (empty()) {
             attach();

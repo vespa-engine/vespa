@@ -85,7 +85,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _primary_buffer_ids(),
       _states(numBuffers),
       _typeHandlers(),
-      _freeListLists(),
+      _free_lists(),
       _freeListsEnabled(false),
       _initializing(false),
       _elemHold1List(),
@@ -216,7 +216,7 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
     typeHandler->clampMaxArrays(_maxArrays);
     _primary_buffer_ids.push_back(0);
     _typeHandlers.push_back(typeHandler);
-    _freeListLists.push_back(BufferState::FreeListList());
+    _free_lists.emplace_back();
     return typeId;
 }
 
@@ -300,7 +300,7 @@ DataStoreBase::enableFreeLists()
         if (!bState.isActive() || bState.getCompacting()) {
             continue;
         }
-        bState.setFreeListList(&_freeListLists[bState.getTypeId()]);
+        bState.free_list().enable(_free_lists[bState.getTypeId()]);
     }
     _freeListsEnabled = true;
 }
@@ -309,7 +309,7 @@ void
 DataStoreBase::disableFreeLists()
 {
     for (BufferState & bState : _states) {
-        bState.setFreeListList(nullptr);
+        bState.free_list().disable();
     }
     _freeListsEnabled = false;
 }
@@ -321,14 +321,14 @@ DataStoreBase::enableFreeList(uint32_t bufferId)
     if (_freeListsEnabled &&
         state.isActive() &&
         !state.getCompacting()) {
-        state.setFreeListList(&_freeListLists[state.getTypeId()]);
+        state.free_list().enable(_free_lists[state.getTypeId()]);
     }
 }
 
 void
 DataStoreBase::disableFreeList(uint32_t bufferId)
 {
-    _states[bufferId].setFreeListList(nullptr);
+    _states[bufferId].free_list().disable();
 }
 
 void
@@ -527,7 +527,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
     assert(!state.getCompacting());
     state.setCompacting();
     state.disableElemHoldList();
-    state.setFreeListList(nullptr);
+    state.free_list().disable();
     inc_compaction_count();
 }
 
