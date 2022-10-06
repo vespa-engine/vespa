@@ -77,7 +77,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String queryDispatchPolicy() { return "adaptive"; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.61") default String phraseOptimization() { return "split"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipCommunicationManagerThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipMbusRequestThread() { return true; }
@@ -129,7 +128,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return false; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim", "vekterli"}, removeAfter="8.61") default boolean computeCoverageFromTargetActiveDocs() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

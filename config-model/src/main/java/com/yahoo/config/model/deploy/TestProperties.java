@@ -41,7 +41,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String queryDispatchPolicy = "adaptive";
-    private String phraseOptimization = "";
     private String sequencerType = "THROUGHPUT";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
@@ -149,7 +148,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
-    @Override public String phraseOptimization() { return phraseOptimization; }
     @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
@@ -197,10 +195,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setQueryDispatchPolicy(String policy) {
         queryDispatchPolicy = policy;
-        return this;
-    }
-    public TestProperties setPhraseOptimization(String value) {
-        phraseOptimization = value;
         return this;
     }
     public TestProperties setFeedSequencerType(String type) {
