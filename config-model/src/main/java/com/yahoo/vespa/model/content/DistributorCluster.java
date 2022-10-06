@@ -32,7 +32,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final boolean unorderedMergeChaining;
     private final boolean useTwoPhaseDocumentGc;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
@@ -95,20 +94,18 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            boolean unorderedMergeChaining = deployState.getProperties().featureFlags().unorderedMergeChaining();
             boolean useTwoPhaseDocumentGc = deployState.getProperties().featureFlags().useTwoPhaseDocumentGc();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
-                    maxInhibitedGroups, unorderedMergeChaining, useTwoPhaseDocumentGc);
+                    maxInhibitedGroups, useTwoPhaseDocumentGc);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
                                int maxActivationInhibitedOutOfSyncGroups,
-                               boolean unorderedMergeChaining,
                                boolean useTwoPhaseDocumentGc)
     {
         super(parent, "distributor");
@@ -117,7 +114,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.unorderedMergeChaining = unorderedMergeChaining;
         this.useTwoPhaseDocumentGc = useTwoPhaseDocumentGc;
     }
 
@@ -131,7 +127,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.use_unordered_merge_chaining(unorderedMergeChaining);
         builder.enable_two_phase_garbage_collection(useTwoPhaseDocumentGc);
 
         bucketSplitting.getConfig(builder);

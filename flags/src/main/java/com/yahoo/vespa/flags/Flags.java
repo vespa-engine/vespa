@@ -262,13 +262,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
-            "unordered-merge-chaining", true,
-            List.of("vekterli", "geirst"), "2021-11-15", "2022-11-01",
-            "Enables the use of unordered merge chains for data merge operations",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
             "ignore-thread-stack-sizes", false,
             List.of("arnej"), "2021-11-12", "2022-12-01",
