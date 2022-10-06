@@ -77,13 +77,10 @@ class Activator {
         NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
         NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
         if ( ! containsAll(hostnames, newActive))
-            throw new IllegalArgumentException("Activation of " + application + " failed. " +
-                                               "Could not find all requested hosts." +
+            throw new RuntimeException("Activation of " + application + " failed, could not find all requested hosts." +
                                                "\nRequested: " + hosts +
                                                "\nReserved: " + reserved.hostnames() +
-                                               "\nActive: " + oldActive.hostnames() +
-                                               "\nThis might happen if the time from reserving host to activation takes " +
-                                               "longer time than reservation expiry (the hosts will then no longer be reserved)");
+                                               "\nActive: " + oldActive.hostnames());
 
         validateParentHosts(application, allNodes, reserved);
 
