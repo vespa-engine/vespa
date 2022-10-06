@@ -45,7 +45,7 @@ public class LoadBalancerInstance {
         return hostname;
     }
 
-    /** IP address this load balancer */
+    /** IP address of this load balancer */
     public Optional<String> ipAddress() {
         return ipAddress;
     }

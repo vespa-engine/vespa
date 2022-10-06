@@ -38,7 +38,7 @@ public class LoadBalancerSerializer {
 
     private static final String idField = "id";
     private static final String hostnameField = "hostname";
-    private static final String lbIpAddressField = "ipAdress";
+    private static final String lbIpAddressField = "ipAddress";
     private static final String stateField = "state";
     private static final String changedAtField = "changedAt";
     private static final String dnsZoneField = "dnsZone";
