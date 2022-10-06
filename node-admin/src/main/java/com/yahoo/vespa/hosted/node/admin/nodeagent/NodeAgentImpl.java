@@ -101,7 +101,6 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
 
-    // Created in NodeAdminImpl
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
                          Orchestrator orchestrator, ContainerOperations containerOperations,
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
