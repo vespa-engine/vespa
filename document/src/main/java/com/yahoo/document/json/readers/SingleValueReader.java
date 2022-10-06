@@ -53,31 +53,17 @@ public class SingleValueReader {
 
     @SuppressWarnings("rawtypes")
     public static ValueUpdate readSingleUpdate(TokenBuffer buffer, DataType expectedType, String action, boolean ignoreUndefinedFields) {
-        ValueUpdate update;
-
-        switch (action) {
-            case UPDATE_ASSIGN:
-                update = (buffer.currentToken() == JsonToken.VALUE_NULL)
-                        ? ValueUpdate.createClear()
-                        : ValueUpdate.createAssign(readSingleValue(buffer, expectedType, ignoreUndefinedFields));
-                break;
+        return switch (action) {
+            case UPDATE_ASSIGN -> (buffer.currentToken() == JsonToken.VALUE_NULL)
+                                  ? ValueUpdate.createClear()
+                                  : ValueUpdate.createAssign(readSingleValue(buffer, expectedType, ignoreUndefinedFields));
             // double is silly, but it's what is used internally anyway
-            case UPDATE_INCREMENT:
-                update = ValueUpdate.createIncrement(Double.valueOf(buffer.currentText()));
-                break;
-            case UPDATE_DECREMENT:
-                update = ValueUpdate.createDecrement(Double.valueOf(buffer.currentText()));
-                break;
-            case UPDATE_MULTIPLY:
-                update = ValueUpdate.createMultiply(Double.valueOf(buffer.currentText()));
-                break;
-            case UPDATE_DIVIDE:
-                update = ValueUpdate.createDivide(Double.valueOf(buffer.currentText()));
-                break;
-            default:
-                throw new IllegalArgumentException("Operation '" + buffer.currentName() + "' not implemented.");
-        }
-        return update;
+            case UPDATE_INCREMENT -> ValueUpdate.createIncrement(Double.valueOf(buffer.currentText()));
+            case UPDATE_DECREMENT -> ValueUpdate.createDecrement(Double.valueOf(buffer.currentText()));
+            case UPDATE_MULTIPLY -> ValueUpdate.createMultiply(Double.valueOf(buffer.currentText()));
+            case UPDATE_DIVIDE -> ValueUpdate.createDivide(Double.valueOf(buffer.currentText()));
+            default -> throw new IllegalArgumentException("Operation '" + buffer.currentName() + "' not implemented.");
+        };
     }
 
     public static Matcher matchArithmeticOperation(String expression) {
@@ -94,7 +80,7 @@ public class SingleValueReader {
         }
     }
 
-    private static FieldValue readReferenceFieldValue(final String refText, DataType expectedType) {
+    private static FieldValue readReferenceFieldValue(String refText, DataType expectedType) {
         final FieldValue value = expectedType.createFieldValue();
         if (!refText.isEmpty()) {
             value.assign(new DocumentId(refText));

@@ -46,14 +46,12 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
      * and using the returned value to call {@link #getFieldValue(Field)}. If the named field does not exist, this
      * method returns null.
      *
-     * @param fieldName The name of the field whose value to return.
-     * @return The value of the field, or null.
+     * @param fieldName the name of the field whose value to return.
+     * @return the value of the field, or null if it is not declared in this, or has no value set
      */
     public FieldValue getFieldValue(String fieldName) {
         Field field = getField(fieldName);
-        if (field == null) {
-            return null;
-        }
+        if (field == null) return null;
         return getFieldValue(field);
     }
 
@@ -61,10 +59,10 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
      * Sets the value of the given field. The type of the value must match the type of this field, i.e.
      * <pre>field.getDataType().getValueClass().isAssignableFrom(value.getClass())</pre> must be true.
      *
-     * @param field The field whose value to set.
-     * @param value The value to set.
-     * @return The previous value of the field, or null.
-     * @throws IllegalArgumentException If the value is not compatible with the field.
+     * @param field the field whose value to set
+     * @param value the value to set
+     * @return the previous value of the field, or null
+     * @throws IllegalArgumentException if the value is not compatible with the field
      */
     public FieldValue setFieldValue(Field field, FieldValue value) {
         if (value == null) {

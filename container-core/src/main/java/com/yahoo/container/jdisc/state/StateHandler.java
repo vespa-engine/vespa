@@ -274,15 +274,11 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     private static List<Tuple> collapseMetrics(MetricSnapshot snapshot, String consumer) {
-        switch (consumer) {
-            case HEALTH_PATH:
-                return collapseHealthMetrics(snapshot);
-            case "all": // deprecated name
-            case METRICS_PATH:
-                return flattenAllMetrics(snapshot);
-            default:
-                throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
-        }
+        return switch (consumer) {
+            case HEALTH_PATH -> collapseHealthMetrics(snapshot); // deprecated name
+            case "all", METRICS_PATH -> flattenAllMetrics(snapshot);
+            default -> throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
+        };
     }
 
     private static List<Tuple> collapseHealthMetrics(MetricSnapshot snapshot) {

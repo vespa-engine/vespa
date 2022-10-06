@@ -12,15 +12,32 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class StructReader {
 
-    public static void fillStruct(TokenBuffer buffer, StructuredFieldValue parent, boolean ignoreUndefinedFields) {
+    /**
+     * Fills this struct.
+     *
+     * @return true if all this was applied and false if it was ignored because the field does not exist
+     */
+    public static boolean fillStruct(TokenBuffer buffer, StructuredFieldValue parent, boolean ignoreUndefinedFields) {
         // do note the order of initializing initNesting and token is relevant for empty docs
-        int initNesting = buffer.nesting();
+        int initialNesting = buffer.nesting();
         buffer.next();
 
-        while (buffer.nesting() >= initNesting) {
-            Field field = getField(buffer, parent, ignoreUndefinedFields);
+        boolean fullyApplied = true;
+        while (buffer.nesting() >= initialNesting) {
+            Field field = parent.getField(buffer.currentName());
+            if (field == null) {
+                if (! ignoreUndefinedFields)
+                    throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
+                                                       parent.getDataType().getDataTypeName() +
+                                                       "', which has the fields: " + parent.getDataType().getFields());
+
+                buffer.skipToRelativeNesting(0);
+                fullyApplied = false;
+                continue;
+            }
+
             try {
-                if (field != null && buffer.currentToken() != JsonToken.VALUE_NULL) {
+                if (buffer.currentToken() != JsonToken.VALUE_NULL) {
                     FieldValue v = readSingleValue(buffer, field.getDataType(), ignoreUndefinedFields);
                     parent.setFieldValue(field, v);
                 }
@@ -29,16 +46,7 @@ public class StructReader {
                 throw new JsonReaderException(field, e);
             }
         }
-    }
-
-    private static Field getField(TokenBuffer buffer, StructuredFieldValue parent, boolean ignoreUndefinedFields) {
-        Field field = parent.getField(buffer.currentName());
-        if (field == null && ! ignoreUndefinedFields) {
-            throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
-                                               parent.getDataType().getDataTypeName() +
-                                               "', which has the fields: " + parent.getDataType().getFields());
-        }
-        return field;
+        return fullyApplied;
     }
 
 }

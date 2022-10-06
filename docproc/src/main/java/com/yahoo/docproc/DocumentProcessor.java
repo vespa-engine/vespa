@@ -90,7 +90,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
         Map<String, String> ret = new HashMap<>();
         for (Entry<Pair<String, String>, String> e : fieldMap.entrySet()) {
             // Remember to include tuple if doctype is unset in mapping
-            if (docType.equals(e.getKey().getFirst()) || e.getKey().getFirst()==null || "".equals(e.getKey().getFirst())) {
+            if (docType.equals(e.getKey().getFirst()) || e.getKey().getFirst() == null || "".equals(e.getKey().getFirst())) {
                 ret.put(e.getKey().getSecond(), e.getValue());
             }
         }

@@ -443,4 +443,5 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public Optional<Boolean> getOptionalCreateIfNonExistent() {
         return Optional.ofNullable(createIfNonExistent);
     }
+
 }

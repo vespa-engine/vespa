@@ -165,43 +165,29 @@ public class RoutingTable {
          * Constructs a new iterator based on a given map. This is private so that only a {@link RoutingTable} can
          * create one.
          *
-         * @param hops The map to iterate through.
+         * @param hops the map to iterate through
          */
         private HopIterator(Map<String, HopBlueprint> hops) {
             it = hops.entrySet().iterator();
             next();
         }
 
-        /**
-         * Steps to the next hop in the map.
-         */
+        /** Steps to the next hop in the map. */
         public void next() {
             entry = it.hasNext() ? it.next() : null;
         }
 
-        /**
-         * Returns whether or not this iterator is valid.
-         *
-         * @return True if valid.
-         */
+        /** Returns whether this iterator is valid. */
         public boolean isValid() {
             return entry != null;
         }
 
-        /**
-         * Returns the name of the current hop.
-         *
-         * @return The name.
-         */
+        /** Returns the name of the current hop. */
         public String getName() {
             return entry.getKey();
         }
 
-        /**
-         * Returns the current hop.
-         *
-         * @return The hop.
-         */
+        /** Returns the current hop. */
         public HopBlueprint getHop() {
             return entry.getValue();
         }
@@ -220,43 +206,29 @@ public class RoutingTable {
          * Constructs a new iterator based on a given map. This is private so that only a {@link RoutingTable} can
          * create one.
          *
-         * @param routes The map to iterate through.
+         * @param routes the map to iterate through
          */
         private RouteIterator(Map<String, Route> routes) {
             it = routes.entrySet().iterator();
             next();
         }
 
-        /**
-         * Steps to the next route in the map.
-         */
+        /** Steps to the next route in the map. */
         public void next() {
             entry = it.hasNext() ? it.next() : null;
         }
 
-        /**
-         * Returns whether or not this iterator is valid.
-         *
-         * @return True if valid.
-         */
+        /** Returns whether this iterator is valid. */
         public boolean isValid() {
             return entry != null;
         }
 
-        /**
-         * Returns the name of the current route.
-         *
-         * @return The name.
-         */
+        /** Returns the name of the current route. */
         public String getName() {
             return entry.getKey();
         }
 
-        /**
-         * Returns the current route.
-         *
-         * @return The route.
-         */
+        /** Returns the current route. */
         public Route getRoute() {
             return entry.getValue();
         }

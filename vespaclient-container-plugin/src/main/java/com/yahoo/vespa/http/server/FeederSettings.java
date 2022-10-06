@@ -17,14 +17,12 @@ public class FeederSettings {
     public final boolean drain; // TODO: Implement drain=true
     public final Route route;
     public final FeedParams.DataFormat dataFormat;
-    public final String priority;
     public final Integer traceLevel;
 
     public FeederSettings(HttpRequest request) {
         this.drain = Optional.ofNullable(request.getHeader(Headers.DRAIN)).map(Boolean::parseBoolean).orElse(false);
         this.route = Optional.ofNullable(request.getHeader(Headers.ROUTE)).map(Route::parse).orElse(DEFAULT_ROUTE);
         this.dataFormat = Optional.ofNullable(request.getHeader(Headers.DATA_FORMAT)).map(FeedParams.DataFormat::valueOf).orElse(FeedParams.DataFormat.JSON_UTF8);
-        this.priority = request.getHeader(Headers.PRIORITY);
         this.traceLevel = Optional.ofNullable(request.getHeader(Headers.TRACE_LEVEL)).map(Integer::valueOf).orElse(null);
     }
 

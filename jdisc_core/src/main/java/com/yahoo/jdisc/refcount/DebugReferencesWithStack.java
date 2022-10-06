@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * @author baldersheim
  */
 public class DebugReferencesWithStack implements References {
+
     private static final Logger log = Logger.getLogger(DebugReferencesWithStack.class.getName());
     private final Map<Throwable, Object> activeReferences = new HashMap<>();
     private final DestructableResource resource;

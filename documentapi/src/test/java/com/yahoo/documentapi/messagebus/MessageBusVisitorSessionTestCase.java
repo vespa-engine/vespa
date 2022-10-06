@@ -56,6 +56,7 @@ import static org.junit.Assert.fail;
 
 // TODO replace explicit pre-mockito mock classes with proper mockito mocks wherever possible
 public class MessageBusVisitorSessionTestCase {
+
     private class MockSender implements MessageBusVisitorSession.Sender {
         private int maxPending = 1000;
         private int pendingCount = 0;
@@ -2520,4 +2521,5 @@ public class MessageBusVisitorSessionTestCase {
 
     // TODO: consider refactoring locking granularity
     // TODO: figure out if we risk a re-run of the "too many tasks" issue
+
 }

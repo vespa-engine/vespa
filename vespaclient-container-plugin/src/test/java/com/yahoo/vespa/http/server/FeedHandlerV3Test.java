@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FeedHandlerV3Test {
+
     final CollectingMetric metric = new CollectingMetric();
     private final Executor simpleThreadpool = Executors.newCachedThreadPool();
 
@@ -101,7 +102,6 @@ public class FeedHandlerV3Test {
         request.getJDiscRequest().headers().add(Headers.DATA_FORMAT, FeedParams.DataFormat.JSON_UTF8.name());
         request.getJDiscRequest().headers().add(Headers.TIMEOUT, "1000000000");
         request.getJDiscRequest().headers().add(Headers.CLIENT_ID, "client123");
-        request.getJDiscRequest().headers().add(Headers.PRIORITY, "LOWEST");
         request.getJDiscRequest().headers().add(Headers.TRACE_LEVEL, "4");
         request.getJDiscRequest().headers().add(Headers.DRAIN, "true");
         return request;

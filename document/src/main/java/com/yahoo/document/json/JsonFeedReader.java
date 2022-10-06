@@ -16,11 +16,9 @@ import com.yahoo.vespaxmlparser.RemoveFeedOperation;
 
 import java.io.InputStream;
 
-
 /**
  * Facade between JsonReader and the FeedReader API.
  *
- * <p>
  * The feed reader will take ownership of the input stream and close it when the
  * last parseable document has been read.
  *
@@ -29,7 +27,7 @@ import java.io.InputStream;
 public class JsonFeedReader implements FeedReader {
 
     private final JsonReader reader;
-    private InputStream stream;
+    private final InputStream stream;
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES).build();
 
     public JsonFeedReader(InputStream stream, DocumentTypeManager docMan) {
