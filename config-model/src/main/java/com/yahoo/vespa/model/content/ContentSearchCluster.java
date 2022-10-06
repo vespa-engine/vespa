@@ -68,7 +68,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
-    private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
@@ -212,7 +211,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
-        this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
 
@@ -407,7 +405,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
-        builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));

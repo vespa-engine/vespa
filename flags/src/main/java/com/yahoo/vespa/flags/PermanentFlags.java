@@ -237,12 +237,6 @@ public class PermanentFlags {
             ZONE_ID
     );
 
-    public static final UnboundBooleanFlag FORWARD_ISSUES_AS_ERRORS = defineFeatureFlag(
-            "forward-issues-as-errors", true,
-            "When the backend detects a problematic issue with a query, it will by default send it as an error message to the QRS, which adds it in an ErrorHit in the result.  May be disabled using this flag.",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag DEACTIVATE_ROUTING = defineFeatureFlag(
             "deactivate-routing", false,
             "Deactivates routing for an application by removing all reals from its load balancers. Used in " +

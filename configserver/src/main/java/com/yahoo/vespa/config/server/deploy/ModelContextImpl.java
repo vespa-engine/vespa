@@ -189,7 +189,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean loadCodeAsHugePages;
         private final double containerShutdownTimeout;
         private final int maxUnCommittedMemory;
-        private final boolean forwardIssuesAsErrors;
         private final boolean ignoreThreadStackSizes;
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
@@ -241,7 +240,6 @@ public class ModelContextImpl implements ModelContext {
             this.loadCodeAsHugePages = flagValue(source, appId, version, Flags.LOAD_CODE_AS_HUGEPAGES);
             this.containerShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.maxUnCommittedMemory = flagValue(source, appId, version, Flags.MAX_UNCOMMITTED_MEMORY);
-            this.forwardIssuesAsErrors = flagValue(source, appId, version, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
             this.ignoreThreadStackSizes = flagValue(source, appId, version, Flags.IGNORE_THREAD_STACK_SIZES);
             this.unorderedMergeChaining = flagValue(source, appId, version, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
@@ -296,7 +294,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-        @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
