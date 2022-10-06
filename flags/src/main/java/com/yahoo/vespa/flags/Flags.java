@@ -262,13 +262,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
-            "unordered-merge-chaining", true,
-            List.of("vekterli", "geirst"), "2021-11-15", "2022-11-01",
-            "Enables the use of unordered merge chains for data merge operations",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
             "ignore-thread-stack-sizes", false,
             List.of("arnej"), "2021-11-12", "2022-12-01",
@@ -289,14 +282,6 @@ public class Flags {
                 List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2023-01-01",
                 "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
                 "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
-            "merge-throttling-policy", "STATIC",
-            List.of("vekterli"), "2022-01-25", "2022-12-01",
-            "Sets the policy used for merge throttling on the content nodes. " +
-            "Valid values: STATIC, DYNAMIC",
-            "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR = defineDoubleFlag(

@@ -186,19 +186,6 @@ public class StorageClusterTest {
     }
 
     @Test
-    void merge_throttling_policy_config_is_derived_from_flag() {
-        var config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("STATIC"));
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
-
-        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("DYNAMIC"));
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.DYNAMIC, config.merge_throttling_policy().type());
-
-        // Invalid enum values fall back to the default
-        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("UKULELE"));
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
-    }
-
-    @Test
     void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(cluster("bees",

@@ -65,10 +65,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
     private int maxUnCommittedMemory = 123456;
-    private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
-    private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
     private int persistenceThrottlingWindowSize = -1;
@@ -126,10 +124,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-    @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
     @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
@@ -319,11 +315,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setUnorderedMergeChaining(boolean unordered) {
-        unorderedMergeChaining = unordered;
-        return this;
-    }
-
     public TestProperties setZoneDnsSuffixes(List<String> zoneDnsSuffixes) {
         this.zoneDnsSuffixes = List.copyOf(zoneDnsSuffixes);
         return this;
@@ -331,11 +322,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxCompactBuffers(int maxCompactBuffers) {
         this.maxCompactBuffers = maxCompactBuffers;
-        return this;
-    }
-
-    public TestProperties setMergeThrottlingPolicy(String policy) {
-        this.mergeThrottlingPolicy = policy;
         return this;
     }
 

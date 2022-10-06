@@ -1132,23 +1132,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(4, resolveTunedNumDistributorStripesConfig(65));
     }
 
-    @Test
-    void unordered_merge_chaining_config_controlled_by_properties() throws Exception {
-        assertFalse(resolveUnorderedMergeChainingConfig(Optional.of(false)));
-        assertTrue(resolveUnorderedMergeChainingConfig(Optional.empty()));
-    }
-
-    private boolean resolveUnorderedMergeChainingConfig(Optional<Boolean> unorderedMergeChaining) throws Exception {
-        var props = new TestProperties();
-        if (unorderedMergeChaining.isPresent()) {
-            props.setUnorderedMergeChaining(unorderedMergeChaining.get());
-        }
-        var cluster = createOneNodeCluster(props);
-        var builder = new StorDistributormanagerConfig.Builder();
-        cluster.getDistributorNodes().getConfig(builder);
-        return (new StorDistributormanagerConfig(builder)).use_unordered_merge_chaining();
-    }
-
     private boolean resolveTwoPhaseGcConfigWithFeatureFlag(Boolean flagEnableTwoPhase) {
         var props = new TestProperties();
         if (flagEnableTwoPhase != null) {
