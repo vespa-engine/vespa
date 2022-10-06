@@ -41,7 +41,7 @@ DirectTensorStore::add_entry(TensorSP tensor)
 {
     auto ref = _tensor_store.addEntry(tensor);
     auto& state = _tensor_store.getBufferState(RefType(ref).bufferId());
-    state.incExtraUsedBytes(tensor->get_memory_usage().allocatedBytes());
+    state.stats().inc_extra_used_bytes(tensor->get_memory_usage().allocatedBytes());
     return ref;
 }
 

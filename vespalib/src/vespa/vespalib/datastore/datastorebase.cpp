@@ -36,7 +36,7 @@ constexpr size_t TOO_DEAD_SLACK = 0x4000u;
 bool
 primary_buffer_too_dead(const BufferState &state)
 {
-    size_t deadElems = state.getDeadElems();
+    size_t deadElems = state.stats().dead_elems();
     size_t deadBytes = deadElems * state.getArraySize();
     return ((deadBytes >= TOO_DEAD_SLACK) && (deadElems * 2 >= state.size()));
 }
@@ -275,7 +275,7 @@ DataStoreBase::dropBuffers()
 vespalib::MemoryUsage
 DataStoreBase::getMemoryUsage() const
 {
-    MemStats stats = getMemStats();
+    auto stats = getMemStats();
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(stats._allocBytes);
     usage.setUsedBytes(stats._usedBytes);
@@ -341,28 +341,10 @@ DataStoreBase::disableElemHoldList()
     }
 }
 
-namespace {
-
-void
-add_buffer_state_to_mem_stats(const BufferState& state, size_t elementSize, DataStoreBase::MemStats& stats)
-{
-    size_t extra_used_bytes = state.getExtraUsedBytes();
-    stats._allocElems += state.capacity();
-    stats._usedElems += state.size();
-    stats._deadElems += state.getDeadElems();
-    stats._holdElems += state.getHoldElems();
-    stats._allocBytes += (state.capacity() * elementSize) + extra_used_bytes;
-    stats._usedBytes += (state.size() * elementSize) + extra_used_bytes;
-    stats._deadBytes += state.getDeadElems() * elementSize;
-    stats._holdBytes += (state.getHoldElems() * elementSize) + state.getExtraHoldBytes();
-}
-
-}
-
-DataStoreBase::MemStats
+MemoryStats
 DataStoreBase::getMemStats() const
 {
-    MemStats stats;
+    MemoryStats stats;
 
     for (const BufferState & bState: _states) {
         auto typeHandler = bState.getTypeHandler();
@@ -372,11 +354,11 @@ DataStoreBase::getMemStats() const
         } else if (state == BufferState::State::ACTIVE) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._activeBuffers;
-            add_buffer_state_to_mem_stats(bState, elementSize, stats);
+            bState.stats().add_to_mem_stats(elementSize, stats);
         } else if (state == BufferState::State::HOLD) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._holdBuffers;
-            add_buffer_state_to_mem_stats(bState, elementSize, stats);
+            bState.stats().add_to_mem_stats(elementSize, stats);
         } else {
             LOG_ABORT("should not be reached");
         }
@@ -398,7 +380,7 @@ DataStoreBase::getAddressSpaceUsage() const
         if (bState.isActive()) {
             uint32_t arraySize = bState.getArraySize();
             usedArrays += bState.size() / arraySize;
-            deadArrays += bState.getDeadElems() / arraySize;
+            deadArrays += bState.stats().dead_elems() / arraySize;
             limitArrays += bState.capacity() / arraySize;
         } else if (bState.isOnHold()) {
             uint32_t arraySize = bState.getArraySize();
@@ -489,7 +471,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const
             uint32_t arraySize = typeHandler->getArraySize();
             uint32_t reservedElements = typeHandler->getReservedElements(bufferId);
             size_t used_elems = state.size();
-            size_t deadElems = state.getDeadElems() - reservedElements;
+            size_t deadElems = state.stats().dead_elems() - reservedElements;
             if (compaction_spec.compact_memory()) {
                 elem_buffers.add(bufferId, used_elems, deadElems);
             }

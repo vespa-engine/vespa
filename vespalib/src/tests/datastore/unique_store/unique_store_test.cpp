@@ -21,10 +21,10 @@ enum class DictionaryType { BTREE, HASH, BTREE_AND_HASH };
 using namespace vespalib::datastore;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using vespalib::datastore::test::BufferStats;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
+using TestBufferStats = vespalib::datastore::test::BufferStats;
 
 template <typename UniqueStoreT>
 struct TestBaseValues {
@@ -94,10 +94,10 @@ struct TestBase : public ::testing::Test {
     uint32_t getBufferId(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
-    void assertBufferState(EntryRef ref, const BufferStats expStats) const {
+    void assertBufferState(EntryRef ref, const TestBufferStats expStats) const {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
-        EXPECT_EQ(expStats._hold, store.bufferState(ref).getHoldElems());
-        EXPECT_EQ(expStats._dead, store.bufferState(ref).getDeadElems());
+        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
+        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
     }
     void assertStoreContent() const {
         for (const auto &elem : refStore) {
@@ -320,9 +320,9 @@ TYPED_TEST(TestBase, elements_are_put_on_hold_when_value_is_removed)
     EntryRef ref = this->add(this->values()[0]);
     size_t reserved = this->get_reserved(ref);
     size_t array_size = this->get_array_size(ref);
-    this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
 }
 
 TYPED_TEST(TestBase, elements_are_reference_counted)
@@ -333,11 +333,11 @@ TYPED_TEST(TestBase, elements_are_reference_counted)
     // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
     size_t reserved = this->get_reserved(ref);
     size_t array_size = this->get_array_size(ref);
-    this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
 }
 
 TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is_full)
@@ -367,7 +367,7 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     this->trimHoldLists();
     size_t reserved = this->get_reserved(val0Ref);
     size_t array_size = this->get_array_size(val0Ref);
-    this->assertBufferState(val0Ref, BufferStats().used(reserved + 3 * array_size).dead(reserved + array_size));
+    this->assertBufferState(val0Ref, TestBufferStats().used(reserved + 3 * array_size).dead(reserved + array_size));
     uint32_t val1BufferId = this->getBufferId(val0Ref);
 
     EXPECT_EQ(2u, this->refStore.size());
@@ -396,7 +396,7 @@ TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
     EntryRef val1Ref = builder.mapEnumValueToEntryRef(2);
     size_t reserved = this->get_reserved(val0Ref);
     size_t array_size = this->get_array_size(val0Ref);
-    this->assertBufferState(val0Ref, BufferStats().used(2 * array_size + reserved).dead(reserved)); // Note: First element is reserved
+    this->assertBufferState(val0Ref, TestBufferStats().used(2 * array_size + reserved).dead(reserved)); // Note: First element is reserved
     EXPECT_TRUE(val0Ref.valid());
     EXPECT_TRUE(val1Ref.valid());
     EXPECT_NE(val0Ref.ref(), val1Ref.ref());

@@ -34,7 +34,7 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
     assert(_treeToFreeze.empty());
     assert(_internalHoldUntilFreeze.empty());
     assert(_leafHoldUntilFreeze.empty());
-    DataStoreBase::MemStats stats = _nodeStore.getMemStats();
+    auto stats = _nodeStore.getMemStats();
     assert(stats._usedBytes == stats._deadBytes);
     assert(stats._holdBytes == 0);
     (void) stats;

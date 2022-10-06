@@ -3,6 +3,7 @@
 #pragma once
 
 #include "buffer_free_list.h"
+#include "buffer_stats.h"
 #include "buffer_type.h"
 #include "entryref.h"
 #include <vespa/vespalib/util/generationhandler.h>
@@ -38,17 +39,7 @@ public:
     };
 
 private:
-    std::atomic<ElemCount>     _usedElems;
-    std::atomic<ElemCount>     _allocElems;
-    std::atomic<ElemCount>     _deadElems;
-    std::atomic<ElemCount>     _holdElems;
-    // Number of bytes that are heap allocated by elements that are stored in this buffer.
-    // For simple types this is 0.
-    std::atomic<size_t>        _extraUsedBytes;
-    // Number of bytes that are heap allocated by elements that are stored in this buffer and is now on hold.
-    // For simple types this is 0.
-    std::atomic<size_t>        _extraHoldBytes;
-
+    MutableBufferStats _stats;
     BufferFreeList _free_list;
     std::atomic<BufferTypeBase*> _typeHandler;
     Alloc           _buffer;
@@ -91,36 +82,28 @@ public:
      */
     void onFree(std::atomic<void*>& buffer);
 
-
     /**
      * Disable hold of elements, just mark then as dead without cleanup.
      * Typically used when tearing down data structure in a controlled manner.
      */
     void disableElemHoldList();
 
+    BufferStats& stats() { return _stats; }
+    const BufferStats& stats() const { return _stats; }
     BufferFreeList& free_list() { return _free_list; }
     const BufferFreeList& free_list() const { return _free_list; }
 
-    size_t size() const { return _usedElems.load(std::memory_order_relaxed); }
-    size_t capacity() const { return _allocElems.load(std::memory_order_relaxed); }
-    size_t remaining() const { return capacity() - size(); }
-    void pushed_back(size_t numElems) {
-        pushed_back(numElems, 0);
-    }
-    void pushed_back(size_t numElems, size_t extraBytes) {
-        _usedElems.store(size() + numElems, std::memory_order_relaxed);
-        _extraUsedBytes.store(getExtraUsedBytes() + extraBytes, std::memory_order_relaxed);
-    }
+    size_t size() const { return _stats.size(); }
+    size_t capacity() const { return _stats.capacity(); }
+    size_t remaining() const { return _stats.remaining(); }
     void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
-        getTypeHandler()->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
+        getTypeHandler()->cleanHold(buffer, offset, numElems,
+                                    BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(),
+                                                                 _stats.extra_hold_bytes_ref()));
     }
     void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
-    size_t getDeadElems() const { return _deadElems.load(std::memory_order_relaxed); }
-    size_t getHoldElems() const { return _holdElems.load(std::memory_order_relaxed); }
-    size_t getExtraUsedBytes() const { return _extraUsedBytes.load(std::memory_order_relaxed); }
-    size_t getExtraHoldBytes() const { return _extraHoldBytes.load(std::memory_order_relaxed); }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
     uint32_t get_used_arrays() const noexcept { return size() / _arraySize; }
@@ -135,14 +118,6 @@ public:
     State getState() const { return _state.load(std::memory_order_relaxed); }
     const BufferTypeBase *getTypeHandler() const { return _typeHandler.load(std::memory_order_relaxed); }
     BufferTypeBase *getTypeHandler() { return _typeHandler.load(std::memory_order_relaxed); }
-
-    void incDeadElems(size_t value) { _deadElems.store(getDeadElems() + value, std::memory_order_relaxed); }
-    void incHoldElems(size_t value) { _holdElems.store(getHoldElems() + value, std::memory_order_relaxed); }
-    void decHoldElems(size_t value);
-    void incExtraUsedBytes(size_t value) { _extraUsedBytes.store(getExtraUsedBytes() + value, std::memory_order_relaxed); }
-    void incExtraHoldBytes(size_t value) {
-        _extraHoldBytes.store(getExtraHoldBytes() + value, std::memory_order_relaxed);
-    }
 
     bool hasDisabledElemHoldList() const { return _disableElemHoldList; }
     void resume_primary_buffer(uint32_t buffer_id);

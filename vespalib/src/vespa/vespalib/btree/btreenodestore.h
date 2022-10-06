@@ -167,7 +167,7 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    datastore::DataStoreBase::MemStats getMemStats() const {
+    datastore::MemoryStats getMemStats() const {
         return _store.getMemStats();
     }
 

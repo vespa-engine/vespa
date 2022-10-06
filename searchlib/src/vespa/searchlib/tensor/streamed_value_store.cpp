@@ -196,7 +196,7 @@ StreamedValueStore::add_entry(TensorEntry::SP tensor)
 {
     auto ref = _concrete_store.addEntry(tensor);
     auto& state = _concrete_store.getBufferState(RefType(ref).bufferId());
-    state.incExtraUsedBytes(tensor->get_memory_usage().allocatedBytes());
+    state.stats().inc_extra_used_bytes(tensor->get_memory_usage().allocatedBytes());
     return ref;
 }
 

@@ -210,7 +210,7 @@ public:
     void clearHoldLists() { _store.clearHoldLists();}
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
-    vespalib::datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
+    vespalib::datastore::MemoryStats getMemStats() const { return _store.getMemStats(); }
 };
 
 }
