@@ -45,7 +45,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
 
     StorServerProducer(String clusterName, ModelContext.FeatureFlags featureFlags) {
         this.clusterName = clusterName;
-        maxMergesPerNode = featureFlags.maxConcurrentMergesPerNode();
         queueSize = featureFlags.maxMergeQueueSize();
     }
 
