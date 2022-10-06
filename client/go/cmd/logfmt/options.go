@@ -24,6 +24,7 @@ type Options struct {
 	TruncateComponent bool
 	ComponentFilter   regexFlag
 	MessageFilter     regexFlag
+	Format            OutputFormat
 }
 
 func NewOptions() (ret Options) {
