@@ -6,7 +6,7 @@ namespace search::tensor {
 
 TensorStore::TensorStore(vespalib::datastore::DataStoreBase &store)
     : _store(store),
-      _typeId(0)
+      _compaction_spec()
 { }
 
 TensorStore::~TensorStore() = default;

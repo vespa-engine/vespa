@@ -2,11 +2,18 @@
 
 #include "direct_tensor_store.h"
 #include <vespa/eval/eval/value.h>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
+#include <vespa/vespalib/datastore/compaction_context.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 
+using vespalib::datastore::CompactionContext;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::ICompactionContext;
 
 namespace search::tensor {
 
@@ -76,6 +83,21 @@ DirectTensorStore::move(EntryRef ref)
     auto new_ref = add_entry(old_tensor);
     _tensor_store.holdElem(ref, 1, old_tensor->get_memory_usage().allocatedBytes());
     return new_ref;
+}
+
+vespalib::MemoryUsage
+DirectTensorStore::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    auto memory_usage = _store.getMemoryUsage();
+    _compaction_spec = CompactionSpec(compaction_strategy.should_compact_memory(memory_usage), false);
+    return memory_usage;
+}
+
+std::unique_ptr<ICompactionContext>
+DirectTensorStore::start_compact(const CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
+    return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 }

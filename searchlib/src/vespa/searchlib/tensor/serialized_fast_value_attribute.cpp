@@ -11,7 +11,6 @@
 LOG_SETUP(".searchlib.tensor.serialized_fast_value_attribute");
 
 #include "blob_sequence_reader.h"
-#include "tensor_attribute.hpp"
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -95,12 +94,6 @@ SerializedFastValueAttribute::onInitSave(vespalib::stringref fileName)
          this->createAttributeHeader(fileName),
          getRefCopy(),
          _streamedValueStore);
-}
-
-void
-SerializedFastValueAttribute::compactWorst()
-{
-    doCompactWorst<StreamedValueStore::RefType>();
 }
 
 }

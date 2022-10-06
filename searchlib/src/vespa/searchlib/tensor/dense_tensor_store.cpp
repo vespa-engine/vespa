@@ -2,10 +2,17 @@
 
 #include "dense_tensor_store.h"
 #include <vespa/eval/eval/value.h>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
+#include <vespa/vespalib/datastore/compaction_context.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 
+using vespalib::datastore::CompactionContext;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::Handle;
+using vespalib::datastore::ICompactionContext;
 using vespalib::eval::CellType;
 using vespalib::eval::CellTypeUtils;
 using vespalib::eval::Value;
@@ -98,7 +105,7 @@ DenseTensorStore::allocRawBuffer()
 {
     size_t bufSize = getBufSize();
     size_t alignedBufSize = _tensorSizeCalc.alignedSize();
-    auto result = _concreteStore.freeListRawAllocator<char>(_typeId).alloc(alignedBufSize);
+    auto result = _concreteStore.freeListRawAllocator<char>(0u).alloc(alignedBufSize);
     clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize);
     return result;
 }
@@ -123,6 +130,21 @@ DenseTensorStore::move(EntryRef ref)
     memcpy(newraw.data, static_cast<const char *>(oldraw), getBufSize());
     _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
     return newraw.ref;
+}
+
+vespalib::MemoryUsage
+DenseTensorStore::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    auto memory_usage = _store.getMemoryUsage();
+    _compaction_spec = CompactionSpec(compaction_strategy.should_compact_memory(memory_usage), false);
+    return memory_usage;
+}
+
+std::unique_ptr<ICompactionContext>
+DenseTensorStore::start_compact(const CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
+    return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 std::unique_ptr<Value>

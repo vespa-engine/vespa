@@ -7,6 +7,9 @@
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
+#include <vespa/vespalib/datastore/compaction_context.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -15,8 +18,12 @@
 
 LOG_SETUP(".searchlib.tensor.streamed_value_store");
 
-using vespalib::datastore::Handle;
+using vespalib::datastore::CompactionContext;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::Handle;
+using vespalib::datastore::ICompactionContext;
 using namespace vespalib::eval;
 using vespalib::ConstArrayRef;
 using vespalib::MemoryUsage;
@@ -235,6 +242,21 @@ StreamedValueStore::move(EntryRef ref)
     auto new_ref = add_entry(old_tensor);
     _concrete_store.holdElem(ref, 1, old_tensor->get_memory_usage().allocatedBytes());
     return new_ref;
+}
+
+vespalib::MemoryUsage
+StreamedValueStore::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    auto memory_usage = _store.getMemoryUsage();
+    _compaction_spec = CompactionSpec(compaction_strategy.should_compact_memory(memory_usage), false);
+    return memory_usage;
+}
+
+std::unique_ptr<ICompactionContext>
+StreamedValueStore::start_compact(const CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
+    return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 bool

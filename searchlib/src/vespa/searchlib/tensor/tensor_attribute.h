@@ -28,10 +28,7 @@ protected:
     bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
-    vespalib::MemoryUsage _cached_tensor_store_memory_usage;
 
-    template <typename RefType>
-    void doCompactWorst();
     void checkTensorType(const vespalib::eval::Value &tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
     virtual vespalib::MemoryUsage update_stat();
@@ -86,7 +83,6 @@ public:
      */
     virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result);
 
-    virtual void compactWorst() = 0;
 };
 
 }

@@ -5,10 +5,14 @@
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compaction_context.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 
 using vespalib::alloc::MemoryAllocator;
+using vespalib::datastore::CompactionContext;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::eval::StreamedValueBuilderFactory;
 using vespalib::eval::Value;
@@ -52,6 +56,22 @@ TensorBufferStore::move(EntryRef ref)
     _ops.copied_labels(buf);
     _array_store.remove(ref);
     return new_ref;
+}
+
+vespalib::MemoryUsage
+TensorBufferStore::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    auto array_store_address_space_usage = _store.getAddressSpaceUsage();
+    auto array_store_memory_usage = _store.getMemoryUsage();
+    _compaction_spec = compaction_strategy.should_compact(array_store_memory_usage, array_store_address_space_usage);
+    return array_store_memory_usage;
+}
+
+std::unique_ptr<vespalib::datastore::ICompactionContext>
+TensorBufferStore::start_compact(const CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
+    return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 EntryRef

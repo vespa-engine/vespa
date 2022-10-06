@@ -5,6 +5,7 @@
 #include "tensor_store.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/typed_cells.h>
+#include <vespa/vespalib/datastore/datastore.h>
 
 namespace vespalib::eval { struct Value; }
 
@@ -67,6 +68,8 @@ public:
     vespalib::datastore::Handle<char> allocRawBuffer();
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const {
         return vespalib::eval::TypedCells(ref.valid() ? getRawBuffer(ref) : &_emptySpace[0],

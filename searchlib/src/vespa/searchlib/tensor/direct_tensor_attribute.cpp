@@ -11,7 +11,6 @@
 
 #include "blob_sequence_reader.h"
 #include "tensor_deserialize.h"
-#include "tensor_attribute.hpp"
 
 using vespalib::eval::FastValueBuilderFactory;
 
@@ -139,12 +138,6 @@ DirectTensorAttribute::onInitSave(vespalib::stringref fileName)
          this->createAttributeHeader(fileName),
          getRefCopy(),
          _direct_store);
-}
-
-void
-DirectTensorAttribute::compactWorst()
-{
-    doCompactWorst<DirectTensorStore::RefType>();
 }
 
 } // namespace

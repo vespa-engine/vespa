@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
+#include "atomic_entry_ref.h"
+#include <vespa/vespalib/util/arrayref.h>
+#include <memory>
 
 namespace vespalib::datastore {
 

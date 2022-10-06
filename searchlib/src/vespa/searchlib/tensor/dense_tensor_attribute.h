@@ -45,7 +45,6 @@ public:
     bool supports_extract_cells_ref() const override { return true; }
     bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    void compactWorst() override;
     uint32_t getVersion() const override;
     void onCommit() override;
     void onGenerationChange(generation_t next_gen) override;

@@ -5,7 +5,6 @@
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_loader.h"
 #include "nearest_neighbor_index_saver.h"
-#include "tensor_attribute.hpp"
 #include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -433,12 +432,6 @@ DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
          getRefCopy(),
          _denseTensorStore,
          std::move(index_saver));
-}
-
-void
-DenseTensorAttribute::compactWorst()
-{
-    doCompactWorst<DenseTensorStore::RefType>();
 }
 
 uint32_t
