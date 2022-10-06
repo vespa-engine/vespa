@@ -138,3 +138,5 @@ http2.maxConcurrentStreams int default=4096
 # Override the default server name when authority is missing from request.
 serverName.fallback string default=""
 
+# The list of accepted server names. Empty list to accept any. Elements follows format of 'serverName.default'.
+serverName.allowed[] string

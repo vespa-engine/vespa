@@ -743,7 +743,7 @@ public class HttpServerTest {
     }
 
     @Test
-    void requestThatFallbackServerNameCanBeOverridden() throws Exception {
+    void fallbackServerNameCanBeOverridden() throws Exception {
         String fallbackHostname = "myhostname";
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new UriRequestHandler(),
@@ -752,10 +752,26 @@ public class HttpServerTest {
                         .serverName(new ConnectorConfig.ServerName.Builder().fallback(fallbackHostname)));
         int listenPort = driver.server().getListenPort();
         HttpGet req = new HttpGet("http://localhost:" + listenPort + "/");
-        req.addHeader("Host", null);
+        req.setHeader("Host", null);
         driver.client().execute(req)
                 .expectStatusCode(is(OK))
                 .expectContent(containsString("http://" + fallbackHostname + ":" + listenPort + "/"));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void acceptedServerNamesCanBeRestricted() throws Exception {
+        String requiredServerName = "myhostname";
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder()
+                        .serverName(new ConnectorConfig.ServerName.Builder().allowed(requiredServerName)));
+        int listenPort = driver.server().getListenPort();
+        HttpGet req = new HttpGet("http://localhost:" + listenPort + "/");
+        req.setHeader("Host", requiredServerName);
+        driver.client().execute(req).expectStatusCode(is(OK));
+        driver.client().get("/").expectStatusCode(is(NOT_FOUND));
         assertTrue(driver.close());
     }
 
