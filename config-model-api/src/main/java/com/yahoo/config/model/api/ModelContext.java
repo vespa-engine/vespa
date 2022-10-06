@@ -110,7 +110,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsBackoff() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThrottlingWindowSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsResizeRate() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"vekterli"}) default boolean persistenceThrottlingOfMergeFeedOps() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
@@ -132,7 +131,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default int availableProcessors() { return 1; }
         @ModelFeatureFlag(owners = {"vekterli", "geirst"}, removeAfter="7.last") default boolean unorderedMergeChaining() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default String mergeThrottlingPolicy() { return "STATIC"; }
-
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default boolean persistenceThrottlingOfMergeFeedOps() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

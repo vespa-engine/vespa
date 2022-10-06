@@ -316,16 +316,6 @@ public class Flags {
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS = defineFeatureFlag(
-            "persistence-throttling-of-merge-feed-ops", true,
-            List.of("vekterli"), "2022-02-24", "2022-11-01",
-            "If true, each put/remove contained within a merge is individually throttled as if it " +
-            "were a put/remove from a client. If false, merges are throttled at a persistence thread " +
-            "level, i.e. per ApplyBucketDiff message, regardless of how many document operations " +
-            "are contained within. Only applies if DYNAMIC policy is used.",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
             "use-qrserver-service-name", false,
             List.of("arnej"), "2022-01-18", "2022-12-31",

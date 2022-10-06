@@ -332,15 +332,13 @@ public class StorageClusterTest {
                 .setPersistenceThrottlingWsDecrementFactor(1.5)
                 .setPersistenceThrottlingWsBackoff(0.8)
                 .setPersistenceThrottlingWindowSize(42)
-                .setPersistenceThrottlingWsResizeRate(2.5)
-                .setPersistenceThrottlingOfMergeFeedOps(false)));
+                .setPersistenceThrottlingWsResizeRate(2.5)));
         assertEquals(1.5, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
         assertEquals(0.8, config.async_operation_throttler().window_size_backoff(), 0.0001);
         // If window size is set, min and max are locked to the same value
         assertEquals(42, config.async_operation_throttler().min_window_size());
         assertEquals(42, config.async_operation_throttler().max_window_size());
         assertEquals(2.5, config.async_operation_throttler().resize_rate(), 0.0001);
-        assertFalse(config.async_operation_throttler().throttle_individual_merge_feed_ops());
     }
 
     @Test
