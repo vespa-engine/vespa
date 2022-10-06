@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.utils.SiaUtils;
 import javax.net.ssl.SSLContext;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 /**
  * A {@link ServiceIdentityProvider} that provides the credentials stored on file system.
@@ -24,34 +25,50 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
 
     private final AutoReloadingX509KeyManager keyManager;
     private final SSLContext sslContext;
+    private final Optional<SSLContext> sslContextWithPublicCerts;
     private final AthenzIdentity service;
     private final Path certificateFile;
     private final Path privateKeyFile;
 
+    public enum TrustStorePublicCerts {
+        /** The trust store includes public root certificates. */
+        INCLUDED,
+        EXCLUDED,
+        UNKNOWN
+    }
+
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
         this(new AthenzService(config.athenzDomain(), config.athenzService()),
-             SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
-             SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
-             Paths.get(config.trustStorePath()));
+             Paths.get(config.keyPathPrefix()),
+             Paths.get(config.trustStorePath()),
+             TrustStorePublicCerts.UNKNOWN);
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
                                Path siaPath,
-                               Path clientTruststoreFile) {
+                               Path clientTruststoreFile,
+                               TrustStorePublicCerts publicCerts) {
         this(service,
-                SiaUtils.getPrivateKeyFile(siaPath, service),
-                SiaUtils.getCertificateFile(siaPath, service),
-                clientTruststoreFile);
+             SiaUtils.getPrivateKeyFile(siaPath, service),
+             SiaUtils.getCertificateFile(siaPath, service),
+             clientTruststoreFile,
+             publicCerts);
     }
 
-    public SiaIdentityProvider(AthenzIdentity service,
-                               Path privateKeyFile,
-                               Path certificateFile,
-                               Path clientTruststoreFile) {
+    SiaIdentityProvider(AthenzIdentity service,
+                        Path privateKeyFile,
+                        Path certificateFile,
+                        Path clientTruststoreFile,
+                        TrustStorePublicCerts publicCerts) {
         this.service = service;
         this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile, certificateFile);
         this.sslContext = createIdentitySslContext(keyManager, clientTruststoreFile);
+        this.sslContextWithPublicCerts = switch (publicCerts) {
+            case INCLUDED -> Optional.of(sslContext);
+            case EXCLUDED -> Optional.of(createIdentitySslContextWithDefaultTrustStore(keyManager));
+            case UNKNOWN -> Optional.empty();
+        };
         this.certificateFile = certificateFile;
         this.privateKeyFile = privateKeyFile;
     }
@@ -66,6 +83,11 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         return sslContext;
     }
 
+    @Override
+    public SSLContext getIdentitySslContextForPublicPeer() {
+        return sslContextWithPublicCerts.orElseThrow(UnsupportedOperationException::new);
+    }
+
     @Override public X509CertificateWithKey getIdentityCertificateWithKey() { return keyManager.getCurrentCertificateWithKey(); }
     @Override public Path certificatePath() { return certificateFile; }
     @Override public Path privateKeyPath() { return privateKeyFile; }
@@ -73,6 +95,12 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile) {
         return new SslContextBuilder()
                 .withTrustStore(trustStoreFile)
+                .withKeyManager(keyManager)
+                .build();
+    }
+
+    private static SSLContext createIdentitySslContextWithDefaultTrustStore(AutoReloadingX509KeyManager keyManager) {
+        return new SslContextBuilder()
                 .withKeyManager(keyManager)
                 .build();
     }

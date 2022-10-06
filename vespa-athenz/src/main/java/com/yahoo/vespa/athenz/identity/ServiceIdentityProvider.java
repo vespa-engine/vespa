@@ -22,9 +22,16 @@ public interface ServiceIdentityProvider {
     AthenzIdentity identity();
 
     /**
-     * @return {@link SSLContext} that is automatically updated.
+     * @return {@link SSLContext} that is automatically updated.  The trust store is guaranteed to include
+     * the Athenz CA cert that signed this identity.
      */
     SSLContext getIdentitySslContext();
+
+    /**
+     * @return {@link SSLContext} that is automatically updated.  The trust store is guaranteed to include
+     * publicly issued CA certificates, e.g. DigiCert, and may not include the CA cert used to sign this identity.
+     */
+    default SSLContext getIdentitySslContextForPublicPeer() { throw new UnsupportedOperationException("Not yet implemented"); }
 
     /**
      * @return Current certificate and private key. Unlike {@link #getIdentitySslContext()} underlying credentials are not automatically updated.

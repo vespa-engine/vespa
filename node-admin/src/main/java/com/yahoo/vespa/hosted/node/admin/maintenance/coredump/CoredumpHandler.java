@@ -63,7 +63,7 @@ public class CoredumpHandler {
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath path on host where processed core dumps are stored
      */
-    public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
+    public CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                            String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics) {
         this(coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
                 metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
