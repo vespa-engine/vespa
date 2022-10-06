@@ -32,7 +32,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 BuildRequires: epel-release
 %endif
 %if 0%{?el8}
@@ -78,7 +78,7 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %if 0%{?centos}
 # Current cmake on CentOS 8 is broken and manually requires libarchive install
 BuildRequires: libarchive
@@ -231,7 +231,7 @@ Requires: unzip
 Requires: zlib
 Requires: zstd
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %if 0%{?_centos_stream}
 %define _vespa_llvm_version 14
 %else
@@ -312,7 +312,7 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libraries
 
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 Requires: epel-release
 %endif
 Requires: xxhash-libs >= 0.8.0
@@ -353,7 +353,7 @@ Requires: vespa-openssl >= 1.1.1o-1
 Requires: openssl-libs
 %endif
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %if 0%{?_centos_stream}
 Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
 %else
