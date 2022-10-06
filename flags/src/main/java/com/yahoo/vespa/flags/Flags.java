@@ -284,14 +284,6 @@ public class Flags {
                 "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
-            "merge-throttling-policy", "STATIC",
-            List.of("vekterli"), "2022-01-25", "2022-12-01",
-            "Sets the policy used for merge throttling on the content nodes. " +
-            "Valid values: STATIC, DYNAMIC",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR = defineDoubleFlag(
             "persistence-throttling-ws-decrement-factor", 1.2,
             List.of("vekterli"), "2022-01-27", "2022-12-01",

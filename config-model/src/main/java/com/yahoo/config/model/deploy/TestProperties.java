@@ -67,7 +67,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxUnCommittedMemory = 123456;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
-    private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
     private int persistenceThrottlingWindowSize = -1;
@@ -127,7 +126,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-    @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
     @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
@@ -324,11 +322,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxCompactBuffers(int maxCompactBuffers) {
         this.maxCompactBuffers = maxCompactBuffers;
-        return this;
-    }
-
-    public TestProperties setMergeThrottlingPolicy(String policy) {
-        this.mergeThrottlingPolicy = policy;
         return this;
     }
 
