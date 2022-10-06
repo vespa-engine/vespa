@@ -51,6 +51,24 @@ public class SpoolerTest {
         assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
     }
 
+    @Test
+    public void failingToTransportIsRetried() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+        Spooler spooler = new Spooler(spoolDir);
+        FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
+
+        assertTrue(sendEntry(logger, "Yo entry"));
+        logger.manualRun(); // Success for first message
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+
+        assertTrue(sendEntry(logger, "Yo entry 2"));
+        logger.manualRun(); // Failure for second message, so still just 1 file in successes path
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+
+        logger.manualRun(); // Success when retrying second message, so 2 files in successes path
+        assertEquals(2, spooler.listFilesInPath(spooler.successesPath()).size());
+    }
+
     private boolean sendEntry(Logger logger, String x) {
         return logger.newEntry()
                      .blob(x.getBytes())
@@ -106,6 +124,37 @@ public class SpoolerTest {
 
         int entriesSent() {
             return entriesSent.size();
+        }
+
+    }
+
+    private static class FailingToTransportSecondEntryLogger extends AbstractSpoolingLogger {
+
+        private int transportCount = 0;
+
+        public FailingToTransportSecondEntryLogger(Spooler spooler) {
+            super(spooler);
+        }
+
+        @Override
+        public boolean send(LoggerEntry entry) {
+            spooler.write(entry);
+            return true;
+        }
+
+        @Override
+        boolean transport(LoggerEntry entry) {
+            transportCount++;
+            return transportCount != 2;
+        }
+
+        @Override
+        public void run() {
+            // do nothing
+        }
+
+        public void manualRun() {
+            super.run();
         }
 
     }
