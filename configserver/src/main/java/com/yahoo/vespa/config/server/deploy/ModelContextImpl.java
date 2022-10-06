@@ -194,11 +194,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final double persistenceThrottlingWsDecrementFactor;
-        private final double persistenceThrottlingWsBackoff;
-        private final int persistenceThrottlingWindowSize;
-        private final double persistenceThrottlingWsResizeRate;
-        private final boolean persistenceThrottlingOfMergeFeedOps;
         private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
         private final Architecture adminClusterArchitecture;
@@ -244,11 +239,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
-            this.persistenceThrottlingWsBackoff = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
-            this.persistenceThrottlingWindowSize = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WINDOW_SIZE);
-            this.persistenceThrottlingWsResizeRate = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_RESIZE_RATE);
-            this.persistenceThrottlingOfMergeFeedOps = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS);
             this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
@@ -297,11 +287,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
-        @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
-        @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
-        @Override public double persistenceThrottlingWsResizeRate() { return persistenceThrottlingWsResizeRate; }
-        @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }

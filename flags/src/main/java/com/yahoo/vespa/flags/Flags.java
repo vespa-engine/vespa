@@ -276,54 +276,11 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-
     public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
                 "max-compact-buffers", 1,
                 List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2023-01-01",
                 "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
                 "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR = defineDoubleFlag(
-            "persistence-throttling-ws-decrement-factor", 1.2,
-            List.of("vekterli"), "2022-01-27", "2022-12-01",
-            "Sets the dynamic throttle policy window size decrement factor for persistence " +
-            "async throttling. Only applies if DYNAMIC policy is used.",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_BACKOFF = defineDoubleFlag(
-            "persistence-throttling-ws-backoff", 0.95,
-            List.of("vekterli"), "2022-01-27", "2022-12-01",
-            "Sets the dynamic throttle policy window size backoff for persistence " +
-            "async throttling. Only applies if DYNAMIC policy is used. Valid range [0, 1]",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundIntFlag PERSISTENCE_THROTTLING_WINDOW_SIZE = defineIntFlag(
-            "persistence-throttling-window-size", -1,
-            List.of("vekterli"), "2022-02-23", "2022-11-01",
-            "If greater than zero, sets both min and max window size to the given number, effectively " +
-            "turning dynamic throttling into a static throttling policy. " +
-            "Only applies if DYNAMIC policy is used.",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_RESIZE_RATE = defineDoubleFlag(
-            "persistence-throttling-ws-resize-rate", 3.0,
-            List.of("vekterli"), "2022-02-23", "2022-11-01",
-            "Sets the dynamic throttle policy resize rate. Only applies if DYNAMIC policy is used.",
-            "Takes effect on redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS = defineFeatureFlag(
-            "persistence-throttling-of-merge-feed-ops", true,
-            List.of("vekterli"), "2022-02-24", "2022-11-01",
-            "If true, each put/remove contained within a merge is individually throttled as if it " +
-            "were a put/remove from a client. If false, merges are throttled at a persistence thread " +
-            "level, i.e. per ApplyBucketDiff message, regardless of how many document operations " +
-            "are contained within. Only applies if DYNAMIC policy is used.",
-            "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
