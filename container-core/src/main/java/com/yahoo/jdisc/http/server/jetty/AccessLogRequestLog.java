@@ -76,7 +76,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             addNonNullValue(builder, request.getProtocol(), RequestLogEntry.Builder::httpVersion);
             addNonNullValue(builder, request.getScheme(), RequestLogEntry.Builder::scheme);
             addNonNullValue(builder, request.getHeader("User-Agent"), RequestLogEntry.Builder::userAgent);
-            addNonNullValue(builder, request.getHeader("Host"), RequestLogEntry.Builder::hostString);
+            addNonNullValue(builder, request.getServerName(), RequestLogEntry.Builder::hostString);
             addNonNullValue(builder, request.getHeader("Referer"), RequestLogEntry.Builder::referer);
             addNonNullValue(builder, request.getQueryString(), RequestLogEntry.Builder::rawQuery);
 
