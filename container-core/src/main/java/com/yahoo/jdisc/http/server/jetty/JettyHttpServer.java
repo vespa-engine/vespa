@@ -14,6 +14,7 @@ import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -138,51 +139,43 @@ public class JettyHttpServer extends AbstractServerProvider {
     private HandlerCollection getHandlerCollection(ServerConfig serverConfig,
                                                    List<JDiscServerConnector> connectors,
                                                    ServletHolder jdiscServlet) {
-        HandlerCollection connectorSpecificHandlers = new HandlerCollection();
-        for (JDiscServerConnector connector : connectors) {
-            ServletContextHandler servletContextHandler = createServletContextHandler(connector);
-            servletContextHandler.addServlet(jdiscServlet, "/*");
+        ServletContextHandler servletContextHandler = createServletContextHandler();
+        servletContextHandler.addServlet(jdiscServlet, "/*");
 
-            List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
-            var secureRedirectHandler = new SecuredRedirectHandler(connectorConfigs);
-            secureRedirectHandler.setHandler(servletContextHandler);
+        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
+        var secureRedirectHandler = new SecuredRedirectHandler(connectorConfigs);
+        secureRedirectHandler.setHandler(servletContextHandler);
 
-            var proxyHandler = new HealthCheckProxyHandler(connectors);
-            proxyHandler.setHandler(secureRedirectHandler);
+        var proxyHandler = new HealthCheckProxyHandler(connectors);
+        proxyHandler.setHandler(secureRedirectHandler);
 
-            var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
-            authEnforcer.setHandler(proxyHandler);
+        var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
+        authEnforcer.setHandler(proxyHandler);
 
-            GzipHandler gzipHandler = newGzipHandler(serverConfig);
-            gzipHandler.setHandler(authEnforcer);
+        GzipHandler gzipHandler = newGzipHandler(serverConfig);
+        gzipHandler.setHandler(authEnforcer);
 
-            HttpResponseStatisticsCollector statisticsCollector =
-                    new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
-                                                        serverConfig.metric().searchHandlerPaths());
-            statisticsCollector.setHandler(gzipHandler);
-            for (String agent : serverConfig.metric().ignoredUserAgents()) {
-                statisticsCollector.ignoreUserAgent(agent);
-            }
-            StatisticsHandler statisticsHandler = newStatisticsHandler();
-            statisticsHandler.setHandler(statisticsCollector);
-
-            connectorSpecificHandlers.addHandler(statisticsHandler);
+        HttpResponseStatisticsCollector statisticsCollector =
+                new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
+                                                    serverConfig.metric().searchHandlerPaths());
+        statisticsCollector.setHandler(gzipHandler);
+        for (String agent : serverConfig.metric().ignoredUserAgents()) {
+            statisticsCollector.ignoreUserAgent(agent);
         }
 
-        return connectorSpecificHandlers;
+        StatisticsHandler statisticsHandler = newStatisticsHandler();
+        statisticsHandler.setHandler(statisticsCollector);
+
+        HandlerCollection handlerCollection = new HandlerCollection();
+        handlerCollection.setHandlers(new Handler[] { statisticsHandler });
+        return handlerCollection;
     }
 
-    private ServletContextHandler createServletContextHandler(JDiscServerConnector connector) {
-        var ctx = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
-        ctx.setContextPath("/");
-        ctx.setDisplayName(getDisplayName(listenedPorts));
-        List<String> allowedServerNames = connector.connectorConfig().serverName().allowed();
-        if (allowedServerNames.isEmpty()) {
-            ctx.setVirtualHosts(new String[]{"@%s".formatted(connector.getName())});
-        } else {
-            ctx.setVirtualHosts(allowedServerNames.toArray(new String[0]));
-        }
-        return ctx;
+    private ServletContextHandler createServletContextHandler() {
+        ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
+        servletContextHandler.setContextPath("/");
+        servletContextHandler.setDisplayName(getDisplayName(listenedPorts));
+        return servletContextHandler;
     }
 
     private static String getDisplayName(List<Integer> ports) {
