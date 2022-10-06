@@ -56,9 +56,6 @@ BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
-%if 0%{?oraclelinux}
-BuildRequires: python39-devel
-%endif
 %endif
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
