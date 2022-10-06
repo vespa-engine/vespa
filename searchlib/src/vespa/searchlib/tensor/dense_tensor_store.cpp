@@ -135,9 +135,9 @@ DenseTensorStore::move(EntryRef ref)
 vespalib::MemoryUsage
 DenseTensorStore::update_stat(const CompactionStrategy& compaction_strategy)
 {
-    auto array_store_memory_usage = _store.getMemoryUsage();
-    _compaction_spec = CompactionSpec(compaction_strategy.should_compact_memory(array_store_memory_usage), false);
-    return array_store_memory_usage;
+    auto memory_usage = _store.getMemoryUsage();
+    _compaction_spec = CompactionSpec(compaction_strategy.should_compact_memory(memory_usage), false);
+    return memory_usage;
 }
 
 std::unique_ptr<ICompactionContext>
