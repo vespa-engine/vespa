@@ -120,7 +120,7 @@ struct TestBase : public ::testing::Test {
     void compactWorst() {
         CompactionSpec compaction_spec(true, true);
         // Use a compaction strategy that will compact all active buffers
-        CompactionStrategy compaction_strategy(0.0, 0.0, EntryRefType::numBuffers(), 1.0);
+        auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
         auto remapper = store.compact_worst(compaction_spec, compaction_strategy);
         std::vector<AtomicEntryRef> refs;
         for (const auto &elem : refStore) {

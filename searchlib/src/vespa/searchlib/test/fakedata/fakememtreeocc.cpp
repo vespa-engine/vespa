@@ -12,12 +12,14 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fakememtreeocc");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
+using vespalib::datastore::CompactionStrategy;
 
 namespace search::fakedata {
 
@@ -280,7 +282,9 @@ FakeMemTreeOccMgr::compactTrees()
 {
     // compact full trees by calling incremental compaction methods in a loop
 
-    std::vector<uint32_t> toHold = _allocator.startCompact();
+    // Use a compaction strategy that will compact all active buffers
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
+    auto compacting_buffers = _allocator.start_compact_worst(compaction_strategy);
     for (uint32_t wordIdx = 0; wordIdx < _postingIdxs.size(); ++wordIdx) {
         PostingIdx &pidx(*_postingIdxs[wordIdx].get());
         Tree &tree = pidx._tree;
@@ -291,7 +295,7 @@ FakeMemTreeOccMgr::compactTrees()
             itr.moveNextLeafNode();
         }
     }
-    _allocator.finishCompact(toHold);
+    compacting_buffers->finish();
     sync();
 }
 

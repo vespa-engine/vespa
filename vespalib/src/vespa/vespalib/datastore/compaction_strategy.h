@@ -74,6 +74,7 @@ public:
     bool should_compact_memory(const MemoryUsage& memory_usage) const;
     bool should_compact_address_space(const AddressSpace& address_space) const;
     CompactionSpec should_compact(const MemoryUsage& memory_usage, const AddressSpace& address_space) const;
+    static CompactionStrategy make_compact_all_active_buffers_strategy();
 };
 
 std::ostream& operator<<(std::ostream& os, const CompactionStrategy& compaction_strategy);

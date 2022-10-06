@@ -200,8 +200,6 @@ protected:
 
     virtual void clearElemHoldList() = 0;
 
-    template <typename BufferStateActiveFilter>
-    uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc);
     void markCompacting(uint32_t bufferId);
 public:
     uint32_t addType(BufferTypeBase *typeHandler);
@@ -364,8 +362,6 @@ public:
         return _buffers[bufferId].getTypeId();
     }
 
-    std::vector<uint32_t> startCompact(uint32_t typeId);
-
     void finishCompact(const std::vector<uint32_t> &toHold);
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
 
@@ -378,7 +374,6 @@ public:
         return self._genHolder;
     }
 
-    uint32_t startCompactWorstBuffer(uint32_t typeId);
     std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
     void inc_compaction_count() const { ++_compaction_count; }

@@ -55,20 +55,6 @@ BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
     _store.dropBuffers(); // Drop buffers before type handlers are dropped
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-std::vector<uint32_t>
-BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-startCompact()
-{
-    std::vector<uint32_t> iToHold = _store.startCompact(NODETYPE_INTERNAL);
-    std::vector<uint32_t> lToHold = _store.startCompact(NODETYPE_LEAF);
-    std::vector<uint32_t> ret = iToHold;
-    ret.insert(ret.end(), lToHold.begin(), lToHold.end());
-    return ret;
-}
-
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 std::unique_ptr<vespalib::datastore::CompactingBuffers>
@@ -76,15 +62,6 @@ BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 start_compact_worst(const CompactionStrategy &compaction_strategy)
 {
     return _store.start_compact_worst_buffers(datastore::CompactionSpec(true, false), compaction_strategy);
-}
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-void
-BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-finishCompact(const std::vector<uint32_t> &toHold)
-{
-    _store.finishCompact(toHold);
 }
 
 }

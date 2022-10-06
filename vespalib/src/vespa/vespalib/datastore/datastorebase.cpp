@@ -427,26 +427,6 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     enableFreeList(bufferId);
 }
 
-std::vector<uint32_t>
-DataStoreBase::startCompact(uint32_t typeId)
-{
-    std::vector<uint32_t> toHold;
-
-    for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
-        BufferState &state = getBufferState(bufferId);
-        if (state.isActive() &&
-            state.getTypeId() == typeId &&
-            !state.getCompacting()) {
-            state.setCompacting();
-            toHold.push_back(bufferId);
-            disableFreeList(bufferId);
-        }
-    }
-    switch_primary_buffer(typeId, 0u);
-    inc_compaction_count();
-    return toHold;
-}
-
 void
 DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 {
@@ -476,43 +456,6 @@ DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
     if (!_initializing) {
         _genHolder.hold(std::move(hold));
     }
-}
-
-uint32_t
-DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
-{
-    uint32_t buffer_id = get_primary_buffer_id(typeId);
-    const BufferTypeBase *typeHandler = _typeHandlers[typeId];
-    assert(typeHandler->get_active_buffers_count() >= 1u);
-    if (typeHandler->get_active_buffers_count() == 1u) {
-        // Single active buffer for type, no need for scan
-        markCompacting(buffer_id);
-        return buffer_id;
-    }
-    // Multiple active buffers for type, must perform full scan
-    return startCompactWorstBuffer(buffer_id,
-                                   [=](const BufferState &state) { return state.isActive(typeId); });
-}
-
-template <typename BufferStateActiveFilter>
-uint32_t
-DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc)
-{
-    uint32_t worstBufferId = initWorstBufferId;
-    size_t worstDeadElems = 0;
-    for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
-        const auto &state = getBufferState(bufferId);
-        if (filterFunc(state)) {
-            assert(!state.getCompacting());
-            size_t deadElems = state.getDeadElems() - state.getTypeHandler()->getReservedElements(bufferId);
-            if (deadElems > worstDeadElems) {
-                worstBufferId = bufferId;
-                worstDeadElems = deadElems;
-            }
-        }
-    }
-    markCompacting(worstBufferId);
-    return worstBufferId;
 }
 
 void
