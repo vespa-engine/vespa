@@ -327,21 +327,6 @@ public class StorageClusterTest {
     }
 
     @Test
-    void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
-        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()
-                .setPersistenceThrottlingWsDecrementFactor(1.5)
-                .setPersistenceThrottlingWsBackoff(0.8)
-                .setPersistenceThrottlingWindowSize(42)
-                .setPersistenceThrottlingWsResizeRate(2.5)));
-        assertEquals(1.5, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
-        assertEquals(0.8, config.async_operation_throttler().window_size_backoff(), 0.0001);
-        // If window size is set, min and max are locked to the same value
-        assertEquals(42, config.async_operation_throttler().min_window_size());
-        assertEquals(42, config.async_operation_throttler().max_window_size());
-        assertEquals(2.5, config.async_operation_throttler().resize_rate(), 0.0001);
-    }
-
-    @Test
     void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(cluster("bees", "")).getConfig(builder);

@@ -67,10 +67,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxUnCommittedMemory = 123456;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
-    private double persistenceThrottlingWsDecrementFactor = 1.2;
-    private double persistenceThrottlingWsBackoff = 0.95;
-    private int persistenceThrottlingWindowSize = -1;
-    private double persistenceThrottlingWsResizeRate = 3.0;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private boolean loadCodeAsHugePages = false;
@@ -125,10 +121,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-    @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
-    @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
-    @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
-    @Override public double persistenceThrottlingWsResizeRate() { return persistenceThrottlingWsResizeRate; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
@@ -320,26 +312,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxCompactBuffers(int maxCompactBuffers) {
         this.maxCompactBuffers = maxCompactBuffers;
-        return this;
-    }
-
-    public TestProperties setPersistenceThrottlingWsDecrementFactor(double factor) {
-        this.persistenceThrottlingWsDecrementFactor = factor;
-        return this;
-    }
-
-    public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
-        this.persistenceThrottlingWsBackoff = backoff;
-        return this;
-    }
-
-    public TestProperties setPersistenceThrottlingWindowSize(int windowSize) {
-        this.persistenceThrottlingWindowSize = windowSize;
-        return this;
-    }
-
-    public TestProperties setPersistenceThrottlingWsResizeRate(double resizeRate) {
-        this.persistenceThrottlingWsResizeRate = resizeRate;
         return this;
     }
 
