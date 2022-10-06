@@ -27,12 +27,8 @@ public class SpoolerTest {
         Spooler spooler = new Spooler(spoolDir);
 
         TestLogger logger = new TestLogger(spooler);
-        assertTrue(logger.newEntry()
-                         .blob("Yo entry".getBytes())
-                         .send());
-        assertTrue(logger.newEntry()
-                         .blob("Yo entry 2".getBytes())
-                         .send());
+        assertTrue(sendEntry(logger, "Yo entry"));
+        assertTrue(sendEntry(logger, "Yo entry 2"));
 
         Path readyPath = spooler.readyPath();
         Path readyFile1 = readyPath.resolve("1");
@@ -41,9 +37,8 @@ public class SpoolerTest {
         waitUntilFileExists(readyFile2);
 
         // Check content after being moved to ready path
-        String content = Files.readString(readyFile1);
-        assertTrue(content.contains(Base64.getEncoder().encodeToString("Yo entry".getBytes())));
-        assertTrue(Files.readString(readyFile2).contains(Base64.getEncoder().encodeToString("Yo entry 2".getBytes())));
+        assertContent(readyFile1, "Yo entry");
+        assertContent(readyFile2, "Yo entry 2");
 
         // Process files (read, transport files)
         logger.manualRun();
@@ -54,6 +49,12 @@ public class SpoolerTest {
         assertEquals(0, spooler.listFilesInPath(readyPath).size());
         assertEquals(2, spooler.listFilesInPath(spooler.successesPath()).size());
         assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
+    }
+
+    private boolean sendEntry(Logger logger, String x) {
+        return logger.newEntry()
+                     .blob(x.getBytes())
+                     .send();
     }
 
     private void waitUntilFileExists(Path path) {
@@ -69,6 +70,10 @@ public class SpoolerTest {
         assertTrue(path.toFile().exists());
     }
 
+    private void assertContent(Path file, String expectedContent) throws IOException {
+        String content = Files.readString(file);
+        assertTrue(content.contains(Base64.getEncoder().encodeToString(expectedContent.getBytes())));
+    }
 
     private static class TestLogger extends AbstractSpoolingLogger {
 
@@ -79,9 +84,9 @@ public class SpoolerTest {
         }
 
         @Override
-        void transport(LoggerEntry entry) {
-            System.out.println("Called transport()");
+        boolean transport(LoggerEntry entry) {
             entriesSent.add(entry);
+            return true;
         }
 
         @Override
@@ -91,7 +96,8 @@ public class SpoolerTest {
 
         @Override
         public boolean send(LoggerEntry entry) {
-            return spooler.write(entry);
+            spooler.write(entry);
+            return true;
         }
 
         public void manualRun() {

@@ -35,9 +35,7 @@ abstract class AbstractSpoolingLogger extends AbstractThreadedLogger implements 
 
     public void run() {
         try {
-            var entries = spooler.processFiles();
-            log.log(Level.INFO, "Entries: " + entries.size());
-            entries.forEach(this::transport);
+            spooler.processFiles(this::transport);
         } catch (IOException e) {
             e.printStackTrace();
         }
