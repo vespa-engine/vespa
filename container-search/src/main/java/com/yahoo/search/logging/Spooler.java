@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -46,32 +47,27 @@ public class Spooler {
         createDirs(spoolPath);
     }
 
-    public boolean write(LoggerEntry entry) {
+    void write(LoggerEntry entry) {
         writeEntry(entry);
-
-        return true;
     }
 
-    public List<LoggerEntry> processFiles() throws IOException {
+    public void processFiles(Function<LoggerEntry, Boolean> transport) throws IOException {
         List<Path> files = listFilesInPath(readyPath);
-
         if (files.size() == 0) {
             log.log(Level.INFO, "No files in ready path " + readyPath.toFile().getAbsolutePath());
-            return List.of();
+            return;
         }
         log.log(Level.FINE, "Files in ready path: " + files.size());
 
         List<File> fileList = getFiles(files, 50); // TODO
         if ( ! fileList.isEmpty()) {
-            return processFiles(fileList);
+            processFiles(fileList, transport);
         }
 
-        return List.of();
     }
 
     List<Path> listFilesInPath(Path path) throws IOException {
         List<Path> files;
-        System.out.println("Path " + path + " exists: " + path.toFile().exists());
         try (Stream<Path> stream = Files.list(path)) {
             files = stream.toList();
             // TODO: Or check if stream is empty
@@ -81,18 +77,18 @@ public class Spooler {
         return files;
     }
 
-    public ArrayList<LoggerEntry> processFiles(List<File> files) throws IOException {
-        ArrayList<LoggerEntry> entries = new ArrayList<>();
+    public void processFiles(List<File> files, Function<LoggerEntry, Boolean> transport) throws IOException {
         for (File f : files) {
             log.log(Level.INFO, "Found file " + f);
             var content = Files.readAllBytes(f.toPath());
             var entry = LoggerEntry.fromJson(content);
-            Path file = f.toPath();
-            Path target = spoolPath.resolve(successesPath).resolve(f.toPath().relativize(file)).resolve(f.getName());
-            Files.move(file, target);
-            entries.add(entry);
+
+            if (transport.apply(entry)) {
+                Path file = f.toPath();
+                Path target = spoolPath.resolve(successesPath).resolve(f.toPath().relativize(file)).resolve(f.getName());
+                Files.move(file, target);
+            }
         }
-        return entries;
     }
 
     public Path processingPath() { return processingPath; }
@@ -159,7 +155,7 @@ public class Spooler {
         if (file.exists() && file.canRead() && file.canWrite()) {
             log.log(Level.INFO, "Directory " + path + " already exists");
         } else if (file.mkdirs()) {
-            log.log(Level.INFO, "Created " + path);
+            log.log(Level.FINE, "Created " + path);
         } else {
             log.log(Level.WARNING, "Could not create " + path + ", please check permissions");
         }

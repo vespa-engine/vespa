@@ -53,7 +53,7 @@ abstract class AbstractThreadedLogger implements Logger {
     /**
      * Actually transports the entry to it's destination
      */
-    abstract void transport(LoggerEntry entry);
+    abstract boolean transport(LoggerEntry entry);
 
 
     private static class WorkerThread extends Thread {

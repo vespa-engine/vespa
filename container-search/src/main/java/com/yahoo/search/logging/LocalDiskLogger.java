@@ -7,20 +7,22 @@ import java.io.IOException;
 
 public class LocalDiskLogger extends AbstractThreadedLogger {
 
-    private String logFilePath;
+    private final String logFilePath;
 
     public LocalDiskLogger(LocalDiskLoggerConfig config) {
         logFilePath = config.path();
     }
 
     @Override
-    void transport(LoggerEntry entry) {
+    boolean transport(LoggerEntry entry) {
         String json = entry.toJson();
         try (FileWriter fw = new FileWriter(logFilePath, true)) {
             fw.write(json);
             fw.write(System.getProperty("line.separator"));
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
