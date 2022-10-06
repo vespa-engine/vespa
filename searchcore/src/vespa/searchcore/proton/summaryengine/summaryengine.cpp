@@ -61,7 +61,6 @@ SummaryEngine::SummaryEngine(size_t numThreads, bool async)
     : _lock(),
       _async(async),
       _closed(false),
-      _forward_issues(true),
       _handlers(),
       _executor(numThreads, 128_Ki, CpuUsage::wrap(summary_engine_executor, CpuUsage::Category::READ)),
       _metrics(std::make_unique<DocsumMetrics>())
@@ -116,7 +115,7 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
     if (_async) {
         auto task = std::make_unique<DocsumTask>(*this, std::move(request), client);
         _executor.execute(std::move(task));
-        return DocsumReply::UP();
+        return {};
     }
     return getDocsums(request.release());
 }
@@ -151,13 +150,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         reply = std::make_unique<DocsumReply>();
     }
     reply->setRequest(std::move(req));
-    if (_forward_issues) {
-        reply->setIssues(std::move(my_issues));
-    } else {
-        my_issues->for_each_message([](const auto &msg){
-            LOG(warning, "unhandled issue: %s", msg.c_str());
-        });
-    }
+    reply->setIssues(std::move(my_issues));
     return reply;
 }
 
@@ -165,7 +158,7 @@ void
 SummaryEngine::updateDocsumMetrics(double latency_s, uint32_t numDocs)
 {
     std::lock_guard guard(_lock);
-    DocsumMetrics & m = static_cast<DocsumMetrics &>(*_metrics);
+    auto & m = static_cast<DocsumMetrics &>(*_metrics);
     m.count.inc();
     m.docs.inc(numDocs);
     m.latency.set(latency_s);

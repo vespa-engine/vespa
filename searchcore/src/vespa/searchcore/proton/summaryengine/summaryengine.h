@@ -28,13 +28,12 @@ private:
         metrics::DoubleAverageMetric latency;
 
         DocsumMetrics();
-        ~DocsumMetrics();
+        ~DocsumMetrics() override;
     };
 
     std::mutex                    _lock;
     bool                          _async;
     bool                          _closed;
-    std::atomic<bool>             _forward_issues;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;
     std::unique_ptr<metrics::MetricSet> _metrics;
@@ -52,7 +51,7 @@ public:
      * @param numThreads Number of threads allocated for handling summary requests.
      */
     SummaryEngine(size_t numThreads, bool async);
-    SummaryEngine(size_t numThreads)
+    explicit SummaryEngine(size_t numThreads)
         : SummaryEngine(numThreads, true)
     { }
 
@@ -60,7 +59,7 @@ public:
      * Frees any allocated resources. This will also stop all internal threads
      * and wait for them to finish. All pending docsum requests are deleted.
      */
-    ~SummaryEngine();
+    ~SummaryEngine() override;
 
     /**
      * Observe and reset internal executor stats
@@ -73,12 +72,6 @@ public:
      * Returns the underlying executor. Only used for state explorers.
      */
     const vespalib::ThreadExecutor& get_executor() const { return _executor; }
-
-    /**
-     * Starts the underlying threads. This will throw a vespalib::Exception if
-     * it failed to start for any reason.
-     */
-    void start();
 
     /**
      * Closes the request handler interface. This will prevent any more data
@@ -127,8 +120,6 @@ public:
     DocsumReply::UP getDocsums(DocsumRequest::UP req) override;
 
     metrics::MetricSet & getMetrics() { return *_metrics; }
-
-    void set_issue_forwarding(bool enable) { _forward_issues = enable; }
 };
 
 } // namespace proton

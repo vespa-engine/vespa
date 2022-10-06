@@ -21,7 +21,6 @@ private:
     const uint32_t                     _distributionKey;
     bool                               _async;
     bool                               _closed;
-    std::atomic<bool>                  _forward_issues;
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
     vespalib::SimpleThreadBundle::Pool _threadBundlePool;
@@ -29,11 +28,6 @@ private:
     std::atomic<bool>                  _nodeMaintenance;
 
 public:
-    /**
-     * Convenience typedefs.
-     */
-    typedef std::unique_ptr<MatchEngine> UP;
-    typedef std::shared_ptr<MatchEngine> SP;
     MatchEngine(const MatchEngine &) = delete;
     MatchEngine & operator = (const MatchEngine &) = delete;
 
@@ -146,8 +140,6 @@ public:
             search::engine::SearchClient &client) override;
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
-
-    void set_issue_forwarding(bool enable) { _forward_issues = enable; }
 };
 
 } // namespace proton

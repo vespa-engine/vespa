@@ -82,12 +82,9 @@ namespace {
 using search::fs4transport::FS4PersistentPacketStreamer;
 
 CompressionConfig::Type
-convert(InternalProtonType::Packetcompresstype type)
+convert(InternalProtonType::Packetcompresstype )
 {
-    switch (type) {
-      case InternalProtonType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
-      default: return CompressionConfig::LZ4;
-    }
+    return CompressionConfig::LZ4;
 }
 
 void
@@ -303,10 +300,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                  protonConfig.numthreadspersearch,
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
-    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _distributionKey = protonConfig.distributionkey;
     _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
-    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
@@ -390,8 +385,6 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     // Called by executor thread during reconfig.
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     setFS4Compression(protonConfig);
-    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
-    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,
