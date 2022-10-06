@@ -651,7 +651,7 @@ public class ProvisioningTest {
             tester.activate(application, state.allHosts);
             fail("Expected exception");
         }
-        catch (IllegalArgumentException e) {
+        catch (RuntimeException e) {
             assertTrue(e.getMessage().startsWith("Activation of " + application + " failed"));
         }
     }
