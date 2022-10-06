@@ -9,6 +9,7 @@ import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
@@ -81,9 +82,16 @@ public class ConnectorFactory {
 
     public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger,
                                            ConnectionMetricAggregator connectionMetricAggregator) {
-        return new JDiscServerConnector(
+        ServerConnector connector = new JDiscServerConnector(
                 connectorConfig, metric, server, connectionLogger, connectionMetricAggregator,
                 createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
+        connector.setPort(connectorConfig.listenPort());
+        connector.setName(connectorConfig.name());
+        connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
+        connector.setReuseAddress(connectorConfig.reuseAddress());
+        connector.setIdleTimeout(toMillis(connectorConfig.idleTimeout()));
+        connector.addBean(HttpCompliance.RFC7230);
+        return connector;
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {

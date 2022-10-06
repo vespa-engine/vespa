@@ -1236,13 +1236,9 @@
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder fallback(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName build()"
     ],
-    "fields": [
-      "public java.util.List allowed"
-    ]
+    "fields": []
   },
   "com.yahoo.jdisc.http.ConnectorConfig$ServerName": {
     "superClass": "com.yahoo.config.InnerNode",
@@ -1253,9 +1249,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder)",
-      "public java.lang.String fallback()",
-      "public java.util.List allowed()",
-      "public java.lang.String allowed(int)"
+      "public java.lang.String fallback()"
     ],
     "fields": []
   },
