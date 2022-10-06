@@ -15,6 +15,7 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/test/btree/btree_printer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rand48.h>
@@ -28,6 +29,7 @@
 LOG_SETUP("btreeaggregation_test");
 
 using vespalib::GenerationHandler;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace vespalib::btree {
@@ -877,15 +879,17 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
     }
     // compact full tree by calling incremental compaction methods in a loop
     {
+        // Use a compaction strategy that will compact all active buffers
+        auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
         MyTree::NodeAllocatorType &manager = tree.getAllocator();
-        std::vector<uint32_t> toHold = manager.startCompact();
+        auto compacting_buffers = manager.start_compact_worst(compaction_strategy);
         MyTree::Iterator itr = tree.begin();
         tree.setRoot(itr.moveFirstLeafNode(tree.getRoot()));
         while (itr.valid()) {
             // LOG(info, "Leaf moved to %d", UNWRAP(itr.getKey()));
             itr.moveNextLeafNode();
         }
-        manager.finishCompact(toHold);
+        compacting_buffers->finish();
         manager.freeze();
         manager.transferHoldLists(g.getCurrentGeneration());
         g.incGeneration();

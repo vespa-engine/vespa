@@ -160,11 +160,7 @@ public:
         _store.freeElem(ref, 1);
     }
 
-    std::vector<uint32_t> startCompact();
-
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);
-
-    void finishCompact(const std::vector<uint32_t> &toHold);
 
     void transferHoldLists(generation_t generation) {
         _store.transferHoldLists(generation);

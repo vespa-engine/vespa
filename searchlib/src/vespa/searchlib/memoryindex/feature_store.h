@@ -208,8 +208,7 @@ public:
     void trimHoldLists(generation_t usedGen) { _store.trimHoldLists(usedGen); }
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void clearHoldLists() { _store.clearHoldLists();}
-    std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
-    void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     vespalib::datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
 };

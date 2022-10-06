@@ -862,15 +862,17 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
     }
     // compact full tree by calling incremental compaction methods in a loop
     {
+        // Use a compaction strategy that will compact all active buffers
+        auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
         MyTree::NodeAllocatorType &manager = tree.getAllocator();
-        std::vector<uint32_t> toHold = manager.startCompact();
+        auto compacting_buffers = manager.start_compact_worst(compaction_strategy);
         MyTree::Iterator itr = tree.begin();
         tree.setRoot(itr.moveFirstLeafNode(tree.getRoot()));
         while (itr.valid()) {
             // LOG(info, "Leaf moved to %d", UNWRAP(itr.getKey()));
             itr.moveNextLeafNode();
         }
-        manager.finishCompact(toHold);
+        compacting_buffers->finish();
         manager.freeze();
         manager.transferHoldLists(g.getCurrentGeneration());
         g.incGeneration();

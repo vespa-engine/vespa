@@ -103,9 +103,7 @@ template <bool interleaved_features>
 void
 FieldIndex<interleaved_features>::compactFeatures()
 {
-    std::vector<uint32_t> toHold;
-
-    toHold = _featureStore.startCompact();
+    auto compacting_buffers = _featureStore.start_compact();
     auto itr = _dict.begin();
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
@@ -143,7 +141,7 @@ FieldIndex<interleaved_features>::compactFeatures()
         }
     }
     using generation_t = GenerationHandler::generation_t;
-    _featureStore.finishCompact(toHold);
+    compacting_buffers->finish();
     generation_t generation = _generationHandler.getCurrentGeneration();
     _featureStore.transferHoldLists(generation);
 }

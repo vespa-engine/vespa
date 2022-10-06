@@ -66,8 +66,6 @@ public:
     uint32_t get_relaxed(const AtomicEntryRef& ref) const { return get(ref.load_relaxed()); }
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     static constexpr bool is_indirect = true;
-    static uint32_t get_offset_bits() { return StoreRefType::offset_bits; }
-    static uint32_t get_num_buffers() { return StoreRefType::numBuffers(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 };
 
@@ -82,7 +80,7 @@ std::unique_ptr<vespalib::datastore::CompactingBuffers>
 RealIntStore::start_compact()
 {
     // Use a compaction strategy that will compact all active buffers
-    CompactionStrategy compaction_strategy(0.0, 0.0, get_num_buffers(), 1.0);
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
     CompactionSpec compaction_spec(true, false);
     return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
 }
@@ -329,7 +327,7 @@ void
 Fixture<Params>::compact_tree()
 {
     // Use a compaction strategy that will compact all active buffers
-    CompactionStrategy compaction_strategy(0.0, 0.0, RefType::numBuffers(), 1.0);
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
     _tree.compact_worst(compaction_strategy);
     _writeItr = _tree.begin();
     _compact_tree.track_compacted();

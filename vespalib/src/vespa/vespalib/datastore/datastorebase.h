@@ -364,8 +364,6 @@ public:
         return _buffers[bufferId].getTypeId();
     }
 
-    std::vector<uint32_t> startCompact(uint32_t typeId);
-
     void finishCompact(const std::vector<uint32_t> &toHold);
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
 

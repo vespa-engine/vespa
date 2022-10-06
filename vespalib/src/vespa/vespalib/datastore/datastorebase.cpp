@@ -427,26 +427,6 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     enableFreeList(bufferId);
 }
 
-std::vector<uint32_t>
-DataStoreBase::startCompact(uint32_t typeId)
-{
-    std::vector<uint32_t> toHold;
-
-    for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
-        BufferState &state = getBufferState(bufferId);
-        if (state.isActive() &&
-            state.getTypeId() == typeId &&
-            !state.getCompacting()) {
-            state.setCompacting();
-            toHold.push_back(bufferId);
-            disableFreeList(bufferId);
-        }
-    }
-    switch_primary_buffer(typeId, 0u);
-    inc_compaction_count();
-    return toHold;
-}
-
 void
 DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 {

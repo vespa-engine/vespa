@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <iostream>
+#include <limits>
 
 namespace vespalib::datastore {
 
@@ -32,6 +33,12 @@ std::ostream& operator<<(std::ostream& os, const CompactionStrategy& compaction_
         ", maxDeadAddressSpaceRatio=" << compaction_strategy.getMaxDeadAddressSpaceRatio() <<
         "}";
     return os;
+}
+
+CompactionStrategy
+CompactionStrategy::make_compact_all_active_buffers_strategy()
+{
+    return CompactionStrategy(0.0, 0.0, std::numeric_limits<uint32_t>::max(), 1.0);
 }
 
 }
