@@ -55,7 +55,8 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
         }
         var instance = new LoadBalancerInstance(
-                DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value()),
+                Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
+                Optional.empty(),
                 Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),

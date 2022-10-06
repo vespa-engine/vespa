@@ -28,7 +28,8 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        return new LoadBalancerInstance(DomainName.of(vipHostname),
+        return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
+                                        Optional.empty(),
                                         Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),

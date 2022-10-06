@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import ai.vespa.http.DomainName;
+import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -12,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -60,12 +60,10 @@ public class MockTesterCloud implements TesterCloud {
 
     @Override
     public Optional<InetAddress> resolveHostName(DomainName hostname) {
-        try {
-            return Optional.of(InetAddress.getByAddress(new byte[]{ 1, 2, 3, 4 }));
-        }
-        catch (UnknownHostException e) {
-            throw new IllegalStateException("should not happen");
-        }
+        return nameService.findRecords(Record.Type.A, RecordName.from(hostname.value())).stream()
+                .findFirst()
+                .map(record -> InetAddresses.forString(record.data().asString()))
+                .or(() -> Optional.of(InetAddresses.forString("1.2.3.4")));
     }
 
     @Override

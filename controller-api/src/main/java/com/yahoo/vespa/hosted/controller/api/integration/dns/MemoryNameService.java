@@ -33,8 +33,8 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
-    public Record createCname(RecordName name, RecordData canonicalName) {
-        var record = new Record(Record.Type.CNAME, name, canonicalName);
+    public Record createRecord(Record.Type type, RecordName name, RecordData canonicalName) {
+        var record = new Record(type, name, canonicalName);
         add(record);
         return record;
     }

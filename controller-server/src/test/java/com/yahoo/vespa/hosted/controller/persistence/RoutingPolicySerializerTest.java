@@ -38,20 +38,29 @@ public class RoutingPolicySerializerTest {
                 ClusterSpec.Id.from("my-cluster2"),
                 ZoneId.from("prod", "us-north-2"));
         var policies = List.of(new RoutingPolicy(id1,
-                        HostName.of("long-and-ugly-name"),
+                        Optional.of(HostName.of("long-and-ugly-name")),
+                        Optional.empty(),
                         Optional.of("zone1"),
                         instanceEndpoints,
                         applicationEndpoints,
                         new RoutingPolicy.Status(true, RoutingStatus.DEFAULT)),
                 new RoutingPolicy(id2,
-                        HostName.of("long-and-ugly-name-2"),
+                        Optional.of(HostName.of("long-and-ugly-name-2")),
+                        Optional.empty(),
                         Optional.empty(),
                         instanceEndpoints,
                         Set.of(),
                         new RoutingPolicy.Status(false,
                                 new RoutingStatus(RoutingStatus.Value.out,
                                         RoutingStatus.Agent.tenant,
-                                        Instant.ofEpochSecond(123)))));
+                                        Instant.ofEpochSecond(123)))),
+                new RoutingPolicy(id1,
+                        Optional.empty(),
+                        Optional.of("127.0.0.1"),
+                        Optional.of("zone2"),
+                        instanceEndpoints,
+                        applicationEndpoints,
+                        new RoutingPolicy.Status(true, RoutingStatus.DEFAULT)));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
         for (Iterator<RoutingPolicy> it1 = policies.iterator(), it2 = serialized.iterator(); it1.hasNext(); ) {
@@ -59,6 +68,7 @@ public class RoutingPolicySerializerTest {
             var actual = it2.next();
             assertEquals(expected.id(), actual.id());
             assertEquals(expected.canonicalName(), actual.canonicalName());
+            assertEquals(expected.ipAddress(), actual.ipAddress());
             assertEquals(expected.dnsZone(), actual.dnsZone());
             assertEquals(expected.instanceEndpoints(), actual.instanceEndpoints());
             assertEquals(expected.applicationEndpoints(), actual.applicationEndpoints());

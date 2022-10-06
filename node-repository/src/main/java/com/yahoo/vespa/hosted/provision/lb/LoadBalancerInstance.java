@@ -17,26 +17,37 @@ import java.util.Set;
  */
 public class LoadBalancerInstance {
 
-    private final DomainName hostname;
+    private final Optional<DomainName> hostname;
+    private final Optional<String> ipAddress;
     private final Optional<DnsZone> dnsZone;
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
     private final Optional<CloudAccount> cloudAccount;
 
-    public LoadBalancerInstance(DomainName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks,
-                                Set<Real> reals, Optional<CloudAccount> cloudAccount) {
+    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone, Set<Integer> ports,
+                                Set<String> networks, Set<Real> reals, Optional<CloudAccount> cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
+        this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
+
+        if (hostname.isEmpty() == ipAddress.isEmpty())
+            throw new IllegalArgumentException("Exactly 1 of hostname=%s and ipAddress=%s must be set".formatted(
+                    hostname.map(DomainName::value).orElse("<empty>"), ipAddress.orElse("<empty>")));
     }
 
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
-    public DomainName hostname() {
+    public Optional<DomainName> hostname() {
         return hostname;
+    }
+
+    /** IP address of this load balancer */
+    public Optional<String> ipAddress() {
+        return ipAddress;
     }
 
     /** ID of the DNS zone associated with this */
@@ -66,7 +77,7 @@ public class LoadBalancerInstance {
 
     /** Returns a copy of this with reals set to given reals */
     public LoadBalancerInstance withReals(Set<Real> reals) {
-        return new LoadBalancerInstance(hostname, dnsZone, ports, networks, reals, cloudAccount);
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, cloudAccount);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

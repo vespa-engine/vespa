@@ -40,6 +40,7 @@ public class RoutingPolicySerializer {
     private static final String routingPoliciesField = "routingPolicies";
     private static final String clusterField = "cluster";
     private static final String canonicalNameField = "canonicalName";
+    private static final String ipAddressField = "ipAddress";
     private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
     private static final String instanceEndpointsField = "rotations";
@@ -58,7 +59,8 @@ public class RoutingPolicySerializer {
             var policyObject = policyArray.addObject();
             policyObject.setString(clusterField, policy.id().cluster().value());
             policyObject.setString(zoneField, policy.id().zone().value());
-            policyObject.setString(canonicalNameField, policy.canonicalName().value());
+            policy.canonicalName().map(DomainName::value).ifPresent(name -> policyObject.setString(canonicalNameField, name));
+            policy.ipAddress().ifPresent(ipAddress -> policyObject.setString(ipAddressField, ipAddress));
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
             var instanceEndpointsArray = policyObject.setArray(instanceEndpointsField);
             policy.instanceEndpoints().forEach(endpointId -> instanceEndpointsArray.addString(endpointId.id()));
@@ -83,7 +85,8 @@ public class RoutingPolicySerializer {
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
             policies.add(new RoutingPolicy(id,
-                                           DomainName.of(inspect.field(canonicalNameField).asString()),
+                                           SlimeUtils.optionalString(inspect.field(canonicalNameField)).map(DomainName::of),
+                                           SlimeUtils.optionalString(inspect.field(ipAddressField)),
                                            SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                            instanceEndpoints,
                                            applicationEndpoints,

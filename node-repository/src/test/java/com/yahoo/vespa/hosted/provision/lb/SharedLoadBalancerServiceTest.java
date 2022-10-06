@@ -28,7 +28,7 @@ public class SharedLoadBalancerServiceTest {
     public void test_create_lb() {
         var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals, Optional.empty()), false);
 
-        assertEquals(HostName.of("vip.example.com"), lb.hostname());
+        assertEquals(Optional.of(HostName.of("vip.example.com")), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
         assertEquals(Set.of(), lb.networks());
         assertEquals(Set.of(4443), lb.ports());

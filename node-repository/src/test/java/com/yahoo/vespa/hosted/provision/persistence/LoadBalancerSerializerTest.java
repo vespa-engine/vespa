@@ -24,15 +24,16 @@ import static org.junit.Assert.assertEquals;
  */
 public class LoadBalancerSerializerTest {
 
+    private static final LoadBalancerId loadBalancerId = new LoadBalancerId(
+            ApplicationId.from("tenant1", "application1", "default"), ClusterSpec.Id.from("qrs"));;
+
     @Test
     public void test_serialization() {
         var now = Instant.now();
-        var loadBalancer = new LoadBalancer(new LoadBalancerId(ApplicationId.from("tenant1",
-                                                                                  "application1",
-                                                                                  "default"),
-                                                               ClusterSpec.Id.from("qrs")),
+        var loadBalancer = new LoadBalancer(loadBalancerId,
                                             Optional.of(new LoadBalancerInstance(
-                                                    DomainName.of("lb-host"),
+                                                    Optional.of(DomainName.of("lb-host")),
+                                                    Optional.empty(),
                                                     Optional.of(new DnsZone("zone-id-1")),
                                                     ImmutableSet.of(4080, 4443),
                                                     ImmutableSet.of("10.2.3.4/24"),
@@ -56,6 +57,18 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
         assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
         assertEquals(loadBalancer.instance().get().cloudAccount(), serialized.instance().get().cloudAccount());
+    }
+
+    @Test
+    public void no_instance_serialization() {
+        var now = Instant.now();
+        var loadBalancer = new LoadBalancer(loadBalancerId, Optional.empty(), LoadBalancer.State.reserved, now);
+
+        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
+        assertEquals(loadBalancer.id(), serialized.id());
+        assertEquals(loadBalancer.instance(), serialized.instance());
+        assertEquals(loadBalancer.state(), serialized.state());
+        assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
     }
 
 }

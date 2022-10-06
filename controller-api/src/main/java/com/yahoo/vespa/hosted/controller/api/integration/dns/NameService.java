@@ -12,13 +12,14 @@ import java.util.Set;
 public interface NameService {
 
     /**
-     * Create a new CNAME record
+     * Create a new record
      *
-     * @param name          The alias to create (lhs of the record)
-     * @param canonicalName The canonical name which the alias should point to (rhs of the record). This must be a FQDN.
+     * @param type The DNS type of record to make, only a small set of types are supported, check with the implementation
+     * @param name Name of the record, e.g. a FQDN for records of type A
+     * @param data Data of the record, e.g. IP address for records of type A
      * @return The created record
      */
-    Record createCname(RecordName name, RecordData canonicalName);
+    Record createRecord(Record.Type type, RecordName name, RecordData data);
 
     /**
      * Create a non-standard ALIAS record pointing to given targets. Implementations of this are expected to be
