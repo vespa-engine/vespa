@@ -451,14 +451,13 @@ featureStoreRef(const FieldIndexCollection &fieldIndexes, uint32_t fieldId)
     return fieldIndexes.getFieldIndex(fieldId)->getFeatureStore();
 }
 
-DataStoreBase::MemStats
+MemoryStats
 getFeatureStoreMemStats(const FieldIndexCollection &fieldIndexes)
 {
-    DataStoreBase::MemStats res;
+    MemoryStats res;
     uint32_t numFields = fieldIndexes.getNumFields();
     for (uint32_t fieldId = 0; fieldId < numFields; ++fieldId) {
-        DataStoreBase::MemStats stats =
-            fieldIndexes.getFieldIndex(fieldId)->getFeatureStore().getMemStats();
+        auto stats = fieldIndexes.getFieldIndex(fieldId)->getFeatureStore().getMemStats();
         res += stats;
     }
     return res;
@@ -1029,7 +1028,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         myPushDocument(_inv);
     }
 
-    DataStoreBase::MemStats beforeStats = getFeatureStoreMemStats(_fic);
+    auto beforeStats = getFeatureStoreMemStats(_fic);
     LOG(info,
         "Before feature compaction: allocElems=%zu, usedElems=%zu"
         ", deadElems=%zu, holdElems=%zu"
@@ -1049,7 +1048,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
                          (fieldIndex->takeGenerationGuard()));
     }
     myCommit(_fic, *_pushThreads);
-    DataStoreBase::MemStats duringStats = getFeatureStoreMemStats(_fic);
+    auto duringStats = getFeatureStoreMemStats(_fic);
     LOG(info,
         "During feature compaction: allocElems=%zu, usedElems=%zu"
         ", deadElems=%zu, holdElems=%zu"
@@ -1064,7 +1063,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         duringStats._holdBuffers);
     guards.clear();
     myCommit(_fic, *_pushThreads);
-    DataStoreBase::MemStats afterStats = getFeatureStoreMemStats(_fic);
+    auto afterStats = getFeatureStoreMemStats(_fic);
     LOG(info,
         "After feature compaction: allocElems=%zu, usedElems=%zu"
         ", deadElems=%zu, holdElems=%zu"

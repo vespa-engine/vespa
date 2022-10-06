@@ -55,7 +55,7 @@ public:
 
 
 using GrowthStats = std::vector<int>;
-using BufferStats = std::vector<int>;
+using BufferIds = std::vector<int>;
 
 constexpr float ALLOC_GROW_FACTOR = 0.4;
 constexpr size_t HUGE_PAGE_ARRAY_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
@@ -124,8 +124,8 @@ public:
             ++i;
         }
     }
-    BufferStats getBuffers(size_t bufs) {
-        BufferStats buffers;
+    BufferIds getBuffers(size_t bufs) {
+        BufferIds buffers;
         while (buffers.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
@@ -143,8 +143,8 @@ public:
 using MyRef = MyStore::RefType;
 
 void
-assertMemStats(const DataStoreBase::MemStats &exp,
-               const DataStoreBase::MemStats &act)
+assertMemStats(const MemoryStats &exp,
+               const MemoryStats &act)
 {
     EXPECT_EQ(exp._allocElems, act._allocElems);
     EXPECT_EQ(exp._usedElems, act._usedElems);
@@ -414,7 +414,7 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
 TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 {
     MyStore s;
-    DataStoreBase::MemStats m;
+    MemoryStats m;
     m._allocElems = MyRef::offsetSize();
     m._usedElems = 1; // ref = 0 is reserved
     m._deadElems = 1; // ref = 0 is reserved
@@ -466,7 +466,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra used bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().incExtraUsedBytes(50);
+        s.get_active_buffer_state().stats().inc_extra_used_bytes(50);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._allocBytes + 50, curr_stats._allocBytes);
         EXPECT_EQ(prev_stats._usedBytes + 50, curr_stats._usedBytes);
@@ -474,7 +474,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra hold bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().incExtraHoldBytes(30);
+        s.get_active_buffer_state().stats().inc_extra_hold_bytes(30);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
     }
@@ -655,7 +655,7 @@ TEST(DataStoreTest, can_set_memory_allocator)
 namespace {
 
 void
-assertBuffers(BufferStats exp_buffers, size_t num_arrays_for_new_buffer)
+assertBuffers(BufferIds exp_buffers, size_t num_arrays_for_new_buffer)
 {
     EXPECT_EQ(exp_buffers, IntGrowStore(1, 1, 1024, num_arrays_for_new_buffer).getBuffers(exp_buffers.size()));
 }

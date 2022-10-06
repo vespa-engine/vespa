@@ -11,7 +11,7 @@
 using namespace vespalib::datastore;
 using vespalib::MemoryUsage;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using BufferStats = vespalib::datastore::test::BufferStats;
+using TestBufferStats = vespalib::datastore::test::BufferStats;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
@@ -60,12 +60,12 @@ struct TestBase : public ::testing::Test {
     const BufferState &buffer_state(EntryRef ref) const {
         return allocator.get_data_store().getBufferState(get_buffer_id(ref));
     }
-    void assert_buffer_state(EntryRef ref, const BufferStats expStats) const {
+    void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) const {
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
-        EXPECT_EQ(expStats._hold, buffer_state(ref).getHoldElems());
-        EXPECT_EQ(expStats._dead, buffer_state(ref).getDeadElems());
-        EXPECT_EQ(expStats._extra_used, buffer_state(ref).getExtraUsedBytes());
-        EXPECT_EQ(expStats._extra_hold, buffer_state(ref).getExtraHoldBytes());
+        EXPECT_EQ(expStats._hold, buffer_state(ref).stats().hold_elems());
+        EXPECT_EQ(expStats._dead, buffer_state(ref).stats().dead_elems());
+        EXPECT_EQ(expStats._extra_used, buffer_state(ref).stats().extra_used_bytes());
+        EXPECT_EQ(expStats._extra_hold, buffer_state(ref).stats().extra_hold_bytes());
     }
     void trim_hold_lists() {
         allocator.get_data_store().transferHoldLists(generation++);
@@ -86,32 +86,32 @@ TEST_F(StringTest, can_add_and_get_values)
 TEST_F(StringTest, elements_are_put_on_hold_when_value_is_removed)
 {
     EntryRef ref = add(small.c_str());
-    assert_buffer_state(ref, BufferStats().used(16).hold(0).dead(0));
+    assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(0));
     remove(ref);
-    assert_buffer_state(ref, BufferStats().used(16).hold(16).dead(0));
+    assert_buffer_state(ref, TestBufferStats().used(16).hold(16).dead(0));
     trim_hold_lists();
-    assert_buffer_state(ref, BufferStats().used(16).hold(0).dead(16));
+    assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(16));
 }
 
 TEST_F(StringTest, extra_bytes_used_is_tracked)
 {
     EntryRef ref = add(spaces1000.c_str());
     // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
-    assert_buffer_state(ref, BufferStats().used(2).hold(0).dead(1).extra_used(1001));
+    assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
     remove(ref);
-    assert_buffer_state(ref, BufferStats().used(2).hold(1).dead(1).extra_used(1001).extra_hold(1001));
+    assert_buffer_state(ref, TestBufferStats().used(2).hold(1).dead(1).extra_used(1001).extra_hold(1001));
     trim_hold_lists();
-    assert_buffer_state(ref, BufferStats().used(2).hold(0).dead(2));
+    assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(2));
     ref = add(spaces1000.c_str());
-    assert_buffer_state(ref, BufferStats().used(2).hold(0).dead(1).extra_used(1001));
+    assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
     EntryRef ref2 = move(ref);
     assert_get(ref2, spaces1000.c_str());
-    assert_buffer_state(ref, BufferStats().used(3).hold(0).dead(1).extra_used(2002));
+    assert_buffer_state(ref, TestBufferStats().used(3).hold(0).dead(1).extra_used(2002));
     remove(ref);
     remove(ref2);
-    assert_buffer_state(ref, BufferStats().used(3).hold(2).dead(1).extra_used(2002).extra_hold(2002));
+    assert_buffer_state(ref, TestBufferStats().used(3).hold(2).dead(1).extra_used(2002).extra_hold(2002));
     trim_hold_lists();
-    assert_buffer_state(ref, BufferStats().used(3).hold(0).dead(3));
+    assert_buffer_state(ref, TestBufferStats().used(3).hold(0).dead(3));
 }
 
 TEST_F(StringTest, string_length_determines_buffer)
@@ -139,8 +139,8 @@ TEST_F(StringTest, free_list_is_used_when_enabled)
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_EQ(ref1, ref3);
     EXPECT_EQ(ref2, ref4);
-    assert_buffer_state(ref1, BufferStats().used(16).hold(0).dead(0));
-    assert_buffer_state(ref2, BufferStats().used(2).hold(0).dead(1).extra_used(1001));
+    assert_buffer_state(ref1, TestBufferStats().used(16).hold(0).dead(0));
+    assert_buffer_state(ref2, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
 }
 
 TEST_F(StringTest, free_list_is_not_used_when_disabled)
@@ -155,8 +155,8 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_NE(ref1, ref3);
     EXPECT_NE(ref2, ref4);
-    assert_buffer_state(ref1, BufferStats().used(32).hold(0).dead(16));
-    assert_buffer_state(ref2, BufferStats().used(3).hold(0).dead(2).extra_used(1001));
+    assert_buffer_state(ref1, TestBufferStats().used(32).hold(0).dead(16));
+    assert_buffer_state(ref2, TestBufferStats().used(3).hold(0).dead(2).extra_used(1001));
 }
 
 TEST_F(StringTest, free_list_is_never_used_for_move)
@@ -173,8 +173,8 @@ TEST_F(StringTest, free_list_is_never_used_for_move)
     EntryRef ref6 = move(ref2);
     EXPECT_NE(ref5, ref3);
     EXPECT_NE(ref6, ref4);
-    assert_buffer_state(ref1, BufferStats().used(48).hold(0).dead(16));
-    assert_buffer_state(ref2, BufferStats().used(4).hold(0).dead(2).extra_used(2002));
+    assert_buffer_state(ref1, TestBufferStats().used(48).hold(0).dead(16));
+    assert_buffer_state(ref2, TestBufferStats().used(4).hold(0).dead(2).extra_used(2002));
 }
 
 TEST_F(StringTest, provided_memory_allocator_is_used)

@@ -114,7 +114,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
             .alloc(array.cbegin(), array.cend());
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
-    state.incExtraUsedBytes(sizeof(EntryT) * array.size());
+    state.stats().inc_extra_used_bytes(sizeof(EntryT) * array.size());
     return handle.ref;
 }
 
@@ -125,7 +125,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::allocate_large_array(size_t array_size)
     using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId).alloc(array_size);
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
-    state.incExtraUsedBytes(sizeof(EntryT) * array_size);
+    state.stats().inc_extra_used_bytes(sizeof(EntryT) * array_size);
     return handle.ref;
 }
 

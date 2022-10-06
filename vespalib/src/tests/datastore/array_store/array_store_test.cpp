@@ -20,7 +20,7 @@ using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 
 using AllocStats = MemoryAllocatorObserver::Stats;
-using BufferStats = vespalib::datastore::test::BufferStats;
+using TestBufferStats = vespalib::datastore::test::BufferStats;
 using MemStats = vespalib::datastore::test::MemStats;
 
 namespace {
@@ -98,16 +98,16 @@ struct ArrayStoreTest : public TestT
     }
     void assertBufferState(EntryRef ref, const MemStats& expStats) const {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
-        EXPECT_EQ(expStats._hold, store.bufferState(ref).getHoldElems());
-        EXPECT_EQ(expStats._dead, store.bufferState(ref).getDeadElems());
+        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
+        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
     }
-    void assert_buffer_stats(EntryRef ref, const BufferStats& exp_stats) const {
+    void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) const {
         auto& state = store.bufferState(ref);
         EXPECT_EQ(exp_stats._used, state.size());
-        EXPECT_EQ(exp_stats._hold, state.getHoldElems());
-        EXPECT_EQ(exp_stats._dead, state.getDeadElems());
-        EXPECT_EQ(exp_stats._extra_used, state.getExtraUsedBytes());
-        EXPECT_EQ(exp_stats._extra_hold, state.getExtraHoldBytes());
+        EXPECT_EQ(exp_stats._hold, state.stats().hold_elems());
+        EXPECT_EQ(exp_stats._dead, state.stats().dead_elems());
+        EXPECT_EQ(exp_stats._extra_used, state.stats().extra_used_bytes());
+        EXPECT_EQ(exp_stats._extra_hold, state.stats().extra_hold_bytes());
     }
     void assertMemoryUsage(const MemStats expStats) const {
         MemoryUsage act = store.getMemoryUsage();
@@ -280,13 +280,13 @@ TEST_P(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_fre
 
 TEST_P(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
     EntryRef ref = add({1,2,3,4});
-    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(16));
+    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(16));
     remove({1,2,3,4});
-    assert_buffer_stats(ref, BufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16));
+    assert_buffer_stats(ref, TestBufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16));
     trimHoldLists();
-    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(2).extra_used(0));
+    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(2).extra_used(0));
     add({5,6,7,8,9});
-    assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(20));
+    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(20));
 }
 
 TEST_F(SmallOffsetNumberStoreTest, new_underlying_buffer_is_allocated_when_current_is_full)

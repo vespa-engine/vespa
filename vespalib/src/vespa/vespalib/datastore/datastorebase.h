@@ -4,12 +4,13 @@
 
 #include "bufferstate.h"
 #include "free_list.h"
+#include "memory_stats.h"
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <vector>
-#include <deque>
 #include <atomic>
+#include <deque>
+#include <vector>
 
 namespace vespalib::datastore {
 
@@ -101,52 +102,6 @@ protected:
     };
 
     class BufferHold;
-
-public:
-    class MemStats
-    {
-    public:
-        size_t _allocElems;
-        size_t _usedElems;
-        size_t _deadElems;
-        size_t _holdElems;
-        size_t _allocBytes;
-        size_t _usedBytes;
-        size_t _deadBytes;
-        size_t _holdBytes;
-        uint32_t _freeBuffers;
-        uint32_t _activeBuffers;
-        uint32_t _holdBuffers;
-
-        MemStats()
-            : _allocElems(0),
-              _usedElems(0),
-              _deadElems(0),
-              _holdElems(0),
-              _allocBytes(0),
-              _usedBytes(0),
-              _deadBytes(0),
-              _holdBytes(0),
-              _freeBuffers(0),
-              _activeBuffers(0),
-              _holdBuffers(0)
-        { }
-
-        MemStats& operator+=(const MemStats &rhs) {
-            _allocElems += rhs._allocElems;
-            _usedElems += rhs._usedElems;
-            _deadElems += rhs._deadElems;
-            _holdElems += rhs._holdElems;
-            _allocBytes += rhs._allocBytes;
-            _usedBytes += rhs._usedBytes;
-            _deadBytes += rhs._deadBytes;
-            _holdBytes += rhs._holdBytes;
-            _freeBuffers += rhs._freeBuffers;
-            _activeBuffers += rhs._activeBuffers;
-            _holdBuffers += rhs._holdBuffers;
-            return *this;
-        }
-    };
 
 private:
     std::vector<BufferState> _states;
@@ -301,7 +256,7 @@ public:
 
     void incDead(uint32_t bufferId, size_t deadElems) {
         BufferState &state = _states[bufferId];
-        state.incDeadElems(deadElems);
+        state.stats().inc_dead_elems(deadElems);
     }
 
     /**
@@ -339,7 +294,7 @@ public:
     /**
      * Returns aggregated memory statistics for all buffers in this data store.
      */
-    MemStats getMemStats() const;
+    MemoryStats getMemStats() const;
 
     /**
      * Assume that no readers are present while data structure is being initialized.
