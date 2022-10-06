@@ -30,6 +30,7 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.TlsContext;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
@@ -43,7 +44,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.net.ssl.SSLContext;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
@@ -89,7 +89,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
@@ -740,6 +742,23 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
+    @Test
+    void requestThatFallbackServerNameCanBeOverridden() throws Exception {
+        String fallbackHostname = "myhostname";
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new UriRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder()
+                        .serverName(new ConnectorConfig.ServerName.Builder().fallback(fallbackHostname)));
+        int listenPort = driver.server().getListenPort();
+        HttpGet req = new HttpGet("http://localhost:" + listenPort + "/");
+        req.addHeader("Host", null);
+        driver.client().execute(req)
+                .expectStatusCode(is(OK))
+                .expectContent(containsString("http://" + fallbackHostname + ":" + listenPort + "/"));
+        assertTrue(driver.close());
+    }
+
     private static JettyTestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
                 .tlsClientAuthEnforcer(
@@ -913,6 +932,16 @@ public class HttpServerTest {
             final Response response = new Response(OK);
             response.headers().add(headerName, headerValue);
             return handler.handleResponse(response);
+        }
+    }
+
+    private static class UriRequestHandler extends AbstractRequestHandler {
+        @Override
+        public ContentChannel handleRequest(Request req, ResponseHandler handler) {
+            final ContentChannel ch = handler.handleResponse(new Response(OK));
+            ch.write(ByteBuffer.wrap(req.getUri().toString().getBytes(StandardCharsets.UTF_8)), null);
+            ch.close(null);
+            return null;
         }
     }
 

@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.HostPort;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.util.ArrayList;
@@ -154,6 +155,8 @@ public class ConnectorFactory {
         if (isSslEffectivelyEnabled(connectorConfig)) {
             httpConfig.addCustomizer(new SecureRequestCustomizer());
         }
+        String serverNameFallback = connectorConfig.serverName().fallback();
+        if (!serverNameFallback.isBlank()) httpConfig.setServerAuthority(new HostPort(serverNameFallback));
         return httpConfig;
     }
 
