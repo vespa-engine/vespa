@@ -89,7 +89,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { return 100; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sharedStringRepoNoReclaim() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean loadCodeAsHugePages() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -132,7 +131,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default double persistenceThrottlingWsResizeRate() { return 3; }
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default boolean persistenceThrottlingOfMergeFeedOps() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default int maxConcurrentMergesPerNode() { return 16; }
-
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default int maxMergeQueueSize() { return 100; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

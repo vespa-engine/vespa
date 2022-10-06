@@ -55,7 +55,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
-    private int maxMergeQueueSize = 100;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.75;
@@ -110,7 +109,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-    @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
@@ -201,11 +199,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseNumThreads(int numThreads) {
         responseNumThreads = numThreads;
-        return this;
-    }
-
-    public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
-        this.maxMergeQueueSize = maxMergeQueueSize;
         return this;
     }
 
