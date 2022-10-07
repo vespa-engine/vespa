@@ -195,7 +195,11 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * If the path and any of its parents does not exists they are created.
      */
     // TODO: Use create().orSetData() in Curator 4 and later
-    public void set(Path path, byte[] data) {
+    public Stat set(Path path, byte[] data) {
+        return set(path, data, -1);
+    }
+
+    public Stat set(Path path, byte[] data, int expectedVersion) {
         if (data.length > juteMaxBuffer)
             throw new IllegalArgumentException("Cannot not set data at " + path.getAbsolute() + ", " +
                                                data.length + " bytes is too much, max number of bytes allowed per node is " + juteMaxBuffer);
@@ -205,11 +209,12 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
 
         String absolutePath = path.getAbsolute();
         try {
-            framework().setData().forPath(absolutePath, data);
+            return framework().setData().withVersion(expectedVersion).forPath(absolutePath, data);
         } catch (Exception e) {
             throw new RuntimeException("Could not set data at " + absolutePath, e);
         }
     }
+
 
     /** @see #create(Path, Duration) */
     public boolean create(Path path) { return create(path, null); }
@@ -220,6 +225,9 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * Returns whether a change was attempted.
      */
     public boolean create(Path path, Duration ttl) {
+        return create(path, ttl, null);
+    }
+    private boolean create(Path path, Duration ttl, Stat stat) {
         if (exists(path)) return false;
 
         String absolutePath = path.getAbsolute();
@@ -231,7 +239,8 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
                     throw new IllegalArgumentException(ttl.toString());
                 b.withTtl(millis).withMode(CreateMode.PERSISTENT_WITH_TTL);
             }
-            b.creatingParentsIfNeeded().forPath(absolutePath, new byte[0]);
+            if (stat == null) b.creatingParentsIfNeeded()                    .forPath(absolutePath, new byte[0]);
+            else              b.creatingParentsIfNeeded().storingStatIn(stat).forPath(absolutePath, new byte[0]);
         } catch (org.apache.zookeeper.KeeperException.NodeExistsException e) {
             // Path created between exists() and create() call, do nothing
         } catch (Exception e) {
@@ -258,12 +267,16 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
     }
 
     /**
-     * Deletes the given path and any children it may have.
-     * If the path does not exists nothing is done.
+     * Deletes the path and any children it may have.
+     * If the path does not exist, nothing is done.
      */
     public void delete(Path path) {
+        delete(path, -1);
+    }
+
+    public void delete(Path path, int expectedVersion) {
         try {
-            framework().delete().guaranteed().deletingChildrenIfNeeded().forPath(path.getAbsolute());
+            framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
             // Do nothing
         } catch (Exception e) {
@@ -290,8 +303,13 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * Empty is returned if the path does not exist.
      */
     public Optional<byte[]> getData(Path path) {
+        return getData(path, null);
+    }
+
+    Optional<byte[]> getData(Path path, Stat stat) {
         try {
-            return Optional.of(framework().getData().forPath(path.getAbsolute()));
+            return stat == null ? Optional.of(framework().getData()                    .forPath(path.getAbsolute()))
+                                : Optional.of(framework().getData().storingStatIn(stat).forPath(path.getAbsolute()));
         }
         catch (KeeperException.NoNodeException e) {
             return Optional.empty();
