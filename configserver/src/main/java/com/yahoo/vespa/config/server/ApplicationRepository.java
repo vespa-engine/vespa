@@ -4,9 +4,9 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -83,20 +83,18 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.filedistribution.maintenance.FileDistributionCleanup;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -116,11 +114,9 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVE
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static java.nio.file.Files.readAttributes;
 
 /**
  * The API for managing applications.
@@ -590,30 +586,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath,
-                                                               Duration keepFileReferencesDuration,
-                                                               int numberToAlwaysKeep) {
-        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration);
-        if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
-
-        Set<String> fileReferencesInUse = getFileReferencesInUse();
-        log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
-
-        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferencesDuration);
-        // Do not delete the newest ones
-        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - numberToAlwaysKeep));
-        if (fileReferencesToDelete.size() > 0) {
-            log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> {
-                File file = new File(fileReferencesPath, fileReference);
-                if ( ! IOUtils.recursiveDeleteDir(file))
-                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
-            });
-        }
-        return fileReferencesToDelete;
+    public void deleteUnusedFileDistributionReferences(File fileReferencesPath, Duration keepFileReferencesDuration) {
+        new FileDistributionCleanup(clock).deleteUnusedFileReferences(fileReferencesPath, keepFileReferencesDuration, getFileReferencesInUse());
     }
 
-    private Set<String> getFileReferencesInUse() {
+    Set<String> getFileReferencesInUse() {
         Set<String> fileReferencesInUse = new HashSet<>();
         for (var applicationId : listApplications()) {
             Application app = getApplication(applicationId);
@@ -622,18 +599,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           .collect(Collectors.toSet()));
         }
         return fileReferencesInUse;
-    }
-
-    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
-        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
-        Instant instant = clock.instant().minus(keepFileReferences);
-        return fileReferencesOnDisk
-                .stream()
-                .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted(Comparator.comparing(a -> lastAccessed(new File(fileReferencesPath, a))))
-                .collect(Collectors.toList());
     }
 
     public Set<FileReference> getFileReferences(ApplicationId applicationId) {
@@ -684,20 +649,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
                 .collect(Collectors.toList());
-    }
-
-    private boolean isLastFileAccessBefore(File fileReference, Instant instant) {
-        return lastAccessed(fileReference).isBefore(instant);
-    }
-
-    private Instant lastAccessed(File fileReference) {
-        BasicFileAttributes fileAttributes;
-        try {
-            fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
-            return fileAttributes.lastAccessTime().toInstant();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
