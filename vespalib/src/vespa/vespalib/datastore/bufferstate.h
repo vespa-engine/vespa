@@ -39,7 +39,7 @@ public:
     };
 
 private:
-    MutableBufferStats _stats;
+    InternalBufferStats _stats;
     BufferFreeList _free_list;
     std::atomic<BufferTypeBase*> _typeHandler;
     Alloc           _buffer;
@@ -83,24 +83,34 @@ public:
     void onFree(std::atomic<void*>& buffer);
 
     /**
-     * Disable hold of elements, just mark then as dead without cleanup.
+     * Disable hold of elements, just mark elements as dead without cleanup.
      * Typically used when tearing down data structure in a controlled manner.
      */
     void disableElemHoldList();
 
+    /**
+     * Update stats to reflect that the given elements are put on hold.
+     * Returns true if element hold list is disabled for this buffer.
+     */
+    bool hold_elems(size_t num_elems, size_t extra_bytes);
+
+    /**
+     * Free the given elements and update stats accordingly.
+     *
+     * The given entry ref is put on the free list (if enabled).
+     * Hold cleaning of elements is executed on the buffer type.
+     */
+    void free_elems(EntryRef ref, size_t num_elems, bool was_held, size_t ref_offset);
+
     BufferStats& stats() { return _stats; }
     const BufferStats& stats() const { return _stats; }
-    BufferFreeList& free_list() { return _free_list; }
-    const BufferFreeList& free_list() const { return _free_list; }
+
+    void enable_free_list(FreeList& type_free_list) { _free_list.enable(type_free_list); }
+    void disable_free_list() { _free_list.disable(); }
 
     size_t size() const { return _stats.size(); }
     size_t capacity() const { return _stats.capacity(); }
     size_t remaining() const { return _stats.remaining(); }
-    void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
-        getTypeHandler()->cleanHold(buffer, offset, numElems,
-                                    BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(),
-                                                                 _stats.extra_hold_bytes_ref()));
-    }
     void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
@@ -119,7 +129,6 @@ public:
     const BufferTypeBase *getTypeHandler() const { return _typeHandler.load(std::memory_order_relaxed); }
     BufferTypeBase *getTypeHandler() { return _typeHandler.load(std::memory_order_relaxed); }
 
-    bool hasDisabledElemHoldList() const { return _disableElemHoldList; }
     void resume_primary_buffer(uint32_t buffer_id);
 
 };

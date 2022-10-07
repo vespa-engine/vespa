@@ -300,7 +300,7 @@ DataStoreBase::enableFreeLists()
         if (!bState.isActive() || bState.getCompacting()) {
             continue;
         }
-        bState.free_list().enable(_free_lists[bState.getTypeId()]);
+        bState.enable_free_list(_free_lists[bState.getTypeId()]);
     }
     _freeListsEnabled = true;
 }
@@ -309,7 +309,7 @@ void
 DataStoreBase::disableFreeLists()
 {
     for (BufferState & bState : _states) {
-        bState.free_list().disable();
+        bState.disable_free_list();
     }
     _freeListsEnabled = false;
 }
@@ -321,14 +321,8 @@ DataStoreBase::enableFreeList(uint32_t bufferId)
     if (_freeListsEnabled &&
         state.isActive() &&
         !state.getCompacting()) {
-        state.free_list().enable(_free_lists[state.getTypeId()]);
+        state.enable_free_list(_free_lists[state.getTypeId()]);
     }
-}
-
-void
-DataStoreBase::disableFreeList(uint32_t bufferId)
-{
-    _states[bufferId].free_list().disable();
 }
 
 void
@@ -452,7 +446,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
     assert(!state.getCompacting());
     state.setCompacting();
     state.disableElemHoldList();
-    state.free_list().disable();
+    state.disable_free_list();
     inc_compaction_count();
 }
 

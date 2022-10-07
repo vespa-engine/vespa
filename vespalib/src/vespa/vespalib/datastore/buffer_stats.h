@@ -47,11 +47,7 @@ public:
     size_t extra_used_bytes() const { return _extra_used_bytes.load(std::memory_order_relaxed); }
     size_t extra_hold_bytes() const { return _extra_hold_bytes.load(std::memory_order_relaxed); }
 
-    void inc_dead_elems(size_t value) { _dead_elems.store(dead_elems() + value, std::memory_order_relaxed); }
-    void inc_hold_elems(size_t value) { _hold_elems.store(hold_elems() + value, std::memory_order_relaxed); }
-    void dec_hold_elems(size_t value);
     void inc_extra_used_bytes(size_t value) { _extra_used_bytes.store(extra_used_bytes() + value, std::memory_order_relaxed); }
-    void inc_extra_hold_bytes(size_t value) { _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed); }
 
     void add_to_mem_stats(size_t element_size, MemoryStats& stats) const;
 };
@@ -59,13 +55,17 @@ public:
 /**
  * Provides low-level access to buffer stats for integration in BufferState.
  */
-class MutableBufferStats : public BufferStats {
+class InternalBufferStats : public BufferStats {
 public:
-    MutableBufferStats();
+    InternalBufferStats();
     void clear();
     void set_alloc_elems(size_t value) { _alloc_elems.store(value, std::memory_order_relaxed); }
     void set_dead_elems(size_t value) { _dead_elems.store(value, std::memory_order_relaxed); }
     void set_hold_elems(size_t value) { _hold_elems.store(value, std::memory_order_relaxed); }
+    void inc_dead_elems(size_t value) { _dead_elems.store(dead_elems() + value, std::memory_order_relaxed); }
+    void inc_hold_elems(size_t value) { _hold_elems.store(hold_elems() + value, std::memory_order_relaxed); }
+    void dec_hold_elems(size_t value);
+    void inc_extra_hold_bytes(size_t value) { _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed); }
     std::atomic<ElemCount>& used_elems_ref() { return _used_elems; }
     std::atomic<ElemCount>& dead_elems_ref() { return _dead_elems; }
     std::atomic<size_t>& extra_used_bytes_ref() { return _extra_used_bytes; }

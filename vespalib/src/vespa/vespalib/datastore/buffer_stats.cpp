@@ -16,14 +16,6 @@ BufferStats::BufferStats()
 }
 
 void
-BufferStats::dec_hold_elems(size_t value)
-{
-    ElemCount elems = hold_elems();
-    assert(elems >= value);
-    _hold_elems.store(elems - value, std::memory_order_relaxed);
-}
-
-void
 BufferStats::add_to_mem_stats(size_t element_size, MemoryStats& stats) const
 {
     size_t extra_used = extra_used_bytes();
@@ -37,13 +29,13 @@ BufferStats::add_to_mem_stats(size_t element_size, MemoryStats& stats) const
     stats._holdBytes += (hold_elems() * element_size) + extra_hold_bytes();
 }
 
-MutableBufferStats::MutableBufferStats()
+InternalBufferStats::InternalBufferStats()
     : BufferStats()
 {
 }
 
 void
-MutableBufferStats::clear()
+InternalBufferStats::clear()
 {
     _alloc_elems.store(0, std::memory_order_relaxed);
     _used_elems.store(0, std::memory_order_relaxed);
@@ -51,6 +43,14 @@ MutableBufferStats::clear()
     _dead_elems.store(0, std::memory_order_relaxed);
     _extra_used_bytes.store(0, std::memory_order_relaxed);
     _extra_hold_bytes.store(0, std::memory_order_relaxed);
+}
+
+void
+InternalBufferStats::dec_hold_elems(size_t value)
+{
+    ElemCount elems = hold_elems();
+    assert(elems >= value);
+    _hold_elems.store(elems - value, std::memory_order_relaxed);
 }
 
 }
