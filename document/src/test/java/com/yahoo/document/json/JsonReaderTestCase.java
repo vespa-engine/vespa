@@ -1046,16 +1046,16 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'nonexisting1': { 'assign': 'ignored value' },",
                 "    'field1': { 'assign': 'value1' },",
-//                "    'nonexisting2': { " +
-//                "      'assign': {",
-//                "        'blocks': {",
-//                "          'a':[2.0,3.0],",
-//                "          'b':[4.0,5.0]",
-//                "        }",
-//                "      }",
-//                "    },",
-                "    'field2': { 'assign': 'value2' }",
-//                "    'nonexisting3': { 'assign': 'ignored value' }",
+                "    'nonexisting2': { " +
+                "      'assign': {",
+                "        'blocks': {",
+                "          'a':[2.0,3.0],",
+                "          'b':[4.0,5.0]",
+                "        }",
+                "      }",
+                "    },",
+                "    'field2': { 'assign': 'value2' },",
+                "    'nonexisting3': { 'assign': 'ignored value' }",
                 "  }",
                 "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
