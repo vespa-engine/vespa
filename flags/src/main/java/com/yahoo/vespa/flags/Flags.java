@@ -233,20 +233,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
-            "max-concurrent-merges-per-node", 16,
-            List.of("balder", "vekterli"), "2021-06-06", "2022-12-01",
-            "Specifies max concurrent merges per content node.",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
-            "max-merge-queue-size", 100,
-            List.of("balder", "vekterli"), "2021-06-06", "2022-12-01",
-            "Specifies max size of merge queue.",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2022-11-01",

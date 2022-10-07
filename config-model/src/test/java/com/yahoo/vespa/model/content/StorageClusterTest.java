@@ -120,9 +120,7 @@ public class StorageClusterTest {
         parse(cluster("foofighters", joinLines(
                 "<tuning>",
                 "  <merges max-per-node=\"1K\" max-queue-size=\"10K\"/>",
-                "</tuning>")),
-                new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37)
-        ).getConfig(builder);
+                "</tuning>"))).getConfig(builder);
 
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(1024, config.max_merges_per_node());
@@ -174,9 +172,9 @@ public class StorageClusterTest {
 
     @Test
     void testMergeFeatureFlags() {
-        var config = configFromProperties(new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37));
-        assertEquals(37, config.max_merges_per_node());
-        assertEquals(1919, config.max_merge_queue_size());
+        var config = configFromProperties(new TestProperties());
+        assertEquals(16, config.max_merges_per_node());
+        assertEquals(100, config.max_merge_queue_size());
     }
 
     @Test

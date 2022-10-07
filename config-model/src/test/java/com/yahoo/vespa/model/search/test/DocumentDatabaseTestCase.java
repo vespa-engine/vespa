@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +54,7 @@ public class DocumentDatabaseTestCase {
 
     @Test
     void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0);
+        verifyConcurrency(List.of(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0);
     }
 
     @Test
@@ -63,7 +62,7 @@ public class DocumentDatabaseTestCase {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7);
+        verifyConcurrency(List.of(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7);
     }
 
     @Test
@@ -77,11 +76,11 @@ public class DocumentDatabaseTestCase {
     }
 
     private void verifyConcurrency(String mode, String xmlTuning, double expectedConcurrency, double featureFlagConcurrency) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, expectedConcurrency, featureFlagConcurrency);
+        verifyConcurrency(List.of(DocType.create("a", mode)), xmlTuning, expectedConcurrency, featureFlagConcurrency);
     }
 
     private void verifyConcurrency(String mode, String xmlTuning, double expectedConcurrency) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, expectedConcurrency, null);
+        verifyConcurrency(List.of(DocType.create("a", mode)), xmlTuning, expectedConcurrency, null);
     }
 
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double expectedConcurrency) {
@@ -114,14 +113,14 @@ public class DocumentDatabaseTestCase {
 
     @Test
     void requireFeedNicenessIsReflected() {
-        verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.0, null);
-        verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.32, 0.32);
+        verifyFeedNiceness(List.of(DocType.create("a", "index")), 0.0, null);
+        verifyFeedNiceness(List.of(DocType.create("a", "index")), 0.32, 0.32);
     }
 
     @Test
     void requireThatModeIsSet() {
         var tester = new SchemaTester();
-        VespaModel model = tester.createModel(Arrays.asList(DocType.create("a", "index"),
+        VespaModel model = tester.createModel(List.of(DocType.create("a", "index"),
                 DocType.create("b", "streaming"),
                 DocType.create("c", "store-only")), "");
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
@@ -150,8 +149,8 @@ public class DocumentDatabaseTestCase {
     @Test
     void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
         final long DEFAULT = 1024L;
-        verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
-                "", Arrays.asList(DEFAULT, DEFAULT));
+        verifyInitialDocumentCount(List.of(DocType.create("a", "index"), DocType.create("b", "streaming")),
+                "", List.of(DEFAULT, DEFAULT));
     }
 
     @Test
@@ -160,8 +159,8 @@ public class DocumentDatabaseTestCase {
         String feedTuning = "<resizing>" +
                 "  <initialdocumentcount>1000000000</initialdocumentcount>" +
                 "</resizing>\n";
-        verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
-                feedTuning, Arrays.asList(INITIAL, INITIAL));
+        verifyInitialDocumentCount(List.of(DocType.create("a", "index"), DocType.create("b", "streaming")),
+                feedTuning, List.of(INITIAL, INITIAL));
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
@@ -345,30 +344,30 @@ public class DocumentDatabaseTestCase {
 
     @Test
     void testThatAttributesMaxUnCommittedMemoryIsControlledByFeatureFlag() {
-        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
-                Arrays.asList("test/search/cluster.test/type1"),
-                ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")),
+        assertAttributesConfigIndependentOfMode("index", List.of("type1"),
+                List.of("test/search/cluster.test/type1"),
+                ImmutableMap.of("type1", List.of("f2", "f2_nfa")),
                 new DeployState.Builder().properties(new TestProperties().maxUnCommittedMemory(193452)), 193452);
     }
 
     @Test
     void testThatAttributesConfigIsProducedForIndexed() {
-        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
-                Arrays.asList("test/search/cluster.test/type1"),
-                ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")));
+        assertAttributesConfigIndependentOfMode("index", List.of("type1"),
+                List.of("test/search/cluster.test/type1"),
+                ImmutableMap.of("type1", List.of("f2", "f2_nfa")));
     }
 
     @Test
     void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
-        assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),
-                Arrays.asList("test/search/type1"),
-                ImmutableMap.of("type1", Arrays.asList("f2")));
+        assertAttributesConfigIndependentOfMode("streaming", List.of("type1"),
+                List.of("test/search/type1"),
+                ImmutableMap.of("type1", List.of("f2")));
     }
 
     @Test
     void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
-        assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"),
-                Arrays.asList("test/search"), Collections.emptyMap());
+        assertAttributesConfigIndependentOfMode("store-only", List.of("type1"),
+                List.of("test/search"), Collections.emptyMap());
     }
 
 }
