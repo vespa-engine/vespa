@@ -3,12 +3,6 @@
 #include "direct_tensor_attribute.h"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/searchlib/attribute/readerbase.h>
-#include <vespa/searchlib/util/fileutil.h>
-#include <vespa/vespalib/util/array.h>
-
-#include "blob_sequence_reader.h"
-#include "tensor_deserialize.h"
 
 using vespalib::eval::FastValueBuilderFactory;
 
