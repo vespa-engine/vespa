@@ -17,7 +17,6 @@ using vespalib::alloc::MemoryAllocator;
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     using ParentType = DataStore<int, EntryRefT<3, 2> >;
-    using ParentType::_primary_buffer_ids;
 public:
     MyStore() {}
     explicit MyStore(std::unique_ptr<BufferType<int>> type)
@@ -44,7 +43,7 @@ public:
     void switch_primary_buffer() {
         ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t primary_buffer_id() const { return _primary_buffer_ids[0]; }
+    size_t primary_buffer_id() const { return get_primary_buffer_id(0); }
     BufferState& get_active_buffer_state() {
         return ParentType::getBufferState(primary_buffer_id());
     }
