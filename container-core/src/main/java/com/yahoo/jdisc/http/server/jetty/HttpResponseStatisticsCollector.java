@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,13 +52,20 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
+    private final Set<String> ignoredUserAgents;
 
     private final AtomicLong inFlight = new AtomicLong();
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths) {
+    HttpResponseStatisticsCollector(ServerConfig.Metric cfg) {
+        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents());
+    }
+
+    HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
+                                    Collection<String> ignoredUserAgents) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
+        this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
     }
 
     private final AsyncListener completionWatcher = new AsyncListener() {
@@ -107,12 +114,6 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
             }
         }
     }
-
-    void ignoreUserAgent(String agentName) {
-        ignoredUserAgents.add(agentName);
-    }
-
-    private Set<String> ignoredUserAgents = new HashSet<>();
 
     private boolean shouldLogMetricsFor(Request request) {
         String agent = request.getHeader(HttpHeader.USER_AGENT.toString());

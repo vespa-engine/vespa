@@ -1051,8 +1051,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder healthCheckProxy(java.util.function.Consumer)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder proxyProtocol(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder proxyProtocol(java.util.function.Consumer)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Builder secureRedirect(com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Builder secureRedirect(java.util.function.Consumer)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxRequestsPerConnection(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxConnectionLife(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder http2Enabled(boolean)",
@@ -1074,7 +1072,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder tlsClientAuthEnforcer",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder healthCheckProxy",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder proxyProtocol",
-      "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder secureRedirect",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder http2",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder serverName"
     ]
@@ -1193,37 +1190,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder enabled(boolean)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder port(int)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder)",
-      "public boolean enabled()",
-      "public int port()"
-    ],
-    "fields": []
-  },
   "com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -1236,9 +1202,13 @@
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder fallback(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName build()"
     ],
-    "fields": []
+    "fields": [
+      "public java.util.List allowed"
+    ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$ServerName": {
     "superClass": "com.yahoo.config.InnerNode",
@@ -1249,7 +1219,9 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder)",
-      "public java.lang.String fallback()"
+      "public java.lang.String fallback()",
+      "public java.util.List allowed()",
+      "public java.lang.String allowed(int)"
     ],
     "fields": []
   },
@@ -1443,7 +1415,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer tlsClientAuthEnforcer()",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy healthCheckProxy()",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol proxyProtocol()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect secureRedirect()",
       "public int maxRequestsPerConnection()",
       "public double maxConnectionLife()",
       "public boolean http2Enabled()",
