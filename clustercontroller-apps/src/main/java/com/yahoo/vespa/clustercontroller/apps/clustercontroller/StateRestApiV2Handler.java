@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
+
     private static final Logger log = Logger.getLogger(StateRestApiV2Handler.class.getName());
 
     @Inject

@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * A value update represents some action to perform to a value.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.document.update.FieldUpdate
  * @see com.yahoo.document.DocumentUpdate
  * @see AddValueUpdate
@@ -31,11 +31,7 @@ public abstract class ValueUpdate<T extends FieldValue> {
         this.valueUpdateClassID = valueUpdateClassID;
     }
 
-    /**
-     * Returns the valueUpdateClassID of this value update.
-     *
-     * @return the valueUpdateClassID of this ValueUpdate
-     */
+    /** Returns the valueUpdateClassID of this value update. */
     public ValueUpdateClassID getValueUpdateClassID() {
         return valueUpdateClassID;
     }
@@ -46,7 +42,7 @@ public abstract class ValueUpdate<T extends FieldValue> {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof ValueUpdate && valueUpdateClassID == ((ValueUpdate) o).valueUpdateClassID;
+        return o instanceof ValueUpdate && valueUpdateClassID == ((ValueUpdate<?>) o).valueUpdateClassID;
     }
 
     @Override

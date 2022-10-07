@@ -27,6 +27,7 @@ import static java.util.logging.Level.WARNING;
  * @author gjoranv
  */
 public class YamasJsonUtil {
+
     private static final Logger log = Logger.getLogger(YamasJsonUtil.class.getName());
     private static final JsonFactory factory = JsonFactory.builder()
             .enable(StreamWriteFeature.WRITE_BIGDECIMAL_AS_PLAIN)

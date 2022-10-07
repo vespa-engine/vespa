@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * @author hakon
  */
 class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
+
     private final ApplicationId applicationId;
     private final StateV1HealthModel healthModel;
 
@@ -86,4 +87,5 @@ class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
             monitors.clear();
         }
     }
+
 }

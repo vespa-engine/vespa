@@ -78,6 +78,7 @@ import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_INCREMENT
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_MULTIPLY;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -103,6 +104,8 @@ public class JsonReaderTestCase {
             DocumentType x = new DocumentType("smoke");
             x.addField(new Field("something", DataType.STRING));
             x.addField(new Field("nalle", DataType.STRING));
+            x.addField(new Field("field1", DataType.STRING));
+            x.addField(new Field("field2", DataType.STRING));
             x.addField(new Field("int1", DataType.INT));
             x.addField(new Field("flag", DataType.BOOL));
             types.registerDocumentType(x);
@@ -216,7 +219,7 @@ public class JsonReaderTestCase {
                 "  }",
                 "}"));
         DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
-                                                             "id:unittest:smoke::doc1");
+                                                             "id:unittest:smoke::doc1").operation();
         smokeTestDoc(put.getDocument());
     }
 
@@ -226,7 +229,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'something': {",
                 "      'assign': 'orOther' }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee").operation();
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
@@ -238,7 +241,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'int1': {",
                 "      'assign': null }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee").operation();
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
@@ -1006,17 +1009,65 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldCanBeIgnored()  throws IOException{
+    public void nonExistingFieldsCanBeIgnoredInPut()  throws IOException{
         JsonReader r = createReader(inputJson(
-                "{ 'put': 'id:unittest:smoke::whee',",
+                "{ ",
+                "  'put': 'id:unittest:smoke::doc1',",
                 "  'fields': {",
-                "    'smething': 'smoketest',",
-                "    'nalle': 'bamse' }}"));
+                "    'nonexisting1': 'ignored value',",
+                "    'field1': 'value1',",
+                "    'nonexisting2': {",
+                "      'blocks':{",
+                "        'a':[2.0,3.0],",
+                "        'b':[4.0,5.0]",
+                "      }",
+                "    },",
+                "    'field2': 'value2',",
+                "    'nonexisting3': 'ignored value'",
+                "  }",
+                "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
+        boolean fullyApplied = new VespaJsonDocumentReader(true).readPut(parseInfo.fieldsBuffer, put);
+        assertFalse(fullyApplied);
+        assertNull(put.getDocument().getField("nonexisting1"));
+        assertEquals("value1", put.getDocument().getFieldValue("field1").toString());
+        assertNull(put.getDocument().getField("nonexisting2"));
+        assertEquals("value2", put.getDocument().getFieldValue("field2").toString());
+        assertNull(put.getDocument().getField("nonexisting3"));
+    }
 
-        new VespaJsonDocumentReader(true).readPut(parseInfo.fieldsBuffer, put);
+    @Test
+    public void nonExistingFieldsCanBeIgnoredInUpdate()  throws IOException{
+        JsonReader r = createReader(inputJson(
+                "{ ",
+                "  'update': 'id:unittest:smoke::doc1',",
+                "  'fields': {",
+                "    'nonexisting1': { 'assign': 'ignored value' },",
+                "    'field1': { 'assign': 'value1' },",
+                "    'nonexisting2': { " +
+                "      'assign': {",
+                "        'blocks': {",
+                "          'a':[2.0,3.0],",
+                "          'b':[4.0,5.0]",
+                "        }",
+                "      }",
+                "    },",
+                "    'field2': { 'assign': 'value2' },",
+                "    'nonexisting3': { 'assign': 'ignored value' }",
+                "  }",
+                "}"));
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentUpdate update = new DocumentUpdate(docType, parseInfo.documentId);
+        boolean fullyApplied = new VespaJsonDocumentReader(true).readUpdate(parseInfo.fieldsBuffer, update);
+        assertFalse(fullyApplied);
+        assertNull(update.getFieldUpdate("nonexisting1"));
+        assertEquals("value1", update.getFieldUpdate("field1").getValueUpdates().get(0).getValue().getWrappedValue().toString());
+        assertNull(update.getFieldUpdate("nonexisting2"));
+        assertEquals("value2", update.getFieldUpdate("field2").getValueUpdates().get(0).getValue().getWrappedValue().toString());
+        assertNull(update.getFieldUpdate("nonexisting3"));
     }
 
     @Test
@@ -1044,7 +1095,8 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
+        boolean fullyApplied = new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
+        assertTrue(fullyApplied);
         smokeTestDoc(put.getDocument());
     }
 
@@ -1271,7 +1323,7 @@ public class JsonReaderTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("update of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
+            assertEquals("Update of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
         }
     }
 
@@ -1288,7 +1340,7 @@ public class JsonReaderTestCase {
                 "  }",
                 "}"));
         DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
-                                                             "id:unittest:testnull::doc1");
+                                                             "id:unittest:testnull::doc1").operation();
         Document doc = put.getDocument();
         assertFieldValueNull(doc, "intfield");
         assertFieldValueNull(doc, "stringfield");

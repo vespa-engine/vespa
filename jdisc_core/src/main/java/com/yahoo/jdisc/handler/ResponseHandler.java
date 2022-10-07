@@ -11,7 +11,7 @@ import com.yahoo.jdisc.service.ClientProvider;
  * {@link ClientProvider#handleRequest(Request, ResponseHandler)} and {@link RequestHandler#handleRequest(Request,
  * ResponseHandler)}).</p>
  *
- * <p>The jDISC API has intentionally been designed as not to provide a implicit reference from Response to
+ * <p>The jDISC API is designed to not provide an implicit reference from Response to
  * corresponding Request, but rather leave that to the implementation of context-aware ResponseHandlers. By creating
  * light-weight ResponseHandlers on a per-Request basis, any necessary reference can be embedded within.</p>
  *

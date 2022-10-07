@@ -86,8 +86,8 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Adds the given value to the entry of the specified key. If no entry exists for the given key, a new one is
-     * created containing only the given value.</p>
+     * Adds the given value to the entry of the specified key. If no entry exists for the given key, a new one is
+     * created containing only the given value.
      *
      * @param key   The key with which the specified value is to be associated.
      * @param value The value to be added to the list associated with the specified key.
@@ -102,11 +102,11 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Adds the given values to the entry of the specified key. If no entry exists for the given key, a new one is
-     * created containing only the given values.</p>
+     * Adds the given values to the entry of the specified key. If no entry exists for the given key, a new one is
+     * created containing only the given values.
      *
-     * @param key    The key with which the specified value is to be associated.
-     * @param values The values to be added to the list associated with the specified key.
+     * @param key    the key with which the specified value is to be associated.
+     * @param values the values to be added to the list associated with the specified key.
      */
     public void add(String key, List<String> values) {
         List<String> lst = content.get(key);
@@ -118,10 +118,10 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Adds all the entries of the given map to this. This is the same as calling {@link #add(String, List)} for each
-     * entry in <code>values</code>.</p>
+     * Adds all the entries of the given map to this. This is the same as calling {@link #add(String, List)} for each
+     * entry in <code>values</code>.
      *
-     * @param values The values to be added to this.
+     * @param values the values to be added to this.
      */
     public void addAll(Map<? extends String, ? extends List<String>> values) {
         for (Entry<? extends String, ? extends List<String>> entry : values.entrySet()) {
@@ -193,11 +193,11 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Convenience method for retrieving the first value of a named header field. If the header is not set, or if the
-     * value list is empty, this method returns null.</p>
+     * Convenience method for retrieving the first value of a named header field. If the header is not set, or if the
+     * value list is empty, this method returns null.
      *
-     * @param key The key whose first value to return.
-     * @return The first value of the named header, or null.
+     * @param key the key whose first value to return
+     * @return the first value of the named header, or null
      */
     public String getFirst(String key) {
         List<String> lst = get(key);
@@ -208,12 +208,12 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Convenience method for checking whether or not a named header field is <em>true</em>. To satisfy this, the
+     * Convenience method for checking whether a named header field is <em>true</em>. To satisfy this, the
      * header field needs to have at least 1 entry, and Boolean.valueOf() of all its values must parse as
-     * <em>true</em>.</p>
+     * <em>true</em>.
      *
-     * @param key The key whose values to parse as a boolean.
-     * @return The boolean value of the named header.
+     * @param key the key whose values to parse as a boolean.
+     * @return the boolean value of the named header.
      */
     public boolean isTrue(String key) {
         List<String> lst = content.get(key);
@@ -249,10 +249,10 @@ public class HeaderFields implements Map<String, List<String>> {
     }
 
     /**
-     * <p>Returns an unmodifiable list of all key-value pairs of this. This provides a flattened view on the content of
-     * this map.</p>
+     * Returns an unmodifiable list of all key-value pairs of this. This provides a flattened view on the content of
+     * this map.
      *
-     * @return The collection of entries.
+     * @return the collection of entries
      */
     public List<Entry<String, String>> entries() {
         List<Entry<String, String>> list = new ArrayList<>(content.size());
@@ -304,6 +304,7 @@ public class HeaderFields implements Map<String, List<String>> {
         public String toString() {
             return key + '=' + value;
         }
+
     }
 
 }

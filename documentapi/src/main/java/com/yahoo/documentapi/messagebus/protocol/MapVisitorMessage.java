@@ -44,4 +44,5 @@ public class MapVisitorMessage extends VisitorMessage {
     public String toString() {
         return "MapVisitorMessage(" + data.toString() + ")";
     }
+
 }

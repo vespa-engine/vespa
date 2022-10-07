@@ -52,9 +52,8 @@ public abstract class Feeder {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
-            message = "(no message) " + sw.toString();
+            message = "(no message) " + sw;
         }
-
         addError("ERROR: " + message);
     }
 
@@ -84,17 +83,9 @@ public abstract class Feeder {
                 if (createIfNonExistent && op.getDocumentUpdate() != null) {
                     op.getDocumentUpdate().setCreateIfNonExistent(true);
                 }
-
-                // Done feeding.
-                if (op.getType() == FeedOperation.Type.INVALID) {
-                    break;
-                } else {
-                    sender.sendOperation(op);
-                }
-            } catch (XMLStreamException e) {
-                addException(e);
-                break;
-            } catch (NullPointerException e) {
+                if (op.getType() == FeedOperation.Type.INVALID) break; // Done feeding
+                sender.sendOperation(op);
+            } catch (XMLStreamException | NullPointerException e) {
                 addException(e);
                 break;
             } catch (Exception e) {

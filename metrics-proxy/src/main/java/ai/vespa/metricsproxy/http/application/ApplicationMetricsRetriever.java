@@ -167,7 +167,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
                 if ( e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
-                    log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() +  "' : " + cause.getMessage());
+                    log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() + "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
                 }

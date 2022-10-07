@@ -96,7 +96,7 @@ public class DocumentUpdateJsonSerializerTest {
     private static DocumentUpdate jsonToDocumentUpdate(String jsonDoc, String docId) {
         final InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
-        return (DocumentUpdate) reader.readSingleDocument(DocumentOperationType.UPDATE, docId);
+        return (DocumentUpdate) reader.readSingleDocument(DocumentOperationType.UPDATE, docId).operation();
     }
 
     private static String documentUpdateToJson(DocumentUpdate update) {

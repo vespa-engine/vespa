@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
  * @author hakonhall
  */
 public class DimensionHelper {
-    private static Map<FetchVector.Dimension, String> serializedDimensions = new HashMap<>();
+
+    private static final Map<FetchVector.Dimension, String> serializedDimensions = new HashMap<>();
+
     static {
         serializedDimensions.put(FetchVector.Dimension.ZONE_ID, "zone");
         serializedDimensions.put(FetchVector.Dimension.HOSTNAME, "hostname");
@@ -29,7 +31,7 @@ public class DimensionHelper {
         }
     }
 
-    private static Map<String, FetchVector.Dimension> deserializedDimensions = serializedDimensions.
+    private static final Map<String, FetchVector.Dimension> deserializedDimensions = serializedDimensions.
             entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     public static String toWire(FetchVector.Dimension dimension) {
@@ -51,4 +53,5 @@ public class DimensionHelper {
     }
 
     private DimensionHelper() { }
+
 }
