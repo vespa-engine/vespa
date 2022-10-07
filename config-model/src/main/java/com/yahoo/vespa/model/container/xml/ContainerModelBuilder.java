@@ -245,7 +245,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT +
                                                ", have " + nonRetiredNodes + " non-retired");
         }
-        cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
+        cluster.addSimpleComponent("com.yahoo.vespa.curator.CuratorWrapper", null, "zkfacade");
 
         // These need to be setup so that they will use the container's config id, since each container
         // have different config (id of zookeeper server)
