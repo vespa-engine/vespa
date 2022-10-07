@@ -223,9 +223,8 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 void
 DataStoreBase::transferElemHoldList(generation_t generation)
 {
-    ElemHold2List &elemHold2List = _elemHold2List;
-    for (const ElemHold1ListElem & elemHold1 : _elemHold1List) {
-        elemHold2List.push_back(ElemHold2ListElem(elemHold1, generation));
+    for (const auto& elemHold1 : _elemHold1List) {
+        _elemHold2List.push_back(ElemHold2ListElem(elemHold1, generation));
     }
     _elemHold1List.clear();
 }
@@ -289,14 +288,14 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
 {
     _states[bufferId].onHold(bufferId);
     size_t holdBytes = 0u;  // getMemStats() still accounts held buffers
-    GenerationHeldBase::UP hold(new BufferHold(holdBytes, *this, bufferId));
+    auto hold = std::make_unique<BufferHold>(holdBytes, *this, bufferId);
     _genHolder.hold(std::move(hold));
 }
 
 void
 DataStoreBase::enableFreeLists()
 {
-    for (BufferState & bState : _states) {
+    for (auto& bState : _states) {
         if (!bState.isActive() || bState.getCompacting()) {
             continue;
         }
@@ -308,7 +307,7 @@ DataStoreBase::enableFreeLists()
 void
 DataStoreBase::disableFreeLists()
 {
-    for (BufferState & bState : _states) {
+    for (auto& bState : _states) {
         bState.disable_free_list();
     }
     _freeListsEnabled = false;
@@ -340,9 +339,9 @@ DataStoreBase::getMemStats() const
 {
     MemoryStats stats;
 
-    for (const BufferState & bState: _states) {
+    for (const auto& bState: _states) {
         auto typeHandler = bState.getTypeHandler();
-        BufferState::State state = bState.getState();
+        auto state = bState.getState();
         if ((state == BufferState::State::FREE) || (typeHandler == nullptr)) {
             ++stats._freeBuffers;
         } else if (state == BufferState::State::ACTIVE) {
@@ -370,7 +369,7 @@ DataStoreBase::getAddressSpaceUsage() const
     size_t usedArrays = 0;
     size_t deadArrays = 0;
     size_t limitArrays = 0;
-    for (const BufferState & bState: _states) {
+    for (const auto& bState: _states) {
         if (bState.isActive()) {
             uint32_t arraySize = bState.getArraySize();
             usedArrays += bState.size() / arraySize;
@@ -386,7 +385,7 @@ DataStoreBase::getAddressSpaceUsage() const
             LOG_ABORT("should not be reached");
         }
     }
-    return vespalib::AddressSpace(usedArrays, deadArrays, limitArrays);
+    return {usedArrays, deadArrays, limitArrays};
 }
 
 void
@@ -423,12 +422,11 @@ DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
     state.fallbackResize(bufferId, elemsNeeded,
                          _buffers[bufferId].get_atomic_buffer(),
                          toHoldBuffer);
-    GenerationHeldBase::UP
-        hold(new FallbackHold(oldAllocElems * elementSize,
-                              std::move(toHoldBuffer),
-                              oldUsedElems,
-                              state.getTypeHandler(),
-                              state.getTypeId()));
+    auto hold = std::make_unique<FallbackHold>(oldAllocElems * elementSize,
+                                               std::move(toHoldBuffer),
+                                               oldUsedElems,
+                                               state.getTypeHandler(),
+                                               state.getTypeId());
     if (!_initializing) {
         _genHolder.hold(std::move(hold));
     }
@@ -454,9 +452,15 @@ std::unique_ptr<CompactingBuffers>
 DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     // compact memory usage
-    CompactBufferCandidates elem_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_active_buffers_ratio(), compaction_strategy.getMaxDeadBytesRatio() / 2, CompactionStrategy::DEAD_BYTES_SLACK);
+    CompactBufferCandidates elem_buffers(_numBuffers, compaction_strategy.get_max_buffers(),
+                                         compaction_strategy.get_active_buffers_ratio(),
+                                         compaction_strategy.getMaxDeadBytesRatio() / 2,
+                                         CompactionStrategy::DEAD_BYTES_SLACK);
     // compact address space
-    CompactBufferCandidates array_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_active_buffers_ratio(), compaction_strategy.getMaxDeadAddressSpaceRatio() / 2, CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
+    CompactBufferCandidates array_buffers(_numBuffers, compaction_strategy.get_max_buffers(),
+                                          compaction_strategy.get_active_buffers_ratio(),
+                                          compaction_strategy.getMaxDeadAddressSpaceRatio() / 2,
+                                          CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
     uint32_t free_buffers = 0;
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = getBufferState(bufferId);

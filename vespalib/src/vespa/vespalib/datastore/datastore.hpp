@@ -44,19 +44,18 @@ template <typename RefT>
 void
 DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
 {
-    ElemHold2List &elemHold2List = _elemHold2List;
-
-    ElemHold2List::iterator it(elemHold2List.begin());
-    ElemHold2List::iterator ite(elemHold2List.end());
+    auto it = _elemHold2List.begin();
+    auto ite = _elemHold2List.end();
     uint32_t freed = 0;
     for (; it != ite; ++it) {
-        if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0)
+        if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0) {
             break;
+        }
         free_elem_internal(it->_ref, it->_len, true);
         ++freed;
     }
     if (freed != 0) {
-        elemHold2List.erase(elemHold2List.begin(), it);
+        _elemHold2List.erase(_elemHold2List.begin(), it);
     }
 }
 
@@ -64,14 +63,12 @@ template <typename RefT>
 void
 DataStoreT<RefT>::clearElemHoldList()
 {
-    ElemHold2List &elemHold2List = _elemHold2List;
-
-    ElemHold2List::iterator it(elemHold2List.begin());
-    ElemHold2List::iterator ite(elemHold2List.end());
+    auto it = _elemHold2List.begin();
+    auto ite = _elemHold2List.end();
     for (; it != ite; ++it) {
         free_elem_internal(it->_ref, it->_len, true);
     }
-    elemHold2List.clear();
+    _elemHold2List.clear();
 }
 
 template <typename RefT>
