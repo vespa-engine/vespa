@@ -22,7 +22,6 @@ import com.yahoo.vespa.objects.BufferSerializer;
 public class ProgressToken {
 
     private static final Logger log = Logger.getLogger(ProgressToken.class.getName());
-
     /**
      * Any bucket kept track of by a <code>ProgressToken</code> instance may
      * be in one of two states: pending or active. <em>Pending</em> means that
@@ -849,5 +848,4 @@ public class ProgressToken {
         pendingBucketCount = 0;
         activeBucketCount = 0;
     }
-
 }

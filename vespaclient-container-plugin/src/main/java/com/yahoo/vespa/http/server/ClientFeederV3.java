@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.ResourceReference;
@@ -52,12 +53,13 @@ class ClientFeederV3 {
     private final AtomicInteger ongoingRequests = new AtomicInteger(0);
     private final String hostName;
 
-    ClientFeederV3(ReferencedResource<SharedSourceSession> sourceSession,
-                   FeedReaderFactory feedReaderFactory,
-                   DocumentTypeManager docTypeManager,
-                   String clientId,
-                   Metric metric,
-                   ReplyHandler feedReplyHandler) {
+    ClientFeederV3(
+            ReferencedResource<SharedSourceSession> sourceSession,
+            FeedReaderFactory feedReaderFactory,
+            DocumentTypeManager docTypeManager,
+            String clientId,
+            Metric metric,
+            ReplyHandler feedReplyHandler) {
         this.sourceSession = sourceSession;
         this.clientId = clientId;
         this.feedReplyHandler = feedReplyHandler;
@@ -218,7 +220,10 @@ class ClientFeederV3 {
 
         // This is a bit hard to set up while testing, so we accept that things are not perfect.
         if (sourceSession.getResource().session() != null) {
-            metric.set(MetricNames.PENDING, (double) sourceSession.getResource().session().getPendingCount(), null);
+            metric.set(
+                    MetricNames.PENDING,
+                    Double.valueOf(sourceSession.getResource().session().getPendingCount()),
+                    null);
         }
 
         DocumentOperationMessageV3 message = DocumentOperationMessageV3.create(operation, operationId, metric);
@@ -226,7 +231,7 @@ class ClientFeederV3 {
             // typical end of feed
             return null;
         }
-        metric.add(MetricNames.NUM_OPERATIONS, 1, null);
+        metric.add(MetricNames.NUM_OPERATIONS, 1, null /*metricContext*/);
         log(Level.FINE, "Successfully deserialized document id: ", message.getOperationId());
         return message;
     }
@@ -235,6 +240,14 @@ class ClientFeederV3 {
         msg.getMessage().setContext(new ReplyContext(msg.getOperationId(), feedReplies));
         if (settings.traceLevel != null) {
             msg.getMessage().getTrace().setLevel(settings.traceLevel);
+        }
+        if (settings.priority != null) {
+            try {
+                DocumentProtocol.Priority priority = DocumentProtocol.Priority.valueOf(settings.priority);
+            }
+            catch (IllegalArgumentException i) {
+                log.severe(i.getMessage());
+            }
         }
     }
 
@@ -259,7 +272,7 @@ class ClientFeederV3 {
             if (now.plusSeconds(1).isAfter(prevOpsPerSecTime)) {
                 Duration duration = Duration.between(now, prevOpsPerSecTime);
                 double opsPerSec = operationsForOpsPerSec / (duration.toMillis() / 1000.);
-                metric.set(MetricNames.OPERATIONS_PER_SEC, opsPerSec, null);
+                metric.set(MetricNames.OPERATIONS_PER_SEC, opsPerSec, null /*metricContext*/);
                 operationsForOpsPerSec = 1.0d;
                 prevOpsPerSecTime = now;
             } else {
@@ -267,5 +280,4 @@ class ClientFeederV3 {
             }
         }
     }
-
 }

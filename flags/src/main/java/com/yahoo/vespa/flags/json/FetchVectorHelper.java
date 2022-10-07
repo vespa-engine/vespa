@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
  * @author hakonhall
  */
 public class FetchVectorHelper {
-
     public static Map<String, String> toWire(FetchVector vector) {
         Map<FetchVector.Dimension, String> map = vector.toMap();
         if (map.isEmpty()) return null;
@@ -25,5 +24,4 @@ public class FetchVectorHelper {
                 entry -> DimensionHelper.fromWire(entry.getKey()),
                 Map.Entry::getValue)));
     }
-
 }

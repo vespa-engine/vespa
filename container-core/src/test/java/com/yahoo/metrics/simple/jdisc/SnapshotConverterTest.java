@@ -20,7 +20,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -51,7 +50,7 @@ public class SnapshotConverterTest {
 
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             for (Map.Entry<String, String> dv : entry.getKey()) {
-                fail();
+                assertTrue(false);
             }
 
             int cnt = 0;
@@ -68,7 +67,7 @@ public class SnapshotConverterTest {
                     assertEquals(42.25, ((GaugeMetric) mv.getValue()).getLast(), 0.001);
                     assertEquals(1, ((GaugeMetric) mv.getValue()).getCount());
                 } else {
-                    fail();
+                    assertTrue(false);
                 }
             }
             assertEquals(3, cnt);

@@ -187,7 +187,7 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     private void populate(String prefixName,Map<String,?> parameters,Properties properties) {
         CompoundName prefix = new CompoundName(prefixName);
         for (Map.Entry<String,?> entry : parameters.entrySet())
-            properties.set(prefix.append(entry.getKey()), entry.getValue());
+            properties.set(prefix.append(entry.getKey()),entry.getValue());
     }
 
     private static class FreezeListener implements Runnable, ResponseReceiver {

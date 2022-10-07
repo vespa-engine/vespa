@@ -9,8 +9,10 @@ import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 
 /**
- * An asynchronous response from the document api.
- * Subclasses of this provide additional response information for particular operations.
+ * <p>An asynchronous response from the document api.
+ * Subclasses of this provide additional response information for particular operations.</p>
+ *
+ * <p>This is a <i>value object</i>.</p>
  *
  * @author bratseth
  */

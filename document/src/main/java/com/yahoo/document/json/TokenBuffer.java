@@ -213,12 +213,4 @@ public class TokenBuffer {
         }
         return toReturn;
     }
-
-    public void skipToRelativeNesting(int relativeNesting) {
-        int initialNesting = nesting();
-        do {
-            next();
-        } while ( nesting() > initialNesting + relativeNesting);
-    }
-
 }

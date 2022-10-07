@@ -29,14 +29,14 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 /**
- * Accept feeds from outside the Vespa cluster.
+ * Accept feeds from outside of the Vespa cluster.
  *
  * @author Steinar Knutsen
  */
 public class FeedHandler extends ThreadedHttpRequestHandler {
 
     protected final ReplyHandler feedReplyHandler;
-    private static final List<Integer> serverSupportedVersions = List.of(3);
+    private static final List<Integer> serverSupportedVersions = Collections.unmodifiableList(Arrays.asList(3));
     private static final Pattern USER_AGENT_PATTERN = Pattern.compile("vespa-http-client \\((.+)\\)");
     private final FeedHandlerV3 feedHandlerV3;
     private final DocumentApiMetrics metricsHelper;
@@ -144,5 +144,4 @@ public class FeedHandler extends ThreadedHttpRequestHandler {
     }
 
     @Override protected void destroy() { feedHandlerV3.destroy(); }
-
 }

@@ -46,10 +46,10 @@ import java.util.List;
  * type - any name/value pair which existing in an updatable structure can be addressed by creating the Fields as
  * needed. For example:
  * <pre>
- * FieldUpdate field = FieldUpdate.createIncrement(new Field("myattribute",DataType.INT),130);
+ * FieldUpdate field=FieldUpdate.createIncrement(new Field("myattribute",DataType.INT),130);
  * </pre>
  *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @see com.yahoo.document.update.ValueUpdate
  * @see com.yahoo.document.DocumentUpdate
  */
@@ -135,7 +135,7 @@ public class FieldUpdate {
      * @throws IllegalArgumentException if the data type of the value update is not equal to the data type of this field
      */
     public FieldUpdate addValueUpdate(ValueUpdate valueUpdate) {
-        valueUpdate.checkCompatibility(field.getDataType()); // will throw exception
+        valueUpdate.checkCompatibility(field.getDataType());  //will throw exception
         valueUpdates.add(valueUpdate);
         return this;
     }
@@ -149,7 +149,7 @@ public class FieldUpdate {
      * @throws IllegalArgumentException if the data type of the value update is not equal to the data type of this field
      */
     public FieldUpdate addValueUpdate(int index, ValueUpdate valueUpdate) {
-        valueUpdate.checkCompatibility(field.getDataType()); // will throw exception
+        valueUpdate.checkCompatibility(field.getDataType());  //will throw exception
         valueUpdates.add(index, valueUpdate);
         return this;
     }

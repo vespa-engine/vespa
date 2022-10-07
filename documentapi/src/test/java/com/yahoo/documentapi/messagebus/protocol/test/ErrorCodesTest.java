@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
  * @author vekterli
  */
 public class ErrorCodesTest {
-
     private class NamedErrorCodes {
         private final TreeMap<String, Integer> nameAndCode = new TreeMap<>();
 

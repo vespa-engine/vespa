@@ -113,8 +113,7 @@ public class DocumentV1ApiTest {
             .maxThrottled(2)
             .resendDelayMillis(1 << 30)
             .build();
-    final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd")
-                                                   .ignoreundefinedfields(true).build();
+    final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd").build();
     final DocumentTypeManager manager = new DocumentTypeManager(docConfig);
     final Document doc1 = new Document(manager.getDocumentType("music"), "id:space:music::one");
     final Document doc2 = new Document(manager.getDocumentType("music"), "id:space:music:n=1:two");
@@ -331,7 +330,6 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"failure?\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
-        assertNull(response.getResponse().headers().get("X-Vespa-Ignored-Fields"));
 
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
@@ -378,15 +376,13 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
                                       "{" +
                                       "  \"fields\": {" +
-                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }, " +
-                                      "    \"nonexisting\": { \"assign\": \"Ignored\" }" +
+                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
                                       "  }" +
                                       "}");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
-        assertEquals("true", response.getResponse().headers().get("X-Vespa-Ignored-Fields").get(0).toString());
 
         // PUT with namespace, document type and group is also a restricted visit which requires a cluster.
         access.expect(parameters -> {

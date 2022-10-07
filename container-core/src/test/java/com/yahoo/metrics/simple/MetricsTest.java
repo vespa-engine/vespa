@@ -17,10 +17,9 @@ import com.yahoo.metrics.simple.jdisc.SimpleMetricConsumer;
 /**
  * Functional test for simple metric implementation.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class MetricsTest extends UnitTestSetup {
-
     SimpleMetricConsumer metricApi;
 
     @BeforeEach
@@ -37,7 +36,7 @@ public class MetricsTest extends UnitTestSetup {
     @Test
     final void smokeTest() throws InterruptedException {
         final String metricName = "testMetric";
-        metricApi.set(metricName, 1.0d, null);
+        metricApi.set(metricName, Double.valueOf(1.0d), null);
         updater.gotData.await(10, TimeUnit.SECONDS);
         Bucket s = getUpdatedSnapshot();
         Collection<Entry<Point, UntypedMetric>> values = s.getValuesForMetric(metricName);

@@ -29,6 +29,11 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart
  */
 public class JsonReader {
 
+    public Optional<DocumentParseInfo> parseDocument() throws IOException {
+        DocumentParser documentParser = new DocumentParser(parser);
+        return documentParser.parse(Optional.empty());
+    }
+
     private final JsonParser parser;
     private final DocumentTypeManager typeManager;
     private ReaderState state = ReaderState.AT_START;
@@ -48,19 +53,14 @@ public class JsonReader {
         }
     }
 
-    public Optional<DocumentParseInfo> parseDocument() throws IOException {
-        DocumentParser documentParser = new DocumentParser(parser);
-        return documentParser.parse(Optional.empty());
-    }
-
     /**
      * Reads a single operation. The operation is not expected to be part of an array.
      *
      * @param operationType the type of operation (update or put)
-     * @param docIdString document ID
-     * @return the parsed document operation
+     * @param docIdString document ID.
+     * @return the document
      */
-    public ParsedDocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
+    public DocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo;
         try {
@@ -72,9 +72,9 @@ public class JsonReader {
         }
         documentParseInfo.operationType = operationType;
         VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
-        ParsedDocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
+        DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
-        operation.operation().setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
+        operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
 
@@ -106,7 +106,7 @@ public class JsonReader {
         VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
         DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.get().documentId.getDocType(), typeManager),
-                documentParseInfo.get()).operation();
+                documentParseInfo.get());
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }
@@ -132,5 +132,4 @@ public class JsonReader {
             throw new IllegalArgumentException(e);
         }
     }
-
 }

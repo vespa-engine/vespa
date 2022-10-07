@@ -7,9 +7,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 
 public class FeedOperation {
-
     public enum Type {DOCUMENT, REMOVE, UPDATE, INVALID}
-
     public static final FeedOperation INVALID = new FeedOperation(Type.INVALID);
 
     private Type type;
@@ -38,5 +36,4 @@ public class FeedOperation {
                 " testandset=" + getCondition() +
                 '}';
     }
-
 }

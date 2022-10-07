@@ -54,14 +54,17 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
      * @param delegateHandler the "real" request handler that this handler wraps
      * @param contentCharsetName name of the charset to use when interpreting the content data
      */
-    public FormPostRequestHandler(RequestHandler delegateHandler, String contentCharsetName, boolean removeBody) {
+    public FormPostRequestHandler(
+            final RequestHandler delegateHandler,
+            final String contentCharsetName,
+            final boolean removeBody) {
         this.delegateHandler = Objects.requireNonNull(delegateHandler);
         this.contentCharsetName = Objects.requireNonNull(contentCharsetName);
         this.removeBody = removeBody;
     }
 
     @Override
-    public ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
+    public ContentChannel handleRequest(final Request request, final ResponseHandler responseHandler) {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         Objects.requireNonNull(responseHandler, "responseHandler");
 
@@ -74,24 +77,24 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
     }
 
     @Override
-    public void write(ByteBuffer buf, CompletionHandler completionHandler) {
+    public void write(final ByteBuffer buf, final CompletionHandler completionHandler) {
         assert buf.hasArray();
         accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
         completionHandler.completed();
     }
 
     @Override
-    public void close(CompletionHandler completionHandler) {
-        try (ResourceReference ref = requestReference) {
-            byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
-            String content = new String(requestContentBytes, contentCharset);
+    public void close(final CompletionHandler completionHandler) {
+        try (final ResourceReference ref = requestReference) {
+            final byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
+            final String content = new String(requestContentBytes, contentCharset);
             completionHandler.completed();
-            Map<String, List<String>> parameterMap = parseFormParameters(content);
+            final Map<String, List<String>> parameterMap = parseFormParameters(content);
             mergeParameters(parameterMap, request.parameters());
-            ContentChannel contentChannel = delegateHandler.handleRequest(request, responseHandler);
+            final ContentChannel contentChannel = delegateHandler.handleRequest(request, responseHandler);
             if (contentChannel != null) {
                 if (!removeBody) {
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
+                    final ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
                     contentChannel.write(byteBuffer, NOOP_COMPLETION_HANDLER);
                 }
                 contentChannel.close(NOOP_COMPLETION_HANDLER);
@@ -106,10 +109,14 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
      * @return a valid Charset for the charset name (never returns null)
      * @throws RequestException if the charset name is invalid or unsupported
      */
-    private static Charset getCharsetByName(String charsetName) throws RequestException {
+    private static Charset getCharsetByName(final String charsetName) throws RequestException {
         try {
-            return Charset.forName(charsetName);
-        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            final Charset charset = Charset.forName(charsetName);
+            if (charset == null) {
+                throw new RequestException(UNSUPPORTED_MEDIA_TYPE, "Unsupported charset " + charsetName);
+            }
+            return charset;
+        } catch (final IllegalCharsetNameException |UnsupportedCharsetException e) {
             throw new RequestException(UNSUPPORTED_MEDIA_TYPE, "Unsupported charset " + charsetName, e);
         }
     }
@@ -120,17 +127,17 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
      * @param formContent raw form content data (body)
      * @return map of decoded parameters
      */
-    private static Map<String, List<String>> parseFormParameters(String formContent) {
+    private static Map<String, List<String>> parseFormParameters(final String formContent) {
         if (formContent.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<String, List<String>> parameterMap = new HashMap<>();
-        String[] params = formContent.split("&");
-        for (String param : params) {
-            String[] parts = param.split("=");
-            String paramName = urlDecode(parts[0]);
-            String paramValue = parts.length > 1 ? urlDecode(parts[1]) : "";
+        final Map<String, List<String>> parameterMap = new HashMap<>();
+        final String[] params = formContent.split("&");
+        for (final String param : params) {
+            final String[] parts = param.split("=");
+            final String paramName = urlDecode(parts[0]);
+            final String paramValue = parts.length > 1 ? urlDecode(parts[1]) : "";
             List<String> currentValues = parameterMap.get(paramName);
             if (currentValues == null) {
                 currentValues = new LinkedList<>();
@@ -152,7 +159,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
             // Regardless of the charset used to transfer the request body,
             // all percent-escaping of non-ascii characters should use UTF-8 code points.
             return URLDecoder.decode(encoded, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
+        } catch (final UnsupportedEncodingException e) {
             // Unfortunately, there is no URLDecoder.decode() method that takes a Charset, so we have to deal
             // with this exception.
             throw new IllegalStateException("Whoa, JVM doesn't support UTF-8 today.", e);
@@ -165,9 +172,11 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
      * @param source containing the parameters to copy into the destination
      * @param destination receiver of parameters, possibly already containing data
      */
-    private static void mergeParameters(Map<String,List<String>> source, Map<String,List<String>> destination) {
+    private static void mergeParameters(
+            final Map<String,List<String>> source,
+            final Map<String,List<String>> destination) {
         for (Map.Entry<String, List<String>> entry : source.entrySet()) {
-            List<String> destinationValues = destination.get(entry.getKey());
+            final List<String> destinationValues = destination.get(entry.getKey());
             if (destinationValues != null) {
                 destinationValues.addAll(entry.getValue());
             } else {
@@ -180,5 +189,4 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
     public RequestHandler getDelegate() {
         return delegateHandler;
     }
-
 }

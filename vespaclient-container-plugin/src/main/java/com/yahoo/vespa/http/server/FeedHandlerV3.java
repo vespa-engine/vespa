@@ -24,8 +24,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * One client has one ClientFeederV3 shared between all client threads.
- * Contains logic for shutting down cleanly as the server is upgraded.
+ * This code is based on v2 code, however, in v3, one client has one ClientFeederV3 shared between all client threads.
+ * The new API has more logic for shutting down cleanly as the server is more likely to be upgraded.
+ * The code is restructured a bit.
  *
  * @author dybis
  */
@@ -59,7 +60,7 @@ public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
     }
 
     // TODO: If this is set up to run without first invoking the old FeedHandler code, we should
-    //       verify the version header first.
+    // verify the version header first. This is done in the old code.
     @Override
     public HttpResponse handle(HttpRequest request) {
         String clientId = clientId(request);
@@ -69,7 +70,7 @@ public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
                 clientFeederByClientId.put(clientId,
                                            new ClientFeederV3(retainSource(sessionCache, sourceSessionParams),
-                                                              new FeedReaderFactory(true), // TODO: Make error debugging configurable
+                                                              new FeedReaderFactory(true), //TODO make error debugging configurable
                                                               docTypeManager,
                                                               clientId,
                                                               metric,

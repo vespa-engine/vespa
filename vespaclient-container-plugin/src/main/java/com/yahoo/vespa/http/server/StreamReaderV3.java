@@ -10,14 +10,16 @@ import com.yahoo.vespaxmlparser.FeedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 /**
  * This code is based on v2 code, but restructured so stream reading code is in one dedicated class.
- *
  * @author dybis
  */
 public class StreamReaderV3 {
+
+    protected static final Logger log = Logger.getLogger(StreamReaderV3.class.getName());
 
     private final FeedReaderFactory feedReaderFactory;
     private final DocumentTypeManager docTypeManager;
@@ -28,11 +30,15 @@ public class StreamReaderV3 {
     }
 
     public FeedOperation getNextOperation(InputStream requestInputStream, FeederSettings settings) throws Exception {
+        FeedOperation op = null;
+
         int length = readByteLength(requestInputStream);
+
         try (InputStream limitedInputStream = new ByteLimitedInputStream(requestInputStream, length)){
             FeedReader reader = feedReaderFactory.createReader(limitedInputStream, docTypeManager, settings.dataFormat);
-            return reader.read();
+            op = reader.read();
         }
+        return op;
     }
 
     public Optional<String> getNextOperationId(InputStream requestInputStream) throws IOException {
@@ -42,7 +48,7 @@ public class StreamReaderV3 {
             if (c == 32) {
                 break;
             }
-            idBuf.append((char) c);  // it's ASCII
+            idBuf.append((char) c);  //it's ASCII
         }
         if (idBuf.length() == 0) {
             return Optional.empty();
@@ -57,7 +63,7 @@ public class StreamReaderV3 {
             if (c == 10) {
                 break;
             }
-            lenBuf.append((char) c);  // it's ASCII
+            lenBuf.append((char) c);  //it's ASCII
         }
         if (lenBuf.length() == 0) {
             throw new IllegalStateException("Operation length missing.");
@@ -65,8 +71,9 @@ public class StreamReaderV3 {
         return Integer.valueOf(lenBuf.toString(), 16);
     }
 
-    public static InputStream unzipStreamIfNeeded(final HttpRequest httpRequest) throws IOException {
-        String contentEncodingHeader = httpRequest.getHeader("content-encoding");
+    public static InputStream unzipStreamIfNeeded(final HttpRequest httpRequest)
+            throws IOException {
+        final String contentEncodingHeader = httpRequest.getHeader("content-encoding");
         if ("gzip".equals(contentEncodingHeader)) {
             return new GZIPInputStream(httpRequest.getData());
         } else {

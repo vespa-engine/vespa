@@ -92,7 +92,7 @@ public class Schema {
         Map<String, List<Function>> functions = new HashMap<>();
         for (var profile : rankProfiles().values()) {
             for (var entry : profile.definedFunctions().entrySet())
-                functions.computeIfAbsent(entry.key(), k -> new ArrayList<>()).addAll(entry.getValue());
+                functions.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).addAll(entry.getValue());
         }
         return functions;
     }

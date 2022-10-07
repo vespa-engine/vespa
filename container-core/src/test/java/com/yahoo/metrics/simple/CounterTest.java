@@ -33,7 +33,7 @@ public class CounterTest {
     }
 
     @Test
-    final void testAdd() {
+    final void testAdd() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Counter c = receiver.declareCounter(metricName);
         c.add();
@@ -47,7 +47,7 @@ public class CounterTest {
     }
 
     @Test
-    final void testAddLong() {
+    final void testAddLong() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Counter c = receiver.declareCounter(metricName);
         final long twoToThePowerOfFourtyeight = 65536L * 65536L * 65536L;
@@ -62,7 +62,7 @@ public class CounterTest {
     }
 
     @Test
-    final void testAddPoint() {
+    final void testAddPoint() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Counter c = receiver.declareCounter(metricName, p);
@@ -77,7 +77,7 @@ public class CounterTest {
     }
 
     @Test
-    final void testAddLongPoint() {
+    final void testAddLongPoint() throws InterruptedException {
         final String metricName = "unitTestCounter";
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Counter c = receiver.declareCounter(metricName, p);

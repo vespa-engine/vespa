@@ -175,44 +175,44 @@ public class Headers implements Map<String, List<String>> {
     }
 
     /**
-     * Removes the given value from the entry of the specified key.
+     * <p>Removes the given value from the entry of the specified key.</p>
      *
-     * @param key   the key of the entry to remove from
-     * @param value the value to remove from the entry
-     * @return true if the value was removed
+     * @param key   The key of the entry to remove from.
+     * @param value The value to remove from the entry.
+     * @return True if the value was removed.
      */
     public boolean remove(String key, String value) {
         return h.remove(key, value);
     }
 
     /**
-     * Convenience method for retrieving the first value of a named header field. If the header is not set, or if the
-     * value list is empty, this method returns null.
+     * <p>Convenience method for retrieving the first value of a named header field. If the header is not set, or if the
+     * value list is empty, this method returns null.</p>
      *
-     * @param key the key whose first value to return.
-     * @return the first value of the named header, or null.
+     * @param key The key whose first value to return.
+     * @return The first value of the named header, or null.
      */
     public String getFirst(String key) {
         return h.getFirst(key);
     }
 
     /**
-     * Convenience method for checking whether a named header field is <em>true</em>. To satisfy this, the
+     * <p>Convenience method for checking whether or not a named header field is <em>true</em>. To satisfy this, the
      * header field needs to have at least 1 entry, and Boolean.valueOf() of all its values must parse as
-     * <em>true</em>.
+     * <em>true</em>.</p>
      *
-     * @param key the key whose values to parse as a boolean
-     * @return the boolean value of the named header
+     * @param key The key whose values to parse as a boolean.
+     * @return The boolean value of the named header.
      */
     public boolean isTrue(String key) {
         return h.isTrue(key);
     }
 
     /**
-     * Returns an unmodifiable list of all key-value pairs of this. This provides a flattened view on the content of
-     * this map.
+     * <p>Returns an unmodifiable list of all key-value pairs of this. This provides a flattened view on the content of
+     * this map.</p>
      *
-     * @return the collection of entries
+     * @return The collection of entries.
      */
     public List<Entry<String, String>> entries() {
         return h.entries();

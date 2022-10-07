@@ -23,10 +23,9 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
  * Functional tests for the value buckets, as implemented in the class Bucket,
  * and by extension the value store itself, UntypedValue.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class BucketTest {
-
     private Bucket bucket;
 
     @BeforeEach
@@ -56,12 +55,23 @@ public class BucketTest {
         for (Entry<Identifier, UntypedMetric> x : bucket.entrySet()) {
             String metricName = x.getKey().getName();
             switch (metricName) {
-                case "nalle" -> ++nalle;
-                case "nalle_0" -> ++nalle0;
-                case "nalle_1" -> ++nalle1;
-                case "nalle_2" -> ++nalle2;
-                case "nalle_3" -> ++nalle3;
-                default -> throw new IllegalStateException();
+                case "nalle":
+                    ++nalle;
+                    break;
+                case "nalle_0":
+                    ++nalle0;
+                    break;
+                case "nalle_1":
+                    ++nalle1;
+                    break;
+                case "nalle_2":
+                    ++nalle2;
+                    break;
+                case "nalle_3":
+                    ++nalle3;
+                    break;
+                default:
+                    throw new IllegalStateException();
             }
         }
         assertEquals(4, nalle);

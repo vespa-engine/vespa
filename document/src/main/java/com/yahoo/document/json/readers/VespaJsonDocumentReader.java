@@ -17,7 +17,6 @@ import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.json.JsonReaderException;
-import com.yahoo.document.json.ParsedDocumentOperation;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.FieldUpdate;
 
@@ -51,65 +50,67 @@ public class VespaJsonDocumentReader {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
     }
 
-    public ParsedDocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
+    public DocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
         final DocumentOperation documentOperation;
-        boolean fullyApplied = true;
         try {
             switch (documentParseInfo.operationType) {
-                case PUT -> {
+                case PUT:
                     documentOperation = new DocumentPut(new Document(documentType, documentParseInfo.documentId));
-                    fullyApplied = readPut(documentParseInfo.fieldsBuffer, (DocumentPut) documentOperation);
+                    readPut(documentParseInfo.fieldsBuffer, (DocumentPut) documentOperation);
                     verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
-                }
-                case REMOVE -> documentOperation = new DocumentRemove(documentParseInfo.documentId);
-                case UPDATE -> {
+                    break;
+                case REMOVE:
+                    documentOperation = new DocumentRemove(documentParseInfo.documentId);
+                    break;
+                case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    fullyApplied = readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
+                    readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
                     verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
-                }
-                default -> throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
+                    break;
+                default:
+                    throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
             }
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, documentParseInfo.documentId);
         }
         if (documentParseInfo.create.isPresent()) {
-            if (! (documentOperation instanceof DocumentUpdate update)) {
+            if (! ( documentOperation instanceof DocumentUpdate)) {
                 throw new IllegalArgumentException("Could not set create flag on non update operation.");
             }
+            DocumentUpdate update = (DocumentUpdate) documentOperation;
             update.setCreateIfNonExistent(documentParseInfo.create.get());
         }
-        return new ParsedDocumentOperation(documentOperation, fullyApplied);
+        return documentOperation;
     }
 
     // Exposed for unit testing...
-    public boolean readPut(TokenBuffer buffer, DocumentPut put) {
+    public void readPut(TokenBuffer buffer, DocumentPut put) {
         try {
             if (buffer.isEmpty()) // no "fields" map
                 throw new IllegalArgumentException(put + " is missing a 'fields' map");
-            return populateComposite(buffer, put.getDocument(), ignoreUndefinedFields);
+            populateComposite(buffer, put.getDocument(), ignoreUndefinedFields);
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, put.getId());
         }
     }
 
     // Exposed for unit testing...
-    public boolean readUpdate(TokenBuffer buffer, DocumentUpdate update) {
+    public void readUpdate(TokenBuffer buffer, DocumentUpdate update) {
         if (buffer.isEmpty())
-            throw new IllegalArgumentException("Update of document " + update.getId() + " is missing a 'fields' map");
+            throw new IllegalArgumentException("update of document " + update.getId() + " is missing a 'fields' map");
         expectObjectStart(buffer.currentToken());
         int localNesting = buffer.nesting();
 
         buffer.next();
-        boolean fullyApplied = true;
         while (localNesting <= buffer.nesting()) {
             expectObjectStart(buffer.currentToken());
 
             String fieldName = buffer.currentName();
             try {
                 if (isFieldPath(fieldName)) {
-                    fullyApplied &= addFieldPathUpdates(update, buffer, fieldName);
+                    addFieldPathUpdates(update, buffer, fieldName);
                 } else {
-                    fullyApplied &= addFieldUpdates(update, buffer, fieldName);
+                    addFieldUpdates(update, buffer, fieldName);
                 }
                 expectObjectEnd(buffer.currentToken());
             }
@@ -118,18 +119,12 @@ public class VespaJsonDocumentReader {
             }
             buffer.next();
         }
-        return fullyApplied;
     }
 
-    private boolean addFieldUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldName) {
+    private void addFieldUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldName) {
         Field field = update.getType().getField(fieldName);
-        if (field == null) {
-            if (! ignoreUndefinedFields)
-                throw new IllegalArgumentException("No field named '" + fieldName + "' in " + update.getType());
-            buffer.skipToRelativeNesting(-1);
-            return false;
-        }
-
+        if (field == null)
+            throw new IllegalArgumentException("No field named '" + fieldName + "' in " + update.getType());
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 
@@ -163,10 +158,9 @@ public class VespaJsonDocumentReader {
             buffer.next();
         }
         update.addFieldUpdate(fieldUpdate);
-        return true;
     }
 
-    private boolean addFieldPathUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldPath) {
+    private void addFieldPathUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldPath) {
         int localNesting = buffer.nesting();
 
         buffer.next();
@@ -191,7 +185,6 @@ public class VespaJsonDocumentReader {
             update.addFieldPathUpdate(fieldPathUpdate);
             buffer.next();
         }
-        return true; // TODO: Track fullyApplied for fieldPath updates
     }
 
     private AssignFieldPathUpdate readAssignFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
@@ -237,5 +230,4 @@ public class VespaJsonDocumentReader {
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }
-
 }

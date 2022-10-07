@@ -6,7 +6,7 @@ package com.yahoo.vespa.http.server;
  *
  * @author Steinar Knutsen
  */
-public final class Headers {
+final class Headers {
 
     private Headers() {
     }
@@ -23,6 +23,7 @@ public final class Headers {
     // This value can be used to route the request to a specific server when using
     // several servers. It is a random value that is the same for the whole session.
     public static final String SHARDING_KEY = "X-Yahoo-Feed-Sharding-Key";
+    public static final String PRIORITY = "X-Yahoo-Feed-Priority";
     public static final String TRACE_LEVEL = "X-Yahoo-Feed-Trace-Level";
 
     public static final int HTTP_NOT_ACCEPTABLE = 406;
@@ -32,9 +33,5 @@ public final class Headers {
     public static final String OUTSTANDING_REQUESTS = "X-Yahoo-Outstanding-Requests";
     public static final String HOSTNAME = "X-Yahoo-Hostname";
     public static final String SILENTUPGRADE = "X-Yahoo-Silent-Upgrade";
-
-    // A response header present and set to "true" onlynif any fields of a document operation were ignored
-    // because they were not declared in the target document type.
-    public static final String IGNORED_FIELDS = "X-Vespa-Ignored-Fields";
 
 }
