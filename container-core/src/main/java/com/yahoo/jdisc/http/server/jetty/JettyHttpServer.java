@@ -142,13 +142,10 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletContextHandler servletContextHandler = createServletContextHandler();
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
-        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
-        var secureRedirectHandler = new SecuredRedirectHandler(connectorConfigs);
-        secureRedirectHandler.setHandler(servletContextHandler);
-
         var proxyHandler = new HealthCheckProxyHandler(connectors);
-        proxyHandler.setHandler(secureRedirectHandler);
+        proxyHandler.setHandler(servletContextHandler);
 
+        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
         var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
         authEnforcer.setHandler(proxyHandler);
 

@@ -56,7 +56,6 @@ public class ConnectorFactory {
     // e.g. due to TLS configuration through environment variables.
     private static void runtimeConnectorConfigValidation(ConnectorConfig config) {
         validateProxyProtocolConfiguration(config);
-        validateSecureRedirectConfig(config);
     }
 
     private static void validateProxyProtocolConfiguration(ConnectorConfig config) {
@@ -66,12 +65,6 @@ public class ConnectorFactory {
             if (!isSslEffectivelyEnabled(config) || tlsMixedModeEnabled) {
                 throw new IllegalArgumentException("Proxy protocol can only be enabled if connector is effectively HTTPS only");
             }
-        }
-    }
-
-    private static void validateSecureRedirectConfig(ConnectorConfig config) {
-        if (config.secureRedirect().enabled() && isSslEffectivelyEnabled(config)) {
-            throw new IllegalArgumentException("Secure redirect can only be enabled on connectors without HTTPS");
         }
     }
 
