@@ -124,12 +124,12 @@ public record VespaVersion(Version version,
         /** We don't have sufficient evidence that this version is working */
         low,
 
-        /** This version works, but we want users to stop using it */
-        legacy,
-        
         /** We have sufficient evidence that this version is working */
         normal,
-        
+
+        /** This version works, but we want users to stop using it */
+        legacy,
+
         /** We have overwhelming evidence that this version is working */
         high;
         
