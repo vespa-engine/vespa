@@ -62,7 +62,7 @@ public:
     }
 
     void expect_tensor(const Value* exp, EntryRef ref) {
-        const auto* act = store.get_tensor(ref);
+        const auto* act = store.get_tensor_ptr(ref);
         ASSERT_TRUE(act);
         EXPECT_EQ(exp, act);
     }
@@ -81,7 +81,7 @@ TEST_F(DirectTensorStoreTest, heap_allocated_memory_is_tracked)
     store.store_tensor(make_tensor(5));
     auto mem_1 = store.getMemoryUsage();
     auto ref = store.store_tensor(make_tensor(10));
-    auto tensor_mem_usage = store.get_tensor(ref)->get_memory_usage();
+    auto tensor_mem_usage = store.get_tensor_ptr(ref)->get_memory_usage();
     auto mem_2 = store.getMemoryUsage();
     EXPECT_GT(tensor_mem_usage.usedBytes(), 500);
     EXPECT_LT(tensor_mem_usage.usedBytes(), 50000);
@@ -93,14 +93,14 @@ TEST_F(DirectTensorStoreTest, heap_allocated_memory_is_tracked)
 
 TEST_F(DirectTensorStoreTest, invalid_ref_returns_nullptr)
 {
-    const auto* t = store.get_tensor(EntryRef());
+    const auto* t = store.get_tensor_ptr(EntryRef());
     EXPECT_FALSE(t);
 }
 
 TEST_F(DirectTensorStoreTest, hold_adds_entry_to_hold_list)
 {
     auto ref = store.store_tensor(make_tensor(5));
-    auto tensor_mem_usage = store.get_tensor(ref)->get_memory_usage();
+    auto tensor_mem_usage = store.get_tensor_ptr(ref)->get_memory_usage();
     auto mem_1 = store.getMemoryUsage();
     store.holdTensor(ref);
     auto mem_2 = store.getMemoryUsage();

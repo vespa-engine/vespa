@@ -35,7 +35,7 @@ DirectTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     const uint32_t docIdLimit(_refs.size());
     vespalib::nbostream stream;
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
-        const vespalib::eval::Value *tensor = _tensorStore.get_tensor(_refs[lid]);
+        const vespalib::eval::Value *tensor = _tensorStore.get_tensor_ptr(_refs[lid]);
         if (tensor) {
             stream.clear();
             encode_value(*tensor, stream);
