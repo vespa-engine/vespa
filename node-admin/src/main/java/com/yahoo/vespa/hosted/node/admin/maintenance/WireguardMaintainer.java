@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
@@ -30,11 +31,13 @@ public class WireguardMaintainer {
                 .add("rm", "-f", WIREGUARD_SOCK_FILE)
                 .executeSilently();
 
-        // TODO: track exit status? How to handle failure, throw?
         CommandResult result  = terminal.newCommandLine(context)
                 .add(WIREGUARD_GO, "wg0")
                 .executeSilently();
 
+        if (result.getExitCode() != 0) {
+            throw ConvergenceException.ofError("Failed to start wireguard-go: " + result.getOutput());
+        }
     }
 
 }
