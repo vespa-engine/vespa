@@ -40,7 +40,7 @@ public:
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const vespalib::eval::Value * get_tensor(EntryRef ref) const {
+    const vespalib::eval::Value * get_tensor_ptr(EntryRef ref) const {
         if (!ref.valid()) {
             return nullptr;
         }
