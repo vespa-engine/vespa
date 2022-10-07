@@ -133,7 +133,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private HandlerCollection createRootHandler(
             ServerConfig serverCfg, List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
-        List<ConnectorConfig> connectorCfgs = connectors.stream().map(JDiscServerConnector::connectorConfig).toList();
         List<ContextHandler> perConnectorHandlers = new ArrayList<>();
         for (JDiscServerConnector connector : connectors) {
             ConnectorConfig connectorCfg = connector.connectorConfig();
@@ -142,7 +141,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             chain.add(newResponseStatisticsHandler(serverCfg));
             chain.add(newGzipHandler(serverCfg));
             if (connectorCfg.tlsClientAuthEnforcer().enable()) {
-                chain.add(newTlsClientAuthEnforcerHandler(connectorCfgs));
+                chain.add(newTlsClientAuthEnforcerHandler(connectorCfg));
             }
             if (connectorCfg.healthCheckProxy().enable()) {
                 chain.add(newHealthCheckProxyHandler(connectors));
@@ -246,8 +245,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         return new HealthCheckProxyHandler(connectors);
     }
 
-    private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(List<ConnectorConfig> connectorCfgs) {
-        return new TlsClientAuthenticationEnforcer(connectorCfgs);
+    private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg) {
+        return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer());
     }
 
     private static HttpResponseStatisticsCollector newResponseStatisticsHandler(ServerConfig cfg) {
