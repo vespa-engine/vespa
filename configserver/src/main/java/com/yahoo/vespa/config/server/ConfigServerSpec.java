@@ -15,15 +15,15 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
     private final int configServerPort;
     private final int zooKeeperPort;
 
-    public String hostName() {
+    public String getHostName() {
         return hostName;
     }
 
-    public int configServerPort() {
+    public int getConfigServerPort() {
         return configServerPort;
     }
 
-    public int zooKeeperPort() {
+    public int getZooKeeperPort() {
         return zooKeeperPort;
     }
 
