@@ -12,11 +12,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedDirectTarget;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -34,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -169,9 +172,16 @@ public class RoutingPolicies {
         // Create a weighted ALIAS per region, pointing to all zones within the same region
         Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones);
         regionEndpoints.forEach(regionEndpoint -> {
-            controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
-                                                          Collections.unmodifiableSet(regionEndpoint.zoneTargets()),
-                                                          Priority.normal);
+            if ( ! regionEndpoint.zoneAliasTargets().isEmpty()) {
+                controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
+                        regionEndpoint.zoneAliasTargets(),
+                        Priority.normal);
+            }
+            if ( ! regionEndpoint.zoneDirectTargets().isEmpty()) {
+                controller.nameServiceForwarder().createDirect(RecordName.from(regionEndpoint.target().name().value()),
+                        regionEndpoint.zoneDirectTargets(),
+                        Priority.normal);
+            }
         });
 
         // Create global latency-based ALIAS pointing to each per-region weighted ALIAS
@@ -203,7 +213,7 @@ public class RoutingPolicies {
     private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
         for (var policy : policies) {
-            if (policy.dnsZone().isEmpty()) continue;
+            if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
             Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
@@ -219,9 +229,11 @@ public class RoutingPolicies {
             if (policy.canonicalName().isPresent()) {
                 var weightedTarget = new WeightedAliasTarget(
                         policy.canonicalName().get(), policy.dnsZone().get(), policy.id().zone(), weight);
-                regionEndpoint.zoneTargets().add(weightedTarget);
+                regionEndpoint.add(weightedTarget);
             } else {
-                // TODO (freva): Add direct weighted record
+                var weightedTarget = new WeightedDirectTarget(
+                        RecordData.from(policy.ipAddress().get()), policy.id().zone(), weight);
+                regionEndpoint.add(weightedTarget);
             }
         }
         return endpoints.values();
@@ -237,8 +249,8 @@ public class RoutingPolicies {
         if (routingTable.isEmpty()) return;
 
         Application application = controller.applications().requireApplication(routingTable.keySet().iterator().next().application());
-        Map<Endpoint, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
-        Map<Endpoint, Set<AliasTarget>> inactiveTargetsByEndpoint = new LinkedHashMap<>();
+        Map<Endpoint, Set<Target>> targetsByEndpoint = new LinkedHashMap<>();
+        Map<Endpoint, Set<Target>> inactiveTargetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
@@ -253,17 +265,15 @@ public class RoutingPolicies {
             for (var policy : routeEntry.getValue()) {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
-                    if (policy.dnsZone().isEmpty()) continue; // Does not support ALIAS records
-                    if (policy.canonicalName().isEmpty()) continue; // TODO (freva): Handle DIRECT records
+                    if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue; // Does not support ALIAS records
                     ZoneRoutingPolicy zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-                    WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName().get(), policy.dnsZone().get(),
-                                                                                      target.deployment().zoneId(), target.weight());
-                    Set<AliasTarget> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
-                    Set<AliasTarget> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+
+                    Set<Target> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+                    Set<Target> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
                     if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
-                        inactiveTargets.add(weightedAliasTarget);
+                        inactiveTargets.add(Target.weighted(policy, target));
                     } else {
-                        activeTargets.add(weightedAliasTarget);
+                        activeTargets.add(Target.weighted(policy, target));
                     }
                 }
             }
@@ -273,11 +283,11 @@ public class RoutingPolicies {
         // the ALIAS records would cause the application endpoint to stop resolving entirely (NXDOMAIN).
         for (var kv : targetsByEndpoint.entrySet()) {
             Endpoint endpoint = kv.getKey();
-            Set<AliasTarget> activeTargets = kv.getValue();
+            Set<Target> activeTargets = kv.getValue();
             if (!activeTargets.isEmpty()) {
                 continue;
             }
-            Set<AliasTarget> inactiveTargets = inactiveTargetsByEndpoint.get(endpoint);
+            Set<Target> inactiveTargets = inactiveTargetsByEndpoint.get(endpoint);
             activeTargets.addAll(inactiveTargets);
             inactiveTargets.clear();
         }
@@ -287,9 +297,21 @@ public class RoutingPolicies {
                                                    .map(DeploymentId::zoneId)
                                                    .findFirst()
                                                    .get();
-            nameServiceForwarderIn(targetZone).createAlias(RecordName.from(applicationEndpoint.dnsName()),
-                                                           targets,
-                                                           Priority.normal);
+            Set<AliasTarget> aliasTargets = new LinkedHashSet<>();
+            Set<DirectTarget> directTargets = new LinkedHashSet<>();
+            for (Target target : targets) {
+                if (target.aliasOrDirectTarget() instanceof AliasTarget at) aliasTargets.add(at);
+                else directTargets.add((DirectTarget) target.aliasOrDirectTarget());
+            }
+
+            if ( ! aliasTargets.isEmpty()) {
+                nameServiceForwarderIn(targetZone).createAlias(
+                        RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal);
+            }
+            if ( ! directTargets.isEmpty()) {
+                nameServiceForwarderIn(targetZone).createDirect(
+                        RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal);
+            }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
             ZoneId targetZone = applicationEndpoint.targets().stream()
@@ -298,9 +320,9 @@ public class RoutingPolicies {
                                                    .findFirst()
                                                    .get();
             targets.forEach(target -> {
-                nameServiceForwarderIn(targetZone).removeRecords(Record.Type.ALIAS,
+                nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.dnsName()),
-                                                                 RecordData.fqdn(target.name().value()),
+                                                                 target.data(),
                                                                  Priority.normal);
             });
         });
@@ -317,7 +339,8 @@ public class RoutingPolicies {
             if (loadBalancer.hostname().isEmpty() && loadBalancer.ipAddress().isEmpty()) continue;
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
-            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), loadBalancer.dnsZone(),
+            var dnsZone = loadBalancer.ipAddress().isPresent() ? Optional.of("ignored") : loadBalancer.dnsZone();
+            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
                                               new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
@@ -407,7 +430,10 @@ public class RoutingPolicies {
                                 RecordData.fqdn(policy.canonicalName().get().value()),
                                 Priority.normal);
                     } else {
-                        // TODO (freva): Remove DIRECT records
+                        forwarder.removeRecords(Record.Type.DIRECT,
+                                RecordName.from(endpoint.dnsName()),
+                                RecordData.from(policy.ipAddress().get()),
+                                Priority.normal);
                     }
                 }
             }
@@ -460,22 +486,23 @@ public class RoutingPolicies {
     private static class RegionEndpoint {
 
         private final LatencyAliasTarget target;
-        private final Set<WeightedAliasTarget> zoneTargets = new LinkedHashSet<>();
+        private final Set<WeightedAliasTarget> zoneAliasTargets = new LinkedHashSet<>();
+        private final Set<WeightedDirectTarget> zoneDirectTargets = new LinkedHashSet<>();
 
         public RegionEndpoint(LatencyAliasTarget target) {
             this.target = Objects.requireNonNull(target);
         }
 
-        public LatencyAliasTarget target() {
-            return target;
-        }
+        public LatencyAliasTarget target() { return target; }
+        public Set<AliasTarget> zoneAliasTargets() { return Collections.unmodifiableSet(zoneAliasTargets); }
+        public Set<DirectTarget> zoneDirectTargets() { return Collections.unmodifiableSet(zoneDirectTargets); }
 
-        public Set<WeightedAliasTarget> zoneTargets() {
-            return zoneTargets;
-        }
+        public void add(WeightedAliasTarget target) { zoneAliasTargets.add(target); }
+        public void add(WeightedDirectTarget target) { zoneDirectTargets.add(target); }
 
         public boolean active() {
-            return zoneTargets.stream().anyMatch(target -> target.weight() > 0);
+            return zoneAliasTargets.stream().anyMatch(target -> target.weight() > 0) ||
+                   zoneDirectTargets.stream().anyMatch(target -> target.weight() > 0);
         }
 
         @Override
@@ -571,6 +598,20 @@ public class RoutingPolicies {
             case exclusive -> controller.nameServiceForwarder();
             case sharedLayer4 -> new NameServiceDiscarder(controller.curator());
         };
+    }
+
+    /** Denotes record data (record rhs) of either an ALIAS or a DIRECT target */
+    private record Target(Record.Type type, RecordData data, Object aliasOrDirectTarget) {
+        static Target weighted(RoutingPolicy policy, Endpoint.Target endpointTarget) {
+            if (policy.ipAddress().isPresent()) {
+                var wt = new WeightedDirectTarget(RecordData.from(policy.ipAddress().get()),
+                        endpointTarget.deployment().zoneId(), endpointTarget.weight());
+                return new Target(Record.Type.DIRECT, wt.recordData(), wt);
+            }
+            var wt = new WeightedAliasTarget(policy.canonicalName().get(), policy.dnsZone().get(),
+                    endpointTarget.deployment().zoneId(), endpointTarget.weight());
+            return new Target(Record.Type.ALIAS, RecordData.fqdn(wt.name().value()), wt);
+        }
     }
 
     /** A {@link NameServiceForwarder} that does nothing. Used in zones where no explicit DNS updates are needed */
