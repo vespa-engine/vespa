@@ -67,7 +67,7 @@ public class SendAckRequestProcessor implements RequestProcessor, Flushable {
             LOG.warn("Closing connection to leader, exception during packet send", e);
             try {
                 Socket socket = learner.sock;
-                if ( socket != null && ! learner.sock.isClosed()) {
+                if (socket != null && !socket.isClosed()) {
                     learner.sock.close();
                 }
             } catch (IOException e1) {
