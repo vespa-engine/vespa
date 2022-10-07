@@ -26,19 +26,7 @@ DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems, bool was_hel
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
-    if (state.isActive()) {
-        if (state.free_list().enabled() && (numElems == state.getArraySize())) {
-            state.free_list().push_entry(ref);
-        }
-    } else {
-        assert(state.isOnHold() && was_held);
-    }
-    state.stats().inc_dead_elems(numElems);
-    if (was_held) {
-        state.stats().dec_hold_elems(numElems);
-    }
-    state.cleanHold(getBuffer(intRef.bufferId()),
-                    intRef.offset() * state.getArraySize(), numElems);
+    state.free_elems(ref, numElems, was_held, intRef.offset());
 }
 
 template <typename RefT>
@@ -47,14 +35,9 @@ DataStoreT<RefT>::holdElem(EntryRef ref, size_t numElems, size_t extraBytes)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
-    assert(state.isActive());
-    if (state.hasDisabledElemHoldList()) {
-        state.stats().inc_dead_elems(numElems);
-        return;
+    if (!state.hold_elems(numElems, extraBytes)) {
+        _elemHold1List.push_back(ElemHold1ListElem(ref, numElems));
     }
-    _elemHold1List.push_back(ElemHold1ListElem(ref, numElems));
-    state.stats().inc_hold_elems(numElems);
-    state.stats().inc_extra_hold_bytes(extraBytes);
 }
 
 template <typename RefT>

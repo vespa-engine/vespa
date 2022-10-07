@@ -176,6 +176,39 @@ BufferState::disableElemHoldList()
     _disableElemHoldList = true;
 }
 
+bool
+BufferState::hold_elems(size_t num_elems, size_t extra_bytes)
+{
+    assert(isActive());
+    if (_disableElemHoldList) {
+        // The elements are directly marked as dead as they are not put on hold.
+        _stats.inc_dead_elems(num_elems);
+        return true;
+    }
+    _stats.inc_hold_elems(num_elems);
+    _stats.inc_extra_hold_bytes(extra_bytes);
+    return false;
+}
+
+void
+BufferState::free_elems(EntryRef ref, size_t num_elems, bool was_held, size_t ref_offset)
+{
+    if (isActive()) {
+        if (_free_list.enabled() && (num_elems == getArraySize())) {
+            _free_list.push_entry(ref);
+        }
+    } else {
+        assert(isOnHold() && was_held);
+    }
+    _stats.inc_dead_elems(num_elems);
+    if (was_held) {
+        _stats.dec_hold_elems(num_elems);
+    }
+    getTypeHandler()->cleanHold(_buffer.get(), (ref_offset * _arraySize), num_elems,
+                                BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(),
+                                                             _stats.extra_hold_bytes_ref()));
+}
+
 void
 BufferState::fallbackResize(uint32_t bufferId,
                             size_t elementsNeeded,

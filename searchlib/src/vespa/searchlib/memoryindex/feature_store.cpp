@@ -68,8 +68,6 @@ FeatureStore::moveFeatures(EntryRef ref, uint64_t bitLen)
     const uint8_t *src = getBits(ref);
     uint64_t byteLen = (bitLen + 7) / 8;
     EntryRef newRef = addFeatures(src, byteLen);
-    // Mark old features as dead
-    _store.incDead(ref, byteLen + Aligner::pad(byteLen));
     return newRef;
 }
 
@@ -117,7 +115,6 @@ FeatureStore::add_features_guard_bytes()
     uint32_t pad = Aligner::pad(len);
     auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(len + pad);
     memset(result.data, 0, len + pad);
-    _store.incDead(result.ref, len + pad);
 }
 
 void

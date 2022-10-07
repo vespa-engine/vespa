@@ -35,9 +35,6 @@ public:
     void trimElemHoldList(generation_t usedGen) override {
         ParentType::trimElemHoldList(usedGen);
     }
-    void incDead(EntryRef ref, uint64_t dead) {
-        ParentType::incDead(ref, dead);
-    }
     void ensureBufferCapacity(size_t sizeNeeded) {
         ParentType::ensureBufferCapacity(0, sizeNeeded);
     }
@@ -429,11 +426,6 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._usedElems++;
     assertMemStats(m, s.getMemStats());
 
-    // inc dead
-    s.incDead(r, 1);
-    m._deadElems++;
-    assertMemStats(m, s.getMemStats());
-
     // hold buffer
     s.addEntry(20);
     s.addEntry(30);
@@ -474,7 +466,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra hold bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().stats().inc_extra_hold_bytes(30);
+        s.get_active_buffer_state().hold_elems(0, 30);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
     }
@@ -487,7 +479,6 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     s.addEntry(20);
     s.addEntry(30);
     s.addEntry(40);
-    s.incDead(r, 1);
     s.holdBuffer(r.bufferId());
     s.transferHoldLists(100);
     vespalib::MemoryUsage m = s.getMemoryUsage();
@@ -698,9 +689,9 @@ void test_free_element_to_held_buffer(bool direct, bool before_hold_buffer)
     s.holdBuffer(0); // hold last buffer
     if (!before_hold_buffer) {
         if (direct) {
-            ASSERT_DEATH({ s.freeElem(ref, 1); }, "state.isOnHold\\(\\) && was_held");
+            ASSERT_DEATH({ s.freeElem(ref, 1); }, "isOnHold\\(\\) && was_held");
         } else {
-            ASSERT_DEATH({ s.holdElem(ref, 1); }, "state.isActive\\(\\)");
+            ASSERT_DEATH({ s.holdElem(ref, 1); }, "isActive\\(\\)");
         }
     }
     s.transferHoldLists(100);

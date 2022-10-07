@@ -253,12 +253,6 @@ public:
 
     void dropBuffers();
 
-
-    void incDead(uint32_t bufferId, size_t deadElems) {
-        BufferState &state = _states[bufferId];
-        state.stats().inc_dead_elems(deadElems);
-    }
-
     /**
      * Enable free list management.
      * This only works for fixed size elements.

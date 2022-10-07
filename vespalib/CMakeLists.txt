@@ -54,6 +54,7 @@ vespa_define_module(
     src/tests/data/smart_buffer
     src/tests/datastore/array_store
     src/tests/datastore/array_store_config
+    src/tests/datastore/buffer_stats
     src/tests/datastore/buffer_type
     src/tests/datastore/compact_buffer_candidates
     src/tests/datastore/datastore
