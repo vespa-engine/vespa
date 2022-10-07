@@ -41,6 +41,8 @@
     ],
     "methods": [
       "public void <init>(int, java.util.List)",
+      "public void <init>(java.lang.String, int, java.util.List)",
+      "public java.lang.String id()",
       "public int size()",
       "public java.util.List indices()",
       "public boolean equals(java.lang.Object)",
