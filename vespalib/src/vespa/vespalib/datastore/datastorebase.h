@@ -25,9 +25,10 @@ class CompactionStrategy;
  */
 class DataStoreBase
 {
-public:
+protected:
     /**
-     * Hold list before freeze, before knowing how long elements must be held.
+     * Hold list element used in the first phase of holding (before freeze),
+     * before knowing how long elements must be held.
      */
     class ElemHold1ListElem
     {
@@ -41,9 +42,26 @@ public:
         { }
     };
 
-protected:
     using generation_t = vespalib::GenerationHandler::generation_t;
     using sgeneration_t = vespalib::GenerationHandler::sgeneration_t;
+
+    /**
+     * Hold list element used in the second phase of holding (at freeze),
+     * when knowing how long elements must be held.
+     */
+    class ElemHold2ListElem : public ElemHold1ListElem
+    {
+    public:
+        generation_t _generation;
+
+        ElemHold2ListElem(const ElemHold1ListElem &hold1, generation_t generation)
+                : ElemHold1ListElem(hold1),
+                  _generation(generation)
+        { }
+    };
+
+    using ElemHold1List = vespalib::Array<ElemHold1ListElem>;
+    using ElemHold2List = std::deque<ElemHold2ListElem>;
 
 private:
     class BufferAndTypeId {
@@ -60,32 +78,16 @@ private:
         uint32_t   _typeId;
     };
     std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
-protected:
+
     // Provides a mapping from typeId -> primary buffer for that type.
     // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
     std::vector<uint32_t> _primary_buffer_ids;
 
+protected:
     void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
 
     /**
-     * Hold list at freeze, when knowing how long elements must be held
-     */
-    class ElemHold2ListElem : public ElemHold1ListElem
-    {
-    public:
-        generation_t _generation;
-
-        ElemHold2ListElem(const ElemHold1ListElem &hold1, generation_t generation)
-            : ElemHold1ListElem(hold1),
-              _generation(generation)
-        { }
-    };
-
-    using ElemHold1List = vespalib::Array<ElemHold1ListElem>;
-    using ElemHold2List = std::deque<ElemHold2ListElem>;
-
-    /**
-     * Class used to hold the old buffer as part of fallbackResize().
+     * Class used to hold the entire old buffer as part of fallbackResize().
      */
     class FallbackHold : public vespalib::GenerationHeldBase
     {
@@ -129,6 +131,7 @@ protected:
 
     virtual ~DataStoreBase();
 
+private:
     /**
      * Get the next buffer id after the given buffer id.
      */
@@ -138,6 +141,7 @@ protected:
             ret = 0;
         return ret;
     }
+protected:
 
     /**
      * Get the primary buffer for the given type id.
@@ -156,6 +160,7 @@ protected:
     virtual void clearElemHoldList() = 0;
 
     void markCompacting(uint32_t bufferId);
+
 public:
     uint32_t addType(BufferTypeBase *typeHandler);
     void init_primary_buffers();
@@ -191,9 +196,11 @@ public:
      */
     void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
+private:
     bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
     void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
+public:
     vespalib::MemoryUsage getMemoryUsage() const;
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
@@ -205,6 +212,8 @@ public:
     const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
+
+private:
     bool hasElemHold1() const { return !_elemHold1List.empty(); }
 
     /**
@@ -212,16 +221,19 @@ public:
      */
     void transferElemHoldList(generation_t generation);
 
+public:
     /**
      * Transfer holds from hold1 to hold2 lists, assigning generation.
      */
     void transferHoldLists(generation_t generation);
 
+private:
     /**
      * Hold of buffer has ended.
      */
     void doneHoldBuffer(uint32_t bufferId);
 
+public:
     /**
      * Trim hold lists, freeing buffers that no longer needs to be held.
      *
@@ -264,16 +276,14 @@ public:
      */
     void disableFreeLists();
 
+private:
     /**
      * Enable free list management.
      * This only works for fixed size elements.
      */
     void enableFreeList(uint32_t bufferId);
 
-    /**
-     * Disable free list management.
-     */
-    void disableFreeList(uint32_t bufferId);
+public:
     void disableElemHoldList();
 
     bool has_free_lists_enabled() const { return _freeListsEnabled; }
@@ -306,14 +316,18 @@ private:
     void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
 
     void inc_hold_buffer_count();
+
 public:
     uint32_t getTypeId(uint32_t bufferId) const {
         return _buffers[bufferId].getTypeId();
     }
 
     void finishCompact(const std::vector<uint32_t> &toHold);
+
+private:
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
 
+public:
     vespalib::GenerationHolder &getGenerationHolder() {
         return _genHolder;
     }
