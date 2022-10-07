@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -767,8 +768,16 @@ public class JobController {
                 .filter(versions::contains) // Don't deploy versions that are no longer known.
                 .ifPresent(versions::add);
 
-        if (versions.isEmpty())
-            throw new IllegalStateException("no deployable platform version found in the system");
+        // Remove all versions that are older than the compile version.
+        versions.removeIf(version -> applicationPackage.compileVersion().map(version::isBefore).orElse(false));
+        if (versions.isEmpty()) {
+            // Fall back to the newest deployable version, if all the ones with normal confidence were too old.
+            Iterator<VespaVersion> descending = reversed(versionStatus.deployableVersions()).iterator();
+            if ( ! descending.hasNext())
+                throw new IllegalStateException("no deployable platform version found in the system");
+            else
+                versions.add(descending.next().versionNumber());
+        }
 
         VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
         List<Version> compatibleVersions = new ArrayList<>();
