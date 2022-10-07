@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -51,6 +52,14 @@ public class NameServiceForwarder {
     public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
         var records = targets.stream()
                              .map(target -> new Record(Record.Type.ALIAS, name, target.pack()))
+                             .collect(Collectors.toList());
+        forward(new CreateRecords(records), priority);
+    }
+
+    /** Create or update a DIRECT record with given name and targets */
+    public void createDirect(RecordName name, Set<DirectTarget> targets, NameServiceQueue.Priority priority) {
+        var records = targets.stream()
+                             .map(target -> new Record(Record.Type.DIRECT, name, target.pack()))
                              .collect(Collectors.toList());
         forward(new CreateRecords(records), priority);
     }

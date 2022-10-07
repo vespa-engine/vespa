@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -69,11 +70,11 @@ public class RemoveRecords implements NameServiceRequest {
                        .stream()
                        .filter(record -> {
                            // Records to remove must match both name and data fields
-                           String dataValue = record.data().asString();
-                           // If we're comparing an ALIAS record we have to unpack it to access the target name
-                           if (record.type() == Record.Type.ALIAS) {
-                               dataValue = AliasTarget.unpack(record.data()).name().value();
-                           }
+                           String dataValue = switch (record.type()) {
+                               case ALIAS -> AliasTarget.unpack(record.data()).name().value();
+                               case DIRECT -> DirectTarget.unpack(record.data()).recordData().asString();
+                               default -> record.data().asString();
+                           };
                            return fqdn(dataValue).equals(fqdn(data.get().asString()));
                        })
                        .forEach(records::add);
