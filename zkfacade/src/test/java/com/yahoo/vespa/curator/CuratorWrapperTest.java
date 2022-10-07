@@ -119,6 +119,7 @@ public class CuratorWrapperTest {
             // Manager unregisters remaining singletons on shutdown.
             curator.deconstruct();
             singleton.phaser.arriveAndAwaitAdvance();
+            assertFalse(singleton.isActive);
         }
     }
 
@@ -128,7 +129,7 @@ public class CuratorWrapperTest {
             CuratorWrapper curator = new CuratorWrapper(wrapped);
 
             // First singleton to register becomes active during construction.
-            Singleton singleton = new Singleton(curator) { public String toString() { return "S 1"; }};
+            Singleton singleton = new Singleton(curator);
             assertTrue(singleton.isActive);
             assertTrue(wrapped.exists(lockPath));
             assertTrue(curator.isActive(singleton.id()));
