@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -38,20 +40,20 @@ public class OsVersions {
 
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
-    private final boolean dynamicProvisioning;
     private final int maxDelegatedUpgrades;
     private final BooleanFlag softRebuildFlag;
+    private final Cloud cloud;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().getCloud().dynamicProvisioning(), MAX_DELEGATED_UPGRADES);
+        this(nodeRepository, nodeRepository.zone().getCloud(), MAX_DELEGATED_UPGRADES);
     }
 
-    OsVersions(NodeRepository nodeRepository, boolean dynamicProvisioning, int maxDelegatedUpgrades) {
+    OsVersions(NodeRepository nodeRepository, Cloud cloud, int maxDelegatedUpgrades) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
-        this.dynamicProvisioning = dynamicProvisioning;
         this.maxDelegatedUpgrades = maxDelegatedUpgrades;
         this.softRebuildFlag = Flags.SOFT_REBUILD.bindTo(nodeRepository.flagSource());
+        this.cloud = Objects.requireNonNull(cloud);
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -141,13 +143,13 @@ public class OsVersions {
 
     /** Returns the upgrader to use when upgrading given node type to target */
     private OsUpgrader chooseUpgrader(NodeType nodeType, Optional<Version> target) {
-        if (dynamicProvisioning) {
-            boolean softRebuild = softRebuildFlag.value();
-            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, softRebuild);
-            if (softRebuild) {
+        if (cloud.dynamicProvisioning()) {
+            boolean canSoftRebuild = cloud.name().equals(CloudName.AWS) && softRebuildFlag.value();
+            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, canSoftRebuild);
+            if (canSoftRebuild) {
                 // If soft rebuild is enabled, we can use RebuildingOsUpgrader for hosts with remote storage.
                 // RetiringOsUpgrader is then only used for hosts with local storage.
-                return new CompositeOsUpgrader(List.of(new RebuildingOsUpgrader(nodeRepository, softRebuild),
+                return new CompositeOsUpgrader(List.of(new RebuildingOsUpgrader(nodeRepository, canSoftRebuild),
                                                        retiringOsUpgrader));
             }
             return retiringOsUpgrader;
