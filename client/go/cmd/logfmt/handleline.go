@@ -5,58 +5,122 @@
 package logfmt
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// handle a line in "vespa.log" format; do filtering and formatting as specified in opts
+type logFields struct {
+	timestamp string // seconds, optional fractional seconds
+	host      string
+	pid       string // pid, optional tid
+	service   string
+	component string
+	level     string
+	messages  []string
+}
 
-func handleLine(opts *Options, line string) (output string, err error) {
-	fields := strings.SplitN(line, "\t", 7)
-	if len(fields) < 7 {
+// handle a line in "vespa.log" format; do filtering and formatting as specified in opts
+func handleLine(opts *Options, line string) (string, error) {
+	fieldStrings := strings.SplitN(line, "\t", 7)
+	if len(fieldStrings) < 7 {
 		return "", fmt.Errorf("not enough fields: '%s'", line)
 	}
-	timestampfield := fields[0] // seconds, optional fractional seconds
-	hostfield := fields[1]
-	pidfield := fields[2] // pid, optional tid
-	servicefield := fields[3]
-	componentfield := fields[4]
-	levelfield := fields[5]
-	messagefields := fields[6:]
-
-	if !opts.showLevel(levelfield) {
-		return "", nil
-	}
-	if opts.OnlyHostname != "" && opts.OnlyHostname != hostfield {
-		return "", nil
-	}
-	if opts.OnlyPid != "" && opts.OnlyPid != pidfield {
-		return "", nil
-	}
-	if opts.OnlyService != "" && opts.OnlyService != servicefield {
-		return "", nil
-	}
-	if opts.OnlyInternal && !isInternal(componentfield) {
-		return "", nil
-	}
-	if opts.ComponentFilter.unmatched(componentfield) {
-		return "", nil
-	}
-	if opts.MessageFilter.unmatched(strings.Join(messagefields, "\t")) {
-		return "", nil
+	fields := logFields{
+		timestamp: fieldStrings[0],
+		host:      fieldStrings[1],
+		pid:       fieldStrings[2],
+		service:   fieldStrings[3],
+		component: fieldStrings[4],
+		level:     fieldStrings[5],
+		messages:  fieldStrings[6:],
 	}
 
+	if !opts.showLevel(fields.level) {
+		return "", nil
+	}
+	if opts.OnlyHostname != "" && opts.OnlyHostname != fields.host {
+		return "", nil
+	}
+	if opts.OnlyPid != "" && opts.OnlyPid != fields.pid {
+		return "", nil
+	}
+	if opts.OnlyService != "" && opts.OnlyService != fields.service {
+		return "", nil
+	}
+	if opts.OnlyInternal && !isInternal(fields.component) {
+		return "", nil
+	}
+	if opts.ComponentFilter.unmatched(fields.component) {
+		return "", nil
+	}
+	if opts.MessageFilter.unmatched(strings.Join(fields.messages, "\t")) {
+		return "", nil
+	}
+
+	switch opts.Format {
+	case FormatRaw:
+		return line + "\n", nil
+	case FormatJSON:
+		return handleLineJson(opts, &fields)
+	case FormatVespa:
+		fallthrough
+	default:
+		return handleLineVespa(opts, &fields)
+	}
+}
+
+func parseTimestamp(timestamp string) (time.Time, error) {
+	secs, err := strconv.ParseFloat(timestamp, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	nsecs := int64(secs * 1e9)
+	return time.Unix(0, nsecs), nil
+}
+
+type logFieldsJson struct {
+	Timestamp string   `json:"timestamp"`
+	Host      string   `json:"host"`
+	Pid       string   `json:"pid"`
+	Service   string   `json:"service"`
+	Component string   `json:"component"`
+	Level     string   `json:"level"`
+	Messages  []string `json:"messages"`
+}
+
+func handleLineJson(_ *Options, fields *logFields) (string, error) {
+	timestamp, err := parseTimestamp(fields.timestamp)
+	if err != nil {
+		return "", err
+	}
+	outputFields := logFieldsJson{
+		Timestamp: timestamp.Format(time.RFC3339Nano),
+		Host:      fields.host,
+		Pid:       fields.pid,
+		Service:   fields.service,
+		Component: fields.component,
+		Level:     fields.level,
+		Messages:  fields.messages,
+	}
+	buf := bytes.Buffer{}
+	if err := json.NewEncoder(&buf).Encode(&outputFields); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func handleLineVespa(opts *Options, fields *logFields) (string, error) {
 	var buf strings.Builder
 
 	if opts.showField("fmttime") {
-		secs, err := strconv.ParseFloat(timestampfield, 64)
+		timestamp, err := parseTimestamp(fields.timestamp)
 		if err != nil {
 			return "", err
 		}
-		nsecs := int64(secs * 1e9)
-		timestamp := time.Unix(0, nsecs)
 		if opts.showField("usecs") {
 			buf.WriteString(timestamp.Format("[2006-01-02 15:04:05.000000] "))
 		} else if opts.showField("msecs") {
@@ -65,36 +129,36 @@ func handleLine(opts *Options, line string) (output string, err error) {
 			buf.WriteString(timestamp.Format("[2006-01-02 15:04:05] "))
 		}
 	} else if opts.showField("time") {
-		buf.WriteString(timestampfield)
+		buf.WriteString(fields.timestamp)
 		buf.WriteString(" ")
 	}
 	if opts.showField("host") {
-		buf.WriteString(fmt.Sprintf("%-8s ", hostfield))
+		buf.WriteString(fmt.Sprintf("%-8s ", fields.host))
 	}
 	if opts.showField("level") {
-		buf.WriteString(fmt.Sprintf("%-7s ", strings.ToUpper(levelfield)))
+		buf.WriteString(fmt.Sprintf("%-7s ", strings.ToUpper(fields.level)))
 	}
 	if opts.showField("pid") {
 		// OnlyPid, _, _ := strings.Cut(pidfield, "/")
-		buf.WriteString(fmt.Sprintf("%6s ", pidfield))
+		buf.WriteString(fmt.Sprintf("%6s ", fields.pid))
 	}
 	if opts.showField("service") {
 		if opts.TruncateService {
-			buf.WriteString(fmt.Sprintf("%-9.9s ", servicefield))
+			buf.WriteString(fmt.Sprintf("%-9.9s ", fields.service))
 		} else {
-			buf.WriteString(fmt.Sprintf("%-16s ", servicefield))
+			buf.WriteString(fmt.Sprintf("%-16s ", fields.service))
 		}
 	}
 	if opts.showField("component") {
 		if opts.TruncateComponent {
-			buf.WriteString(fmt.Sprintf("%-15.15s ", componentfield))
+			buf.WriteString(fmt.Sprintf("%-15.15s ", fields.component))
 		} else {
-			buf.WriteString(fmt.Sprintf("%s\t", componentfield))
+			buf.WriteString(fmt.Sprintf("%s\t", fields.component))
 		}
 	}
 	if opts.showField("message") {
 		var msgBuf strings.Builder
-		for idx, message := range messagefields {
+		for idx, message := range fields.messages {
 			if idx > 0 {
 				msgBuf.WriteString("\n\t")
 			}
@@ -111,6 +175,5 @@ func handleLine(opts *Options, line string) (output string, err error) {
 		buf.WriteString(message)
 	}
 	buf.WriteString("\n")
-	output = buf.String()
-	return
+	return buf.String(), nil
 }
