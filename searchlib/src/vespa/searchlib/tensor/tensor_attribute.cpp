@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_attribute.h"
+#include "blob_sequence_reader.h"
+#include "tensor_store_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -275,6 +277,51 @@ TensorAttribute::getRefCopy() const
         result.push_back(ref_vector[i].load_relaxed());
     }
     return result;
+}
+
+bool
+TensorAttribute::onLoad(vespalib::Executor*)
+{
+    BlobSequenceReader tensorReader(*this);
+    if (!tensorReader.hasData()) {
+        return false;
+    }
+    setCreateSerialNum(tensorReader.getCreateSerialNum());
+    assert(tensorReader.getVersion() == getVersion());
+    uint32_t numDocs = tensorReader.getDocIdLimit();
+    _refVector.reset();
+    _refVector.unsafe_reserve(numDocs);
+    vespalib::Array<char> buffer(1024);
+    for (uint32_t lid = 0; lid < numDocs; ++lid) {
+        uint32_t tensorSize = tensorReader.getNextSize();
+        if (tensorSize != 0) {
+            if (tensorSize > buffer.size()) {
+                buffer.resize(tensorSize + 1024);
+            }
+            tensorReader.readBlob(&buffer[0], tensorSize);
+            vespalib::nbostream source(&buffer[0], tensorSize);
+            EntryRef ref = _tensorStore.store_encoded_tensor(source);
+            _refVector.push_back(AtomicEntryRef(ref));
+        } else {
+            EntryRef invalid;
+            _refVector.push_back(AtomicEntryRef(invalid));
+        }
+    }
+    setNumDocs(numDocs);
+    setCommittedDocIdLimit(numDocs);
+    return true;
+}
+
+std::unique_ptr<AttributeSaver>
+TensorAttribute::onInitSave(vespalib::stringref fileName)
+{
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().
+                                             takeGuard());
+    return std::make_unique<TensorStoreSaver>
+        (std::move(guard),
+         this->createAttributeHeader(fileName),
+         getRefCopy(),
+         _tensorStore);
 }
 
 void

@@ -7,12 +7,10 @@
 
 namespace search::tensor {
 
-class TensorBufferStore;
-
 /*
  * Class for saving a tensor attribute.
  */
-class StreamedValueSaver : public AttributeSaver
+class TensorStoreSaver : public AttributeSaver
 {
 public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
@@ -20,16 +18,16 @@ private:
     using GenerationHandler = vespalib::GenerationHandler;
 
     RefCopyVector _refs;
-    const TensorBufferStore &_tensorStore;
+    const TensorStore& _tensorStore;
 
     bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    StreamedValueSaver(GenerationHandler::Guard &&guard,
-                       const attribute::AttributeHeader &header,
-                       RefCopyVector &&refs,
-                       const TensorBufferStore &tensorStore);
+    TensorStoreSaver(GenerationHandler::Guard &&guard,
+                     const attribute::AttributeHeader &header,
+                     RefCopyVector &&refs,
+                     const TensorStore &tensorStore);
 
-    virtual ~StreamedValueSaver();
+    virtual ~TensorStoreSaver();
 };
 
 } // namespace search::tensor

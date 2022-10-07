@@ -8,6 +8,7 @@
 #include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
+namespace vespalib { class nbostream; }
 namespace vespalib::datastore { struct ICompactionContext; }
 namespace vespalib::eval { struct Value; }
 
@@ -40,6 +41,11 @@ public:
     virtual vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
 
     virtual std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
+
+    virtual EntryRef store_tensor(const vespalib::eval::Value& tensor) = 0;
+    virtual EntryRef store_encoded_tensor(vespalib::nbostream& encoded) = 0;
+    virtual std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const = 0;
+    virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
 
     // Inherit doc from DataStoreBase
     void trimHoldLists(generation_t usedGen) {
