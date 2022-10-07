@@ -59,8 +59,8 @@ public sealed abstract class AliasTarget permits LatencyAliasTarget, WeightedAli
     public static AliasTarget unpack(RecordData data) {
         String[] parts = data.asString().split("/");
         switch (parts[0]) {
-            case "latency": return LatencyAliasTarget.unpack(data);
-            case "weighted": return WeightedAliasTarget.unpack(data);
+            case LatencyAliasTarget.TARGET_TYPE: return LatencyAliasTarget.unpack(data);
+            case WeightedAliasTarget.TARGET_TYPE: return WeightedAliasTarget.unpack(data);
         }
         throw new IllegalArgumentException("Unknown alias type '" + parts[0] + "'");
     }

@@ -16,6 +16,8 @@ import java.util.Objects;
  */
 public final class WeightedAliasTarget extends AliasTarget {
 
+    static final String TARGET_TYPE = "weighted";
+
     private final long weight;
 
     public WeightedAliasTarget(DomainName name, String dnsZone, ZoneId zone, long weight) {
@@ -31,7 +33,7 @@ public final class WeightedAliasTarget extends AliasTarget {
 
     @Override
     public RecordData pack() {
-        return RecordData.from("weighted/" + name().value() + "/" + dnsZone() + "/" + id() + "/" + weight);
+        return RecordData.from(String.join("/", TARGET_TYPE, name().value(), dnsZone(), id(), Long.toString(weight)));
     }
 
     @Override
@@ -60,7 +62,7 @@ public final class WeightedAliasTarget extends AliasTarget {
             throw new IllegalArgumentException("Expected data to be on format type/name/DNS-zone/zone-id/weight, " +
                                                "but got " + data.asString());
         }
-        if (!"weighted".equals(parts[0])) {
+        if (!TARGET_TYPE.equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
         return new WeightedAliasTarget(DomainName.of(parts[1]), parts[2], ZoneId.from(parts[3]),

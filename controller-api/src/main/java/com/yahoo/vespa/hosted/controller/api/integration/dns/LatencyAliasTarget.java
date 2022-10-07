@@ -13,6 +13,8 @@ import java.util.Objects;
  */
 public final class LatencyAliasTarget extends AliasTarget {
 
+    static final String TARGET_TYPE = "latency";
+
     private final ZoneId zone;
 
     public LatencyAliasTarget(DomainName name, String dnsZone, ZoneId zone) {
@@ -27,7 +29,7 @@ public final class LatencyAliasTarget extends AliasTarget {
 
     @Override
     public RecordData pack() {
-        return RecordData.from("latency/" + name().value() + "/" + dnsZone() + "/" + id());
+        return RecordData.from(String.join("/", TARGET_TYPE, name().value(), dnsZone(), id()));
     }
 
     @Override
@@ -56,7 +58,7 @@ public final class LatencyAliasTarget extends AliasTarget {
             throw new IllegalArgumentException("Expected data to be on format type/name/DNS-zone/zone-id, but got " +
                                                data.asString());
         }
-        if (!"latency".equals(parts[0])) {
+        if (!TARGET_TYPE.equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
         return new LatencyAliasTarget(DomainName.of(parts[1]), parts[2], ZoneId.from(parts[3]));
