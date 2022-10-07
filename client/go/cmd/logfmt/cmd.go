@@ -38,7 +38,7 @@ and converts it to something human-readable`,
 	cmd.Flags().StringVarP(&curOptions.OnlyHostname, "host", "H", "", "select only one host")
 	cmd.Flags().StringVarP(&curOptions.OnlyPid, "pid", "p", "", "select only one process ID")
 	cmd.Flags().StringVarP(&curOptions.OnlyService, "service", "S", "", "select only one service")
-	cmd.Flags().VarP(&curOptions.Format, "format", "F", "select logfmt output format, vespa (default), json or raw are supported")
+	cmd.Flags().VarP(&curOptions.Format, "format", "F", "select logfmt output format, vespa (default), json or raw are supported. The json output format is not stable, and will change in the future.")
 	cmd.Flags().MarkHidden("tc")
 	cmd.Flags().MarkHidden("ts")
 	cmd.Flags().MarkHidden("dequotenewlines")
