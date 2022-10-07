@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,7 +50,7 @@ public class RequestLogEntry {
     private final Principal sslPrincipal;
     private final HitCounts hitCounts;
     private final TraceNode traceNode;
-    private final Map<String, Collection<String>> extraAttributes;
+    private final SortedMap<String, Collection<String>> extraAttributes;
 
     private RequestLogEntry(Builder builder) {
         this.connectionId = builder.connectionId;
@@ -99,7 +102,7 @@ public class RequestLogEntry {
     public Optional<Principal> sslPrincipal() { return Optional.ofNullable(sslPrincipal); }
     public Optional<HitCounts> hitCounts() { return Optional.ofNullable(hitCounts); }
     public Optional<TraceNode> traceNode() { return Optional.ofNullable(traceNode); }
-    public Collection<String> extraAttributeKeys() { return Collections.unmodifiableCollection(extraAttributes.keySet()); }
+    public SortedSet<String> extraAttributeKeys() { return Collections.unmodifiableSortedSet((SortedSet<String>)extraAttributes.keySet()); }
     public Collection<String> extraAttributeValues(String key) { return Collections.unmodifiableCollection(extraAttributes.get(key)); }
 
     private static OptionalInt optionalInt(int value) {
@@ -112,8 +115,8 @@ public class RequestLogEntry {
         return OptionalLong.of(value);
     }
 
-    private static Map<String, Collection<String>> copyExtraAttributes(Map<String, Collection<String>> extraAttributes) {
-        Map<String, Collection<String>> copy = new HashMap<>();
+    private static SortedMap<String, Collection<String>> copyExtraAttributes(Map<String, Collection<String>> extraAttributes) {
+        SortedMap<String, Collection<String>> copy = new TreeMap<>();
         extraAttributes.forEach((key, value) -> copy.put(key, new ArrayList<>(value)));
         return copy;
     }
