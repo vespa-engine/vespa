@@ -1,4 +1,70 @@
 {
+  "com.yahoo.vespa.curator.api.AbstractSingletonWorker": {
+    "superClass": "com.yahoo.component.AbstractComponent",
+    "interfaces": [
+      "com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "protected java.lang.String id()",
+      "protected final void register(com.yahoo.vespa.curator.api.VespaCurator, java.time.Duration)",
+      "protected final void unregister(java.time.Duration)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.vespa.curator.api.VespaCurator$Data": {
+    "superClass": "java.lang.Record",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.vespa.curator.api.VespaCurator$Meta, byte[])",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.vespa.curator.api.VespaCurator$Meta meta()",
+      "public byte[] data()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.vespa.curator.api.VespaCurator$Meta": {
+    "superClass": "java.lang.Record",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public int version()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void activate()",
+      "public abstract void deactivate()"
+    ],
+    "fields": []
+  },
   "com.yahoo.vespa.curator.api.VespaCurator": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -8,7 +74,17 @@
       "abstract"
     ],
     "methods": [
-      "public abstract java.lang.AutoCloseable lock(com.yahoo.path.Path, java.time.Duration)"
+      "public abstract java.util.Optional stat(com.yahoo.path.Path)",
+      "public abstract java.util.Optional read(com.yahoo.path.Path)",
+      "public abstract com.yahoo.vespa.curator.api.VespaCurator$Meta write(com.yahoo.path.Path, byte[])",
+      "public abstract java.util.Optional write(com.yahoo.path.Path, byte[], int)",
+      "public abstract void delete(com.yahoo.path.Path)",
+      "public abstract boolean delete(com.yahoo.path.Path, int)",
+      "public abstract java.util.List list(com.yahoo.path.Path)",
+      "public abstract java.lang.AutoCloseable lock(com.yahoo.path.Path, java.time.Duration)",
+      "public abstract java.util.concurrent.Future registerSingleton(java.lang.String, com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker)",
+      "public abstract java.util.concurrent.Future unregisterSingleton(com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker)",
+      "public abstract boolean isActive(java.lang.String)"
     ],
     "fields": []
   }

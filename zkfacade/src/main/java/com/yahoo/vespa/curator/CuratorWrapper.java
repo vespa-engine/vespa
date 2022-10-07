@@ -25,10 +25,69 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
     static final Path userRoot = Path.fromString("user");
 
     private final Curator curator;
+    private final SingletonManager singletons;
 
     @Inject
     public CuratorWrapper(Curator curator) {
+        this(curator, Clock.systemUTC(), Duration.ofSeconds(1));
+    }
+
+    CuratorWrapper(Curator curator, Clock clock, Duration tickTimeout) {
         this.curator = curator;
+        this.singletons = new SingletonManager(curator, clock, tickTimeout);
+
+        curator.framework().getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
+            if (connectionState == ConnectionState.LOST) singletons.invalidate();
+        });
+    }
+
+    @Override
+    public Optional<Meta> stat(Path path) {
+        return curator.getStat(userRoot.append(path)).map(stat -> new Meta(stat.getVersion()));
+    }
+
+    @Override
+    public Optional<Data> read(Path path) {
+        Stat stat = new Stat();
+        return curator.getData(userRoot.append(path), stat).map(data -> new Data(new Meta(stat.getVersion()), data));
+    }
+
+    @Override
+    public Meta write(Path path, byte[] data) {
+        return new Meta(curator.set(userRoot.append(path), data).getVersion());
+    }
+
+    @Override
+    public Optional<Meta> write(Path path, byte[] data, int expectedVersion) {
+        try {
+            return Optional.of(new Meta(curator.set(userRoot.append(path), data, expectedVersion).getVersion()));
+        }
+        catch (RuntimeException e) {
+            if (e.getCause() instanceof BadVersionException) return Optional.empty();
+            throw e;
+        }
+    }
+
+    @Override
+    public void delete(Path path) {
+        curator.delete(userRoot.append(path));
+    }
+
+    @Override
+    public boolean delete(Path path, int expectedVersion) {
+        try {
+            curator.delete(userRoot.append(path), expectedVersion);
+            return true;
+        }
+        catch (RuntimeException e) {
+            if (e.getCause() instanceof BadVersionException) return false;
+            throw e;
+        }
+    }
+
+    @Override
+    public List<String> list(Path path) {
+        return curator.getChildren(userRoot.append(path));
     }
 
     @Override
@@ -38,6 +97,26 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
         try { current = curator.lock(userRoot.append(path), timeout); }
         catch (Throwable t) { old.close(); throw t; }
         return () -> { try(old) { current.close(); } };
+    }
+
+    @Override
+    public CompletableFuture<?> registerSingleton(String singletonId, SingletonWorker singleton) {
+        return singletons.register(singletonId, singleton);
+    }
+
+    @Override
+    public CompletableFuture<?> unregisterSingleton(SingletonWorker singleton) {
+        return singletons.unregister(singleton);
+    }
+
+    @Override
+    public boolean isActive(String singletonId) {
+        return singletons.isActive(singletonId);
+    }
+
+    @Override
+    public void deconstruct() {
+        singletons.close();
     }
 
 }

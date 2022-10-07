@@ -64,7 +64,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
 
     // Note that session timeout has min and max values are related to tickTime defined by server, see configserver.def
-    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
+    static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
 
     private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
