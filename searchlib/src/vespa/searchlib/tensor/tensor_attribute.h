@@ -36,6 +36,8 @@ protected:
     void populate_state(vespalib::slime::Cursor& object) const;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
+    bool onLoad(vespalib::Executor *executor) override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;

@@ -24,8 +24,6 @@ public:
     ~SerializedFastValueAttribute() override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    bool onLoad(vespalib::Executor *executor) override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 };
 
 }

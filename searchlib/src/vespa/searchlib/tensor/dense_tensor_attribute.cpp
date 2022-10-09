@@ -112,7 +112,7 @@ void
 DenseTensorAttribute::internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor)
 {
     consider_remove_from_index(docid);
-    EntryRef ref = _denseTensorStore.setTensor(tensor);
+    EntryRef ref = _denseTensorStore.store_tensor(tensor);
     setTensorRef(docid, ref);
 }
 
@@ -229,10 +229,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
     if (docId < getCommittedDocIdLimit()) {
         ref = acquire_entry_ref(docId);
     }
-    if (!ref.valid()) {
-        return {};
-    }
-    return _denseTensorStore.getTensor(ref);
+    return _denseTensorStore.get_tensor(ref);
 }
 
 vespalib::eval::TypedCells

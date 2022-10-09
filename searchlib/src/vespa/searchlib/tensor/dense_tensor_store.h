@@ -51,10 +51,6 @@ private:
     BufferType _bufferType;
     ValueType _type; // type of dense tensor
     std::vector<char> _emptySpace;
-
-    template <class TensorType>
-    TensorStore::EntryRef
-    setDenseTensor(const TensorType &tensor);
 public:
     DenseTensorStore(const ValueType &type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator);
     ~DenseTensorStore() override;
@@ -70,12 +66,15 @@ public:
     EntryRef move(EntryRef ref) override;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
-    std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
+    EntryRef store_tensor(const vespalib::eval::Value &tensor) override;
+    EntryRef store_encoded_tensor(vespalib::nbostream &encoded) override;
+    std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
+    bool encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const override;
+
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const {
         return vespalib::eval::TypedCells(ref.valid() ? getRawBuffer(ref) : &_emptySpace[0],
                                           _type.cell_type(), getNumCells());
     }
-    EntryRef setTensor(const vespalib::eval::Value &tensor);
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
 };
