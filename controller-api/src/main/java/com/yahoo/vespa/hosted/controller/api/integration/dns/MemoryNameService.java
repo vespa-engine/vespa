@@ -54,6 +54,20 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
+    public List<Record> createDirect(RecordName name, Set<DirectTarget> targets) {
+        var records = targets.stream()
+                .sorted((a, b) -> Comparator.comparing((DirectTarget target) -> target.recordData().asString()).compare(a, b))
+                .map(d -> new Record(Record.Type.DIRECT, name, d.pack()))
+                .collect(Collectors.toList());
+        // Satisfy idempotency contract of interface
+        for (var r1 : records) {
+            this.records.removeIf(r2 -> conflicts(r1, r2));
+        }
+        this.records.addAll(records);
+        return records;
+    }
+
+    @Override
     public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
@@ -121,6 +135,11 @@ public class MemoryNameService implements NameService {
             AliasTarget t1 = AliasTarget.unpack(r1.data());
             AliasTarget t2 = AliasTarget.unpack(r2.data());
             return t1.name().equals(t2.name());                        // ALIAS records require distinct targets
+        }
+        if (r1.type() == Record.Type.DIRECT && r1.type() == r2.type()) {
+            DirectTarget t1 = DirectTarget.unpack(r1.data());
+            DirectTarget t2 = DirectTarget.unpack(r2.data());
+            return t1.id().equals(t2.id());                            // DIRECT records require distinct IDs
         }
         return true;                                                   // Anything else is considered a conflict
     }

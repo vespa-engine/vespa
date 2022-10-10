@@ -31,6 +31,15 @@ public interface NameService {
     List<Record> createAlias(RecordName name, Set<AliasTarget> targets);
 
     /**
+     * Create a non-standard record pointing to given targets. Implementations of this are expected to be
+     * idempotent
+     *
+     * @param targets Targets that should be resolved by this name.
+     * @return The created records. One per target.
+     */
+    List<Record> createDirect(RecordName name, Set<DirectTarget> targets);
+
+    /**
      * Create a new TXT record containing the provided data.
      * @param name Name of the created record
      * @param txtRecords TXT data values for the record, each consisting of one or more space-separated double-quoted

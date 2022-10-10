@@ -370,11 +370,16 @@ public class RoutingPoliciesTest {
         List<String> expectedRecords = List.of("c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                                                "c0.app1.tenant1.gcp-us-south1-b.z.vespa-app.cloud",
                                                "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                                               "c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud",
                                                "r0.app1.tenant1.g.vespa-app.cloud");
         assertEquals(Set.copyOf(expectedRecords), tester.recordNames());
 
         assertEquals(List.of("lb-0--tenant1.app1.default--prod.aws-us-east-1c."), tester.recordDataOf(Record.Type.CNAME, expectedRecords.get(0)));
         assertEquals(List.of("10.0.0.0"), tester.recordDataOf(Record.Type.A, expectedRecords.get(1)));
+        assertEquals(List.of("weighted/10.0.0.0/prod.gcp-us-south1-b/1"), tester.recordDataOf(Record.Type.DIRECT, expectedRecords.get(3)));
+        assertEquals(List.of("latency/c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud/dns-zone-1/prod.aws-us-east-1c",
+                             "latency/c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud/ignored/prod.gcp-us-south1-b"),
+                     tester.recordDataOf(Record.Type.ALIAS, expectedRecords.get(4)));
     }
 
     @Test

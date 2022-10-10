@@ -10,7 +10,6 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -97,15 +97,10 @@ public class ApplicationPackageValidator {
                 var clouds = new HashSet<CloudName>();
                 for (var region : endpoint.regions()) {
                     for (ZoneApi zone : controller.zoneRegistry().zones().all().in(Environment.prod).in(region).zones()) {
-                        if (zone.getCloudName().equals(CloudName.GCP)) {
-                            throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
-                                                               " contains a Google Cloud region (" + region +
-                                                               "), which is not yet supported");
-                        }
                         clouds.add(zone.getCloudName());
                     }
                 }
-                if (clouds.size() != 1) {
+                if (clouds.size() != 1 && !clouds.equals(Set.of(CloudName.GCP, CloudName.AWS))) {
                     throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
                                                        " cannot contain regions in different clouds: " +
                                                        endpoint.regions().stream().sorted().toList());
