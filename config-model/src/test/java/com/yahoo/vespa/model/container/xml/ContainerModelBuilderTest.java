@@ -570,6 +570,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
             assertNotNull(cluster);
             assertComponentConfigured(cluster, "com.yahoo.vespa.curator.Curator");
+            assertComponentConfigured(cluster, "com.yahoo.vespa.curator.CuratorWrapper");
             cluster.getContainers().forEach(container -> {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");

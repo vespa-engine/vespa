@@ -17,7 +17,7 @@ public class UncheckedInterruptedException extends RuntimeException {
         this(cause.toString(), cause, restoreInterruptFlags);
     }
 
-    public UncheckedInterruptedException(String message, boolean restoreInterruptFlag) { this(message, null, false); }
+    public UncheckedInterruptedException(String message, boolean restoreInterruptFlag) { this(message, null, restoreInterruptFlag); }
 
     public UncheckedInterruptedException(String message, InterruptedException cause) { this(message, cause, false); }
 
