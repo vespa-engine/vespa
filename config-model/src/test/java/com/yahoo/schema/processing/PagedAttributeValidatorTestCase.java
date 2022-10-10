@@ -71,8 +71,13 @@ public class PagedAttributeValidatorTestCase {
     }
 
     @Test
-    void non_dense_tensor_attribute_does_not_support_paged_setting() throws ParseException {
-        assertPagedSettingNotSupported("tensor(x{},y[2])");
+    void non_dense_none_fast_rank_tensor_attribute_supports_paged_setting() throws ParseException {
+        assertPagedSupported("tensor(x{},y[2])");
+    }
+
+    @Test
+    void non_dense_fast_rank_tensor_attribute_does_not_support_paged_setting() throws ParseException {
+        assertPagedSettingNotSupported("tensor(x{},y[2])", true);
     }
 
     @Test
@@ -82,36 +87,45 @@ public class PagedAttributeValidatorTestCase {
 
     @Test
     void reference_attribute_support_paged_setting() throws ParseException {
-        assertPagedSupported("reference<parent>", Optional.of(getSd("parent", "int")));
+        assertPagedSupported("reference<parent>", Optional.of(getSd("parent", "int", false)));
     }
 
     private void assertPagedSettingNotSupported(String fieldType) throws ParseException {
-        assertPagedSettingNotSupported(fieldType, Optional.empty());
+        assertPagedSettingNotSupported(fieldType, false);
     }
 
-    private void assertPagedSettingNotSupported(String fieldType, Optional<String> parentSd) throws ParseException {
+    private void assertPagedSettingNotSupported(String fieldType, boolean fastRank) throws ParseException {
+        assertPagedSettingNotSupported(fieldType, fastRank, Optional.empty());
+    }
+
+    private void assertPagedSettingNotSupported(String fieldType, boolean fastRank, Optional<String> parentSd) throws ParseException {
         try {
             if (parentSd.isPresent()) {
-                createFromStrings(new BaseDeployLogger(), parentSd.get(), getSd(fieldType));
+                createFromStrings(new BaseDeployLogger(), parentSd.get(), getSd(fieldType, fastRank));
             } else {
-                createFromString(getSd(fieldType));
+                createFromString(getSd(fieldType, fastRank));
             }
             fail("Expected exception");
         }  catch (IllegalArgumentException e) {
-            assertEquals("For schema 'test', field 'foo': The 'paged' attribute setting is not supported for non-dense tensor, predicate and reference types",
+            assertEquals("For schema 'test', field 'foo': The 'paged' attribute setting is not supported for fast-rank tensor and predicate types",
                     e.getMessage());
         }
     }
 
     private String getSd(String fieldType) {
-        return getSd("test", fieldType);
+        return getSd(fieldType, false);
     }
 
-    private String getSd(String docType, String fieldType) {
+    private String getSd(String fieldType, boolean fastRank) {
+        return getSd("test", fieldType, fastRank);
+    }
+
+    private String getSd(String docType, String fieldType, boolean fastRank) {
         return joinLines(
                 "schema " + docType + " {",
                 "  document " + docType + " {",
                 "    field foo type " + fieldType + "{",
+                (fastRank ? "attribute: fast-rank" : ""),
                 "      indexing: attribute",
                 "      attribute: paged",
                 "    }",
