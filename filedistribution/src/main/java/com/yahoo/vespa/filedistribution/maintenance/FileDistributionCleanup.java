@@ -48,27 +48,28 @@ public class FileDistributionCleanup {
                                           fileReferencesInUse);
     }
 
-    public List<String> deleteUnusedFileReferences(File fileReferencesPath,
+    public List<String> deleteUnusedFileReferences(File fileReferencesDir,
                                                    Duration keepFileReferencesDuration,
                                                    int numberToAlwaysKeep,
                                                    Set<String> fileReferencesInUse) {
-        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration);
-        if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
+        if (!fileReferencesDir.isDirectory()) throw new RuntimeException(fileReferencesDir + " is not a directory");
 
-        log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
-
-        Stream<String> candidates = sortedUnusedFileReferences(fileReferencesPath.toPath(), fileReferencesInUse, keepFileReferencesDuration);
+        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration +
+                ", file references in use : " + fileReferencesInUse);
         List<String> fileReferencesDeleted = new ArrayList<>();
-        // Do not delete the newest ones
-        final AtomicInteger i = new AtomicInteger(0);
-        candidates.forEach(fileReference -> {
-            if (i.incrementAndGet() > numberToAlwaysKeep) {
-                fileReferencesDeleted.add(fileReference);
-                File file = new File(fileReferencesPath, fileReference);
-                if (!IOUtils.recursiveDeleteDir(file))
-                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
-            }
-        });
+        Path fileReferencesPath = fileReferencesDir.toPath();
+        try (Stream<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferencesDuration)) {
+            final AtomicInteger i = new AtomicInteger(0);
+            candidates.forEach(fileReference -> {
+                // Do not delete the newest ones
+                if (i.incrementAndGet() > numberToAlwaysKeep) {
+                    fileReferencesDeleted.add(fileReference);
+                    File file = new File(fileReferencesDir, fileReference);
+                    if (!IOUtils.recursiveDeleteDir(file))
+                        log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
+                }
+            });
+        }
         return fileReferencesDeleted;
     }
 
