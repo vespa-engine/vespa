@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +37,7 @@ class SingletonManager implements AutoCloseable {
     private final Duration tickTimeout;
     private final Map<String, Janitor> janitors = new HashMap<>();
     private final Map<String, Integer> count = new HashMap<>();
-    private final Map<SingletonWorker, String> registrations = new HashMap<>();
+    private final Map<SingletonWorker, String> registrations = new IdentityHashMap<>();
 
     SingletonManager(Curator curator, Clock clock, Duration tickTimeout) {
         this.curator = curator;
