@@ -25,7 +25,7 @@ SingleValueEnumAttribute(const vespalib::string &baseFileName,
 template <typename B>
 SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 template <typename B>
@@ -128,7 +128,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     total.merge(this->_enumStore.update_stat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
@@ -218,7 +218,7 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 {
     if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
         uint32_t numDocs = this->getNumDocs();
-        getGenerationHolder().clearHoldLists();
+        getGenerationHolder().reclaim_all();
         _enumIndices.reset();
         _enumIndices.unsafe_reserve(numDocs);
         for (DocId doc = 0; doc < numDocs; ++doc, loaded.next()) {
@@ -267,7 +267,7 @@ void
 SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
     this->_enumStore.trim_hold_lists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 template <typename B>
@@ -281,7 +281,7 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
     this->_enumStore.transfer_hold_lists(generation - 1);
 }
 

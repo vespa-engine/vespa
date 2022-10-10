@@ -80,7 +80,7 @@ RcuVectorBase<T>::replaceVector(ArrayType replacement) {
     replacement.swap(_data); // atomic switch of underlying data
     size_t holdSize = replacement.capacity() * sizeof(T);
     auto hold = std::make_unique<RcuVectorHeld<ArrayType>>(holdSize, std::move(replacement));
-    _genHolder.hold(std::move(hold));
+    _genHolder.insert(std::move(hold));
     onReallocation();
 }
 
@@ -116,7 +116,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
         tmpData.swap(_data); // atomic switch of underlying data
         size_t holdSize = tmpData.capacity() * sizeof(T);
         auto hold = std::make_unique<RcuVectorHeld<ArrayType>>(holdSize, std::move(tmpData));
-        _genHolder.hold(std::move(hold));
+        _genHolder.insert(std::move(hold));
         onReallocation();
     }
 }
@@ -162,7 +162,7 @@ template <typename T>
 void
 RcuVector<T>::onReallocation() {
     RcuVectorBase<T>::onReallocation();
-    _genHolderStore.transferHoldLists(_generation);
+    _genHolderStore.assign_generation(_generation);
 }
 
 template <typename T>
@@ -182,14 +182,14 @@ RcuVector<T>::RcuVector(GrowStrategy growStrategy)
 template <typename T>
 RcuVector<T>::~RcuVector()
 {
-    _genHolderStore.clearHoldLists();
+    _genHolderStore.reclaim_all();
 }
 
 template <typename T>
 void
 RcuVector<T>::removeOldGenerations(generation_t firstUsed)
 {
-    _genHolderStore.trimHoldLists(firstUsed);
+    _genHolderStore.reclaim(firstUsed);
 }
 
 template <typename T>
@@ -197,7 +197,7 @@ MemoryUsage
 RcuVector<T>::getMemoryUsage() const
 {
     MemoryUsage retval(RcuVectorBase<T>::getMemoryUsage());
-    retval.mergeGenerationHeldBytes(_genHolderStore.getHeldBytes());
+    retval.mergeGenerationHeldBytes(_genHolderStore.get_held_bytes());
     return retval;
 }
 

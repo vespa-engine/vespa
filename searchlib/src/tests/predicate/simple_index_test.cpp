@@ -74,7 +74,7 @@ struct Fixture {
     Fixture() : _generation_holder(), _limit_provider(),
                 _index(_generation_holder, _limit_provider, config) {}
     ~Fixture() {
-        _generation_holder.clearHoldLists();
+        _generation_holder.reclaim_all();
     }
     SimpleIndex<MyData> &index() {
         return _index;

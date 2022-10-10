@@ -14,7 +14,7 @@ namespace vespalib {
  *
  * This class must be used in accordance with a GenerationHandler.
  */
-template <typename T, bool track_bytes_held>
+template <typename T, bool track_bytes_held, bool use_deque>
 class GenerationHoldList {
 private:
     using generation_t = vespalib::GenerationHandler::generation_t;
@@ -30,7 +30,9 @@ private:
     };
 
     using ElemList = std::vector<T>;
-    using ElemWithGenList = std::deque<ElemWithGen>;
+    using ElemWithGenList = std::conditional_t<use_deque,
+            std::deque<ElemWithGen>,
+            std::vector<ElemWithGen>>;
 
     ElemList _phase_1_list;
     ElemWithGenList _phase_2_list;
@@ -46,6 +48,7 @@ private:
 
 public:
     GenerationHoldList();
+    ~GenerationHoldList();
 
     /**
      * Insert the given data element on this hold list.

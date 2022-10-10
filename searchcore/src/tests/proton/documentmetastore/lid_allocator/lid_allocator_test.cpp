@@ -28,7 +28,7 @@ protected:
 
     ~LidAllocatorTest()
     {
-        _gen_hold.clearHoldLists();
+        _gen_hold.reclaim_all();
     }
 
     uint32_t get_size() { return _allocator.getActiveLids().size(); }

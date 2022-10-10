@@ -36,7 +36,7 @@ SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
 
 SingleValueSmallNumericAttribute::~SingleValueSmallNumericAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 void
@@ -97,7 +97,7 @@ void
 SingleValueSmallNumericAttribute::onUpdateStat()
 {
     vespalib::MemoryUsage usage = _wordData.getMemoryUsage();
-    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     uint32_t numDocs = B::getNumDocs();
     updateStatistics(numDocs, numDocs,
                      usage.allocatedBytes(), usage.usedBytes(),
@@ -108,14 +108,14 @@ SingleValueSmallNumericAttribute::onUpdateStat()
 void
 SingleValueSmallNumericAttribute::removeOldGenerations(generation_t firstUsed)
 {
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 
 void
 SingleValueSmallNumericAttribute::onGenerationChange(generation_t generation)
 {
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
 }
 
 
@@ -127,7 +127,7 @@ SingleValueSmallNumericAttribute::onLoad(vespalib::Executor *)
     if (ok) {
         setCreateSerialNum(attrReader.getCreateSerialNum());
         const size_t sz(attrReader.getDataCount());
-        getGenerationHolder().clearHoldLists();
+        getGenerationHolder().reclaim_all();
         _wordData.reset();
         _wordData.unsafe_reserve(sz - 1);
         Word numDocs = attrReader.getNextData();

@@ -113,13 +113,13 @@ void
 TensorAttribute::removeOldGenerations(generation_t firstUsed)
 {
     _tensorStore.trimHoldLists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 void
 TensorAttribute::onGenerationChange(generation_t generation)
 {
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
     _tensorStore.transferHoldLists(generation - 1);
 }
 
@@ -169,7 +169,7 @@ TensorAttribute::update_stat()
 {
     vespalib::MemoryUsage result = _refVector.getMemoryUsage();
     result.merge(_tensorStore.update_stat(getConfig().getCompactionStrategy()));
-    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    result.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     return result;
 }
 
@@ -178,7 +178,7 @@ TensorAttribute::memory_usage() const
 {
     vespalib::MemoryUsage result = _refVector.getMemoryUsage();
     result.merge(_tensorStore.getMemoryUsage());
-    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    result.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     return result;
 }
 

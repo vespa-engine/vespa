@@ -165,7 +165,7 @@ ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 {
     _referenceMappings.trimHoldLists(firstUsed);
     _store.trimHoldLists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 void
@@ -175,7 +175,7 @@ ReferenceAttribute::onGenerationChange(generation_t generation)
     _store.freeze();
     _referenceMappings.transferHoldLists(generation - 1);
     _store.transferHoldLists(generation - 1);
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
 }
 
 void
@@ -203,7 +203,7 @@ ReferenceAttribute::onUpdateStat()
     _compaction_spec = ReferenceAttributeCompactionSpec(compaction_strategy.should_compact_memory(total),
                                                         compaction_strategy.should_compact_memory(dictionary_memory_usage));
     total.merge(dictionary_memory_usage);
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
     updateStatistics(getTotalValueCount(), getUniqueValueCount(),

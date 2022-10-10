@@ -29,7 +29,7 @@ SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & g
 
 SingleBoolAttribute::~SingleBoolAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 void
@@ -95,7 +95,7 @@ SingleBoolAttribute::onUpdateStat() {
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.writer().extraByteSize());
     usage.setUsedBytes(_bv.writer().sizeBytes());
-    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_bv.writer().size(), _bv.writer().size(), usage.allocatedBytes(), usage.usedBytes(),
                            usage.deadBytes(), usage.allocatedBytesOnHold());
@@ -191,7 +191,7 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
     bool ok(attrReader.hasData());
     if (ok) {
         setCreateSerialNum(attrReader.getCreateSerialNum());
-        getGenerationHolder().clearHoldLists();
+        getGenerationHolder().reclaim_all();
         _bv.writer().clear();
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
@@ -258,12 +258,12 @@ SingleBoolAttribute::getEstimatedSaveByteSize() const
 
 void
 SingleBoolAttribute::removeOldGenerations(generation_t firstUsed) {
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 void
 SingleBoolAttribute::onGenerationChange(generation_t generation) {
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
 }
 
 }

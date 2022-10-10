@@ -22,7 +22,7 @@ protected:
 
     ~LidStateVectorTest()
     {
-        _gen_hold.clearHoldLists();
+        _gen_hold.reclaim_all();
     }
 
 };

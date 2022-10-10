@@ -3,12 +3,13 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/generationholder.h>
+#include <iostream>
 
 using vespalib::GenerationHeldBase;
 using vespalib::GenerationHoldList;
 
 using MyElem = GenerationHeldBase;
-using MyHoldList = GenerationHoldList<MyElem::UP, true>;
+using MyHoldList = GenerationHoldList<MyElem::UP, true, false>;
 
 TEST(GenerationHoldListTest, holding_of_unique_ptr_elements_with_tracking_of_held_bytes)
 {

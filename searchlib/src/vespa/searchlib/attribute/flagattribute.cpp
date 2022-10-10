@@ -223,7 +223,7 @@ FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
         }
     }
     _bitVectorSize = newSize;
-    _bitVectorHolder.transferHoldLists(this->getCurrentGeneration());
+    _bitVectorHolder.assign_generation(this->getCurrentGeneration());
 }
 
 
@@ -232,7 +232,7 @@ void
 FlagAttributeT<B>::removeOldGenerations(vespalib::GenerationHandler::generation_t firstUsed)
 {
     B::removeOldGenerations(firstUsed);
-    _bitVectorHolder.trimHoldLists(firstUsed);
+    _bitVectorHolder.reclaim(firstUsed);
 }
 
 template class FlagAttributeT<FlagBaseImpl>;

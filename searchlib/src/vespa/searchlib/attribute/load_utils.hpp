@@ -68,7 +68,7 @@ loadFromEnumeratedSingleValue(Vector &vector,
     using ValueType = typename Vector::ValueType;
     using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     uint32_t numDocs = attrReader.getEnumCount();
-    genHolder.clearHoldLists();
+    genHolder.reclaim_all();
     vector.reset();
     vector.unsafe_reserve(numDocs);
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
