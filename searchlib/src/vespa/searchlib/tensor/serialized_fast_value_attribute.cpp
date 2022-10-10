@@ -16,7 +16,7 @@ namespace search::tensor {
 SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const Config &cfg)
   : TensorAttribute(name, cfg, _tensorBufferStore),
     _tensor_type(cfg.tensorType()),
-    _tensorBufferStore(_tensor_type, {}, 1000u)
+    _tensorBufferStore(_tensor_type, get_memory_allocator(), 1000u)
 {
 }
 
