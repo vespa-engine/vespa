@@ -366,6 +366,12 @@ public final class ConfiguredApplication implements Application {
         synchronized (monitor) {
             Set<ServerProvider> serversToClose = createIdentityHashSet(startedServers);
             serversToClose.removeAll(currentServers);
+            for (ServerProvider server : currentServers) {
+                if ( ! startedServers.contains(server) && server.isMultiplexed()) {
+                    server.start();
+                    startedServers.add(server);
+                }
+            }
             if (serversToClose.size() > 0) {
                 log.info(String.format("Closing %d server instances", serversToClose.size()));
                 for (ServerProvider server : serversToClose) {
@@ -374,7 +380,7 @@ public final class ConfiguredApplication implements Application {
                 }
             }
             for (ServerProvider server : currentServers) {
-                if (!startedServers.contains(server)) {
+                if ( ! startedServers.contains(server)) {
                     server.start();
                     startedServers.add(server);
                 }

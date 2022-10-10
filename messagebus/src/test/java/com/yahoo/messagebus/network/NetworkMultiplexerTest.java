@@ -43,7 +43,8 @@ public class NetworkMultiplexerTest {
             fail("Illegal to register same session multiple times with the same owner");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Session 's1' with owner 'mock owner' already registered with this", expected.getMessage());
+            assertEquals("Session 's1' with owner 'mock owner' already registered with network multiplexer with owners: [mock owner], sessions: {s1=[mock owner]} and destructible: false",
+                         expected.getMessage());
         }
         assertEquals(Set.of("s1"), net.registered);
 

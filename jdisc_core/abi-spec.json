@@ -905,7 +905,8 @@
     ],
     "methods": [
       "public abstract void start()",
-      "public abstract void close()"
+      "public abstract void close()",
+      "public boolean isMultiplexed()"
     ],
     "fields": []
   }
