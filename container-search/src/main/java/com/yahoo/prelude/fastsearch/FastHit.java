@@ -73,10 +73,10 @@ public class FastHit extends Hit {
         distributionKey = 0;
     }
 
-    public FastHit(byte [] gid, double relevance, int partId, int distributionKey) {
+    public FastHit(byte[] gid, double relevance, int partId, int distributionKey) {
         this(gid, new Relevance(relevance), partId, distributionKey);
     }
-    public FastHit(byte [] gid, Relevance relevance, int partId, int distributionKey) {
+    public FastHit(byte[] gid, Relevance relevance, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
         this.partId = partId;
@@ -109,8 +109,8 @@ public class FastHit extends Hit {
      */
     @Override
     public URI getId() {
-        URI uri = super.getId();
-        if (uri != null) return uri;
+        URI id = super.getId();
+        if (id != null) return id;
 
         // Fallback to index:[source]/[partid]/[id]
         StringBuilder sb = new StringBuilder(64);
