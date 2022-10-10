@@ -58,6 +58,25 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void defaultInstance() {
+        String specXml = "<deployment version='1.0'>" +
+                         "    <prod>" +
+                         "        <region>aws-us-east-1c</region>" +
+                         "        <region>aws-us-west-2a</region>" +
+                         "    </prod>" +
+                         "</deployment>";
+
+        StringReader r = new StringReader(specXml);
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(specXml, spec.xmlForm());
+        assertEquals(2, spec.requireInstance("default").steps().size());
+        assertFalse(spec.majorVersion().isPresent());
+        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("aws-us-east-1c"))));
+        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("aws-us-west-2a"))));
+        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
+    }
+
+    @Test
     public void specPinningMajorVersion() {
         String specXml = "<deployment version='1.0' major-version='6'>" +
                          "   <instance id='default'>" +
