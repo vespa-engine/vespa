@@ -89,8 +89,7 @@ class SingletonManager implements AutoCloseable {
 
     @Override
     public synchronized void close() {
-        List<SingletonWorker> registered = List.copyOf(registrations.keySet());
-        for (SingletonWorker singleton : registered) {
+        for (SingletonWorker singleton : List.copyOf(registrations.keySet())) {
             String id = registrations.get(singleton);
             logger.log(Level.WARNING, singleton + " still registered with id '" + id + "' at shutdown");
             unregister(singleton);
@@ -151,7 +150,6 @@ class SingletonManager implements AutoCloseable {
             }
         }
 
-        @SuppressWarnings("fallthrough")
         private void run() {
             try {
                 while ( ! shutdown.get()) {
