@@ -87,7 +87,9 @@ public class CuratorWrapperTest {
             Singleton singleton = new Singleton(curator);
             assertTrue(singleton.isActive);
             assertTrue(wrapped.exists(lockPath));
+            stunning.register();
             assertTrue(curator.isActive(singleton.id()));
+            stunning.arriveAndDeregister();
             singleton.shutdown();
             assertFalse(singleton.isActive);
             // ... and deactivated as a result of unregistering again.
