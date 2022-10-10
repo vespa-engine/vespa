@@ -1,5 +1,6 @@
 package com.yahoo.vespa.curator;
 
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.api.AbstractSingletonWorker;
@@ -14,9 +15,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -34,7 +37,7 @@ public class CuratorWrapperTest {
     @Test
     public void testUserApi() throws Exception {
         try (Curator wrapped = new MockCurator()) {
-            CuratorWrapper curator = new CuratorWrapper(wrapped);
+            CuratorWrapper curator = new CuratorWrapper(wrapped, new MockMetric());
 
             Path path = Path.fromString("path");
             assertEquals(Optional.empty(), curator.stat(path));
@@ -81,7 +84,8 @@ public class CuratorWrapperTest {
                     return super.instant();
                 };
             };
-            CuratorWrapper curator = new CuratorWrapper(wrapped, clock, Duration.ofMillis(100));
+            MockMetric metric = new MockMetric();
+            CuratorWrapper curator = new CuratorWrapper(wrapped, clock, Duration.ofMillis(100), metric);
 
             // First singleton to register becomes active during construction.
             Singleton singleton = new Singleton(curator);
@@ -95,11 +99,18 @@ public class CuratorWrapperTest {
             // ... and deactivated as a result of unregistering again.
 
             // Singleton can be set up again, but this time, time runs away.
+            Phaser mark2 = new Phaser(2); // Janitor and helper.
+            new Thread(() -> {
+                mark2.arriveAndAwaitAdvance(); // Wait for janitor to call activate.
+                stunning.arriveAndAwaitAdvance(); // Let janitor measure time spent on activation, while test thread waits for it.
+                stunning.arriveAndAwaitAdvance(); // Let janitor measure time spent on activation, while test thread waits for it.
+            }).start();
             singleton = new Singleton(curator) {
                 @Override public void activate() {
                     // Set up sync in clock on next renewLease.
                     super.activate();
                     stunning.register();
+                    mark2.arrive();
                 }
             };
             assertTrue(singleton.isActive);
@@ -109,26 +120,45 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance(); // Wait for next updateStatus.
             clock.advance(Curator.ZK_SESSION_TIMEOUT);
             singleton.phaser.register();      // Set up so we can synchronise with deactivation.
-            stunning.arriveAndDeregister();   // Let lease expire, and ensure further ticks complete if we lose the race to unregister.
+            stunning.forceTermination();      // Let lease expire, and ensure further ticks complete if we lose the race to unregister.
 
             singleton.phaser.arriveAndAwaitAdvance();
             assertFalse(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 2.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 2.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0),
+                          metric);
 
             // Singleton is reactivated next tick.
             singleton.phaser.arriveAndAwaitAdvance();
             assertTrue(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 3.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 2.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 1.0,
+                                 "has_lease", 1.0),
+                          metric);
 
             // Manager unregisters remaining singletons on shutdown.
             curator.deconstruct();
             singleton.phaser.arriveAndAwaitAdvance();
             assertFalse(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 3.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 3.0,
+                                 "deactivation.millis", 0.0),
+                          metric);
         }
     }
 
     @Test
     public void testSingletonsInSameContainer() {
         try (Curator wrapped = new MockCurator()) {
-            CuratorWrapper curator = new CuratorWrapper(wrapped);
+            MockMetric metric = new MockMetric();
+            CuratorWrapper curator = new CuratorWrapper(wrapped, metric);
 
             // First singleton to register becomes active during construction.
             Singleton singleton = new Singleton(curator);
@@ -154,6 +184,13 @@ public class CuratorWrapperTest {
             assertFalse(newerSingleton.isActive);
             assertTrue(newSingleton.isActive);
             assertFalse(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 4.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 3.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 1.0,
+                                 "has_lease", 1.0),
+                          metric);
 
             // Add a singleton which fails activation.
             Phaser stunning = new Phaser(2);
@@ -180,11 +217,36 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance(); // Failing component is about to be deactivated.
             assertFalse(newSingleton.isActive);
             assertTrue(curator.isActive(newSingleton.id())); // No actual active components, but container has the lease.
+            verifyMetrics(Map.of("activation.count", 5.0,
+                                 "activation.millis", 0.0,
+                                 "activation.failure.count", 1.0,
+                                 "deactivation.count", 5.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0,
+                                 "has_lease", 1.0),
+                          metric);
             stunning.arriveAndAwaitAdvance(); // Failing component is done being deactivated.
             stunning.arriveAndAwaitAdvance(); // Failing component is done cleaning up after itself.
             assertTrue(newSingleton.isActive);
             assertEquals("failed to register failing singleton", thrownMessage.get());
+            verifyMetrics(Map.of("activation.count", 6.0,
+                                 "activation.millis", 0.0,
+                                 "activation.failure.count", 1.0,
+                                 "deactivation.count", 5.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 1.0,
+                                 "has_lease", 1.0),
+                          metric);
+
             newSingleton.shutdown();
+            verifyMetrics(Map.of("activation.count", 6.0,
+                                 "activation.millis", 0.0,
+                                 "activation.failure.count", 1.0,
+                                 "deactivation.count", 6.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0,
+                                 "has_lease", 0.0),
+                          metric);
 
             curator.deconstruct();
         }
@@ -193,7 +255,8 @@ public class CuratorWrapperTest {
     @Test
     public void testSingletonsInDifferentContainers() {
         try (MockCurator wrapped = new MockCurator()) {
-            CuratorWrapper curator = new CuratorWrapper(wrapped, Clock.systemUTC(), Duration.ofMillis(100));
+            MockMetric metric = new MockMetric();
+            CuratorWrapper curator = new CuratorWrapper(wrapped, Clock.systemUTC(), Duration.ofMillis(100), metric);
 
             // Simulate a different container holding the lock.
             Singleton singleton;
@@ -201,12 +264,18 @@ public class CuratorWrapperTest {
                 singleton = new Singleton(curator);
                 assertFalse(singleton.isActive);
                 assertFalse(curator.isActive(singleton.id()));
+                assertEquals(Map.of(), metric.metrics());
                 singleton.phaser.register();
             }
 
             singleton.phaser.arriveAndAwaitAdvance();
             assertTrue(curator.isActive(singleton.id()));
             assertTrue(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 1.0,
+                                 "activation.millis", 0.0,
+                                 "is_active", 1.0,
+                                 "has_lease", 1.0),
+                          metric);
 
             // Simulate a different container wanting the lock.
             Phaser stunning = new Phaser(2);
@@ -222,14 +291,36 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance();
             singleton.phaser.arriveAndAwaitAdvance();
             assertFalse(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 1.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 1.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0,
+                                 "has_lease", 0.0),
+                          metric);
 
             // Connection is restored, and the other container releases the lock again.
             stunning.arriveAndAwaitAdvance();
             singleton.phaser.arriveAndAwaitAdvance();
             assertTrue(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 2.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 1.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 1.0,
+                                 "has_lease", 1.0),
+                          metric);
+
             singleton.phaser.arriveAndDeregister();
             singleton.shutdown();
             assertFalse(singleton.isActive);
+            verifyMetrics(Map.of("activation.count", 2.0,
+                                 "activation.millis", 0.0,
+                                 "deactivation.count", 2.0,
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0,
+                                 "has_lease", 0.0),
+                          metric);
 
             curator.deconstruct();
         }
@@ -243,6 +334,10 @@ public class CuratorWrapperTest {
         @Override public void activate() { isActive = true; phaser.arriveAndAwaitAdvance(); }
         @Override public void deactivate() { isActive = false; phaser.arriveAndAwaitAdvance(); }
         public void shutdown() { unregister(Duration.ofSeconds(2)); }
+    }
+
+    static void verifyMetrics(Map<String, Double> expected, MockMetric metrics) {
+        expected.forEach((metric, value) -> assertEquals(metric, value, metrics.metrics().get("singleton." + metric).get(Map.of("singletonId", "singleton"))));
     }
 
 }

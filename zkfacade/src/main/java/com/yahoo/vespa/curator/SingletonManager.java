@@ -1,5 +1,6 @@
 package com.yahoo.vespa.curator;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.protect.Process;
 import com.yahoo.vespa.curator.api.VespaCurator.SingletonWorker;
@@ -38,11 +39,13 @@ class SingletonManager implements AutoCloseable {
     private final Map<String, Janitor> janitors = new HashMap<>();
     private final Map<String, Integer> count = new HashMap<>();
     private final Map<SingletonWorker, String> registrations = new IdentityHashMap<>();
+    private final Metric metric;
 
-    SingletonManager(Curator curator, Clock clock, Duration tickTimeout) {
+    SingletonManager(Curator curator, Clock clock, Duration tickTimeout, Metric metric) {
         this.curator = curator;
         this.clock = clock;
         this.tickTimeout = tickTimeout;
+        this.metric = metric;
     }
 
     synchronized CompletableFuture<?> register(String singletonId, SingletonWorker singleton) {
@@ -127,14 +130,15 @@ class SingletonManager implements AutoCloseable {
         final Thread worker;
         final String id;
         final Path path;
+        final MetricHelper metrics;
         Lock lock = null;
         boolean active;
-
 
         Janitor(String id) {
             this.id = id;
             this.path = Path.fromString("/vespa/singleton/v1/" + id);
             this.worker = new Thread(this::run, "singleton-janitor-" + id + "-");
+            this.metrics = new MetricHelper();
 
             worker.setDaemon(true);
             worker.start();
@@ -144,6 +148,7 @@ class SingletonManager implements AutoCloseable {
             doom.set(null);
             if (lock != null) try {
                 lock.close();
+                metrics.hasLease(false);
                 lock = null;
             }
             catch (Exception e) {
@@ -203,13 +208,13 @@ class SingletonManager implements AutoCloseable {
             if (active) {
                 RuntimeException e = null;
                 if (current != null) try {
-                    current.deactivate();
+                    metrics.deactivation(current::deactivate);
                 }
                 catch (RuntimeException f) {
                     e = f;
                 }
                 try {
-                    singleton.activate();
+                    metrics.activation(singleton::activate);
                 }
                 catch (RuntimeException f) {
                     if (e == null) e = f;
@@ -225,13 +230,13 @@ class SingletonManager implements AutoCloseable {
             if ( ! singletons.remove(singleton)) return;
             if (active && current == singleton) {
                 try {
-                    singleton.deactivate();
+                    metrics.deactivation(singleton::deactivate);
                 }
                 catch (RuntimeException f) {
                     e = f;
                 }
                 if ( ! singletons.isEmpty()) try {
-                    singletons.peek().activate();
+                    metrics.activation(singletons.peek()::activate);
                 }
                 catch (RuntimeException f) {
                     if (e == null) e = f;
@@ -257,6 +262,7 @@ class SingletonManager implements AutoCloseable {
             Instant start = clock.instant();
             if (lock == null) try {
                 lock = curator.lock(path.append("lock"), tickTimeout);
+                metrics.hasLease(true);
             }
             catch (RuntimeException e) {
                 logger.log(Level.FINE, "Failed acquiring lock for '" + path + "' within " + tickTimeout, e);
@@ -284,7 +290,7 @@ class SingletonManager implements AutoCloseable {
             if ( ! active && shouldBeActive) {
                 try {
                     active = true;
-                    if ( ! singletons.isEmpty()) singletons.peek().activate();
+                    if ( ! singletons.isEmpty()) metrics.activation(singletons.peek()::activate);
                 }
                 catch (RuntimeException e) {
                     logger.log(Level.WARNING, "Failed to activate " + singletons.peek() + ", deactivating again", e);
@@ -294,7 +300,7 @@ class SingletonManager implements AutoCloseable {
             if (active && ! shouldBeActive) {
                 try  {
                     active = false;
-                    if ( ! singletons.isEmpty()) singletons.peek().deactivate();
+                    if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
                 }
                 catch (RuntimeException e) {
                     logger.log(Level.WARNING, "Failed to deactivate " + singletons.peek(), e);
@@ -323,6 +329,66 @@ class SingletonManager implements AutoCloseable {
             if ( ! shutdown.compareAndSet(false, true)) {
                 logger.log(Level.WARNING, "Shutdown called more than once on " + this);
             }
+        }
+
+        private class MetricHelper {
+
+            static final String PREFIX = "singleton.";
+            static final String HAS_LEASE = PREFIX + "has_lease";
+            static final String IS_ACTIVE = PREFIX + "is_active";
+            static final String ACTIVATION = PREFIX + "activation.count";
+            static final String ACTIVATION_MILLIS = PREFIX + "activation.millis";
+            static final String ACTIVATION_FAILURES = PREFIX + "activation.failure.count";
+            static final String DEACTIVATION = PREFIX + "deactivation.count";
+            static final String DEACTIVATION_MILLIS = PREFIX + "deactivation.millis";
+            static final String DEACTIVATION_FAILURES = PREFIX + "deactivation.failure.count";
+
+            final Metric.Context context;
+
+            MetricHelper() {
+                this.context = metric.createContext(Map.of("singletonId", id));
+            }
+
+            void hasLease(boolean hasLease) {
+                metric.set(HAS_LEASE, hasLease ? 1 : 0, context);
+            }
+
+            void activation(Runnable activation) {
+                Instant start = clock.instant();
+                boolean failed = false;
+                metric.add(ACTIVATION, 1, context);
+                try {
+                    activation.run();
+                }
+                catch (RuntimeException e) {
+                    failed = true;
+                    throw e;
+                }
+                finally {
+                    metric.set(ACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
+                    if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
+                    else metric.set(IS_ACTIVE, 1, context);
+                }
+            }
+
+            void deactivation(Runnable deactivation) {
+                Instant start = clock.instant();
+                boolean failed = false;
+                metric.add(DEACTIVATION, 1, context);
+                try {
+                    deactivation.run();
+                }
+                catch (RuntimeException e) {
+                    failed = true;
+                    throw e;
+                }
+                finally {
+                    metric.set(DEACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
+                    if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
+                    metric.set(IS_ACTIVE, 0, context);
+                }
+            }
+
         }
 
     }
