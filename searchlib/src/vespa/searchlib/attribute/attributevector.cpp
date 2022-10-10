@@ -64,7 +64,7 @@ allow_paged(const search::attribute::Config& config)
         return false;
     }
     if (config.basicType() == Type::TENSOR) {
-        return (!config.tensorType().is_error() && config.tensorType().is_dense());
+        return (!config.tensorType().is_error() && (config.tensorType().is_dense() || !config.fastSearch()));
     }
     return true;
 }
