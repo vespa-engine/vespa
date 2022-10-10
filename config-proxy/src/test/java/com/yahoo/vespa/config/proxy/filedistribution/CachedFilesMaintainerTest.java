@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
@@ -92,7 +93,7 @@ public class CachedFilesMaintainerTest {
                 writeFileAndSetLastAccessedTime(cachedDownloads, "download" + i);
                 clock.advance(Duration.ofMinutes(1));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         });
     }
