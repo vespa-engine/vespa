@@ -2,14 +2,17 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
+import com.yahoo.test.ManualClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
-import java.time.Instant;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,9 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class CachedFilesMaintainerTest {
 
+    private static final int numberToAlwaysKeep = 2;
+
     private File cachedFileReferences;
     private File cachedDownloads;
     private CachedFilesMaintainer cachedFilesMaintainer;
+    private final ManualClock clock = new ManualClock();
 
     @TempDir
     public File tempFolder;
@@ -30,28 +36,28 @@ public class CachedFilesMaintainerTest {
     public void setup() throws IOException {
         cachedFileReferences = newFolder(tempFolder, "cachedFileReferences");
         cachedDownloads = newFolder(tempFolder, "cachedDownloads");
-        cachedFilesMaintainer = new CachedFilesMaintainer(cachedFileReferences, cachedDownloads, Duration.ofMinutes(1));
+        cachedFilesMaintainer = new CachedFilesMaintainer(cachedFileReferences,
+                                                          cachedDownloads,
+                                                          Duration.ofMinutes(2),
+                                                          clock,
+                                                          numberToAlwaysKeep);
     }
 
     @Test
-    void require_old_files_to_be_deleted() throws IOException {
+    void require_old_files_to_be_deleted() {
         runMaintainerAndAssertFiles(0, 0);
 
-        File fileReference = writeFile(cachedFileReferences, "fileReference");
-        File download = writeFile(cachedDownloads, "download");
-        runMaintainerAndAssertFiles(1, 1);
+        clock.advance(Duration.ofSeconds(55));
+        // Create file references and downloads
+        createFiles();
 
-        updateLastModifiedTimeStamp(fileReference, Instant.now().minus(Duration.ofMinutes(10)));
-        runMaintainerAndAssertFiles(0, 1);
+        runMaintainerAndAssertFiles(4, 4);
 
-        updateLastModifiedTimeStamp(download, Instant.now().minus(Duration.ofMinutes(10)));
-        runMaintainerAndAssertFiles(0, 0);
-    }
+        clock.advance(Duration.ofMinutes(1));
+        runMaintainerAndAssertFiles(3, 3);
 
-    private void updateLastModifiedTimeStamp(File file, Instant instant) {
-        if (!file.setLastModified(instant.toEpochMilli())) {
-            throw new RuntimeException("Could not set last modified timestamp for '" + file.getAbsolutePath() + "'");
-        }
+        clock.advance(Duration.ofMinutes(100));
+        runMaintainerAndAssertFiles(numberToAlwaysKeep, numberToAlwaysKeep);
     }
 
     private void runMaintainerAndAssertFiles(int fileReferenceCount, int downloadCount) {
@@ -65,10 +71,10 @@ public class CachedFilesMaintainerTest {
         assertEquals(downloadCount, downloads.length);
     }
 
-    private File writeFile(File directory, String filename) throws IOException {
+    private void writeFileAndSetLastAccessedTime(File directory, String filename) throws IOException {
         File file = new File(directory, filename);
         IOUtils.writeFile(file, filename, false);
-        return file;
+        Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.from(clock.instant()));
     }
 
     private static File newFolder(File root, String... subDirs) throws IOException {
@@ -78,6 +84,18 @@ public class CachedFilesMaintainerTest {
             throw new IOException("Couldn't create folders " + root);
         }
         return result;
+    }
+
+    private void createFiles() {
+        IntStream.of(0,1,2,3).forEach(i -> {
+            try {
+                writeFileAndSetLastAccessedTime(cachedFileReferences, "fileReference" + i);
+                writeFileAndSetLastAccessedTime(cachedDownloads, "download" + i);
+                clock.advance(Duration.ofMinutes(1));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
 }
