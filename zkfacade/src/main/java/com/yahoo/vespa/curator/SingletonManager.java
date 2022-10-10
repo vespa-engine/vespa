@@ -74,7 +74,7 @@ class SingletonManager implements AutoCloseable {
      * The container may abandon the lease early, if deactivation is triggered and completes before the deadline.
      * Unless connection to the underlying ZK cluster is lost, the returned value will regularly move forwards in time.
      */
-    Optional<Instant> activeUntil(String singletonId) {
+    synchronized Optional<Instant> activeUntil(String singletonId) {
         return Optional.ofNullable(janitors.get(singletonId)).map(janitor -> janitor.doom.get());
     }
 
