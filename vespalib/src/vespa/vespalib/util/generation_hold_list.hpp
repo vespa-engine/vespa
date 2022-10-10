@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
 #include "generation_hold_list.h"
+#include <cassert>
 
 namespace vespalib {
 
-template <typename T, bool track_bytes_held>
+template <typename T, bool track_bytes_held, bool use_deque>
 void
-GenerationHoldList<T, track_bytes_held>::assign_generation_internal(generation_t current_gen)
+GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(generation_t current_gen)
 {
     for (auto& elem : _phase_1_list) {
         _phase_2_list.push_back(ElemWithGen(std::move(elem), current_gen));
@@ -14,9 +17,9 @@ GenerationHoldList<T, track_bytes_held>::assign_generation_internal(generation_t
     _phase_1_list.clear();
 }
 
-template <typename T, bool track_bytes_held>
+template <typename T, bool track_bytes_held, bool use_deque>
 void
-GenerationHoldList<T, track_bytes_held>::reclaim_internal(generation_t oldest_used_gen)
+GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_t oldest_used_gen)
 {
     auto itr = _phase_2_list.begin();
     auto ite = _phase_2_list.end();
@@ -33,17 +36,25 @@ GenerationHoldList<T, track_bytes_held>::reclaim_internal(generation_t oldest_us
     }
 }
 
-template <typename T, bool track_bytes_held>
-GenerationHoldList<T, track_bytes_held>::GenerationHoldList()
+template <typename T, bool track_bytes_held, bool use_deque>
+GenerationHoldList<T, track_bytes_held, use_deque>::GenerationHoldList()
     : _phase_1_list(),
       _phase_2_list(),
       _held_bytes()
 {
 }
 
-template <typename T, bool track_bytes_held>
+template <typename T, bool track_bytes_held, bool use_deque>
+GenerationHoldList<T, track_bytes_held, use_deque>::~GenerationHoldList()
+{
+    assert(_phase_1_list.empty());
+    assert(_phase_2_list.empty());
+    assert(get_held_bytes() == 0);
+}
+
+template <typename T, bool track_bytes_held, bool use_deque>
 void
-GenerationHoldList<T, track_bytes_held>::insert(T data)
+GenerationHoldList<T, track_bytes_held, use_deque>::insert(T data)
 {
     _phase_1_list.push_back(std::move(data));
     if (track_bytes_held) {
@@ -51,9 +62,9 @@ GenerationHoldList<T, track_bytes_held>::insert(T data)
     }
 }
 
-template <typename T, bool track_bytes_held>
+template <typename T, bool track_bytes_held, bool use_deque>
 void
-GenerationHoldList<T, track_bytes_held>::reclaim_all()
+GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_all()
 {
     _phase_1_list.clear();
     _phase_2_list.clear();

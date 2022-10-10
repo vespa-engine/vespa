@@ -232,7 +232,7 @@ DataStoreBase::transferElemHoldList(generation_t generation)
 void
 DataStoreBase::transferHoldLists(generation_t generation)
 {
-    _genHolder.transferHoldLists(generation);
+    _genHolder.assign_generation(generation);
     if (hasElemHold1()) {
         transferElemHoldList(generation);
     }
@@ -250,7 +250,7 @@ void
 DataStoreBase::trimHoldLists(generation_t usedGen)
 {
     trimElemHoldList(usedGen);  // Trim entries before trimming buffers
-    _genHolder.trimHoldLists(usedGen);
+    _genHolder.reclaim(usedGen);
 }
 
 void
@@ -258,7 +258,7 @@ DataStoreBase::clearHoldLists()
 {
     transferElemHoldList(0);
     clearElemHoldList();
-    _genHolder.clearHoldLists();
+    _genHolder.reclaim_all();
 }
 
 void
@@ -268,7 +268,7 @@ DataStoreBase::dropBuffers()
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
         _states[bufferId].dropBuffer(bufferId, _buffers[bufferId].get_atomic_buffer());
     }
-    _genHolder.clearHoldLists();
+    _genHolder.reclaim_all();
 }
 
 vespalib::MemoryUsage
@@ -289,7 +289,7 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
     _states[bufferId].onHold(bufferId);
     size_t holdBytes = 0u;  // getMemStats() still accounts held buffers
     auto hold = std::make_unique<BufferHold>(holdBytes, *this, bufferId);
-    _genHolder.hold(std::move(hold));
+    _genHolder.insert(std::move(hold));
 }
 
 void
@@ -356,7 +356,7 @@ DataStoreBase::getMemStats() const
             LOG_ABORT("should not be reached");
         }
     }
-    size_t genHolderHeldBytes = _genHolder.getHeldBytes();
+    size_t genHolderHeldBytes = _genHolder.get_held_bytes();
     stats._holdBytes += genHolderHeldBytes;
     stats._allocBytes += genHolderHeldBytes;
     stats._usedBytes += genHolderHeldBytes;
@@ -428,7 +428,7 @@ DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
                                                state.getTypeHandler(),
                                                state.getTypeId());
     if (!_initializing) {
-        _genHolder.hold(std::move(hold));
+        _genHolder.insert(std::move(hold));
     }
 }
 

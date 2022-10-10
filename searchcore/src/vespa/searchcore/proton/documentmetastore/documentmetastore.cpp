@@ -224,7 +224,7 @@ DocumentMetaStore::onUpdateStat()
 {
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
-    usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    usage.incAllocatedBytesOnHold(getGenerationHolder().get_held_bytes());
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);
     usage.incUsedBytes(bvSize);
@@ -245,7 +245,7 @@ DocumentMetaStore::onGenerationChange(generation_t generation)
 {
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().transferHoldLists(generation - 1);
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
     updateStat(false);
 }
 
@@ -254,7 +254,7 @@ DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
 {
     _gidToLidMap.getAllocator().trimHoldLists(firstUsed);
     _lidAlloc.trimHoldLists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 std::unique_ptr<search::AttributeSaver>
@@ -442,7 +442,7 @@ DocumentMetaStore::~DocumentMetaStore()
     // TODO: Properly notify about modified buckets when using shared bucket db
     // between document types
     unload();
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     assert(get_shrink_lid_space_blockers() == 0);
 }
 
@@ -1009,7 +1009,7 @@ DocumentMetaStore::holdUnblockShrinkLidSpace()
 {
     assert(get_shrink_lid_space_blockers() > 0);
     auto hold = std::make_unique<ShrinkBlockHeld>(*this);
-    getGenerationHolder().hold(std::move(hold));
+    getGenerationHolder().insert(std::move(hold));
     incGeneration();
 }
 

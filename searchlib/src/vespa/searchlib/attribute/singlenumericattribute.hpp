@@ -32,7 +32,7 @@ SingleValueNumericAttribute(const vespalib::string & baseFileName, const Attribu
 template <typename B>
 SingleValueNumericAttribute<B>::~SingleValueNumericAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 template <typename B>
@@ -65,7 +65,7 @@ void
 SingleValueNumericAttribute<B>::onUpdateStat()
 {
     vespalib::MemoryUsage usage = _data.getMemoryUsage();
-    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_data.size(), _data.size(),
                            usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
@@ -97,14 +97,14 @@ template <typename B>
 void
 SingleValueNumericAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(firstUsed);
 }
 
 template <typename B>
 void
 SingleValueNumericAttribute<B>::onGenerationChange(generation_t generation)
 {
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(generation - 1);
 }
 
 template <typename B>
@@ -143,7 +143,7 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
         return onLoadEnumerated(attrReader);
     
     const size_t sz(attrReader.getDataCount());
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     _data.reset();
     _data.unsafe_reserve(sz);
     for (uint32_t i = 0; i < sz; ++i) {

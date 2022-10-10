@@ -23,7 +23,7 @@ SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const
 
 SerializedFastValueAttribute::~SerializedFastValueAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     _tensorStore.clearHoldLists();
 }
 

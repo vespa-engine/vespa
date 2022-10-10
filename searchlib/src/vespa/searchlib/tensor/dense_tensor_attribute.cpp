@@ -172,7 +172,7 @@ DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, con
 
 DenseTensorAttribute::~DenseTensorAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     _tensorStore.clearHoldLists();
 }
 
