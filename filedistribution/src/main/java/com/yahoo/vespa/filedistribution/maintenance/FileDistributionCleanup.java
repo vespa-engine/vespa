@@ -5,18 +5,20 @@ import com.yahoo.io.IOUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.readAttributes;
 
@@ -55,30 +57,28 @@ public class FileDistributionCleanup {
 
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
 
-        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferencesDuration);
+        Stream<String> candidates = sortedUnusedFileReferences(fileReferencesPath.toPath(), fileReferencesInUse, keepFileReferencesDuration);
+        List<String> fileReferencesDeleted = new ArrayList<>();
         // Do not delete the newest ones
-        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - numberToAlwaysKeep));
-        if (fileReferencesToDelete.size() > 0) {
-            log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> {
+        final AtomicInteger i = new AtomicInteger(0);
+        candidates.forEach(fileReference -> {
+            if (i.incrementAndGet() > numberToAlwaysKeep) {
+                fileReferencesDeleted.add(fileReference);
                 File file = new File(fileReferencesPath, fileReference);
                 if (!IOUtils.recursiveDeleteDir(file))
                     log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
-            });
-        }
-        return fileReferencesToDelete;
+            }
+        });
+        return fileReferencesDeleted;
     }
 
-    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
-        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+    // Sorted, newest first
+    private Stream<String> sortedUnusedFileReferences(Path fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
         Instant instant = clock.instant().minus(keepFileReferences);
-        return fileReferencesOnDisk
-                .stream()
+        return getFileReferencesOnDisk(fileReferencesPath)
                 .filter(fileReference -> !fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted(Comparator.comparing(a -> lastAccessed(new File(fileReferencesPath, a))))
-                .collect(Collectors.toList());
+                .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath.toFile(), fileReference), instant))
+                .sorted(Comparator.comparing(a -> lastAccessed(new File(fileReferencesPath.toFile(), (String) a))).reversed());
     }
 
     private boolean isLastFileAccessBefore(File fileReference, Instant instant) {
@@ -95,15 +95,12 @@ public class FileDistributionCleanup {
         }
     }
 
-    /**
-     * Returns all files in the given directory, non-recursive.
-     */
-    public static Set<String> getFileReferencesOnDisk(File directory) {
-        Set<String> fileReferencesOnDisk = new HashSet<>();
-        File[] filesOnDisk = directory.listFiles();
-        if (filesOnDisk != null)
-            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
-        return fileReferencesOnDisk;
+    public static Stream<String> getFileReferencesOnDisk(Path directory) {
+        try {
+            return Files.list(directory).map(path -> path.toFile().getName());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

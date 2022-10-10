@@ -27,7 +27,8 @@ public class FileDistributionUtil {
     }
 
     public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {
-        return FileDistributionCleanup.getFileReferencesOnDisk(downloadDirectory).contains(applicationPackageReference.value());
+        return FileDistributionCleanup.getFileReferencesOnDisk(downloadDirectory.toPath())
+                                      .anyMatch(fileReference -> fileReference.equals(applicationPackageReference.value()));
     }
 
 }
