@@ -69,14 +69,19 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
     }
 
     @Override
-    public void delete(Path path) {
+    public void deleteAll(Path path) {
         curator.delete(userRoot.append(path));
+    }
+
+    @Override
+    public void delete(Path path) {
+        curator.delete(userRoot.append(path), false);
     }
 
     @Override
     public boolean delete(Path path, int expectedVersion) {
         try {
-            curator.delete(userRoot.append(path), expectedVersion);
+            curator.delete(userRoot.append(path), expectedVersion, false);
             return true;
         }
         catch (RuntimeException e) {

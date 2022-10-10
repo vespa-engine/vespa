@@ -5,7 +5,6 @@ import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -25,26 +24,33 @@ public interface VespaCurator {
     /** Returns the content and stat for the node at the given path, or empty if no node exists at that path. */
     Optional<Data> read(Path path);
 
-    /** Writes the given data to a node at the given path, creating it and its parents as needed, and returns the stat of the modified node. */
+    /**
+     * Writes the given data to a node at the given path, creating it and its parents as needed, and returns the
+     * stat of the modified node. Failure to write, due to connection loss, is retried a limited number of times.
+     */
     Meta write(Path path, byte[] data);
 
     /**
      * Atomically compares the version in the stat of the node at the given path, with the expected version, and then:
-     * if they are equal, performs the write operation (see {@link #write(Path, byte[])});
+     * if they are equal, attempts the write operation (see {@link #write(Path, byte[])});
      * otherwise, return empty.
      */
     Optional<Meta> write(Path path, byte[] data, int expectedVersion);
 
     /** Recursively deletes any node at the given path, and any children it may have. */
+    void deleteAll(Path path);
+
+    /** Deletes the node at the given path. Failres due to connection loss are retried a limited number of times. */
     void delete(Path path);
 
     /**
      * Atomically compares the version in the stat of the node at the given path, with the expected version, and then:
-     * if they are equal, performs the recursive delete operation (see {@link #delete(Path)}), and returns {@code} true;
+     * if they are equal, attempts the delete operation (see {@link #delete(Path)}), and returns {@code} true;
      * otherwise, returns {@code false}.
      */
     boolean delete(Path path, int expectedVersion);
 
+    /** Lists the children of the node at the given path, or throws if there is no node at that path. */
     List<String> list(Path path);
 
     /** Creates and acquires a re-entrant lock with the given path. This blocks until the lock is acquired or timeout elapses. */
@@ -73,7 +79,7 @@ public interface VespaCurator {
     Future<?> unregisterSingleton(SingletonWorker singleton);
 
     /**
-     * Whether this container currently holds te exclusive lease for activation of singletons with this ID.
+     * Whether this container currently holds the exclusive lease for activation of singletons with this ID.
      */
     boolean isActive(String singletonId);
 
@@ -86,9 +92,17 @@ public interface VespaCurator {
      *          was registered. See {@link #registerSingleton} and {@link #isActive}.</li>
      *     <li>{@link #deactivate()} is called by the system on a singleton which is currently active whenever
      *         the above no longer holds. See {@link #unregisterSingleton}.</li>
-     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial,
-     *         which means the implemented callbacks must return in a timely manner.</li>
-     *     <li>If activation of a singleton, as a result of the container acquiring the lease at some tpoint,</li>
+     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial;
+     *         the callbacks must return in a timely manner, but are allowed to throw exceptions.</li>
+     *     <li>Activation and deactivation may be triggered by:
+     *         <ol><li>the container acquiring or losing the activation lease; or</li>
+     *         <li>registration of unregistration of a new or obsolete singleton.</li></ol>
+     *         Events triggered by the latter happen synchronously, and errors are propagated to the caller for cleanup.
+     *         Events triggered by the former may happen in the background, and because the system tries to always have
+     *         one activated singleton, exceptions during activation will cause the container to abandon its lease, so
+     *         another container may obtain it instead; exceptions during deactivation are only logged.
+     *     </li>
+     *     <li>A container without any registered singletons will not attempt to hold the activation lease.</li>
      * </ul>
      * See {@link AbstractSingletonWorker} for an abstract superclass to use for implementations.
      */

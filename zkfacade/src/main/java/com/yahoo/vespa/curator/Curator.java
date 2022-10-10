@@ -270,12 +270,21 @@ public class Curator extends AbstractComponent implements AutoCloseable {
      * If the path does not exist, nothing is done.
      */
     public void delete(Path path) {
-        delete(path, -1);
+        delete(path, true);
     }
 
-    public void delete(Path path, int expectedVersion) {
+    /**
+     * Deletes the path and any children it may have.
+     * If the path does not exist, nothing is done.
+     */
+    public void delete(Path path, boolean recursive) {
+        delete(path, -1, recursive);
+    }
+
+    public void delete(Path path, int expectedVersion, boolean recursive) {
         try {
-            framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
+            if (recursive) framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
+            else           framework().delete().guaranteed()                           .withVersion(expectedVersion).forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
             // Do nothing
         } catch (Exception e) {
