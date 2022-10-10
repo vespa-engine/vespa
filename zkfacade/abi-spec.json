@@ -1,6 +1,6 @@
 {
   "com.yahoo.vespa.curator.api.AbstractSingletonWorker": {
-    "superClass": "com.yahoo.component.AbstractComponent",
+    "superClass": "java.lang.Object",
     "interfaces": [
       "com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker"
     ],
@@ -10,9 +10,9 @@
     ],
     "methods": [
       "public void <init>()",
-      "protected java.lang.String id()",
-      "protected final void register(com.yahoo.vespa.curator.api.VespaCurator, java.time.Duration)",
-      "protected final void unregister(java.time.Duration)"
+      "public java.lang.String id()",
+      "public final void register(com.yahoo.vespa.curator.api.VespaCurator, java.time.Duration)",
+      "public final void unregister(java.time.Duration)"
     ],
     "fields": []
   },
@@ -78,6 +78,7 @@
       "public abstract java.util.Optional read(com.yahoo.path.Path)",
       "public abstract com.yahoo.vespa.curator.api.VespaCurator$Meta write(com.yahoo.path.Path, byte[])",
       "public abstract java.util.Optional write(com.yahoo.path.Path, byte[], int)",
+      "public abstract void deleteAll(com.yahoo.path.Path)",
       "public abstract void delete(com.yahoo.path.Path)",
       "public abstract boolean delete(com.yahoo.path.Path, int)",
       "public abstract java.util.List list(com.yahoo.path.Path)",
