@@ -41,19 +41,19 @@ public class PagedAttributeValidator extends Processor {
 
     private void validatePagedSetting(Field field, Attribute attribute) {
         if (!isSupportedType(attribute)) {
-            fail(schema, field, "The 'paged' attribute setting is not supported for non-dense tensor, predicate and reference types");
+            fail(schema, field, "The 'paged' attribute setting is not supported for fast-rank tensor and predicate types");
         }
     }
 
     private boolean isSupportedType(Attribute attribute) {
         var type = attribute.getType();
         return (type != Attribute.Type.PREDICATE) &&
-                (isSupportedTensorType(attribute.tensorType()));
+                (isSupportedTensorType(attribute.tensorType(), attribute.isFastRank()));
     }
 
-    private boolean isSupportedTensorType(Optional<TensorType> tensorType) {
+    private boolean isSupportedTensorType(Optional<TensorType> tensorType, boolean fastRank) {
         if (tensorType.isPresent()) {
-            return isDenseTensorType(tensorType.get());
+            return !fastRank;
         }
         return true;
     }
