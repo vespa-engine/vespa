@@ -46,8 +46,8 @@ class SingletonManager implements AutoCloseable {
     }
 
     synchronized CompletableFuture<?> register(String singletonId, SingletonWorker singleton) {
-        if (singletonId.contains("/") || singletonId.contains("..")) {
-            throw new IllegalArgumentException("singleton ID may not contain '/' or '..', but got " + singletonId);
+        if (singletonId.isEmpty() || singletonId.contains("/") || singletonId.contains("..")) {
+            throw new IllegalArgumentException("singleton ID must be non-empty, and may not contain '/' or '..', but got " + singletonId);
         }
         String old = registrations.putIfAbsent(singleton, singletonId);
         if (old != null) throw new IllegalArgumentException(singleton + " already registered with ID " + old);
