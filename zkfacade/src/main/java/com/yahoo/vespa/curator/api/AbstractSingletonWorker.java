@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author jonmv
  */
-public abstract class AbstractSingletonWorker extends AbstractComponent implements SingletonWorker {
+public abstract class AbstractSingletonWorker implements SingletonWorker {
 
     private final AtomicReference<VespaCurator> owner = new AtomicReference<>();
 
@@ -33,16 +33,16 @@ public abstract class AbstractSingletonWorker extends AbstractComponent implemen
      * {@link VespaCurator#isActive(String)} may be polled to see whether this container is currently
      * allowed to have an active singleton with the given ID.
      */
-    protected String id() { return getClass().getName(); }
+    public String id() { return getClass().getName(); }
 
     /**
-     * Call this at the end of construction of the child or owner.
+     * <strong>Call this at the end of construction of the owner of this.</strong>
      * If this activates the singleton, this happens synchronously, and any errors are propagated here.
      * If this replaces an already active singleton, its deactivation is also called, prior to activation of this.
      * If (de)activation is not complete within the given timeout, a timeout exception is thrown.
      * If an error occurs (due to failed activation), unregistration is automatically attempted, with the same timeout.
      */
-    protected final void register(VespaCurator curator, Duration timeout) {
+    public final void register(VespaCurator curator, Duration timeout) {
         if ( ! owner.compareAndSet(null, curator)) {
             throw new IllegalArgumentException(this + " is already registered with " + owner.get());
         }
@@ -61,12 +61,13 @@ public abstract class AbstractSingletonWorker extends AbstractComponent implemen
     }
 
     /**
-     * Call this at the start of deconstruction of the child!
+     * <strong>Call this at the start of deconstruction of the owner of this!</strong>
+     * <p>
      * If this singleton is active, deactivation will be called synchronously, and errors propagated here.
      * If this also triggers activation of a new singleton, its activation is called after deactivation of this.
      * If (de)activation is not complete within the given timeout, a timeout exception is thrown.
      */
-    protected final void unregister(Duration timeout) {
+    public final void unregister(Duration timeout) {
         VespaCurator curator = owner.getAndSet(null);
         if (curator == null) {
             throw new IllegalArgumentException(this + " was not registered with any owners");

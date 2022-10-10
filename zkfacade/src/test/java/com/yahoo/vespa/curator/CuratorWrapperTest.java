@@ -88,7 +88,7 @@ public class CuratorWrapperTest {
             assertTrue(singleton.isActive);
             assertTrue(wrapped.exists(lockPath));
             assertTrue(curator.isActive(singleton.id()));
-            singleton.deconstruct();
+            singleton.shutdown();
             assertFalse(singleton.isActive);
             // ... and deactivated as a result of unregistering again.
 
@@ -143,12 +143,12 @@ public class CuratorWrapperTest {
             assertFalse(newSingleton.isActive);
             assertFalse(singleton.isActive);
 
-            singleton.deconstruct();
+            singleton.shutdown();
             assertTrue(newerSingleton.isActive);
             assertFalse(newSingleton.isActive);
             assertFalse(singleton.isActive);
 
-            newerSingleton.deconstruct();
+            newerSingleton.shutdown();
             assertFalse(newerSingleton.isActive);
             assertTrue(newSingleton.isActive);
             assertFalse(singleton.isActive);
@@ -182,7 +182,7 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance(); // Failing component is done cleaning up after itself.
             assertTrue(newSingleton.isActive);
             assertEquals("failed to register failing singleton", thrownMessage.get());
-            newSingleton.deconstruct();
+            newSingleton.shutdown();
 
             curator.deconstruct();
         }
@@ -226,7 +226,7 @@ public class CuratorWrapperTest {
             singleton.phaser.arriveAndAwaitAdvance();
             assertTrue(singleton.isActive);
             singleton.phaser.arriveAndDeregister();
-            singleton.deconstruct();
+            singleton.shutdown();
             assertFalse(singleton.isActive);
 
             curator.deconstruct();
@@ -237,10 +237,10 @@ public class CuratorWrapperTest {
         Singleton(VespaCurator curator) { register(curator, Duration.ofSeconds(2)); }
         boolean isActive;
         Phaser phaser = new Phaser(1);
-        @Override protected String id() { return "singleton"; } // ... lest anonymous subclasses get different IDs ... ƪ(`▿▿▿▿´ƪ)
+        @Override public String id() { return "singleton"; } // ... lest anonymous subclasses get different IDs ... ƪ(`▿▿▿▿´ƪ)
         @Override public void activate() { isActive = true; phaser.arriveAndAwaitAdvance(); }
         @Override public void deactivate() { isActive = false; phaser.arriveAndAwaitAdvance(); }
-        @Override public void deconstruct() { unregister(Duration.ofSeconds(2)); }
+        public void shutdown() { unregister(Duration.ofSeconds(2)); }
     }
 
 }
