@@ -249,7 +249,7 @@ class SingletonManager implements AutoCloseable {
          * If lock is held, or acquired, ping the ZK cluster to extend our deadline.
          */
         private void renewLease() {
-            if (doom.get() == INVALID) {
+            if (doom.get() == INVALID || singletons.isEmpty()) {
                 unlock();
             }
             // Witness value to detect if invalidation occurs between here and successful ping.
