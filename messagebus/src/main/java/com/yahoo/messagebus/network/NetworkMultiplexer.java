@@ -59,7 +59,7 @@ public class NetworkMultiplexer implements NetworkOwner {
                     net.registerSession(session);
             }
             else if (owners.contains(owner))
-                throw new IllegalArgumentException("Session '" + session + "' with owner '" + owner + "' already registered with this");
+                throw new IllegalArgumentException("Session '" + session + "' with owner '" + owner + "' already registered with " +  this);
 
             owners.push(owner);
             return owners;
@@ -68,12 +68,12 @@ public class NetworkMultiplexer implements NetworkOwner {
 
     public void unregisterSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.computeIfPresent(session, (name, owners) -> {
-            owners.remove(owner);
-            if (owners.isEmpty()) {
+            if (owners.size() == 1 && owners.contains(owner)) {
                 if (broadcast)
                     net.unregisterSession(session);
                 return null;
             }
+            owners.remove(owner);
             return owners;
         });
     }
@@ -103,7 +103,7 @@ public class NetworkMultiplexer implements NetworkOwner {
     /** Attach the network owner to this, allowing this to forward messages to it. */
     public void attach(NetworkOwner owner) {
         if (owners.contains(owner))
-            throw new IllegalArgumentException(owner + " is already attached to this");
+            throw new IllegalArgumentException(owner + " is already attached to " + this);
 
         owners.add(owner);
     }
@@ -111,7 +111,7 @@ public class NetworkMultiplexer implements NetworkOwner {
     /** Detach the network owner from this, no longer allowing messages to it, and shutting down this is ownerless. */
     public void detach(NetworkOwner owner) {
         if ( ! owners.remove(owner))
-            throw new IllegalArgumentException(owner + " not attached to this");
+            throw new IllegalArgumentException(owner + " not attached to " + this);
 
         destroyIfOwnerless();
     }
@@ -137,12 +137,7 @@ public class NetworkMultiplexer implements NetworkOwner {
 
     @Override
     public String toString() {
-        return "NetworkMultiplexer{" +
-               "net=" + net +
-               ", owners=" + owners +
-               ", sessions=" + sessions +
-               ", destructible=" + disowned +
-               '}';
+        return "network multiplexer with owners: " + owners + ", sessions: " + sessions + " and destructible: " + disowned.get();
     }
 
 }
