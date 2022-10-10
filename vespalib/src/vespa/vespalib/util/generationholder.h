@@ -17,16 +17,16 @@ public:
 
     generation_t _generation;
 private:
-    size_t	 _size;
+    size_t	 _byte_size;
 
 public:
-    GenerationHeldBase(size_t size)
+    GenerationHeldBase(size_t byte_size_in)
         : _generation(0u),
-          _size(size)
+          _byte_size(byte_size_in)
     { }
 
     virtual ~GenerationHeldBase();
-    size_t getSize() const { return _size; }
+    size_t byte_size() const { return _byte_size; }
 };
 
 /*
@@ -39,7 +39,7 @@ private:
     typedef GenerationHandler::generation_t generation_t;
     typedef GenerationHandler::sgeneration_t sgeneration_t;
 
-    typedef std::vector<GenerationHeldBase::SP> HoldList;
+    typedef std::vector<GenerationHeldBase::UP> HoldList;
 
     HoldList _hold1List;
     HoldList _hold2List;

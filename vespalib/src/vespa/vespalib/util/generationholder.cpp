@@ -23,8 +23,8 @@ GenerationHolder::~GenerationHolder()
 void
 GenerationHolder::hold(GenerationHeldBase::UP data)
 {
-    _hold1List.push_back(GenerationHeldBase::SP(data.release()));
-    _heldBytes.store(getHeldBytes() + _hold1List.back()->getSize(), std::memory_order_relaxed);
+    _hold1List.push_back(std::move(data));
+    _heldBytes.store(getHeldBytes() + _hold1List.back()->byte_size(), std::memory_order_relaxed);
 }
 
 void
@@ -36,7 +36,7 @@ GenerationHolder::transferHoldListsSlow(generation_t generation)
     for (; it != ite; ++it) {
         assert((*it)->_generation == 0u);
         (*it)->_generation = generation;
-        hold2List.push_back(*it);
+        hold2List.push_back(std::move(*it));
     }
     _hold1List.clear();
 }
@@ -50,7 +50,7 @@ GenerationHolder::trimHoldListsSlow(generation_t usedGen)
         GenerationHeldBase &first = *_hold2List.front();
         if (static_cast<sgeneration_t>(first._generation - usedGen) >= 0)
             break;
-        _heldBytes.store(getHeldBytes() - first.getSize(), std::memory_order_relaxed);
+        _heldBytes.store(getHeldBytes() - first.byte_size(), std::memory_order_relaxed);
         _hold2List.erase(_hold2List.begin());
     }
 }

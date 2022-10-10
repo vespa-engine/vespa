@@ -181,9 +181,10 @@ vespa_define_module(
     src/tests/util/bfloat16
     src/tests/util/cgroup_resource_limits
     src/tests/util/file_area_freelist
+    src/tests/util/generation_hold_list
+    src/tests/util/generation_holder
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
-    src/tests/util/generation_holder
     src/tests/util/hamming
     src/tests/util/md5
     src/tests/util/mmap_file_allocator
