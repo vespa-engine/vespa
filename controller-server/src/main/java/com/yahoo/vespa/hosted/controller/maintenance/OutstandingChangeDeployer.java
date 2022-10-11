@@ -26,9 +26,8 @@ public class OutstandingChangeDeployer extends ControllerMaintainer {
     protected double maintain() {
         double ok = 0, total = 0;
         for (Application application : ApplicationList.from(controller().applications().readable())
-                                                      .withProductionDeployment()
                                                       .withProjectId()
-                                                      .withDeploymentSpec()
+                                                      .withJobs()
                                                       .asList())
             try {
                 ++total;

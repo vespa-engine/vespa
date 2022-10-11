@@ -2700,6 +2700,54 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    void testBrokenApplication() {
+        DeploymentContext app = tester.newDeploymentContext();
+        app.submit().runJob(systemTest).failDeployment(stagingTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(stagingTest);
+        tester.triggerJobs();
+        app.assertNotRunning(stagingTest);
+        assertEquals(4, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(20));
+        app.submit().runJob(systemTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(20));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.of(1000), app.application().projectId());
+        tester.clock().advance(Duration.ofDays(20));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(stagingTest);
+        tester.triggerJobs();
+        app.assertNotRunning(stagingTest);
+        assertEquals(4, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).runJob(stagingTest).failDeployment(productionUsCentral1);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(productionUsCentral1);
+        tester.triggerJobs();
+        app.assertNotRunning(productionUsCentral1);
+        assertEquals(3, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.of(1000), app.application().projectId());
+
+        app.assertNotRunning(productionUsCentral1);
+        tester.triggerJobs();
+        app.assertRunning(productionUsCentral1);
+    }
+
+    @Test
     void testJobNames() {
         ZoneRegistryMock zones = new ZoneRegistryMock(SystemName.main);
         List<ZoneApi> existing = new ArrayList<>(zones.zones().all().zones());
