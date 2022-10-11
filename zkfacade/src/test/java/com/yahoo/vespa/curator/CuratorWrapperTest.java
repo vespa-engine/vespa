@@ -270,7 +270,6 @@ public class CuratorWrapperTest {
             assertTrue(curator.isActive(singleton.id()));
             assertTrue(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 1.0,
-                                 "activation.millis", 0.0,
                                  "has_lease", 1.0),
                           metric);
 
