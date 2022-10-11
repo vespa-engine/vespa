@@ -77,6 +77,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
@@ -763,14 +764,18 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
+            boolean isRemoved =    ! id.type().environment().isManuallyDeployed()
+                                && ! controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id.application())))
+                                               .jobSteps().containsKey(id.job());
+
             controller.jobController().active(id).ifPresent(run -> {
                 if (run.status() == reset)
                     return;
 
-                if (run.hasFailed())
+                if (run.hasFailed() && ! isRemoved)
                     sendEmailNotification(run, logger);
 
-                updateConsoleNotification(run);
+                updateConsoleNotification(run, isRemoved);
             });
         }
         catch (IllegalStateException e) {
@@ -820,10 +825,10 @@ public class InternalStepRunner implements StepRunner {
                          .orElse(true);
     }
 
-    private void updateConsoleNotification(Run run) {
+    private void updateConsoleNotification(Run run, boolean isRemoved) {
         NotificationSource source = NotificationSource.from(run.id());
         Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
-        switch (run.status()) {
+        switch (isRemoved ? success : run.status()) {
             case aborted: return; // wait and see how the next run goes.
             case noTests:
             case running:
