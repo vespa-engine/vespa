@@ -71,7 +71,7 @@ UniqueStoreStringAllocator<RefT>::hold(EntryRef ref)
 
 template <typename RefT>
 EntryRef
-UniqueStoreStringAllocator<RefT>::move(EntryRef ref)
+UniqueStoreStringAllocator<RefT>::move_on_compact(EntryRef ref)
 {
     RefT iRef(ref);
     uint32_t type_id = _store.getTypeId(iRef.bufferId());

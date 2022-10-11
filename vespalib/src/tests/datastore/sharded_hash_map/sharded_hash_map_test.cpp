@@ -73,8 +73,8 @@ public:
     }
     ~MyCompactable() override = default;
 
-    EntryRef move(EntryRef ref) override {
-        auto new_ref = _allocator.move(ref);
+    EntryRef move_on_compact(EntryRef ref) override {
+        auto new_ref = _allocator.move_on_compact(ref);
         _allocator.hold(ref);
         _new_refs.emplace_back(new_ref);
         return new_ref;
@@ -395,7 +395,7 @@ TEST_F(DataStoreShardedHashTest, foreach_key_works)
     }
 }
 
-TEST_F(DataStoreShardedHashTest, move_keys_works)
+TEST_F(DataStoreShardedHashTest, move_keys_on_compact_works)
 {
     populate_sample_data(small_population);
     std::vector<EntryRef> refs;
@@ -403,7 +403,7 @@ TEST_F(DataStoreShardedHashTest, move_keys_works)
     std::vector<EntryRef> new_refs;
     MyCompactable my_compactable(_allocator, new_refs);
     auto filter = make_entry_ref_filter<RefT>(false);
-    _hash_map.move_keys(my_compactable, filter);
+    _hash_map.move_keys_on_compact(my_compactable, filter);
     std::vector<EntryRef> verify_new_refs;
     _hash_map.foreach_key([&verify_new_refs](EntryRef ref) { verify_new_refs.emplace_back(ref); });
     EXPECT_EQ(small_population, refs.size());

@@ -51,8 +51,8 @@ struct TestBase : public ::testing::Test {
     void remove(EntryRef ref) {
         allocator.hold(ref);
     }
-    EntryRef move(EntryRef ref) {
-        return allocator.move(ref);
+    EntryRef move_on_compact(EntryRef ref) {
+        return allocator.move_on_compact(ref);
     }
     uint32_t get_buffer_id(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
@@ -104,7 +104,7 @@ TEST_F(StringTest, extra_bytes_used_is_tracked)
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(2));
     ref = add(spaces1000.c_str());
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
-    EntryRef ref2 = move(ref);
+    EntryRef ref2 = move_on_compact(ref);
     assert_get(ref2, spaces1000.c_str());
     assert_buffer_state(ref, TestBufferStats().used(3).hold(0).dead(1).extra_used(2002));
     remove(ref);
@@ -159,7 +159,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
     assert_buffer_state(ref2, TestBufferStats().used(3).hold(0).dead(2).extra_used(1001));
 }
 
-TEST_F(StringTest, free_list_is_never_used_for_move)
+TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
 {
     // Free lists are default enabled for UniqueStoreStringAllocator
     EntryRef ref1 = add(small.c_str());
@@ -169,8 +169,8 @@ TEST_F(StringTest, free_list_is_never_used_for_move)
     remove(ref3);
     remove(ref4);
     trim_hold_lists();
-    EntryRef ref5 = move(ref1);
-    EntryRef ref6 = move(ref2);
+    EntryRef ref5 = move_on_compact(ref1);
+    EntryRef ref6 = move_on_compact(ref2);
     EXPECT_NE(ref5, ref3);
     EXPECT_NE(ref6, ref4);
     assert_buffer_state(ref1, TestBufferStats().used(48).hold(0).dead(16));

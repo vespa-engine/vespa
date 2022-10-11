@@ -140,7 +140,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const 
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICompactable &compactable, const EntryRefFilter& compacting_buffers)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys_on_compact(ICompactable &compactable, const EntryRefFilter& compacting_buffers)
 {
     if constexpr (has_btree_dictionary) {
         auto itr = this->_btree_dict.begin();
@@ -148,7 +148,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICo
             EntryRef oldRef(itr.getKey().load_relaxed());
             assert(oldRef.valid());
             if (compacting_buffers.has(oldRef)) {
-                EntryRef newRef(compactable.move(oldRef));
+                EntryRef newRef(compactable.move_on_compact(oldRef));
                 this->_btree_dict.thaw(itr);
                 itr.writeKey(AtomicEntryRef(newRef));
                 if constexpr (has_hash_dictionary) {
@@ -160,7 +160,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICo
             ++itr;
         }
     } else {
-        this->_hash_dict.move_keys(compactable, compacting_buffers);
+        this->_hash_dict.move_keys_on_compact(compactable, compacting_buffers);
     }
 }
 

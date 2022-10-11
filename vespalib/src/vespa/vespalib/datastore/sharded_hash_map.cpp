@@ -171,12 +171,12 @@ ShardedHashMap::foreach_key(std::function<void(EntryRef)> callback) const
 }
 
 void
-ShardedHashMap::move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers)
+ShardedHashMap::move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers)
 {
     for (size_t i = 0; i < num_shards; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
         if (map != nullptr) {
-            map->move_keys(compactable, compacting_buffers);
+            map->move_keys_on_compact(compactable, compacting_buffers);
         }
     }
 }

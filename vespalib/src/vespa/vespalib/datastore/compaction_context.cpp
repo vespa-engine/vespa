@@ -25,7 +25,7 @@ CompactionContext::compact(vespalib::ArrayRef<AtomicEntryRef> refs)
     for (auto &atomic_entry_ref : refs) {
         auto ref = atomic_entry_ref.load_relaxed();
         if (ref.valid() && _filter.has(ref)) {
-            EntryRef newRef = _store.move(ref);
+            EntryRef newRef = _store.move_on_compact(ref);
             atomic_entry_ref.store_release(newRef);
         }
     }

@@ -183,7 +183,7 @@ FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) con
 }
 
 void
-FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
+FixedSizeHashMap::move_keys_on_compact(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
 {
     for (auto& chain_head : _chain_heads) {
         uint32_t node_idx = chain_head.load_relaxed();
@@ -192,7 +192,7 @@ FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &com
             EntryRef old_ref = node.get_kv().first.load_relaxed();
             assert(old_ref.valid());
             if (compacting_buffers.has(old_ref)) {
-                EntryRef new_ref = compactable.move(old_ref);
+                EntryRef new_ref = compactable.move_on_compact(old_ref);
                 node.get_kv().first.store_release(new_ref);
             }
             node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);

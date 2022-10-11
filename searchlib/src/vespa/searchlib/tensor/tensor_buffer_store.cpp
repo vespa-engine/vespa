@@ -48,7 +48,7 @@ TensorBufferStore::holdTensor(EntryRef ref)
 }
 
 EntryRef
-TensorBufferStore::move(EntryRef ref)
+TensorBufferStore::move_on_compact(EntryRef ref)
 {
     if (!ref.valid()) {
         return EntryRef();
@@ -56,7 +56,6 @@ TensorBufferStore::move(EntryRef ref)
     auto buf = _array_store.get(ref);
     auto new_ref = _array_store.add(buf);
     _ops.copied_labels(buf);
-    _array_store.remove(ref);
     return new_ref;
 }
 

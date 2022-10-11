@@ -48,7 +48,7 @@ UniqueStoreAllocator<EntryT, RefT>::hold(EntryRef ref)
 
 template <typename EntryT, typename RefT>
 EntryRef
-UniqueStoreAllocator<EntryT, RefT>::move(EntryRef ref)
+UniqueStoreAllocator<EntryT, RefT>::move_on_compact(EntryRef ref)
 {
     return _store.template allocator<WrappedEntryType>(0).alloc(get_wrapped(ref)).ref;
 }
