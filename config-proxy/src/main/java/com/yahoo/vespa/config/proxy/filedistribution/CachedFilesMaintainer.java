@@ -2,9 +2,7 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.vespa.filedistribution.FileDownloader;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -31,7 +29,7 @@ class CachedFilesMaintainer implements Runnable {
 
     private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
-    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(30);
+    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(14);
 
     private final File urlDownloadDir;
     private final File fileReferencesDownloadDir;
