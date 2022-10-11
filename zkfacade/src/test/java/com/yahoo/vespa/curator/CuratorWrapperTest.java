@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -132,7 +131,7 @@ public class CuratorWrapperTest {
                           metric);
 
             // Singleton is reactivated next tick.
-            singleton.phaser.arriveAndAwaitAdvance();
+            singleton.phaser.awaitAdvance(singleton.phaser.arriveAndDeregister());
             assertTrue(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 3.0,
                                  "activation.millis", 0.0,
@@ -144,7 +143,6 @@ public class CuratorWrapperTest {
 
             // Manager unregisters remaining singletons on shutdown.
             curator.deconstruct();
-            singleton.phaser.arriveAndAwaitAdvance();
             assertFalse(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 3.0,
                                  "activation.millis", 0.0,
@@ -239,6 +237,7 @@ public class CuratorWrapperTest {
                           metric);
 
             newSingleton.shutdown();
+            curator.deconstruct();
             verifyMetrics(Map.of("activation.count", 6.0,
                                  "activation.millis", 0.0,
                                  "activation.failure.count", 1.0,
@@ -247,8 +246,6 @@ public class CuratorWrapperTest {
                                  "is_active", 0.0,
                                  "has_lease", 0.0),
                           metric);
-
-            curator.deconstruct();
         }
     }
 
@@ -313,6 +310,7 @@ public class CuratorWrapperTest {
 
             singleton.phaser.arriveAndDeregister();
             singleton.shutdown();
+            curator.deconstruct();
             assertFalse(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 2.0,
                                  "activation.millis", 0.0,
@@ -321,8 +319,6 @@ public class CuratorWrapperTest {
                                  "is_active", 0.0,
                                  "has_lease", 0.0),
                           metric);
-
-            curator.deconstruct();
         }
     }
 
@@ -331,8 +327,16 @@ public class CuratorWrapperTest {
         boolean isActive;
         Phaser phaser = new Phaser(1);
         @Override public String id() { return "singleton"; } // ... lest anonymous subclasses get different IDs ... ƪ(`▿▿▿▿´ƪ)
-        @Override public void activate() { isActive = true; phaser.arriveAndAwaitAdvance(); }
-        @Override public void deactivate() { isActive = false; phaser.arriveAndAwaitAdvance(); }
+        @Override public void activate() {
+            if (isActive) throw new IllegalStateException("already active");
+            isActive = true;
+            phaser.arriveAndAwaitAdvance();
+        }
+        @Override public void deactivate() {
+            if ( ! isActive) throw new IllegalStateException("already inactive");
+            isActive = false;
+            phaser.arriveAndAwaitAdvance();
+        }
         public void shutdown() { unregister(Duration.ofSeconds(2)); }
     }
 

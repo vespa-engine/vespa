@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  *
  * @author jonmv
  */
-class SingletonManager implements AutoCloseable {
+class SingletonManager {
 
     private static final Logger logger = Logger.getLogger(SingletonManager.class.getName());
 
@@ -91,13 +91,16 @@ class SingletonManager implements AutoCloseable {
         for (Janitor janitor : janitors.values()) janitor.invalidate();
     }
 
-    @Override
-    public synchronized void close() {
+    public synchronized CompletableFuture<?> shutdown() {
+        CompletableFuture<?>[] futures = new CompletableFuture[registrations.size()];
+        int i = 0;
         for (SingletonWorker singleton : List.copyOf(registrations.keySet())) {
             String id = registrations.get(singleton);
             logger.log(Level.WARNING, singleton + " still registered with id '" + id + "' at shutdown");
-            unregister(singleton);
+            futures[i++] = unregister(singleton);
         }
+        return CompletableFuture.allOf(futures)
+                                .orTimeout(10, TimeUnit.SECONDS);
     }
 
 
@@ -220,6 +223,7 @@ class SingletonManager implements AutoCloseable {
                     if (e == null) e = f;
                     else e.addSuppressed(f);
                 }
+                if (singletons.isEmpty()) doom.set(INVALID);
                 if (e != null) throw e;
             }
         }
@@ -243,9 +247,7 @@ class SingletonManager implements AutoCloseable {
                     else e.addSuppressed(f);
                 }
             }
-            if (singletons.isEmpty()) {
-                unlock();
-            }
+            if (singletons.isEmpty()) doom.set(INVALID);
             if (e != null) throw e;
         }
 
@@ -254,7 +256,7 @@ class SingletonManager implements AutoCloseable {
          * If lock is held, or acquired, ping the ZK cluster to extend our deadline.
          */
         private void renewLease() {
-            if (doom.get() == INVALID || singletons.isEmpty()) {
+            if (doom.get() == INVALID) {
                 doom.set(null);
                 return; // Skip to updateStatus, deactivation, and release the lock.
             }
@@ -287,7 +289,7 @@ class SingletonManager implements AutoCloseable {
          */
         private void updateStatus() {
             Instant ourDoom = doom.get();
-            boolean shouldBeActive = ourDoom != null && ! clock.instant().isAfter(ourDoom);
+            boolean shouldBeActive = ourDoom != null && ourDoom != INVALID && ! clock.instant().isAfter(ourDoom);
             if ( ! active && shouldBeActive) {
                 try {
                     active = true;
