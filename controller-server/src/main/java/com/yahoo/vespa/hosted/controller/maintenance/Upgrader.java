@@ -70,7 +70,8 @@ public class Upgrader extends ControllerMaintainer {
 
     private DeploymentStatusList deploymentStatuses(VersionStatus versionStatus) {
         return controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
-                                                                              .withProjectId(),
+                                                                              .withProjectId()
+                                                                              .withJobs(),
                                                                versionStatus);
     }
 
