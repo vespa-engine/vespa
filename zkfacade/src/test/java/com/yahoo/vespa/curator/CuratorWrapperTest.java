@@ -126,8 +126,7 @@ public class CuratorWrapperTest {
             verifyMetrics(Map.of("activation.count", 2.0,
                                  "activation.millis", 0.0,
                                  "deactivation.count", 2.0,
-                                 "deactivation.millis", 0.0,
-                                 "is_active", 0.0),
+                                 "deactivation.millis", 0.0),
                           metric);
 
             // Singleton is reactivated next tick.
