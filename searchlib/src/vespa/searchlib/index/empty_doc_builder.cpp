@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <cassert>
 
@@ -11,6 +12,7 @@ using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
+using document::DocumentTypeRepoFactory;
 
 namespace search::index {
 
@@ -32,7 +34,8 @@ get_document_types_config(EmptyDocBuilder::AddFieldsType add_fields)
 }
 
 EmptyDocBuilder::EmptyDocBuilder(AddFieldsType add_fields)
-    : _repo(std::make_shared<const DocumentTypeRepo>(get_document_types_config(add_fields))),
+    : _document_types_config(std::make_shared<const DocumenttypesConfig>(get_document_types_config(add_fields))),
+      _repo(DocumentTypeRepoFactory::make(*_document_types_config)),
       _document_type(_repo->getDocumentType("searchdocument"))
 {
 }

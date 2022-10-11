@@ -1,5 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
@@ -27,7 +30,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/config-bucketspaces.h>
@@ -258,24 +261,35 @@ struct TwoAttrSchema : public OneAttrSchema
     }
 };
 
+EmptyDocBuilder::AddFieldsType
+get_add_fields(bool has_attr2)
+{
+    return [has_attr2](auto& header) {
+               header.addField("attr1", DataType::T_INT);
+               if (has_attr2) {
+                   header.addField("attr2", DataType::T_INT);
+               }
+           };
+}
+
 struct MyConfigSnapshot
 {
     typedef std::unique_ptr<MyConfigSnapshot> UP;
     Schema _schema;
-    DocBuilder _builder;
+    EmptyDocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
     MyConfigSnapshot(FNET_Transport & transport, const Schema &schema, const vespalib::string &cfgDir)
         : _schema(schema),
-          _builder(_schema),
+          _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
           _cfg(),
           _bootstrap()
     {
-        auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.getDocumenttypesConfig());
+        auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.get_documenttypes_config());
         auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
         _bootstrap = std::make_shared<BootstrapConfig>(1,
                                  documenttypesConfig,
-                                 _builder.getDocumentTypeRepo(),
+                                 _builder.get_repo_sp(),
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
                                  std::make_shared<BucketspacesConfig>(),
@@ -746,8 +760,8 @@ template <typename FixtureType>
 struct DocumentHandler
 {
     FixtureType &_f;
-    DocBuilder _builder;
-    DocumentHandler(FixtureType &f) : _f(f), _builder(f._baseSchema) {}
+    EmptyDocBuilder _builder;
+    DocumentHandler(FixtureType &f) : _f(f), _builder(get_add_fields(f._baseSchema.getNumAttributeFields() > 1)) {}
     static constexpr uint32_t BUCKET_USED_BITS = 8;
     static DocumentId createDocId(uint32_t docId)
     {
@@ -755,16 +769,16 @@ struct DocumentHandler
                                                 "searchdocument::%u", docId));
     }
     Document::UP createEmptyDoc(uint32_t docId) {
-        return _builder.startDocument
-            (vespalib::make_string("id:searchdocument:searchdocument::%u",
-                                   docId)).
-            endDocument();
+        auto id = vespalib::make_string("id:searchdocument:searchdocument::%u",
+                                        docId);
+        return _builder.make_document(id);
     }
     Document::UP createDoc(uint32_t docId, int64_t attr1Value, int64_t attr2Value) {
-        return _builder.startDocument
-                (vespalib::make_string("id:searchdocument:searchdocument::%u", docId)).
-                startAttributeField("attr1").addInt(attr1Value).endField().
-                startAttributeField("attr2").addInt(attr2Value).endField().endDocument();
+        auto id = vespalib::make_string("id:searchdocument:searchdocument::%u", docId);
+        auto doc = _builder.make_document(id);
+        doc->setValue("attr1", IntFieldValue(attr1Value));
+        doc->setValue("attr2", IntFieldValue(attr2Value));
+        return doc;
     }
     PutOperation createPut(Document::UP doc, Timestamp timestamp, SerialNum serialNum) {
         proton::test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
