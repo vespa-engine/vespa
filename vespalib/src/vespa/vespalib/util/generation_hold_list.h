@@ -26,8 +26,15 @@ private:
             : elem(std::move(elem_in)),
               gen(gen_in)
         {}
-        size_t byte_size() const { return elem->byte_size(); }
+        size_t byte_size() const {
+            if constexpr (track_bytes_held) {
+                return elem->byte_size();
+            }
+            return 0;
+        }
     };
+
+    struct NoopFunc { void operator()(const T&){} };
 
     using ElemList = std::vector<T>;
     using ElemWithGenList = std::conditional_t<use_deque,
@@ -43,8 +50,8 @@ private:
      */
     void assign_generation_internal(generation_t current_gen);
 
-    void reclaim_internal(generation_t oldest_used_gen);
-
+    template<typename Func>
+    void reclaim_internal(generation_t oldest_used_gen, Func callback);
 
 public:
     GenerationHoldList();
@@ -67,17 +74,30 @@ public:
 
     /**
      * Reclaim all data elements where the assigned generation < oldest used generation.
+     * The callback function is called for each data element reclaimed.
      **/
-    void reclaim(generation_t oldest_used_gen) {
+    template<typename Func>
+    void reclaim(generation_t oldest_used_gen, Func callback) {
         if (!_phase_2_list.empty() && (_phase_2_list.front().gen < oldest_used_gen)) {
-            reclaim_internal(oldest_used_gen);
+            reclaim_internal(oldest_used_gen, callback);
         }
+    }
+
+    void reclaim(generation_t oldest_used_gen) {
+        reclaim(oldest_used_gen, NoopFunc());
     }
 
     /**
      * Reclaim all data elements from this hold list.
      */
     void reclaim_all();
+
+    /**
+     * Reclaim all data elements from this hold list.
+     * The callback function is called for all data elements reclaimed.
+     */
+    template<typename Func>
+    void reclaim_all(Func callback);
 
     size_t get_held_bytes() const { return _held_bytes.load(std::memory_order_relaxed); }
 

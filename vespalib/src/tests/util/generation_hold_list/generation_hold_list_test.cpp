@@ -3,17 +3,16 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/generationholder.h>
-#include <iostream>
+#include <cstdint>
 
-using vespalib::GenerationHeldBase;
-using vespalib::GenerationHoldList;
+using namespace vespalib;
 
 using MyElem = GenerationHeldBase;
-using MyHoldList = GenerationHoldList<MyElem::UP, true, false>;
+using generation_t = GenerationHandler::generation_t;
 
-TEST(GenerationHoldListTest, holding_of_unique_ptr_elements_with_tracking_of_held_bytes)
+TEST(GenerationHolderTest, holding_of_unique_ptr_elements_with_tracking_of_held_bytes)
 {
-    MyHoldList h;
+    GenerationHolder h;
     h.insert(std::make_unique<MyElem>(3));
     h.assign_generation(0);
     h.insert(std::make_unique<MyElem>(5));
@@ -41,6 +40,56 @@ TEST(GenerationHoldListTest, holding_of_unique_ptr_elements_with_tracking_of_hel
     EXPECT_EQ(0, h.get_held_bytes());
     h.reclaim(7);
     EXPECT_EQ(0, h.get_held_bytes());
+}
+
+TEST(GenerationHolderTest, reclaim_all_clears_everything)
+{
+    GenerationHolder h;
+    h.insert(std::make_unique<MyElem>(3));
+    h.insert(std::make_unique<MyElem>(5));
+    h.assign_generation(1);
+    h.reclaim_all();
+    EXPECT_EQ(0, h.get_held_bytes());
+}
+
+using IntVector = std::vector<int32_t>;
+using IntHoldList = GenerationHoldList<int32_t, false, true>;
+
+struct IntHoldListTest : public testing::Test {
+    IntHoldList h;
+    IntHoldListTest() : h() {}
+    void assert_reclaim(const IntVector& exp, generation_t oldest_used_gen) {
+        IntVector act;
+        h.reclaim(oldest_used_gen, [&](int elem){ act.push_back(elem); });
+        EXPECT_EQ(exp, act);
+    }
+    void assert_reclaim_all(const IntVector& exp) {
+        IntVector act;
+        h.reclaim_all([&](int elem){ act.push_back(elem); });
+        EXPECT_EQ(exp, act);
+    }
+};
+
+TEST_F(IntHoldListTest, reclaim_calls_callback_for_reclaimed_elements)
+{
+    h.insert(3);
+    h.assign_generation(1);
+    h.insert(5);
+    h.insert(7);
+    h.assign_generation(2);
+
+    assert_reclaim({}, 1);
+    assert_reclaim({3}, 2);
+    assert_reclaim({5, 7}, 3);
+}
+
+TEST_F(IntHoldListTest, reclaim_all_calls_callback_for_all_elements)
+{
+    h.insert(3);
+    h.insert(5);
+    h.assign_generation(2);
+    assert_reclaim_all({3, 5});
+    assert_reclaim_all({});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

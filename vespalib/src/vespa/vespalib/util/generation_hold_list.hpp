@@ -18,8 +18,9 @@ GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(g
 }
 
 template <typename T, bool track_bytes_held, bool use_deque>
+template <typename Func>
 void
-GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_t oldest_used_gen)
+GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_t oldest_used_gen, Func func)
 {
     auto itr = _phase_2_list.begin();
     auto ite = _phase_2_list.end();
@@ -27,7 +28,9 @@ GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_
         if (itr->gen >= oldest_used_gen) {
             break;
         }
-        if (track_bytes_held) {
+        const auto& elem = itr->elem;
+        func(elem);
+        if constexpr (track_bytes_held) {
             _held_bytes.store(get_held_bytes() - itr->byte_size(), std::memory_order_relaxed);
         }
     }
@@ -57,7 +60,7 @@ void
 GenerationHoldList<T, track_bytes_held, use_deque>::insert(T data)
 {
     _phase_1_list.push_back(std::move(data));
-    if (track_bytes_held) {
+    if constexpr (track_bytes_held) {
         _held_bytes.store(get_held_bytes() + _phase_1_list.back()->byte_size(), std::memory_order_relaxed);
     }
 }
@@ -69,6 +72,17 @@ GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_all()
     _phase_1_list.clear();
     _phase_2_list.clear();
     _held_bytes = 0;
+}
+
+template <typename T, bool track_bytes_held, bool use_deque>
+template <typename Func>
+void
+GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_all(Func func)
+{
+    for (const auto& elem_with_gen : _phase_2_list) {
+        func(elem_with_gen.elem);
+    }
+    reclaim_all();
 }
 
 }
