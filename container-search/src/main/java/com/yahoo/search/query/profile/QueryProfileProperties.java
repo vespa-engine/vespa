@@ -357,7 +357,7 @@ public class QueryProfileProperties extends Properties {
         if (profile.getTypes().isEmpty()) return name;
 
         CompoundName unaliasedName = name;
-        for (int i = 0; i<name.size(); i++) {
+        for (int i = 0; i < name.size(); i++) {
             QueryProfileType type = profile.getType(name.first(i), context);
             if (type == null) continue;
             if (type.aliases() == null) continue; // TODO: Make never null

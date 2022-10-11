@@ -175,6 +175,8 @@ public final class CompoundName {
         if (compounds.size() < n)
             throw new IllegalArgumentException("Asked for the first " + n + " components but '" +
                                                this + "' only have " + compounds.size() + " components.");
+        if (compounds.size() == n) return this;
+        if (compounds.size() == 0) return empty;
         return new CompoundName(compounds.subList(0, n));
     }
 
