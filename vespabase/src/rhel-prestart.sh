@@ -116,6 +116,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server/serverdb
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server/serverdb/tenants
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/download
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/filedistribution
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/index
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/logcontrol
