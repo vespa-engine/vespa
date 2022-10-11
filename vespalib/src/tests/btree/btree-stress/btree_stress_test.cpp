@@ -279,7 +279,7 @@ Fixture<Params>::commit()
     _values.transfer_hold_lists(current_gen);
     allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
-    auto first_used_gen = _generationHandler.getFirstUsedGeneration();
+    auto first_used_gen = _generationHandler.get_oldest_used_generation();
     allocator.trimHoldLists(first_used_gen);
     _keys.trim_hold_lists(first_used_gen);
     _values.trim_hold_lists(first_used_gen);

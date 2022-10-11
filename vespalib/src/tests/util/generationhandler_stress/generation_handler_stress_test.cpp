@@ -238,7 +238,7 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
     ReadStopper read_stopper(_stopRead);
     uint32_t sleep_cnt = 0;
     ASSERT_EQ(0, _generationHandler.getCurrentGeneration());
-    auto oldest_gen = _generationHandler.getFirstUsedGeneration();
+    auto oldest_gen = _generationHandler.get_oldest_used_generation();
     for (uint64_t i = 0; i < cnt; ++i) {
         auto gen = _generationHandler.getCurrentGeneration();
         // Hold data for gen, write new data for next_gen
@@ -248,7 +248,7 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
         *v_ptr = next_gen;
         context._value_ptr.store(v_ptr, std::memory_order_release);
         _generationHandler.incGeneration();
-        auto first_used_gen = _generationHandler.getFirstUsedGeneration();
+        auto first_used_gen = _generationHandler.get_oldest_used_generation();
         while (oldest_gen < first_used_gen) {
             // Clear data that readers should no longer have access to.
             *context.calc_value_ptr(oldest_gen) = 0;
@@ -258,8 +258,8 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
             // Sleep if writer gets too much ahead of readers.
             std::this_thread::sleep_for(1ms);
             ++sleep_cnt;
-            _generationHandler.updateFirstUsedGeneration();
-            first_used_gen = _generationHandler.getFirstUsedGeneration();
+            _generationHandler.update_oldest_used_generation();
+            first_used_gen = _generationHandler.get_oldest_used_generation();
         }
     }
     _doneWriteWork += cnt;

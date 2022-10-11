@@ -184,7 +184,7 @@ FakeMemTreeOccMgr::incGeneration()
 void
 FakeMemTreeOccMgr::trimHoldLists()
 {
-    _allocator.trimHoldLists(_generationHandler.getFirstUsedGeneration());
+    _allocator.trimHoldLists(_generationHandler.get_oldest_used_generation());
 }
 
 

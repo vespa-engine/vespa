@@ -54,7 +54,7 @@ private:
 
     void trimHoldLists() {
         GenerationHandler::generation_t usedGen =
-            _generationHandler.getFirstUsedGeneration();
+                _generationHandler.get_oldest_used_generation();
         _postingListStore.trimHoldLists(usedGen);
         _dict.getAllocator().trimHoldLists(usedGen);
         _featureStore.trimHoldLists(usedGen);

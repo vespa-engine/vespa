@@ -274,7 +274,7 @@ freezeTree(GenerationHandler &g, ManagerType &m)
     m.freeze();
     m.transferHoldLists(g.getCurrentGeneration());
     g.incGeneration();
-    m.trimHoldLists(g.getFirstUsedGeneration());
+    m.trimHoldLists(g.get_oldest_used_generation());
 }
 
 template <typename ManagerType>
@@ -893,7 +893,7 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
         manager.freeze();
         manager.transferHoldLists(g.getCurrentGeneration());
         g.incGeneration();
-        manager.trimHoldLists(g.getFirstUsedGeneration());
+        manager.trimHoldLists(g.get_oldest_used_generation());
     }
     // remove entries
     for (size_t i = 0; i < numEntries; ++i) {
@@ -1192,7 +1192,7 @@ Test::requireThatSmallNodesWorks()
     s.freeze();
     s.transferHoldLists(g.getCurrentGeneration());
     g.incGeneration();
-    s.trimHoldLists(g.getFirstUsedGeneration());
+    s.trimHoldLists(g.get_oldest_used_generation());
 }
 
 void

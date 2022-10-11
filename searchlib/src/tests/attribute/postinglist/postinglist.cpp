@@ -263,8 +263,8 @@ AttributePostingListTest::freeTree(bool verbose)
     _intPostings->clearBuilder();
     _intPostings->transferHoldLists(_handler.getCurrentGeneration());
     _handler.incGeneration();
-    _intNodeAlloc->trimHoldLists(_handler.getFirstUsedGeneration());
-    _intPostings->trimHoldLists(_handler.getFirstUsedGeneration());
+    _intNodeAlloc->trimHoldLists(_handler.get_oldest_used_generation());
+    _intPostings->trimHoldLists(_handler.get_oldest_used_generation());
     LOG(info,
         "freeTree after unhold: %" PRIu64 " (%" PRIu64 " held)",
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytes()),
@@ -615,7 +615,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
     generation_t generation = _handler.getCurrentGeneration();
     valueHandle.transferHoldLists(generation);
     _handler.incGeneration();
-    valueHandle.trimHoldLists(_handler.getFirstUsedGeneration());
+    valueHandle.trimHoldLists(_handler.get_oldest_used_generation());
 
     LOG(info,
         "doCompactEnumStore done");
@@ -672,8 +672,8 @@ removeOldGenerations(Tree &tree,
 {
     (void) tree;
     (void) valueHandle;
-    postingsAlloc.trimHoldLists(_handler.getFirstUsedGeneration());
-    postings.trimHoldLists(_handler.getFirstUsedGeneration());
+    postingsAlloc.trimHoldLists(_handler.get_oldest_used_generation());
+    postings.trimHoldLists(_handler.get_oldest_used_generation());
 }
 
 int

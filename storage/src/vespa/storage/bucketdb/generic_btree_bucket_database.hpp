@@ -43,7 +43,7 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
 
     _generation_handler.incGeneration();
 
-    auto used_gen = _generation_handler.getFirstUsedGeneration();
+    auto used_gen = _generation_handler.get_oldest_used_generation();
     _store.trimHoldLists(used_gen);
     _tree.getAllocator().trimHoldLists(used_gen);
 }

@@ -269,8 +269,8 @@ public:
     void commit(uint32_t docid) {
         index->transfer_hold_lists(gen_handler.getCurrentGeneration());
         gen_handler.incGeneration();
-        gen_handler.updateFirstUsedGeneration();
-        index->trim_hold_lists(gen_handler.getFirstUsedGeneration());
+        gen_handler.update_oldest_used_generation();
+        index->trim_hold_lists(gen_handler.get_oldest_used_generation());
         std::lock_guard<std::mutex> guard(in_progress_lock);
         in_progress->clearBit(docid);
         // printf("commit: %u\n", docid);

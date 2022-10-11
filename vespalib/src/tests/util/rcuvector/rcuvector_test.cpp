@@ -434,7 +434,7 @@ StressFixture::commit()
     auto current_gen = generation_handler.getCurrentGeneration();
     g.assign_generation(current_gen);
     generation_handler.incGeneration();
-    auto first_used_gen = generation_handler.getFirstUsedGeneration();
+    auto first_used_gen = generation_handler.get_oldest_used_generation();
     g.reclaim(first_used_gen);
 }
 

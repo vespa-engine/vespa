@@ -409,8 +409,8 @@ bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpd
 
 void
 AttributeVector::removeAllOldGenerations() {
-    _genHandler.updateFirstUsedGeneration();
-    removeOldGenerations(_genHandler.getFirstUsedGeneration());
+    _genHandler.update_oldest_used_generation();
+    removeOldGenerations(_genHandler.get_oldest_used_generation());
 }
 
 
@@ -483,13 +483,11 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     incGeneration();
 }
 
-
 bool
 AttributeVector::canShrinkLidSpace() const {
     return wantShrinkLidSpace() &&
-        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < getFirstUsedGeneration();
+        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < get_oldest_used_generation();
 }
-
 
 void
 AttributeVector::shrinkLidSpace()

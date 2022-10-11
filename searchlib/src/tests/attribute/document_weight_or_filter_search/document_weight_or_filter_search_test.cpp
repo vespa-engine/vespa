@@ -145,8 +145,8 @@ DocumentWeightOrFilterSearchTest::inc_generation()
     _postings.freeze();
     _postings.transferHoldLists(_gens.getCurrentGeneration());
     _gens.incGeneration();
-    _gens.updateFirstUsedGeneration();
-    _postings.trimHoldLists(_gens.getFirstUsedGeneration());
+    _gens.update_oldest_used_generation();
+    _postings.trimHoldLists(_gens.get_oldest_used_generation());
 }
 
 TEST_F(DocumentWeightOrFilterSearchTest, daat_or)

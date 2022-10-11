@@ -101,8 +101,8 @@ public:
     void commit() {
         index->transfer_hold_lists(gen_handler.getCurrentGeneration());
         gen_handler.incGeneration();
-        gen_handler.updateFirstUsedGeneration();
-        index->trim_hold_lists(gen_handler.getFirstUsedGeneration());
+        gen_handler.update_oldest_used_generation();
+        index->trim_hold_lists(gen_handler.get_oldest_used_generation());
     }
     void set_filter(std::vector<uint32_t> docids) {
         uint32_t sz = 10;

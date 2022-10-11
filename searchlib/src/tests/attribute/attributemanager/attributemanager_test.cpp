@@ -38,8 +38,7 @@ public:
     generation_t getGen() const { return getCurrentGeneration(); }
     uint32_t getRefCount(generation_t gen) const { return getGenerationRefCount(gen); }
     void incGen() { incGeneration(); }
-    void updateFirstUsedGen() { updateFirstUsedGeneration(); }
-    generation_t getFirstUsedGen() const { return getFirstUsedGeneration(); }
+    generation_t oldest_used_gen() const { return get_oldest_used_generation(); }
 };
 
 
@@ -49,35 +48,35 @@ TEST("Test attribute guards")
     TestAttribute * v = static_cast<TestAttribute *> (vec.get());
     EXPECT_EQUAL(v->getGen(), unsigned(0));
     EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
-    EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(0));
+    EXPECT_EQUAL(v->oldest_used_gen(), unsigned(0));
     {
         AttributeGuard g0(vec);
         EXPECT_EQUAL(v->getGen(), unsigned(0));
         EXPECT_EQUAL(v->getRefCount(0), unsigned(1));
-        EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(0));
+        EXPECT_EQUAL(v->oldest_used_gen(), unsigned(0));
         {
             AttributeGuard g1(vec);
             EXPECT_EQUAL(v->getGen(), unsigned(0));
             EXPECT_EQUAL(v->getRefCount(0), unsigned(2));
-            EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(0));
+            EXPECT_EQUAL(v->oldest_used_gen(), unsigned(0));
         }
         EXPECT_EQUAL(v->getRefCount(0), unsigned(1));
-        EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(0));
+        EXPECT_EQUAL(v->oldest_used_gen(), unsigned(0));
     }
     EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
-    EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(0));
+    EXPECT_EQUAL(v->oldest_used_gen(), unsigned(0));
 
     v->incGen();
     EXPECT_EQUAL(v->getGen(), unsigned(1));
     EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
     EXPECT_EQUAL(v->getRefCount(1), unsigned(0));
-    EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(1));
+    EXPECT_EQUAL(v->oldest_used_gen(), unsigned(1));
     {
         AttributeGuard g0(vec);
         EXPECT_EQUAL(v->getGen(), unsigned(1));
         EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
         EXPECT_EQUAL(v->getRefCount(1), unsigned(1));
-        EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(1));
+        EXPECT_EQUAL(v->oldest_used_gen(), unsigned(1));
         {
             v->incGen();
             AttributeGuard g1(vec);
@@ -85,19 +84,19 @@ TEST("Test attribute guards")
             EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
             EXPECT_EQUAL(v->getRefCount(1), unsigned(1));
             EXPECT_EQUAL(v->getRefCount(2), unsigned(1));
-            EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(1));
+            EXPECT_EQUAL(v->oldest_used_gen(), unsigned(1));
         }
         EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
         EXPECT_EQUAL(v->getRefCount(1), unsigned(1));
         EXPECT_EQUAL(v->getRefCount(2), unsigned(0));
-        EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(1));
+        EXPECT_EQUAL(v->oldest_used_gen(), unsigned(1));
     }
     EXPECT_EQUAL(v->getRefCount(0), unsigned(0));
     EXPECT_EQUAL(v->getRefCount(1), unsigned(0));
     EXPECT_EQUAL(v->getRefCount(2), unsigned(0));
-    EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(1));
-    v->updateFirstUsedGeneration();
-    EXPECT_EQUAL(v->getFirstUsedGen(), unsigned(2));
+    EXPECT_EQUAL(v->oldest_used_gen(), unsigned(1));
+    v->update_oldest_used_generation();
+    EXPECT_EQUAL(v->oldest_used_gen(), unsigned(2));
     EXPECT_EQUAL(v->getGen(), unsigned(2));
 }
 
