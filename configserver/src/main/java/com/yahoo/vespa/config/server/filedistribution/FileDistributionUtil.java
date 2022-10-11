@@ -5,9 +5,12 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
-import com.yahoo.vespa.filedistribution.maintenance.FileDistributionCleanup;
+
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +21,17 @@ import java.util.stream.Collectors;
  */
 public class FileDistributionUtil {
 
+    /**
+     * Returns all files in the given directory, non-recursive.
+     */
+    public static Set<String> getFileReferencesOnDisk(File directory) {
+        Set<String> fileReferencesOnDisk = new HashSet<>();
+        File[] filesOnDisk = directory.listFiles();
+        if (filesOnDisk != null)
+            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
+        return fileReferencesOnDisk;
+    }
+
     public static List<String> getOtherConfigServersInCluster(ConfigserverConfig configserverConfig) {
         return ConfigServerSpec.fromConfig(configserverConfig)
                                .stream()
@@ -27,8 +41,7 @@ public class FileDistributionUtil {
     }
 
     public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {
-        return FileDistributionCleanup.getFileReferencesOnDisk(downloadDirectory.toPath())
-                                      .anyMatch(fileReference -> fileReference.equals(applicationPackageReference.value()));
+        return getFileReferencesOnDisk(downloadDirectory).contains(applicationPackageReference.value());
     }
 
 }

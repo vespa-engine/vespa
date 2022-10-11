@@ -49,7 +49,6 @@ import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.filedistribution.maintenance.FileDistributionCleanup;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
@@ -294,10 +293,9 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> toBeDeleted = new FileDistributionCleanup(clock).deleteUnusedFileReferences(fileReferencesDir,
-                                                                                                 keepFileReferencesDuration,
-                                                                                                 2,
-                                                                                                 applicationRepository.getFileReferencesInUse());
+        List<String> toBeDeleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir,
+                                                                                                keepFileReferencesDuration,
+                                                                                                2);
         Collections.sort(toBeDeleted);
         assertEquals(List.of("bar0", "foo"), toBeDeleted);
         // bar0 and foo are the only ones that will be deleted (keeps 2 newest no matter how old they are)
