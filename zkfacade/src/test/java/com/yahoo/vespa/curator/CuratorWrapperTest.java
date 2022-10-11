@@ -209,8 +209,8 @@ public class CuratorWrapperTest {
                                                           return "failing singleton";
                                                       }
                                                   });
-                stunning.arriveAndAwaitAdvance();
                 thrownMessage.set(e.getMessage());
+                stunning.arriveAndAwaitAdvance();
             }).start();
 
             stunning.arriveAndAwaitAdvance(); // Failing component is about to be deactivated.
