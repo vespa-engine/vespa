@@ -29,7 +29,7 @@ protected:
     vespalib::nbostream encode_stored_tensor(EntryRef ref);
     void assert_store_load(const TensorSpec& tensor_spec);
     void assert_store_load_many(const TensorSpec& tensor_spec);
-    void assert_store_move_load(const TensorSpec& tensor_spec);
+    void assert_store_move_on_compact_load(const TensorSpec& tensor_spec);
     void assert_store_encode_store_encoded_load(const TensorSpec& tensor_spec);
 };
 
@@ -102,10 +102,10 @@ TensorBufferStoreTest::assert_store_load_many(const TensorSpec& tensor_spec)
 }
 
 void
-TensorBufferStoreTest::assert_store_move_load(const TensorSpec& tensor_spec)
+TensorBufferStoreTest::assert_store_move_on_compact_load(const TensorSpec& tensor_spec)
 {
     auto ref = store_tensor(tensor_spec);
-    auto ref2 = _store.move(ref);
+    auto ref2 = _store.move_on_compact(ref);
     EXPECT_NE(ref, ref2);
     auto loaded_spec = load_tensor_spec(ref2);
     _store.holdTensor(ref2);
@@ -147,10 +147,10 @@ TEST_F(TensorBufferStoreTest, tensor_can_be_stored_and_loaded_many_times)
     }
 }
 
-TEST_F(TensorBufferStoreTest, stored_tensor_can_be_copied)
+TEST_F(TensorBufferStoreTest, stored_tensor_can_be_moved_on_compact)
 {
     for (auto& tensor_spec : tensor_specs) {
-        assert_store_move_load(tensor_spec);
+        assert_store_move_on_compact_load(tensor_spec);
     }
 }
 

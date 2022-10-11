@@ -35,7 +35,7 @@ public:
     ~UniqueStoreAllocator() override;
     EntryRef allocate(const EntryType& value);
     void hold(EntryRef ref);
-    EntryRef move(EntryRef ref) override;
+    EntryRef move_on_compact(EntryRef ref) override;
     const WrappedEntryType& get_wrapped(EntryRef ref) const {
         RefType iRef(ref);
         return *_store.template getEntry<WrappedEntryType>(iRef);

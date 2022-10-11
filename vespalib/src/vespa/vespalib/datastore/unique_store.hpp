@@ -109,20 +109,20 @@ private:
         }
     }
 
-    EntryRef move(EntryRef oldRef) override {
+    EntryRef move_on_compact(EntryRef oldRef) override {
         RefT iRef(oldRef);
         uint32_t buffer_id = iRef.bufferId();
         auto &inner_mapping = _mapping[buffer_id];
         assert(iRef.offset() < inner_mapping.size());
         EntryRef &mappedRef = inner_mapping[iRef.offset()];
         assert(!mappedRef.valid());
-        EntryRef newRef = _store.move(oldRef);
+        EntryRef newRef = _store.move_on_compact(oldRef);
         mappedRef = newRef;
         return newRef;
     }
     
     void fillMapping() {
-        _dict.move_keys(*this, _filter);
+        _dict.move_keys_on_compact(*this, _filter);
     }
 
 public:

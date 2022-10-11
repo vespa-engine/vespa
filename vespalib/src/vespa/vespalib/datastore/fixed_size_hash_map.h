@@ -159,7 +159,7 @@ public:
     size_t size() const noexcept { return _count; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(const std::function<void(EntryRef)>& callback) const;
-    void move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers);
+    void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter &compacting_buffers);
     /*
      * Scan dictionary and call normalize function for each value. If
      * returned value is different then write back the modified value to

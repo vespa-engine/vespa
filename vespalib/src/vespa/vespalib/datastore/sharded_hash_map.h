@@ -58,7 +58,7 @@ public:
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(std::function<void(EntryRef)> callback) const;
-    void move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers);
+    void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers);
     bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
     bool normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter);
     void foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter);

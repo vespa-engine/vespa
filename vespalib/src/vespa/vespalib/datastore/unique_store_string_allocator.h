@@ -111,7 +111,7 @@ public:
     ~UniqueStoreStringAllocator() override;
     EntryRef allocate(const char *value);
     void hold(EntryRef ref);
-    EntryRef move(EntryRef ref) override;
+    EntryRef move_on_compact(EntryRef ref) override;
     const UniqueStoreEntryBase& get_wrapped(EntryRef ref) const {
         RefType iRef(ref);
         auto &state = _store.getBufferState(iRef.bufferId());
