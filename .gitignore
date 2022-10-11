@@ -51,3 +51,4 @@ Testing
 install_manifest.txt
 *.cbp
 !/.copr/Makefile
+node_modules/

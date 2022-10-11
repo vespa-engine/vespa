@@ -24,6 +24,21 @@ export default {
   traceLevel: { name: 'traceLevel', type: 'Integer' },
   explainLevel: { name: 'explainLevel', type: 'Integer' },
   explainlevel: { name: 'explainlevel', type: 'Integer' },
+
+  /* model root level aliases */
+  defaultIndex: { name: 'defaultIndex', type: 'String' },
+  encoding: { name: 'encoding', type: 'String' },
+  filter: { name: 'filter', type: 'String' },
+  locale: { name: 'locale', type: 'String' },
+  language: { name: 'language', type: 'String' },
+  lang: { name: 'lang', type: 'string' },
+  query: { name: 'query', type: 'string' },
+  restrict: { name: 'restrict', type: 'List' },
+  searchPath: { name: 'searchPath', type: 'String' },
+  sources: { name: 'sources', type: 'List' },
+  type: { name: 'type', type: 'String' },
+  /* model root level aliases end */
+
   model: {
     name: 'model',
     type: 'Parent',
@@ -36,8 +51,18 @@ export default {
       searchPath: { name: 'searchPath', type: 'String' },
       sources: { name: 'sources', type: 'List' },
       type: { name: 'type', type: 'String' },
+      language: { name: 'language', type: 'String' },
+      lang: { name: 'lang', type: 'String' },
     },
   },
+
+  /* ranking root level aliases */
+  location: { name: 'location', type: 'String' },
+  listFeatures: { name: 'listFeatures', type: 'Boolean' },
+  ranking: { name: 'ranking', type: 'String' },
+  sorting: { name: 'sorting', type: 'String' },
+  /* ranking root level aliases end */
+
   ranking: {
     name: 'ranking',
     type: 'Parent',
@@ -78,6 +103,13 @@ export default {
   },
   collapsesize: { name: 'collapsesize', type: 'Integer' },
   collapsefield: { name: 'collapsefield', type: 'String' },
+
+  /* presentation root level aliases */
+  bolding: { name: 'bolding', type: 'Boolean' },
+  format: { name: 'format', type: 'String' },
+  summary: { name: 'summary', type: 'String' },
+  /* presentation root level aliases end */
+
   presentation: {
     name: 'presentation',
     type: 'Parent',
