@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
@@ -51,12 +52,12 @@ public class MapConverter {
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();
-                var stringValues = new ArrayList<String>();
+                var stringValues = new ArrayList<String>(entry.getValue().size());
                 for (var value : entry.getValue()) {
                     if (value != null) {
                         if (value instanceof Tensor tensor) {
-                            byte[] encoded = TypedBinaryFormat.encode(tensor);
-                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(encoded)));
+                            var buffer = TypedBinaryFormat.encode(tensor, new GrowableByteBuffer(4096));
+                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(buffer.getByteBuffer().flip())));
                         } else {
                             stringValues.add(value.toString());
                         }

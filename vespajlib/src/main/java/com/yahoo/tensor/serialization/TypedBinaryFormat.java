@@ -33,9 +33,13 @@ public class TypedBinaryFormat {
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
+        encode(tensor, buffer);
+        return asByteArray(buffer);
+    }
+    public static GrowableByteBuffer encode(Tensor tensor, GrowableByteBuffer buffer) {
         BinaryFormat encoder = getFormatEncoder(buffer, tensor);
         encoder.encode(buffer, tensor);
-        return asByteArray(buffer);
+        return buffer;
     }
 
     /**
