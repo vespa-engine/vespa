@@ -157,7 +157,7 @@ public class CuratorWrapperTest {
     public void testSingletonsInSameContainer() {
         try (Curator wrapped = new MockCurator()) {
             MockMetric metric = new MockMetric();
-            CuratorWrapper curator = new CuratorWrapper(wrapped, metric);
+            CuratorWrapper curator = new CuratorWrapper(wrapped, new ManualClock(), Duration.ofMillis(100), metric);
 
             // First singleton to register becomes active during construction.
             Singleton singleton = new Singleton(curator);
@@ -254,7 +254,7 @@ public class CuratorWrapperTest {
     public void testSingletonsInDifferentContainers() {
         try (MockCurator wrapped = new MockCurator()) {
             MockMetric metric = new MockMetric();
-            CuratorWrapper curator = new CuratorWrapper(wrapped, Clock.systemUTC(), Duration.ofMillis(100), metric);
+            CuratorWrapper curator = new CuratorWrapper(wrapped, new ManualClock(), Duration.ofMillis(100), metric);
 
             // Simulate a different container holding the lock.
             Singleton singleton;
