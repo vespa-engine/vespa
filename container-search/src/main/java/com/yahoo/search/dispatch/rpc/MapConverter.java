@@ -7,7 +7,7 @@ import com.google.protobuf.ByteString;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -51,12 +51,12 @@ public class MapConverter {
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();
-                var stringValues = new LinkedList<String>();
+                var stringValues = new ArrayList<String>();
                 for (var value : entry.getValue()) {
                     if (value != null) {
-                        if (value instanceof Tensor) {
-                            byte[] tensor = TypedBinaryFormat.encode((Tensor) value);
-                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(tensor)));
+                        if (value instanceof Tensor tensor) {
+                            byte[] encoded = TypedBinaryFormat.encode(tensor);
+                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(encoded)));
                         } else {
                             stringValues.add(value.toString());
                         }

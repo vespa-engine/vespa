@@ -2,7 +2,6 @@
 package com.yahoo.tensor.serialization;
 
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
