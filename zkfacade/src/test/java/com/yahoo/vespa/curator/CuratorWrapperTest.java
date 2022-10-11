@@ -137,7 +137,6 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 2.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 1.0,
                                  "has_lease", 1.0),
                           metric);
 
@@ -147,7 +146,9 @@ public class CuratorWrapperTest {
             verifyMetrics(Map.of("activation.count", 3.0,
                                  "activation.millis", 0.0,
                                  "deactivation.count", 3.0,
-                                 "deactivation.millis", 0.0),
+                                 "deactivation.millis", 0.0,
+                                 "is_active", 0.0,
+                                 "has_lease", 0.0),
                           metric);
         }
     }
@@ -270,7 +271,6 @@ public class CuratorWrapperTest {
             assertTrue(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 1.0,
                                  "activation.millis", 0.0,
-                                 "is_active", 1.0,
                                  "has_lease", 1.0),
                           metric);
 
@@ -304,7 +304,6 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 1.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 1.0,
                                  "has_lease", 1.0),
                           metric);
 
