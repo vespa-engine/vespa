@@ -197,12 +197,12 @@ public class CuratorWrapperTest {
                 RuntimeException e = assertThrows(RuntimeException.class,
                                                   () -> new Singleton(curator) {
                                                       @Override public void activate() {
-                                                          throw new RuntimeException();
+                                                          throw new RuntimeException("expected test exception");
                                                       }
                                                       @Override public void deactivate() {
                                                           stunning.arriveAndAwaitAdvance();
                                                           stunning.arriveAndAwaitAdvance();
-                                                          throw new RuntimeException();
+                                                          throw new RuntimeException("expected test exception");
                                                       }
                                                       @Override public String toString() {
                                                           return "failing singleton";
