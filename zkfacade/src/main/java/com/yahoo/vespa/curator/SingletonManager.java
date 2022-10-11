@@ -147,8 +147,8 @@ class SingletonManager implements AutoCloseable {
         public void unlock() {
             doom.set(null);
             if (lock != null) try {
-                lock.close();
                 metrics.hasLease(false);
+                lock.close();
                 lock = null;
             }
             catch (Exception e) {
@@ -255,7 +255,8 @@ class SingletonManager implements AutoCloseable {
          */
         private void renewLease() {
             if (doom.get() == INVALID || singletons.isEmpty()) {
-                unlock();
+                doom.set(null);
+                return; // Skip to updateStatus, deactivation, and release the lock.
             }
             // Witness value to detect if invalidation occurs between here and successful ping.
             Instant ourDoom = doom.get();
@@ -299,8 +300,8 @@ class SingletonManager implements AutoCloseable {
             }
             if (active && ! shouldBeActive) {
                 try  {
-                    active = false;
                     if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
+                    active = false;
                 }
                 catch (RuntimeException e) {
                     logger.log(Level.WARNING, "Failed to deactivate " + singletons.peek(), e);

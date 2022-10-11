@@ -288,8 +288,8 @@ public class CuratorWrapperTest {
 
             // Simulate connection loss for our singleton's ZK session.
             ((MockCuratorFramework) wrapped.framework()).connectionStateListeners.listeners.forEach(listener -> listener.stateChanged(null, ConnectionState.LOST));
-            stunning.arriveAndAwaitAdvance();
             singleton.phaser.arriveAndAwaitAdvance();
+            stunning.arriveAndAwaitAdvance();
             assertFalse(singleton.isActive);
             verifyMetrics(Map.of("activation.count", 1.0,
                                  "activation.millis", 0.0,
