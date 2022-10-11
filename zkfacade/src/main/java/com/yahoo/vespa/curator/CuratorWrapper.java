@@ -2,8 +2,10 @@ package com.yahoo.vespa.curator;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
+import com.yahoo.yolean.UncheckedInterruptedException;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.KeeperException.BadVersionException;
 import org.apache.zookeeper.data.Stat;
@@ -13,6 +15,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link VespaCurator} which delegates to a {@link Curator}.
@@ -28,13 +32,13 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
     private final SingletonManager singletons;
 
     @Inject
-    public CuratorWrapper(Curator curator) {
-        this(curator, Clock.systemUTC(), Duration.ofSeconds(1));
+    public CuratorWrapper(Curator curator, Metric metric) {
+        this(curator, Clock.systemUTC(), Duration.ofSeconds(1), metric);
     }
 
-    CuratorWrapper(Curator curator, Clock clock, Duration tickTimeout) {
+    CuratorWrapper(Curator curator, Clock clock, Duration tickTimeout, Metric metric) {
         this.curator = curator;
-        this.singletons = new SingletonManager(curator, clock, tickTimeout);
+        this.singletons = new SingletonManager(curator, clock, tickTimeout, metric);
 
         curator.framework().getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
             if (connectionState == ConnectionState.LOST) singletons.invalidate();
@@ -121,7 +125,15 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
 
     @Override
     public void deconstruct() {
-        singletons.close();
+        try {
+            singletons.shutdown().get();
+        }
+        catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e, true);
+        }
+        catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        }
     }
 
 }
