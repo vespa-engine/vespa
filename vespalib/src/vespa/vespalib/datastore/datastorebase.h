@@ -7,6 +7,7 @@
 #include "memory_stats.h"
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/generationholder.h>
+#include <vespa/vespalib/util/generation_hold_list.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
 #include <deque>
@@ -26,42 +27,18 @@ class CompactionStrategy;
 class DataStoreBase
 {
 protected:
-    /**
-     * Hold list element used in the first phase of holding (before freeze),
-     * before knowing how long elements must be held.
-     */
-    class ElemHold1ListElem
-    {
-    public:
-        EntryRef _ref;
-        size_t   _len;  // Aligned length
+    struct EntryRefHoldElem {
+        EntryRef ref;
+        size_t   num_elems;
 
-        ElemHold1ListElem(EntryRef ref, size_t len)
-            : _ref(ref),
-              _len(len)
-        { }
+        EntryRefHoldElem(EntryRef ref_in, size_t num_elems_in)
+            : ref(ref_in),
+              num_elems(num_elems_in)
+        {}
     };
 
+    using EntryRefHoldList = GenerationHoldList<EntryRefHoldElem, false, true>;
     using generation_t = vespalib::GenerationHandler::generation_t;
-    using sgeneration_t = vespalib::GenerationHandler::sgeneration_t;
-
-    /**
-     * Hold list element used in the second phase of holding (at freeze),
-     * when knowing how long elements must be held.
-     */
-    class ElemHold2ListElem : public ElemHold1ListElem
-    {
-    public:
-        generation_t _generation;
-
-        ElemHold2ListElem(const ElemHold1ListElem &hold1, generation_t generation)
-                : ElemHold1ListElem(hold1),
-                  _generation(generation)
-        { }
-    };
-
-    using ElemHold1List = vespalib::Array<ElemHold1ListElem>;
-    using ElemHold2List = std::deque<ElemHold2ListElem>;
 
 private:
     class BufferAndTypeId {
@@ -113,10 +90,7 @@ protected:
     std::vector<FreeList> _free_lists;
     bool _freeListsEnabled;
     bool _initializing;
-
-    ElemHold1List _elemHold1List;
-    ElemHold2List _elemHold2List;
-
+    EntryRefHoldList _entry_ref_hold_list;
     const uint32_t _numBuffers;
     const uint32_t _offset_bits;
     uint32_t       _hold_buffer_count;
@@ -153,11 +127,11 @@ protected:
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.
      *
-     * @param usedGen       lowest generation that is still used.
+     * @param oldest_used_gen the oldest generation that is still used.
      */
-    virtual void trimElemHoldList(generation_t usedGen) = 0;
+    virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
 
-    virtual void clearElemHoldList() = 0;
+    virtual void reclaim_all_entry_refs() = 0;
 
     void markCompacting(uint32_t bufferId);
 
@@ -212,14 +186,6 @@ public:
     const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
-
-private:
-    bool hasElemHold1() const { return !_elemHold1List.empty(); }
-
-    /**
-     * Transfer element holds from hold1 list to hold2 list.
-     */
-    void transferElemHoldList(generation_t generation);
 
 public:
     /**
@@ -343,4 +309,8 @@ public:
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 };
 
+}
+
+namespace vespalib {
+extern template class GenerationHoldList<datastore::DataStoreBase::EntryRefHoldElem, false, true>;
 }

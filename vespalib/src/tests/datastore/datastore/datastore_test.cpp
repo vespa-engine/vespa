@@ -31,8 +31,8 @@ public:
     void transferHoldLists(generation_t generation) {
         ParentType::transferHoldLists(generation);
     }
-    void trimElemHoldList(generation_t usedGen) override {
-        ParentType::trimElemHoldList(usedGen);
+    void reclaim_entry_refs(generation_t oldest_used_gen) override {
+        ParentType::reclaim_entry_refs(oldest_used_gen);
     }
     void ensureBufferCapacity(size_t sizeNeeded) {
         ParentType::ensureBufferCapacity(0, sizeNeeded);
@@ -314,11 +314,11 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_elements)
     EXPECT_EQ(1, s.getEntry(r1));
     EXPECT_EQ(2, s.getEntry(r2));
     EXPECT_EQ(3, s.getEntry(r3));
-    s.trimElemHoldList(11);
+    s.reclaim_entry_refs(11);
     EXPECT_EQ(0, s.getEntry(r1));
     EXPECT_EQ(2, s.getEntry(r2));
     EXPECT_EQ(3, s.getEntry(r3));
-    s.trimElemHoldList(31);
+    s.reclaim_entry_refs(31);
     EXPECT_EQ(0, s.getEntry(r1));
     EXPECT_EQ(0, s.getEntry(r2));
     EXPECT_EQ(0, s.getEntry(r3));
@@ -363,12 +363,12 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists)
     expect_successive_refs(r1, r2);
     s.holdElem(r2, 1);
     s.transferHoldLists(20);
-    s.trimElemHoldList(11);
+    s.reclaim_entry_refs(11);
     auto r3 = s.addEntry(3); // reuse r1
     EXPECT_EQ(r1, r3);
     auto r4 = s.addEntry(4);
     expect_successive_refs(r2, r4);
-    s.trimElemHoldList(21);
+    s.reclaim_entry_refs(21);
     auto r5 = s.addEntry(5); // reuse r2
     EXPECT_EQ(r2, r5);
     auto r6 = s.addEntry(6);
@@ -394,7 +394,7 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
     s.holdElem(h1.ref, 3);
     s.holdElem(h2.ref, 3);
     s.transferHoldLists(10);
-    s.trimElemHoldList(11);
+    s.reclaim_entry_refs(11);
 
     auto h3 = allocator.alloc(3); // reuse h2.ref from free list
     EXPECT_EQ(h2, h3);

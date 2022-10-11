@@ -7,7 +7,7 @@
 #include "free_list_allocator.hpp"
 #include "free_list_raw_allocator.hpp"
 #include "raw_allocator.hpp"
-#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/generation_hold_list.hpp>
 
 namespace vespalib::datastore {
 
@@ -36,39 +36,26 @@ DataStoreT<RefT>::holdElem(EntryRef ref, size_t numElems, size_t extraBytes)
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
     if (!state.hold_elems(numElems, extraBytes)) {
-        _elemHold1List.push_back(ElemHold1ListElem(ref, numElems));
+        _entry_ref_hold_list.insert({ref, numElems});
     }
 }
 
 template <typename RefT>
 void
-DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
+DataStoreT<RefT>::reclaim_entry_refs(generation_t oldest_used_gen)
 {
-    auto it = _elemHold2List.begin();
-    auto ite = _elemHold2List.end();
-    uint32_t freed = 0;
-    for (; it != ite; ++it) {
-        if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0) {
-            break;
-        }
-        free_elem_internal(it->_ref, it->_len, true);
-        ++freed;
-    }
-    if (freed != 0) {
-        _elemHold2List.erase(_elemHold2List.begin(), it);
-    }
+    _entry_ref_hold_list.reclaim(oldest_used_gen, [this](const auto& elem) {
+        free_elem_internal(elem.ref, elem.num_elems, true);
+    });
 }
 
 template <typename RefT>
 void
-DataStoreT<RefT>::clearElemHoldList()
+DataStoreT<RefT>::reclaim_all_entry_refs()
 {
-    auto it = _elemHold2List.begin();
-    auto ite = _elemHold2List.end();
-    for (; it != ite; ++it) {
-        free_elem_internal(it->_ref, it->_len, true);
-    }
-    _elemHold2List.clear();
+    _entry_ref_hold_list.reclaim_all([this](const auto& elem) {
+        free_elem_internal(elem.ref, elem.num_elems, true);
+    });
 }
 
 template <typename RefT>

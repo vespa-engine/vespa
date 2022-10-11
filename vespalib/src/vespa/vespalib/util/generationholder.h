@@ -27,13 +27,13 @@ public:
     size_t byte_size() const { return _byte_size; }
 };
 
-template class GenerationHoldList<GenerationHeldBase::UP, true, false>;
+using GenerationHolderParent = GenerationHoldList<GenerationHeldBase::UP, true, false>;
 
 /*
  * GenerationHolder is meant to hold large elements until readers can
  * no longer access them.
  */
-class GenerationHolder : public GenerationHoldList<GenerationHeldBase::UP, true, false> {
+class GenerationHolder : public GenerationHolderParent {
 public:
     GenerationHolder();
 };

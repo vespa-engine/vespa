@@ -5,9 +5,8 @@
 #include "compacting_buffers.h"
 #include "compaction_spec.h"
 #include "compaction_strategy.h"
-#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <algorithm>
 #include <limits>
 #include <cassert>
 
@@ -15,6 +14,10 @@
 LOG_SETUP(".vespalib.datastore.datastorebase");
 
 using vespalib::GenerationHeldBase;
+
+namespace vespalib {
+template class GenerationHoldList<datastore::DataStoreBase::EntryRefHoldElem, false, true>;
+}
 
 namespace vespalib::datastore {
 
@@ -88,8 +91,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _free_lists(),
       _freeListsEnabled(false),
       _initializing(false),
-      _elemHold1List(),
-      _elemHold2List(),
+      _entry_ref_hold_list(),
       _numBuffers(numBuffers),
       _offset_bits(offset_bits),
       _hold_buffer_count(0u),
@@ -102,9 +104,6 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
 DataStoreBase::~DataStoreBase()
 {
     disableFreeLists();
-
-    assert(_elemHold1List.empty());
-    assert(_elemHold2List.empty());
 }
 
 void
@@ -221,21 +220,10 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 }
 
 void
-DataStoreBase::transferElemHoldList(generation_t generation)
-{
-    for (const auto& elemHold1 : _elemHold1List) {
-        _elemHold2List.push_back(ElemHold2ListElem(elemHold1, generation));
-    }
-    _elemHold1List.clear();
-}
-
-void
 DataStoreBase::transferHoldLists(generation_t generation)
 {
     _genHolder.assign_generation(generation);
-    if (hasElemHold1()) {
-        transferElemHoldList(generation);
-    }
+    _entry_ref_hold_list.assign_generation(generation);
 }
 
 void
@@ -249,15 +237,15 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 void
 DataStoreBase::trimHoldLists(generation_t usedGen)
 {
-    trimElemHoldList(usedGen);  // Trim entries before trimming buffers
+    reclaim_entry_refs(usedGen);  // Trim entries before trimming buffers
     _genHolder.reclaim(usedGen);
 }
 
 void
 DataStoreBase::clearHoldLists()
 {
-    transferElemHoldList(0);
-    clearElemHoldList();
+    _entry_ref_hold_list.assign_generation(0);
+    reclaim_all_entry_refs();
     _genHolder.reclaim_all();
 }
 
