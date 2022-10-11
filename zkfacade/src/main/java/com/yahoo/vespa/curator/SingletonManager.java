@@ -176,6 +176,7 @@ class SingletonManager {
                         }
                     }
                 }
+                unlock();
             }
             catch (Throwable t) {
                 Process.logAndDie(worker + " can't continue, shutting down", t);
@@ -327,12 +328,24 @@ class SingletonManager {
         }
 
         void shutdown() {
-            assert Thread.currentThread() == worker : "shutdown should be run in the worker thread";
             if ( ! shutdown.compareAndSet(false, true)) {
                 logger.log(Level.WARNING, "Shutdown called more than once on " + this);
             }
-            unlock();
-            for (Task task : tasks) task.future.cancel(true);
+            if (Thread.currentThread() != worker) {
+                try {
+                    worker.join();
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            else {
+                unlock();
+            }
+            if ( ! tasks.isEmpty()) {
+                logger.log(Level.WARNING, "Non-empty task list after shutdown: " + tasks.size() + " remaining");
+                for (Task task : tasks) task.future.cancel(true); // Shouldn't happen.
+            }
         }
 
         private class MetricHelper {
