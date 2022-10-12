@@ -266,7 +266,7 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
+    this->_enumStore.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 

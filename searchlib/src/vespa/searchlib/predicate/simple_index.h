@@ -187,7 +187,7 @@ public:
     // (and after doc id limits values are determined) to promote posting lists to vectors.
     void promoteOverThresholdVectors();
     void commit();
-    void trimHoldLists(generation_t used_generation);
+    void reclaim_memory(generation_t oldest_used_gen);
     void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
     template <typename FunctionType>

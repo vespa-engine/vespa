@@ -130,7 +130,7 @@ void
 SingleValueStringPostingAttributeT<B>::removeOldGenerations(generation_t firstUsed)
 {
     SingleValueStringAttributeT<B>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    _postingList.reclaim_memory(firstUsed);
 }
 
 template <typename B>

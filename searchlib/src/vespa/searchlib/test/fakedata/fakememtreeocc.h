@@ -96,7 +96,7 @@ public:
     void freeze();
     void assign_generation();
     void incGeneration();
-    void trimHoldLists();
+    void reclaim_memory();
     void sync();
     void add(uint32_t wordIdx, index::DocIdAndFeatures &features) override;
     void remove(uint32_t wordIdx, uint32_t docId) override;

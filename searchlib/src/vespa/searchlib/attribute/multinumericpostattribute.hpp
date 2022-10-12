@@ -59,7 +59,7 @@ void
 MultiValueNumericPostingAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
 {
     MultiValueNumericEnumAttribute<B, M>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    _postingList.reclaim_memory(firstUsed);
 }
 
 template <typename B, typename M>

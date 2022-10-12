@@ -196,8 +196,8 @@ template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
-    this->_mvMapping.trimHoldLists(firstUsed);
+    this->_enumStore.reclaim_memory(firstUsed);
+    this->_mvMapping.reclaim_memory(firstUsed);
 }
 
 template <typename B, typename M>

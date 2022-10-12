@@ -346,7 +346,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     checkReaders(ses, readers);
 
     ses.assign_generation(sesGen);
-    ses.trim_hold_lists(sesGen + 1);
+    ses.reclaim_memory(sesGen + 1);
 }
 
 void
@@ -358,7 +358,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
 
     generation_t gen = 5;
     store.assign_generation(gen);
-    store.trim_hold_lists(gen + 1);
+    store.reclaim_memory(gen + 1);
 }
 
 TEST(EnumStoreTest, address_space_usage_is_reported)
@@ -884,7 +884,7 @@ void inc_generation(generation_t &gen, NumericEnumStore &store)
     store.freeze_dictionary();
     store.assign_generation(gen);
     ++gen;
-    store.trim_hold_lists(gen);
+    store.reclaim_memory(gen);
 }
 
 }

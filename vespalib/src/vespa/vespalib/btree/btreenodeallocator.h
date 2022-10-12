@@ -101,7 +101,7 @@ public:
     /**
      * Try to free held nodes if nobody can be referencing them.
      */
-    void trimHoldLists(generation_t usedGen);
+    void reclaim_memory(generation_t oldest_used_gen);
 
     /**
      * Transfer nodes from hold1 lists to hold2 lists, they are no

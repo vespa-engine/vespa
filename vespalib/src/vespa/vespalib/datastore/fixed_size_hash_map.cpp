@@ -108,11 +108,11 @@ FixedSizeHashMap::assign_generation_slow(generation_t current_gen)
 
 
 void
-FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
+FixedSizeHashMap::reclaim_memory_slow(generation_t oldest_used_gen)
 {
     while (!_hold_2_list.empty()) {
         auto& first = _hold_2_list.front();
-        if (static_cast<sgeneration_t>(first.first - first_used) >= 0) {
+        if (static_cast<sgeneration_t>(first.first - oldest_used_gen) >= 0) {
             break;
         }
         uint32_t node_idx = first.second;

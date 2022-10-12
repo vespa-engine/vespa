@@ -182,9 +182,9 @@ FakeMemTreeOccMgr::incGeneration()
 
 
 void
-FakeMemTreeOccMgr::trimHoldLists()
+FakeMemTreeOccMgr::reclaim_memory()
 {
-    _allocator.trimHoldLists(_generationHandler.get_oldest_used_generation());
+    _allocator.reclaim_memory(_generationHandler.get_oldest_used_generation());
 }
 
 
@@ -194,7 +194,7 @@ FakeMemTreeOccMgr::sync()
     freeze();
     assign_generation();
     incGeneration();
-    trimHoldLists();
+    reclaim_memory();
 }
 
 

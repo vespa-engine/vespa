@@ -163,8 +163,8 @@ ReferenceAttribute::clearDoc(DocId doc)
 void
 ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 {
-    _referenceMappings.trimHoldLists(firstUsed);
-    _store.trimHoldLists(firstUsed);
+    _referenceMappings.reclaim_memory(firstUsed);
+    _store.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 

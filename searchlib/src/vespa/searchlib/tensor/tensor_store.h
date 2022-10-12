@@ -48,8 +48,8 @@ public:
     virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
 
     // Inherit doc from DataStoreBase
-    void trimHoldLists(generation_t usedGen) {
-        _store.trimHoldLists(usedGen);
+    void reclaim_memory(generation_t oldest_used_gen) {
+        _store.reclaim_memory(oldest_used_gen);
     }
 
     // Inherit doc from DataStoreBase

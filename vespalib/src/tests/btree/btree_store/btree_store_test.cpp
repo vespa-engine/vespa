@@ -33,7 +33,7 @@ protected:
         _store.freeze();
         _store.assign_generation(_gen_handler.getCurrentGeneration());
         _gen_handler.incGeneration();
-        _store.trimHoldLists(_gen_handler.get_oldest_used_generation());
+        _store.reclaim_memory(_gen_handler.get_oldest_used_generation());
     }
 
     EntryRef add_sequence(int start_key, int end_key)

@@ -75,7 +75,7 @@ public:
     ~UniqueStoreDictionary() override;
     void freeze() override;
     void assign_generation(generation_t current_gen) override;
-    void trim_hold_lists(generation_t firstUsed) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
     UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) override;
     EntryRef find(const EntryComparator& comp) override;
     void remove(const EntryComparator& comp, EntryRef ref) override;

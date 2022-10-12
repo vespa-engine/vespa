@@ -71,7 +71,7 @@ public:
 
     // Pass on hold list management to underlying store
     void assign_generation(generation_t current_gen);
-    void trimHoldLists(generation_t firstUsed);
+    void reclaim_memory(generation_t oldest_used_gen);
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
     void freeze();

@@ -224,8 +224,8 @@ public:
     void assign_generation(generation_t current_gen) override {
         _transfer_gen = current_gen;
     }
-    void trim_hold_lists(generation_t first_used_gen) override {
-        _trim_gen = first_used_gen;
+    void reclaim_memory(generation_t oldest_used_gen) override {
+        _trim_gen = oldest_used_gen;
     }
     bool consider_compact(const CompactionStrategy&) override {
         return false;

@@ -172,8 +172,8 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    void trimHoldLists(generation_t usedGen) {
-        _store.trimHoldLists(usedGen);
+    void reclaim_memory(generation_t oldest_used_gen) {
+        _store.reclaim_memory(oldest_used_gen);
     }
 
     void clearHoldLists() {

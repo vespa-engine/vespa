@@ -92,8 +92,8 @@ DataStoreFixedSizeHashTest::commit()
     _hash_map->assign_generation(_generation_handler.getCurrentGeneration());
     _generation_holder.assign_generation(_generation_handler.getCurrentGeneration());
     _generation_handler.incGeneration();
-    _store.trimHoldLists(_generation_handler.get_oldest_used_generation());
-    _hash_map->trim_hold_lists(_generation_handler.get_oldest_used_generation());
+    _store.reclaim_memory(_generation_handler.get_oldest_used_generation());
+    _hash_map->reclaim_memory(_generation_handler.get_oldest_used_generation());
     _generation_holder.reclaim(_generation_handler.get_oldest_used_generation());
 }
 

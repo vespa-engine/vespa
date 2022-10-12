@@ -29,7 +29,7 @@ struct ICompactable;
  * that memory is held while it can be accessed by reader.
  *
  * The writer must update generation and call assign_generation and
- * trim_hold_lists as needed to free up memory no longer needed by any
+ * reclaim_memory as needed to free up memory no longer needed by any
  * readers.
  */
 class ShardedHashMap {
@@ -53,7 +53,7 @@ public:
     KvType* find(const EntryComparator& comp, EntryRef key_ref);
     const KvType* find(const EntryComparator& comp, EntryRef key_ref) const;
     void assign_generation(generation_t current_gen);
-    void trim_hold_lists(generation_t first_used);
+    void reclaim_memory(generation_t oldest_used_gen);
     size_t size() const noexcept;
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;

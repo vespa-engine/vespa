@@ -59,7 +59,7 @@ public:
     void clearMapping(const Reference &entry);
 
     // Hold list management & freezing
-    void trimHoldLists(generation_t usedGen) { _reverseMapping.trimHoldLists(usedGen); }
+    void reclaim_memory(generation_t oldest_used_gen) { _reverseMapping.reclaim_memory(oldest_used_gen); }
     void freeze() { _reverseMapping.freeze(); }
     void assign_generation(generation_t current_gen) { _reverseMapping.assign_generation(current_gen); }
 

@@ -112,10 +112,10 @@ struct TestBase : public ::testing::Test {
         }
         return EntryRef();
     }
-    void trimHoldLists() {
+    void reclaim_memory() {
         store.freeze();
         store.assign_generation(generation++);
-        store.trimHoldLists(generation);
+        store.reclaim_memory(generation);
     }
     void compactWorst() {
         CompactionSpec compaction_spec(true, true);
@@ -364,7 +364,7 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
     this->remove(this->add(this->values()[2]));
-    this->trimHoldLists();
+    this->reclaim_memory();
     size_t reserved = this->get_reserved(val0Ref);
     size_t array_size = this->get_array_size(val0Ref);
     this->assertBufferState(val0Ref, TestBufferStats().used(reserved + 3 * array_size).dead(reserved + array_size));
@@ -381,7 +381,7 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     this->assertGet(val0Ref, this->values()[0]);
     this->assertGet(val1Ref, this->values()[1]);
     EXPECT_TRUE(this->store.bufferState(val0Ref).isOnHold());
-    this->trimHoldLists();
+    this->reclaim_memory();
     EXPECT_TRUE(this->store.bufferState(val0Ref).isFree());
     this->assertStoreContent();
 }
@@ -415,7 +415,7 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
     this->remove(this->add(this->values()[2]));
-    this->trimHoldLists();
+    this->reclaim_memory();
 
     auto enumerator = this->getEnumerator(true);
     std::vector<uint32_t> refs;
@@ -460,7 +460,7 @@ TEST_F(DoubleTest, nan_is_handled)
     for (auto &value : myvalues) {
         refs.emplace_back(add(value));
     }
-    trimHoldLists();
+    reclaim_memory();
     EXPECT_TRUE(std::isnan(store.get(refs[1])));
     EXPECT_TRUE(std::signbit(store.get(refs[1])));
     EXPECT_TRUE(std::isinf(store.get(refs[2])));

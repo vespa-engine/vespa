@@ -465,7 +465,7 @@ DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
 {
     TensorAttribute::removeOldGenerations(first_used_gen);
     if (_index) {
-        _index->trim_hold_lists(first_used_gen);
+        _index->reclaim_memory(first_used_gen);
     }
 }
 

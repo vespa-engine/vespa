@@ -171,8 +171,8 @@ DataStoreShardedHashTest::commit()
     _store.assign_generation(_generationHandler.getCurrentGeneration());
     _hash_map.assign_generation(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
-    _store.trimHoldLists(_generationHandler.get_oldest_used_generation());
-    _hash_map.trim_hold_lists(_generationHandler.get_oldest_used_generation());
+    _store.reclaim_memory(_generationHandler.get_oldest_used_generation());
+    _hash_map.reclaim_memory(_generationHandler.get_oldest_used_generation());
 }
 
 void

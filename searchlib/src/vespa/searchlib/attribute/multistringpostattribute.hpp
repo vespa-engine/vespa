@@ -78,7 +78,7 @@ void
 MultiValueStringPostingAttributeT<B, T>::removeOldGenerations(generation_t firstUsed)
 {
     MultiValueStringAttributeT<B, T>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    _postingList.reclaim_memory(firstUsed);
 }
 
 template <typename B, typename T>

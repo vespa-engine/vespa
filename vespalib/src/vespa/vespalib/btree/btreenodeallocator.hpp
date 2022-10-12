@@ -266,9 +266,9 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-trimHoldLists(generation_t usedGen)
+reclaim_memory(generation_t oldest_used_gen)
 {
-    _nodeStore.trimHoldLists(usedGen);
+    _nodeStore.reclaim_memory(oldest_used_gen);
 }
 
 template <typename KeyT, typename DataT, typename AggrT,

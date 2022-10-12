@@ -291,10 +291,10 @@ SimpleIndex<Posting, Key, DocId>::commit() {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generation) {
-    _btree_posting_lists.trimHoldLists(used_generation);
-    _dictionary.getAllocator().trimHoldLists(used_generation);
-    _vector_posting_lists.getAllocator().trimHoldLists(used_generation);
+SimpleIndex<Posting, Key, DocId>::reclaim_memory(generation_t oldest_used_gen) {
+    _btree_posting_lists.reclaim_memory(oldest_used_gen);
+    _dictionary.getAllocator().reclaim_memory(oldest_used_gen);
+    _vector_posting_lists.getAllocator().reclaim_memory(oldest_used_gen);
 
 }
 

@@ -128,7 +128,7 @@ void
 PredicateAttribute::removeOldGenerations(generation_t firstUsed)
 {
     getGenerationHolder().reclaim(firstUsed);
-    _index->trimHoldLists(firstUsed);
+    _index->reclaim_memory(firstUsed);
 }
 
 void

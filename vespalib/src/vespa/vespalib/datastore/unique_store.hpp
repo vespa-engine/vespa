@@ -198,10 +198,10 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::assign_generation(generation_t cu
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT, Compare, Allocator>::trimHoldLists(generation_t firstUsed)
+UniqueStore<EntryT, RefT, Compare, Allocator>::reclaim_memory(generation_t oldest_used_gen)
 {
-    _dict->trim_hold_lists(firstUsed);
-    _store.trimHoldLists(firstUsed);
+    _dict->reclaim_memory(oldest_used_gen);
+    _store.reclaim_memory(oldest_used_gen);
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>

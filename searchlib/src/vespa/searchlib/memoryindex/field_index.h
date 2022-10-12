@@ -52,12 +52,12 @@ private:
         _dict.getAllocator().freeze();
     }
 
-    void trimHoldLists() {
-        GenerationHandler::generation_t usedGen =
+    void reclaim_memory() {
+        GenerationHandler::generation_t oldest_used_gen =
                 _generationHandler.get_oldest_used_generation();
-        _postingListStore.trimHoldLists(usedGen);
-        _dict.getAllocator().trimHoldLists(usedGen);
-        _featureStore.trimHoldLists(usedGen);
+        _postingListStore.reclaim_memory(oldest_used_gen);
+        _dict.getAllocator().reclaim_memory(oldest_used_gen);
+        _featureStore.reclaim_memory(oldest_used_gen);
     }
 
     void assign_generation() {
@@ -92,7 +92,7 @@ public:
         freeze();
         assign_generation();
         incGeneration();
-        trimHoldLists();
+        reclaim_memory();
     }
 
     /**

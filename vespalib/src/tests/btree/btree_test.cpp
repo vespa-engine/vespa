@@ -165,7 +165,7 @@ cleanup(GenerationHandler & g, ManagerType & m)
     m.freeze();
     m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
-    m.trimHoldLists(g.get_oldest_used_generation());
+    m.reclaim_memory(g.get_oldest_used_generation());
 }
 
 template <typename ManagerType, typename NodeType>
@@ -876,7 +876,7 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
         manager.freeze();
         manager.assign_generation(g.getCurrentGeneration());
         g.incGeneration();
-        manager.trimHoldLists(g.get_oldest_used_generation());
+        manager.reclaim_memory(g.get_oldest_used_generation());
     }
     // remove entries
     for (size_t i = 0; i < numEntries; ++i) {
@@ -1108,7 +1108,7 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     // trim hold lists
     tm.assign_generation(gh.getCurrentGeneration());
     gh.incGeneration();
-    tm.trimHoldLists(gh.get_oldest_used_generation());
+    tm.reclaim_memory(gh.get_oldest_used_generation());
     mu = vespalib::MemoryUsage();
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
     mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
@@ -1284,7 +1284,7 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
     s.freeze();
     s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
-    s.trimHoldLists(g.get_oldest_used_generation());
+    s.reclaim_memory(g.get_oldest_used_generation());
 }
 
 namespace {
@@ -1418,7 +1418,7 @@ TEST_F(BTreeTest, require_that_apply_works)
     s.freeze();
     s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
-    s.trimHoldLists(g.get_oldest_used_generation());
+    s.reclaim_memory(g.get_oldest_used_generation());
 }
 
 class MyTreeTestIterator : public MyTree::Iterator
@@ -1555,7 +1555,7 @@ inc_generation(GenerationHandler &g, Tree &t)
     s.freeze();
     s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
-    s.trimHoldLists(g.get_oldest_used_generation());
+    s.reclaim_memory(g.get_oldest_used_generation());
 }
 
 template <typename Tree>

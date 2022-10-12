@@ -43,9 +43,9 @@ public:
     void clear();
 
     /**
-     * Frees up elements with generation < first used generation for reuse.
+     * Frees up elements with generation < oldest used generation for reuse.
      **/
-    void trimHoldLists(generation_t firstUsed, LidStateVector &freeLids);
+    void reclaim_memory(generation_t oldest_used_gen, LidStateVector &freeLids);
 };
 
 

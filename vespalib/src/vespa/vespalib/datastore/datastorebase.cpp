@@ -235,10 +235,10 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 }
 
 void
-DataStoreBase::trimHoldLists(generation_t usedGen)
+DataStoreBase::reclaim_memory(generation_t oldest_used_gen)
 {
-    reclaim_entry_refs(usedGen);  // Trim entries before trimming buffers
-    _genHolder.reclaim(usedGen);
+    reclaim_entry_refs(oldest_used_gen);  // Trim entries before trimming buffers
+    _genHolder.reclaim(oldest_used_gen);
 }
 
 void

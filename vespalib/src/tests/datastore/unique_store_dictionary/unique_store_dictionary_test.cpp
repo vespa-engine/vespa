@@ -64,7 +64,7 @@ struct UniqueStoreDictionaryTest : public ::testing::Test {
         dict.freeze();
         dict.assign_generation(gen_handler.getCurrentGeneration());
         gen_handler.incGeneration();
-        dict.trim_hold_lists(gen_handler.get_oldest_used_generation());
+        dict.reclaim_memory(gen_handler.get_oldest_used_generation());
     }
     void take_snapshot() {
         dict.freeze();

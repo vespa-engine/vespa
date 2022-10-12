@@ -74,7 +74,7 @@ FieldIndex<interleaved_features>::~FieldIndex()
     freeze();   // Flush pending freeze for dictionary tree.
     assign_generation();
     incGeneration();
-    trimHoldLists();
+    reclaim_memory();
 }
 
 template <bool interleaved_features>

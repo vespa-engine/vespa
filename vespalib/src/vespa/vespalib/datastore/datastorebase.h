@@ -201,11 +201,11 @@ private:
 
 public:
     /**
-     * Trim hold lists, freeing buffers that no longer needs to be held.
+     * Reclaim memory from hold lists, freeing buffers and entry refs that no longer needs to be held.
      *
-     * @param usedGen       lowest generation that is still used.
+     * @param oldest_used_gen oldest generation that is still used.
      */
-    void trimHoldLists(generation_t usedGen);
+    void reclaim_memory(generation_t oldest_used_gen);
 
     void clearHoldLists();
 

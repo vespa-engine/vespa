@@ -521,11 +521,11 @@ HnswIndex::assign_generation(generation_t current_gen)
 }
 
 void
-HnswIndex::trim_hold_lists(generation_t first_used_gen)
+HnswIndex::reclaim_memory(generation_t oldest_used_gen)
 {
-    _graph.node_refs.removeOldGenerations(first_used_gen);
-    _graph.nodes.trimHoldLists(first_used_gen);
-    _graph.links.trimHoldLists(first_used_gen);
+    _graph.node_refs.removeOldGenerations(oldest_used_gen);
+    _graph.nodes.reclaim_memory(oldest_used_gen);
+    _graph.links.reclaim_memory(oldest_used_gen);
 }
 
 void

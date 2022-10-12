@@ -252,8 +252,8 @@ DocumentMetaStore::onGenerationChange(generation_t generation)
 void
 DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
 {
-    _gidToLidMap.getAllocator().trimHoldLists(firstUsed);
-    _lidAlloc.trimHoldLists(firstUsed);
+    _gidToLidMap.getAllocator().reclaim_memory(firstUsed);
+    _lidAlloc.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 

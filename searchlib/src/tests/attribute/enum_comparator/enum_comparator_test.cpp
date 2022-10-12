@@ -149,7 +149,7 @@ TEST("requireThatComparatorWithTreeIsWorking")
     m.freeze();
     m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
-    m.trimHoldLists(g.get_oldest_used_generation());
+    m.reclaim_memory(g.get_oldest_used_generation());
 }
 
 TEST("requireThatFoldedLessIsWorking")

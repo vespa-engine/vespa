@@ -57,7 +57,7 @@ private:
  * that memory is held while it can be accessed by reader.
  *
  * The writer must update generation and call assign_generation and
- * trim_hold_lists as needed to free up memory no longer needed by any
+ * reclaim_memory as needed to free up memory no longer needed by any
  * readers.
  */
 class FixedSizeHashMap {
@@ -115,7 +115,7 @@ private:
     uint32_t          _num_shards;
 
     void assign_generation_slow(generation_t current_gen);
-    void trim_hold_lists_slow(generation_t first_used);
+    void reclaim_memory_slow(generation_t oldest_used_gen);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards);
@@ -149,9 +149,9 @@ public:
         }
     }
 
-    void trim_hold_lists(generation_t first_used) {
-        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - first_used) < 0) {
-            trim_hold_lists_slow(first_used);
+    void reclaim_memory(generation_t oldest_used_gen) {
+        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - oldest_used_gen) < 0) {
+            reclaim_memory_slow(oldest_used_gen);
         }
     }
 

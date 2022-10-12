@@ -53,13 +53,13 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::assign_genera
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::trim_hold_lists(generation_t firstUsed)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::reclaim_memory(generation_t oldest_used_gen)
 {
     if constexpr (has_btree_dictionary) {
-        this->_btree_dict.getAllocator().trimHoldLists(firstUsed);
+        this->_btree_dict.getAllocator().reclaim_memory(oldest_used_gen);
     }
     if constexpr (has_hash_dictionary) {
-        this->_hash_dict.trim_hold_lists(firstUsed);
+        this->_hash_dict.reclaim_memory(oldest_used_gen);
     }
 }
 

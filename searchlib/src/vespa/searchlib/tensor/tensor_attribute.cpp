@@ -112,7 +112,7 @@ TensorAttribute::onUpdateStat()
 void
 TensorAttribute::removeOldGenerations(generation_t firstUsed)
 {
-    _tensorStore.trimHoldLists(firstUsed);
+    _tensorStore.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 

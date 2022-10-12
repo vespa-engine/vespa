@@ -283,7 +283,7 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     EXPECT_TRUE(s.getBufferState(1).size() != 0);
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
     EXPECT_TRUE(s.getBufferState(3).size() != 0);
-    s.trimHoldLists(11);
+    s.reclaim_memory(11);
     EXPECT_TRUE(s.getBufferState(0).size() == 0);
     EXPECT_TRUE(s.getBufferState(1).size() != 0);
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
@@ -292,7 +292,7 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     s.switch_primary_buffer();
     EXPECT_EQ(0u, s.primary_buffer_id());
     EXPECT_EQ(0u, MyRef(s.addEntry(5)).bufferId());
-    s.trimHoldLists(41);
+    s.reclaim_memory(41);
     EXPECT_TRUE(s.getBufferState(0).size() != 0);
     EXPECT_TRUE(s.getBufferState(1).size() == 0);
     EXPECT_TRUE(s.getBufferState(2).size() == 0);
@@ -446,7 +446,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._freeBuffers--;
 
     // trim hold buffer
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
     m._allocElems -= MyRef::offsetSize();
     m._usedElems = 1;
     m._deadElems = 0;
@@ -485,7 +485,7 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     EXPECT_EQ(5 * sizeof(int), m.usedBytes());
     EXPECT_EQ(0 * sizeof(int), m.deadBytes());
     EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
 }
 
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
@@ -514,7 +514,7 @@ TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
     EXPECT_EQ(2 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
     s.assign_generation(100);
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
 }
 
 using IntGrowStore = GrowStore<int, EntryRefT<24>>;
@@ -636,7 +636,7 @@ TEST(DataStoreTest, can_set_memory_allocator)
         s.holdBuffer(0);
         s.assign_generation(10);
         EXPECT_EQ(AllocStats(3, 0), stats);
-        s.trimHoldLists(11);
+        s.reclaim_memory(11);
         EXPECT_EQ(AllocStats(3, 2), stats);
     }
     EXPECT_EQ(AllocStats(3, 3), stats);
@@ -694,7 +694,7 @@ void test_free_element_to_held_buffer(bool direct, bool before_hold_buffer)
         }
     }
     s.assign_generation(100);
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
 }
 
 }

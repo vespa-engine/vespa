@@ -130,7 +130,7 @@ void
 SingleValueNumericPostingAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
     SingleValueNumericEnumAttribute<B>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    _postingList.reclaim_memory(firstUsed);
 }
 
 template <typename B>

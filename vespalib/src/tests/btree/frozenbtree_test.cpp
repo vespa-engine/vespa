@@ -136,7 +136,7 @@ FrozenBTreeTest::freeTree(bool verbose)
     _allocator->freeze();
     _allocator->assign_generation(_generationHandler->getCurrentGeneration());
     _generationHandler->incGeneration();
-    _allocator->trimHoldLists(_generationHandler->get_oldest_used_generation());
+    _allocator->reclaim_memory(_generationHandler->get_oldest_used_generation());
     delete _tree;
     _tree = NULL;
     delete _allocator;

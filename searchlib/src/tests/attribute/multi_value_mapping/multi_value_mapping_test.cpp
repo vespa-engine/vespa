@@ -42,7 +42,7 @@ class MyAttribute : public search::NotImplementedAttribute
         setNumDocs(committedDocIdLimit);
     }
     virtual void removeOldGenerations(generation_t firstUsed) override {
-        _mvMapping.trimHoldLists(firstUsed);
+        _mvMapping.reclaim_memory(firstUsed);
     }
     virtual void onGenerationChange(generation_t generation) override {
         _mvMapping.assign_generation(generation - 1);
@@ -116,7 +116,7 @@ public:
         EXPECT_EQ(exp, std::vector<EntryT>(act.cbegin(), act.cend()));
     }
     void assign_generation(generation_t current_gen) { _mvMapping->assign_generation(current_gen); }
-    void trimHoldLists(generation_t firstUsed) { _mvMapping->trimHoldLists(firstUsed); }
+    void reclaim_memory(generation_t oldest_used_gen) { _mvMapping->reclaim_memory(oldest_used_gen); }
     void addDocs(uint32_t numDocs) {
         for (uint32_t i = 0; i < numDocs; ++i) {
             uint32_t doc = 0;
@@ -248,9 +248,9 @@ TEST_F(IntMappingTest, test_that_old_value_is_not_overwritten_while_held)
     assign_generation(10);
     assertArray({5}, old3);
     assertGet(3, {7});
-    trimHoldLists(10);
+    reclaim_memory(10);
     assertArray({5}, old3);
-    trimHoldLists(11);
+    reclaim_memory(11);
     assertArray({0}, old3);
 }
 

@@ -213,11 +213,11 @@ PredicateIndex::commit() {
 }
 
 void
-PredicateIndex::trimHoldLists(generation_t used_generation) {
-    _interval_index.trimHoldLists(used_generation);
-    _bounds_index.trimHoldLists(used_generation);
-    _interval_store.trimHoldLists(used_generation);
-    _zero_constraint_docs.getAllocator().trimHoldLists(used_generation);
+PredicateIndex::reclaim_memory(generation_t oldest_used_gen) {
+    _interval_index.reclaim_memory(oldest_used_gen);
+    _bounds_index.reclaim_memory(oldest_used_gen);
+    _interval_store.reclaim_memory(oldest_used_gen);
+    _zero_constraint_docs.getAllocator().reclaim_memory(oldest_used_gen);
 }
 
 void

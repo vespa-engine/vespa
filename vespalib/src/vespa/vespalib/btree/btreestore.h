@@ -332,10 +332,10 @@ public:
 
     // Inherit doc from DataStoreBase
     void
-    trimHoldLists(generation_t usedGen)
+    reclaim_memory(generation_t oldest_used_gen)
     {
-        _allocator.trimHoldLists(usedGen);
-        _store.trimHoldLists(usedGen);
+        _allocator.reclaim_memory(oldest_used_gen);
+        _store.reclaim_memory(oldest_used_gen);
     }
 
     // Inherit doc from DataStoreBase
