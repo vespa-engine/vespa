@@ -2,6 +2,7 @@
 package com.yahoo.security;
 
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
+import org.bouncycastle.jce.spec.IESParameterSpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -12,7 +13,6 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -37,25 +37,33 @@ import java.security.SecureRandom;
  */
 public class SharedKeyGenerator {
 
+    private static final int    AES_GCM_KEY_BITS      = 256;
     private static final int    AES_GCM_AUTH_TAG_BITS = 128;
     private static final String AES_GCM_ALGO_SPEC     = "AES/GCM/NoPadding";
-    private static final String ECIES_CIPHER_NAME     = "ECIES"; // TODO ensure SHA-256+AES. Needs BC version bump
+    private static final String ECIES_CIPHER_NAME     = "ECIESwithSHA256andAES-CBC";
+    protected static final int  ECIES_AES_CBC_IV_BITS = 128;
+    private static final int    ECIES_HMAC_BITS       = 256;
+    private static final int    ECIES_AES_KEY_BITS    = 256;
     private static final SecureRandom SHARED_CSPRNG   = new SecureRandom();
 
     public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, int keyId) {
         try {
             var keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(256, SHARED_CSPRNG);
+            keyGen.init(AES_GCM_KEY_BITS, SHARED_CSPRNG);
             var secretKey = keyGen.generateKey();
 
             var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
-            cipher.init(Cipher.ENCRYPT_MODE, receiverPublicKey);
+            byte[] iv = new byte[ECIES_AES_CBC_IV_BITS / 8];
+            SHARED_CSPRNG.nextBytes(iv);
+            var iesParamSpec = new IESParameterSpec(null, null, ECIES_HMAC_BITS, ECIES_AES_KEY_BITS, iv);
+
+            cipher.init(Cipher.ENCRYPT_MODE, receiverPublicKey, iesParamSpec);
             byte[] eciesPayload = cipher.doFinal(secretKey.getEncoded());
 
-            var sealedSharedKey = new SealedSharedKey(keyId, eciesPayload);
+            var sealedSharedKey = new SealedSharedKey(keyId, eciesPayload, iv);
             return new SecretSharedKey(secretKey, sealedSharedKey);
         } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                | IllegalBlockSizeException | BadPaddingException e) {
+                | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
     }
@@ -63,7 +71,8 @@ public class SharedKeyGenerator {
     public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
         try {
             var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
-            cipher.init(Cipher.DECRYPT_MODE, receiverPrivateKey);
+            var iesParamSpec = new IESParameterSpec(null, null, ECIES_HMAC_BITS, ECIES_AES_KEY_BITS, sealedKey.iv());
+            cipher.init(Cipher.DECRYPT_MODE, receiverPrivateKey, iesParamSpec);
             byte[] secretKey = cipher.doFinal(sealedKey.eciesPayload());
 
             return new SecretSharedKey(new SecretKeySpec(secretKey, "AES"), sealedKey);
@@ -71,7 +80,7 @@ public class SharedKeyGenerator {
             throw new IllegalArgumentException("Token integrity check failed; token is either corrupt or was " +
                                                "generated for a different public key");
         } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                | IllegalBlockSizeException | BadPaddingException e) {
+                | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
     }
@@ -88,7 +97,7 @@ public class SharedKeyGenerator {
         return new byte[] { 'h', 'e', 'r', 'e', 'B', 'd', 'r', 'a', 'g', 'o', 'n', 's' };
     }
 
-    private static Cipher makeAes256GcmCipher(SecretSharedKey secretSharedKey, int cipherMode) {
+    private static Cipher makeAesGcmCipher(SecretSharedKey secretSharedKey, int cipherMode) {
         try {
             var cipher  = Cipher.getInstance(AES_GCM_ALGO_SPEC);
             var gcmSpec = new GCMParameterSpec(AES_GCM_AUTH_TAG_BITS, fixed96BitIvForSingleUseKey());
@@ -101,20 +110,20 @@ public class SharedKeyGenerator {
     }
 
     /**
-     * Creates an AES-GCM-256 Cipher that can be used to encrypt arbitrary plaintext.
+     * Creates an AES-GCM Cipher that can be used to encrypt arbitrary plaintext.
      *
      * The given secret key MUST NOT be used to encrypt more than one plaintext.
      */
-    public static Cipher makeAes256GcmEncryptionCipher(SecretSharedKey secretSharedKey) {
-        return makeAes256GcmCipher(secretSharedKey, Cipher.ENCRYPT_MODE);
+    public static Cipher makeAesGcmEncryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeAesGcmCipher(secretSharedKey, Cipher.ENCRYPT_MODE);
     }
 
     /**
-     * Creates an AES-GCM-256 Cipher that can be used to decrypt ciphertext that was previously
+     * Creates an AES-GCM Cipher that can be used to decrypt ciphertext that was previously
      * encrypted with the given secret key.
      */
-    public static Cipher makeAes256GcmDecryptionCipher(SecretSharedKey secretSharedKey) {
-        return makeAes256GcmCipher(secretSharedKey, Cipher.DECRYPT_MODE);
+    public static Cipher makeAesGcmDecryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeAesGcmCipher(secretSharedKey, Cipher.DECRYPT_MODE);
     }
 
 }

@@ -62,9 +62,10 @@ public class SharedKeyTest {
         var receiverKeyPair = new KeyPair(receiverPublic, receiverPrivate);
 
         // Token generated for the above receiver public key, with the below expected shared secret (in hex)
-        var publicToken = "AQAAAQTAVVthmrVAbMgKt8hBc4xColmDmEeEAyPD-ZcPlRmeId9wBaZTTctwV3pwT3FyV0UtvX_7zrRId" +
-                          "3mNxvaru0tvFucd7mYY73Hi9d3j8qS6pN0bTTb1sw_dKYrR_0BXhEFE_py8uZnNxvV8-wHtBIAVXBk_4Q";
-        var expectedSharedSecret = "b1aded9dc19593baa08fe64f916dcbaf3328ec666d2e0c81b1f6f8af9794187b";
+        var publicToken = "AQAAAUfvuJpugUV3knQXwyP7afgEpDXT4JxaF-x7Ykirty2iwUqJv5UsGx78is5Vu4Mdln_mOVbAUv4dj" +
+                          "da7hvzKYNC3IpSMjFrTQ8ab-bEkMpc5tjss_Z7DaJzY4fUlw31Lhx39BMB5yQX0pVLMdFGp5F-_8z8CE" +
+                          "-7d9lkCDP9hPKiD77besjrBt_mEBadCd4oNONqc6zzhuQj4O5T9k_RC5VRV";
+        var expectedSharedSecret = "64e01295e736cb827e86cf0281385d5a0dcca217ec1b59f6609a06e2e9debf78";
 
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair.getPrivate());
@@ -92,7 +93,7 @@ public class SharedKeyTest {
     }
 
     static byte[] streamEncryptString(String data, SecretSharedKey secretSharedKey) throws IOException {
-        var cipher = SharedKeyGenerator.makeAes256GcmEncryptionCipher(secretSharedKey);
+        var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(secretSharedKey);
         var outStream = new ByteArrayOutputStream();
         try (var cipherStream = new CipherOutputStream(outStream, cipher)) {
             cipherStream.write(data.getBytes(StandardCharsets.UTF_8));
@@ -102,7 +103,7 @@ public class SharedKeyTest {
     }
 
     static String streamDecryptString(byte[] encrypted, SecretSharedKey secretSharedKey) throws IOException {
-        var cipher   = SharedKeyGenerator.makeAes256GcmDecryptionCipher(secretSharedKey);
+        var cipher   = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretSharedKey);
         var inStream = new ByteArrayInputStream(encrypted);
         var total    = ByteBuffer.allocate(encrypted.length); // Assume decrypted form can't be _longer_
         byte[] tmp   = new byte[8]; // short buf to test chunking
