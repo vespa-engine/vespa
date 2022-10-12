@@ -167,7 +167,7 @@ public class CoredumpHandler {
      */
     String getMetadata(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) throws IOException {
         UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
-        if (!Files.exists(metadataPath.toPath())) {
+        if (!metadataPath.exists()) {
             ContainerPath coredumpFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
             Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFile));
             metadata.putAll(nodeAttributesSupplier.get());
