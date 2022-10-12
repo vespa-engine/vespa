@@ -61,12 +61,7 @@ public class CuratorWrapperTest {
             assertEquals(List.of(), curator.list(Path.createRoot()));
 
             try (AutoCloseable lock = curator.lock(path, Duration.ofSeconds(1))) {
-                assertEquals(List.of("user", "path"), wrapped.getChildren(Path.createRoot()));
                 assertEquals(List.of("path"), wrapped.getChildren(CuratorWrapper.userRoot));
-            }
-
-            try (AutoCloseable lock = curator.lock(path, Duration.ofSeconds(1))) {
-                // Both previous locks were released.
             }
         }
     }

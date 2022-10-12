@@ -101,11 +101,7 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
 
     @Override
     public AutoCloseable lock(Path path, Duration timeout) {
-        // TODO jonmv: clear up
-        Lock current, old = curator.lock(path, timeout);
-        try { current = curator.lock(userRoot.append(path), timeout); }
-        catch (Throwable t) { old.close(); throw t; }
-        return () -> { try(old) { current.close(); } };
+        return curator.lock(userRoot.append(path), timeout);
     }
 
     @Override
