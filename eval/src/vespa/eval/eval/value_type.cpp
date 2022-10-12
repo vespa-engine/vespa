@@ -191,6 +191,18 @@ ValueType::is_dense() const
     return true;
 }
 
+bool
+ValueType::is_mixed() const
+{
+    bool seen_mapped = false;
+    bool seen_indexed = false;
+    for (const auto &dim : dimensions()) {
+        seen_mapped |= dim.is_mapped();
+        seen_indexed |= dim.is_indexed();
+    }
+    return (seen_mapped && seen_indexed);
+}
+
 size_t
 ValueType::count_indexed_dimensions() const
 {

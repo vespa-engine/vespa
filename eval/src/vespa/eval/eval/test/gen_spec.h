@@ -150,6 +150,7 @@ public:
         _seq = seq_in;
         return *this;
     }
+    GenSpec &seq(const std::vector<double> &numbers) { return seq(Seq({numbers})); }
     bool bad_scalar() const;
     ValueType type() const;
     TensorSpec gen() const;
