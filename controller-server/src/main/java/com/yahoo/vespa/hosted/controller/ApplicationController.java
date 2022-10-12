@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
@@ -166,10 +167,11 @@ public class ApplicationController {
             int count = 0;
             for (TenantAndApplicationId id : curator.readApplicationIds()) {
                 lockApplicationIfPresent(id, application -> {
-                    for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                        if ( ! application.get().instances().containsKey(instance))
-                            application = withNewInstance(application, id.instance(instance));
-
+                    for (var declaredInstance : application.get().deploymentSpec().instances())
+                        if ( ! application.get().instances().containsKey(declaredInstance.name()))
+                            application = withNewInstance(application,
+                                                          id.instance(declaredInstance.name()),
+                                                          declaredInstance.tags());
                     store(application);
                 });
                 count++;
@@ -451,14 +453,14 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the instance already exists, or has an invalid instance name.
      */
-    public void createInstance(ApplicationId id) {
+    public void createInstance(ApplicationId id, Tags tags) {
         lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            store(withNewInstance(application, id));
+            store(withNewInstance(application, id, tags));
         });
     }
 
     /** Returns given application with a new instance */
-    public LockedApplication withNewInstance(LockedApplication application, ApplicationId instance) {
+    public LockedApplication withNewInstance(LockedApplication application, ApplicationId instance, Tags tags) {
         if (instance.instance().isTester())
             throw new IllegalArgumentException("'" + instance + "' is a tester application!");
         InstanceId.validate(instance.instance().value());
@@ -469,7 +471,7 @@ public class ApplicationController {
             throw new IllegalArgumentException("Could not create '" + instance + "': Instance " + dashToUnderscore(instance) + " already exists");
 
         log.info("Created " + instance);
-        return application.withNewInstance(instance.instance());
+        return application.withNewInstance(instance.instance(), tags);
     }
 
     /** Deploys an application package for an existing application instance. */
@@ -496,10 +498,11 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
             AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
+            Instance instance;
             try (Mutex lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                 application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
-                Instance instance = application.get().require(job.application().instance());
+                instance = application.get().require(job.application().instance());
 
                 if (   ! applicationPackage.trustedCertificates().isEmpty()
                     &&   run.testerCertificate().isPresent())
@@ -512,7 +515,7 @@ public class ApplicationController {
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
+            ActivateResult result = deploy(job.application(), instance.tags(), applicationPackage, zone, platform, containerEndpoints,
                                            endpointCertificateMetadata, run.isDryRun());
 
             endpointCertificateMetadata.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
@@ -543,9 +546,9 @@ public class ApplicationController {
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
-                                           instance -> instance.withNewDeployment(zone, revision, platform,
-                                                                                  clock.instant(), warningsFrom(result),
-                                                                                  quotaUsage))));
+                                           i -> i.withNewDeployment(zone, revision, platform,
+                                                                    clock.instant(), warningsFrom(result),
+                                                                    quotaUsage))));
             return result;
         }
     }
@@ -557,16 +560,19 @@ public class ApplicationController {
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
 
-        var existingInstances = application.get().instances().keySet();
-        var declaredInstances = applicationPackage.deploymentSpec().instanceNames();
-        for (var name : declaredInstances)
-            if ( ! existingInstances.contains(name))
-                application = withNewInstance(application, application.get().id().instance(name));
+        var existingInstances = application.get().instances();
+        var declaredInstances = applicationPackage.deploymentSpec().instances();
+        for (var declaredInstance : declaredInstances) {
+            if ( ! existingInstances.containsKey(declaredInstance.name()))
+                application = withNewInstance(application, application.get().id().instance(declaredInstance.name()), declaredInstance.tags());
+            else if ( ! existingInstances.get(declaredInstance.name()).tags().equals(declaredInstance.tags()))
+                application = application.with(declaredInstance.name(), instance -> instance.with(declaredInstance.tags()));
+        }
 
         // Delete zones not listed in DeploymentSpec, if allowed
         // We do this at deployment time for externally built applications, and at submission time
         // for internally built ones, to be able to return a validation failure message when necessary
-        for (InstanceName name : existingInstances) {
+        for (InstanceName name : existingInstances.keySet()) {
             application = withoutDeletedDeployments(application, name);
         }
 
@@ -599,7 +605,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), false);
+            return deploy(application.id(), Tags.empty(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), false);
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -607,10 +613,10 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), false);
+        return deploy(tester.id(), Tags.empty(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), false);
     }
 
-    private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
+    private ActivateResult deploy(ApplicationId application, Tags tags, ApplicationPackage applicationPackage,
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                                   boolean dryRun) {
@@ -646,7 +652,7 @@ public class ApplicationController {
                                                                    .collect(toList());
             Optional<CloudAccount> cloudAccount = decideCloudAccountOf(deployment, applicationPackage.deploymentSpec());
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
+                    configServer.deploy(new DeploymentData(application, tags, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
                                                            deploymentQuota, tenantSecretStores, operatorCertificates,
                                                            cloudAccount, dryRun));

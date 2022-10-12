@@ -17,6 +17,7 @@ import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.HexDump;
@@ -138,6 +139,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                        deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
+                                       deployData.getTags(),
                                        computeCheckSum(appDir),
                                        deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
@@ -484,6 +486,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                                       ApplicationId.from(TenantName.defaultName(),
                                                                                          ApplicationName.from(originalAppDir),
                                                                                          InstanceName.defaultName()),
+                                                                      Tags.empty(),
                                                                       "",
                                                                       0L,
                                                                       0L);
@@ -583,7 +586,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                     inputXml,
                                                     metaData.getApplicationId().instance(),
                                                     zone.environment(),
-                                                    zone.region())
+                                                    zone.region(),
+                                                    metaData.getTags())
                     .run();
 
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {

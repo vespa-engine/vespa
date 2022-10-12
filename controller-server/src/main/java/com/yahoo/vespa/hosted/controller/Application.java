@@ -65,7 +65,7 @@ public class Application {
              Set.of(), OptionalLong.empty(), RevisionHistory.empty(), List.of());
     }
 
-    // DO NOT USE! For serialization purposes, only.
+    // Do not use directly - edit through LockedApplication.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
@@ -230,11 +230,8 @@ public class Application {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (! (o instanceof Application)) return false;
-
-        Application that = (Application) o;
-
-        return id.equals(that.id);
+        if (! (o instanceof Application other)) return false;
+        return id.equals(other.id);
     }
 
     @Override

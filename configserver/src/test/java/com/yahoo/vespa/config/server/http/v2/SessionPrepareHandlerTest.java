@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeAllocationException;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
@@ -187,7 +188,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void require_that_preparing_with_multiple_tenants_work() throws Exception {
+    public void prepare_with_multiple_tenants() throws Exception {
         SessionHandler handler = createHandler();
 
         TenantName defaultTenant = TenantName.from("test2");
@@ -206,7 +207,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         assertEquals(sessionId, sessionId2);  // Want to test when they are equal (but for different tenants)
 
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId2 +
-                "/prepared?applicationName=" + applicationName;
+                     "/prepared?applicationName=" + applicationName;
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertEquals(SessionHandlerTest.getRenderedString(response), OK, response.getStatus());
@@ -214,7 +215,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         ApplicationId applicationId3 = ApplicationId.from(tenant.value(), applicationName, "quux");
         long sessionId3 = createSession(applicationId3);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId3 +
-                "/prepared?applicationName=" + applicationName + "&instance=quux";
+                     "/prepared?applicationName=" + applicationName + "&instance=quux";
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertEquals(SessionHandlerTest.getRenderedString(response), OK, response.getStatus());
@@ -324,7 +325,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private long createSession(ApplicationId applicationId) {
-        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
+        return applicationRepository.createSession(applicationId, Tags.empty(), timeoutBudget, app, new BaseDeployLogger());
     }
 
     private static class FailingSessionPrepareHandler extends SessionPrepareHandler {

@@ -16,6 +16,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -202,7 +203,8 @@ public class ApplicationPackage {
                                     new InputStreamReader(new ByteArrayInputStream(servicesXml.content()), UTF_8),
                                     InstanceName.defaultName(),
                                     Environment.prod,
-                                    RegionName.defaultName())
+                                    RegionName.defaultName(),
+                                    Tags.empty())
                         .run(); // Populates the zip archive cache with files that would be included.
             }
             catch (IllegalArgumentException e) {

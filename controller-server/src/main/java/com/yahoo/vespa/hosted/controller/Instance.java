@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 public class Instance {
 
     private final ApplicationId id;
+    private final Tags tags;
     private final Map<ZoneId, Deployment> deployments;
     private final List<AssignedRotation> rotations;
     private final RotationStatus rotationStatus;
@@ -47,20 +49,25 @@ public class Instance {
     private final Change change;
 
     /** Creates an empty instance */
-    public Instance(ApplicationId id) {
-        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY, Change.empty());
+    public Instance(ApplicationId id, Tags tags) {
+        this(id, tags, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY, Change.empty());
     }
 
     /** Creates an empty instance*/
-    public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
+    public Instance(ApplicationId id, Tags tags, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
                     List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.tags = Objects.requireNonNull(tags, "tags cannot be null");
         this.deployments = Objects.requireNonNull(deployments, "deployments cannot be null").stream()
                                   .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
         this.jobPauses = Map.copyOf(Objects.requireNonNull(jobPauses, "deploymentJobs cannot be null"));
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
         this.change = Objects.requireNonNull(change, "change cannot be null");
+    }
+
+    public Instance with(Tags tags) {
+        return new Instance(id, tags, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance withNewDeployment(ZoneId zone, RevisionId revision, Version version,
@@ -87,7 +94,7 @@ public class Instance {
         else
             jobPauses.remove(jobType);
 
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
+        return new Instance(id, tags, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance recordActivityAt(Instant instant, ZoneId zone) {
@@ -118,15 +125,15 @@ public class Instance {
     }
 
     public Instance with(List<AssignedRotation> assignedRotations) {
-        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus, change);
+        return new Instance(id, tags, deployments.values(), jobPauses, assignedRotations, rotationStatus, change);
     }
 
     public Instance with(RotationStatus rotationStatus) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
+        return new Instance(id, tags, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance withChange(Change change) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
+        return new Instance(id, tags, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     private Instance with(Deployment deployment) {
@@ -136,12 +143,14 @@ public class Instance {
     }
 
     private Instance with(Map<ZoneId, Deployment> deployments) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
+        return new Instance(id, tags, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public ApplicationId id() { return id; }
 
     public InstanceName name() { return id.instance(); }
+
+    public Tags tags() { return tags; }
 
     /** Returns an immutable map of the current deployments of this */
     public Map<ZoneId, Deployment> deployments() { return deployments; }

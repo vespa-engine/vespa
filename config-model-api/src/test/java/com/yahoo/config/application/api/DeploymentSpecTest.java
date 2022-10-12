@@ -7,6 +7,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -130,6 +131,29 @@ public class DeploymentSpecTest {
         assertEquals(0, spec.requireInstance("default").minRisk());
         assertEquals(0, spec.requireInstance("default").maxRisk());
         assertEquals(8, spec.requireInstance("default").maxIdleHours());
+    }
+
+    @Test
+    public void specWithTags() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='a' tags='tag1 tag2'>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "   <instance id='b' tags='tag3'>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Tags.fromString("tag1 tag2"), spec.requireInstance("a").tags());
+        assertEquals(Tags.fromString("tag3"), spec.requireInstance("b").tags());
     }
 
     @Test

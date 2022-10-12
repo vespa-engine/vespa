@@ -2,6 +2,7 @@
 package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -9,6 +10,9 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Metadata about an application package.
@@ -21,32 +25,40 @@ public class ApplicationMetaData {
     private final long deployTimestamp;
     private final boolean internalRedeploy;
     private final ApplicationId applicationId;
+    private final Tags tags;
     private final String checksum;
     private final long generation;
     private final long previousActiveGeneration;
 
     public ApplicationMetaData(String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
-                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
-        this("unknown", deployedFromDir, deployTimestamp, internalRedeploy, applicationId, checksum, generation, previousActiveGeneration);
-    }
-
-    @Deprecated
-    // TODO: Remove in Vespa 9
-    public ApplicationMetaData(String ignored, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
-                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
+                               ApplicationId applicationId, Tags tags,
+                               String checksum, Long generation, long previousActiveGeneration) {
         this.deployedFromDir = deployedFromDir;
         this.deployTimestamp = deployTimestamp;
         this.internalRedeploy = internalRedeploy;
         this.applicationId = applicationId;
+        this.tags = tags;
         this.checksum = checksum;
         this.generation = generation;
         this.previousActiveGeneration = previousActiveGeneration;
     }
 
+    @Deprecated // TODO: Remove on Vespa 9
+    public ApplicationMetaData(String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
+        this(deployedFromDir, deployTimestamp, internalRedeploy, applicationId, Tags.empty(), checksum, generation, previousActiveGeneration);
+    }
+
+    @Deprecated // TODO: Remove on Vespa 9
+    public ApplicationMetaData(String ignored, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
+        this(deployedFromDir, deployTimestamp, internalRedeploy, applicationId, Tags.empty(), checksum, generation, previousActiveGeneration);
+    }
+
     /**
      * Gets the user who deployed the application.
      *
-     * @return user name for the user who ran "deploy-application"
+     * @return username of the user who ran "deploy-application"
      */
     @Deprecated // TODO: Remove in Vespa 9
     public String getDeployedByUser() { return "unknown"; }
@@ -60,6 +72,8 @@ public class ApplicationMetaData {
     public String getDeployPath() { return deployedFromDir; }
 
     public ApplicationId getApplicationId() { return applicationId; }
+
+    public Tags getTags() { return tags; }
 
     /**
      * Gets the time the application was deployed.
@@ -103,6 +117,7 @@ public class ApplicationMetaData {
                                            deploy.field("timestamp").asLong(),
                                            booleanField("internalRedeploy", false, deploy),
                                            ApplicationId.fromSerializedForm(app.field("id").asString()),
+                                           Tags.fromString(deploy.field("tags").asString()),
                                            app.field("checksum").asString(),
                                            app.field("generation").asLong(),
                                            app.field("previousActiveGeneration").asLong());
@@ -118,6 +133,7 @@ public class ApplicationMetaData {
         deploy.setString("from", deployedFromDir);
         deploy.setLong("timestamp", deployTimestamp);
         deploy.setBool("internalRedeploy", internalRedeploy);
+        deploy.setString("tags", tags.asString());
         Cursor app = meta.setObject("application");
         app.setString("id", applicationId.serializedForm());
         app.setString("checksum", checksum);

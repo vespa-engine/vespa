@@ -24,6 +24,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
@@ -157,6 +158,7 @@ public class SessionPreparer {
         final PrepareParams params;
 
         final ApplicationId applicationId;
+        final Tags tags;
 
         /** The repository part of docker image to be used for this deployment */
         final Optional<DockerImage> dockerImageRepository;
@@ -188,6 +190,7 @@ public class SessionPreparer {
             this.applicationPackage = applicationPackage;
             this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();
+            this.tags = params.tags();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
@@ -224,7 +227,7 @@ public class SessionPreparer {
             if (! timeoutBudget.hasTimeLeft(step)) {
                 String used = timeoutBudget.timesUsed();
                 throw new UncheckedTimeoutException("prepare timed out " + used + " after " + step +
-                        " step (timeout " + timeoutBudget.timeout() + "): " + applicationId);
+                                                    " step (timeout " + timeoutBudget.timeout() + "): " + applicationId);
             }
         }
 
@@ -248,7 +251,7 @@ public class SessionPreparer {
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(zone, logger);
             } catch (IOException | RuntimeException e) {
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
-                                                           ", session " + sessionZooKeeperClient.sessionId(), e);
+                                                   ", session " + sessionZooKeeperClient.sessionId(), e);
             }
             checkTimeout("preprocess");
         }
@@ -318,10 +321,11 @@ public class SessionPreparer {
         void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData) {
             try {
                 new XmlPreProcessor(appDir,
-                        inputXml,
-                        metaData.getApplicationId().instance(),
-                        zone.environment(),
-                        zone.region())
+                                    inputXml,
+                                    metaData.getApplicationId().instance(),
+                                    zone.environment(),
+                                    zone.region(),
+                                    metaData.getTags())
                         .run();
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
                 throw new RuntimeException(e);
@@ -346,6 +350,7 @@ public class SessionPreparer {
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
+                                  tags,
                                   filereference,
                                   dockerImageRepository,
                                   vespaVersion,
@@ -387,6 +392,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
+                                       Tags tags,
                                        FileReference fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
@@ -403,6 +409,7 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
+            zooKeeperClient.writeTags(tags);
             zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);

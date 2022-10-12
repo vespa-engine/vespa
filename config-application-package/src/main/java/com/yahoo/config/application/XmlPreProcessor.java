@@ -5,6 +5,7 @@ import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A preprocessor for services.xml files that handles deploy:environment, deploy:region, preprocess:properties, preprocess:include
@@ -38,22 +40,53 @@ public class XmlPreProcessor {
     private final InstanceName instance;
     private final Environment environment;
     private final RegionName region;
+    private final Tags tags;
     private final List<PreProcessor> chain;
 
-    public XmlPreProcessor(File applicationDir, File xmlInput, InstanceName instance, Environment environment, RegionName region) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), instance, environment, region);
+    // TODO: Remove after November 2022
+    public XmlPreProcessor(File applicationDir,
+                           File xmlInput,
+                           InstanceName instance,
+                           Environment environment,
+                           RegionName region) throws IOException {
+        this(applicationDir, new FileReader(xmlInput), instance, environment, region, Tags.empty());
     }
 
-    public XmlPreProcessor(File applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
-        this(FileSystemWrapper.getDefault(applicationDir.toPath()).wrap(applicationDir.toPath()), xmlInput, instance, environment, region);
+    public XmlPreProcessor(File applicationDir,
+                           File xmlInput,
+                           InstanceName instance,
+                           Environment environment,
+                           RegionName region,
+                           Tags tags) throws IOException {
+        this(applicationDir, new FileReader(xmlInput), instance, environment, region, tags);
     }
 
-    public XmlPreProcessor(FileWrapper applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
+    public XmlPreProcessor(File applicationDir,
+                           Reader xmlInput,
+                           InstanceName instance,
+                           Environment environment,
+                           RegionName region,
+                           Tags tags) {
+        this(FileSystemWrapper.getDefault(applicationDir.toPath()).wrap(applicationDir.toPath()),
+             xmlInput,
+             instance,
+             environment,
+             region,
+             tags);
+    }
+
+    public XmlPreProcessor(FileWrapper applicationDir,
+                           Reader xmlInput,
+                           InstanceName instance,
+                           Environment environment,
+                           RegionName region,
+                           Tags tags) {
         this.applicationDir = applicationDir;
         this.xmlInput = xmlInput;
         this.instance = instance;
         this.environment = environment;
         this.region = region;
+        this.tags = tags;
         this.chain = setupChain();
     }
 
@@ -73,7 +106,7 @@ public class XmlPreProcessor {
     private List<PreProcessor> setupChain() {
         List<PreProcessor> chain = new ArrayList<>();
         chain.add(new IncludeProcessor(applicationDir));
-        chain.add(new OverrideProcessor(instance, environment, region));
+        chain.add(new OverrideProcessor(instance, environment, region, tags));
         chain.add(new PropertiesProcessor());
         chain.add(new ValidationProcessor()); // must be last in chain
         return chain;
