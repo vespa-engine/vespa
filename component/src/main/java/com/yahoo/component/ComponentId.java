@@ -16,19 +16,11 @@ public final class ComponentId implements Comparable<ComponentId> {
     private final Spec<Version> spec;
     private final boolean anonymous;
 
-    private static AtomicInteger threadIdCounter = new AtomicInteger(0);
+    private static final AtomicInteger threadIdCounter = new AtomicInteger(0);
 
-    private static ThreadLocal<Counter> threadLocalUniqueId = new ThreadLocal<Counter>() {
-        @Override protected Counter initialValue() {
-            return new Counter();
-        }
-    };
+    private static final ThreadLocal<Counter> threadLocalUniqueId = ThreadLocal.withInitial(Counter::new);
 
-    private static ThreadLocal<String> threadId = new ThreadLocal<String>() {
-        @Override protected String initialValue() {
-            return new String("_" + threadIdCounter.getAndIncrement() + "_");
-        }
-    };
+    private static final ThreadLocal<String> threadId = ThreadLocal.withInitial(() -> "_" + threadIdCounter.getAndIncrement() + "_");
 
     /** Precomputed string value */
     private final String stringValue;
@@ -97,9 +89,8 @@ public final class ComponentId implements Comparable<ComponentId> {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof ComponentId)) return false;
+        if ( ! (o instanceof ComponentId c)) return false;
 
-        ComponentId c = (ComponentId) o;
         if (isAnonymous() || c.isAnonymous()) // TODO: Stop doing this
             return false;
 
@@ -221,7 +212,7 @@ public final class ComponentId implements Comparable<ComponentId> {
         return new ComponentId(splitter.name, Version.fromString(splitter.version), splitter.namespace, true);
     }
 
-    private final class VersionHandler implements Spec.VersionHandler<Version> {
+    private static final class VersionHandler implements Spec.VersionHandler<Version> {
 
         @Override
         public Version emptyVersion() {

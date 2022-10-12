@@ -18,14 +18,10 @@ import java.util.function.Consumer;
  */
 public class MapConverter {
 
-    public static void convertMapTensors(Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
-        GrowableByteBuffer buffer = null;
+    public static void convertMapTensors(GrowableByteBuffer buffer, Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
             if (value instanceof Tensor tensor) {
-                if (buffer == null) {
-                    buffer = new GrowableByteBuffer(4096);
-                }
                 buffer.clear();
                 TypedBinaryFormat.encode(tensor, buffer);
                 inserter.accept(TensorProperty.newBuilder().setName(entry.getKey()).setValue(ByteString.copyFrom(buffer.getByteBuffer().flip())));
@@ -51,10 +47,10 @@ public class MapConverter {
         }
     }
 
-    public static void convertMultiMap(Map<String, List<Object>> map,
+    public static void convertMultiMap(GrowableByteBuffer buffer,
+                                       Map<String, List<Object>> map,
                                        Consumer<StringProperty.Builder> stringInserter,
                                        Consumer<TensorProperty.Builder> tensorInserter) {
-        GrowableByteBuffer buffer = null;
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();
@@ -62,9 +58,6 @@ public class MapConverter {
                 for (var value : entry.getValue()) {
                     if (value != null) {
                         if (value instanceof Tensor tensor) {
-                            if (buffer == null) {
-                                buffer = new GrowableByteBuffer(4096);
-                            }
                             buffer.clear();
                             TypedBinaryFormat.encode(tensor, buffer);
                             tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(buffer.getByteBuffer().flip())));
