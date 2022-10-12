@@ -14,6 +14,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 
@@ -39,11 +40,12 @@ public class SharedKeyGenerator {
     private static final int    AES_GCM_AUTH_TAG_BITS = 128;
     private static final String AES_GCM_ALGO_SPEC     = "AES/GCM/NoPadding";
     private static final String ECIES_CIPHER_NAME     = "ECIES"; // TODO ensure SHA-256+AES. Needs BC version bump
+    private static final SecureRandom SHARED_CSPRNG   = new SecureRandom();
 
     public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, int keyId) {
         try {
             var keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(256, new SecureRandom());
+            keyGen.init(256, SHARED_CSPRNG);
             var secretKey = keyGen.generateKey();
 
             var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
@@ -58,10 +60,10 @@ public class SharedKeyGenerator {
         }
     }
 
-    public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, KeyPair receiverKeyPair) {
+    public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
         try {
             var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
-            cipher.init(Cipher.DECRYPT_MODE, receiverKeyPair.getPrivate());
+            cipher.init(Cipher.DECRYPT_MODE, receiverPrivateKey);
             byte[] secretKey = cipher.doFinal(sealedKey.eciesPayload());
 
             return new SecretSharedKey(new SecretKeySpec(secretKey, "AES"), sealedKey);

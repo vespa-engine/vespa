@@ -36,7 +36,7 @@ public class SharedKeyTest {
         var publicToken = myShared.sealedSharedKey().toTokenString();
 
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
-        var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair);
+        var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair.getPrivate());
 
         assertArrayEquals(myShared.secretKey().getEncoded(), theirShared.secretKey().getEncoded());
     }
@@ -67,7 +67,7 @@ public class SharedKeyTest {
         var expectedSharedSecret = "b1aded9dc19593baa08fe64f916dcbaf3328ec666d2e0c81b1f6f8af9794187b";
 
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
-        var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair);
+        var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair.getPrivate());
 
         assertEquals(expectedSharedSecret, Hex.toHexString(theirShared.secretKey().getEncoded()));
     }
@@ -78,7 +78,7 @@ public class SharedKeyTest {
         var eveKeyPair   = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         var bobShared    = SharedKeyGenerator.generateForReceiverPublicKey(aliceKeyPair.getPublic(), 1);
         assertThrows(IllegalArgumentException.class, // TODO consider distinct exception class
-                     () -> SharedKeyGenerator.fromSealedKey(bobShared.sealedSharedKey(), eveKeyPair));
+                     () -> SharedKeyGenerator.fromSealedKey(bobShared.sealedSharedKey(), eveKeyPair.getPrivate()));
     }
 
     @Test
