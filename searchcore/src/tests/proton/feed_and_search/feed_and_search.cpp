@@ -3,6 +3,8 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
@@ -10,8 +12,9 @@
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/query/base.h>
@@ -31,6 +34,7 @@ LOG_SETUP("feed_and_search_test");
 using document::DataType;
 using document::Document;
 using document::FieldValue;
+using document::StringFieldValue;
 using search::DocumentIdT;
 using search::FlushToken;
 using search::TuneFileIndexing;
@@ -44,9 +48,10 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
-using search::index::DocBuilder;
+using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
+using search::index::StringFieldBuilder;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
 using search::query::SimpleStringTerm;
@@ -113,14 +118,13 @@ Schema getSchema() {
     return schema;
 }
 
-Document::UP buildDocument(DocBuilder & doc_builder, int id,
+Document::UP buildDocument(EmptyDocBuilder & doc_builder, int id,
                            const string &word) {
     ostringstream ost;
     ost << "id:ns:searchdocument::" << id;
-    doc_builder.startDocument(ost.str());
-    doc_builder.startIndexField(field_name)
-        .addStr(noise).addStr(word).endField();
-    return doc_builder.endDocument();
+    auto doc = doc_builder.make_document(ost.str());
+    doc->setValue(field_name, StringFieldBuilder(doc_builder).word(noise).space().word(word).build());
+    return doc;
 }
 
 // Performs a search using a Searchable.
@@ -165,7 +169,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
     MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
-    DocBuilder doc_builder(schema);
+    EmptyDocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
     memory_index.insertDocument(doc_id1, *doc, {});

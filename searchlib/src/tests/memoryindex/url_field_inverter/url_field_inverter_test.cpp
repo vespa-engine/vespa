@@ -1,11 +1,21 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/memoryindex/url_field_inverter.h>
+#include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/searchlib/index/schema_index_fields.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
-#include <vespa/searchlib/memoryindex/url_field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
@@ -14,6 +24,10 @@
 namespace search {
 
 using document::Document;
+using document::ArrayFieldValue;
+using document::StructFieldValue;
+using document::UrlDataType;
+using document::WeightedSetFieldValue;
 using index::schema::CollectionType;
 using index::schema::DataType;
 
@@ -26,160 +40,88 @@ namespace {
 const vespalib::string url = "url";
 
 Document::UP
-makeDoc10Single(DocBuilder &b)
+makeDoc10Single(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    b.startIndexField("url").
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("81").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        addTermAnnotation("altfluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("4").
-        endSubField().
-        endField();
-    return b.endDocument();
+    auto doc = b.make_document("id:ns:searchdocument::10");
+    StructFieldValue url_value(b.get_data_type("url"));
+    StringFieldBuilder sfb(b);
+    sfb.url_mode(true);
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:81/fluke?ab=2#4").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("81").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").alt_word("altfluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("4").build());
+    doc->setValue("url", url_value);
+    return doc;
 }
 
 Document::UP
-makeDoc10Array(DocBuilder &b)
+makeDoc10Array(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    b.startIndexField("url").
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        addTermAnnotation("altfluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("8").
-        endSubField().
-        endElement().
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:82/fluke?ab=2#9").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("9").
-        endSubField().
-        endElement().
-        endField();
-    return b.endDocument();
+    auto doc = b.make_document("id:ns:searchdocument::10");
+    StringFieldBuilder sfb(b);
+    sfb.url_mode(true);
+    ArrayFieldValue url_array(b.get_data_type("Array<url>"));
+    StructFieldValue url_value(b.get_data_type("url"));
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:82/fluke?ab=2#8").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("82").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").alt_word("altfluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("8").build());
+    url_array.add(url_value);
+    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:82/fluke?ab=2#9").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("fragment", sfb.tokenize("9").build());
+    url_array.add(url_value);
+    doc->setValue("url", url_array);
+    return doc;
 }
 
 Document::UP
-makeDoc10WeightedSet(DocBuilder &b)
+makeDoc10WeightedSet(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    b.startIndexField("url").
-        startElement(4).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("83").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        addTermAnnotation("altfluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("12").
-        endSubField().
-        endElement().
-        startElement(7).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:85/fluke?ab=2#13").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("85").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("13").
-        endSubField().
-        endElement().
-        endField();
-    return b.endDocument();
+    auto doc = b.make_document("id:ns:searchdocument::10");
+    StringFieldBuilder sfb(b);
+    sfb.url_mode(true);
+    WeightedSetFieldValue url_wset(b.get_data_type("WeightedSet<url>"));
+    StructFieldValue url_value(b.get_data_type("url"));
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:83/fluke?ab=2#12").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("83").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").alt_word("altfluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("12").build());
+    url_wset.add(url_value, 4);
+    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:85/fluke?ab=2#13").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
+    url_value.setValue("port", sfb.tokenize("85").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("13").build());
+    url_wset.add(url_value, 7);
+    doc->setValue("url", url_wset);
+    return doc;
 }
 
 Document::UP
-makeDoc10Empty(DocBuilder &b)
+makeDoc10Empty(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    return b.endDocument();
+    return b.make_document("id:ns:searchdocument::10");
 }
 
 }
 
 struct UrlFieldInverterTest : public ::testing::Test {
     Schema _schema;
-    DocBuilder _b;
+    EmptyDocBuilder _b;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserterBackend _inserter_backend;
@@ -195,9 +137,10 @@ struct UrlFieldInverterTest : public ::testing::Test {
         return schema;
     }
 
-    UrlFieldInverterTest(Schema::CollectionType collectionType)
+    UrlFieldInverterTest(Schema::CollectionType collectionType,
+                         EmptyDocBuilder::AddFieldsType add_fields)
         : _schema(makeSchema(collectionType)),
-          _b(_schema),
+          _b(add_fields),
           _word_store(),
           _remover(_word_store),
           _inserter_backend(),
@@ -250,16 +193,32 @@ struct UrlFieldInverterTest : public ::testing::Test {
 
 UrlFieldInverterTest::~UrlFieldInverterTest() = default;
 
+EmptyDocBuilder::AddFieldsType
+add_single_url = [](auto& header) {
+                     header.addField("url", UrlDataType::getInstance().getId()); };
+
+EmptyDocBuilder::AddFieldsType
+add_array_url = [](auto& header) {
+                    using namespace document::config_builder;
+                    header.addField("url", Array(UrlDataType::getInstance().getId())); };
+
+EmptyDocBuilder::AddFieldsType
+add_wset_url = [](auto& header) {
+                    using namespace document::config_builder;
+                    header.addField("url", Wset(UrlDataType::getInstance().getId())); };
+
+
+
 struct SingleInverterTest : public UrlFieldInverterTest {
-    SingleInverterTest() : UrlFieldInverterTest(CollectionType::SINGLE) {}
+    SingleInverterTest() : UrlFieldInverterTest(CollectionType::SINGLE, add_single_url) {}
 };
 
 struct ArrayInverterTest : public UrlFieldInverterTest {
-    ArrayInverterTest() : UrlFieldInverterTest(CollectionType::ARRAY) {}
+    ArrayInverterTest() : UrlFieldInverterTest(CollectionType::ARRAY, add_array_url) {}
 };
 
 struct WeightedSetInverterTest : public UrlFieldInverterTest {
-    WeightedSetInverterTest() : UrlFieldInverterTest(CollectionType::WEIGHTEDSET) {}
+    WeightedSetInverterTest() : UrlFieldInverterTest(CollectionType::WEIGHTEDSET, add_wset_url) {}
 };
 
 

@@ -5,7 +5,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 struct HandlerTest : public ::testing::Test {
-    DocBuilder _docBuilder;
+    EmptyDocBuilder _docBuilder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyDocumentStore _docStore;
     MySubDb _subDb;
@@ -15,13 +15,13 @@ struct HandlerTest : public ::testing::Test {
 };
 
 HandlerTest::HandlerTest()
-    : _docBuilder(Schema()),
+    : _docBuilder(),
       _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _docStore(),
-      _subDb(_bucketDB, _docStore, _docBuilder.getDocumentTypeRepo()),
+      _subDb(_bucketDB, _docStore, _docBuilder.get_repo_sp()),
       _handler(_subDb.maintenance_sub_db, "test")
 {
-    _docStore._readDoc = _docBuilder.startDocument(DOC_ID).endDocument();
+    _docStore._readDoc = _docBuilder.make_document(DOC_ID);
 }
 
 HandlerTest::~HandlerTest() = default;
