@@ -111,7 +111,7 @@ public:
      */
     void assign_generation(generation_t current_gen);
 
-    void clearHoldLists();
+    void reclaim_all_memory();
 
     static bool isValidRef(BTreeNode::Ref ref) { return NodeStore::isValidRef(ref); }
 

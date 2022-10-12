@@ -57,8 +57,8 @@ public:
         _store.assign_generation(current_gen);
     }
 
-    void clearHoldLists() {
-        _store.clearHoldLists();
+    void reclaim_all_memory() {
+        _store.reclaim_all_memory();
     }
 
     vespalib::MemoryUsage getMemoryUsage() const {

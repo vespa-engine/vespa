@@ -242,7 +242,7 @@ DataStoreBase::reclaim_memory(generation_t oldest_used_gen)
 }
 
 void
-DataStoreBase::clearHoldLists()
+DataStoreBase::reclaim_all_memory()
 {
     _entry_ref_hold_list.assign_generation(0);
     reclaim_all_entry_refs();

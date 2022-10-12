@@ -135,7 +135,7 @@ DocumentWeightOrFilterSearchTest::~DocumentWeightOrFilterSearchTest()
         _postings.clear(tree);
     }
     _postings.clearBuilder();
-    _postings.clearHoldLists();
+    _postings.reclaim_all_memory();
     inc_generation();
 }
 

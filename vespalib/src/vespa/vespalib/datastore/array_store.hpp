@@ -57,7 +57,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
 template <typename EntryT, typename RefT, typename TypeMapperT>
 ArrayStore<EntryT, RefT, TypeMapperT>::~ArrayStore()
 {
-    _store.clearHoldLists();
+    _store.reclaim_all_memory();
     _store.dropBuffers();
 }
 

@@ -58,7 +58,7 @@ public:
     DirectTensorStoreTest() : store() {}
 
     virtual ~DirectTensorStoreTest() {
-        store.clearHoldLists();
+        store.reclaim_all_memory();
     }
 
     void expect_tensor(const Value* exp, EntryRef ref) {

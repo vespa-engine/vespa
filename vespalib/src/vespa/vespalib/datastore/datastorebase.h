@@ -207,7 +207,7 @@ public:
      */
     void reclaim_memory(generation_t oldest_used_gen);
 
-    void clearHoldLists();
+    void reclaim_all_memory();
 
     template <typename EntryType, typename RefType>
     EntryType *getEntry(RefType ref) {

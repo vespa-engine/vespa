@@ -207,7 +207,7 @@ public:
 
     void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
     void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
-    void clearHoldLists() { _store.clearHoldLists();}
+    void reclaim_all_memory() { _store.reclaim_all_memory();}
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     vespalib::datastore::MemoryStats getMemStats() const { return _store.getMemStats(); }

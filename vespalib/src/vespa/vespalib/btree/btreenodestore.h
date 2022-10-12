@@ -176,8 +176,8 @@ public:
         _store.reclaim_memory(oldest_used_gen);
     }
 
-    void clearHoldLists() {
-        _store.clearHoldLists();
+    void reclaim_all_memory() {
+        _store.reclaim_all_memory();
     }
 
     // Inherit doc from DataStoreBase

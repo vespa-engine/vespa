@@ -24,7 +24,7 @@ SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const
 SerializedFastValueAttribute::~SerializedFastValueAttribute()
 {
     getGenerationHolder().reclaim_all();
-    _tensorStore.clearHoldLists();
+    _tensorStore.reclaim_all_memory();
 }
 
 void

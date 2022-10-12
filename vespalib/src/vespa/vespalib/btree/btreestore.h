@@ -347,10 +347,10 @@ public:
     }
 
     void
-    clearHoldLists()
+    reclaim_all_memory()
     {
-        _allocator.clearHoldLists();
-        _store.clearHoldLists();
+        _allocator.reclaim_all_memory();
+        _store.reclaim_all_memory();
     }
 
 

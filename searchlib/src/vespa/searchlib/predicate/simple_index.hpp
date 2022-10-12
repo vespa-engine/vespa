@@ -54,17 +54,17 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     _vector_posting_lists.disableElemHoldList();
     _vector_posting_lists.clear();
     _vector_posting_lists.getAllocator().freeze();
-    _vector_posting_lists.getAllocator().clearHoldLists();
+    _vector_posting_lists.getAllocator().reclaim_all_memory();
 
     _dictionary.disableFreeLists();
     _dictionary.disableElemHoldList();
     _dictionary.clear();
     _dictionary.getAllocator().freeze();
-    _dictionary.getAllocator().clearHoldLists();
+    _dictionary.getAllocator().reclaim_all_memory();
 
     _btree_posting_lists.clearBuilder();
     _btree_posting_lists.freeze();
-    _btree_posting_lists.clearHoldLists();
+    _btree_posting_lists.reclaim_all_memory();
 }
 
 template <typename Posting, typename Key, typename DocId>

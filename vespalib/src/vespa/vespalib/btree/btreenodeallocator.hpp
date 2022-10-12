@@ -285,9 +285,9 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-clearHoldLists()
+reclaim_all_memory()
 {
-    _nodeStore.clearHoldLists();
+    _nodeStore.reclaim_all_memory();
 }
 
 
