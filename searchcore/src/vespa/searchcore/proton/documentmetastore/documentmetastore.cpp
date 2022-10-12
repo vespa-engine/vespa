@@ -250,11 +250,11 @@ DocumentMetaStore::before_inc_generation(generation_t current_gen)
 }
 
 void
-DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
+DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 {
-    _gidToLidMap.getAllocator().reclaim_memory(firstUsed);
-    _lidAlloc.reclaim_memory(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
+    _lidAlloc.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 std::unique_ptr<search::AttributeSaver>

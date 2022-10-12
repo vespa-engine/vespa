@@ -182,7 +182,7 @@ public:
     /**
      * Remove all old data vectors where generation < firstUsed.
      **/
-    void removeOldGenerations(generation_t firstUsed);
+    void reclaim_memory(generation_t oldest_used_gen);
 
     MemoryUsage getMemoryUsage() const override;
 };

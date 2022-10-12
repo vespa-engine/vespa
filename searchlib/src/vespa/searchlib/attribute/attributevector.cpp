@@ -237,7 +237,7 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
         getConfig().collectionType().asString();
 }
 
-void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
+void AttributeVector::reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; }
 void AttributeVector::before_inc_generation(generation_t current_gen) { (void) current_gen; }
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
@@ -410,7 +410,7 @@ bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpd
 void
 AttributeVector::removeAllOldGenerations() {
     _genHandler.update_oldest_used_generation();
-    removeOldGenerations(_genHandler.get_oldest_used_generation());
+    reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 

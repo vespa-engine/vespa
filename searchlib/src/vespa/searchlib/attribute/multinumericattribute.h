@@ -60,7 +60,7 @@ public:
     uint32_t getValueCount(DocId doc) const override;
     void onCommit() override;
     void onUpdateStat() override;
-    void removeOldGenerations(generation_t firstUsed) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
 
     void before_inc_generation(generation_t current_gen) override;
     bool onLoad(vespalib::Executor *executor) override;

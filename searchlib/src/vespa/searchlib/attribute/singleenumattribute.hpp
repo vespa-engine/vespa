@@ -264,10 +264,10 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueEnumAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_enumStore.reclaim_memory(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    this->_enumStore.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>

@@ -106,9 +106,9 @@ SingleValueSmallNumericAttribute::onUpdateStat()
 
 
 void
-SingleValueSmallNumericAttribute::removeOldGenerations(generation_t firstUsed)
+SingleValueSmallNumericAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().reclaim(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 

@@ -459,11 +459,11 @@ DenseTensorAttribute::before_inc_generation(generation_t current_gen)
 }
 
 void
-DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
+DenseTensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    TensorAttribute::removeOldGenerations(first_used_gen);
+    TensorAttribute::reclaim_memory(oldest_used_gen);
     if (_index) {
-        _index->reclaim_memory(first_used_gen);
+        _index->reclaim_memory(oldest_used_gen);
     }
 }
 

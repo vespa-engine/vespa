@@ -257,8 +257,8 @@ SingleBoolAttribute::getEstimatedSaveByteSize() const
 }
 
 void
-SingleBoolAttribute::removeOldGenerations(generation_t firstUsed) {
-    getGenerationHolder().reclaim(firstUsed);
+SingleBoolAttribute::reclaim_memory(generation_t oldest_used_gen) {
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void

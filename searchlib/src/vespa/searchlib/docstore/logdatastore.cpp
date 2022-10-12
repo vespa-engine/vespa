@@ -110,7 +110,7 @@ LogDataStore::~LogDataStore()
     // Must be called before ending threads as there are sanity checks.
     _fileChunks.clear();
     _genHandler.update_oldest_used_generation();
-    _lidInfo.removeOldGenerations(_genHandler.get_oldest_used_generation());
+    _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 void
@@ -940,7 +940,7 @@ LogDataStore::setLid(const MonitorGuard &guard, uint32_t lid, const LidInfo &met
     (void) guard;
     if (lid < _lidInfo.size()) {
         _genHandler.update_oldest_used_generation();
-        _lidInfo.removeOldGenerations(_genHandler.get_oldest_used_generation());
+        _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
         const LidInfo prev = vespalib::atomic::load_ref_relaxed(_lidInfo[lid]);
         if (prev.valid()) {
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
@@ -959,7 +959,7 @@ LogDataStore::incGeneration()
     _lidInfo.setGeneration(_genHandler.getNextGeneration());
     _genHandler.incGeneration();
     _genHandler.update_oldest_used_generation();
-    _lidInfo.removeOldGenerations(_genHandler.get_oldest_used_generation());
+    _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 size_t

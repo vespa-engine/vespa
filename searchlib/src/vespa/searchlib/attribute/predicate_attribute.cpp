@@ -125,10 +125,10 @@ PredicateAttribute::onUpdateStat()
 }
 
 void
-PredicateAttribute::removeOldGenerations(generation_t firstUsed)
+PredicateAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().reclaim(firstUsed);
-    _index->reclaim_memory(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
+    _index->reclaim_memory(oldest_used_gen);
 }
 
 void

@@ -48,7 +48,7 @@ public:
     uint32_t clearDoc(DocId docId) override;
     void onCommit() override;
     void onUpdateStat() override;
-    void removeOldGenerations(generation_t firstUsed) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;
     bool addDoc(DocId &docId) override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;

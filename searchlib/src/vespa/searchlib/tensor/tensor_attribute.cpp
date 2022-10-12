@@ -110,10 +110,10 @@ TensorAttribute::onUpdateStat()
 }
 
 void
-TensorAttribute::removeOldGenerations(generation_t firstUsed)
+TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    _tensorStore.reclaim_memory(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    _tensorStore.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void

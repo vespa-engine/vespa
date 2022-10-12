@@ -96,9 +96,9 @@ void MultiValueNumericAttribute<B, M>::setNewValues(DocId doc, const std::vector
 }
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
+void MultiValueNumericAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_mvMapping.reclaim_memory(firstUsed);
+    this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 

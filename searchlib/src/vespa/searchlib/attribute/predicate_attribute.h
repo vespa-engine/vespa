@@ -48,7 +48,7 @@ public:
     void onSave(IAttributeSaveTarget & saveTarget) override;
     bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
-    void removeOldGenerations(generation_t firstUsed) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;
     void onUpdateStat() override;
     bool addDoc(DocId &doc_id) override;

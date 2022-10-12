@@ -194,10 +194,10 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
+MultiValueEnumAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_enumStore.reclaim_memory(firstUsed);
-    this->_mvMapping.reclaim_memory(firstUsed);
+    this->_enumStore.reclaim_memory(oldest_used_gen);
+    this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B, typename M>

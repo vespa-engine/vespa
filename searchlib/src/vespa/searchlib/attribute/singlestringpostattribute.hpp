@@ -127,10 +127,10 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
 
 template <typename B>
 void
-SingleValueStringPostingAttributeT<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueStringPostingAttributeT<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    SingleValueStringAttributeT<B>::removeOldGenerations(firstUsed);
-    _postingList.reclaim_memory(firstUsed);
+    SingleValueStringAttributeT<B>::reclaim_memory(oldest_used_gen);
+    _postingList.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B>

@@ -446,7 +446,7 @@ private:
     GenerationHandler::Guard takeGenerationGuard() { return _genHandler.takeGuard(); }
 
     /// Clean up [0, firstUsed>
-    virtual void removeOldGenerations(generation_t firstUsed);
+    virtual void reclaim_memory(generation_t oldest_used_gen);
     virtual void before_inc_generation(generation_t current_gen);
     virtual void onUpdateStat() = 0;
     /**
