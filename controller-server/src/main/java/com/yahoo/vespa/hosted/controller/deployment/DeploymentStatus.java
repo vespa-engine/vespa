@@ -54,6 +54,7 @@ import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.nex
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.reverseOrder;
@@ -1027,10 +1028,11 @@ public class DeploymentStatus {
             Versions lastVersions = job.lastCompleted().get().versions();
             Versions toRun = Versions.from(change, status.application, dependent.flatMap(status::deploymentFor), status.fallbackPlatform(change, job.id()));
             if ( ! toRun.targetsMatch(lastVersions)) return Optional.empty();
-            if (   job.id().type().environment().isTest()
+            if (     job.id().type().environment().isTest()
                 && ! dependent.map(JobId::type).map(status::findCloud).map(List.of(CloudName.AWS, CloudName.GCP)::contains).orElse(true)
-                && job.isNodeAllocationFailure()) return Optional.empty();
+                &&   job.isNodeAllocationFailure()) return Optional.empty();
 
+            if (job.lastStatus().get() == invalidApplication) return Optional.of(status.now.plus(Duration.ofDays(36524))); // 100 years
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
 

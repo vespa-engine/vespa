@@ -51,7 +51,8 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
         } catch (IllegalArgumentException | UnsupportedOperationException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
         } catch (NodeAllocationException e) {
-            return HttpErrorResponse.nodeAllocationFailure(getMessage(e, request));
+            return e.retryable() ? HttpErrorResponse.nodeAllocationFailure(getMessage(e, request))
+                                 : HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
         } catch (InternalServerException e) {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {

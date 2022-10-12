@@ -73,6 +73,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
@@ -257,6 +258,8 @@ public class InternalStepRunner implements StepRunner {
                            ? result
                            : Optional.of(nodeAllocationFailure);
                 case INVALID_APPLICATION_PACKAGE:
+                    logger.log(WARNING, e.getMessage());
+                    return Optional.of(invalidApplication);
                 case BAD_REQUEST:
                     logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
@@ -838,8 +841,11 @@ public class InternalStepRunner implements StepRunner {
             case nodeAllocationFailure:
                 if ( ! run.id().type().environment().isTest()) updater.accept("could not allocate the requested capacity to your tenant. Please contact Vespa Cloud support.");
                 return;
-            case deploymentFailed:
+            case invalidApplication:
                 updater.accept("invalid application configuration. Please review warnings and errors in the deployment job log.");
+                return;
+            case deploymentFailed:
+                updater.accept("failure processing application configuration. Please review warnings and errors in the deployment job log.");
                 return;
             case installationFailed:
                 updater.accept("nodes were not able to deploy to the new configuration. Please check the Vespa log for errors, and contact Vespa Cloud support if unable to resolve these.");
@@ -867,6 +873,7 @@ public class InternalStepRunner implements StepRunner {
             case nodeAllocationFailure:
                 return run.id().type().isProduction() ? Optional.of(mails.nodeAllocationFailure(run.id(), recipients)) : Optional.empty();
             case deploymentFailed:
+            case invalidApplication:
                 return Optional.of(mails.deploymentFailure(run.id(), recipients));
             case installationFailed:
                 return Optional.of(mails.installationFailure(run.id(), recipients));

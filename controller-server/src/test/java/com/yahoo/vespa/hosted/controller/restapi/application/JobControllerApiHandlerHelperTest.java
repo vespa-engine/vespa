@@ -39,6 +39,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.tes
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,7 +88,7 @@ public class JobControllerApiHandlerHelperTest {
         // us-east-3 eats the deployment failure and fails before deployment, while us-west-1 fails after.
         tester.configServer().throwOnNextPrepare(new ConfigServerException(INVALID_APPLICATION_PACKAGE, "ERROR!", "Failed to deploy application"));
         tester.runner().run();
-        assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
+        assertEquals(invalidApplication, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
         tester.runner().run();
         tester.clock().advance(Duration.ofHours(4).plusSeconds(1));

@@ -14,6 +14,8 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -118,9 +120,17 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         app.assertRunning(productionUsWest1);
 
+        tester.configServer().throwOnNextPrepare(new ConfigServerException(ErrorCode.INVALID_APPLICATION_PACKAGE, "nope", "bah"));
+        tester.runner().run();
+        assertEquals(RunStatus.invalidApplication, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
+        tester.triggerJobs();
+        app.assertNotRunning(productionUsWest1);
+
         // production-us-west-1 fails, but the app loses its projectId, and the job isn't retried.
+        app.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).triggerJobs();
         tester.applications().lockApplicationOrThrow(app.application().id(), locked ->
                 tester.applications().store(locked.withProjectId(OptionalLong.empty())));
+
         app.timeOutConvergence(productionUsWest1);
         tester.triggerJobs();
         assertEquals(0, tester.jobs().active().size(), "Job is not triggered when no projectId is present");

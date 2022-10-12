@@ -66,7 +66,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                                 Optional<CloudAccount> cloudAccount) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
-                                                                   .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources)));
+                                                                   .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : provisionIndices) {
             String hostHostname = hostType == NodeType.host ? "hostname" + index : hostType.name() + index;

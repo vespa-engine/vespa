@@ -14,7 +14,10 @@ public enum RunStatus {
     /** Deployment was rejected due node allocation failure. */
     nodeAllocationFailure,
 
-    /** Deployment of the real application was rejected. */
+    /** Deployment of the real application was rejected because the package is faulty. */
+    invalidApplication,
+
+    /** Deployment of the real application was rejected, for other reasons. */
     deploymentFailed,
 
     /** Deployment timed out waiting for endpoint certificate */
