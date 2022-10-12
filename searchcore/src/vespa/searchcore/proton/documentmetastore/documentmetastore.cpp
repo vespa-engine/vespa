@@ -244,7 +244,7 @@ void
 DocumentMetaStore::onGenerationChange(generation_t generation)
 {
     _gidToLidMap.getAllocator().freeze();
-    _gidToLidMap.getAllocator().transferHoldLists(generation - 1);
+    _gidToLidMap.getAllocator().assign_generation(generation - 1);
     getGenerationHolder().assign_generation(generation - 1);
     updateStat(false);
 }
@@ -252,8 +252,8 @@ DocumentMetaStore::onGenerationChange(generation_t generation)
 void
 DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
 {
-    _gidToLidMap.getAllocator().trimHoldLists(firstUsed);
-    _lidAlloc.trimHoldLists(firstUsed);
+    _gidToLidMap.getAllocator().reclaim_memory(firstUsed);
+    _lidAlloc.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 
@@ -318,7 +318,7 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
     _gidToLidMap.assign(treeBuilder);
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
-    _gidToLidMap.getAllocator().transferHoldLists(generation);
+    _gidToLidMap.getAllocator().assign_generation(generation);
 
     setNumDocs(_metaDataStore.size());
     setCommittedDocIdLimit(_metaDataStore.size());
@@ -433,7 +433,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
-    _gidToLidMap.getAllocator().transferHoldLists(generation);
+    _gidToLidMap.getAllocator().assign_generation(generation);
     updateStat(true);
 }
 

@@ -25,8 +25,8 @@ public:
     using generation_t = vespalib::GenerationHandler::generation_t;
     virtual ~IUniqueStoreDictionary() = default;
     virtual void freeze() = 0;
-    virtual void transfer_hold_lists(generation_t generation) = 0;
-    virtual void trim_hold_lists(generation_t firstUsed) = 0;
+    virtual void assign_generation(generation_t current_gen) = 0;
+    virtual void reclaim_memory(generation_t oldest_used_gen) = 0;
     virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) = 0;
     virtual EntryRef find(const EntryComparator& comp) = 0;
     virtual void remove(const EntryComparator& comp, EntryRef ref) = 0;

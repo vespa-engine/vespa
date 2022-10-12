@@ -56,8 +56,8 @@ private:
  * A reader must own an appropriate GenerationHandler::Guard to ensure
  * that memory is held while it can be accessed by reader.
  *
- * The writer must update generation and call transfer_hold_lists and
- * trim_hold_lists as needed to free up memory no longer needed by any
+ * The writer must update generation and call assign_generation and
+ * reclaim_memory as needed to free up memory no longer needed by any
  * readers.
  */
 class FixedSizeHashMap {
@@ -114,8 +114,8 @@ private:
     std::deque<std::pair<generation_t, uint32_t>> _hold_2_list;
     uint32_t          _num_shards;
 
-    void transfer_hold_lists_slow(generation_t generation);
-    void trim_hold_lists_slow(generation_t first_used);
+    void assign_generation_slow(generation_t current_gen);
+    void reclaim_memory_slow(generation_t oldest_used_gen);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards);
@@ -143,15 +143,15 @@ public:
         return nullptr;
     }
 
-    void transfer_hold_lists(generation_t generation) {
+    void assign_generation(generation_t current_gen) {
         if (!_hold_1_list.empty()) {
-            transfer_hold_lists_slow(generation);
+            assign_generation_slow(current_gen);
         }
     }
 
-    void trim_hold_lists(generation_t first_used) {
-        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - first_used) < 0) {
-            trim_hold_lists_slow(first_used);
+    void reclaim_memory(generation_t oldest_used_gen) {
+        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - oldest_used_gen) < 0) {
+            reclaim_memory_slow(oldest_used_gen);
         }
     }
 

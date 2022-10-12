@@ -163,8 +163,8 @@ ReferenceAttribute::clearDoc(DocId doc)
 void
 ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 {
-    _referenceMappings.trimHoldLists(firstUsed);
-    _store.trimHoldLists(firstUsed);
+    _referenceMappings.reclaim_memory(firstUsed);
+    _store.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 
@@ -173,8 +173,8 @@ ReferenceAttribute::onGenerationChange(generation_t generation)
 {
     _referenceMappings.freeze();
     _store.freeze();
-    _referenceMappings.transferHoldLists(generation - 1);
-    _store.transferHoldLists(generation - 1);
+    _referenceMappings.assign_generation(generation - 1);
+    _store.assign_generation(generation - 1);
     getGenerationHolder().assign_generation(generation - 1);
 }
 

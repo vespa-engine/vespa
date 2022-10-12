@@ -128,14 +128,14 @@ void
 PredicateAttribute::removeOldGenerations(generation_t firstUsed)
 {
     getGenerationHolder().reclaim(firstUsed);
-    _index->trimHoldLists(firstUsed);
+    _index->reclaim_memory(firstUsed);
 }
 
 void
 PredicateAttribute::onGenerationChange(generation_t generation)
 {
     getGenerationHolder().assign_generation(generation - 1);
-    _index->transferHoldLists(generation - 1);
+    _index->assign_generation(generation - 1);
 }
 
 void

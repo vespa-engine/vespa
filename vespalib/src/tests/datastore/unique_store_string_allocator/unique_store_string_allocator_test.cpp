@@ -67,9 +67,9 @@ struct TestBase : public ::testing::Test {
         EXPECT_EQ(expStats._extra_used, buffer_state(ref).stats().extra_used_bytes());
         EXPECT_EQ(expStats._extra_hold, buffer_state(ref).stats().extra_hold_bytes());
     }
-    void trim_hold_lists() {
-        allocator.get_data_store().transferHoldLists(generation++);
-        allocator.get_data_store().trimHoldLists(generation);
+    void reclaim_memory() {
+        allocator.get_data_store().assign_generation(generation++);
+        allocator.get_data_store().reclaim_memory(generation);
     }
 };
 
@@ -89,7 +89,7 @@ TEST_F(StringTest, elements_are_put_on_hold_when_value_is_removed)
     assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(0));
     remove(ref);
     assert_buffer_state(ref, TestBufferStats().used(16).hold(16).dead(0));
-    trim_hold_lists();
+    reclaim_memory();
     assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(16));
 }
 
@@ -100,7 +100,7 @@ TEST_F(StringTest, extra_bytes_used_is_tracked)
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
     remove(ref);
     assert_buffer_state(ref, TestBufferStats().used(2).hold(1).dead(1).extra_used(1001).extra_hold(1001));
-    trim_hold_lists();
+    reclaim_memory();
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(2));
     ref = add(spaces1000.c_str());
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
@@ -110,7 +110,7 @@ TEST_F(StringTest, extra_bytes_used_is_tracked)
     remove(ref);
     remove(ref2);
     assert_buffer_state(ref, TestBufferStats().used(3).hold(2).dead(1).extra_used(2002).extra_hold(2002));
-    trim_hold_lists();
+    reclaim_memory();
     assert_buffer_state(ref, TestBufferStats().used(3).hold(0).dead(3));
 }
 
@@ -134,7 +134,7 @@ TEST_F(StringTest, free_list_is_used_when_enabled)
     EntryRef ref2 = add(spaces1000.c_str());
     remove(ref1);
     remove(ref2);
-    trim_hold_lists();
+    reclaim_memory();
     EntryRef ref3 = add(small.c_str());
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_EQ(ref1, ref3);
@@ -150,7 +150,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
     EntryRef ref2 = add(spaces1000.c_str());
     remove(ref1);
     remove(ref2);
-    trim_hold_lists();
+    reclaim_memory();
     EntryRef ref3 = add(small.c_str());
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_NE(ref1, ref3);
@@ -168,7 +168,7 @@ TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
     EntryRef ref4 = add(spaces1000.c_str());
     remove(ref3);
     remove(ref4);
-    trim_hold_lists();
+    reclaim_memory();
     EntryRef ref5 = move_on_compact(ref1);
     EntryRef ref6 = move_on_compact(ref2);
     EXPECT_NE(ref5, ref3);

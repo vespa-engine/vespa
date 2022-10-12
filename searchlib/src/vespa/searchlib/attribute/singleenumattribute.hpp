@@ -266,7 +266,7 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
+    this->_enumStore.reclaim_memory(firstUsed);
     getGenerationHolder().reclaim(firstUsed);
 }
 
@@ -282,7 +282,7 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      */
     freezeEnumDictionary();
     getGenerationHolder().assign_generation(generation - 1);
-    this->_enumStore.transfer_hold_lists(generation - 1);
+    this->_enumStore.assign_generation(generation - 1);
 }
 
 

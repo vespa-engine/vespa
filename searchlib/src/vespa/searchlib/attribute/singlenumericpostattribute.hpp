@@ -130,7 +130,7 @@ void
 SingleValueNumericPostingAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
     SingleValueNumericEnumAttribute<B>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    _postingList.reclaim_memory(firstUsed);
 }
 
 template <typename B>
@@ -139,7 +139,7 @@ SingleValueNumericPostingAttribute<B>::onGenerationChange(generation_t generatio
 {
     _postingList.freeze();
     SingleValueNumericEnumAttribute<B>::onGenerationChange(generation);
-    _postingList.transferHoldLists(generation - 1);
+    _postingList.assign_generation(generation - 1);
 }
 
 template <typename B>

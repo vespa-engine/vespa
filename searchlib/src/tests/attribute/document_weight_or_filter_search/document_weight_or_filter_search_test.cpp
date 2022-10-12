@@ -135,7 +135,7 @@ DocumentWeightOrFilterSearchTest::~DocumentWeightOrFilterSearchTest()
         _postings.clear(tree);
     }
     _postings.clearBuilder();
-    _postings.clearHoldLists();
+    _postings.reclaim_all_memory();
     inc_generation();
 }
 
@@ -143,10 +143,10 @@ void
 DocumentWeightOrFilterSearchTest::inc_generation()
 {
     _postings.freeze();
-    _postings.transferHoldLists(_gens.getCurrentGeneration());
+    _postings.assign_generation(_gens.getCurrentGeneration());
     _gens.incGeneration();
-    _gens.updateFirstUsedGeneration();
-    _postings.trimHoldLists(_gens.getFirstUsedGeneration());
+    _gens.update_oldest_used_generation();
+    _postings.reclaim_memory(_gens.get_oldest_used_generation());
 }
 
 TEST_F(DocumentWeightOrFilterSearchTest, daat_or)

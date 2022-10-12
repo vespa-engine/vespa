@@ -134,9 +134,9 @@ FrozenBTreeTest::freeTree(bool verbose)
     (void) verbose;
     _tree->clear(*_allocator);
     _allocator->freeze();
-    _allocator->transferHoldLists(_generationHandler->getCurrentGeneration());
+    _allocator->assign_generation(_generationHandler->getCurrentGeneration());
     _generationHandler->incGeneration();
-    _allocator->trimHoldLists(_generationHandler->getFirstUsedGeneration());
+    _allocator->reclaim_memory(_generationHandler->get_oldest_used_generation());
     delete _tree;
     _tree = NULL;
     delete _allocator;
@@ -425,7 +425,7 @@ FrozenBTreeTest::Main()
     EXPECT_TRUE(_tree->getFrozenView(*_allocator).empty());
     _allocator->freeze();
     EXPECT_FALSE(_tree->getFrozenView(*_allocator).empty());
-    _allocator->transferHoldLists(_generationHandler->getCurrentGeneration());
+    _allocator->assign_generation(_generationHandler->getCurrentGeneration());
     lookupFrozenRandomValues(*_tree, *_allocator, _randomValues);
     traverseTreeIterator(*_tree,
                          *_allocator,

@@ -220,10 +220,10 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 }
 
 void
-DataStoreBase::transferHoldLists(generation_t generation)
+DataStoreBase::assign_generation(generation_t current_gen)
 {
-    _genHolder.assign_generation(generation);
-    _entry_ref_hold_list.assign_generation(generation);
+    _genHolder.assign_generation(current_gen);
+    _entry_ref_hold_list.assign_generation(current_gen);
 }
 
 void
@@ -235,14 +235,14 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 }
 
 void
-DataStoreBase::trimHoldLists(generation_t usedGen)
+DataStoreBase::reclaim_memory(generation_t oldest_used_gen)
 {
-    reclaim_entry_refs(usedGen);  // Trim entries before trimming buffers
-    _genHolder.reclaim(usedGen);
+    reclaim_entry_refs(oldest_used_gen);  // Trim entries before trimming buffers
+    _genHolder.reclaim(oldest_used_gen);
 }
 
 void
-DataStoreBase::clearHoldLists()
+DataStoreBase::reclaim_all_memory()
 {
     _entry_ref_hold_list.assign_generation(0);
     reclaim_all_entry_refs();

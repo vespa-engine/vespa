@@ -168,11 +168,11 @@ DataStoreShardedHashTest::~DataStoreShardedHashTest()
 void
 DataStoreShardedHashTest::commit()
 {
-    _store.transferHoldLists(_generationHandler.getCurrentGeneration());
-    _hash_map.transfer_hold_lists(_generationHandler.getCurrentGeneration());
+    _store.assign_generation(_generationHandler.getCurrentGeneration());
+    _hash_map.assign_generation(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
-    _store.trimHoldLists(_generationHandler.getFirstUsedGeneration());
-    _hash_map.trim_hold_lists(_generationHandler.getFirstUsedGeneration());
+    _store.reclaim_memory(_generationHandler.get_oldest_used_generation());
+    _hash_map.reclaim_memory(_generationHandler.get_oldest_used_generation());
 }
 
 void

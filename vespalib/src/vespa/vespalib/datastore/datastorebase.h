@@ -189,9 +189,9 @@ public:
 
 public:
     /**
-     * Transfer holds from hold1 to hold2 lists, assigning generation.
+     * Assign generation on data elements on hold lists added since the last time this function was called.
      */
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
 
 private:
     /**
@@ -201,13 +201,13 @@ private:
 
 public:
     /**
-     * Trim hold lists, freeing buffers that no longer needs to be held.
+     * Reclaim memory from hold lists, freeing buffers and entry refs that no longer needs to be held.
      *
-     * @param usedGen       lowest generation that is still used.
+     * @param oldest_used_gen oldest generation that is still used.
      */
-    void trimHoldLists(generation_t usedGen);
+    void reclaim_memory(generation_t oldest_used_gen);
 
-    void clearHoldLists();
+    void reclaim_all_memory();
 
     template <typename EntryType, typename RefType>
     EntryType *getEntry(RefType ref) {

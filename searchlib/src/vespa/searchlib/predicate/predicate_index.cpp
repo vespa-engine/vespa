@@ -213,19 +213,19 @@ PredicateIndex::commit() {
 }
 
 void
-PredicateIndex::trimHoldLists(generation_t used_generation) {
-    _interval_index.trimHoldLists(used_generation);
-    _bounds_index.trimHoldLists(used_generation);
-    _interval_store.trimHoldLists(used_generation);
-    _zero_constraint_docs.getAllocator().trimHoldLists(used_generation);
+PredicateIndex::reclaim_memory(generation_t oldest_used_gen) {
+    _interval_index.reclaim_memory(oldest_used_gen);
+    _bounds_index.reclaim_memory(oldest_used_gen);
+    _interval_store.reclaim_memory(oldest_used_gen);
+    _zero_constraint_docs.getAllocator().reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateIndex::transferHoldLists(generation_t generation) {
-    _interval_index.transferHoldLists(generation);
-    _bounds_index.transferHoldLists(generation);
-    _interval_store.transferHoldLists(generation);
-    _zero_constraint_docs.getAllocator().transferHoldLists(generation);
+PredicateIndex::assign_generation(generation_t current_gen) {
+    _interval_index.assign_generation(current_gen);
+    _bounds_index.assign_generation(current_gen);
+    _interval_store.assign_generation(current_gen);
+    _zero_constraint_docs.getAllocator().assign_generation(current_gen);
 }
 
 vespalib::MemoryUsage

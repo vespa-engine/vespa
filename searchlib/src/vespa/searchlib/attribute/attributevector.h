@@ -158,8 +158,8 @@ public:
     void incGeneration();
     void removeAllOldGenerations();
 
-    generation_t getFirstUsedGeneration() const {
-        return _genHandler.getFirstUsedGeneration();
+    generation_t get_oldest_used_generation() const {
+        return _genHandler.get_oldest_used_generation();
     }
 
     generation_t getCurrentGeneration() const {
@@ -466,8 +466,8 @@ public:
     /**
      * Should be called by the writer thread.
      */
-    void updateFirstUsedGeneration() {
-        _genHandler.updateFirstUsedGeneration();
+    void update_oldest_used_generation() {
+        _genHandler.update_oldest_used_generation();
     }
 
     /**

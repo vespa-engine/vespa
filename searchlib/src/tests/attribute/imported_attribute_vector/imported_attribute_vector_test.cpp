@@ -73,14 +73,14 @@ TEST_F("makeReadGuard(false) acquires guards on both target and reference attrib
         EXPECT_EQUAL(2u, f.target_attr->getCurrentGeneration());
         EXPECT_EQUAL(2u, f.reference_attr->getCurrentGeneration());
         // Should still be holding guard for first generation of writes for both attributes
-        EXPECT_EQUAL(1u, f.target_attr->getFirstUsedGeneration());
-        EXPECT_EQUAL(1u, f.reference_attr->getFirstUsedGeneration());
+        EXPECT_EQUAL(1u, f.target_attr->get_oldest_used_generation());
+        EXPECT_EQUAL(1u, f.reference_attr->get_oldest_used_generation());
     }
     // Force a generation handler update
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     add_n_docs_with_undefined_values(*f.target_attr, 1);
-    EXPECT_EQUAL(3u, f.target_attr->getFirstUsedGeneration());
-    EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
+    EXPECT_EQUAL(3u, f.target_attr->get_oldest_used_generation());
+    EXPECT_EQUAL(3u, f.reference_attr->get_oldest_used_generation());
 }
 
 TEST_F("makeReadGuard(true) acquires enum guard on target and regular guard on reference attribute", Fixture) {
@@ -95,15 +95,15 @@ TEST_F("makeReadGuard(true) acquires enum guard on target and regular guard on r
         EXPECT_EQUAL(5u, f.target_attr->getCurrentGeneration());
         EXPECT_EQUAL(2u, f.reference_attr->getCurrentGeneration());
 
-        EXPECT_EQUAL(3u, f.target_attr->getFirstUsedGeneration());
-        EXPECT_EQUAL(1u, f.reference_attr->getFirstUsedGeneration());
+        EXPECT_EQUAL(3u, f.target_attr->get_oldest_used_generation());
+        EXPECT_EQUAL(1u, f.reference_attr->get_oldest_used_generation());
         EXPECT_TRUE(has_active_enum_guards(*f.target_attr));
     }
     // Force a generation handler update
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     add_n_docs_with_undefined_values(*f.target_attr, 1);
-    EXPECT_EQUAL(7u, f.target_attr->getFirstUsedGeneration());
-    EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
+    EXPECT_EQUAL(7u, f.target_attr->get_oldest_used_generation());
+    EXPECT_EQUAL(3u, f.reference_attr->get_oldest_used_generation());
     EXPECT_FALSE(has_active_enum_guards(*f.target_attr));
 }
 

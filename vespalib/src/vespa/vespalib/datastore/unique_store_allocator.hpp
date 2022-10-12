@@ -28,7 +28,7 @@ UniqueStoreAllocator<EntryT, RefT>::UniqueStoreAllocator(std::shared_ptr<alloc::
 template <typename EntryT, typename RefT>
 UniqueStoreAllocator<EntryT, RefT>::~UniqueStoreAllocator()
 {
-    _store.clearHoldLists();
+    _store.reclaim_all_memory();
     _store.dropBuffers();
 }
 

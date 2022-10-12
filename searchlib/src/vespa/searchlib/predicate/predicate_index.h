@@ -73,8 +73,8 @@ public:
     void indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations);
     void removeDocument(uint32_t doc_id);
     void commit();
-    void trimHoldLists(generation_t used_generation);
-    void transferHoldLists(generation_t generation);
+    void reclaim_memory(generation_t oldest_used_gen);
+    void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
     int getArity() const { return _arity; }

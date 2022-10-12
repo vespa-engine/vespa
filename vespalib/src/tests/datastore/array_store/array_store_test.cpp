@@ -123,7 +123,7 @@ struct ArrayStoreTest : public TestT
     void assert_ref_reused(const EntryVector& first, const EntryVector& second, bool should_reuse) {
         EntryRef ref1 = add(first);
         remove(ref1);
-        trimHoldLists();
+        reclaim_memory();
         EntryRef ref2 = add(second);
         EXPECT_EQ(should_reuse, (ref2 == ref1));
         assertGet(ref2, second);
@@ -136,9 +136,9 @@ struct ArrayStoreTest : public TestT
         }
         return EntryRef();
     }
-    void trimHoldLists() {
-        store.transferHoldLists(generation++);
-        store.trimHoldLists(generation);
+    void reclaim_memory() {
+        store.assign_generation(generation++);
+        store.reclaim_memory(generation);
     }
     void compactWorst(bool compactMemory, bool compactAddressSpace) {
         CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
@@ -283,7 +283,7 @@ TEST_P(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_en
     assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(16));
     remove({1,2,3,4});
     assert_buffer_stats(ref, TestBufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16));
-    trimHoldLists();
+    reclaim_memory();
     assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(2).extra_used(0));
     add({5,6,7,8,9});
     assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(20));
@@ -316,7 +316,7 @@ test_compaction(NumberStoreBasicTest &f)
     EntryRef size2Ref = f.add({2,2});
     EntryRef size3Ref = f.add({3,3,3});
     f.remove(f.add({5,5}));
-    f.trimHoldLists();
+    f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(1).dead(0));
     f.assertBufferState(size2Ref, MemStats().used(4).dead(2));
     f.assertBufferState(size3Ref, MemStats().used(2).dead(1)); // Note: First element is reserved
@@ -335,7 +335,7 @@ test_compaction(NumberStoreBasicTest &f)
     EXPECT_NE(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
     f.assertGet(size2Ref, {2,2}); // Old ref should still point to data.
     EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
-    f.trimHoldLists();
+    f.reclaim_memory();
     EXPECT_TRUE(f.store.bufferState(size2Ref).isFree());
 }
 
@@ -360,7 +360,7 @@ void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressS
     f.remove(f.add({5,5,5}));
     f.remove(f.add({6}));
     f.remove(f.add({7}));
-    f.trimHoldLists();
+    f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(3).dead(2));
     f.assertBufferState(size2Ref, MemStats().used(2).dead(0));
     f.assertBufferState(size3Ref, MemStats().used(6).dead(3));
@@ -397,7 +397,7 @@ void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressS
         EXPECT_FALSE(f.store.bufferState(size1Ref).isOnHold());
     }
     EXPECT_FALSE(f.store.bufferState(size2Ref).isOnHold());
-    f.trimHoldLists();
+    f.reclaim_memory();
     if (compactMemory) {
         EXPECT_TRUE(f.store.bufferState(size3Ref).isFree());
     } else {
@@ -436,7 +436,7 @@ TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_a
     assertMemoryUsage(exp.used(entrySize() * 3));
     remove({1,2,3});
     assertMemoryUsage(exp.hold(entrySize() * 3));
-    trimHoldLists();
+    reclaim_memory();
     assertMemoryUsage(exp.holdToDead(entrySize() * 3));
 }
 
@@ -447,7 +447,7 @@ TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_a
     assertMemoryUsage(exp.used(largeArraySize() + entrySize() * 4));
     remove({1,2,3,4});
     assertMemoryUsage(exp.hold(largeArraySize() + entrySize() * 4));
-    trimHoldLists();
+    reclaim_memory();
     assertMemoryUsage(exp.decUsed(entrySize() * 4).decHold(largeArraySize() + entrySize() * 4).
             dead(largeArraySize()));
 }

@@ -66,8 +66,8 @@ protected:
         _allocator.holdLids(lids, get_size(), 0);
     }
 
-    void trim_hold_lists() {
-        _allocator.trimHoldLists(1);
+    void reclaim_memory() {
+        _allocator.reclaim_memory(1);
     }
     
     std::vector<uint32_t> get_valid_lids() {
@@ -117,7 +117,7 @@ TEST_F(LidAllocatorTest, unregister_lids)
     assert_valid_lids({2, 4, 6});
     assert_active_lids({4, 6});
     hold_lids({1, 3, 5});
-    trim_hold_lists();
+    reclaim_memory();
     EXPECT_EQ((std::vector<uint32_t>{1, 3, 5, 7, 8}), alloc_lids(5));
 }
 

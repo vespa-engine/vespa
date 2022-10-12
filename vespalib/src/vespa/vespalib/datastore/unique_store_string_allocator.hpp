@@ -30,7 +30,7 @@ UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator(std::shared_ptr<all
 template <typename RefT>
 UniqueStoreStringAllocator<RefT>::~UniqueStoreStringAllocator()
 {
-    _store.clearHoldLists();
+    _store.reclaim_all_memory();
     _store.dropBuffers();
 }
 

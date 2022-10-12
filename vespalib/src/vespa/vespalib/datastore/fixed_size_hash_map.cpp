@@ -97,23 +97,22 @@ FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef
 }
 
 void
-FixedSizeHashMap::transfer_hold_lists_slow(generation_t generation)
+FixedSizeHashMap::assign_generation_slow(generation_t current_gen)
 {
     auto &hold_2_list = _hold_2_list;
     for (uint32_t node_idx : _hold_1_list) {
-        hold_2_list.push_back(std::make_pair(generation, node_idx));
+        hold_2_list.push_back(std::make_pair(current_gen, node_idx));
     }
     _hold_1_list.clear();
-
 }
 
 
 void
-FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
+FixedSizeHashMap::reclaim_memory_slow(generation_t oldest_used_gen)
 {
     while (!_hold_2_list.empty()) {
         auto& first = _hold_2_list.front();
-        if (static_cast<sgeneration_t>(first.first - first_used) >= 0) {
+        if (static_cast<sgeneration_t>(first.first - oldest_used_gen) >= 0) {
             break;
         }
         uint32_t node_idx = first.second;
