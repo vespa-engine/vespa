@@ -38,6 +38,7 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorControlSession;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
@@ -1175,6 +1176,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                                            StringJoiner::merge)
                                                                    .toString());
 
+        getProperty(request, TRACELEVEL, integerParser).ifPresent(parameters::setTraceLevel);
+
         getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
@@ -1310,6 +1313,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             callback.onStart(response, fullyApplied);
             VisitorControlHandler controller = new VisitorControlHandler() {
                 final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, request.getTimeout(MILLISECONDS), MILLISECONDS) : null;
+                final AtomicReference<VisitorSession> session = new AtomicReference<>();
+                @Override public void setSession(VisitorControlSession session) { // Workaround for broken session API ಠ_ಠ
+                    super.setSession(session);
+                    if (session instanceof VisitorSession visitorSession) this.session.set(visitorSession);
+                }
                 @Override public void onDone(CompletionCode code, String message) {
                     super.onDone(code, message);
                     loggingException(() -> {
@@ -1318,6 +1326,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                             if (getVisitorStatistics() != null)
                                 response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+
+                            if (session.get() != null)
+                                response.writeTrace(session.get().getTrace());
 
                             int status = Response.Status.BAD_GATEWAY;
                             switch (code) {
@@ -1350,7 +1361,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
                         visits.remove(this).destroy();
                     });
-
                 }
             };
             if (parameters.getRemoteDataHandler() == null) {
