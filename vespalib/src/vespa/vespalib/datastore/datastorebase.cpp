@@ -7,6 +7,7 @@
 #include "compaction_strategy.h"
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <algorithm>
 #include <limits>
 #include <cassert>
 
