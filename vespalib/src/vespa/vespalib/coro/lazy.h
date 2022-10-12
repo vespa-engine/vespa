@@ -5,6 +5,7 @@
 #include <concepts>
 #include <coroutine>
 #include <optional>
+#include <utility>
 
 namespace vespalib::coro {
 
