@@ -5,8 +5,7 @@
 namespace proton::test {
 
 UserDocumentsBuilder::UserDocumentsBuilder()
-    : _schema(),
-      _builder(_schema),
+    : _builder(),
       _docs()
 {
 }
@@ -17,7 +16,7 @@ UserDocumentsBuilder &
 UserDocumentsBuilder::createDoc(uint32_t userId, search::DocumentIdT lid)
 {
     vespalib::string docId = vespalib::make_string("id:test:searchdocument:n=%u:%u", userId, lid);
-    document::Document::SP doc(_builder.startDocument(docId).endDocument().release());
+    document::Document::SP doc(_builder.make_document(docId));
     _docs.addDoc(userId, Document(doc, lid, storage::spi::Timestamp(lid)));
     return *this;
 }

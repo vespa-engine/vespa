@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchcore/proton/index/index_writer.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("index_writer_test");
 
@@ -80,21 +82,18 @@ struct Fixture
     IIndexManager::SP iim;
     MyIndexManager   &mim;
     IndexWriter      iw;
-    Schema            schema;
-    DocBuilder        builder;
+    EmptyDocBuilder   builder;
     Document::UP      dummyDoc;
     Fixture()
         : iim(new MyIndexManager()),
           mim(static_cast<MyIndexManager &>(*iim)),
           iw(iim),
-          schema(),
-          builder(schema),
+          builder(),
           dummyDoc(createDoc(1234)) // This content of this is not used
     {
     }
     Document::UP createDoc(uint32_t lid) {
-        builder.startDocument(vespalib::make_string("id:ns:searchdocument::%u", lid));
-        return builder.endDocument();
+        return builder.make_document(vespalib::make_string("id:ns:searchdocument::%u", lid));
     }
     void put(SerialNum serialNum, const search::DocumentIdT lid) {
         iw.put(serialNum, *dummyDoc, lid, {});

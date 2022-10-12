@@ -168,9 +168,8 @@ vespa_define_module(
     src/tests/grouping
     src/tests/groupingengine
     src/tests/hitcollector
-    src/tests/index/docbuilder
-    src/tests/index/doctypebuilder
     src/tests/index/field_length_calculator
+    src/tests/index/string_field_builder
     src/tests/indexmetainfo
     src/tests/ld-library-path
     src/tests/memoryindex/compact_words_store

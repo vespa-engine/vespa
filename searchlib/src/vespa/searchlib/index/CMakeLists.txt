@@ -2,9 +2,7 @@
 vespa_add_library(searchlib_searchlib_index OBJECT
     SOURCES
     dictionaryfile.cpp
-    docbuilder.cpp
     docidandfeatures.cpp
-    doctypebuilder.cpp
     dummyfileheadercontext.cpp
     empty_doc_builder.cpp
     indexbuilder.cpp
@@ -15,6 +13,7 @@ vespa_add_library(searchlib_searchlib_index OBJECT
     postinglistparams.cpp
     schemautil.cpp
     schema_index_fields.cpp
+    string_field_builder.cpp
     uri_field.cpp
     DEPENDS
 )

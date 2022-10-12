@@ -33,6 +33,11 @@ get_document_types_config(EmptyDocBuilder::AddFieldsType add_fields)
 
 }
 
+EmptyDocBuilder::EmptyDocBuilder()
+    : EmptyDocBuilder([](auto&) noexcept {})
+{
+}
+
 EmptyDocBuilder::EmptyDocBuilder(AddFieldsType add_fields)
     : _document_types_config(std::make_shared<const DocumenttypesConfig>(get_document_types_config(add_fields))),
       _repo(DocumentTypeRepoFactory::make(*_document_types_config)),

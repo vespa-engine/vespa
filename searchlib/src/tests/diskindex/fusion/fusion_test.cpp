@@ -1,14 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/diskindex/fusion.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
-#include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
@@ -31,7 +37,10 @@ LOG_SETUP("fusion_test");
 
 namespace search {
 
+using document::ArrayFieldValue;
 using document::Document;
+using document::StringFieldValue;
+using document::WeightedSetFieldValue;
 using fef::FieldPositionsIterator;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
@@ -110,26 +119,20 @@ toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeight
 }
 
 std::unique_ptr<Document>
-make_doc10(DocBuilder &b)
+make_doc10(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("c").addStr("d").
-        addStr("e").addStr("f").addStr("z").
-        endField();
-    b.startIndexField("f1").
-        addStr("w").addStr("x").
-        addStr("y").addStr("z").
-        endField();
-    b.startIndexField("f2").
-        startElement(4).addStr("ax").addStr("ay").addStr("z").endElement().
-        startElement(5).addStr("ax").endElement().
-        endField();
-    b.startIndexField("f3").
-        startElement(4).addStr("wx").addStr("z").endElement().
-        endField();
-
-    return b.endDocument();
+    auto doc = b.make_document("id:ns:searchdocument::10");
+    StringFieldBuilder sfb(b);
+    doc->setValue("f0", sfb.tokenize("a b c d e f z").build());
+    doc->setValue("f1", sfb.tokenize("w x y z").build());
+    ArrayFieldValue string_array(b.get_data_type("Array<String>"));
+    string_array.add(sfb.tokenize("ax ay z").build());
+    string_array.add(sfb.tokenize("ax").build());
+    doc->setValue("f2", string_array);
+    WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+    string_wset.add(sfb.tokenize("wx z").build(), 4);
+    doc->setValue("f3", string_wset);
+    return doc;
 }
 
 Schema::IndexField
@@ -149,6 +152,18 @@ make_schema(bool interleaved_features)
     schema.addIndexField(make_index_field("f2", CollectionType::ARRAY, interleaved_features));
     schema.addIndexField(make_index_field("f3", CollectionType::WEIGHTEDSET, interleaved_features));
     return schema;
+}
+
+EmptyDocBuilder::AddFieldsType
+make_add_fields()
+{
+    return [](auto& header) { using namespace document::config_builder;
+        using DataType = document::DataType;
+        header.addField("f0", DataType::T_STRING)
+            .addField("f1", DataType::T_STRING)
+            .addField("f2", Array(DataType::T_STRING))
+            .addField("f3", Wset(DataType::T_STRING));
+            };
 }
 
 void
@@ -327,7 +342,8 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
                                addField("f2").addField("f3").
                                addField("f4"));
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
-    DocBuilder b(schema);
+    EmptyDocBuilder b(make_add_fields());
+    StringFieldBuilder sfb(b);
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverterContext inv_context(schema, *invertThreads, *pushThreads, fic);
@@ -338,19 +354,21 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     inv.invertDocument(10, *doc, {});
     myPushDocument(inv);
 
-    b.startDocument("id:ns:searchdocument::11").
-        startIndexField("f3").
-        startElement(-27).addStr("zz").endElement().
-        endField();
-    doc = b.endDocument();
+    doc = b.make_document("id:ns:searchdocument::11");
+    {
+        WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+        string_wset.add(sfb.word("zz").build(), -27);
+        doc->setValue("f3", string_wset);
+    }
     inv.invertDocument(11, *doc, {});
     myPushDocument(inv);
 
-    b.startDocument("id:ns:searchdocument::12").
-        startIndexField("f3").
-        startElement(0).addStr("zz0").endElement().
-        endField();
-    doc = b.endDocument();
+    doc = b.make_document("id:ns:searchdocument::12");
+    {
+        WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+        string_wset.add(sfb.word("zz0").build(), 0);
+        doc->setValue("f3", string_wset);
+    }
     inv.invertDocument(12, *doc, {});
     myPushDocument(inv);
 
@@ -468,7 +486,7 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     FieldIndexCollection fic(_schema, field_length_inspector);
     uint32_t numDocs = 20;
     uint32_t numWords = 1000;
-    DocBuilder b(_schema);
+    EmptyDocBuilder b(make_add_fields());
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverterContext inv_context(_schema, *invertThreads, *pushThreads, fic);

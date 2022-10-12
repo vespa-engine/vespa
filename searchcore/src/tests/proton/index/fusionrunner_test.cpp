@@ -1,15 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcorespi/index/fusionrunner.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
-#include <vespa/searchcorespi/index/fusionrunner.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
@@ -25,6 +29,7 @@
 
 using document::Document;
 using document::FieldValue;
+using document::StringFieldValue;
 using proton::ExecutorThreadingService;
 using proton::index::IndexManager;
 using search::FixedSourceSelector;
@@ -38,9 +43,10 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
-using search::index::DocBuilder;
+using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
+using search::index::StringFieldBuilder;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
@@ -149,15 +155,15 @@ void Test::tearDown() {
     _selector.reset(0);
 }
 
-Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word) {
+Document::UP buildDocument(EmptyDocBuilder & doc_builder, int id, const string &word) {
     vespalib::asciistream ost;
     ost << "id:ns:searchdocument::" << id;
-    doc_builder.startDocument(ost.str());
-    doc_builder.startIndexField(field_name).addStr(word).endField();
-    return doc_builder.endDocument();
+    auto doc = doc_builder.make_document(ost.str());
+    doc->setValue(field_name, StringFieldBuilder(doc_builder).word(word).build());
+    return doc;
 }
 
-void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &selector,
+void addDocument(EmptyDocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &selector,
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
     index.insertDocument(docid, *doc, {});
@@ -181,7 +187,7 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     _selector->setDefaultSource(id - _selector->getBaseId());
 
     Schema schema = getSchema();
-    DocBuilder doc_builder(schema);
+    EmptyDocBuilder doc_builder([](auto& header) { header.addField(field_name, document::DataType::T_STRING); });
     MemoryIndex memory_index(schema, MockFieldLengthInspector(),
                              _service.write().indexFieldInverter(),
                              _service.write().indexFieldWriter());

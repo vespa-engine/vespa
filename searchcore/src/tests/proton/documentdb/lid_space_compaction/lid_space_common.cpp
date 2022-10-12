@@ -127,7 +127,8 @@ MyHandler::handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared
 }
 
 MyHandler::MyHandler(bool storeMoveDoneContexts, bool bucketIdEqualLid)
-    : _stats(),
+    : _builder(),
+      _stats(),
       _moveFromLid(0),
       _moveToLid(0),
       _handleMoveCnt(0),
@@ -140,9 +141,8 @@ MyHandler::MyHandler(bool storeMoveDoneContexts, bool bucketIdEqualLid)
       _rm_listener(),
       _docs()
 {
-    DocBuilder builder = DocBuilder(Schema());
     for (uint32_t i(0); i < 10; i++) {
-        auto doc = builder.startDocument(fmt("%s%d", DOC_ID.c_str(), i)).endDocument();
+        auto doc = _builder.make_document(fmt("%s%d", DOC_ID.c_str(), i));
         _docs.emplace_back(DocumentMetaData(i, TIMESTAMP_1, createBucketId(i), doc->getId().getGlobalId()), std::move(doc));
     }
 }

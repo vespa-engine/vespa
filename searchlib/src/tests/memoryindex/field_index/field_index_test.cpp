@@ -1,13 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
@@ -37,7 +46,11 @@ namespace search {
 using namespace fef;
 using namespace index;
 
+using document::ArrayFieldValue;
 using document::Document;
+using document::StructFieldValue;
+using document::UrlDataType;
+using document::WeightedSetFieldValue;
 using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
@@ -505,6 +518,12 @@ make_single_field_schema()
     return result;
 }
 
+EmptyDocBuilder::AddFieldsType
+make_single_add_fields()
+{
+    return [](auto& header) { header.addField("f0", document::DataType::T_STRING); };
+}
+
 template <typename FieldIndexType>
 struct FieldIndexTest : public ::testing::Test {
     Schema schema;
@@ -704,6 +723,18 @@ make_multi_field_schema()
     result.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
     result.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
     return result;
+}
+
+EmptyDocBuilder::AddFieldsType
+make_multi_field_add_fields()
+{
+    return [](auto& header) { using namespace document::config_builder;
+        using DataType = document::DataType;
+        header.addField("f0", DataType::T_STRING)
+            .addField("f1", DataType::T_STRING)
+            .addField("f2", Array(DataType::T_STRING))
+            .addField("f3", Wset(DataType::T_STRING));
+           };
 }
 
 struct FieldIndexCollectionTest : public ::testing::Test {
@@ -907,16 +938,16 @@ class InverterTest : public ::testing::Test {
 public:
     Schema _schema;
     FieldIndexCollection _fic;
-    DocBuilder _b;
+    EmptyDocBuilder _b;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     DocumentInverterContext _inv_context;
     DocumentInverter _inv;
 
-    InverterTest(const Schema& schema)
+    InverterTest(const Schema& schema, EmptyDocBuilder::AddFieldsType add_fields)
         : _schema(schema),
           _fic(_schema, MockFieldLengthInspector()),
-          _b(_schema),
+          _b(add_fields),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
           _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
@@ -938,91 +969,63 @@ public:
 
 class BasicInverterTest : public InverterTest {
 public:
-    BasicInverterTest() : InverterTest(make_multi_field_schema()) {}
+    BasicInverterTest() : InverterTest(make_multi_field_schema(), make_multi_field_add_fields()) {}
 };
 
 TEST_F(BasicInverterTest, require_that_inversion_is_working)
 {
     Document::UP doc;
+    StringFieldBuilder sfb(_b);
 
-    _b.startDocument("id:ns:searchdocument::10");
-    _b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("c").addStr("d").
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::10");
+    doc->setValue("f0", sfb.tokenize("a b c d").build());
     _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 
-    _b.startDocument("id:ns:searchdocument::20");
-    _b.startIndexField("f0").
-        addStr("a").addStr("a").addStr("b").addStr("c").addStr("d").
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::20");
+    doc->setValue("f0", sfb.tokenize("a a b c d").build());
     _inv.invertDocument(20, *doc, {});
     myPushDocument(_inv);
 
-    _b.startDocument("id:ns:searchdocument::30");
-    _b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("c").addStr("d").
-        addStr("e").addStr("f").
-        endField();
-    _b.startIndexField("f1").
-        addStr("\nw2").addStr("w").addStr("x").
-        addStr("\nw3").addStr("y").addStr("z").
-        endField();
-    _b.startIndexField("f2").
-        startElement(4).
-        addStr("w").addStr("x").
-        endElement().
-        startElement(5).
-        addStr("y").addStr("z").
-        endElement().
-        endField();
-    _b.startIndexField("f3").
-        startElement(6).
-        addStr("w").addStr("x").
-        endElement().
-        startElement(7).
-        addStr("y").addStr("z").
-        endElement().
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::30");
+    doc->setValue("f0", sfb.tokenize("a b c d e f").build());
+    doc->setValue("f1", sfb.word("\nw2").tokenize(" w x ").
+                  word("\nw3").tokenize(" y z").build());
+    {
+        ArrayFieldValue string_array(_b.get_data_type("Array<String>"));
+        string_array.add(sfb.tokenize("w x").build());
+        string_array.add(sfb.tokenize("y z").build());
+        doc->setValue("f2", string_array);
+    }
+    {
+        WeightedSetFieldValue string_wset(_b.get_data_type("WeightedSet<String>"));
+        string_wset.add(sfb.tokenize("w x").build(), 6);
+        string_wset.add(sfb.tokenize("y z").build(), 7);
+        doc->setValue("f3", string_wset);
+    }
     _inv.invertDocument(30, *doc, {});
     myPushDocument(_inv);
 
-    _b.startDocument("id:ns:searchdocument::40");
-    _b.startIndexField("f0").
-        addStr("a").addStr("a").addStr("b").addStr("c").addStr("a").
-        addStr("e").addStr("f").
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::40");
+    doc->setValue("f0", sfb.tokenize("a a b c a e f").build());
     _inv.invertDocument(40, *doc, {});
     myPushDocument(_inv);
 
-    _b.startDocument("id:ns:searchdocument::999");
-    _b.startIndexField("f0").
-        addStr("this").addStr("is").addStr("_a_").addStr("test").
-        addStr("for").addStr("insertion").addStr("speed").addStr("with").
-        addStr("more").addStr("than").addStr("just").addStr("__a__").
-        addStr("few").addStr("words").addStr("present").addStr("in").
-        addStr("some").addStr("of").addStr("the").addStr("fields").
-        endField();
-    _b.startIndexField("f1").
-        addStr("the").addStr("other").addStr("field").addStr("also").
-        addStr("has").addStr("some").addStr("content").
-        endField();
-    _b.startIndexField("f2").
-        startElement(1).
-        addStr("strange").addStr("things").addStr("here").
-        addStr("has").addStr("some").addStr("content").
-        endElement().
-        endField();
-    _b.startIndexField("f3").
-        startElement(3).
-        addStr("not").addStr("a").addStr("weighty").addStr("argument").
-        endElement().
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::999");
+    doc->setValue("f0", sfb.tokenize("this is ").word("_a_").
+                  tokenize(" test for insertion speed with more than just ").
+                  word("__a__").tokenize(" few words present in some of the fields").build());
+    doc->setValue("f1", sfb.tokenize("the other field also has some content").build());
+    {
+        ArrayFieldValue string_array(_b.get_data_type("Array<String>"));
+        string_array.add(sfb.tokenize("strange things here has some content").build());
+        doc->setValue("f2", string_array);
+    }
+    {
+        WeightedSetFieldValue string_wset(_b.get_data_type("WeightedSet<String>"));
+        string_wset.add(sfb.tokenize("not a weighty argument").build(), 3);
+        doc->setValue("f3", string_wset);
+    }
     for (uint32_t docId = 10000; docId < 20000; ++docId) {
         _inv.invertDocument(docId, *doc, {});
         myPushDocument(_inv);
@@ -1132,19 +1135,17 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
 
 TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remover)
 {
-    Document::UP doc;
+    StringFieldBuilder sfb(_b);
 
-    _b.startDocument("id:ns:searchdocument::1");
-    _b.startIndexField("f0").addStr("a").addStr("b").endField();
-    _b.startIndexField("f1").addStr("a").addStr("c").endField();
-    Document::UP doc1 = _b.endDocument();
-    _inv.invertDocument(1, *doc1.get(), {});
+    auto doc1 = _b.make_document("id:ns:searchdocument::1");
+    doc1->setValue("f0", sfb.tokenize("a b").build());
+    doc1->setValue("f1", sfb.tokenize("a c").build());
+    _inv.invertDocument(1, *doc1, {});
     myPushDocument(_inv);
 
-    _b.startDocument("id:ns:searchdocument::2");
-    _b.startIndexField("f0").addStr("b").addStr("c").endField();
-    Document::UP doc2 = _b.endDocument();
-    _inv.invertDocument(2, *doc2.get(), {});
+    auto doc2 = _b.make_document("id:ns:searchdocument::2");
+    doc2->setValue("f0", sfb.tokenize("b c").build());
+    _inv.invertDocument(2, *doc2, {});
     myPushDocument(_inv);
 
     EXPECT_TRUE(assertPostingList("[1]", find("a", 0)));
@@ -1172,136 +1173,71 @@ make_uri_schema()
     return result;
 }
 
+EmptyDocBuilder::AddFieldsType
+make_uri_add_fields()
+{
+    return [](auto& header) { using namespace document::config_builder;
+        header.addField("iu", UrlDataType::getInstance().getId())
+            .addField("iau", Array(UrlDataType::getInstance().getId()))
+            .addField("iwu", Wset(UrlDataType::getInstance().getId()));
+           };
+}
+
 class UriInverterTest : public InverterTest {
 public:
-    UriInverterTest() : InverterTest(make_uri_schema()) {}
+    UriInverterTest() : InverterTest(make_uri_schema(), make_uri_add_fields()) {}
 };
 
 TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 {
     Document::UP doc;
+    StringFieldBuilder sfb(_b);
+    sfb.url_mode(true);
+    StructFieldValue url_value(_b.get_data_type("url"));
 
-    _b.startDocument("id:ns:searchdocument::10");
-    _b.startIndexField("iu").
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("81").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("4").
-        endSubField().
-        endField();
-    _b.startIndexField("iau").
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("8").
-        endSubField().
-        endElement().
-        startElement(1).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:82/fluke?ab=2#9").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("82").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("9").
-        endSubField().
-        endElement().
-        endField();
-    _b.startIndexField("iwu").
-        startElement(4).
-        startSubField("all").
-        addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.example.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("83").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("12").
-        endSubField().
-        endElement().
-        startElement(7).
-        startSubField("all").
-        addUrlTokenizedString("http://www.flickr.com:85/fluke?ab=2#13").
-        endSubField().
-        startSubField("scheme").
-        addUrlTokenizedString("http").
-        endSubField().
-        startSubField("host").
-        addUrlTokenizedString("www.flickr.com").
-        endSubField().
-        startSubField("port").
-        addUrlTokenizedString("85").
-        endSubField().
-        startSubField("path").
-        addUrlTokenizedString("/fluke").
-        endSubField().
-        startSubField("query").
-        addUrlTokenizedString("ab=2").
-        endSubField().
-        startSubField("fragment").
-        addUrlTokenizedString("13").
-        endSubField().
-        endElement().
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::10");
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:81/fluke?ab=2#4").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("81").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("4").build());
+    doc->setValue("iu", url_value);
+    ArrayFieldValue url_array(_b.get_data_type("Array<url>"));
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:82/fluke?ab=2#8").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("82").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("8").build());
+    url_array.add(url_value);
+    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:82/fluke?ab=2#9").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("fragment", sfb.tokenize("9").build());
+    url_array.add(url_value);
+    doc->setValue("iau", url_array);
+    WeightedSetFieldValue url_wset(_b.get_data_type("WeightedSet<url>"));
+    url_value.setValue("all", sfb.tokenize("http://www.example.com:83/fluke?ab=2#12").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.example.com").build());
+    url_value.setValue("port", sfb.tokenize("83").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").alt_word("altfluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("12").build());
+    url_wset.add(url_value, 4);
+    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:85/fluke?ab=2#13").build());
+    url_value.setValue("scheme", sfb.tokenize("http").build());
+    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
+    url_value.setValue("port", sfb.tokenize("85").build());
+    url_value.setValue("path", sfb.tokenize("/fluke").build());
+    url_value.setValue("query", sfb.tokenize("ab=2").build());
+    url_value.setValue("fragment", sfb.tokenize("13").build());
+    url_wset.add(url_value, 7);
+    doc->setValue("iwu", url_wset);
     _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 
@@ -1360,21 +1296,16 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 
 class CjkInverterTest : public InverterTest {
 public:
-    CjkInverterTest() : InverterTest(make_single_field_schema()) {}
+    CjkInverterTest() : InverterTest(make_single_field_schema(), make_single_add_fields()) {}
 };
 
 TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
 {
     Document::UP doc;
+    StringFieldBuilder sfb(_b);
 
-    _b.startDocument("id:ns:searchdocument::10");
-    _b.startIndexField("f0").
-        addStr("我就是那个").
-        setAutoSpace(false).
-        addStr("大灰狼").
-        setAutoSpace(true).
-        endField();
-    doc = _b.endDocument();
+    doc = _b.make_document("id:ns:searchdocument::10");
+    doc->setValue("f0", sfb.word("我就是那个").word("大灰狼").build());
     _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 

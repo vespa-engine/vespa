@@ -28,6 +28,7 @@ class EmptyDocBuilder {
     const document::DocumentType*                     _document_type;
 public:
     using AddFieldsType = std::function<void(document::config_builder::Struct&)>;
+    EmptyDocBuilder();
     explicit EmptyDocBuilder(AddFieldsType add_fields);
     ~EmptyDocBuilder();
     const document::DocumentTypeRepo& get_repo() const noexcept { return *_repo; }
