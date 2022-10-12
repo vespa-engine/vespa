@@ -19,6 +19,7 @@ public class JobMetrics {
     public static final String nodeAllocationFailure = "deployment.nodeAllocationFailure";
     public static final String endpointCertificateTimeout = "deployment.endpointCertificateTimeout";
     public static final String deploymentFailure = "deployment.deploymentFailure";
+    public static final String invalidApplication = "deployment.invalidApplication";
     public static final String convergenceFailure = "deployment.convergenceFailure";
     public static final String testFailure = "deployment.testFailure";
     public static final String noTests = "deployment.noTests";
@@ -27,11 +28,9 @@ public class JobMetrics {
     public static final String success = "deployment.success";
 
     private final Metric metric;
-    private final Supplier<SystemName> system;
 
-    public JobMetrics(Metric metric, Supplier<SystemName> system) {
+    public JobMetrics(Metric metric) {
         this.metric = metric;
-        this.system = system;
     }
 
     public void jobStarted(JobId id) {
@@ -51,18 +50,19 @@ public class JobMetrics {
     }
 
     static String valueOf(RunStatus status) {
-        switch (status) {
-            case nodeAllocationFailure: return nodeAllocationFailure;
-            case endpointCertificateTimeout: return endpointCertificateTimeout;
-            case deploymentFailed: return deploymentFailure;
-            case installationFailed: return convergenceFailure;
-            case testFailure: return testFailure;
-            case noTests: return noTests;
-            case error: return error;
-            case aborted: return abort;
-            case success: return success;
-            default: throw new IllegalArgumentException("Unexpected run status '" + status + "'");
-        }
+        return switch (status) {
+            case nodeAllocationFailure -> nodeAllocationFailure;
+            case endpointCertificateTimeout -> endpointCertificateTimeout;
+            case invalidApplication -> invalidApplication;
+            case deploymentFailed -> deploymentFailure;
+            case installationFailed -> convergenceFailure;
+            case testFailure -> testFailure;
+            case noTests -> noTests;
+            case error -> error;
+            case aborted -> abort;
+            case success -> success;
+            default -> throw new IllegalArgumentException("Unexpected run status '" + status + "'");
+        };
     }
 
 }

@@ -293,7 +293,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             return hosts;
         } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
-            throw new NodeAllocationException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage());
+            throw new NodeAllocationException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage(),
+                                              ! (e instanceof NodeAllocationException nae) || nae.retryable());
         } catch (RuntimeException e) {
             throw new RuntimeException("Failed to provision " + count + " " + nodeResources + ", will retry in " + interval(), e);
         }

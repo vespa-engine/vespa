@@ -34,6 +34,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
@@ -329,39 +330,38 @@ class RunSerializer {
     }
 
     static String valueOf(RunStatus status) {
-        switch (status) {
-            case running                    : return "running";
-            case nodeAllocationFailure      : return "nodeAllocationFailure";
-            case endpointCertificateTimeout : return "endpointCertificateTimeout";
-            case deploymentFailed           : return "deploymentFailed";
-            case installationFailed         : return "installationFailed";
-            case testFailure                : return "testFailure";
-            case noTests                    : return "noTests";
-            case error                      : return "error";
-            case success                    : return "success";
-            case aborted                    : return "aborted";
-            case reset                      : return "reset";
-
-            default: throw new AssertionError("No value defined for '" + status + "'!");
-        }
+        return switch (status) {
+            case running                    -> "running";
+            case nodeAllocationFailure      -> "nodeAllocationFailure";
+            case endpointCertificateTimeout -> "endpointCertificateTimeout";
+            case deploymentFailed           -> "deploymentFailed";
+            case invalidApplication         -> "invalidApplication";
+            case installationFailed         -> "installationFailed";
+            case testFailure                -> "testFailure";
+            case noTests                    -> "noTests";
+            case error                      -> "error";
+            case success                    -> "success";
+            case aborted                    -> "aborted";
+            case reset                      -> "reset";
+        };
     }
 
     static RunStatus runStatusOf(String status) {
-        switch (status) {
-            case "running"                    : return running;
-            case "nodeAllocationFailure"      : return nodeAllocationFailure;
-            case "endpointCertificateTimeout" : return endpointCertificateTimeout;
-            case "deploymentFailed"           : return deploymentFailed;
-            case "installationFailed"         : return installationFailed;
-            case "noTests"                    : return noTests;
-            case "testFailure"                : return testFailure;
-            case "error"                      : return error;
-            case "success"                    : return success;
-            case "aborted"                    : return aborted;
-            case "reset"                      : return reset;
-
-            default: throw new IllegalArgumentException("No run status defined by '" + status + "'!");
-        }
+        return switch (status) {
+            case "running"                    -> running;
+            case "nodeAllocationFailure"      -> nodeAllocationFailure;
+            case "endpointCertificateTimeout" -> endpointCertificateTimeout;
+            case "deploymentFailed"           -> deploymentFailed;
+            case "invalidApplication"         -> invalidApplication;
+            case "installationFailed"         -> installationFailed;
+            case "noTests"                    -> noTests;
+            case "testFailure"                -> testFailure;
+            case "error"                      -> error;
+            case "success"                    -> success;
+            case "aborted"                    -> aborted;
+            case "reset"                      -> reset;
+            default -> throw new IllegalArgumentException("No run status defined by '" + status + "'!");
+        };
     }
 
 }
