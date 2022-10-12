@@ -41,11 +41,11 @@ class MyAttribute : public search::NotImplementedAttribute
         _mvMapping.shrink(committedDocIdLimit);
         setNumDocs(committedDocIdLimit);
     }
-    virtual void removeOldGenerations(generation_t firstUsed) override {
-        _mvMapping.reclaim_memory(firstUsed);
+    virtual void reclaim_memory(generation_t oldest_used_gen) override {
+        _mvMapping.reclaim_memory(oldest_used_gen);
     }
-    virtual void onGenerationChange(generation_t generation) override {
-        _mvMapping.assign_generation(generation - 1);
+    virtual void before_inc_generation(generation_t current_gen) override {
+        _mvMapping.assign_generation(current_gen);
     }
 
 public:

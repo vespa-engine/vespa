@@ -106,16 +106,16 @@ SingleValueSmallNumericAttribute::onUpdateStat()
 
 
 void
-SingleValueSmallNumericAttribute::removeOldGenerations(generation_t firstUsed)
+SingleValueSmallNumericAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().reclaim(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 
 void
-SingleValueSmallNumericAttribute::onGenerationChange(generation_t generation)
+SingleValueSmallNumericAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 

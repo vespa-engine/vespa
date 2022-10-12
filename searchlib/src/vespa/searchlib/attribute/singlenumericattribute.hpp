@@ -95,16 +95,16 @@ SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueNumericAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().reclaim(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueNumericAttribute<B>::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 template <typename B>

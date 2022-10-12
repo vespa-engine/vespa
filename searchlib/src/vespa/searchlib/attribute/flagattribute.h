@@ -33,7 +33,7 @@ private:
     void ensureGuardBit();
     void clearGuardBit(DocId doc);
     void resizeBitVectors(uint32_t neededSize);
-    void removeOldGenerations(vespalib::GenerationHandler::generation_t firstUsed) override;
+    void reclaim_memory(vespalib::GenerationHandler::generation_t oldest_used_gen) override;
     uint32_t getOffset(int8_t value) const { return value + 128; }
 
     using AtomicBitVectorPtr = vespalib::datastore::AtomicValueWrapper<BitVector *>;

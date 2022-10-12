@@ -201,7 +201,7 @@ private:
                    PostingListNodeAllocator &postingsAlloc);
 
     void
-    removeOldGenerations(Tree &tree,
+    reclaim_memory(Tree &tree,
                          ValueHandle &valueHandle,
                          PostingList &postings,
                          PostingListNodeAllocator &postingsAlloc);
@@ -665,7 +665,7 @@ bumpGeneration(Tree &tree,
 
 void
 AttributePostingListTest::
-removeOldGenerations(Tree &tree,
+reclaim_memory(Tree &tree,
                      ValueHandle &valueHandle,
                      PostingList &postings,
                      PostingListNodeAllocator &postingsAlloc)

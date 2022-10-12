@@ -187,9 +187,9 @@ RcuVector<T>::~RcuVector()
 
 template <typename T>
 void
-RcuVector<T>::removeOldGenerations(generation_t firstUsed)
+RcuVector<T>::reclaim_memory(generation_t oldest_used_gen)
 {
-    _genHolderStore.reclaim(firstUsed);
+    _genHolderStore.reclaim(oldest_used_gen);
 }
 
 template <typename T>

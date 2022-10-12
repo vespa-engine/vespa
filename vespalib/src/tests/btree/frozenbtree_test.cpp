@@ -114,7 +114,7 @@ FrozenBTreeTest::freeTree(bool verbose)
         static_cast<uint64_t>(_intTree->getUsedMemory()),
         static_cast<uint64_t>(_intTree->getHeldMemory()));
     _intTree->dropFrozen();
-    _intTree->removeOldGenerations(_intTree->getGeneration() + 1);
+    _intTree->reclaim_memory(_intTree->getGeneration() + 1);
     LOG(info,
         "freeTree after unhold: %" PRIu64 " (%" PRIu64 " held)",
         static_cast<uint64_t>(_intTree->getUsedMemory()),

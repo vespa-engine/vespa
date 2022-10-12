@@ -523,7 +523,7 @@ HnswIndex::assign_generation(generation_t current_gen)
 void
 HnswIndex::reclaim_memory(generation_t oldest_used_gen)
 {
-    _graph.node_refs.removeOldGenerations(oldest_used_gen);
+    _graph.node_refs.reclaim_memory(oldest_used_gen);
     _graph.nodes.reclaim_memory(oldest_used_gen);
     _graph.links.reclaim_memory(oldest_used_gen);
 }

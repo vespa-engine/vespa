@@ -241,20 +241,20 @@ DocumentMetaStore::onUpdateStat()
 }
 
 void
-DocumentMetaStore::onGenerationChange(generation_t generation)
+DocumentMetaStore::before_inc_generation(generation_t current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
-    _gidToLidMap.getAllocator().assign_generation(generation - 1);
-    getGenerationHolder().assign_generation(generation - 1);
+    _gidToLidMap.getAllocator().assign_generation(current_gen);
+    getGenerationHolder().assign_generation(current_gen);
     updateStat(false);
 }
 
 void
-DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
+DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 {
-    _gidToLidMap.getAllocator().reclaim_memory(firstUsed);
-    _lidAlloc.reclaim_memory(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
+    _lidAlloc.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 std::unique_ptr<search::AttributeSaver>
