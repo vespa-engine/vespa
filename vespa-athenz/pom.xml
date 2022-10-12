@@ -92,7 +92,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <!--Exclude all Jackson bundles provided by JDisc -->
                 <exclusion>
@@ -148,7 +148,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <!--Exclude all Jackson bundles provided by JDisc -->
                 <exclusion>
