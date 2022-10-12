@@ -103,9 +103,9 @@ void MultiValueNumericAttribute<B, M>::removeOldGenerations(generation_t firstUs
 
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::onGenerationChange(generation_t generation)
+void MultiValueNumericAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
-    this->_mvMapping.assign_generation(generation - 1);
+    this->_mvMapping.assign_generation(current_gen);
 }
 
 template <typename B, typename M>

@@ -447,7 +447,7 @@ private:
 
     /// Clean up [0, firstUsed>
     virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
+    virtual void before_inc_generation(generation_t current_gen);
     virtual void onUpdateStat() = 0;
     /**
      * Used to regulate access to critical resources. Apply the

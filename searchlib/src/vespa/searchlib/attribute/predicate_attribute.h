@@ -49,7 +49,7 @@ public:
     bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
     void removeOldGenerations(generation_t firstUsed) override;
-    void onGenerationChange(generation_t generation) override;
+    void before_inc_generation(generation_t current_gen) override;
     void onUpdateStat() override;
     bool addDoc(DocId &doc_id) override;
     uint32_t clearDoc(DocId doc_id) override;

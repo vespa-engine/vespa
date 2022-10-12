@@ -117,10 +117,10 @@ TensorAttribute::removeOldGenerations(generation_t firstUsed)
 }
 
 void
-TensorAttribute::onGenerationChange(generation_t generation)
+TensorAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
-    _tensorStore.assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    _tensorStore.assign_generation(current_gen);
 }
 
 bool

@@ -102,9 +102,9 @@ SingleValueNumericAttribute<B>::removeOldGenerations(generation_t firstUsed)
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueNumericAttribute<B>::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 template <typename B>

@@ -184,7 +184,7 @@ void
 AttributeVector::incGeneration()
 {
     // Freeze trees etc, to stop new readers from accessing currently held data
-    onGenerationChange(_genHandler.getNextGeneration());
+    before_inc_generation(_genHandler.getCurrentGeneration());
     _genHandler.incGeneration();
     // Remove old data on hold lists that can no longer be reached by readers
     removeAllOldGenerations();
@@ -238,7 +238,7 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
 }
 
 void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
-void AttributeVector::onGenerationChange(generation_t generation) { (void) generation; }
+void AttributeVector::before_inc_generation(generation_t current_gen) { (void) current_gen; }
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }

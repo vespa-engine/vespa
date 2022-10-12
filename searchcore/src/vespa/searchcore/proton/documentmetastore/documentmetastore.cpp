@@ -241,11 +241,11 @@ DocumentMetaStore::onUpdateStat()
 }
 
 void
-DocumentMetaStore::onGenerationChange(generation_t generation)
+DocumentMetaStore::before_inc_generation(generation_t current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
-    _gidToLidMap.getAllocator().assign_generation(generation - 1);
-    getGenerationHolder().assign_generation(generation - 1);
+    _gidToLidMap.getAllocator().assign_generation(current_gen);
+    getGenerationHolder().assign_generation(current_gen);
     updateStat(false);
 }
 

@@ -169,13 +169,13 @@ ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 }
 
 void
-ReferenceAttribute::onGenerationChange(generation_t generation)
+ReferenceAttribute::before_inc_generation(generation_t current_gen)
 {
     _referenceMappings.freeze();
     _store.freeze();
-    _referenceMappings.assign_generation(generation - 1);
-    _store.assign_generation(generation - 1);
-    getGenerationHolder().assign_generation(generation - 1);
+    _referenceMappings.assign_generation(current_gen);
+    _store.assign_generation(current_gen);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 void

@@ -93,7 +93,7 @@ private:
     void onUpdateStat() override;
 
     // Implements AttributeVector
-    void onGenerationChange(generation_t generation) override;
+    void before_inc_generation(generation_t current_gen) override;
     void removeOldGenerations(generation_t firstUsed) override;
     std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     bool onLoad(vespalib::Executor *executor) override;

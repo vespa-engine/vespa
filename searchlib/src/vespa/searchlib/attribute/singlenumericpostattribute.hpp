@@ -135,11 +135,11 @@ SingleValueNumericPostingAttribute<B>::removeOldGenerations(generation_t firstUs
 
 template <typename B>
 void
-SingleValueNumericPostingAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueNumericPostingAttribute<B>::before_inc_generation(generation_t current_gen)
 {
     _postingList.freeze();
-    SingleValueNumericEnumAttribute<B>::onGenerationChange(generation);
-    _postingList.assign_generation(generation - 1);
+    SingleValueNumericEnumAttribute<B>::before_inc_generation(current_gen);
+    _postingList.assign_generation(current_gen);
 }
 
 template <typename B>

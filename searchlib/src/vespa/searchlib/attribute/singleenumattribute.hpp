@@ -272,7 +272,7 @@ SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueEnumAttribute<B>::before_inc_generation(generation_t current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector
@@ -281,8 +281,8 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    getGenerationHolder().assign_generation(generation - 1);
-    this->_enumStore.assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    this->_enumStore.assign_generation(current_gen);
 }
 
 

@@ -47,7 +47,7 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     uint32_t getVersion() const override;
     void onCommit() override;
-    void onGenerationChange(generation_t next_gen) override;
+    void before_inc_generation(generation_t current_gen) override;
     void removeOldGenerations(generation_t first_used_gen) override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
     void onShrinkLidSpace() override;

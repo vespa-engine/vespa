@@ -132,10 +132,10 @@ PredicateAttribute::removeOldGenerations(generation_t firstUsed)
 }
 
 void
-PredicateAttribute::onGenerationChange(generation_t generation)
+PredicateAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
-    _index->assign_generation(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    _index->assign_generation(current_gen);
 }
 
 void

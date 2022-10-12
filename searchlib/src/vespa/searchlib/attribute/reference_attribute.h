@@ -51,7 +51,7 @@ private:
 
     void onAddDocs(DocId docIdLimit) override;
     void removeOldGenerations(generation_t firstUsed) override;
-    void onGenerationChange(generation_t generation) override;
+    void before_inc_generation(generation_t current_gen) override;
     void onCommit() override;
     void onUpdateStat() override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;

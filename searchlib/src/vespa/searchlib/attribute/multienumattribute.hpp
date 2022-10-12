@@ -202,7 +202,7 @@ MultiValueEnumAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
+MultiValueEnumAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector
@@ -211,8 +211,8 @@ MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    this->_mvMapping.assign_generation(generation - 1);
-    this->_enumStore.assign_generation(generation - 1);
+    this->_mvMapping.assign_generation(current_gen);
+    this->_enumStore.assign_generation(current_gen);
 }
 
 template <typename B, typename M>

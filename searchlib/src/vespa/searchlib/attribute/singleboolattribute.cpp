@@ -262,8 +262,8 @@ SingleBoolAttribute::removeOldGenerations(generation_t firstUsed) {
 }
 
 void
-SingleBoolAttribute::onGenerationChange(generation_t generation) {
-    getGenerationHolder().assign_generation(generation - 1);
+SingleBoolAttribute::before_inc_generation(generation_t current_gen) {
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 }

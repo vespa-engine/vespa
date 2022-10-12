@@ -83,11 +83,11 @@ MultiValueStringPostingAttributeT<B, T>::removeOldGenerations(generation_t first
 
 template <typename B, typename T>
 void
-MultiValueStringPostingAttributeT<B, T>::onGenerationChange(generation_t generation)
+MultiValueStringPostingAttributeT<B, T>::before_inc_generation(generation_t current_gen)
 {
     _postingList.freeze();
-    MultiValueStringAttributeT<B, T>::onGenerationChange(generation);
-    _postingList.assign_generation(generation - 1);
+    MultiValueStringAttributeT<B, T>::before_inc_generation(current_gen);
+    _postingList.assign_generation(current_gen);
 }
 
 

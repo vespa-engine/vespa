@@ -64,11 +64,11 @@ MultiValueNumericPostingAttribute<B, M>::removeOldGenerations(generation_t first
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::onGenerationChange(generation_t generation)
+MultiValueNumericPostingAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
     _postingList.freeze();
-    MultiValueNumericEnumAttribute<B, M>::onGenerationChange(generation);
-    _postingList.assign_generation(generation - 1);
+    MultiValueNumericEnumAttribute<B, M>::before_inc_generation(current_gen);
+    _postingList.assign_generation(current_gen);
 }
 
 template <typename B, typename M>
