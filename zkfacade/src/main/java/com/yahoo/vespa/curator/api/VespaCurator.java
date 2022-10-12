@@ -7,6 +7,7 @@ import com.yahoo.path.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -63,20 +64,29 @@ public interface VespaCurator {
     record Meta(int version) { }
 
     /**
-     * Register the singleton with the framework, so it may become active, and returns a
-     * synchronisation handle to any deactivations or activations triggered by this.
-     * If there is already another active singleton with the given ID (in this JVM),
-     * that will be deactivated before the new one is activated.
+     * Register the singleton with the framework, so it may become active.
+     * <p>
+     * <strong>Call this after construction of the singleton, typically during component construction!</strong>
+     * <ul>
+     *   <li>If this activates the singleton, this happens synchronously, and any errors are propagated here.</li>
+     *   <li>If this replaces an already active singleton, its deactivation is also called, prior to activation of this.</li>
+     *   <li>If (de)activation is not complete within the given timeout, a timeout exception is thrown.</li>
+     *   <li>If an error occurs (due to failed activation), unregistration is automatically attempted, with the same timeout.</li>
+     * </ul>
      */
-    Future<?> registerSingleton(String singletonId, SingletonWorker singleton);
+    void register(SingletonWorker singleton, Duration timeout);
 
     /**
      * Unregister with the framework, so this singleton may no longer be active, and returns
-     * a synchronisation handle to any deactivation or activation triggered by this.
-     * If this is the last singleton registered with its ID, then this container immediately releases
-     * the activation lease for that ID, so another container may acquire it.
+     * <p>
+     * <strong>Call this before deconstruction of the singleton, typically during component deconstruction!</strong>
+     * <ul>
+     * <li>If this singleton is active, deactivation will be called synchronously, and errors propagated here.</li>
+     * <li>If this also triggers activation of a new singleton, its activation is called after deactivation of this.</li>
+     * <li>If (de)activation is not complete within the given timeout, a timeout exception is thrown.</li>
+     * </ul>
      */
-    Future<?> unregisterSingleton(SingletonWorker singleton);
+    void unregister(SingletonWorker singleton, Duration timeout);
 
     /**
      * Whether this container currently holds the exclusive lease for activation of singletons with this ID.
@@ -85,18 +95,79 @@ public interface VespaCurator {
 
     /**
      * Callback interface for processes of which only a single instance should be active at any time, across all
-     * containers in the cluster, and across all component generations. Notes:
+     * containers in the cluster, and across all component generations.
+     * <p>
+     * <br>
+     * Sample usage:
+     * <pre>
+     * public class SingletonHolder extends AbstractComponent {
+     *
+     *     private static final Duration timeout = Duration.ofSeconds(10);
+     *     private final VespaCurator curator;
+     *     private final SingletonWorker singleton;
+     *
+     *     public SingletonHolder(VespaCurator curator) {
+     *         this.curator = curator;
+     *         this.singleton = new Singleton();
+     *         curator.register(singleton, timeout);
+     *     }
+     *
+     *     &#064;Override
+     *     public void deconstruct() {
+     *         curator.unregister(singleton, timeout);
+     *         singleton.shutdown();
+     *     }
+     *
+     * }
+     *
+     * public class Singleton implements SingletonWorker {
+     *
+     *     private final SharedResource resource = ...; // Shared resource that requires exclusive access.
+     *     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+     *     private final AtomicBoolean running = new AtomicBoolean();
+     *     private Future&lt;?&gt; future = null;
+     *
+     *     &#064;Override
+     *     public void activate() {
+     *         resource.open(); // Verify resource works here, and propagate any errors out.
+     *         running.set(true);
+     *         future = executor.submit(this::doWork);
+     *     }
+     *
+     *     &#064;Override
+     *     public void deactivate() {
+     *         running.set(false);
+     *         try { future.get(10, TimeUnit.SECONDS); }
+     *         catch (Exception e) { ... }
+     *         finally { resource.close(); }
+     *     }
+     *
+     *     private void doWork() {
+     *         while (running.get()) { ... } // Regularly check whether we should keep running.
+     *     }
+     *
+     *     public void shutdown() {
+     *         executor.shutdownNow(); // Executor should have no running tasks at this point.
+     *     }
+     *
+     * }
+     * </pre>
+     * <p>
+     * <br>
+     * Notes to implementors:
      * <ul>
      *     <li>{@link #activate()} is called by the system on a singleton whenever it is the newest registered
      *          singleton in this container, and this container has the lease for the ID with which the singleton
-     *          was registered. See {@link #registerSingleton} and {@link #isActive}.</li>
+     *          was registered. See {@link #id}, {@link #register} and {@link #isActive}.</li>
      *     <li>{@link #deactivate()} is called by the system on a singleton which is currently active whenever
-     *         the above no longer holds. See {@link #unregisterSingleton}.</li>
-     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial;
-     *         the callbacks must return in a timely manner, but are allowed to throw exceptions.</li>
+     *         the above no longer holds. See {@link #unregister}.</li>
+     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial; the callbacks must
+     *         return in a timely manner, but are encouraged to throw exceptions when something's wrong</li>
      *     <li>Activation and deactivation may be triggered by:
-     *         <ol><li>the container acquiring or losing the activation lease; or</li>
-     *         <li>registration of unregistration of a new or obsolete singleton.</li></ol>
+     *         <ol>
+     *             <li>the container acquiring or losing the activation lease; or</li>
+     *             <li>registration of unregistration of a new or obsolete singleton.</li>
+     *         </ol>
      *         Events triggered by the latter happen synchronously, and errors are propagated to the caller for cleanup.
      *         Events triggered by the former may happen in the background, and because the system tries to always have
      *         one activated singleton, exceptions during activation will cause the container to abandon its lease, so
@@ -104,7 +175,6 @@ public interface VespaCurator {
      *     </li>
      *     <li>A container without any registered singletons will not attempt to hold the activation lease.</li>
      * </ul>
-     * See {@link AbstractSingletonWorker} for an abstract superclass to use for implementations.
      */
     interface SingletonWorker {
 
@@ -117,6 +187,14 @@ public interface VespaCurator {
 
         /** Called by the system whenever this singleton is no longer the single active worker. */
         void deactivate();
+
+        /**
+         * The singleton ID to use when registering this with a {@link VespaCurator}.
+         * At most one singleton worker with the given ID will be active, in the cluster, at any time.
+         * {@link VespaCurator#isActive(String)} may be polled to see whether this container is currently
+         * allowed to have an active singleton with the given ID.
+         */
+        default String id() { return getClass().getName(); }
 
     }
 
