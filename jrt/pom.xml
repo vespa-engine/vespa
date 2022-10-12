@@ -38,7 +38,7 @@
     </dependency>
     <dependency> <!-- required due to bug in maven dependency resolving - bouncycastle is compile scope in security-utils, yet it is not part of test scope here -->
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
+      <artifactId>bcpkix-jdk18on</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

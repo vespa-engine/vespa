@@ -2,7 +2,7 @@
 package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -60,7 +60,7 @@ public class SubjectAlternativeName {
             case GeneralName.rfc822Name:
             case GeneralName.dNSName:
             case GeneralName.uniformResourceIdentifier:
-                return DERIA5String.getInstance(name).getString();
+                return ASN1IA5String.getInstance(name).getString();
             case GeneralName.directoryName:
                 return X500Name.getInstance(name).toString();
             case GeneralName.iPAddress:
