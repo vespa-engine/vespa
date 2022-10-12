@@ -19,8 +19,8 @@ public:
             struct awaiter {
                 bool await_ready() const noexcept { return false; }
                 std::coroutine_handle<> await_suspend(Handle handle) const noexcept {
-                    auto waiter = handle.promise().waiter;
-                    return waiter ? waiter : std::noop_coroutine();
+                    auto promise_waiter = handle.promise().waiter;
+                    return promise_waiter ? promise_waiter : std::noop_coroutine();
                 }
                 void await_resume() const noexcept {}
             };
