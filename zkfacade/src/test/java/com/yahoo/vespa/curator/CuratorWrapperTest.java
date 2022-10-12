@@ -3,9 +3,9 @@ package com.yahoo.vespa.curator;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.api.AbstractSingletonWorker;
 import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.api.VespaCurator.Meta;
+import com.yahoo.vespa.curator.api.VespaCurator.SingletonWorker;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.mock.MockCuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
@@ -314,8 +314,13 @@ public class CuratorWrapperTest {
         }
     }
 
-    static class Singleton extends AbstractSingletonWorker {
-        Singleton(VespaCurator curator) { register(curator, Duration.ofSeconds(2)); }
+    static class Singleton implements SingletonWorker {
+        final VespaCurator curator;
+        Singleton(VespaCurator curator) {
+            this.curator = curator;
+
+            curator.register(this, Duration.ofSeconds(2));
+        }
         boolean isActive;
         Phaser phaser = new Phaser(1);
         @Override public String id() { return "singleton"; } // ... lest anonymous subclasses get different IDs ... ƪ(`▿▿▿▿´ƪ)
@@ -329,7 +334,7 @@ public class CuratorWrapperTest {
             isActive = false;
             phaser.arriveAndAwaitAdvance();
         }
-        public void shutdown() { unregister(Duration.ofSeconds(2)); }
+        public void shutdown() { curator.unregister(this, Duration.ofSeconds(2)); }
     }
 
     static void verifyMetrics(Map<String, Double> expected, MockMetric metrics) {

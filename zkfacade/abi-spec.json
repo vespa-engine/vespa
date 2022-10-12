@@ -1,21 +1,4 @@
 {
-  "com.yahoo.vespa.curator.api.AbstractSingletonWorker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker"
-    ],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public java.lang.String id()",
-      "public final void register(com.yahoo.vespa.curator.api.VespaCurator, java.time.Duration)",
-      "public final void unregister(java.time.Duration)"
-    ],
-    "fields": []
-  },
   "com.yahoo.vespa.curator.api.VespaCurator$Data": {
     "superClass": "java.lang.Record",
     "interfaces": [],
@@ -61,7 +44,8 @@
     ],
     "methods": [
       "public abstract void activate()",
-      "public abstract void deactivate()"
+      "public abstract void deactivate()",
+      "public java.lang.String id()"
     ],
     "fields": []
   },
@@ -83,8 +67,8 @@
       "public abstract boolean delete(com.yahoo.path.Path, int)",
       "public abstract java.util.List list(com.yahoo.path.Path)",
       "public abstract java.lang.AutoCloseable lock(com.yahoo.path.Path, java.time.Duration)",
-      "public abstract java.util.concurrent.Future registerSingleton(java.lang.String, com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker)",
-      "public abstract java.util.concurrent.Future unregisterSingleton(com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker)",
+      "public abstract void register(com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker, java.time.Duration)",
+      "public abstract void unregister(com.yahoo.vespa.curator.api.VespaCurator$SingletonWorker, java.time.Duration)",
       "public abstract boolean isActive(java.lang.String)"
     ],
     "fields": []

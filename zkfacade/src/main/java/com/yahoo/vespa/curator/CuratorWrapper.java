@@ -2,6 +2,7 @@ package com.yahoo.vespa.curator;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
@@ -16,7 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Implementation of {@link VespaCurator} which delegates to a {@link Curator}.
@@ -105,13 +108,41 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
     }
 
     @Override
-    public CompletableFuture<?> registerSingleton(String singletonId, SingletonWorker singleton) {
-        return singletons.register(singletonId, singleton);
+    public void register(SingletonWorker singleton, Duration timeout) {
+        try {
+            await(singletons.register(singleton.id(), singleton), timeout, "register " + singleton);
+        }
+        catch (RuntimeException e) {
+            try {
+                unregister(singleton, timeout);
+            }
+            catch (Exception f) {
+                e.addSuppressed(f);
+            }
+            throw e;
+        }
     }
 
     @Override
-    public CompletableFuture<?> unregisterSingleton(SingletonWorker singleton) {
-        return singletons.unregister(singleton);
+    public void unregister(SingletonWorker singleton, Duration timeout) {
+        await(singletons.unregister(singleton), timeout, "unregister " + singleton);
+    }
+
+    private void await(Future<?> future, Duration timeout, String action) {
+        try {
+            future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            future.cancel(true);
+            throw new UncheckedInterruptedException("interrupted while " + action, e, true);
+        }
+        catch (TimeoutException e) {
+            future.cancel(true);
+            throw new UncheckedTimeoutException("timed out while " + action, e);
+        }
+        catch (ExecutionException e) {
+            throw new RuntimeException("failed to " + action, e.getCause());
+        }
     }
 
     @Override

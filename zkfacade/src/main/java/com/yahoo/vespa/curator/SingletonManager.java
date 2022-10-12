@@ -140,7 +140,7 @@ class SingletonManager {
         Janitor(String id) {
             this.id = id;
             this.path = Path.fromString("/vespa/singleton/v1/" + id);
-            this.worker = new Thread(this::run, "singleton-janitor-" + id + "-");
+            this.worker = new Thread(this::run, "singleton-janitor-" + id);
             this.metrics = new MetricHelper();
 
             worker.setDaemon(true);
@@ -199,7 +199,7 @@ class SingletonManager {
                 }
             }
             catch (RuntimeException e) {
-                logger.log(Level.WARNING, "Uncaught exception in " + worker, e);
+                logger.log(Level.WARNING, "Exception attempting to " + task.type + " " + task.singleton + " in " + worker, e);
                 task.future.completeExceptionally(e);
             }
         }
@@ -374,6 +374,7 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(ACTIVATION, 1, context);
+                logger.log(Level.INFO, "Activating singleton with ID " + id);
                 try {
                     activation.run();
                 }
@@ -392,6 +393,7 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(DEACTIVATION, 1, context);
+                logger.log(Level.INFO, "Deactivating singleton with ID " + id);
                 try {
                     deactivation.run();
                 }
