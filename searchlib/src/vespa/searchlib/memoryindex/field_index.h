@@ -60,12 +60,12 @@ private:
         _featureStore.trimHoldLists(usedGen);
     }
 
-    void transferHoldLists() {
+    void assign_generation() {
         GenerationHandler::generation_t generation =
             _generationHandler.getCurrentGeneration();
-        _postingListStore.transferHoldLists(generation);
-        _dict.getAllocator().transferHoldLists(generation);
-        _featureStore.transferHoldLists(generation);
+        _postingListStore.assign_generation(generation);
+        _dict.getAllocator().assign_generation(generation);
+        _featureStore.assign_generation(generation);
     }
 
     void incGeneration() {
@@ -90,7 +90,7 @@ public:
     void commit() override {
         _remover.flush();
         freeze();
-        transferHoldLists();
+        assign_generation();
         incGeneration();
         trimHoldLists();
     }

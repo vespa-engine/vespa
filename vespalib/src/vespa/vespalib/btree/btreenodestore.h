@@ -162,8 +162,8 @@ public:
 
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);
 
-    void transferHoldLists(generation_t generation) {
-        _store.transferHoldLists(generation);
+    void assign_generation(generation_t current_gen) {
+        _store.assign_generation(current_gen);
     }
 
     // Inherit doc from DataStoreBase

@@ -220,10 +220,10 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 }
 
 void
-DataStoreBase::transferHoldLists(generation_t generation)
+DataStoreBase::assign_generation(generation_t current_gen)
 {
-    _genHolder.assign_generation(generation);
-    _entry_ref_hold_list.assign_generation(generation);
+    _genHolder.assign_generation(current_gen);
+    _entry_ref_hold_list.assign_generation(current_gen);
 }
 
 void

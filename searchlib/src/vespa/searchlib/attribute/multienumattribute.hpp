@@ -211,8 +211,8 @@ MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    this->_mvMapping.transferHoldLists(generation - 1);
-    this->_enumStore.transfer_hold_lists(generation - 1);
+    this->_mvMapping.assign_generation(generation - 1);
+    this->_enumStore.assign_generation(generation - 1);
 }
 
 template <typename B, typename M>

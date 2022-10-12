@@ -68,7 +68,7 @@ MultiValueNumericPostingAttribute<B, M>::onGenerationChange(generation_t generat
 {
     _postingList.freeze();
     MultiValueNumericEnumAttribute<B, M>::onGenerationChange(generation);
-    _postingList.transferHoldLists(generation - 1);
+    _postingList.assign_generation(generation - 1);
 }
 
 template <typename B, typename M>

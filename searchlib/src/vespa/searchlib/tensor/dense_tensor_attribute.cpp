@@ -456,7 +456,7 @@ DenseTensorAttribute::onGenerationChange(generation_t next_gen)
     //       This applies for entire attribute vector code.
     TensorAttribute::onGenerationChange(next_gen);
     if (_index) {
-        _index->transfer_hold_lists(next_gen - 1);
+        _index->assign_generation(next_gen - 1);
     }
 }
 

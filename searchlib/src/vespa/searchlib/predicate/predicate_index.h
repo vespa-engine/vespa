@@ -74,7 +74,7 @@ public:
     void removeDocument(uint32_t doc_id);
     void commit();
     void trimHoldLists(generation_t used_generation);
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
     int getArity() const { return _arity; }

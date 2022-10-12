@@ -45,7 +45,7 @@ class MyAttribute : public search::NotImplementedAttribute
         _mvMapping.trimHoldLists(firstUsed);
     }
     virtual void onGenerationChange(generation_t generation) override {
-        _mvMapping.transferHoldLists(generation - 1);
+        _mvMapping.assign_generation(generation - 1);
     }
 
 public:
@@ -115,7 +115,7 @@ public:
         ConstArrayRef act = get(docId);
         EXPECT_EQ(exp, std::vector<EntryT>(act.cbegin(), act.cend()));
     }
-    void transferHoldLists(generation_t generation) { _mvMapping->transferHoldLists(generation); }
+    void assign_generation(generation_t current_gen) { _mvMapping->assign_generation(current_gen); }
     void trimHoldLists(generation_t firstUsed) { _mvMapping->trimHoldLists(firstUsed); }
     void addDocs(uint32_t numDocs) {
         for (uint32_t i = 0; i < numDocs; ++i) {
@@ -245,7 +245,7 @@ TEST_F(IntMappingTest, test_that_old_value_is_not_overwritten_while_held)
     auto old3 = get(3);
     assertArray({5}, old3);
     set(3, {7});
-    transferHoldLists(10);
+    assign_generation(10);
     assertArray({5}, old3);
     assertGet(3, {7});
     trimHoldLists(10);

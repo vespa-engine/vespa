@@ -73,7 +73,7 @@ public:
 
     void trimHoldLists(generation_t used_generation);
 
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
 
     /**
      * Return memory usage (only the data store is included)

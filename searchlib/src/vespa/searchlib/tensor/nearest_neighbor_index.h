@@ -68,7 +68,7 @@ public:
     virtual void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) = 0;
 
     virtual void remove_document(uint32_t docid) = 0;
-    virtual void transfer_hold_lists(generation_t current_gen) = 0;
+    virtual void assign_generation(generation_t current_gen) = 0;
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
     virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;

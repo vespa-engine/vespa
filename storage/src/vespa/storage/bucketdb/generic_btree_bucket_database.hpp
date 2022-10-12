@@ -38,8 +38,8 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
     _tree.getAllocator().freeze();
 
     auto current_gen = _generation_handler.getCurrentGeneration();
-    _store.transferHoldLists(current_gen);
-    _tree.getAllocator().transferHoldLists(current_gen);
+    _store.assign_generation(current_gen);
+    _tree.getAllocator().assign_generation(current_gen);
 
     _generation_handler.incGeneration();
 

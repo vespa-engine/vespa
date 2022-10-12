@@ -139,7 +139,7 @@ SingleValueNumericPostingAttribute<B>::onGenerationChange(generation_t generatio
 {
     _postingList.freeze();
     SingleValueNumericEnumAttribute<B>::onGenerationChange(generation);
-    _postingList.transferHoldLists(generation - 1);
+    _postingList.assign_generation(generation - 1);
 }
 
 template <typename B>

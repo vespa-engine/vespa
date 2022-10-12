@@ -59,7 +59,7 @@ public:
     AtomicEntryRef add_relaxed(uint32_t value) { return AtomicEntryRef(add(value)); }
     void hold(const AtomicEntryRef& ref) { _store.holdElem(ref.load_relaxed(), 1); }
     EntryRef move(EntryRef ref);
-    void transfer_hold_lists(generation_t gen) { _store.transferHoldLists(gen); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
     void trim_hold_lists(generation_t gen) { _store.trimHoldLists(gen); }
     uint32_t get(EntryRef ref) const { return _store.getEntry(ref); }
     uint32_t get_acquire(const AtomicEntryRef& ref) const { return get(ref.load_acquire()); }
@@ -118,7 +118,7 @@ public:
     static uint32_t add(uint32_t value) noexcept { return value; }
     static uint32_t add_relaxed(uint32_t value) noexcept { return value; }
     static void hold(uint32_t) noexcept { }
-    static void transfer_hold_lists(generation_t) noexcept { }
+    static void assign_generation(generation_t) noexcept { }
     static void trim_hold_lists(generation_t) noexcept { }
     static uint32_t get(uint32_t value) noexcept { return value; }
     static uint32_t get_acquire(uint32_t value) noexcept { return value; }
@@ -274,10 +274,10 @@ Fixture<Params>::commit()
     auto &allocator = _tree.getAllocator();
     allocator.freeze();
     auto current_gen = _generationHandler.getCurrentGeneration();
-    allocator.transferHoldLists(current_gen);
-    _keys.transfer_hold_lists(current_gen);
-    _values.transfer_hold_lists(current_gen);
-    allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
+    allocator.assign_generation(current_gen);
+    _keys.assign_generation(current_gen);
+    _values.assign_generation(current_gen);
+    allocator.assign_generation(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
     auto first_used_gen = _generationHandler.get_oldest_used_generation();
     allocator.trimHoldLists(first_used_gen);

@@ -114,7 +114,7 @@ public:
     vespalib::AddressSpace addressSpaceUsage() const;
 
     // Pass on hold list management to underlying store
-    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }

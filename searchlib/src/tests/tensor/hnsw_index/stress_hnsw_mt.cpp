@@ -267,7 +267,7 @@ public:
         ASSERT_EQ(r.get(), nullptr);
     }
     void commit(uint32_t docid) {
-        index->transfer_hold_lists(gen_handler.getCurrentGeneration());
+        index->assign_generation(gen_handler.getCurrentGeneration());
         gen_handler.incGeneration();
         gen_handler.update_oldest_used_generation();
         index->trim_hold_lists(gen_handler.get_oldest_used_generation());

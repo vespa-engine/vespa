@@ -190,10 +190,10 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::bufferState(EntryRef ref) const
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT, Compare, Allocator>::transferHoldLists(generation_t generation)
+UniqueStore<EntryT, RefT, Compare, Allocator>::assign_generation(generation_t current_gen)
 {
-    _dict->transfer_hold_lists(generation);
-    _store.transferHoldLists(generation);
+    _dict->assign_generation(current_gen);
+    _store.assign_generation(current_gen);
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>

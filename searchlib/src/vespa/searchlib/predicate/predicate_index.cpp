@@ -221,11 +221,11 @@ PredicateIndex::trimHoldLists(generation_t used_generation) {
 }
 
 void
-PredicateIndex::transferHoldLists(generation_t generation) {
-    _interval_index.transferHoldLists(generation);
-    _bounds_index.transferHoldLists(generation);
-    _interval_store.transferHoldLists(generation);
-    _zero_constraint_docs.getAllocator().transferHoldLists(generation);
+PredicateIndex::assign_generation(generation_t current_gen) {
+    _interval_index.assign_generation(current_gen);
+    _bounds_index.assign_generation(current_gen);
+    _interval_store.assign_generation(current_gen);
+    _zero_constraint_docs.getAllocator().assign_generation(current_gen);
 }
 
 vespalib::MemoryUsage

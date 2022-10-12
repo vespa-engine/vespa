@@ -272,7 +272,7 @@ void
 freezeTree(GenerationHandler &g, ManagerType &m)
 {
     m.freeze();
-    m.transferHoldLists(g.getCurrentGeneration());
+    m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     m.trimHoldLists(g.get_oldest_used_generation());
 }
@@ -891,7 +891,7 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
         }
         compacting_buffers->finish();
         manager.freeze();
-        manager.transferHoldLists(g.getCurrentGeneration());
+        manager.assign_generation(g.getCurrentGeneration());
         g.incGeneration();
         manager.trimHoldLists(g.get_oldest_used_generation());
     }
@@ -1190,7 +1190,7 @@ Test::requireThatSmallNodesWorks()
     s.clear(root);
     s.clearBuilder();
     s.freeze();
-    s.transferHoldLists(g.getCurrentGeneration());
+    s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     s.trimHoldLists(g.get_oldest_used_generation());
 }

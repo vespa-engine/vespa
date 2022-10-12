@@ -143,7 +143,7 @@ void
 DocumentWeightOrFilterSearchTest::inc_generation()
 {
     _postings.freeze();
-    _postings.transferHoldLists(_gens.getCurrentGeneration());
+    _postings.assign_generation(_gens.getCurrentGeneration());
     _gens.incGeneration();
     _gens.update_oldest_used_generation();
     _postings.trimHoldLists(_gens.get_oldest_used_generation());

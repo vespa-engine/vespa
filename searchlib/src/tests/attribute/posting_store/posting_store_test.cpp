@@ -64,8 +64,8 @@ protected:
     {
         _value_store.freeze_dictionary();
         _store.freeze();
-        _value_store.transfer_hold_lists(_gen_handler.getCurrentGeneration());
-        _store.transferHoldLists(_gen_handler.getCurrentGeneration());
+        _value_store.assign_generation(_gen_handler.getCurrentGeneration());
+        _store.assign_generation(_gen_handler.getCurrentGeneration());
         _gen_handler.incGeneration();
         _value_store.trim_hold_lists(_gen_handler.get_oldest_used_generation());
         _store.trimHoldLists(_gen_handler.get_oldest_used_generation());

@@ -107,15 +107,15 @@ ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
 }
 
 void
-ShardedHashMap::transfer_hold_lists(generation_t generation)
+ShardedHashMap::assign_generation(generation_t current_gen)
 {
     for (size_t i = 0; i < num_shards; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
         if (map != nullptr) {
-            map->transfer_hold_lists(generation);
+            map->assign_generation(current_gen);
         }
     }
-    _gen_holder.assign_generation(generation);
+    _gen_holder.assign_generation(current_gen);
 }
 
 void

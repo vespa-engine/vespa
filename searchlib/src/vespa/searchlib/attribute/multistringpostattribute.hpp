@@ -87,7 +87,7 @@ MultiValueStringPostingAttributeT<B, T>::onGenerationChange(generation_t generat
 {
     _postingList.freeze();
     MultiValueStringAttributeT<B, T>::onGenerationChange(generation);
-    _postingList.transferHoldLists(generation - 1);
+    _postingList.assign_generation(generation - 1);
 }
 
 

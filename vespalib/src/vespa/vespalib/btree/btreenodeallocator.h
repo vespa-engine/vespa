@@ -109,7 +109,7 @@ public:
      * older versions of the frozen structure must leave before elements
      * can be unheld.
      */
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
 
     void clearHoldLists();
 

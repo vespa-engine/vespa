@@ -68,7 +68,7 @@ struct TestBase : public ::testing::Test {
         EXPECT_EQ(expStats._extra_hold, buffer_state(ref).stats().extra_hold_bytes());
     }
     void trim_hold_lists() {
-        allocator.get_data_store().transferHoldLists(generation++);
+        allocator.get_data_store().assign_generation(generation++);
         allocator.get_data_store().trimHoldLists(generation);
     }
 };

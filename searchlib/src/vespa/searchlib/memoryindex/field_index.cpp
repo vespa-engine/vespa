@@ -69,10 +69,10 @@ FieldIndex<interleaved_features>::~FieldIndex()
     }
     _postingListStore.clearBuilder();
     freeze();   // Flush all pending posting list tree freezes
-    transferHoldLists();
+    assign_generation();
     _dict.clear();  // Clear dictionary
     freeze();   // Flush pending freeze for dictionary tree.
-    transferHoldLists();
+    assign_generation();
     incGeneration();
     trimHoldLists();
 }
@@ -143,7 +143,7 @@ FieldIndex<interleaved_features>::compactFeatures()
     using generation_t = GenerationHandler::generation_t;
     compacting_buffers->finish();
     generation_t generation = _generationHandler.getCurrentGeneration();
-    _featureStore.transferHoldLists(generation);
+    _featureStore.assign_generation(generation);
 }
 
 template <bool interleaved_features>

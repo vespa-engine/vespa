@@ -48,7 +48,7 @@ public:
      */
     ReadView make_read_view(size_t read_size) const { return ReadView(_indices.make_read_view(read_size), &_store); }
     // Pass on hold list management to underlying store
-    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     void prepareLoadFromMultiValue() { _store.setInitializing(true); }
 

@@ -53,8 +53,8 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    void transferHoldLists(generation_t generation) {
-        _store.transferHoldLists(generation);
+    void assign_generation(generation_t current_gen) {
+        _store.assign_generation(current_gen);
     }
 
     void clearHoldLists() {

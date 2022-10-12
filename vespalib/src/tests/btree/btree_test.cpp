@@ -163,7 +163,7 @@ void
 cleanup(GenerationHandler & g, ManagerType & m)
 {
     m.freeze();
-    m.transferHoldLists(g.getCurrentGeneration());
+    m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     m.trimHoldLists(g.get_oldest_used_generation());
 }
@@ -874,7 +874,7 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
         }
         compacting_buffers->finish();
         manager.freeze();
-        manager.transferHoldLists(g.getCurrentGeneration());
+        manager.assign_generation(g.getCurrentGeneration());
         g.incGeneration();
         manager.trimHoldLists(g.get_oldest_used_generation());
     }
@@ -1106,7 +1106,7 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
 
     // trim hold lists
-    tm.transferHoldLists(gh.getCurrentGeneration());
+    tm.assign_generation(gh.getCurrentGeneration());
     gh.incGeneration();
     tm.trimHoldLists(gh.get_oldest_used_generation());
     mu = vespalib::MemoryUsage();
@@ -1282,7 +1282,7 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
     s.clear(root);
     s.clearBuilder();
     s.freeze();
-    s.transferHoldLists(g.getCurrentGeneration());
+    s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     s.trimHoldLists(g.get_oldest_used_generation());
 }
@@ -1416,7 +1416,7 @@ TEST_F(BTreeTest, require_that_apply_works)
     s.clear(root);
     s.clearBuilder();
     s.freeze();
-    s.transferHoldLists(g.getCurrentGeneration());
+    s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     s.trimHoldLists(g.get_oldest_used_generation());
 }
@@ -1553,7 +1553,7 @@ inc_generation(GenerationHandler &g, Tree &t)
 {
     auto &s = t.getAllocator();
     s.freeze();
-    s.transferHoldLists(g.getCurrentGeneration());
+    s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     s.trimHoldLists(g.get_oldest_used_generation());
 }

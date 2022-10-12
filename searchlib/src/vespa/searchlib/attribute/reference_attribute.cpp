@@ -173,8 +173,8 @@ ReferenceAttribute::onGenerationChange(generation_t generation)
 {
     _referenceMappings.freeze();
     _store.freeze();
-    _referenceMappings.transferHoldLists(generation - 1);
-    _store.transferHoldLists(generation - 1);
+    _referenceMappings.assign_generation(generation - 1);
+    _store.assign_generation(generation - 1);
     getGenerationHolder().assign_generation(generation - 1);
 }
 

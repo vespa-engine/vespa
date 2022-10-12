@@ -120,7 +120,7 @@ void
 TensorAttribute::onGenerationChange(generation_t generation)
 {
     getGenerationHolder().assign_generation(generation - 1);
-    _tensorStore.transferHoldLists(generation - 1);
+    _tensorStore.assign_generation(generation - 1);
 }
 
 bool

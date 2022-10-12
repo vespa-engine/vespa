@@ -56,7 +56,7 @@ private:
  * A reader must own an appropriate GenerationHandler::Guard to ensure
  * that memory is held while it can be accessed by reader.
  *
- * The writer must update generation and call transfer_hold_lists and
+ * The writer must update generation and call assign_generation and
  * trim_hold_lists as needed to free up memory no longer needed by any
  * readers.
  */
@@ -114,7 +114,7 @@ private:
     std::deque<std::pair<generation_t, uint32_t>> _hold_2_list;
     uint32_t          _num_shards;
 
-    void transfer_hold_lists_slow(generation_t generation);
+    void assign_generation_slow(generation_t current_gen);
     void trim_hold_lists_slow(generation_t first_used);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
@@ -143,9 +143,9 @@ public:
         return nullptr;
     }
 
-    void transfer_hold_lists(generation_t generation) {
+    void assign_generation(generation_t current_gen) {
         if (!_hold_1_list.empty()) {
-            transfer_hold_lists_slow(generation);
+            assign_generation_slow(current_gen);
         }
     }
 

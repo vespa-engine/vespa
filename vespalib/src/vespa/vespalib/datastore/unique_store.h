@@ -70,7 +70,7 @@ public:
     inline const DataStoreType& get_data_store() const noexcept { return _allocator.get_data_store(); }
 
     // Pass on hold list management to underlying store
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
     void trimHoldLists(generation_t firstUsed);
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }

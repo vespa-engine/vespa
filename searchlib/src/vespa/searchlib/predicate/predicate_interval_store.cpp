@@ -105,8 +105,8 @@ PredicateIntervalStore::trimHoldLists(generation_t used_generation) {
 }
 
 void
-PredicateIntervalStore::transferHoldLists(generation_t generation) {
-    _store.transferHoldLists(generation);
+PredicateIntervalStore::assign_generation(generation_t current_gen) {
+    _store.assign_generation(current_gen);
 }
 
 }

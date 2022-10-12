@@ -137,7 +137,7 @@ struct ArrayStoreTest : public TestT
         return EntryRef();
     }
     void trimHoldLists() {
-        store.transferHoldLists(generation++);
+        store.assign_generation(generation++);
         store.trimHoldLists(generation);
     }
     void compactWorst(bool compactMemory, bool compactAddressSpace) {

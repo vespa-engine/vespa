@@ -345,7 +345,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     // check readers again
     checkReaders(ses, readers);
 
-    ses.transfer_hold_lists(sesGen);
+    ses.assign_generation(sesGen);
     ses.trim_hold_lists(sesGen + 1);
 }
 
@@ -357,7 +357,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
     updater.commit();
 
     generation_t gen = 5;
-    store.transfer_hold_lists(gen);
+    store.assign_generation(gen);
     store.trim_hold_lists(gen + 1);
 }
 
@@ -882,7 +882,7 @@ namespace {
 void inc_generation(generation_t &gen, NumericEnumStore &store)
 {
     store.freeze_dictionary();
-    store.transfer_hold_lists(gen);
+    store.assign_generation(gen);
     ++gen;
     store.trim_hold_lists(gen);
 }

@@ -300,10 +300,10 @@ SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generation) {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::transferHoldLists(generation_t generation) {
-    _dictionary.getAllocator().transferHoldLists(generation);
-    _btree_posting_lists.transferHoldLists(generation);
-    _vector_posting_lists.getAllocator().transferHoldLists(generation);
+SimpleIndex<Posting, Key, DocId>::assign_generation(generation_t current_gen) {
+    _dictionary.getAllocator().assign_generation(current_gen);
+    _btree_posting_lists.assign_generation(current_gen);
+    _vector_posting_lists.getAllocator().assign_generation(current_gen);
 }
 
 template <typename Posting, typename Key, typename DocId>

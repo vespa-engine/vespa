@@ -206,7 +206,7 @@ public:
     const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
     void trimHoldLists(generation_t usedGen) { _store.trimHoldLists(usedGen); }
-    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
     void clearHoldLists() { _store.clearHoldLists();}
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }

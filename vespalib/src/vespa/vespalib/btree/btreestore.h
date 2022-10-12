@@ -340,10 +340,10 @@ public:
 
     // Inherit doc from DataStoreBase
     void
-    transferHoldLists(generation_t generation)
+    assign_generation(generation_t current_gen)
     {
-        _allocator.transferHoldLists(generation);
-        _store.transferHoldLists(generation);
+        _allocator.assign_generation(current_gen);
+        _store.assign_generation(current_gen);
     }
 
     void

@@ -275,9 +275,9 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-transferHoldLists(generation_t generation)
+assign_generation(generation_t current_gen)
 {
-    _nodeStore.transferHoldLists(generation);
+    _nodeStore.assign_generation(current_gen);
 }
 
 

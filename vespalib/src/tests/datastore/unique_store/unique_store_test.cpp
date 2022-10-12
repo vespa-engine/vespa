@@ -114,7 +114,7 @@ struct TestBase : public ::testing::Test {
     }
     void trimHoldLists() {
         store.freeze();
-        store.transferHoldLists(generation++);
+        store.assign_generation(generation++);
         store.trimHoldLists(generation);
     }
     void compactWorst() {

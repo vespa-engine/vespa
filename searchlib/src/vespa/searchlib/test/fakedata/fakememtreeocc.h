@@ -94,7 +94,7 @@ public:
     ~FakeMemTreeOccMgr();
 
     void freeze();
-    void transferHoldLists();
+    void assign_generation();
     void incGeneration();
     void trimHoldLists();
     void sync();

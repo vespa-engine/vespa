@@ -61,7 +61,7 @@ public:
     // Hold list management & freezing
     void trimHoldLists(generation_t usedGen) { _reverseMapping.trimHoldLists(usedGen); }
     void freeze() { _reverseMapping.freeze(); }
-    void transferHoldLists(generation_t generation) { _reverseMapping.transferHoldLists(generation); }
+    void assign_generation(generation_t current_gen) { _reverseMapping.assign_generation(current_gen); }
 
     // Handle mapping changes
     void notifyReferencedPut(const Reference &entry, uint32_t targetLid);

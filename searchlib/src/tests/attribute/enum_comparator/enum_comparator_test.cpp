@@ -147,7 +147,7 @@ TEST("requireThatComparatorWithTreeIsWorking")
     EXPECT_EQUAL(101, exp);
     t.clear(m);
     m.freeze();
-    m.transferHoldLists(g.getCurrentGeneration());
+    m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
     m.trimHoldLists(g.get_oldest_used_generation());
 }

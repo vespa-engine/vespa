@@ -259,9 +259,9 @@ AttributePostingListTest::freeTree(bool verbose)
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytesOnHold()));
     _intNodeAlloc->freeze();
     _intPostings->freeze();
-    _intNodeAlloc->transferHoldLists(_handler.getCurrentGeneration());
+    _intNodeAlloc->assign_generation(_handler.getCurrentGeneration());
     _intPostings->clearBuilder();
-    _intPostings->transferHoldLists(_handler.getCurrentGeneration());
+    _intPostings->assign_generation(_handler.getCurrentGeneration());
     _handler.incGeneration();
     _intNodeAlloc->trimHoldLists(_handler.get_oldest_used_generation());
     _intPostings->trimHoldLists(_handler.get_oldest_used_generation());
@@ -613,7 +613,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
         valueHandle.holdBuffer(*it);
     }
     generation_t generation = _handler.getCurrentGeneration();
-    valueHandle.transferHoldLists(generation);
+    valueHandle.assign_generation(generation);
     _handler.incGeneration();
     valueHandle.trimHoldLists(_handler.get_oldest_used_generation());
 
@@ -658,8 +658,8 @@ bumpGeneration(Tree &tree,
     (void) tree;
     (void) valueHandle;
     postingsAlloc.freeze();
-    postingsAlloc.transferHoldLists(_handler.getCurrentGeneration());
-    postings.transferHoldLists(_handler.getCurrentGeneration());
+    postingsAlloc.assign_generation(_handler.getCurrentGeneration());
+    postings.assign_generation(_handler.getCurrentGeneration());
     _handler.incGeneration();
 }
 
@@ -689,7 +689,7 @@ AttributePostingListTest::Main()
     lookupRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
                        _stlTree, _randomValues);
     _intNodeAlloc->freeze();
-    _intNodeAlloc->transferHoldLists(_handler.getCurrentGeneration());
+    _intNodeAlloc->assign_generation(_handler.getCurrentGeneration());
     doCompactEnumStore(*_intTree, *_intNodeAlloc, *_intKeyStore);
     removeRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
                        _stlTree, _randomValues);
