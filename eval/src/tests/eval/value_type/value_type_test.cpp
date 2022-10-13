@@ -353,33 +353,34 @@ TEST("require that dimension index can be obtained") {
 
 void verify_predicates(const ValueType &type,
                        bool expect_error, bool expect_double, bool expect_tensor,
-                       bool expect_sparse, bool expect_dense)
+                       bool expect_sparse, bool expect_dense, bool expect_mixed)
 {
     EXPECT_EQUAL(type.is_error(), expect_error);
     EXPECT_EQUAL(type.is_double(), expect_double);
     EXPECT_EQUAL(type.has_dimensions(), expect_tensor);
     EXPECT_EQUAL(type.is_sparse(), expect_sparse);
     EXPECT_EQUAL(type.is_dense(), expect_dense);
+    EXPECT_EQUAL(type.is_mixed(), expect_mixed);
 }
 
 TEST("require that type-related predicate functions work as expected") {
-    TEST_DO(verify_predicates(type("error"), true, false, false, false, false));
-    TEST_DO(verify_predicates(type("double"), false, true, false, false, false));
-    TEST_DO(verify_predicates(type("tensor()"), false, true, false, false, false));
-    TEST_DO(verify_predicates(type("tensor(x{})"), false, false, true, true, false));
-    TEST_DO(verify_predicates(type("tensor(x{},y{})"), false, false, true, true, false));
-    TEST_DO(verify_predicates(type("tensor(x[5])"), false, false, true, false, true));
-    TEST_DO(verify_predicates(type("tensor(x[5],y[10])"), false, false, true, false, true));
-    TEST_DO(verify_predicates(type("tensor(x[5],y{})"), false, false, true, false, false));
-    TEST_DO(verify_predicates(type("tensor<float>(x{})"), false, false, true, true, false));
-    TEST_DO(verify_predicates(type("tensor<float>(x[5])"), false, false, true, false, true));
-    TEST_DO(verify_predicates(type("tensor<float>(x[5],y{})"), false, false, true, false, false));
-    TEST_DO(verify_predicates(type("tensor<bfloat16>(x{})"), false, false, true, true, false));
-    TEST_DO(verify_predicates(type("tensor<bfloat16>(x[5])"), false, false, true, false, true));
-    TEST_DO(verify_predicates(type("tensor<bfloat16>(x[5],y{})"), false, false, true, false, false));
-    TEST_DO(verify_predicates(type("tensor<int8>(x{})"), false, false, true, true, false));
-    TEST_DO(verify_predicates(type("tensor<int8>(x[5])"), false, false, true, false, true));
-    TEST_DO(verify_predicates(type("tensor<int8>(x[5],y{})"), false, false, true, false, false));
+    TEST_DO(verify_predicates(type("error"), true, false, false, false, false, false));
+    TEST_DO(verify_predicates(type("double"), false, true, false, false, false, false));
+    TEST_DO(verify_predicates(type("tensor()"), false, true, false, false, false, false));
+    TEST_DO(verify_predicates(type("tensor(x{})"), false, false, true, true, false, false));
+    TEST_DO(verify_predicates(type("tensor(x{},y{})"), false, false, true, true, false, false));
+    TEST_DO(verify_predicates(type("tensor(x[5])"), false, false, true, false, true, false));
+    TEST_DO(verify_predicates(type("tensor(x[5],y[10])"), false, false, true, false, true, false));
+    TEST_DO(verify_predicates(type("tensor(x[5],y{})"), false, false, true, false, false, true));
+    TEST_DO(verify_predicates(type("tensor<float>(x{})"), false, false, true, true, false, false));
+    TEST_DO(verify_predicates(type("tensor<float>(x[5])"), false, false, true, false, true, false));
+    TEST_DO(verify_predicates(type("tensor<float>(x[5],y{})"), false, false, true, false, false, true));
+    TEST_DO(verify_predicates(type("tensor<bfloat16>(x{})"), false, false, true, true, false, false));
+    TEST_DO(verify_predicates(type("tensor<bfloat16>(x[5])"), false, false, true, false, true, false));
+    TEST_DO(verify_predicates(type("tensor<bfloat16>(x[5],y{})"), false, false, true, false, false, true));
+    TEST_DO(verify_predicates(type("tensor<int8>(x{})"), false, false, true, true, false, false));
+    TEST_DO(verify_predicates(type("tensor<int8>(x[5])"), false, false, true, false, true, false));
+    TEST_DO(verify_predicates(type("tensor<int8>(x[5],y{})"), false, false, true, false, false, true));
 }
 
 TEST("require that mapped and indexed dimensions can be counted") {

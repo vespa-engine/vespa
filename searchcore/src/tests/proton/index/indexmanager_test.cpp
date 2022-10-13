@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/index/indexmanager.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
@@ -9,8 +13,9 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
@@ -34,6 +39,7 @@ LOG_SETUP("indexmanager_test");
 
 using document::Document;
 using document::FieldValue;
+using document::StringFieldValue;
 using proton::index::IndexConfig;
 using proton::index::IndexManager;
 using vespalib::SequencedTaskExecutor;
@@ -42,10 +48,11 @@ using search::TuneFileAttributes;
 using search::TuneFileIndexManager;
 using search::TuneFileIndexing;
 using vespalib::datastore::EntryRef;
-using search::index::DocBuilder;
+using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
+using search::index::StringFieldBuilder;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::CompactWordsStore;
@@ -88,13 +95,13 @@ void removeTestData() {
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
-Document::UP buildDocument(DocBuilder &doc_builder, int id,
+Document::UP buildDocument(EmptyDocBuilder &doc_builder, int id,
                            const string &word) {
     vespalib::asciistream ost;
     ost << "id:ns:searchdocument::" << id;
-    doc_builder.startDocument(ost.str());
-    doc_builder.startIndexField(field_name).addStr(word).endField();
-    return doc_builder.endDocument();
+    auto doc = doc_builder.make_document(ost.str());
+    doc->setValue(field_name, StringFieldBuilder(doc_builder).word(word).build());
+    return doc;
 }
 
 void push_documents_and_wait(search::memoryindex::DocumentInverter &inverter) {
@@ -110,7 +117,7 @@ struct IndexManagerTest : public ::testing::Test {
     TransportAndExecutorService _service;
     std::unique_ptr<IndexManager> _index_manager;
     Schema _schema;
-    DocBuilder _builder;
+    EmptyDocBuilder _builder;
 
     IndexManagerTest()
         : _serial_num(0),
@@ -119,7 +126,7 @@ struct IndexManagerTest : public ::testing::Test {
           _service(1),
           _index_manager(),
           _schema(getSchema()),
-          _builder(_schema)
+          _builder([](auto& header) { header.addField(field_name, document::DataType::T_STRING); })
     {
         removeTestData();
         std::filesystem::create_directory(std::filesystem::path(index_dir));

@@ -16,7 +16,7 @@ DirectTensorAttribute::DirectTensorAttribute(stringref name, const Config &cfg)
 DirectTensorAttribute::~DirectTensorAttribute()
 {
     getGenerationHolder().reclaim_all();
-    _tensorStore.clearHoldLists();
+    _tensorStore.reclaim_all_memory();
 }
 
 void

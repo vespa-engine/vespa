@@ -140,22 +140,18 @@ public class QueryTree extends CompositeItem {
         else if (b == null || b instanceof NullItem) {
             return a;
         }
-        else if (a instanceof NotItem && b instanceof NotItem) {
-            NotItem notItemA = (NotItem)a;
-            NotItem notItemB = (NotItem)b;
+        else if (a instanceof NotItem notItemA && b instanceof NotItem notItemB) {
             NotItem combined = new NotItem();
             combined.addPositiveItem(and(notItemA.getPositiveItem(), notItemB.getPositiveItem()));
             notItemA.negativeItems().forEach(item -> combined.addNegativeItem(item));
             notItemB.negativeItems().forEach(item -> combined.addNegativeItem(item));
             return combined;
         }
-        else if (a instanceof NotItem){
-            NotItem notItem = (NotItem)a;
+        else if (a instanceof NotItem notItem){
             notItem.addPositiveItem(b);
             return a;
         }
-        else if (b instanceof NotItem){
-            NotItem notItem = (NotItem)b;
+        else if (b instanceof NotItem notItem){
             notItem.addPositiveItem(a);
             return notItem;
         }
@@ -179,17 +175,16 @@ public class QueryTree extends CompositeItem {
     }
 
     private static void getPositiveTerms(Item item, List<IndexedItem> terms) {
-        if (item instanceof NotItem) {
-            getPositiveTerms(((NotItem) item).getPositiveItem(), terms);
-        } else if (item instanceof PhraseItem) {
-            PhraseItem pItem = (PhraseItem)item;
-            terms.add(pItem);
-        } else if (item instanceof CompositeItem) {
-            for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext();) {
+        if (item instanceof NotItem notItem) {
+            getPositiveTerms(notItem.getPositiveItem(), terms);
+        } else if (item instanceof PhraseItem phraseItem) {
+            terms.add(phraseItem);
+        } else if (item instanceof CompositeItem compositeItem) {
+            for (Iterator<Item> i = compositeItem.getItemIterator(); i.hasNext();) {
                 getPositiveTerms(i.next(), terms);
             }
-        } else if (item instanceof TermItem) {
-            terms.add((TermItem)item);
+        } else if (item instanceof TermItem termItem) {
+            terms.add(termItem);
         }
     }
 
@@ -203,8 +198,7 @@ public class QueryTree extends CompositeItem {
 
     private int countItemsRecursively(Item item) {
         int children = 0;
-        if (item instanceof CompositeItem) {
-            CompositeItem composite = (CompositeItem)item;
+        if (item instanceof CompositeItem composite) {
             for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
                 children += countItemsRecursively(i.next());
             }

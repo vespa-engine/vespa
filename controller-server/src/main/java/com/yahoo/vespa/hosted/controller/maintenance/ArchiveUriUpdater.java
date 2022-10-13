@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
+import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Updates archive URIs for tenants in all zones.
@@ -51,20 +53,28 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
             }
         }
 
-        tenantsByZone.forEach((zone, tenants) -> {
-            Map<TenantName, URI> zoneArchiveUris = nodeRepository.getArchiveUris(zone);
-            for (TenantName tenant : tenants) {
-                archiveBucketDb.archiveUriFor(zone, tenant, true)
-                        .filter(uri -> !uri.equals(zoneArchiveUris.get(tenant)))
-                        .ifPresent(uri -> nodeRepository.setArchiveUri(zone, tenant, uri));
+        int failures = 0;
+        for (ZoneId zone : tenantsByZone.keySet()) {
+            try {
+                Map<TenantName, URI> zoneArchiveUris = nodeRepository.getArchiveUris(zone);
+
+                for (TenantName tenant : tenantsByZone.get(zone)) {
+                    archiveBucketDb.archiveUriFor(zone, tenant, true)
+                            .filter(uri -> !uri.equals(zoneArchiveUris.get(tenant)))
+                            .ifPresent(uri -> nodeRepository.setArchiveUri(zone, tenant, uri));
+                }
+
+                zoneArchiveUris.keySet().stream()
+                        .filter(tenant -> !tenantsByZone.get(zone).contains(tenant))
+                        .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Failed to update archive URI in " + zone + ". Retrying in " + interval() + ". Error: " +
+                        Exceptions.toMessageString(e));
+                failures++;
             }
+        }
 
-            zoneArchiveUris.keySet().stream()
-                    .filter(tenant -> !tenants.contains(tenant))
-                    .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
-        });
-
-        return 1.0;
+        return asSuccessFactor(tenantsByZone.size(), failures);
     }
 
 }

@@ -173,7 +173,7 @@ DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, con
 DenseTensorAttribute::~DenseTensorAttribute()
 {
     getGenerationHolder().reclaim_all();
-    _tensorStore.clearHoldLists();
+    _tensorStore.reclaim_all_memory();
 }
 
 uint32_t
@@ -450,22 +450,20 @@ DenseTensorAttribute::onCommit()
 }
 
 void
-DenseTensorAttribute::onGenerationChange(generation_t next_gen)
+DenseTensorAttribute::before_inc_generation(generation_t current_gen)
 {
-    // TODO: Change onGenerationChange() to send current generation instead of next generation.
-    //       This applies for entire attribute vector code.
-    TensorAttribute::onGenerationChange(next_gen);
+    TensorAttribute::before_inc_generation(current_gen);
     if (_index) {
-        _index->transfer_hold_lists(next_gen - 1);
+        _index->assign_generation(current_gen);
     }
 }
 
 void
-DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
+DenseTensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    TensorAttribute::removeOldGenerations(first_used_gen);
+    TensorAttribute::reclaim_memory(oldest_used_gen);
     if (_index) {
-        _index->trim_hold_lists(first_used_gen);
+        _index->reclaim_memory(oldest_used_gen);
     }
 }
 

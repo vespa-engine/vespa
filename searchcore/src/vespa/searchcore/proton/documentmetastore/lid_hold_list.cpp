@@ -23,9 +23,9 @@ LidHoldList::clear() {
 }
 
 void
-LidHoldList::trimHoldLists(generation_t firstUsed, LidStateVector &freeLids)
+LidHoldList::reclaim_memory(generation_t oldest_used_gen, LidStateVector &freeLids)
 {
-    while (!_holdList.empty() && _holdList.front().second < firstUsed) {
+    while (!_holdList.empty() && _holdList.front().second < oldest_used_gen) {
         uint32_t lid = _holdList.front().first;
         freeLids.setBit(lid);
         _holdList.pop_front();

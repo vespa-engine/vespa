@@ -31,9 +31,9 @@ protected:
     void inc_generation()
     {
         _store.freeze();
-        _store.transferHoldLists(_gen_handler.getCurrentGeneration());
+        _store.assign_generation(_gen_handler.getCurrentGeneration());
         _gen_handler.incGeneration();
-        _store.trimHoldLists(_gen_handler.getFirstUsedGeneration());
+        _store.reclaim_memory(_gen_handler.get_oldest_used_generation());
     }
 
     EntryRef add_sequence(int start_key, int end_key)

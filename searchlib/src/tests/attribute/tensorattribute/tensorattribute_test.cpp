@@ -221,11 +221,11 @@ public:
         auto vector = _vectors.get_vector(docid).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
-    void transfer_hold_lists(generation_t current_gen) override {
+    void assign_generation(generation_t current_gen) override {
         _transfer_gen = current_gen;
     }
-    void trim_hold_lists(generation_t first_used_gen) override {
-        _trim_gen = first_used_gen;
+    void reclaim_memory(generation_t oldest_used_gen) override {
+        _trim_gen = oldest_used_gen;
     }
     bool consider_compact(const CompactionStrategy&) override {
         return false;

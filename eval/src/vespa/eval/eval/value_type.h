@@ -60,6 +60,7 @@ public:
     bool has_dimensions() const { return !_dimensions.empty(); }
     bool is_sparse() const;
     bool is_dense() const;
+    bool is_mixed() const;
     size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;

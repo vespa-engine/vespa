@@ -2,7 +2,6 @@
 package com.yahoo.tensor.serialization;
 
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -34,9 +33,12 @@ public class TypedBinaryFormat {
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
+        return asByteArray(encode(tensor, buffer));
+    }
+    public static GrowableByteBuffer encode(Tensor tensor, GrowableByteBuffer buffer) {
         BinaryFormat encoder = getFormatEncoder(buffer, tensor);
         encoder.encode(buffer, tensor);
-        return asByteArray(buffer);
+        return buffer;
     }
 
     /**
@@ -53,8 +55,8 @@ public class TypedBinaryFormat {
     }
 
     private static BinaryFormat getFormatEncoder(GrowableByteBuffer buffer, Tensor tensor) {
-        boolean hasMappedDimensions = tensor.type().dimensions().stream().anyMatch(d -> d.isMapped());
-        boolean hasIndexedDimensions = tensor.type().dimensions().stream().anyMatch(d -> d.isIndexed());
+        boolean hasMappedDimensions = tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
+        boolean hasIndexedDimensions = tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
         boolean isMixed = hasMappedDimensions && hasIndexedDimensions;
 
         // TODO: Encoding as indexed if the implementation is mixed is not yet supported so use mixed format instead
@@ -113,12 +115,11 @@ public class TypedBinaryFormat {
 
     private static void encodeValueType(GrowableByteBuffer buffer, TensorType.Value valueType) {
         switch (valueType) {
-            case DOUBLE: buffer.putInt1_4Bytes(DOUBLE_VALUE_TYPE); break;
-            case FLOAT: buffer.putInt1_4Bytes(FLOAT_VALUE_TYPE); break;
-            case BFLOAT16: buffer.putInt1_4Bytes(BFLOAT16_VALUE_TYPE); break;
-            case INT8: buffer.putInt1_4Bytes(INT8_VALUE_TYPE); break;
-            default:
-                throw new IllegalArgumentException("Attempt to encode unknown tensor value type: " + valueType);
+            case DOUBLE -> buffer.putInt1_4Bytes(DOUBLE_VALUE_TYPE);
+            case FLOAT -> buffer.putInt1_4Bytes(FLOAT_VALUE_TYPE);
+            case BFLOAT16 -> buffer.putInt1_4Bytes(BFLOAT16_VALUE_TYPE);
+            case INT8 -> buffer.putInt1_4Bytes(INT8_VALUE_TYPE);
+            default -> throw new IllegalArgumentException("Attempt to encode unknown tensor value type: " + valueType);
         }
     }
 

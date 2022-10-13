@@ -109,8 +109,8 @@ LogDataStore::~LogDataStore()
 {
     // Must be called before ending threads as there are sanity checks.
     _fileChunks.clear();
-    _genHandler.updateFirstUsedGeneration();
-    _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
+    _genHandler.update_oldest_used_generation();
+    _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 void
@@ -485,8 +485,8 @@ void LogDataStore::compactFile(FileId fileId)
     FileChunk::UP toDie;
     for (;;) {
         MonitorGuard guard(_updateLock);
-        _genHandler.updateFirstUsedGeneration();
-        if (currentGeneration < _genHandler.getFirstUsedGeneration()) {
+        _genHandler.update_oldest_used_generation();
+        if (currentGeneration < _genHandler.get_oldest_used_generation()) {
             if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
                 toDie = std::move(fc);
                 break;
@@ -939,8 +939,8 @@ LogDataStore::setLid(const MonitorGuard &guard, uint32_t lid, const LidInfo &met
 {
     (void) guard;
     if (lid < _lidInfo.size()) {
-        _genHandler.updateFirstUsedGeneration();
-        _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
+        _genHandler.update_oldest_used_generation();
+        _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
         const LidInfo prev = vespalib::atomic::load_ref_relaxed(_lidInfo[lid]);
         if (prev.valid()) {
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
@@ -958,8 +958,8 @@ LogDataStore::incGeneration()
 {
     _lidInfo.setGeneration(_genHandler.getNextGeneration());
     _genHandler.incGeneration();
-    _genHandler.updateFirstUsedGeneration();
-    _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
+    _genHandler.update_oldest_used_generation();
+    _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 size_t
@@ -1213,7 +1213,7 @@ LogDataStore::canShrinkLidSpace(const MonitorGuard &) const
 {
     // Update lock is held, allowing call to _lidInfo.get_size()
     return getDocIdLimit() < _lidInfo.get_size() &&
-           _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
+           _compactLidSpaceGeneration < _genHandler.get_oldest_used_generation();
 }
 
 size_t

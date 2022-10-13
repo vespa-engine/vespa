@@ -131,6 +131,37 @@ public:
     static const ValueBuilderFactory &test_factory() { return SimpleValueBuilderFactory::get(); }
 
     // Verify the evaluation result and specific tensor function
+    // details for the given expression with the given parameters. A
+    // parameter can be tagged as mutable by giving it a name starting
+    // with '@'. Parameters must be given in automatic discovery order.
+
+    template <typename FunInfo>
+    static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, std::vector<GenSpec> param_specs) {
+        UNWIND_MSG("in verify(%s) with %zu FunInfo", expr.c_str(), fun_info.size());
+        auto fun = Function::parse(expr);
+        REQUIRE_EQ(fun->num_params(), param_specs.size());
+        EvalFixture::ParamRepo param_repo;
+        for (size_t i = 0; i < fun->num_params(); ++i) {
+            if (fun->param_name(i)[0] == '@') {
+                param_repo.add_mutable(fun->param_name(i), param_specs[i]);
+            } else {
+                param_repo.add(fun->param_name(i), param_specs[i]);
+            }
+        }
+        EvalFixture fixture(prod_factory(), expr, param_repo, true, true);
+        EvalFixture slow_fixture(prod_factory(), expr, param_repo, false, false);
+        EvalFixture test_fixture(test_factory(), expr, param_repo, true, true);
+        REQUIRE_EQ(fixture.result(), test_fixture.result());
+        REQUIRE_EQ(fixture.result(), slow_fixture.result());
+        REQUIRE_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
+        auto info = fixture.find_all<typename FunInfo::LookFor>();
+        REQUIRE_EQ(info.size(), fun_info.size());
+        for (size_t i = 0; i < fun_info.size(); ++i) {
+            fixture.verify_callback<FunInfo>(fun_info[i], *info[i]);
+        }
+    }
+
+    // Verify the evaluation result and specific tensor function
     // details for the given expression with different combinations of
     // cell types. Parameter names must be valid GenSpec descriptions
     // ('a5b8'), with an optional mutable prefix ('@a5b8') to denote
@@ -138,10 +169,9 @@ public:
     // trailer starting with '$' ('a5b3$2') to allow multiple
     // parameters with the same description as well as scalars
     // ('$this_is_a_scalar').
-                         
+
     template <typename FunInfo>
     static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, CellTypeSpace cell_type_space) {
-
         UNWIND_MSG("in verify(%s) with %zu FunInfo", expr.c_str(), fun_info.size());
         auto fun = Function::parse(expr);
         REQUIRE_EQ(fun->num_params(), cell_type_space.n());

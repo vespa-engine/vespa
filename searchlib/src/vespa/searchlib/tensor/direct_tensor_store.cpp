@@ -71,16 +71,14 @@ DirectTensorStore::holdTensor(EntryRef ref)
 }
 
 EntryRef
-DirectTensorStore::move(EntryRef ref)
+DirectTensorStore::move_on_compact(EntryRef ref)
 {
     if (!ref.valid()) {
         return EntryRef();
     }
     const auto& old_tensor = _tensor_store.getEntry(ref);
     assert(old_tensor);
-    auto new_ref = add_entry(old_tensor);
-    _tensor_store.holdElem(ref, 1, old_tensor->get_memory_usage().allocatedBytes());
-    return new_ref;
+    return add_entry(old_tensor);
 }
 
 vespalib::MemoryUsage

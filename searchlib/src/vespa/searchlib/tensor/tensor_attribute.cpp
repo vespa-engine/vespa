@@ -110,17 +110,17 @@ TensorAttribute::onUpdateStat()
 }
 
 void
-TensorAttribute::removeOldGenerations(generation_t firstUsed)
+TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    _tensorStore.trimHoldLists(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    _tensorStore.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-TensorAttribute::onGenerationChange(generation_t generation)
+TensorAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
-    _tensorStore.transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    _tensorStore.assign_generation(current_gen);
 }
 
 bool

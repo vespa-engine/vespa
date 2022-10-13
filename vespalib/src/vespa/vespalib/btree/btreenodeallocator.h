@@ -101,7 +101,7 @@ public:
     /**
      * Try to free held nodes if nobody can be referencing them.
      */
-    void trimHoldLists(generation_t usedGen);
+    void reclaim_memory(generation_t oldest_used_gen);
 
     /**
      * Transfer nodes from hold1 lists to hold2 lists, they are no
@@ -109,9 +109,9 @@ public:
      * older versions of the frozen structure must leave before elements
      * can be unheld.
      */
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
 
-    void clearHoldLists();
+    void reclaim_all_memory();
 
     static bool isValidRef(BTreeNode::Ref ref) { return NodeStore::isValidRef(ref); }
 

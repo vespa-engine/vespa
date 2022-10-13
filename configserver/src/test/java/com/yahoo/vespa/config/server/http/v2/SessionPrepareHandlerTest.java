@@ -243,7 +243,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
-                                                                                new NodeAllocationException(exceptionMessage));
+                                                                                new NodeAllocationException(exceptionMessage, true));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(400, response.getStatus());
         Slime data = getData(response);

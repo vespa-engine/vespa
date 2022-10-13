@@ -38,14 +38,14 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
     _tree.getAllocator().freeze();
 
     auto current_gen = _generation_handler.getCurrentGeneration();
-    _store.transferHoldLists(current_gen);
-    _tree.getAllocator().transferHoldLists(current_gen);
+    _store.assign_generation(current_gen);
+    _tree.getAllocator().assign_generation(current_gen);
 
     _generation_handler.incGeneration();
 
-    auto used_gen = _generation_handler.getFirstUsedGeneration();
-    _store.trimHoldLists(used_gen);
-    _tree.getAllocator().trimHoldLists(used_gen);
+    auto used_gen = _generation_handler.get_oldest_used_generation();
+    _store.reclaim_memory(used_gen);
+    _tree.getAllocator().reclaim_memory(used_gen);
 }
 
 template <typename DataStoreTraitsT>

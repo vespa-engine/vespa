@@ -4,10 +4,11 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -17,12 +18,13 @@ import java.util.function.Consumer;
  */
 public class MapConverter {
 
-    public static void convertMapTensors(Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
+    public static void convertMapTensors(GrowableByteBuffer buffer, Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
-            if (value instanceof Tensor) {
-                byte[] tensor = TypedBinaryFormat.encode((Tensor) value);
-                inserter.accept(TensorProperty.newBuilder().setName(entry.getKey()).setValue(ByteString.copyFrom(tensor)));
+            if (value instanceof Tensor tensor) {
+                buffer.clear();
+                TypedBinaryFormat.encode(tensor, buffer);
+                inserter.accept(TensorProperty.newBuilder().setName(entry.getKey()).setValue(ByteString.copyFrom(buffer.getByteBuffer().flip())));
             }
         }
     }
@@ -45,18 +47,20 @@ public class MapConverter {
         }
     }
 
-    public static void convertMultiMap(Map<String, List<Object>> map,
+    public static void convertMultiMap(GrowableByteBuffer buffer,
+                                       Map<String, List<Object>> map,
                                        Consumer<StringProperty.Builder> stringInserter,
                                        Consumer<TensorProperty.Builder> tensorInserter) {
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();
-                var stringValues = new LinkedList<String>();
+                var stringValues = new ArrayList<String>(entry.getValue().size());
                 for (var value : entry.getValue()) {
                     if (value != null) {
-                        if (value instanceof Tensor) {
-                            byte[] tensor = TypedBinaryFormat.encode((Tensor) value);
-                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(tensor)));
+                        if (value instanceof Tensor tensor) {
+                            buffer.clear();
+                            TypedBinaryFormat.encode(tensor, buffer);
+                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(buffer.getByteBuffer().flip())));
                         } else {
                             stringValues.add(value.toString());
                         }

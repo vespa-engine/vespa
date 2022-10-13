@@ -125,17 +125,17 @@ PredicateAttribute::onUpdateStat()
 }
 
 void
-PredicateAttribute::removeOldGenerations(generation_t firstUsed)
+PredicateAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().reclaim(firstUsed);
-    _index->trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
+    _index->reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateAttribute::onGenerationChange(generation_t generation)
+PredicateAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().assign_generation(generation - 1);
-    _index->transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    _index->assign_generation(current_gen);
 }
 
 void

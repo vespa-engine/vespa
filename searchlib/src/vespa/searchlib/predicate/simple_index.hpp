@@ -54,17 +54,17 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     _vector_posting_lists.disableElemHoldList();
     _vector_posting_lists.clear();
     _vector_posting_lists.getAllocator().freeze();
-    _vector_posting_lists.getAllocator().clearHoldLists();
+    _vector_posting_lists.getAllocator().reclaim_all_memory();
 
     _dictionary.disableFreeLists();
     _dictionary.disableElemHoldList();
     _dictionary.clear();
     _dictionary.getAllocator().freeze();
-    _dictionary.getAllocator().clearHoldLists();
+    _dictionary.getAllocator().reclaim_all_memory();
 
     _btree_posting_lists.clearBuilder();
     _btree_posting_lists.freeze();
-    _btree_posting_lists.clearHoldLists();
+    _btree_posting_lists.reclaim_all_memory();
 }
 
 template <typename Posting, typename Key, typename DocId>
@@ -291,19 +291,19 @@ SimpleIndex<Posting, Key, DocId>::commit() {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generation) {
-    _btree_posting_lists.trimHoldLists(used_generation);
-    _dictionary.getAllocator().trimHoldLists(used_generation);
-    _vector_posting_lists.getAllocator().trimHoldLists(used_generation);
+SimpleIndex<Posting, Key, DocId>::reclaim_memory(generation_t oldest_used_gen) {
+    _btree_posting_lists.reclaim_memory(oldest_used_gen);
+    _dictionary.getAllocator().reclaim_memory(oldest_used_gen);
+    _vector_posting_lists.getAllocator().reclaim_memory(oldest_used_gen);
 
 }
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::transferHoldLists(generation_t generation) {
-    _dictionary.getAllocator().transferHoldLists(generation);
-    _btree_posting_lists.transferHoldLists(generation);
-    _vector_posting_lists.getAllocator().transferHoldLists(generation);
+SimpleIndex<Posting, Key, DocId>::assign_generation(generation_t current_gen) {
+    _dictionary.getAllocator().assign_generation(current_gen);
+    _btree_posting_lists.assign_generation(current_gen);
+    _vector_posting_lists.getAllocator().assign_generation(current_gen);
 }
 
 template <typename Posting, typename Key, typename DocId>

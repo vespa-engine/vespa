@@ -20,7 +20,7 @@ BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::~BTree()
 {
     clear();
     _alloc.freeze();
-    _alloc.clearHoldLists();
+    _alloc.reclaim_all_memory();
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,

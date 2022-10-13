@@ -126,11 +126,11 @@ struct Fixture
         return std::make_shared<GidToLidMapperFactory>(_dmsContext);
     }
 
-    void assertGenerations(generation_t currentGeneration, generation_t firstUsedGeneration)
+    void assertGenerations(generation_t currentGeneration, generation_t oldest_used_generation)
     {
         const GenerationHandler &handler = _dms->getGenerationHandler();
         EXPECT_EQUAL(currentGeneration, handler.getCurrentGeneration());
-        EXPECT_EQUAL(firstUsedGeneration, handler.getFirstUsedGeneration());
+        EXPECT_EQUAL(oldest_used_generation, handler.get_oldest_used_generation());
     }
 
     template <typename Function>

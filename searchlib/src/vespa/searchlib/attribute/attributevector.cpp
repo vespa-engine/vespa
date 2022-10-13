@@ -184,7 +184,7 @@ void
 AttributeVector::incGeneration()
 {
     // Freeze trees etc, to stop new readers from accessing currently held data
-    onGenerationChange(_genHandler.getNextGeneration());
+    before_inc_generation(_genHandler.getCurrentGeneration());
     _genHandler.incGeneration();
     // Remove old data on hold lists that can no longer be reached by readers
     removeAllOldGenerations();
@@ -237,8 +237,8 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
         getConfig().collectionType().asString();
 }
 
-void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
-void AttributeVector::onGenerationChange(generation_t generation) { (void) generation; }
+void AttributeVector::reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; }
+void AttributeVector::before_inc_generation(generation_t current_gen) { (void) current_gen; }
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
@@ -409,8 +409,8 @@ bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpd
 
 void
 AttributeVector::removeAllOldGenerations() {
-    _genHandler.updateFirstUsedGeneration();
-    removeOldGenerations(_genHandler.getFirstUsedGeneration());
+    _genHandler.update_oldest_used_generation();
+    reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 
@@ -483,13 +483,11 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     incGeneration();
 }
 
-
 bool
 AttributeVector::canShrinkLidSpace() const {
     return wantShrinkLidSpace() &&
-        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < getFirstUsedGeneration();
+        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < get_oldest_used_generation();
 }
-
 
 void
 AttributeVector::shrinkLidSpace()

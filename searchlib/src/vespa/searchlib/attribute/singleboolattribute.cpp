@@ -257,13 +257,13 @@ SingleBoolAttribute::getEstimatedSaveByteSize() const
 }
 
 void
-SingleBoolAttribute::removeOldGenerations(generation_t firstUsed) {
-    getGenerationHolder().reclaim(firstUsed);
+SingleBoolAttribute::reclaim_memory(generation_t oldest_used_gen) {
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-SingleBoolAttribute::onGenerationChange(generation_t generation) {
-    getGenerationHolder().assign_generation(generation - 1);
+SingleBoolAttribute::before_inc_generation(generation_t current_gen) {
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 }

@@ -56,19 +56,19 @@ MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
+MultiValueNumericPostingAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
-    MultiValueNumericEnumAttribute<B, M>::removeOldGenerations(firstUsed);
-    _postingList.trimHoldLists(firstUsed);
+    MultiValueNumericEnumAttribute<B, M>::reclaim_memory(oldest_used_gen);
+    _postingList.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::onGenerationChange(generation_t generation)
+MultiValueNumericPostingAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
     _postingList.freeze();
-    MultiValueNumericEnumAttribute<B, M>::onGenerationChange(generation);
-    _postingList.transferHoldLists(generation - 1);
+    MultiValueNumericEnumAttribute<B, M>::before_inc_generation(current_gen);
+    _postingList.assign_generation(current_gen);
 }
 
 template <typename B, typename M>

@@ -1,8 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
@@ -13,9 +19,12 @@
 
 namespace search {
 
+using document::ArrayFieldValue;
 using document::Document;
-using index::DocBuilder;
+using document::WeightedSetFieldValue;
+using index::EmptyDocBuilder;
 using index::Schema;
+using index::StringFieldBuilder;
 using index::schema::CollectionType;
 using index::schema::DataType;
 
@@ -26,93 +35,91 @@ namespace memoryindex {
 namespace {
 
 Document::UP
-makeDoc10(DocBuilder &b)
+makeDoc10(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::10");
-    b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("c").addStr("d").
-        endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::10");
+    doc->setValue("f0", sfb.tokenize("a b c d").build());
+    return doc;
 }
 
 Document::UP
-makeDoc11(DocBuilder &b)
+makeDoc11(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::11");
-    b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("e").addStr("f").
-        endField();
-    b.startIndexField("f1").
-        addStr("a").addStr("g").
-        endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::11");
+    doc->setValue("f0", sfb.tokenize("a b e f").build());
+    doc->setValue("f1", sfb.tokenize("a g").build());
+    return doc;
 }
 
 Document::UP
-makeDoc12(DocBuilder &b)
+makeDoc12(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::12");
-    b.startIndexField("f0").
-        addStr("h").addStr("doc12").
-        endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::12");
+    doc->setValue("f0", sfb.tokenize("h doc12").build());
+    return doc;
 }
 
 Document::UP
-makeDoc13(DocBuilder &b)
+makeDoc13(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::13");
-    b.startIndexField("f0").
-        addStr("i").addStr("doc13").
-        endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::13");
+    doc->setValue("f0", sfb.tokenize("i doc13").build());
+    return doc;
 }
 
 Document::UP
-makeDoc14(DocBuilder &b)
+makeDoc14(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::14");
-    b.startIndexField("f0").
-        addStr("j").addStr("doc14").
-        endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::14");
+    doc->setValue("f0", sfb.tokenize("j doc14").build());
+    return doc;
 }
 
 Document::UP
-makeDoc15(DocBuilder &b)
+makeDoc15(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::15");
-    return b.endDocument();
+    return b.make_document("id:ns:searchdocument::15");
 }
 
 Document::UP
-makeDoc16(DocBuilder &b)
+makeDoc16(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::16");
-    b.startIndexField("f0").addStr("foo").addStr("bar").addStr("baz").
-        addTermAnnotation("altbaz").addStr("y").addTermAnnotation("alty").
-        addStr("z").endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::16");
+    doc->setValue("f0", sfb.tokenize("foo bar baz").alt_word("altbaz").tokenize(" y").alt_word("alty").tokenize(" z").build());
+    return doc;
 }
 
 Document::UP
-makeDoc17(DocBuilder &b)
+makeDoc17(EmptyDocBuilder &b)
 {
-    b.startDocument("id:ns:searchdocument::17");
-    b.startIndexField("f1").addStr("foo0").addStr("bar0").endField();
-    b.startIndexField("f2").startElement(1).addStr("foo").addStr("bar").endElement().startElement(1).addStr("bar").endElement().endField();
-    b.startIndexField("f3").startElement(3).addStr("foo2").addStr("bar2").endElement().startElement(4).addStr("bar2").endElement().endField();
-    return b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::17");
+    doc->setValue("f1", sfb.tokenize("foo0 bar0").build());
+    ArrayFieldValue string_array(b.get_data_type("Array<String>"));
+    string_array.add(sfb.tokenize("foo bar").build());
+    string_array.add(sfb.tokenize("bar").build());
+    doc->setValue("f2", string_array);
+    WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+    string_wset.add(sfb.tokenize("foo2 bar2").build(), 3);
+    string_wset.add(sfb.tokenize("bar2").build(), 4);
+    doc->setValue("f3", string_wset);
+    return doc;
 }
 
 vespalib::string corruptWord = "corruptWord";
 
 Document::UP
-makeCorruptDocument(DocBuilder &b, size_t wordOffset)
+makeCorruptDocument(EmptyDocBuilder &b, size_t wordOffset)
 {
-    b.startDocument("id:ns:searchdocument::18");
-    b.startIndexField("f0").addStr("before").addStr(corruptWord).addStr("after").addStr("z").endField();
-    auto doc = b.endDocument();
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::18");
+    doc->setValue("f0", sfb.tokenize("before ").word(corruptWord).tokenize(" after z").build());
     vespalib::nbostream stream;
     doc->serialize(stream);
     std::vector<char> raw;
@@ -127,14 +134,14 @@ makeCorruptDocument(DocBuilder &b, size_t wordOffset)
     }
     vespalib::nbostream badstream;
     badstream.write(&raw[0], raw.size());
-    return std::make_unique<Document>(*b.getDocumentTypeRepo(), badstream);
+    return std::make_unique<Document>(b.get_repo(), badstream);
 }
 
 }
 
 struct FieldInverterTest : public ::testing::Test {
     Schema _schema;
-    DocBuilder _b;
+    EmptyDocBuilder _b;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserterBackend _inserter_backend;
@@ -151,9 +158,21 @@ struct FieldInverterTest : public ::testing::Test {
         return schema;
     }
 
+    static EmptyDocBuilder::AddFieldsType
+    make_add_fields()
+    {
+        return [](auto& header) { using namespace document::config_builder;
+            using DataType = document::DataType;
+            header.addField("f0", DataType::T_STRING)
+                .addField("f1", DataType::T_STRING)
+                .addField("f2", Array(DataType::T_STRING))
+                .addField("f3", Wset(DataType::T_STRING));
+               };
+    }
+
     FieldInverterTest()
         : _schema(makeSchema()),
-          _b(_schema),
+          _b(make_add_fields()),
           _word_store(),
           _remover(_word_store),
           _inserter_backend(),

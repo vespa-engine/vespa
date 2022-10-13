@@ -56,10 +56,11 @@ hasActiveEnumGuards(AttributeVector &attr)
 }
 
 void
-assertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generation_t expFirstUsedGeneration, bool expHasActiveEnumGuards)
+assertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generation_t exp_oldest_used_generation,
+             bool expHasActiveEnumGuards)
 {
     EXPECT_EQUAL(expCurrentGeneration, attr.getCurrentGeneration());
-    EXPECT_EQUAL(expFirstUsedGeneration, attr.getFirstUsedGeneration());
+    EXPECT_EQUAL(exp_oldest_used_generation, attr.get_oldest_used_generation());
     EXPECT_EQUAL(expHasActiveEnumGuards, hasActiveEnumGuards(attr));
 }
 

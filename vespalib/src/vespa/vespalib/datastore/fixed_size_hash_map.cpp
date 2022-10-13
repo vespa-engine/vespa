@@ -97,23 +97,22 @@ FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef
 }
 
 void
-FixedSizeHashMap::transfer_hold_lists_slow(generation_t generation)
+FixedSizeHashMap::assign_generation_slow(generation_t current_gen)
 {
     auto &hold_2_list = _hold_2_list;
     for (uint32_t node_idx : _hold_1_list) {
-        hold_2_list.push_back(std::make_pair(generation, node_idx));
+        hold_2_list.push_back(std::make_pair(current_gen, node_idx));
     }
     _hold_1_list.clear();
-
 }
 
 
 void
-FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
+FixedSizeHashMap::reclaim_memory_slow(generation_t oldest_used_gen)
 {
     while (!_hold_2_list.empty()) {
         auto& first = _hold_2_list.front();
-        if (static_cast<sgeneration_t>(first.first - first_used) >= 0) {
+        if (static_cast<sgeneration_t>(first.first - oldest_used_gen) >= 0) {
             break;
         }
         uint32_t node_idx = first.second;
@@ -183,7 +182,7 @@ FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) con
 }
 
 void
-FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
+FixedSizeHashMap::move_keys_on_compact(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
 {
     for (auto& chain_head : _chain_heads) {
         uint32_t node_idx = chain_head.load_relaxed();
@@ -192,7 +191,7 @@ FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &com
             EntryRef old_ref = node.get_kv().first.load_relaxed();
             assert(old_ref.valid());
             if (compacting_buffers.has(old_ref)) {
-                EntryRef new_ref = compactable.move(old_ref);
+                EntryRef new_ref = compactable.move_on_compact(old_ref);
                 node.get_kv().first.store_release(new_ref);
             }
             node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);

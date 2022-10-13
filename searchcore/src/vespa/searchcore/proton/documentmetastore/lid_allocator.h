@@ -41,8 +41,8 @@ public:
     void unregisterLid(DocId lid);
     void unregister_lids(const std::vector<DocId>& lids);
     size_t getUsedLidsSize() const { return _usedLids.byteSize(); }
-    void trimHoldLists(generation_t firstUsed) {
-        _holdLids.trimHoldLists(firstUsed, _freeLids);
+    void reclaim_memory(generation_t oldest_used_gen) {
+        _holdLids.reclaim_memory(oldest_used_gen, _freeLids);
     }
     void moveLidBegin(DocId fromLid, DocId toLid);
     void moveLidEnd(DocId fromLid, DocId toLid);

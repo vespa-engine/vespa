@@ -264,15 +264,15 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueEnumAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
-    getGenerationHolder().reclaim(firstUsed);
+    this->_enumStore.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueEnumAttribute<B>::before_inc_generation(generation_t current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector
@@ -281,8 +281,8 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    getGenerationHolder().assign_generation(generation - 1);
-    this->_enumStore.transfer_hold_lists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    this->_enumStore.assign_generation(current_gen);
 }
 
 

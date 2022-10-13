@@ -100,13 +100,13 @@ PredicateIntervalStore::remove(EntryRef ref) {
 }
 
 void
-PredicateIntervalStore::trimHoldLists(generation_t used_generation) {
-    _store.trimHoldLists(used_generation);
+PredicateIntervalStore::reclaim_memory(generation_t oldest_used_gen) {
+    _store.reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateIntervalStore::transferHoldLists(generation_t generation) {
-    _store.transferHoldLists(generation);
+PredicateIntervalStore::assign_generation(generation_t current_gen) {
+    _store.assign_generation(current_gen);
 }
 
 }

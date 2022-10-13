@@ -104,17 +104,17 @@ EnumStoreT<EntryT>::get_values_address_space_usage() const
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::transfer_hold_lists(generation_t generation)
+EnumStoreT<EntryT>::assign_generation(generation_t current_gen)
 {
-    _store.transferHoldLists(generation);
+    _store.assign_generation(current_gen);
 }
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::trim_hold_lists(generation_t firstUsed)
+EnumStoreT<EntryT>::reclaim_memory(generation_t oldest_used_gen)
 {
     // remove generations in the range [0, firstUsed>
-    _store.trimHoldLists(firstUsed);
+    _store.reclaim_memory(oldest_used_gen);
 }
 
 template <typename EntryT>

@@ -111,7 +111,7 @@ GenerationHandler::Guard::operator=(Guard &&rhs)
 }
 
 void
-GenerationHandler::updateFirstUsedGeneration()
+GenerationHandler::update_oldest_used_generation()
 {
     for (;;) {
         if (_first == _last.load(std::memory_order_relaxed))
@@ -125,12 +125,12 @@ GenerationHandler::updateFirstUsedGeneration()
         toFree->_next = _free;
         _free = toFree;
     }
-    _firstUsedGeneration.store(_first->_generation, std::memory_order_relaxed);
+    _oldest_used_generation.store(_first->_generation, std::memory_order_relaxed);
 }
 
 GenerationHandler::GenerationHandler()
     : _generation(0),
-      _firstUsedGeneration(0),
+      _oldest_used_generation(0),
       _last(nullptr),
       _first(nullptr),
       _free(nullptr),
@@ -144,7 +144,7 @@ GenerationHandler::GenerationHandler()
 
 GenerationHandler::~GenerationHandler(void)
 {
-    updateFirstUsedGeneration();
+    update_oldest_used_generation();
     assert(_first == _last.load(std::memory_order_relaxed));
     while (_free != nullptr) {
         GenerationHold *toFree = _free;
@@ -190,7 +190,7 @@ GenerationHandler::incGeneration()
         // reader
         set_generation(ngen);
         last->_generation.store(ngen, std::memory_order_relaxed);
-        updateFirstUsedGeneration();
+        update_oldest_used_generation();
         return;
     }
     GenerationHold *nhold = nullptr;
@@ -207,7 +207,7 @@ GenerationHandler::incGeneration()
     last->_next = nhold;
     set_generation(ngen);
     _last.store(nhold, std::memory_order_release);
-    updateFirstUsedGeneration();
+    update_oldest_used_generation();
 }
 
 uint32_t
@@ -215,7 +215,7 @@ GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
     if (static_cast<sgeneration_t>(gen - getCurrentGeneration()) > 0)
         return 0u;
-    if (static_cast<sgeneration_t>(getFirstUsedGeneration() - gen) > 0)
+    if (static_cast<sgeneration_t>(get_oldest_used_generation() - gen) > 0)
         return 0u;
     for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation.load(std::memory_order_relaxed) == gen)

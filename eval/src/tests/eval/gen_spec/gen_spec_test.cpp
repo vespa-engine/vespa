@@ -31,13 +31,13 @@ TEST(DimSpecTest, mapped_dimension) {
 
 TEST(DimSpecTest, simple_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 1, "");
-    std::vector<vespalib::string> expect = {"0", "1", "2", "3", "4"};
+    std::vector<vespalib::string> expect = {"1", "2", "3", "4", "5"};
     EXPECT_EQ(dict, expect);
 }
 
 TEST(DimSpecTest, advanced_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 3, "str_");
-    std::vector<vespalib::string> expect = {"str_0", "str_3", "str_6", "str_9", "str_12"};
+    std::vector<vespalib::string> expect = {"str_3", "str_6", "str_9", "str_12", "str_15"};
     EXPECT_EQ(dict, expect);
 }
 
@@ -176,50 +176,50 @@ TEST(GenSpecTest, generating_custom_vector) {
 //-----------------------------------------------------------------------------
 
 TensorSpec basic_map = TensorSpec("tensor(a{})")
-    .add({{"a", "0"}}, 1.0)
-    .add({{"a", "1"}}, 2.0)
-    .add({{"a", "2"}}, 3.0);
+    .add({{"a", "1"}}, 1.0)
+    .add({{"a", "2"}}, 2.0)
+    .add({{"a", "3"}}, 3.0);
 
 TensorSpec custom_map = TensorSpec("tensor(a{})")
-    .add({{"a", "s0"}}, 1.0)
-    .add({{"a", "s5"}}, 2.0)
-    .add({{"a", "s10"}}, 3.0);
+    .add({{"a", "s5"}}, 1.0)
+    .add({{"a", "s10"}}, 2.0)
+    .add({{"a", "s15"}}, 3.0);
 
 TEST(GenSpecTest, generating_basic_map) {
     EXPECT_EQ(GenSpec().map("a", 3).gen(), basic_map);
     EXPECT_EQ(GenSpec().map("a", 3, 1).gen(), basic_map);
     EXPECT_EQ(GenSpec().map("a", 3, 1, "").gen(), basic_map);
-    EXPECT_EQ(GenSpec().map("a", {"0", "1", "2"}).gen(), basic_map);
+    EXPECT_EQ(GenSpec().map("a", {"1", "2", "3"}).gen(), basic_map);
 }
 
 TEST(GenSpecTest, generating_custom_map) {
     EXPECT_EQ(GenSpec().map("a", 3, 5, "s").gen(), custom_map);
-    EXPECT_EQ(GenSpec().map("a", {"s0", "s5", "s10"}).gen(), custom_map);
+    EXPECT_EQ(GenSpec().map("a", {"s5", "s10", "s15"}).gen(), custom_map);
 }
 
 //-----------------------------------------------------------------------------
 
 TensorSpec basic_mixed = TensorSpec("tensor(a{},b[1],c{},d[3])")
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 0}}, 1.0)
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 1}}, 2.0)
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 2}}, 3.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 0}}, 4.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 1}}, 5.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 2}}, 6.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 0}}, 7.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 1}}, 8.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 2}}, 9.0);
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 0}}, 1.0)
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 1}}, 2.0)
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 2}}, 3.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 0}}, 4.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 1}}, 5.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 2}}, 6.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 0}}, 7.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 1}}, 8.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 2}}, 9.0);
 
 TensorSpec inverted_mixed = TensorSpec("tensor(a{},b[1],c{},d[3])")
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 0}}, 1.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 0}}, 2.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 0}}, 3.0)
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 1}}, 4.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 1}}, 5.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 1}}, 6.0)
-    .add({{"a", "0"},{"b", 0},{"c", "0"},{"d", 2}}, 7.0)
-    .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 2}}, 8.0)
-    .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 2}}, 9.0);
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 0}}, 1.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 0}}, 2.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 0}}, 3.0)
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 1}}, 4.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 1}}, 5.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 1}}, 6.0)
+    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 2}}, 7.0)
+    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 2}}, 8.0)
+    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 2}}, 9.0);
 
 TEST(GenSpecTest, generating_basic_mixed) {
     EXPECT_EQ(GenSpec().map("a", 3).idx("b", 1).map("c", 1).idx("d", 3).gen(), basic_mixed);

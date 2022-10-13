@@ -49,7 +49,7 @@ public:
     EntryRef store_tensor(std::unique_ptr<vespalib::eval::Value> tensor);
 
     void holdTensor(EntryRef ref) override;
-    EntryRef move(EntryRef ref) override;
+    EntryRef move_on_compact(EntryRef ref) override;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     EntryRef store_tensor(const vespalib::eval::Value& tensor) override;

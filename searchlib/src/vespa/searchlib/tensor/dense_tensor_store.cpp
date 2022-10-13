@@ -121,7 +121,7 @@ DenseTensorStore::holdTensor(EntryRef ref)
 }
 
 TensorStore::EntryRef
-DenseTensorStore::move(EntryRef ref)
+DenseTensorStore::move_on_compact(EntryRef ref)
 {
     if (!ref.valid()) {
         return RefType();
@@ -129,7 +129,6 @@ DenseTensorStore::move(EntryRef ref)
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer();
     memcpy(newraw.data, static_cast<const char *>(oldraw), getBufSize());
-    _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
     return newraw.ref;
 }
 

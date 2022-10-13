@@ -9,8 +9,15 @@ package com.yahoo.config.provision;
  */
 public class NodeAllocationException extends RuntimeException {
 
-    public NodeAllocationException(String message) {
+    private final boolean retryable;
+
+    public NodeAllocationException(String message, boolean retryable) {
         super(message);
+        this.retryable = retryable;
+    }
+
+    public boolean retryable() {
+        return retryable;
     }
 
 }

@@ -63,8 +63,8 @@ public:
     void onCommit() override;
     void onUpdateStat() override;
 
-    void removeOldGenerations(generation_t firstUsed) override;
-    void onGenerationChange(generation_t generation) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
+    void before_inc_generation(generation_t current_gen) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // Attribute read API

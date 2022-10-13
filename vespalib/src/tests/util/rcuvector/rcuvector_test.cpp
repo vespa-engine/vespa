@@ -140,7 +140,7 @@ TEST(RcuVectorTest, generation_handling)
 
     v.setGeneration(2);
     v.push_back(50);
-    v.removeOldGenerations(3);
+    v.reclaim_memory(3);
     EXPECT_EQ(0u, v.getMemoryUsage().allocatedBytesOnHold());
     v.push_back(60); // new array
     EXPECT_EQ(24u, v.getMemoryUsage().allocatedBytesOnHold());
@@ -184,7 +184,7 @@ TEST(RcuVectorTest, memory_usage)
     EXPECT_TRUE(assertUsage(MemoryUsage(6,6,0,2), v.getMemoryUsage()));
     v.push_back(4);
     EXPECT_TRUE(assertUsage(MemoryUsage(12,11,0,6), v.getMemoryUsage()));
-    v.removeOldGenerations(1);
+    v.reclaim_memory(1);
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }
 
@@ -434,7 +434,7 @@ StressFixture::commit()
     auto current_gen = generation_handler.getCurrentGeneration();
     g.assign_generation(current_gen);
     generation_handler.incGeneration();
-    auto first_used_gen = generation_handler.getFirstUsedGeneration();
+    auto first_used_gen = generation_handler.get_oldest_used_generation();
     g.reclaim(first_used_gen);
 }
 

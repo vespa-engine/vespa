@@ -70,6 +70,10 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     @Override public Path certificatePath() { return certificateFile; }
     @Override public Path privateKeyPath() { return privateKeyFile; }
 
+    public SSLContext createIdentitySslContextWithTrustStore(Path trustStoreFile) {
+        return createIdentitySslContext(keyManager, trustStoreFile);
+    }
+
     private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile) {
         return new SslContextBuilder()
                 .withTrustStore(trustStoreFile)

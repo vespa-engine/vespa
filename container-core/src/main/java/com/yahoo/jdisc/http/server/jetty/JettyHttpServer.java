@@ -14,6 +14,7 @@ import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -131,34 +132,34 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
     }
 
-    private HandlerCollection createRootHandler(
+    private Handler createRootHandler(
             ServerConfig serverCfg, List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
-        List<ContextHandler> perConnectorHandlers = new ArrayList<>();
+        HandlerCollection perConnectorHandlers = new ContextHandlerCollection();
         for (JDiscServerConnector connector : connectors) {
             ConnectorConfig connectorCfg = connector.connectorConfig();
-            List<HandlerWrapper> chain = new ArrayList<>();
-            chain.add(newGenericStatisticsHandler());
-            chain.add(newResponseStatisticsHandler(serverCfg));
-            chain.add(newGzipHandler(serverCfg));
+            List<Handler> connectorChain = new ArrayList<>();
             if (connectorCfg.tlsClientAuthEnforcer().enable()) {
-                chain.add(newTlsClientAuthEnforcerHandler(connectorCfg));
+                connectorChain.add(newTlsClientAuthEnforcerHandler(connectorCfg));
             }
             if (connectorCfg.healthCheckProxy().enable()) {
-                chain.add(newHealthCheckProxyHandler(connectors));
+                connectorChain.add(newHealthCheckProxyHandler(connectors));
             } else {
-                chain.add(newServletHandler(jdiscServlet));
+                connectorChain.add(newServletHandler(jdiscServlet));
             }
-            ContextHandler connectorRoot = newConnectorContextHandler(connector, connectorCfg);
-            addChainToRoot(connectorRoot, chain);
-            perConnectorHandlers.add(connectorRoot);
+            ContextHandler connectorRoot = newConnectorContextHandler(connector);
+            addChainToRoot(connectorRoot, connectorChain);
+            perConnectorHandlers.addHandler(connectorRoot);
         }
-        return new ContextHandlerCollection(perConnectorHandlers.toArray(new ContextHandler[0]));
+        StatisticsHandler root = newGenericStatisticsHandler();
+        addChainToRoot(root, List.of(
+                newResponseStatisticsHandler(serverCfg), newGzipHandler(serverCfg), perConnectorHandlers));
+        return root;
     }
 
-    private static void addChainToRoot(ContextHandler root, List<HandlerWrapper> chain) {
-        HandlerWrapper parent = root;
-        for (HandlerWrapper h : chain) {
-            parent.setHandler(h);
+    private static void addChainToRoot(Handler root, List<Handler> chain) {
+        Handler parent = root;
+        for (Handler h : chain) {
+            ((HandlerWrapper)parent).setHandler(h);
             parent = h;
         }
     }
@@ -230,9 +231,9 @@ public class JettyHttpServer extends AbstractServerProvider {
         return h;
     }
 
-    private static ContextHandler newConnectorContextHandler(JDiscServerConnector connector, ConnectorConfig connectorCfg) {
+    private static ContextHandler newConnectorContextHandler(JDiscServerConnector connector) {
         ContextHandler ctxHandler = new ContextHandler();
-        List<String> allowedServerNames = connectorCfg.serverName().allowed();
+        List<String> allowedServerNames = connector.connectorConfig().serverName().allowed();
         if (allowedServerNames.isEmpty()) {
             ctxHandler.setVirtualHosts(new String[]{"@%s".formatted(connector.getName())});
         } else {

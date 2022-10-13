@@ -169,9 +169,9 @@ FakeMemTreeOccMgr::freeze()
 
 
 void
-FakeMemTreeOccMgr::transferHoldLists()
+FakeMemTreeOccMgr::assign_generation()
 {
-    _allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
+    _allocator.assign_generation(_generationHandler.getCurrentGeneration());
 }
 
 void
@@ -182,9 +182,9 @@ FakeMemTreeOccMgr::incGeneration()
 
 
 void
-FakeMemTreeOccMgr::trimHoldLists()
+FakeMemTreeOccMgr::reclaim_memory()
 {
-    _allocator.trimHoldLists(_generationHandler.getFirstUsedGeneration());
+    _allocator.reclaim_memory(_generationHandler.get_oldest_used_generation());
 }
 
 
@@ -192,9 +192,9 @@ void
 FakeMemTreeOccMgr::sync()
 {
     freeze();
-    transferHoldLists();
+    assign_generation();
     incGeneration();
-    trimHoldLists();
+    reclaim_memory();
 }
 
 
