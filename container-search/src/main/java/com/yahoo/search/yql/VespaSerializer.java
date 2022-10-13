@@ -121,7 +121,6 @@ import com.yahoo.search.query.QueryTree;
 public class VespaSerializer {
 
     // TODO: Refactor, too much copy/paste
-
     private static abstract class Serializer<ITEM extends Item> {
 
         abstract void onExit(StringBuilder destination, ITEM item);

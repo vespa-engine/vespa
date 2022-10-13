@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -70,43 +71,26 @@ public class RegExpItem extends TermItem {
         putString(getIndexedString(), buffer);
     }
 
+    public Pattern getRegexp() { return regexp; }
+
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("RegExpItem [expression=").append(expression).append("]");
-        return builder.toString();
+        return "RegExpItem [expression=" + expression + "]";
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + ((expression == null) ? 0 : expression.hashCode());
-        return result;
+        return Objects.hash(super.hashCode(), expression);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!super.equals(obj)) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        RegExpItem other = (RegExpItem) obj;
-        if (expression == null) {
-            if (other.expression != null) {
-                return false;
-            }
-        } else if (!expression.equals(other.expression)) {
-            return false;
-        }
-        return true;
-    }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if ( ! super.equals(o)) return false;
+        if (getClass() != o.getClass()) return false;
 
-    public Pattern getRegexp() { return regexp; }
+        RegExpItem other = (RegExpItem)o;
+        return Objects.equals(this.expression, other.expression);
+    }
 
 }

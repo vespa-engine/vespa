@@ -277,29 +277,28 @@ final class ProgramParser {
             switch (getParseTreeIndex(sourceNode)) {
                 // ALL_SOURCE and MULTI_SOURCE are how FROM SOURCES
                 // *|source_name,... are parsed
-                case yqlplusParser.RULE_select_source_all:
-                	Location location = toLocation(scope, sourceNode.getChild(2));
+                case yqlplusParser.RULE_select_source_all -> {
+                    Location location = toLocation(scope, sourceNode.getChild(2));
                     source = OperatorNode.create(location, SequenceOperator.ALL);
                     source.putAnnotation("alias", "row");
                     scope.defineDataSource(location, "row");
-                    break;
-                case yqlplusParser.RULE_select_source_multi:
-                	Source_listContext multiSourceContext = ((Select_source_multiContext) sourceNode).source_list();
+                }
+                case yqlplusParser.RULE_select_source_multi -> {
+                    Source_listContext multiSourceContext = ((Select_source_multiContext) sourceNode).source_list();
                     source = readMultiSource(scope, multiSourceContext);
                     source.putAnnotation("alias", "row");
                     scope.defineDataSource(toLocation(scope, multiSourceContext), "row");
-                    break;
-                case yqlplusParser.RULE_select_source_from:
-                    source = convertSource((ParserRuleContext) sourceNode.getChild(1), scope);
-                    break;
                 }
-            } else {
-                source = OperatorNode.create(SequenceOperator.EMPTY);
+                case yqlplusParser.RULE_select_source_from ->
+                        source = convertSource((ParserRuleContext) sourceNode.getChild(1), scope);
             }
+        } else {
+            source = OperatorNode.create(SequenceOperator.EMPTY);
+        }
 
-            for (int i = 1; i < node.getChildCount(); ++i) {
-                ParseTree child = node.getChild(i);
-                switch (getParseTreeIndex(child)) {
+        for (int i = 1; i < node.getChildCount(); ++i) {
+            ParseTree child = node.getChild(i);
+            switch (getParseTreeIndex(child)) {
                 case yqlplusParser.RULE_select_field_spec:
                     if (getParseTreeIndex(child.getChild(0)) == yqlplusParser.RULE_project_spec) {
                         proj = readProjection(((Project_specContext) child.getChild(0)).field_def(), scope);
@@ -311,7 +310,7 @@ final class ProgramParser {
                 case yqlplusParser.RULE_orderby:
                     // OrderbyContext orderby()
                     List<Orderby_fieldContext> orderFieds = ((OrderbyContext) child)
-                            .orderby_fields().orderby_field();
+                                                                    .orderby_fields().orderby_field();
                     orderby = Lists.newArrayListWithExpectedSize(orderFieds.size());
                     for (var field: orderFieds) {
                         orderby.add(convertSortKey(field, scope));
@@ -326,8 +325,8 @@ final class ProgramParser {
                 case yqlplusParser.RULE_timeout:
                     timeout = convertExpr(((TimeoutContext) child).fixed_or_parameter(), scope);
                     break;
-                }
             }
+        }
         // now assemble the logical plan
         OperatorNode<SequenceOperator> result = source;
         // filter
@@ -415,8 +414,7 @@ final class ProgramParser {
     private OperatorNode<SequenceOperator> convertQuery(ParseTree node, Scope scope) {
         if (node instanceof Select_statementContext) {
             return convertSelect(node, scope.getRoot());
-        } else if (node instanceof Source_statementContext) { // for pipe
-            Source_statementContext sourceStatementContext = (Source_statementContext)node;
+        } else if (node instanceof Source_statementContext sourceStatementContext) { // for pipe
             return convertPipe(sourceStatementContext.query_statement(), sourceStatementContext.pipeline_step(), scope);
         } else {
             throw new IllegalArgumentException("Unexpected argument type to convertQueryStatement: " + node.toStringTree());
@@ -469,47 +467,44 @@ final class ProgramParser {
                dataSourceNode = (ParserRuleContext)dataSourceNode.getChild(1); 
            }
        }
-       switch (getParseTreeIndex(dataSourceNode)) {
-           case yqlplusParser.RULE_call_source: {
-               List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
-               alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
-               List<OperatorNode<ExpressionOperator>> arguments = ImmutableList.of();
-               ArgumentsContext argumentsContext = dataSourceNode.getRuleContext(ArgumentsContext.class,0);
-               if ( argumentsContext != null) {
-                   List<ArgumentContext> argumentContexts = argumentsContext.argument();
-                   arguments = Lists.newArrayListWithExpectedSize(argumentContexts.size());
-                   for (ArgumentContext argumentContext:argumentContexts) {
-                       arguments.add(convertExpr(argumentContext, scope));
-                   }
-               }
-               if (names.size() == 1 && scope.isVariable(names.get(0))) {
-                   String ident = names.get(0);
-                   if (arguments.size() > 0) {
-                       throw new ProgramCompileException(toLocation(scope, argumentsContext), "Invalid call-with-arguments on local source '%s'", ident);
-                   }
-                   result = OperatorNode.create(toLocation(scope, dataSourceNode), SequenceOperator.EVALUATE, OperatorNode.create(toLocation(scope, dataSourceNode), ExpressionOperator.VARREF, ident));
-                } else {
-                   result = OperatorNode.create(toLocation(scope, dataSourceNode), SequenceOperator.SCAN, scope.resolvePath(names), arguments);
+        switch (getParseTreeIndex(dataSourceNode)) {
+            case yqlplusParser.RULE_call_source -> {
+                List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
+                alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
+                List<OperatorNode<ExpressionOperator>> arguments = ImmutableList.of();
+                ArgumentsContext argumentsContext = dataSourceNode.getRuleContext(ArgumentsContext.class, 0);
+                if (argumentsContext != null) {
+                    List<ArgumentContext> argumentContexts = argumentsContext.argument();
+                    arguments = Lists.newArrayListWithExpectedSize(argumentContexts.size());
+                    for (ArgumentContext argumentContext : argumentContexts) {
+                        arguments.add(convertExpr(argumentContext, scope));
+                    }
                 }
-                break;
+                if (names.size() == 1 && scope.isVariable(names.get(0))) {
+                    String ident = names.get(0);
+                    if (arguments.size() > 0) {
+                        throw new ProgramCompileException(toLocation(scope, argumentsContext), "Invalid call-with-arguments on local source '%s'", ident);
+                    }
+                    result = OperatorNode.create(toLocation(scope, dataSourceNode), SequenceOperator.EVALUATE, OperatorNode.create(toLocation(scope, dataSourceNode), ExpressionOperator.VARREF, ident));
+                } else {
+                    result = OperatorNode.create(toLocation(scope, dataSourceNode), SequenceOperator.SCAN, scope.resolvePath(names), arguments);
+                }
             }
-            case yqlplusParser.RULE_sequence_source: {
-                IdentContext identContext = dataSourceNode.getRuleContext(IdentContext.class,0);
+            case yqlplusParser.RULE_sequence_source -> {
+                IdentContext identContext = dataSourceNode.getRuleContext(IdentContext.class, 0);
                 String ident = identContext.getText();
                 if (!scope.isVariable(ident)) {
                     throw new ProgramCompileException(toLocation(scope, identContext), "Unknown variable reference '%s'", ident);
                 }
                 alias = assignAlias(ident, aliasContext, scope);
                 result = OperatorNode.create(toLocation(scope, dataSourceNode), SequenceOperator.EVALUATE, OperatorNode.create(toLocation(scope, dataSourceNode), ExpressionOperator.VARREF, ident));
-                break;
             }
-            case yqlplusParser.RULE_source_statement: {
+            case yqlplusParser.RULE_source_statement -> {
                 alias = assignAlias(null, dataSourceNode, scope);
                 result = convertQuery(dataSourceNode, scope);
-                break;
             }
-            default:
-                throw new IllegalArgumentException("Unexpected argument type to convertSource: " + dataSourceNode.getText());
+            default ->
+                    throw new IllegalArgumentException("Unexpected argument type to convertSource: " + dataSourceNode.getText());
         }
         result.putAnnotation("alias", alias);
         return result;
@@ -522,10 +517,7 @@ final class ProgramParser {
         List<OperatorNode<StatementOperator>> stmts = Lists.newArrayList();
         int output = 0;
         for (ParseTree node : program.children) {
-            if (!(node instanceof ParserRuleContext)) {
-                continue;
-            }
-            ParserRuleContext ruleContext = (ParserRuleContext) node;
+            if (!(node instanceof ParserRuleContext ruleContext)) continue;
             if (ruleContext.getRuleIndex() != yqlplusParser.RULE_statement)
                 throw new ProgramCompileException("Unknown program element: " + node.getText());
 
