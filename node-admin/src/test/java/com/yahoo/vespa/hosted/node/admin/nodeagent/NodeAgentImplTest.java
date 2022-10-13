@@ -789,7 +789,7 @@ public class NodeAgentImplTest {
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  List.of(credentialsMaintainer), Optional.of(aclMaintainer), Optional.of(healthChecker),
-                                 clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE);
+                                 clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE, Optional.empty());
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
