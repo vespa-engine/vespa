@@ -237,7 +237,10 @@ public class JettyHttpServer extends AbstractServerProvider {
         if (allowedServerNames.isEmpty()) {
             ctxHandler.setVirtualHosts(new String[]{"@%s".formatted(connector.getName())});
         } else {
-            ctxHandler.setVirtualHosts(allowedServerNames.toArray(new String[0]));
+            String[] virtualHosts = allowedServerNames.stream()
+                    .map(name -> "%s@%s".formatted(name, connector.getName()))
+                    .toArray(String[]::new);
+            ctxHandler.setVirtualHosts(virtualHosts);
         }
         return ctxHandler;
     }
