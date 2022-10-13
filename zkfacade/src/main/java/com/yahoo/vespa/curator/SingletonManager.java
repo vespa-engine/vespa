@@ -21,8 +21,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Manages {@link com.yahoo.vespa.curator.api.VespaCurator.SingletonWorker}.
@@ -96,7 +99,7 @@ class SingletonManager {
         int i = 0;
         for (SingletonWorker singleton : List.copyOf(registrations.keySet())) {
             String id = registrations.get(singleton);
-            logger.log(Level.WARNING, singleton + " still registered with id '" + id + "' at shutdown");
+            logger.log(WARNING, singleton + " still registered with id '" + id + "' at shutdown");
             futures[i++] = unregister(singleton);
         }
         return CompletableFuture.allOf(futures)
@@ -150,12 +153,13 @@ class SingletonManager {
         public void unlock() {
             doom.set(null);
             if (lock != null) try {
+                logger.log(INFO, "Releasing lease for " + id);
                 metrics.hasLease(false);
                 lock.close();
                 lock = null;
             }
             catch (Exception e) {
-                logger.log(Level.WARNING, "failed closing " + lock, e);
+                logger.log(WARNING, "Failed closing " + lock, e);
             }
         }
 
@@ -172,7 +176,7 @@ class SingletonManager {
                     }
                     catch (InterruptedException e) {
                         if ( ! shutdown.get()) {
-                            logger.log(Level.WARNING, worker + " interrupted, restarting event loop");
+                            logger.log(WARNING, worker + " interrupted, restarting event loop");
                         }
                     }
                 }
@@ -199,46 +203,55 @@ class SingletonManager {
                 }
             }
             catch (RuntimeException e) {
-                logger.log(Level.WARNING, "Exception attempting to " + task.type + " " + task.singleton + " in " + worker, e);
+                logger.log(WARNING, "Exception attempting to " + task.type + " " + task.singleton + " in " + worker, e);
                 task.future.completeExceptionally(e);
             }
         }
 
         private void doRegister(SingletonWorker singleton) {
+            logger.log(INFO, "Registering " + singleton + " with ID: " + id);
             SingletonWorker current = singletons.peek();
             singletons.push(singleton);
             if (active) {
                 RuntimeException e = null;
                 if (current != null) try {
+                    logger.log(INFO, "Deactivating " + current);
                     metrics.deactivation(current::deactivate);
                 }
                 catch (RuntimeException f) {
                     e = f;
                 }
                 try {
+                    logger.log(INFO, "Activating " + singleton);
                     metrics.activation(singleton::activate);
                 }
                 catch (RuntimeException f) {
                     if (e == null) e = f;
                     else e.addSuppressed(f);
                 }
-                if (singletons.isEmpty()) doom.set(INVALID);
+                if (singletons.isEmpty()) {
+                    logger.log(INFO, "No registered singletons, invalidating lease");
+                    invalidate();
+                }
                 if (e != null) throw e;
             }
         }
 
         private void doUnregister(SingletonWorker singleton) {
+            logger.log(INFO, "Unregistering " + singleton + " with ID: " + id);
             RuntimeException e = null;
             SingletonWorker current = singletons.peek();
             if ( ! singletons.remove(singleton)) return;
             if (active && current == singleton) {
                 try {
+                    logger.log(INFO, "Deactivating " + singleton);
                     metrics.deactivation(singleton::deactivate);
                 }
                 catch (RuntimeException f) {
                     e = f;
                 }
                 if ( ! singletons.isEmpty()) try {
+                    logger.log(INFO, "Activating " + singletons.peek());
                     metrics.activation(singletons.peek()::activate);
                 }
                 catch (RuntimeException f) {
@@ -246,7 +259,10 @@ class SingletonManager {
                     else e.addSuppressed(f);
                 }
             }
-            if (singletons.isEmpty()) doom.set(INVALID);
+            if (singletons.isEmpty()) {
+                logger.log(INFO, "No registered singletons, invalidating lease");
+                invalidate();
+            }
             if (e != null) throw e;
         }
 
@@ -256,6 +272,7 @@ class SingletonManager {
          */
         private void renewLease() {
             if (doom.get() == INVALID) {
+                logger.log(INFO, "Lease invalidated");
                 doom.set(null);
                 return; // Skip to updateStatus, deactivation, and release the lock.
             }
@@ -264,21 +281,22 @@ class SingletonManager {
             Instant start = clock.instant();
             if (lock == null) try {
                 lock = curator.lock(path.append("lock"), tickTimeout);
+                logger.log(INFO, "Acquired lock for ID: " + id);
                 metrics.hasLease(true);
             }
             catch (RuntimeException e) {
-                logger.log(Level.FINE, "Failed acquiring lock for '" + path + "' within " + tickTimeout, e);
+                logger.log(FINE, "Failed acquiring lock for '" + path + "' within " + tickTimeout, e);
                 return;
             }
             try {
                 curator.set(path.append("ping"), new byte[0]);
             }
             catch (RuntimeException e) {
-                logger.log(Level.FINE, "Failed pinging ZK cluster", e);
+                logger.log(FINE, "Failed pinging ZK cluster", e);
                 return;
             }
             if ( ! doom.compareAndSet(ourDoom, start.plus(Curator.ZK_SESSION_TIMEOUT.multipliedBy(9).dividedBy(10)))) {
-                logger.log(Level.FINE, "Deadline changed, invalidating current lease renewal");
+                logger.log(FINE, "Deadline changed, current lease renewal is void");
             }
         }
 
@@ -290,22 +308,24 @@ class SingletonManager {
             Instant ourDoom = doom.get();
             boolean shouldBeActive = ourDoom != null && ourDoom != INVALID && ! clock.instant().isAfter(ourDoom);
             if ( ! active && shouldBeActive) {
+                logger.log(INFO, "Activating singletons for ID :" + id);
                 try {
                     active = true;
                     if ( ! singletons.isEmpty()) metrics.activation(singletons.peek()::activate);
                 }
                 catch (RuntimeException e) {
-                    logger.log(Level.WARNING, "Failed to activate " + singletons.peek() + ", deactivating again", e);
+                    logger.log(WARNING, "Failed to activate " + singletons.peek() + ", deactivating again", e);
                     shouldBeActive = false;
                 }
             }
             if (active && ! shouldBeActive) {
+                logger.log(INFO, "Deactivating singletons due to doom value of '" + ourDoom + "', for ID :" + id);
                 try  {
                     if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
                     active = false;
                 }
                 catch (RuntimeException e) {
-                    logger.log(Level.WARNING, "Failed to deactivate " + singletons.peek(), e);
+                    logger.log(WARNING, "Failed to deactivate " + singletons.peek(), e);
                 }
                 unlock();
             }
@@ -328,8 +348,9 @@ class SingletonManager {
         }
 
         void shutdown() {
+            logger.log(INFO, "Shutting down " + this);
             if ( ! shutdown.compareAndSet(false, true)) {
-                logger.log(Level.WARNING, "Shutdown called more than once on " + this);
+                logger.log(WARNING, "Shutdown called more than once on " + this);
             }
             if (Thread.currentThread() != worker) {
                 try {
@@ -343,7 +364,7 @@ class SingletonManager {
                 unlock();
             }
             if ( ! tasks.isEmpty()) {
-                logger.log(Level.WARNING, "Non-empty task list after shutdown: " + tasks.size() + " remaining");
+                logger.log(WARNING, "Non-empty task list after shutdown: " + tasks.size() + " remaining");
                 for (Task task : tasks) task.future.cancel(true); // Shouldn't happen.
             }
         }
@@ -374,7 +395,6 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(ACTIVATION, 1, context);
-                logger.log(Level.INFO, "Activating singleton with ID " + id);
                 try {
                     activation.run();
                 }
@@ -393,7 +413,6 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(DEACTIVATION, 1, context);
-                logger.log(Level.INFO, "Deactivating singleton with ID " + id);
                 try {
                     deactivation.run();
                 }
