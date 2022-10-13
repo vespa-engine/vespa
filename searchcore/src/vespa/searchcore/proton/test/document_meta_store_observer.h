@@ -162,8 +162,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     DocId getCommittedDocIdLimit() const override {
         return _store.getCommittedDocIdLimit();
     }
-    void removeAllOldGenerations() override {
-        _store.removeAllOldGenerations();
+    void reclaim_unused_memory() override {
+        _store.reclaim_unused_memory();
     }
     bool canShrinkLidSpace() const override {
         return _store.canShrinkLidSpace();

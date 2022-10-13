@@ -239,7 +239,7 @@ applyReplayDone(uint32_t docIdLimit, AttributeVector &attr)
 void
 applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
 {
-    attr.removeAllOldGenerations();
+    attr.reclaim_unused_memory();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
         attr.commit(search::CommitParam(serialNum));
     }

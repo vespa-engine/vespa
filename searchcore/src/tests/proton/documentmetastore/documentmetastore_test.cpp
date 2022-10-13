@@ -1802,7 +1802,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
               ft->getApproxMemoryGain().getAfter());
 
     g.reset();
-    dms->removeAllOldGenerations();
+    dms->reclaim_unused_memory();
     assertLidSpace(10, shrinkTarget, shrinkTarget - 1, true, true, *dms);
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >
                 ft->getApproxMemoryGain().getAfter());
@@ -2008,7 +2008,7 @@ namespace {
 
 void try_compact_document_meta_store(DocumentMetaStore &dms)
 {
-    dms.removeAllOldGenerations();
+    dms.reclaim_unused_memory();
     dms.commit(true);
 }
 

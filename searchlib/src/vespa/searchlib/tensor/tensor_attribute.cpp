@@ -134,7 +134,7 @@ TensorAttribute::addDoc(DocId &docId)
     if (incGen) {
         incGeneration();
     } else {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
     }
     return true;
 }

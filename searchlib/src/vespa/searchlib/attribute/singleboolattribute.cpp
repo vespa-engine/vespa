@@ -53,7 +53,7 @@ SingleBoolAttribute::addDoc(DocId & doc) {
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
-    removeAllOldGenerations();
+    reclaim_unused_memory();
     return true;
 }
 
@@ -80,7 +80,7 @@ SingleBoolAttribute::onCommit() {
     }
 
     std::atomic_thread_fence(std::memory_order_release);
-    removeAllOldGenerations();
+    reclaim_unused_memory();
 
     _changes.clear();
 }

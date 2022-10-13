@@ -66,7 +66,7 @@ SingleValueEnumAttribute<B>::addDoc(DocId & doc)
     if (incGen) {
         this->incGeneration();
     } else
-        this->removeAllOldGenerations();
+        this->reclaim_unused_memory();
     return true;
 }
 
@@ -95,7 +95,7 @@ SingleValueEnumAttribute<B>::onCommit()
     updater.commit();
     freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
     auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         remap_enum_store_refs(*remapper, *this);

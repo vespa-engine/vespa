@@ -87,7 +87,7 @@ ReferenceAttribute::addDoc(DocId &doc)
     if (incGen) {
         incGeneration();
     } else {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
     }
     return true;
 }
