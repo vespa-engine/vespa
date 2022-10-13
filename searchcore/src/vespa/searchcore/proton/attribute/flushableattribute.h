@@ -51,7 +51,7 @@ public:
      *
      * fileHeaderContext must be kept alive by caller.
      **/
-    FlushableAttribute(const AttributeVectorSP attr,
+    FlushableAttribute(AttributeVectorSP attr,
                        const std::shared_ptr<AttributeDirectory> &attrDir,
                        const search::TuneFileAttributes &tuneFileAttributes,
                        const search::common::FileHeaderContext &

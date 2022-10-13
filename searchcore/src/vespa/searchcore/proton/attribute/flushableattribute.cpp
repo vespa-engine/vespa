@@ -146,7 +146,7 @@ FlushableAttribute::Flusher::run()
     }
 }
 
-FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
+FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
                                        const std::shared_ptr<AttributeDirectory> &attrDir,
                                        const TuneFileAttributes &
                                        tuneFileAttributes,

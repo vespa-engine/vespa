@@ -43,8 +43,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_manager_test");
 
-namespace vespa { namespace config { namespace search {}}}
-
 using std::string;
 using namespace vespa::config::search;
 using namespace config;
@@ -258,7 +256,7 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       masterExecutor(1, 128_Ki),
       master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
-                                                                documentMetaStore, baseAttrMgr, attrCfg,
+                                                                documentMetaStore, *baseAttrMgr, attrCfg,
                                                                 alloc_strategy,
                                                                 fastAccessAttributesOnly, master, mgr))
 {

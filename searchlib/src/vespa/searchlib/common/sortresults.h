@@ -28,7 +28,7 @@ struct FastS_IResultSorter {
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastS_IResultSorter() {}
+    virtual ~FastS_IResultSorter() = default;
 
     /**
      * Sort the given array of results.
@@ -45,10 +45,10 @@ struct FastS_IResultSorter {
 class FastS_DefaultResultSorter : public FastS_IResultSorter
 {
 private:
-    static FastS_DefaultResultSorter __instance;
+    static FastS_DefaultResultSorter _instance;
 
 public:
-    static FastS_DefaultResultSorter *instance() { return &__instance; }
+    static FastS_DefaultResultSorter *instance() { return &_instance; }
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t ntop) override {
         return FastS_SortResults(a, n, ntop);
     }
@@ -84,6 +84,7 @@ public:
 
     struct SortData : public search::RankedHit
     {
+        SortData() : RankedHit(), _idx(0u), _len(0u), _pos(0u) {}
         uint32_t _idx;
         uint32_t _len;
         uint32_t _pos;
@@ -110,11 +111,10 @@ public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
     FastS_SortSpec(uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
-    ~FastS_SortSpec();
+    ~FastS_SortSpec() override;
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
-        return std::pair<const char *, size_t>((const char*)(&_binarySortData[0] + _sortDataArray[i]._idx),
-                                               _sortDataArray[i]._len);
+        return {(const char*)(&_binarySortData[0] + _sortDataArray[i]._idx), _sortDataArray[i]._len };
     }
     bool Init(const vespalib::string & sortSpec, search::attribute::IAttributeContext & vecMan);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
@@ -122,7 +122,6 @@ public:
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();
     void initWithoutSorting(const search::RankedHit * hits, uint32_t hitCnt);
-    static int Compare(const FastS_SortSpec *self, const SortData &a, const SortData &b);
 };
 
 //-----------------------------------------------------------------------------
