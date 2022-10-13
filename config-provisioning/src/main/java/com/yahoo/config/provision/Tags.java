@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A deployment may have a list of tags associated with it. Config files may have variants for these tags similar
@@ -30,7 +31,9 @@ public class Tags {
     public boolean containsAll(Tags other) { return tags.containsAll(other.tags); }
 
     /** Returns this as a space-separated string which can be used to recreate this by calling fromString(). */
-    public String asString() { return String.join(" ", tags); }
+    public String asString() {
+        return tags.stream().sorted().collect(Collectors.joining(" "));
+    }
 
     @Override
     public String toString() {
