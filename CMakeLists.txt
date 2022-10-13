@@ -22,6 +22,21 @@ vespa_use_default_cmake_install_prefix()
 include(GNUInstallDirs)
 vespa_use_default_vespa_user()
 vespa_use_default_vespa_group()
+vespa_use_default_vespa_deps_prefix()
+vespa_use_default_cmake_prefix_path()
+
+SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
+SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
+
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+message(STATUS "LLVM_INCLUDE_DIRS is ${LLVM_INCLUDE_DIRS}")
+message(STATUS "LLVM_LIBRARY_DIRS is ${LLVM_LIBRARY_DIRS}")
+message(STATUS "LLVM_INCLUDE_DIR is ${LLVM_INCLUDE_DIR}")
+message(STATUS "LLVM_MAIN_INCLUDE_DIR is ${LLVM_MAIN_INCLUDE_DIR}")
+message(STATUS "LLVM_LIBRARY_DIR is ${LLVM_LIBRARY_DIR}")
+
 vespa_use_default_build_settings()
 
 # allows import of project in CLion on OSX
