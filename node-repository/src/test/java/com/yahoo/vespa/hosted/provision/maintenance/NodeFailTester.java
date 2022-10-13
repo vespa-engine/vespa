@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
-import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -63,7 +62,6 @@ public class NodeFailTester {
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
     public TestMetric metric;
-    private final TestHostLivenessTracker hostLivenessTracker;
     private final NodeRepositoryProvisioner provisioner;
     private final Curator curator;
 
@@ -74,7 +72,6 @@ public class NodeFailTester {
         curator = tester.getCurator();
         nodeRepository = tester.nodeRepository();
         provisioner = tester.provisioner();
-        hostLivenessTracker = new TestHostLivenessTracker(clock);
     }
 
     private void initializeMaintainers(Map<ApplicationId, MockDeployer.ApplicationContext> apps) {

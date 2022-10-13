@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Report;
-import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -21,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,23 +62,21 @@ public class NodeFailerTest {
     }
 
     private void testNodeFailingWith(NodeFailTester tester, String hostWithHwFailure) {
-        // The host should have 2 nodes in active and 1 ready
+        // The host should have 2 nodes in active
         Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.nodes().list().childrenOf(hostWithHwFailure).asList().stream()
                 .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
         assertEquals(2, hostnamesByState.get(Node.State.active).size());
-        assertEquals(1, hostnamesByState.get(Node.State.ready).size());
 
         // Suspend the first of the active nodes
         tester.suspend(hostnamesByState.get(Node.State.active).get(0));
 
         tester.runMaintainers();
         tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
         // The first (and the only) ready node and the 1st active node that was allowed to fail should be failed
         Map<Node.State, List<String>> expectedHostnamesByState1Iter = Map.of(
-                Node.State.failed, List.of(hostnamesByState.get(Node.State.ready).get(0), hostnamesByState.get(Node.State.active).get(0)),
+                Node.State.failed, List.of(hostnamesByState.get(Node.State.active).get(0)),
                 Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
         Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.nodes().list().childrenOf(hostWithHwFailure).asList().stream()
                 .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
@@ -88,7 +86,6 @@ public class NodeFailerTest {
         tester.suspend(hostnamesByState.get(Node.State.active).get(1));
 
         tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
         // All of the children should be failed now
@@ -101,7 +98,7 @@ public class NodeFailerTest {
         tester.suspend(hostWithHwFailure);
         tester.runMaintainers();
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(hostWithHwFailure).get().state());
-        assertEquals(4, tester.nodeRepository.nodes().list(Node.State.failed).size());
+        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).size());
     }
 
     @Test
@@ -110,14 +107,12 @@ public class NodeFailerTest {
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
 
-        // The host has 2 nodes in active and 1 ready
+        // The host has 2 nodes in active
         Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.nodes().list().childrenOf(hostWithFailureReports).asList().stream()
                 .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
         assertEquals(2, hostnamesByState.get(Node.State.active).size());
         String activeChild1 = hostnamesByState.get(Node.State.active).get(0);
         String activeChild2 = hostnamesByState.get(Node.State.active).get(1);
-        assertEquals(1, hostnamesByState.get(Node.State.ready).size());
-        String readyChild = hostnamesByState.get(Node.State.ready).get(0);
 
         // Set failure report to the parent and all its children.
         Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
@@ -128,20 +123,16 @@ public class NodeFailerTest {
                     tester.nodeRepository.nodes().write(updatedNode, () -> {});
                 });
 
-        // The ready node will be failed, but neither the host nor the 2 active nodes since they have not been suspended
-        tester.allNodesMakeAConfigRequestExcept();
+        // Neither the host nor the 2 active nodes are failed out because they have not been suspended
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild1).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
 
-        // Suspending the host will not fail any more since none of the children are suspened
+        // Suspending the host will not fail any more since none of the children are suspended
         tester.suspend(hostWithFailureReports);
         tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild1).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
@@ -149,9 +140,7 @@ public class NodeFailerTest {
         // Suspending one child node will fail that out.
         tester.suspend(activeChild1);
         tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild1).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
@@ -159,9 +148,7 @@ public class NodeFailerTest {
         // Suspending the second child node will fail that out and the host.
         tester.suspend(activeChild2);
         tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild1).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild2).get().state());
@@ -210,30 +197,17 @@ public class NodeFailerTest {
 
     @Test
     public void node_failing() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        NodeFailTester tester = NodeFailTester.withTwoApplications(6);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
 
-            assertEquals( 0, tester.deployer.redeployments);
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-            assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-            assertEquals( 4, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+            assertEquals(0, tester.deployer.redeployments);
+            assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+            assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         }
-
-        // Hardware failures are detected on two ready nodes, which are then failed
-        Node readyFail1 = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).asList().get(2);
-        Node readyFail2 = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).asList().get(3);
-        tester.nodeRepository.nodes().write(readyFail1.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
-        tester.nodeRepository.nodes().write(readyFail2.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
-        assertEquals(4, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        tester.runMaintainers();
-        assertEquals(2, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyFail1.hostname()).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyFail2.hostname()).get().state());
 
         String downHost1 = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
         String downHost2 = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app2).asList().get(3).hostname();
@@ -243,41 +217,34 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 45; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
-            assertEquals( 0, tester.deployer.redeployments);
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-            assertEquals( 2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-            assertEquals( 2, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+            assertEquals(0, tester.deployer.redeployments);
+            assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+            assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         }
         tester.serviceMonitor.setHostUp(downHost1);
 
         // downHost2 should now be failed and replaced, but not downHost1
         tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals( 1, tester.deployer.redeployments);
-        assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals( 1, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(downHost2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).asList().get(0).hostname());
 
         // downHost1 fails again
         tester.serviceMonitor.setHostDown(downHost1);
         tester.runMaintainers();
         tester.clock.advance(Duration.ofMinutes(5));
-        tester.allNodesMakeAConfigRequestExcept();
         // the system goes down
         tester.clock.advance(Duration.ofMinutes(120));
         tester.failer = tester.createFailer();
         tester.runMaintainers();
         // the host is still down and fails
         tester.clock.advance(Duration.ofMinutes(5));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals( 2, tester.deployer.redeployments);
-        assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals( 4, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.deployer.redeployments);
+        assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
 
         // the last host goes down
         Node lastNode = tester.highestIndex(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1));
@@ -286,23 +253,19 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 75; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
-            assertEquals( 2, tester.deployer.redeployments);
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-            assertEquals( 4, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-            assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+            assertEquals(2, tester.deployer.redeployments);
+            assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+            assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         }
 
         // A new node is available
         tester.createReadyNodes(1, 16, NodeFailTester.nodeResources);
         tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         // The node is now failed
-        assertEquals( 3, tester.deployer.redeployments);
-        assertEquals(12, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals( 5, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+        assertEquals(3, tester.deployer.redeployments);
+        assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertTrue("The index of the last failed node is not reused",
                    tester.highestIndex(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1)).allocation().get().membership().index()
                    >
@@ -319,12 +282,10 @@ public class NodeFailerTest {
         String downNode = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
 
         tester.serviceMonitor.setHostDown(downNode);
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
 
         tester.clock.advance(Duration.ofMinutes(75));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
@@ -332,12 +293,10 @@ public class NodeFailerTest {
         // Re-activate the node. It is still down, but should not be failed out until the grace period has passed again
         tester.nodeRepository.nodes().reactivate(downNode, Agent.system, getClass().getSimpleName());
         tester.clock.advance(Duration.ofMinutes(30));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
 
         tester.clock.advance(Duration.ofMinutes(45));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
@@ -360,7 +319,6 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 45; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
             assertEquals(0, tester.deployer.redeployments);
             assertEquals(3, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
             assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
@@ -368,7 +326,6 @@ public class NodeFailerTest {
 
         // downHost should now be failed and replaced
         tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(1, tester.deployer.redeployments);
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
@@ -403,37 +360,15 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void host_not_failed_without_config_requests() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
-
-        // For a day all nodes work so nothing happens
-        for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
-            tester.clock.advance(Duration.ofMinutes(interval));
-            tester.allNodesMakeAConfigRequestExcept();
-            tester.runMaintainers();
-            assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).size());
-            assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
-        }
-
-        tester.clock.advance(Duration.ofMinutes(180));
-        Node host = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).first().get();
-        tester.allNodesMakeAConfigRequestExcept(host);
-        tester.runMaintainers();
-        assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).size());
-        assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
-    }
-
-    @Test
     public void failing_hosts() {
         NodeFailTester tester = NodeFailTester.withTwoApplications(7);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
             tester.clock.advance(Duration.ofMinutes(interval));
-            tester.allNodesMakeAConfigRequestExcept();
             tester.runMaintainers();
             assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-            assertEquals(13, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+            assertEquals(0, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
             assertEquals(7, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
         }
 
@@ -446,21 +381,17 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 45; minutes += 5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
             assertEquals(0, tester.deployer.redeployments);
             assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-            assertEquals(13, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
             assertEquals(7, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
         }
 
         tester.clock.advance(Duration.ofMinutes(30));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
         assertEquals(2, tester.deployer.redeployments);
-        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(10, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(7, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
 
@@ -468,9 +399,8 @@ public class NodeFailerTest {
         tester.runMaintainers();
 
         assertEquals(2 + 1, tester.deployer.redeployments);
-        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(10, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(6, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
 
@@ -483,18 +413,15 @@ public class NodeFailerTest {
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(interval));
-            tester.allNodesMakeAConfigRequestExcept();
-            assertEquals(3 + 1, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(2 + 1, tester.nodeRepository.nodes().list(Node.State.failed).size());
         }
 
         tester.clock.advance(Duration.ofMinutes(30));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
         assertEquals(3 + 1, tester.deployer.redeployments);
-        assertEquals(4, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(9, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(6, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
 
 
@@ -503,14 +430,12 @@ public class NodeFailerTest {
         tester.serviceMonitor.setHostDown(downHost2);
         tester.runMaintainers();
         tester.clock.advance(Duration.ofMinutes(90));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         tester.runMaintainers();  // The host is failed in the 2. maintain()
 
         assertEquals(5 + 2, tester.deployer.redeployments);
-        assertEquals(7, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(5, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(6, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
 
 
@@ -520,13 +445,11 @@ public class NodeFailerTest {
         tester.serviceMonitor.setHostDown(downHost3);
         tester.runMaintainers();
         tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
         assertEquals(6 + 2, tester.deployer.redeployments);
-        assertEquals(9, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(6, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(4, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
     }
 
@@ -547,7 +470,6 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
 
             assertEquals(count, tester.nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).size());
         }
@@ -560,7 +482,6 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 45; minutes +=5 ) {
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
             assertEquals( 0, tester.deployer.redeployments);
             assertEquals(count, tester.nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).size());
         }
@@ -582,38 +503,30 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void failing_divergent_ready_nodes() {
-        NodeFailTester tester = NodeFailTester.withNoApplications();
-
-        Node readyNode = tester.createReadyNodes(1).get(0);
-
-        tester.runMaintainers();
-        assertEquals(Node.State.ready, readyNode.state());
-
-        tester.nodeRepository.nodes().write(readyNode.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
-
-        tester.runMaintainers();
-        assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).size());
-    }
-
-    @Test
     public void node_failing_throttle() {
         // Throttles based on an absolute number in small zone
         {
-            // 10 hosts with 3 tenant nodes each, total 40 nodes
-            NodeFailTester tester = NodeFailTester.withTwoApplications(10);
-            NodeList hosts = tester.nodeRepository.nodes().list().nodeType(NodeType.host);
+            // 10 hosts with 7 container and 7 content nodes, total 24 nodes
+            NodeFailTester tester = NodeFailTester.withTwoApplications(10, 7, 7);
+
+            List<String> failedHostHostnames = tester.nodeRepository.nodes().list().stream()
+                    .flatMap(node -> node.parentHostname().stream())
+                    .collect(Collectors.groupingBy(h -> h, Collectors.counting()))
+                    .entrySet().stream()
+                    .sorted(Comparator.comparingLong((Map.Entry<String, Long> e) -> e.getValue()).reversed())
+                    .limit(3)
+                    .map(Map.Entry::getKey)
+                    .toList();
 
             // 3 hosts fail. 2 of them and all of their children are allowed to fail
-            List<Node> failedHosts = hosts.asList().subList(0, 3);
-            failedHosts.forEach(host -> tester.serviceMonitor.setHostDown(host.hostname()));
+            failedHostHostnames.forEach(hostname -> tester.serviceMonitor.setHostDown(hostname));
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(61));
 
             tester.runMaintainers();
             tester.runMaintainers();  // hosts are typically failed in the 2. maintain()
             assertEquals(2 + /* hosts */
-                         (2 * 3) /* containers per host */,
+                         (2 * 2) /* containers per host */,
                          tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled host failures", 1, tester.metric.values.get(NodeFailer.throttledHostFailuresMetric));
@@ -623,7 +536,7 @@ public class NodeFailerTest {
                 tester.clock.advance(Duration.ofMinutes(interval));
             }
             tester.runMaintainers();
-            assertEquals(8, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(6, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled host failures", 1, tester.metric.values.get(NodeFailer.throttledHostFailuresMetric));
 
@@ -631,14 +544,14 @@ public class NodeFailerTest {
             tester.clock.advance(Duration.ofMinutes(30));
             tester.runMaintainers();
             tester.runMaintainers();  // hosts are failed in the 2. maintain()
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(9, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric, as no throttled attempt is made", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // Nothing else to fail
             tester.clock.advance(Duration.ofHours(25));
             tester.runMaintainers();
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(9, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
         }
