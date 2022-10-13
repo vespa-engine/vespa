@@ -154,7 +154,6 @@ class SingletonManager {
             doom.set(null);
             if (lock != null) try {
                 logger.log(INFO, "Releasing lease for " + id);
-                metrics.hasLease(false);
                 lock.close();
                 lock = null;
             }
@@ -282,7 +281,6 @@ class SingletonManager {
             if (lock == null) try {
                 lock = curator.lock(path.append("lock"), tickTimeout);
                 logger.log(INFO, "Acquired lock for ID: " + id);
-                metrics.hasLease(true);
             }
             catch (RuntimeException e) {
                 logger.log(FINE, "Failed acquiring lock for '" + path + "' within " + tickTimeout, e);
@@ -371,8 +369,7 @@ class SingletonManager {
 
         private class MetricHelper {
 
-            static final String PREFIX = "singleton.";
-            static final String HAS_LEASE = PREFIX + "has_lease";
+            static final String PREFIX = "jdisc.singleton.";
             static final String IS_ACTIVE = PREFIX + "is_active";
             static final String ACTIVATION = PREFIX + "activation.count";
             static final String ACTIVATION_MILLIS = PREFIX + "activation.millis";
@@ -385,10 +382,6 @@ class SingletonManager {
 
             MetricHelper() {
                 this.context = metric.createContext(Map.of("singletonId", id));
-            }
-
-            void hasLease(boolean hasLease) {
-                metric.set(HAS_LEASE, hasLease ? 1 : 0, context);
             }
 
             void activation(Runnable activation) {

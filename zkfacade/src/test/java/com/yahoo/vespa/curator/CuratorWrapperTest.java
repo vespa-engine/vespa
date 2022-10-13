@@ -130,8 +130,7 @@ public class CuratorWrapperTest {
             verifyMetrics(Map.of("activation.count", 3.0,
                                  "activation.millis", 0.0,
                                  "deactivation.count", 2.0,
-                                 "deactivation.millis", 0.0,
-                                 "has_lease", 1.0),
+                                 "deactivation.millis", 0.0),
                           metric);
 
             // Manager unregisters remaining singletons on shutdown.
@@ -141,8 +140,7 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 3.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 0.0,
-                                 "has_lease", 0.0),
+                                 "is_active", 0.0),
                           metric);
         }
     }
@@ -181,8 +179,7 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 3.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 1.0,
-                                 "has_lease", 1.0),
+                                 "is_active", 1.0),
                           metric);
 
             // Add a singleton which fails activation.
@@ -215,8 +212,7 @@ public class CuratorWrapperTest {
                                  "activation.failure.count", 1.0,
                                  "deactivation.count", 5.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 0.0,
-                                 "has_lease", 1.0),
+                                 "is_active", 0.0),
                           metric);
             stunning.arriveAndAwaitAdvance(); // Failing component is done being deactivated.
             stunning.arriveAndAwaitAdvance(); // Failing component is done cleaning up after itself.
@@ -227,8 +223,7 @@ public class CuratorWrapperTest {
                                  "activation.failure.count", 1.0,
                                  "deactivation.count", 5.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 1.0,
-                                 "has_lease", 1.0),
+                                 "is_active", 1.0),
                           metric);
 
             newSingleton.shutdown();
@@ -238,8 +233,7 @@ public class CuratorWrapperTest {
                                  "activation.failure.count", 1.0,
                                  "deactivation.count", 6.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 0.0,
-                                 "has_lease", 0.0),
+                                 "is_active", 0.0),
                           metric);
         }
     }
@@ -263,8 +257,7 @@ public class CuratorWrapperTest {
             singleton.phaser.arriveAndAwaitAdvance();
             assertTrue(curator.isActive(singleton.id()));
             assertTrue(singleton.isActive);
-            verifyMetrics(Map.of("activation.count", 1.0,
-                                 "has_lease", 1.0),
+            verifyMetrics(Map.of("activation.count", 1.0),
                           metric);
 
             // Simulate a different container wanting the lock.
@@ -285,8 +278,7 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 1.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 0.0,
-                                 "has_lease", 0.0),
+                                 "is_active", 0.0),
                           metric);
 
             // Connection is restored, and the other container releases the lock again.
@@ -296,8 +288,7 @@ public class CuratorWrapperTest {
             verifyMetrics(Map.of("activation.count", 2.0,
                                  "activation.millis", 0.0,
                                  "deactivation.count", 1.0,
-                                 "deactivation.millis", 0.0,
-                                 "has_lease", 1.0),
+                                 "deactivation.millis", 0.0),
                           metric);
 
             singleton.phaser.arriveAndDeregister();
@@ -308,8 +299,7 @@ public class CuratorWrapperTest {
                                  "activation.millis", 0.0,
                                  "deactivation.count", 2.0,
                                  "deactivation.millis", 0.0,
-                                 "is_active", 0.0,
-                                 "has_lease", 0.0),
+                                 "is_active", 0.0),
                           metric);
         }
     }
@@ -338,7 +328,7 @@ public class CuratorWrapperTest {
     }
 
     static void verifyMetrics(Map<String, Double> expected, MockMetric metrics) {
-        expected.forEach((metric, value) -> assertEquals(metric, value, metrics.metrics().get("singleton." + metric).get(Map.of("singletonId", "singleton"))));
+        expected.forEach((metric, value) -> assertEquals(metric, value, metrics.metrics().get("jdisc.singleton." + metric).get(Map.of("singletonId", "singleton"))));
     }
 
 }
