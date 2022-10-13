@@ -55,7 +55,7 @@ public class Tags {
      * Creates this from a space-separated string or null. */
     public static Tags fromString(String tagsString) {
         if (tagsString == null || tagsString.isBlank()) return empty();
-        return new Tags(Set.of(tagsString.trim().split(" ")));
+        return new Tags(Set.of(tagsString.trim().split(" +")));
     }
 
 }
