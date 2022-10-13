@@ -15,10 +15,12 @@ import java.util.Base64;
  * This token representation is expected to be used as a convenient serialization
  * form when communicating shared keys.
  */
-public record SealedSharedKey(int keyId, byte[] eciesPayload) {
+public record SealedSharedKey(int keyId, byte[] eciesPayload, byte[] iv) {
 
     /** Current encoding version of opaque sealed key tokens. Must be less than 256. */
     public static final int CURRENT_TOKEN_VERSION = 1;
+
+    private static final int ECIES_AES_IV_LENGTH = SharedKeyGenerator.ECIES_AES_CBC_IV_BITS / 8;
 
     /**
      * Creates an opaque URL-safe string token that contains enough information to losslessly
@@ -28,9 +30,13 @@ public record SealedSharedKey(int keyId, byte[] eciesPayload) {
         if (keyId >= (1 << 24)) {
             throw new IllegalArgumentException("Key id is too large to be encoded");
         }
+        if (iv.length != ECIES_AES_IV_LENGTH) {
+            throw new IllegalStateException("Expected a %d byte IV, got %d bytes".formatted(ECIES_AES_IV_LENGTH, iv.length));
+        }
 
-        ByteBuffer encoded = ByteBuffer.allocate(4 + eciesPayload.length);
+        ByteBuffer encoded = ByteBuffer.allocate(4 + ECIES_AES_IV_LENGTH + eciesPayload.length);
         encoded.putInt((CURRENT_TOKEN_VERSION << 24) | keyId);
+        encoded.put(iv);
         encoded.put(eciesPayload);
         encoded.flip();
 
@@ -55,11 +61,13 @@ public record SealedSharedKey(int keyId, byte[] eciesPayload) {
             throw new IllegalArgumentException("Token had unexpected version. Expected %d, was %d"
                                                .formatted(CURRENT_TOKEN_VERSION, version));
         }
+        byte[] iv = new byte[ECIES_AES_IV_LENGTH];
+        decoded.get(iv);
         byte[] eciesPayload = new byte[decoded.remaining()];
         decoded.get(eciesPayload);
 
         int keyId = versionAndKeyId & 0xffffff;
-        return new SealedSharedKey(keyId, eciesPayload);
+        return new SealedSharedKey(keyId, eciesPayload, iv);
     }
 
 }
