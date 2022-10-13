@@ -763,7 +763,7 @@ void
 StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
 {
     assert(_writeService.master().isCurrentThread());
-    _metaStore.removeAllOldGenerations();
+    _metaStore.reclaim_unused_memory();
     _metaStore.commit(CommitParam(serialNum));
     heartBeatSummary(serialNum, onDone);
     heartBeatIndexedFields(serialNum, onDone);

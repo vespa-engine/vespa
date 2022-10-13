@@ -156,7 +156,7 @@ protected:
     
 public:
     void incGeneration();
-    void removeAllOldGenerations();
+    void reclaim_unused_memory();
 
     generation_t get_oldest_used_generation() const {
         return _genHandler.get_oldest_used_generation();

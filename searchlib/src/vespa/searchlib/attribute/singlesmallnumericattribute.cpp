@@ -67,7 +67,7 @@ SingleValueSmallNumericAttribute::onCommit()
     }
 
     std::atomic_thread_fence(std::memory_order_release);
-    removeAllOldGenerations();
+    reclaim_unused_memory();
 
     _changes.clear();
 }
@@ -84,7 +84,7 @@ SingleValueSmallNumericAttribute::addDoc(DocId & doc) {
         if (incGen) {
             this->incGeneration();
         } else
-            this->removeAllOldGenerations();
+            this->reclaim_unused_memory();
     } else {
         B::incNumDocs();
         doc = B::getNumDocs() - 1;

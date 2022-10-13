@@ -187,7 +187,7 @@ AttributeVector::incGeneration()
     before_inc_generation(_genHandler.getCurrentGeneration());
     _genHandler.incGeneration();
     // Remove old data on hold lists that can no longer be reached by readers
-    removeAllOldGenerations();
+    reclaim_unused_memory();
 }
 
 void
@@ -408,7 +408,7 @@ bool AttributeVector::applyWeight(DocId, const FieldValue &, const ArithmeticVal
 bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpdate&) { return false; }
 
 void
-AttributeVector::removeAllOldGenerations() {
+AttributeVector::reclaim_unused_memory() {
     _genHandler.update_oldest_used_generation();
     reclaim_memory(_genHandler.get_oldest_used_generation());
 }
@@ -493,7 +493,7 @@ void
 AttributeVector::shrinkLidSpace()
 {
     commit();
-    removeAllOldGenerations();
+    reclaim_unused_memory();
     if (!canShrinkLidSpace()) {
         return;
     }
@@ -715,7 +715,7 @@ AttributeVector::drain_hold(uint64_t hold_limit)
 {
     incGeneration();
     for (int retry = 0; retry < 40; ++retry) {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
         updateStat(true);
         if (_status.getOnHold() <= hold_limit) {
             return;

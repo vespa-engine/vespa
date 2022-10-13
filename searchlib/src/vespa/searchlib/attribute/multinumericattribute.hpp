@@ -63,7 +63,7 @@ MultiValueNumericAttribute<B, M>::onCommit()
     }
 
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
 
     this->_changes.clear();
     if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {

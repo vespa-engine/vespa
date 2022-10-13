@@ -245,7 +245,7 @@ MultiValueAttribute<B, M>::addDoc(DocId & doc)
     if (incGen) {
         this->incGeneration();
     } else
-        this->removeAllOldGenerations();
+        this->reclaim_unused_memory();
     return true;
 }
 

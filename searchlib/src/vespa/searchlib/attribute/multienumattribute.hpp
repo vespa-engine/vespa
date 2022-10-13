@@ -147,7 +147,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
     updater.commit();
     this->freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
     if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
         this->updateStat(true);

@@ -68,7 +68,7 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
 
     // Functions that are also defined search::AttributeVector
     virtual void commit(const CommitParam & param) = 0;
-    virtual void removeAllOldGenerations() = 0;
+    virtual void reclaim_unused_memory() = 0;
     virtual bool canShrinkLidSpace() const = 0;
     virtual SerialNum getLastSerialNum() const = 0;
 

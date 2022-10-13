@@ -51,7 +51,7 @@ public:
     // the ones with the same signature in proton::IDocumentMetaStore.
     using DocumentMetaStoreAttribute::commit;
     using DocumentMetaStoreAttribute::getCommittedDocIdLimit;
-    using DocumentMetaStoreAttribute::removeAllOldGenerations;
+    using DocumentMetaStoreAttribute::reclaim_unused_memory;
     using DocumentMetaStoreAttribute::getCurrentGeneration;
 
 private:
@@ -122,7 +122,7 @@ private:
         return getCommittedDocIdLimit();
     }
     void doRemoveAllOldGenerations() override {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
     }
     uint64_t doGetCurrentGeneration() const override {
         return getCurrentGeneration();

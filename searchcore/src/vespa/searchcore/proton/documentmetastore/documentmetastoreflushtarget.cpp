@@ -203,7 +203,7 @@ IFlushTarget::Task::UP
 DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     // Called by document db executor
-    _dms->removeAllOldGenerations();
+    _dms->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _dms->getStatus().getLastSyncToken());
     auto writer = _dmsDir->tryGetWriter();
     if (!writer) {

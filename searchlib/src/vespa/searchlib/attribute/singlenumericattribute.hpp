@@ -55,7 +55,7 @@ SingleValueNumericAttribute<B>::onCommit()
         }
     }
 
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
 
     this->_changes.clear();
 }
@@ -89,7 +89,7 @@ SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
     if (incGen) {
         this->incGeneration();
     } else
-        this->removeAllOldGenerations();
+        this->reclaim_unused_memory();
     return true;
 }
 
