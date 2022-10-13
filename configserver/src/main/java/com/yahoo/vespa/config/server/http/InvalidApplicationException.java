@@ -6,9 +6,9 @@ package com.yahoo.vespa.config.server.http;
  */
 public class InvalidApplicationException extends IllegalArgumentException {
 
-    public InvalidApplicationException(String message) {
-        super(message);
-    }
+    public InvalidApplicationException(String message) { super(message); }
+
+    public InvalidApplicationException(Throwable t) { super(t); }
 
     public InvalidApplicationException(String message, Throwable e) {
         super(message, e);
