@@ -11,9 +11,9 @@
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
@@ -43,10 +43,8 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
-using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
-using search::index::StringFieldBuilder;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
@@ -57,6 +55,8 @@ using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::ISourceSelector;
 using search::queryeval::SearchIterator;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using searchcorespi::index::FusionRunner;
 using searchcorespi::index::FusionSpec;
 using std::set;
@@ -155,7 +155,7 @@ void Test::tearDown() {
     _selector.reset(0);
 }
 
-Document::UP buildDocument(EmptyDocBuilder & doc_builder, int id, const string &word) {
+Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word) {
     vespalib::asciistream ost;
     ost << "id:ns:searchdocument::" << id;
     auto doc = doc_builder.make_document(ost.str());
@@ -163,7 +163,7 @@ Document::UP buildDocument(EmptyDocBuilder & doc_builder, int id, const string &
     return doc;
 }
 
-void addDocument(EmptyDocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &selector,
+void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &selector,
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
     index.insertDocument(docid, *doc, {});
@@ -187,7 +187,7 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     _selector->setDefaultSource(id - _selector->getBaseId());
 
     Schema schema = getSchema();
-    EmptyDocBuilder doc_builder([](auto& header) { header.addField(field_name, document::DataType::T_STRING); });
+    DocBuilder doc_builder([](auto& header) { header.addField(field_name, document::DataType::T_STRING); });
     MemoryIndex memory_index(schema, MockFieldLengthInspector(),
                              _service.write().indexFieldInverter(),
                              _service.write().indexFieldWriter());

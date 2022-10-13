@@ -6,9 +6,9 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
@@ -22,11 +22,11 @@ namespace search {
 using document::ArrayFieldValue;
 using document::Document;
 using document::WeightedSetFieldValue;
-using index::EmptyDocBuilder;
 using index::Schema;
-using index::StringFieldBuilder;
 using index::schema::CollectionType;
 using index::schema::DataType;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 
 using namespace index;
 
@@ -35,7 +35,7 @@ namespace memoryindex {
 namespace {
 
 Document::UP
-makeDoc10(EmptyDocBuilder &b)
+makeDoc10(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::10");
@@ -44,7 +44,7 @@ makeDoc10(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc11(EmptyDocBuilder &b)
+makeDoc11(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::11");
@@ -54,7 +54,7 @@ makeDoc11(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc12(EmptyDocBuilder &b)
+makeDoc12(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::12");
@@ -63,7 +63,7 @@ makeDoc12(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc13(EmptyDocBuilder &b)
+makeDoc13(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::13");
@@ -72,7 +72,7 @@ makeDoc13(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc14(EmptyDocBuilder &b)
+makeDoc14(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::14");
@@ -81,13 +81,13 @@ makeDoc14(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc15(EmptyDocBuilder &b)
+makeDoc15(DocBuilder &b)
 {
     return b.make_document("id:ns:searchdocument::15");
 }
 
 Document::UP
-makeDoc16(EmptyDocBuilder &b)
+makeDoc16(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::16");
@@ -96,7 +96,7 @@ makeDoc16(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc17(EmptyDocBuilder &b)
+makeDoc17(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::17");
@@ -115,7 +115,7 @@ makeDoc17(EmptyDocBuilder &b)
 vespalib::string corruptWord = "corruptWord";
 
 Document::UP
-makeCorruptDocument(EmptyDocBuilder &b, size_t wordOffset)
+makeCorruptDocument(DocBuilder &b, size_t wordOffset)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::18");
@@ -141,7 +141,7 @@ makeCorruptDocument(EmptyDocBuilder &b, size_t wordOffset)
 
 struct FieldInverterTest : public ::testing::Test {
     Schema _schema;
-    EmptyDocBuilder _b;
+    DocBuilder _b;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserterBackend _inserter_backend;
@@ -158,7 +158,7 @@ struct FieldInverterTest : public ::testing::Test {
         return schema;
     }
 
-    static EmptyDocBuilder::AddFieldsType
+    static DocBuilder::AddFieldsType
     make_add_fields()
     {
         return [](auto& header) { using namespace document::config_builder;

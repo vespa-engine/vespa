@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -16,14 +16,14 @@ LOG_SETUP("document_field_populator_test");
 using namespace document;
 using namespace proton;
 using namespace search;
-using namespace search::index;
+using search::test::DocBuilder;
 
 typedef search::attribute::Config AVConfig;
 typedef search::attribute::BasicType AVBasicType;
 
 struct DocContext
 {
-    EmptyDocBuilder _builder;
+    DocBuilder _builder;
     DocContext()
         : _builder([](auto& header) { header.addField("a1", DataType::T_INT); })
     {

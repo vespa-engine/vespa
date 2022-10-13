@@ -10,13 +10,13 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/schema_index_fields.h>
-#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -30,6 +30,8 @@ using document::UrlDataType;
 using document::WeightedSetFieldValue;
 using index::schema::CollectionType;
 using index::schema::DataType;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 
 using namespace index;
 
@@ -40,7 +42,7 @@ namespace {
 const vespalib::string url = "url";
 
 Document::UP
-makeDoc10Single(EmptyDocBuilder &b)
+makeDoc10Single(DocBuilder &b)
 {
     auto doc = b.make_document("id:ns:searchdocument::10");
     auto url_value = b.make_struct("url");
@@ -58,7 +60,7 @@ makeDoc10Single(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc10Array(EmptyDocBuilder &b)
+makeDoc10Array(DocBuilder &b)
 {
     auto doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
@@ -84,7 +86,7 @@ makeDoc10Array(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc10WeightedSet(EmptyDocBuilder &b)
+makeDoc10WeightedSet(DocBuilder &b)
 {
     auto doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
@@ -112,7 +114,7 @@ makeDoc10WeightedSet(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc10Empty(EmptyDocBuilder &b)
+makeDoc10Empty(DocBuilder &b)
 {
     return b.make_document("id:ns:searchdocument::10");
 }
@@ -121,7 +123,7 @@ makeDoc10Empty(EmptyDocBuilder &b)
 
 struct UrlFieldInverterTest : public ::testing::Test {
     Schema _schema;
-    EmptyDocBuilder _b;
+    DocBuilder _b;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserterBackend _inserter_backend;
@@ -138,7 +140,7 @@ struct UrlFieldInverterTest : public ::testing::Test {
     }
 
     UrlFieldInverterTest(Schema::CollectionType collectionType,
-                         EmptyDocBuilder::AddFieldsType add_fields)
+                         DocBuilder::AddFieldsType add_fields)
         : _schema(makeSchema(collectionType)),
           _b(add_fields),
           _word_store(),
@@ -193,16 +195,16 @@ struct UrlFieldInverterTest : public ::testing::Test {
 
 UrlFieldInverterTest::~UrlFieldInverterTest() = default;
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 add_single_url = [](auto& header) {
                      header.addField("url", UrlDataType::getInstance().getId()); };
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 add_array_url = [](auto& header) {
                     using namespace document::config_builder;
                     header.addField("url", Array(UrlDataType::getInstance().getId())); };
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 add_wset_url = [](auto& header) {
                     using namespace document::config_builder;
                     header.addField("url", Wset(UrlDataType::getInstance().getId())); };

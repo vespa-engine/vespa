@@ -13,10 +13,8 @@
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
@@ -24,6 +22,8 @@
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -56,6 +56,8 @@ using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using vespalib::GenerationHandler;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
@@ -518,7 +520,7 @@ make_single_field_schema()
     return result;
 }
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 make_single_add_fields()
 {
     return [](auto& header) { header.addField("f0", document::DataType::T_STRING); };
@@ -725,7 +727,7 @@ make_multi_field_schema()
     return result;
 }
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 make_multi_field_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
@@ -938,13 +940,13 @@ class InverterTest : public ::testing::Test {
 public:
     Schema _schema;
     FieldIndexCollection _fic;
-    EmptyDocBuilder _b;
+    DocBuilder _b;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     DocumentInverterContext _inv_context;
     DocumentInverter _inv;
 
-    InverterTest(const Schema& schema, EmptyDocBuilder::AddFieldsType add_fields)
+    InverterTest(const Schema& schema, DocBuilder::AddFieldsType add_fields)
         : _schema(schema),
           _fic(_schema, MockFieldLengthInspector()),
           _b(add_fields),
@@ -1173,7 +1175,7 @@ make_uri_schema()
     return result;
 }
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 make_uri_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;

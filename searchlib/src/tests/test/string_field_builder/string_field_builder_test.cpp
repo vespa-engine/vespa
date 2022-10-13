@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <cassert>
 #include <iostream>
@@ -18,8 +18,8 @@ using document::Span;
 using document::SpanNode;
 using document::SpanTree;
 using document::StringFieldValue;
-using search::index::EmptyDocBuilder;
-using search::index::StringFieldBuilder;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 
 namespace
 {
@@ -70,7 +70,7 @@ std::ostream& operator<<(std::ostream& os, const MyAnnotation& ann) {
 class StringFieldBuilderTest : public testing::Test
 {
 protected:
-    EmptyDocBuilder    edb;
+    DocBuilder    db;
     StringFieldBuilder sfb;
     StringFieldBuilderTest();
     ~StringFieldBuilderTest();
@@ -80,8 +80,8 @@ protected:
 
 StringFieldBuilderTest::StringFieldBuilderTest()
     : testing::Test(),
-      edb(),
-      sfb(edb)
+      db(),
+      sfb(db)
 {
 }
 

@@ -12,9 +12,9 @@
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
@@ -52,6 +52,8 @@ using search::common::FileHeaderContext;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using vespalib::SequencedTaskExecutor;
 
 using namespace index;
@@ -119,7 +121,7 @@ toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeight
 }
 
 std::unique_ptr<Document>
-make_doc10(EmptyDocBuilder &b)
+make_doc10(DocBuilder &b)
 {
     auto doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
@@ -154,7 +156,7 @@ make_schema(bool interleaved_features)
     return schema;
 }
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 make_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
@@ -342,7 +344,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
                                addField("f2").addField("f3").
                                addField("f4"));
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
-    EmptyDocBuilder b(make_add_fields());
+    DocBuilder b(make_add_fields());
     StringFieldBuilder sfb(b);
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
@@ -486,7 +488,7 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     FieldIndexCollection fic(_schema, field_length_inspector);
     uint32_t numDocs = 20;
     uint32_t numWords = 1000;
-    EmptyDocBuilder b(make_add_fields());
+    DocBuilder b(make_add_fields());
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverterContext inv_context(_schema, *invertThreads, *pushThreads, fic);

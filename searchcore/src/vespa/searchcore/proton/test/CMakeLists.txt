@@ -20,4 +20,5 @@ vespa_add_library(searchcore_test STATIC
     searchcore_server
     searchcore_fconfig
     searchcorespi
+    searchlib_test
 )

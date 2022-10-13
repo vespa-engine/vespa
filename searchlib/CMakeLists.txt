@@ -169,7 +169,6 @@ vespa_define_module(
     src/tests/groupingengine
     src/tests/hitcollector
     src/tests/index/field_length_calculator
-    src/tests/index/string_field_builder
     src/tests/indexmetainfo
     src/tests/ld-library-path
     src/tests/memoryindex/compact_words_store
@@ -225,6 +224,7 @@ vespa_define_module(
     src/tests/tensor/tensor_buffer_operations
     src/tests/tensor/tensor_buffer_store
     src/tests/tensor/tensor_buffer_type_mapper
+    src/tests/test/string_field_builder
     src/tests/transactionlog
     src/tests/transactionlogstress
     src/tests/true

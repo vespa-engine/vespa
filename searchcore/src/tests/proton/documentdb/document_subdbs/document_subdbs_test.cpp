@@ -30,8 +30,8 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/subscription/sourcespec.h>
@@ -63,6 +63,7 @@ using proton::bucketdb::IBucketDBHandler;
 using proton::bucketdb::IBucketDBHandlerInitializer;
 using vespalib::IDestructorCallback;
 using search::test::DirectoryHandler;
+using search::test::DocBuilder;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
@@ -261,7 +262,7 @@ struct TwoAttrSchema : public OneAttrSchema
     }
 };
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 get_add_fields(bool has_attr2)
 {
     return [has_attr2](auto& header) {
@@ -276,7 +277,7 @@ struct MyConfigSnapshot
 {
     typedef std::unique_ptr<MyConfigSnapshot> UP;
     Schema _schema;
-    EmptyDocBuilder _builder;
+    DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
     MyConfigSnapshot(FNET_Transport & transport, const Schema &schema, const vespalib::string &cfgDir)
@@ -760,7 +761,7 @@ template <typename FixtureType>
 struct DocumentHandler
 {
     FixtureType &_f;
-    EmptyDocBuilder _builder;
+    DocBuilder _builder;
     DocumentHandler(FixtureType &f) : _f(f), _builder(get_add_fields(f._baseSchema.getNumAttributeFields() > 1)) {}
     static constexpr uint32_t BUCKET_USED_BITS = 8;
     static DocumentId createDocId(uint32_t docId)

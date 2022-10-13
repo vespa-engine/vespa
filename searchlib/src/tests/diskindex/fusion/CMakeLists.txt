@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_fusion_test_app TEST
     SOURCES
     fusion_test.cpp
     DEPENDS
-    searchlib
+    searchlib_test
     GTest::GTest
     AFTER
     searchlib_vespa-index-inspect_app
