@@ -205,7 +205,7 @@ VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
 
 TEST_P(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION
-    EXPECT_EQ(464u, sizeof(store));
+    EXPECT_EQ(472u, sizeof(store));
     EXPECT_EQ(304u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #else
     EXPECT_EQ(504u, sizeof(store));
