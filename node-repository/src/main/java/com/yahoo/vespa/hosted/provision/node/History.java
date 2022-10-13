@@ -46,10 +46,8 @@ public class History {
 
     private static ImmutableMap<Event.Type, Event> toImmutableMap(Collection<Event> events) {
         ImmutableMap.Builder<Event.Type, Event> builder = new ImmutableMap.Builder<>();
-        for (Event event : events) {
-            if (event.type() == Event.Type.requested) continue; // TODO (freva): Remove requested event after 8.70
+        for (Event event : events)
             builder.put(event.type(), event);
-        }
         return builder.build();
     }
 

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import ai.vespa.http.DomainName;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
@@ -485,12 +484,15 @@ public class CuratorDatabaseClient {
         transaction.onCommitted(() -> {
             for (var lb : loadBalancers) {
                 if (lb.state() == fromState) continue;
-                Optional<String> target = lb.instance().flatMap(instance -> instance.hostname().map(DomainName::value).or(instance::ipAddress));
                 if (fromState == null) {
-                    log.log(Level.INFO, () -> "Creating " + lb.id() + target.map(t -> " (" +  t + ")").orElse("") +
+                    log.log(Level.INFO, () -> "Creating " + lb.id() + lb.instance()
+                                                                        .map(instance -> " (" +  instance.hostname() + ")")
+                                                                        .orElse("") +
                                               " in " + lb.state());
                 } else {
-                    log.log(Level.INFO, () -> "Moving " + lb.id() + target.map(t -> " (" +  t + ")").orElse("") +
+                    log.log(Level.INFO, () -> "Moving " + lb.id() + lb.instance()
+                                                                      .map(instance -> " (" +  instance.hostname() + ")")
+                                                                      .orElse("") +
                                               " from " + fromState +
                                               " to " + lb.state());
                 }

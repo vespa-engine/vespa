@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jrt.Request;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
+import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
@@ -49,6 +51,7 @@ public class RpcTester implements AutoCloseable {
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
     private final String myHostname = HostName.getLocalhost();
+    private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
     private final Spec spec;
 
     private final RpcServer rpcServer;
@@ -92,6 +95,7 @@ public class RpcTester implements AutoCloseable {
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .build();
+        assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
     }
 
     public void close() {
@@ -118,6 +122,7 @@ public class RpcTester implements AutoCloseable {
                                                                   new InMemoryFlagSource())),
                              Metrics.createTestMetrics(),
                              hostRegistry,
+                             hostLivenessTracker,
                              new FileServer(temporaryFolder.newFolder()),
                              new NoopRpcAuthorizer(),
                              new RpcRequestHandlerProvider());
@@ -162,6 +167,8 @@ public class RpcTester implements AutoCloseable {
     void performRequest(Request req) {
         clock.advance(Duration.ofMillis(10));
         sup.connect(spec).invokeSync(req, Duration.ofSeconds(10));
+        if (req.methodName().equals(RpcServer.getConfigMethodName))
+            assertEquals(clock.instant(), hostLivenessTracker.lastRequestFrom(myHostname).get());
     }
 
     RpcServer rpcServer() {

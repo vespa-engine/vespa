@@ -7,6 +7,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.DataValue;
@@ -26,8 +27,8 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -43,7 +44,6 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
@@ -102,6 +102,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     private final SuperModelRequestHandler superModelRequestHandler;
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
+    private final HostLivenessTracker hostLivenessTracker;
     private final FileServer fileServer;
     private final RpcAuthorizer rpcAuthorizer;
 
@@ -127,12 +128,13 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
                      MetricUpdaterFactory metrics, HostRegistry hostRegistry,
-                     FileServer fileServer, RpcAuthorizer rpcAuthorizer,
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer,
                      RpcRequestHandlerProvider handlerProvider) {
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
+        this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
         int rpcWorkerThreads = (config.numRpcThreads() == 0) ? threadsToUse() : config.numRpcThreads();
         executorService = new ThreadPoolExecutor(rpcWorkerThreads, rpcWorkerThreads,
@@ -610,5 +612,9 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                                                               false /* downloadFromOtherSourceIfNotFound */)));
                     req.returnValues().add(new Int32Value(0));
                 });
+    }
+
+    HostLivenessTracker hostLivenessTracker() {
+        return hostLivenessTracker;
     }
 }
