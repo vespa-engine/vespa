@@ -77,6 +77,23 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
+        // Ready nodes
+        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
+            for (FailingNode failing : findReadyFailingNodes()) {
+                attempts++;
+                if (throttle(failing.node())) {
+                    failures++;
+                    if (failing.node().type().isHost())
+                        throttledHostFailures++;
+                    else
+                        throttledNodeFailures++;
+                    continue;
+                }
+                nodeRepository().nodes().fail(failing.node().hostname(), Agent.NodeFailer, failing.reason());
+            }
+        }
+
+        // Active nodes
         for (FailingNode failing : findActiveFailingNodes()) {
             attempts++;
             if (!failAllowedFor(failing.node().type())) continue;
@@ -99,6 +116,22 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         return asSuccessFactor(attempts, failures);
     }
 
+    private Collection<FailingNode> findReadyFailingNodes() {
+        Set<FailingNode> failingNodes = new HashSet<>();
+        for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
+            Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+            List<String> failureReports = reasonsToFailHost(hostNode);
+            if (failureReports.size() > 0) {
+                if (hostNode.equals(node)) {
+                    failingNodes.add(new FailingNode(node, "Host has failure reports: " + failureReports));
+                } else {
+                    failingNodes.add(new FailingNode(node, "Parent (" + hostNode + ") has failure reports: " + failureReports));
+                }
+            }
+        }
+        return failingNodes;
+    }
+
     private Collection<FailingNode> findActiveFailingNodes() {
         Set<FailingNode> failingNodes = new HashSet<>();
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
@@ -117,7 +150,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         for (Node node : activeNodes) {
             if (allSuspended(node, activeNodes)) {
-                Node host = node.parentHostname().flatMap(activeNodes::node).orElse(node);
+                Node host = node.parentHostname().flatMap(parent -> activeNodes.node(parent)).orElse(node);
                 if (host.type().isHost()) {
                     List<String> failureReports = reasonsToFailHost(host);
                     if ( ! failureReports.isEmpty()) {
@@ -142,7 +175,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeList allNodes) {
-        Node host = node.parentHostname().flatMap(allNodes::node).orElse(node);
+        Node host = node.parentHostname().flatMap(parent -> allNodes.node(parent)).orElse(node);
         return reasonsToFailHost(host).size() > 0;
     }
 
@@ -311,6 +344,30 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     }
 
-    private record FailingNode(Node node, String reason) { }
+    private static class FailingNode {
+
+        private final Node node;
+        private final String reason;
+
+        public FailingNode(Node node, String reason) {
+            this.node = node;
+            this.reason = reason;
+        }
+
+        public Node node() { return node; }
+        public String reason() { return reason; }
+
+        @Override
+        public boolean equals(Object other) {
+            if ( ! (other instanceof FailingNode)) return false;
+            return ((FailingNode)other).node().equals(this.node());
+        }
+
+        @Override
+        public int hashCode() {
+            return node.hashCode();
+        }
+
+    }
 
 }

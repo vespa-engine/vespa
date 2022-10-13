@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -151,6 +150,7 @@ class GetConfigProcessor implements Runnable {
 
     @Override
     public void run() {
+        rpcServer.hostLivenessTracker().receivedRequestFrom(request.getClientHostName());
         Pair<GetConfigContext, Long> delayed = getConfig(request);
 
         if (delayed != null) {
